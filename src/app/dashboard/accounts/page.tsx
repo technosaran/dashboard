@@ -10,8 +10,6 @@ import { createAccount, updateAccount, deleteAccount, createTransfer } from "./a
 
 type Account = Tables<"accounts">;
 
-const supabase = createClient();
-
 const TYPE_STYLES: Record<string, { bg: string; badge: string; color: string }> = {
   checking:   { bg: "from-blue-600 via-blue-500 to-cyan-500",         badge: "bg-blue-500/20 text-blue-100 border border-blue-400/30",       color: "#3b82f6" },
   savings:    { bg: "from-emerald-600 via-teal-500 to-cyan-500",      badge: "bg-teal-500/20 text-teal-100 border border-teal-400/30",       color: "#14b8a6" },
@@ -49,6 +47,7 @@ export default function AccountsPage() {
   });
 
   const loadAccounts = useCallback(async () => {
+    const supabase = createClient();
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -76,8 +75,10 @@ export default function AccountsPage() {
   }, []);
 
   useEffect(() => {
-    void loadAccounts();
-
+    const supabase = createClient();
+    const timer = setTimeout(() => {
+      void loadAccounts();
+    }, 0);
     let channel: ReturnType<typeof supabase.channel> | null = null;
 
     const setupRealtime = async () => {
@@ -104,6 +105,7 @@ export default function AccountsPage() {
     void setupRealtime();
 
     return () => {
+      clearTimeout(timer);
       if (channel) {
         void supabase.removeChannel(channel);
       }

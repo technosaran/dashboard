@@ -60,7 +60,10 @@ export default function TestConnectionPage() {
   }, []);
 
   useEffect(() => {
-    void testConnection();
+    const timer = setTimeout(() => {
+      void testConnection();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [testConnection]);
 
   return (

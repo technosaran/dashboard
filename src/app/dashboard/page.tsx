@@ -4,14 +4,13 @@ import { useCallback, useEffect, useState } from "react";
 import Greeting from "@/components/greeting";
 import { createClient } from "@/lib/supabase-browser";
 
-const supabase = createClient();
-
 export default function DashboardPage() {
   const [totalBalance, setTotalBalance] = useState(0);
   const [loading, setLoading] = useState(true);
   const [accountCount, setAccountCount] = useState(0);
 
   const loadTotalBalance = useCallback(async () => {
+    const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       setLoading(false);
@@ -32,7 +31,10 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    void loadTotalBalance();
+    const supabase = createClient();
+    const timer = setTimeout(() => {
+      void loadTotalBalance();
+    }, 0);
 
     const channel = supabase
       .channel("dashboard-accounts")
@@ -46,6 +48,7 @@ export default function DashboardPage() {
       .subscribe();
 
     return () => {
+      clearTimeout(timer);
       void supabase.removeChannel(channel);
     };
   }, [loadTotalBalance]);

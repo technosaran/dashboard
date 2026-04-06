@@ -8,8 +8,6 @@ import { createTransfer } from "./actions";
 type Account = Tables<"accounts">;
 type Transfer = Tables<"transfers">;
 
-const supabase = createClient();
-
 export default function TransfersPage() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [transfers, setTransfers] = useState<Transfer[]>([]);
@@ -25,6 +23,7 @@ export default function TransfersPage() {
   });
 
   const loadAccounts = useCallback(async () => {
+    const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
@@ -38,6 +37,7 @@ export default function TransfersPage() {
   }, []);
 
   const loadTransfers = useCallback(async () => {
+    const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
@@ -57,7 +57,10 @@ export default function TransfersPage() {
   }, [loadAccounts, loadTransfers]);
 
   useEffect(() => {
-    void loadData();
+    const supabase = createClient();
+    const timer = setTimeout(() => {
+      void loadData();
+    }, 0);
 
     const channel = supabase
       .channel("transfers-changes")
@@ -78,6 +81,7 @@ export default function TransfersPage() {
       .subscribe();
 
     return () => {
+      clearTimeout(timer);
       void supabase.removeChannel(channel);
     };
   }, [loadAccounts, loadData]);
