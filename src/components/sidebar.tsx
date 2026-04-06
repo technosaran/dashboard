@@ -48,10 +48,10 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="w-64 shrink-0 bg-zinc-950 flex flex-col">
+    <aside className="w-64 shrink-0 bg-slate-900 flex flex-col border-r border-slate-800">
       <div className="px-6 py-6">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-emerald-500 flex items-center justify-center">
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-500/20">
             <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
               <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
             </svg>
@@ -61,7 +61,7 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex-1 px-3 space-y-0.5">
-        <p className="px-3 pb-2 text-xs font-medium text-zinc-500 uppercase tracking-wider">Menu</p>
+        <p className="px-3 pb-2 text-xs font-medium text-slate-500 uppercase tracking-wider">Menu</p>
         {nav.map(({ label, href, icon }) => {
           const active = pathname === href;
           return (
@@ -70,20 +70,20 @@ export default function Sidebar() {
               href={href}
               className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
                 active
-                  ? "bg-zinc-800 text-white"
-                  : "text-zinc-400 hover:bg-zinc-800/60 hover:text-white"
+                  ? "bg-blue-500/10 text-blue-400 border border-blue-500/20"
+                  : "text-slate-400 hover:bg-slate-800/60 hover:text-white"
               }`}
             >
-              <span className={active ? "text-emerald-400" : ""}>{icon}</span>
+              <span className={active ? "text-blue-400" : ""}>{icon}</span>
               {label}
-              {active && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-400" />}
+              {active && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-400" />}
             </Link>
           );
         })}
       </nav>
 
-      <div className="px-3 py-4 border-t border-zinc-800">
-        <button onClick={handleLogout} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-400 hover:bg-zinc-800/60 hover:text-white transition-all">
+      <div className="px-3 py-4 border-t border-slate-800">
+        <button onClick={handleLogout} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-400 hover:bg-slate-800/60 hover:text-white transition-all">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
           </svg>

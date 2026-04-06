@@ -58,8 +58,8 @@ export default function DashboardPage() {
       </p>
 
       <div className="mt-8">
-        <div className="rounded-2xl bg-emerald-500 p-6 text-white shadow-lg shadow-emerald-200 dark:shadow-none max-w-sm">
-          <p className="text-sm font-medium text-emerald-100">Total Net Worth</p>
+        <div className="rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-500 p-6 text-white shadow-lg shadow-blue-500/20 max-w-sm">
+          <p className="text-sm font-medium text-blue-100">Total Net Worth</p>
           {loading ? (
             <p className="mt-3 text-4xl font-bold tracking-tight">Loading...</p>
           ) : (
