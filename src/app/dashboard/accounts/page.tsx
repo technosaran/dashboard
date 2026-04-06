@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { createClient } from "@/lib/supabase-browser";
 import type { Tables } from "@/lib/database.types";
 import { searchBanks, type Bank } from "@/lib/banks";
+import { formatCurrency } from "@/lib/format";
 import { createAccount, updateAccount, deleteAccount, createTransfer } from "./actions";
 
 type Account = Tables<"accounts">;
@@ -12,15 +13,33 @@ type Account = Tables<"accounts">;
 const supabase = createClient();
 
 const TYPE_STYLES: Record<string, { bg: string; badge: string; color: string }> = {
-  checking:   { bg: "from-blue-600 via-blue-500 to-cyan-500",         badge: "bg-blue-500/20 text-blue-100 border border-blue-400/30",       color: "#3b82f6" },
-  savings:    { bg: "from-emerald-600 via-teal-500 to-cyan-500",      badge: "bg-teal-500/20 text-teal-100 border border-teal-400/30",       color: "#14b8a6" },
-  credit:     { bg: "from-violet-600 via-purple-500 to-fuchsia-500",  badge: "bg-violet-500/20 text-violet-100 border border-violet-400/30", color: "#8b5cf6" },
-  investment: { bg: "from-indigo-600 via-blue-500 to-sky-500",        badge: "bg-indigo-500/20 text-indigo-100 border border-indigo-400/30", color: "#6366f1" },
+  checking: {
+    bg: "from-sky-400/24 via-cyan-300/10 to-transparent",
+    badge: "border border-sky-400/30 bg-sky-400/12 text-sky-100",
+    color: "#78c7ff",
+  },
+  savings: {
+    bg: "from-emerald-400/24 via-teal-300/10 to-transparent",
+    badge: "border border-emerald-400/30 bg-emerald-400/12 text-emerald-100",
+    color: "#58d5aa",
+  },
+  credit: {
+    bg: "from-amber-300/24 via-orange-300/10 to-transparent",
+    badge: "border border-amber-300/30 bg-amber-300/12 text-amber-100",
+    color: "#ffba6b",
+  },
+  investment: {
+    bg: "from-fuchsia-300/20 via-pink-300/10 to-transparent",
+    badge: "border border-fuchsia-300/30 bg-fuchsia-300/12 text-fuchsia-100",
+    color: "#f9a8d4",
+  },
 };
 
-const inputCls = "w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent";
-const selectCls = "w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-blue-500";
-const btnCls = "px-4 py-2 rounded-lg font-medium transition-colors";
+const inputCls =
+  "w-full rounded-[18px] border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-[var(--muted)] outline-none transition focus:border-[var(--border-strong)] focus:bg-white/[0.08]";
+const selectCls =
+  "w-full rounded-[18px] border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition focus:border-[var(--border-strong)] focus:bg-white/[0.08]";
+const btnCls = "inline-flex items-center justify-center rounded-full px-5 py-3 text-sm font-semibold transition";
 
 export default function AccountsPage() {
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -46,37 +65,6 @@ export default function AccountsPage() {
     bank_name: "",
     bank_logo: "",
   });
-
-  useEffect(() => {
-    loadAccounts();
-
-    async function setupRealtime() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const channel = supabase
-        .channel("accounts-changes")
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "accounts",
-            filter: `user_id=eq.${user.id}`,
-          },
-          () => {
-            loadAccounts();
-          }
-        )
-        .subscribe();
-
-      return () => {
-        supabase.removeChannel(channel);
-      };
-    }
-
-    setupRealtime();
-  }, []);
 
   async function loadAccounts() {
     try {
@@ -104,6 +92,38 @@ export default function AccountsPage() {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadAccounts();
+
+    async function setupRealtime() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const channel = supabase
+        .channel("accounts-changes")
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "accounts",
+            filter: `user_id=eq.${user.id}`,
+          },
+          () => {
+            void loadAccounts();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        void supabase.removeChannel(channel);
+      };
+    }
+
+    void setupRealtime();
+  }, []);
 
   function handleBankSearch(query: string) {
     setBankSearch(query);
@@ -181,7 +201,12 @@ export default function AccountsPage() {
 
   async function handleDelete(id: string) {
     if (confirm("Delete this account?")) {
-      await deleteAccount(id);
+      const result = await deleteAccount(id);
+      if (result?.error) {
+        setError(result.error);
+        return;
+      }
+      await loadAccounts();
     }
   }
 
@@ -245,19 +270,22 @@ export default function AccountsPage() {
   }
 
   const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
+  const primaryCurrency = accounts[0]?.currency ?? "USD";
+  const liquidBalance = accounts
+    .filter((account) => account.type === "checking" || account.type === "savings")
+    .reduce((sum, account) => sum + account.balance, 0);
+  const investmentBalance = accounts
+    .filter((account) => account.type === "investment")
+    .reduce((sum, account) => sum + account.balance, 0);
   
   // Generate distinct colors for each account
   const accountColors = [
-    "#3b82f6", // blue
-    "#06b6d4", // cyan
-    "#8b5cf6", // violet
-    "#ec4899", // pink
-    "#f59e0b", // amber
-    "#10b981", // emerald
-    "#6366f1", // indigo
-    "#14b8a6", // teal
-    "#f97316", // orange
-    "#a855f7", // purple
+    "#78c7ff",
+    "#58d5aa",
+    "#ffba6b",
+    "#f9a8d4",
+    "#c4b5fd",
+    "#fb7185",
   ];
   
   const chartData = accounts.map((account, index) => ({
@@ -268,18 +296,33 @@ export default function AccountsPage() {
   }));
 
   if (loading) {
-    return <div className="p-8 text-zinc-400">Loading...</div>;
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm text-[var(--muted-strong)]">
+          Loading accounts...
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-white">Accounts</h1>
-        <div className="flex gap-3">
+    <div className="flex h-full flex-col gap-6">
+      <div className="flex flex-col gap-4 rounded-[28px] border border-white/8 bg-white/[0.04] p-6 xl:flex-row xl:items-end xl:justify-between">
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--muted)]">Accounts</p>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+            Keep every balance in one elegant ledger
+          </h1>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--muted-strong)]">
+            Review account mix, update balances, and move money without leaving the
+            portfolio view.
+          </p>
+        </div>
+        <div className="flex flex-col gap-3 sm:flex-row">
           <button
             onClick={() => {
               if (accounts.length < 2) {
-                alert("You need at least 2 accounts to make a transfer");
+                setError("You need at least 2 accounts to make a transfer");
                 return;
               }
               setTransferFromId(accounts[0].id);
@@ -288,42 +331,97 @@ export default function AccountsPage() {
               setError(null);
             }}
             disabled={accounts.length < 2}
-            className={`${btnCls} bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed`}
+            className={`${btnCls} border border-white/10 bg-white/5 text-white hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50`}
           >
             Internal Transfers
           </button>
           <button
             onClick={() => setShowForm(!showForm)}
-            className={`${btnCls} bg-blue-600 text-white hover:bg-blue-700`}
+            className={`${btnCls} bg-[linear-gradient(135deg,rgba(88,213,170,0.95),rgba(120,199,255,0.9))] text-slate-950 hover:brightness-110`}
           >
-            + New Account
+            New Account
           </button>
         </div>
       </div>
 
+      {error && (
+        <div className="rounded-[24px] border border-rose-400/20 bg-rose-500/10 px-5 py-4 text-sm text-rose-100">
+          {error}
+        </div>
+      )}
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="metric-tile rounded-[26px] p-5">
+          <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--muted)]">Tracked balance</p>
+          <p className="mt-4 text-3xl font-semibold text-white">
+            {formatCurrency(totalBalance, primaryCurrency)}
+          </p>
+          <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+            All balances combined in your primary currency view.
+          </p>
+        </div>
+        <div className="metric-tile rounded-[26px] p-5">
+          <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--muted)]">Liquid funds</p>
+          <p className="mt-4 text-3xl font-semibold text-white">
+            {formatCurrency(liquidBalance, primaryCurrency)}
+          </p>
+          <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+            Checking and savings ready for your next move.
+          </p>
+        </div>
+        <div className="metric-tile rounded-[26px] p-5">
+          <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--muted)]">Invested</p>
+          <p className="mt-4 text-3xl font-semibold text-white">
+            {formatCurrency(investmentBalance, primaryCurrency)}
+          </p>
+          <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+            Long-term capital separated from day-to-day cash.
+          </p>
+        </div>
+      </div>
+
       {accounts.length > 0 && (
-        <div className="bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-500 rounded-3xl p-8 mb-8 shadow-2xl shadow-blue-500/20">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+        <div className="app-panel rounded-[32px] p-6 sm:p-7">
+          <div className="grid grid-cols-1 items-center gap-8 xl:grid-cols-2">
             <div>
-              <h2 className="text-white/90 text-lg mb-2 font-medium">Total Balance</h2>
-              <p className="text-white text-5xl font-bold mb-6">
+              <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--muted)]">Portfolio spread</p>
+              <h2 className="mt-2 text-3xl font-semibold tracking-tight text-white">
+                Balance distribution across accounts
+              </h2>
+              <p className="hidden">
                 ₹{totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
-              <div className="space-y-3">
+              <p className="mt-3 text-sm leading-6 text-[var(--muted-strong)]">
+                Spot concentration quickly and rebalance before one account carries too much
+                of the month.
+              </p>
+              <p className="mt-6 text-4xl font-semibold tracking-tight text-white">
+                {formatCurrency(totalBalance, primaryCurrency)}
+              </p>
+              <div className="mt-6 space-y-3">
                 {chartData.map((item, index) => (
-                  <div key={`${item.name}-${index}`} className="flex items-center justify-between bg-white/15 backdrop-blur-sm rounded-xl p-4 hover:bg-white/25 transition-all border border-white/10">
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className="w-3 h-3 rounded-full shadow-lg flex-shrink-0" style={{ backgroundColor: item.color }}></div>
-                      <div className="flex flex-col min-w-0">
+                  <div
+                    key={`${item.name}-${index}`}
+                    className="flex items-center justify-between rounded-[22px] border border-white/8 bg-white/[0.04] p-4 transition hover:border-[var(--border-strong)] hover:bg-white/[0.08]"
+                  >
+                    <div className="flex min-w-0 flex-1 items-center gap-3">
+                      <div
+                        className="h-3 w-3 flex-shrink-0 rounded-full shadow-lg"
+                        style={{ backgroundColor: item.color }}
+                      />
+                      <div className="flex min-w-0 flex-col">
                         <span className="text-white font-medium truncate">{item.name}</span>
-                        <span className="text-white/70 text-xs capitalize">{item.type}</span>
+                        <span className="text-xs capitalize text-[var(--muted)]">{item.type}</span>
                       </div>
                     </div>
-                    <div className="text-right flex-shrink-0 ml-3">
-                      <span className="text-white font-bold text-lg">
+                    <div className="ml-3 flex-shrink-0 text-right">
+                      <span className="hidden">
                         ₹{item.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
-                      <div className="text-white/80 text-xs">
+                      <span className="text-lg font-bold text-white">
+                        {formatCurrency(item.value, primaryCurrency)}
+                      </span>
+                      <div className="text-xs text-[var(--muted)]">
                         {((item.value / totalBalance) * 100).toFixed(1)}%
                       </div>
                     </div>
@@ -364,8 +462,8 @@ export default function AccountsPage() {
       )}
 
       {showForm && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 rounded-2xl p-6 max-w-2xl w-full border border-slate-700 max-h-[90vh] overflow-y-auto shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-md">
+          <div className="app-panel max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[32px] p-6 sm:p-7">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold text-white">{editingId ? "Edit Account" : "Create Account"}</h2>
               <button
@@ -460,7 +558,7 @@ export default function AccountsPage() {
                 <button 
                   type="submit" 
                   disabled={submitting}
-                  className={`flex-1 ${btnCls} bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed`}
+                  className={`flex-1 ${btnCls} bg-[linear-gradient(135deg,rgba(88,213,170,0.95),rgba(120,199,255,0.9))] text-slate-950 hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   {submitting ? "Saving..." : editingId ? "Update" : "Create"}
                 </button>
@@ -468,7 +566,7 @@ export default function AccountsPage() {
                   type="button" 
                   onClick={resetForm} 
                   disabled={submitting}
-                  className={`flex-1 ${btnCls} bg-slate-700 text-white hover:bg-slate-600 disabled:opacity-50`}
+                  className={`flex-1 ${btnCls} border border-white/10 bg-white/5 text-white hover:bg-white/10 disabled:opacity-50`}
                 >
                   Cancel
                 </button>
@@ -478,58 +576,67 @@ export default function AccountsPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 2xl:grid-cols-3">
         {accounts.map((account) => {
           const style = TYPE_STYLES[account.type] || TYPE_STYLES.checking;
           return (
-            <div key={account.id} className={`bg-gradient-to-br ${style.bg} rounded-2xl p-6 text-white relative h-[280px] flex flex-col`}>
-              <div className="flex justify-between items-start mb-4">
+            <div
+              key={account.id}
+              className="app-panel group relative flex h-[300px] flex-col overflow-hidden rounded-[30px] p-6 text-white transition hover:-translate-y-0.5 hover:border-[var(--border-strong)]"
+            >
+              <div className={`pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-br ${style.bg}`} />
+              <div className="relative mb-4 flex items-start justify-between">
                 <div className="min-h-[60px]">
-                  <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${style.badge}`}>
+                  <span className={`inline-block rounded-full px-3 py-1 text-xs font-medium capitalize ${style.badge}`}>
                     {account.type}
                   </span>
                   {account.bank_name ? (
                     <div className="flex items-center gap-2 mt-3">
                       {account.bank_logo && (
-                        <div className="bg-white rounded-lg p-1.5 shadow-md">
+                        <div className="rounded-2xl border border-white/10 bg-white p-1.5 shadow-md">
                           <img src={account.bank_logo} alt={account.bank_name} className="w-8 h-8 object-contain" />
                         </div>
                       )}
-                      <span className="text-sm opacity-90 font-medium">{account.bank_name}</span>
+                      <span className="text-sm font-medium text-[var(--muted-strong)]">{account.bank_name}</span>
                     </div>
                   ) : (
                     <div className="h-[44px]"></div>
                   )}
                 </div>
+                <span
+                  className="mt-1 h-3 w-3 rounded-full shadow-[0_0_22px_rgba(255,255,255,0.24)]"
+                  style={{ backgroundColor: style.color }}
+                />
               </div>
-              <div className="flex-1 flex flex-col justify-between">
+              <div className="relative flex flex-1 flex-col justify-between">
                 <div>
                   <h3 className="text-xl font-semibold mb-2 line-clamp-1">{account.name}</h3>
                   <p className="text-3xl font-bold mb-4">
-                    {account.currency} {account.balance.toLocaleString()}
+                    {formatCurrency(account.balance, account.currency)}
                   </p>
                 </div>
-                <div className="flex gap-2 items-center mt-auto">
+                <div className="mt-auto grid gap-2 sm:grid-cols-3">
                   <button
-                    onClick={() => {
-                      // TODO: Implement add money functionality
-                      alert("Add money feature coming soon!");
-                    }}
-                    className="flex-1 bg-white/20 hover:bg-white/30 rounded-lg p-2.5 transition-colors flex items-center justify-center"
-                    title="Add money"
+                    onClick={() => startEdit(account)}
+                    className="rounded-full border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium transition hover:bg-white/10"
+                    title="Edit account"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                      <path d="M12 4v16m8-8H4" />
-                    </svg>
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => startTransfer(account.id)}
+                    disabled={accounts.length < 2}
+                    className="rounded-full border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+                    title="Transfer funds"
+                  >
+                    Transfer
                   </button>
                   <button
                     onClick={() => handleDelete(account.id)}
-                    className="bg-red-500/20 hover:bg-red-500/40 rounded-lg p-2.5 transition-colors"
+                    className="rounded-full border border-rose-400/20 bg-rose-500/10 px-4 py-2.5 text-sm font-medium text-rose-100 transition hover:bg-rose-500/20"
                     title="Delete account"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                      <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
+                    Delete
                   </button>
                 </div>
               </div>
@@ -539,15 +646,19 @@ export default function AccountsPage() {
       </div>
 
       {accounts.length === 0 && !showForm && (
-        <div className="text-center py-12 text-zinc-500">
-          No accounts yet. Create your first account to get started.
+        <div className="rounded-[28px] border border-dashed border-white/10 bg-white/[0.04] px-6 py-8 text-center">
+          <p className="text-lg font-semibold text-white">No accounts yet</p>
+          <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+            Create your first account to start seeing a portfolio overview and transfer
+            options.
+          </p>
         </div>
       )}
 
       {/* Transfer Modal */}
       {showTransferModal && transferFromId && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 rounded-2xl p-6 max-w-md w-full border border-slate-700 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-md">
+          <div className="app-panel w-full max-w-md rounded-[32px] p-6 sm:p-7">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold text-white">Transfer Money</h2>
               <button
@@ -625,7 +736,7 @@ export default function AccountsPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="flex-1 px-4 py-2.5 rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="flex-1 rounded-full bg-[linear-gradient(135deg,rgba(88,213,170,0.95),rgba(120,199,255,0.9))] px-4 py-3 text-sm font-semibold text-slate-950 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {submitting ? "Processing..." : "Transfer"}
                 </button>
@@ -633,7 +744,7 @@ export default function AccountsPage() {
                   type="button"
                   onClick={closeTransferModal}
                   disabled={submitting}
-                  className="flex-1 px-4 py-2.5 rounded-lg font-medium bg-slate-700 text-white hover:bg-slate-600 disabled:opacity-50 transition-colors"
+                  className="flex-1 rounded-full border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-white transition hover:bg-white/10 disabled:opacity-50"
                 >
                   Cancel
                 </button>

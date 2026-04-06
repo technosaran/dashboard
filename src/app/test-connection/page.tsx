@@ -1,13 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { User } from "@supabase/supabase-js";
+import type { Tables } from "@/lib/database.types";
 import { createClient } from "@/lib/supabase-browser";
+
+type Account = Tables<"accounts">;
 
 export default function TestConnectionPage() {
   const [status, setStatus] = useState<{
     connected: boolean;
-    user: any;
-    accounts: any[];
+    user: User | null;
+    accounts: Account[];
     error: string | null;
   }>({
     connected: false,
@@ -16,37 +20,45 @@ export default function TestConnectionPage() {
     error: null,
   });
 
-  useEffect(() => {
-    testConnection();
-  }, []);
-
   async function testConnection() {
     try {
       const supabase = createClient();
 
-      // Test 1: Check Supabase client initialization
-      console.log("✓ Supabase client created");
+      console.log("Supabase client created");
 
-      // Test 2: Check authentication
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
+
       if (authError) {
-        setStatus({ connected: false, user: null, accounts: [], error: `Auth error: ${authError.message}` });
+        setStatus({
+          connected: false,
+          user: null,
+          accounts: [],
+          error: `Auth error: ${authError.message}`,
+        });
         return;
       }
-      console.log("✓ Auth check passed", user);
 
-      // Test 3: Try to fetch accounts
+      console.log("Auth check passed", user);
+
       const { data: accounts, error: dbError } = await supabase
         .from("accounts")
         .select("*")
         .limit(5);
 
       if (dbError) {
-        setStatus({ connected: true, user, accounts: [], error: `Database error: ${dbError.message}` });
+        setStatus({
+          connected: true,
+          user,
+          accounts: [],
+          error: `Database error: ${dbError.message}`,
+        });
         return;
       }
 
-      console.log("✓ Database query successful", accounts);
+      console.log("Database query successful", accounts);
 
       setStatus({
         connected: true,
@@ -54,28 +66,32 @@ export default function TestConnectionPage() {
         accounts: accounts || [],
         error: null,
       });
-    } catch (err: any) {
+    } catch (error) {
       setStatus({
         connected: false,
         user: null,
         accounts: [],
-        error: err.message,
+        error: error instanceof Error ? error.message : "Unknown connection error",
       });
     }
   }
 
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void testConnection();
+  }, []);
+
   return (
     <div className="min-h-screen bg-zinc-950 p-8">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-white mb-8">Backend Connection Test</h1>
+      <div className="mx-auto max-w-4xl">
+        <h1 className="mb-8 text-3xl font-bold text-white">Backend Connection Test</h1>
 
         <div className="space-y-6">
-          {/* Connection Status */}
-          <div className="bg-zinc-900 rounded-xl p-6 border border-zinc-800">
-            <h2 className="text-xl font-semibold text-white mb-4">Connection Status</h2>
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-6">
+            <h2 className="mb-4 text-xl font-semibold text-white">Connection Status</h2>
             <div className="flex items-center gap-3">
               <div
-                className={`w-4 h-4 rounded-full ${
+                className={`h-4 w-4 rounded-full ${
                   status.connected ? "bg-emerald-500" : "bg-red-500"
                 }`}
               />
@@ -85,39 +101,37 @@ export default function TestConnectionPage() {
             </div>
           </div>
 
-          {/* Authentication Status */}
-          <div className="bg-zinc-900 rounded-xl p-6 border border-zinc-800">
-            <h2 className="text-xl font-semibold text-white mb-4">Authentication</h2>
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-6">
+            <h2 className="mb-4 text-xl font-semibold text-white">Authentication</h2>
             {status.user ? (
               <div className="space-y-2">
-                <p className="text-emerald-400">✓ User authenticated</p>
-                <div className="bg-zinc-800 rounded-lg p-4 mt-2">
-                  <p className="text-zinc-400 text-sm">User ID: {status.user.id}</p>
-                  <p className="text-zinc-400 text-sm">Email: {status.user.email}</p>
+                <p className="text-emerald-400">User authenticated</p>
+                <div className="mt-2 rounded-lg bg-zinc-800 p-4">
+                  <p className="text-sm text-zinc-400">User ID: {status.user.id}</p>
+                  <p className="text-sm text-zinc-400">Email: {status.user.email}</p>
                 </div>
               </div>
             ) : (
-              <p className="text-yellow-400">⚠ No user logged in</p>
+              <p className="text-yellow-400">No user logged in</p>
             )}
           </div>
 
-          {/* Database Query Status */}
-          <div className="bg-zinc-900 rounded-xl p-6 border border-zinc-800">
-            <h2 className="text-xl font-semibold text-white mb-4">Database Query</h2>
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-6">
+            <h2 className="mb-4 text-xl font-semibold text-white">Database Query</h2>
             {status.error ? (
-              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
-                <p className="text-red-400">✗ Error: {status.error}</p>
+              <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-4">
+                <p className="text-red-400">Error: {status.error}</p>
               </div>
             ) : (
               <div className="space-y-2">
-                <p className="text-emerald-400">✓ Successfully queried accounts table</p>
-                <p className="text-zinc-400 text-sm">Found {status.accounts.length} accounts</p>
+                <p className="text-emerald-400">Successfully queried accounts table</p>
+                <p className="text-sm text-zinc-400">Found {status.accounts.length} accounts</p>
                 {status.accounts.length > 0 && (
-                  <div className="bg-zinc-800 rounded-lg p-4 mt-2">
-                    <p className="text-white font-medium mb-2">Sample Accounts:</p>
-                    {status.accounts.map((acc) => (
-                      <div key={acc.id} className="text-zinc-400 text-sm py-1">
-                        • {acc.name} ({acc.type}) - {acc.currency} {acc.balance}
+                  <div className="mt-2 rounded-lg bg-zinc-800 p-4">
+                    <p className="mb-2 font-medium text-white">Sample Accounts:</p>
+                    {status.accounts.map((account) => (
+                      <div key={account.id} className="py-1 text-sm text-zinc-400">
+                        - {account.name} ({account.type}) - {account.currency} {account.balance}
                       </div>
                     ))}
                   </div>
@@ -126,31 +140,41 @@ export default function TestConnectionPage() {
             )}
           </div>
 
-          {/* Environment Variables */}
-          <div className="bg-zinc-900 rounded-xl p-6 border border-zinc-800">
-            <h2 className="text-xl font-semibold text-white mb-4">Environment Variables</h2>
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-6">
+            <h2 className="mb-4 text-xl font-semibold text-white">Environment Variables</h2>
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <span className="text-zinc-400">NEXT_PUBLIC_SUPABASE_URL:</span>
-                <span className={`text-sm ${process.env.NEXT_PUBLIC_SUPABASE_URL ? "text-emerald-400" : "text-red-400"}`}>
-                  {process.env.NEXT_PUBLIC_SUPABASE_URL ? "✓ Set" : "✗ Missing"}
+                <span
+                  className={`text-sm ${
+                    process.env.NEXT_PUBLIC_SUPABASE_URL
+                      ? "text-emerald-400"
+                      : "text-red-400"
+                  }`}
+                >
+                  {process.env.NEXT_PUBLIC_SUPABASE_URL ? "Set" : "Missing"}
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-zinc-400">NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:</span>
-                <span className={`text-sm ${process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ? "text-emerald-400" : "text-red-400"}`}>
-                  {process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ? "✓ Set" : "✗ Missing"}
+                <span
+                  className={`text-sm ${
+                    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+                      ? "text-emerald-400"
+                      : "text-red-400"
+                  }`}
+                >
+                  {process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ? "Set" : "Missing"}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Actions */}
-          <div className="bg-zinc-900 rounded-xl p-6 border border-zinc-800">
-            <h2 className="text-xl font-semibold text-white mb-4">Actions</h2>
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-6">
+            <h2 className="mb-4 text-xl font-semibold text-white">Actions</h2>
             <button
-              onClick={testConnection}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors"
+              onClick={() => void testConnection()}
+              className="rounded-lg bg-emerald-600 px-4 py-2 font-medium text-white transition-colors hover:bg-emerald-700"
             >
               Retest Connection
             </button>

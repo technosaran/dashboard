@@ -17,7 +17,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const stored = localStorage.getItem("username");
-    if (stored) setUsernameState(stored);
+    if (stored) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setUsernameState(stored);
+    }
   }, []);
 
   const setUsername = (name: string) => {
