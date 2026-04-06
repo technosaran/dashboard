@@ -1,41 +1,37 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase-browser";
+import type { User } from "@supabase/supabase-js";
+import type { Tables } from "@/lib/database.types";
+
+type Account = Tables<"accounts">;
+
+type TestStatus = {
+  connected: boolean;
+  user: User | null;
+  accounts: Account[];
+  error: string | null;
+};
 
 export default function TestConnectionPage() {
-  const [status, setStatus] = useState<{
-    connected: boolean;
-    user: any;
-    accounts: any[];
-    error: string | null;
-  }>({
+  const [status, setStatus] = useState<TestStatus>({
     connected: false,
     user: null,
     accounts: [],
     error: null,
   });
 
-  useEffect(() => {
-    testConnection();
-  }, []);
-
-  async function testConnection() {
+  const testConnection = useCallback(async () => {
     try {
       const supabase = createClient();
 
-      // Test 1: Check Supabase client initialization
-      console.log("✓ Supabase client created");
-
-      // Test 2: Check authentication
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError) {
         setStatus({ connected: false, user: null, accounts: [], error: `Auth error: ${authError.message}` });
         return;
       }
-      console.log("✓ Auth check passed", user);
 
-      // Test 3: Try to fetch accounts
       const { data: accounts, error: dbError } = await supabase
         .from("accounts")
         .select("*")
@@ -46,23 +42,26 @@ export default function TestConnectionPage() {
         return;
       }
 
-      console.log("✓ Database query successful", accounts);
-
       setStatus({
         connected: true,
         user,
         accounts: accounts || [],
         error: null,
       });
-    } catch (err: any) {
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unknown error";
       setStatus({
         connected: false,
         user: null,
         accounts: [],
-        error: err.message,
+        error: message,
       });
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    void testConnection();
+  }, [testConnection]);
 
   return (
     <div className="min-h-screen bg-zinc-950 p-8">

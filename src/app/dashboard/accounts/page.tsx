@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
+import { useCallback, useEffect, useState } from "react";
+import Image from "next/image";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { createClient } from "@/lib/supabase-browser";
 import type { Tables } from "@/lib/database.types";
 import { searchBanks, type Bank } from "@/lib/banks";
@@ -47,38 +48,7 @@ export default function AccountsPage() {
     bank_logo: "",
   });
 
-  useEffect(() => {
-    loadAccounts();
-
-    async function setupRealtime() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const channel = supabase
-        .channel("accounts-changes")
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "accounts",
-            filter: `user_id=eq.${user.id}`,
-          },
-          () => {
-            loadAccounts();
-          }
-        )
-        .subscribe();
-
-      return () => {
-        supabase.removeChannel(channel);
-      };
-    }
-
-    setupRealtime();
-  }, []);
-
-  async function loadAccounts() {
+  const loadAccounts = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -90,7 +60,7 @@ export default function AccountsPage() {
         .select("*")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
-      
+
       if (error) {
         console.error("Error loading accounts:", error);
         setError(error.message);
@@ -103,7 +73,42 @@ export default function AccountsPage() {
       setError(err instanceof Error ? err.message : "Failed to load accounts");
       setLoading(false);
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    void loadAccounts();
+
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
+    const setupRealtime = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      channel = supabase
+        .channel("accounts-changes")
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "accounts",
+            filter: `user_id=eq.${user.id}`,
+          },
+          () => {
+            void loadAccounts();
+          }
+        )
+        .subscribe();
+    };
+
+    void setupRealtime();
+
+    return () => {
+      if (channel) {
+        void supabase.removeChannel(channel);
+      }
+    };
+  }, [loadAccounts]);
 
   function handleBankSearch(query: string) {
     setBankSearch(query);
@@ -165,31 +170,10 @@ export default function AccountsPage() {
     setError(null);
   }
 
-  function startEdit(account: Account) {
-    setFormData({
-      name: account.name,
-      type: account.type,
-      balance: account.balance.toString(),
-      currency: account.currency,
-      bank_name: account.bank_name || "",
-      bank_logo: account.bank_logo || "",
-    });
-    setBankSearch(account.bank_name || "");
-    setEditingId(account.id);
-    setShowForm(true);
-  }
-
   async function handleDelete(id: string) {
     if (confirm("Delete this account?")) {
       await deleteAccount(id);
     }
-  }
-
-  function startTransfer(fromAccountId: string) {
-    setTransferFromId(fromAccountId);
-    setTransferData({ to_account_id: "", amount: "", note: "" });
-    setShowTransferModal(true);
-    setError(null);
   }
 
   function closeTransferModal() {
@@ -448,7 +432,7 @@ export default function AccountsPage() {
                           onClick={() => selectBank(bank)}
                           className="w-full flex items-center gap-3 p-3 hover:bg-zinc-700 text-left"
                         >
-                          <img src={bank.logo} alt={bank.name} className="w-8 h-8 rounded" />
+                          <Image src={bank.logo} alt={bank.name} width={32} height={32} className="w-8 h-8 rounded" unoptimized />
                           <span className="text-white">{bank.name}</span>
                         </button>
                       ))}
@@ -492,7 +476,7 @@ export default function AccountsPage() {
                     <div className="flex items-center gap-2 mt-3">
                       {account.bank_logo && (
                         <div className="bg-white rounded-lg p-1.5 shadow-md">
-                          <img src={account.bank_logo} alt={account.bank_name} className="w-8 h-8 object-contain" />
+                          <Image src={account.bank_logo} alt={account.bank_name} width={32} height={32} className="w-8 h-8 object-contain" unoptimized />
                         </div>
                       )}
                       <span className="text-sm opacity-90 font-medium">{account.bank_name}</span>

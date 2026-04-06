@@ -1,36 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Greeting from "@/components/greeting";
 import { createClient } from "@/lib/supabase-browser";
+
+const supabase = createClient();
 
 export default function DashboardPage() {
   const [totalBalance, setTotalBalance] = useState(0);
   const [loading, setLoading] = useState(true);
   const [accountCount, setAccountCount] = useState(0);
-  const supabase = createClient();
 
-  useEffect(() => {
-    loadTotalBalance();
-
-    // Subscribe to account changes
-    const channel = supabase
-      .channel("dashboard-accounts")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "accounts" },
-        () => {
-          loadTotalBalance();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  async function loadTotalBalance() {
+  const loadTotalBalance = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       setLoading(false);
@@ -48,7 +29,26 @@ export default function DashboardPage() {
       setAccountCount(accounts.length);
     }
     setLoading(false);
-  }
+  }, []);
+
+  useEffect(() => {
+    void loadTotalBalance();
+
+    const channel = supabase
+      .channel("dashboard-accounts")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "accounts" },
+        () => {
+          void loadTotalBalance();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [loadTotalBalance]);
 
   return (
     <div>
