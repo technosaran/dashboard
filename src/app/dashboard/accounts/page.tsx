@@ -5,7 +5,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recha
 import { createClient } from "@/lib/supabase-browser";
 import type { Tables } from "@/lib/database.types";
 import { searchBanks, type Bank } from "@/lib/banks";
-import { createAccount, updateAccount, deleteAccount } from "./actions";
+import { createAccount, updateAccount, deleteAccount, createTransfer } from "./actions";
 
 type Account = Tables<"accounts">;
 
@@ -29,6 +29,15 @@ export default function AccountsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [bankSearch, setBankSearch] = useState("");
   const [bankResults, setBankResults] = useState<Bank[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [transferFromId, setTransferFromId] = useState<string | null>(null);
+  const [transferData, setTransferData] = useState({
+    to_account_id: "",
+    amount: "",
+    note: "",
+  });
   const [formData, setFormData] = useState({
     name: "",
     type: "checking",
@@ -100,6 +109,9 @@ export default function AccountsPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+
     const data = {
       name: formData.name,
       type: formData.type,
@@ -109,13 +121,26 @@ export default function AccountsPage() {
       bank_logo: formData.bank_logo || null,
     };
 
-    if (editingId) {
-      await updateAccount(editingId, data);
-    } else {
-      await createAccount(data);
-    }
+    try {
+      let result;
+      if (editingId) {
+        result = await updateAccount(editingId, data);
+      } else {
+        result = await createAccount(data);
+      }
 
-    resetForm();
+      if (result?.error) {
+        setError(result.error);
+        setSubmitting(false);
+        return;
+      }
+
+      resetForm();
+      await loadAccounts();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred");
+      setSubmitting(false);
+    }
   }
 
   function resetForm() {
@@ -123,6 +148,8 @@ export default function AccountsPage() {
     setBankSearch("");
     setShowForm(false);
     setEditingId(null);
+    setSubmitting(false);
+    setError(null);
   }
 
   function startEdit(account: Account) {
@@ -143,6 +170,65 @@ export default function AccountsPage() {
     if (confirm("Delete this account?")) {
       await deleteAccount(id);
     }
+  }
+
+  function startTransfer(fromAccountId: string) {
+    setTransferFromId(fromAccountId);
+    setTransferData({ to_account_id: "", amount: "", note: "" });
+    setShowTransferModal(true);
+    setError(null);
+  }
+
+  function closeTransferModal() {
+    setShowTransferModal(false);
+    setTransferFromId(null);
+    setTransferData({ to_account_id: "", amount: "", note: "" });
+    setError(null);
+    setSubmitting(false);
+  }
+
+  async function handleTransfer(e: React.FormEvent) {
+    e.preventDefault();
+    if (!transferFromId) return;
+
+    setSubmitting(true);
+    setError(null);
+
+    if (transferFromId === transferData.to_account_id) {
+      setError("Cannot transfer to the same account");
+      setSubmitting(false);
+      return;
+    }
+
+    const amount = parseFloat(transferData.amount);
+    if (amount <= 0) {
+      setError("Amount must be greater than 0");
+      setSubmitting(false);
+      return;
+    }
+
+    const fromAccount = accounts.find((a) => a.id === transferFromId);
+    if (fromAccount && fromAccount.balance < amount) {
+      setError("Insufficient balance");
+      setSubmitting(false);
+      return;
+    }
+
+    const result = await createTransfer({
+      from_account_id: transferFromId,
+      to_account_id: transferData.to_account_id,
+      amount,
+      note: transferData.note || null,
+    });
+
+    if (result?.error) {
+      setError(result.error);
+      setSubmitting(false);
+      return;
+    }
+
+    closeTransferModal();
+    await loadAccounts();
   }
 
   const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
@@ -228,6 +314,13 @@ export default function AccountsPage() {
       {showForm && (
         <form onSubmit={handleSubmit} className="bg-zinc-900 rounded-2xl p-6 mb-8 border border-zinc-800">
           <h2 className="text-xl font-semibold text-white mb-4">{editingId ? "Edit Account" : "Create Account"}</h2>
+          
+          {error && (
+            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
+              {error}
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm text-zinc-400 mb-2">Account Name</label>
@@ -300,10 +393,19 @@ export default function AccountsPage() {
             </div>
           </div>
           <div className="flex gap-3 mt-6">
-            <button type="submit" className={`${btnCls} bg-emerald-600 text-white hover:bg-emerald-700`}>
-              {editingId ? "Update" : "Create"}
+            <button 
+              type="submit" 
+              disabled={submitting}
+              className={`${btnCls} bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              {submitting ? "Saving..." : editingId ? "Update" : "Create"}
             </button>
-            <button type="button" onClick={resetForm} className={`${btnCls} bg-zinc-700 text-white hover:bg-zinc-600`}>
+            <button 
+              type="button" 
+              onClick={resetForm} 
+              disabled={submitting}
+              className={`${btnCls} bg-zinc-700 text-white hover:bg-zinc-600 disabled:opacity-50`}
+            >
               Cancel
             </button>
           </div>
@@ -332,16 +434,23 @@ export default function AccountsPage() {
               <p className="text-3xl font-bold mb-4">
                 {account.currency} {account.balance.toLocaleString()}
               </p>
-              <div className="flex gap-2">
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  onClick={() => startTransfer(account.id)}
+                  className="bg-blue-500/20 hover:bg-blue-500/30 rounded-lg py-2 text-sm font-medium transition-colors"
+                  disabled={accounts.length < 2}
+                >
+                  Transfer
+                </button>
                 <button
                   onClick={() => startEdit(account)}
-                  className="flex-1 bg-white/20 hover:bg-white/30 rounded-lg py-2 text-sm font-medium transition-colors"
+                  className="bg-white/20 hover:bg-white/30 rounded-lg py-2 text-sm font-medium transition-colors"
                 >
                   Edit
                 </button>
                 <button
                   onClick={() => handleDelete(account.id)}
-                  className="flex-1 bg-red-500/20 hover:bg-red-500/30 rounded-lg py-2 text-sm font-medium transition-colors"
+                  className="bg-red-500/20 hover:bg-red-500/30 rounded-lg py-2 text-sm font-medium transition-colors"
                 >
                   Delete
                 </button>
@@ -354,6 +463,105 @@ export default function AccountsPage() {
       {accounts.length === 0 && !showForm && (
         <div className="text-center py-12 text-zinc-500">
           No accounts yet. Create your first account to get started.
+        </div>
+      )}
+
+      {/* Transfer Modal */}
+      {showTransferModal && transferFromId && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-zinc-900 rounded-2xl p-6 max-w-md w-full border border-zinc-800">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-white">Transfer Money</h2>
+              <button
+                onClick={closeTransferModal}
+                className="text-zinc-400 hover:text-white transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {error && (
+              <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
+                {error}
+              </div>
+            )}
+
+            <form onSubmit={handleTransfer} className="space-y-4">
+              <div>
+                <label className="block text-sm text-zinc-400 mb-2">From Account</label>
+                <div className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-4 py-2.5 text-sm text-white">
+                  {accounts.find((a) => a.id === transferFromId)?.name}
+                  <span className="text-zinc-400 ml-2">
+                    (Balance: {accounts.find((a) => a.id === transferFromId)?.currency}{" "}
+                    {accounts.find((a) => a.id === transferFromId)?.balance.toLocaleString()})
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm text-zinc-400 mb-2">To Account</label>
+                <select
+                  value={transferData.to_account_id}
+                  onChange={(e) => setTransferData({ ...transferData, to_account_id: e.target.value })}
+                  className={selectCls}
+                  required
+                >
+                  <option value="">Select destination account</option>
+                  {accounts
+                    .filter((a) => a.id !== transferFromId)
+                    .map((account) => (
+                      <option key={account.id} value={account.id}>
+                        {account.name} ({account.currency} {account.balance.toLocaleString()})
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm text-zinc-400 mb-2">Amount</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={transferData.amount}
+                  onChange={(e) => setTransferData({ ...transferData, amount: e.target.value })}
+                  className={inputCls}
+                  placeholder="0.00"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm text-zinc-400 mb-2">Note (optional)</label>
+                <input
+                  type="text"
+                  value={transferData.note}
+                  onChange={(e) => setTransferData({ ...transferData, note: e.target.value })}
+                  className={inputCls}
+                  placeholder="e.g., Monthly savings"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="flex-1 px-4 py-2.5 rounded-lg font-medium bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {submitting ? "Processing..." : "Transfer"}
+                </button>
+                <button
+                  type="button"
+                  onClick={closeTransferModal}
+                  disabled={submitting}
+                  className="flex-1 px-4 py-2.5 rounded-lg font-medium bg-zinc-700 text-white hover:bg-zinc-600 disabled:opacity-50 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>
