@@ -9,7 +9,7 @@ export default function Greeting() {
     hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
 
   return (
-    <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
+    <h1 className="text-4xl font-bold text-zinc-900 dark:text-zinc-50">
       {greeting}, {username} 👋
     </h1>
   );

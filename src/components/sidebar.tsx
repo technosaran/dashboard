@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { createClient } from "@/lib/supabase-browser";
 
 const nav = [
   {
@@ -40,6 +41,12 @@ const nav = [
 export default function Sidebar() {
   const pathname = usePathname();
 
+  async function handleLogout() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    window.location.href = "/login";
+  }
+
   return (
     <aside className="w-64 shrink-0 bg-zinc-950 flex flex-col">
       <div className="px-6 py-6">
@@ -76,7 +83,7 @@ export default function Sidebar() {
       </nav>
 
       <div className="px-3 py-4 border-t border-zinc-800">
-        <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-400 hover:bg-zinc-800/60 hover:text-white transition-all">
+        <button onClick={handleLogout} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-400 hover:bg-zinc-800/60 hover:text-white transition-all">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
           </svg>

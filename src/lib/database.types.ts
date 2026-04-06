@@ -42,6 +42,8 @@ export type Database = {
       accounts: {
         Row: {
           balance: number
+          bank_logo: string | null
+          bank_name: string | null
           created_at: string
           currency: string
           id: string
@@ -51,6 +53,8 @@ export type Database = {
         }
         Insert: {
           balance?: number
+          bank_logo?: string | null
+          bank_name?: string | null
           created_at?: string
           currency?: string
           id?: string
@@ -60,6 +64,8 @@ export type Database = {
         }
         Update: {
           balance?: number
+          bank_logo?: string | null
+          bank_name?: string | null
           created_at?: string
           currency?: string
           id?: string
@@ -68,6 +74,41 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      deposits: {
+        Row: {
+          account_id: string
+          amount: number
+          created_at: string
+          id: string
+          note: string | null
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          amount: number
+          created_at?: string
+          id?: string
+          note?: string | null
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          amount?: number
+          created_at?: string
+          id?: string
+          note?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deposits_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       transactions: {
         Row: {
@@ -107,6 +148,51 @@ export type Database = {
           {
             foreignKeyName: "transactions_account_id_fkey"
             columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transfers: {
+        Row: {
+          amount: number
+          created_at: string
+          from_account_id: string
+          id: string
+          note: string | null
+          to_account_id: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          from_account_id: string
+          id?: string
+          note?: string | null
+          to_account_id: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          from_account_id?: string
+          id?: string
+          note?: string | null
+          to_account_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transfers_from_account_id_fkey"
+            columns: ["from_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transfers_to_account_id_fkey"
+            columns: ["to_account_id"]
             isOneToOne: false
             referencedRelation: "accounts"
             referencedColumns: ["id"]
