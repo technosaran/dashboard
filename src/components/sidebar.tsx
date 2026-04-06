@@ -27,15 +27,6 @@ const nav = [
     ),
   },
   {
-    label: "Transfers",
-    href: "/dashboard/transfers",
-    icon: (
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-        <path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-      </svg>
-    ),
-  },
-  {
     label: "Settings",
     href: "/dashboard/settings",
     icon: (

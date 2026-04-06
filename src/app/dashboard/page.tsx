@@ -65,7 +65,7 @@ export default function DashboardPage() {
           ) : (
             <>
               <p className="mt-3 text-4xl font-bold tracking-tight">
-                ${totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                ₹{totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
               <p className="mt-2 text-xs text-emerald-200">
                 {accountCount} {accountCount === 1 ? "account" : "accounts"} • Updated just now
