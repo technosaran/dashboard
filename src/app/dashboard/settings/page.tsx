@@ -1,22 +1,35 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useUser } from "@/context/user-context";
 
 export default function SettingsPage() {
   const { username, setUsername } = useUser();
   const [input, setInput] = useState(username);
-  const [saved, setSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<string | null>(null);
+  const savingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     setInput(username);
   }, [username]);
 
-  const handleSave = async () => {
-    if (!input.trim()) return;
-    await setUsername(input.trim());
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVal = e.target.value;
+    setInput(newVal);
+    
+    if (newVal.trim()) {
+      setIsSaving(true);
+      setUsername(newVal.trim());
+      
+      // We use a local timeout just for the "Saving" indicator UX
+      if (savingTimeoutRef.current) clearTimeout(savingTimeoutRef.current);
+      savingTimeoutRef.current = setTimeout(() => {
+        setIsSaving(false);
+        setLastSaved(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+        savingTimeoutRef.current = null;
+      }, 1000);
+    }
   };
 
   return (
@@ -72,6 +85,23 @@ export default function SettingsPage() {
                 Manage your display name
               </p>
             </div>
+            
+            {/* Status Indicator */}
+            <div className="ml-auto flex items-center gap-2">
+              {isSaving ? (
+                <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-[--text-muted]">
+                  <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+                  Saving...
+                </div>
+              ) : lastSaved ? (
+                <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-[--accent-primary-light]">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                    <path d="M5 13l4 4L19 7" />
+                  </svg>
+                  Saved at {lastSaved}
+                </div>
+              ) : null}
+            </div>
           </div>
 
           <div className="space-y-5">
@@ -85,50 +115,17 @@ export default function SettingsPage() {
               <input
                 type="text"
                 value={input}
-                onChange={(e) => { setInput(e.target.value); setSaved(false); }}
+                onChange={handleChange}
                 className="input-premium"
                 placeholder="Enter your name"
               />
               <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>
-                This name appears in your dashboard greeting.
+                Changes are saved automatically as you type.
               </p>
             </div>
-
-            <button
-              onClick={handleSave}
-              className={saved ? "" : "btn-primary"}
-              style={saved ? {
-                width: "100%",
-                padding: "12px 20px",
-                borderRadius: "var(--radius-md)",
-                fontSize: "0.875rem",
-                fontWeight: 600,
-                cursor: "default",
-                background: "rgba(85, 239, 196, 0.12)",
-                color: "#55efc4",
-                border: "1px solid rgba(85, 239, 196, 0.25)",
-                transition: "all 0.3s",
-              } : {
-                width: "100%",
-                padding: "12px 20px",
-              }}
-            >
-              {saved ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                    <path d="M5 13l4 4L19 7" />
-                  </svg>
-                  Saved Successfully
-                </span>
-              ) : (
-                "Save Changes"
-              )}
-            </button>
           </div>
         </div>
       </div>
-
     </div>
   );
 }
-
