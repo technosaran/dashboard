@@ -1,0 +1,17 @@
+{
+  "name": "FinanceOS Dashboard",
+  "short_name": "FinanceOS",
+  "description": "Premium personal finance dashboard",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#06080f",
+  "theme_color": "#6c5ce7",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ],
+  "orientation": "portrait"
+}

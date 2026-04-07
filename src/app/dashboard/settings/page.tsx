@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useUser } from "@/context/user-context";
 
 export default function SettingsPage() {
@@ -8,9 +8,13 @@ export default function SettingsPage() {
   const [input, setInput] = useState(username);
   const [saved, setSaved] = useState(false);
 
-  const handleSave = () => {
+  useEffect(() => {
+    setInput(username);
+  }, [username]);
+
+  const handleSave = async () => {
     if (!input.trim()) return;
-    setUsername(input.trim());
+    await setUsername(input.trim());
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };

@@ -8,11 +8,11 @@ export default function DashboardLayout({
 }) {
   return (
     <UserProvider>
-      <div className="flex h-screen" style={{ background: "var(--bg-base)" }}>
-        <Sidebar />
+      <div className="flex flex-col md:flex-row h-screen overflow-hidden" style={{ background: "var(--bg-base)" }}>
+        <Sidebar toggleMobileMenu={() => {}} />
         <main
-          className="flex-1 overflow-y-auto relative"
-          style={{ padding: "36px 40px" }}
+          className="flex-1 overflow-y-auto relative w-full"
+          style={{ padding: "var(--main-padding, 24px 20px)" }}
         >
           {/* Ambient glow orbs */}
           <div

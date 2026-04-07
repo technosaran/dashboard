@@ -11,6 +11,14 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "FinanceOS — Your Financial Command Center",
   description: "Premium personal finance dashboard to manage accounts, track wealth, and transfer funds with ease.",
+  manifest: "/manifest.json",
+  themeColor: "#6c5ce7",
+  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "FinanceOS",
+  }
 };
 
 export default function RootLayout({

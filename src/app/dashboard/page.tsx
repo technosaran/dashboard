@@ -52,46 +52,6 @@ export default function DashboardPage() {
     setLoading(false);
   }
 
-  const quickStats = [
-    {
-      label: "Total Accounts",
-      value: accountCount.toString(),
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-          <path d="M3 10h18M7 15h2m4 0h2M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-        </svg>
-      ),
-      color: "#a29bfe",
-      bg: "rgba(162, 155, 254, 0.1)",
-      borderColor: "rgba(162, 155, 254, 0.15)",
-    },
-    {
-      label: "Active Currency",
-      value: "INR",
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-          <circle cx="12" cy="12" r="10" />
-          <path d="M12 6v12M8 10h8M8 14h8" />
-        </svg>
-      ),
-      color: "#00cec9",
-      bg: "rgba(0, 206, 201, 0.1)",
-      borderColor: "rgba(0, 206, 201, 0.15)",
-    },
-    {
-      label: "Status",
-      value: "Active",
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-          <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
-      color: "#55efc4",
-      bg: "rgba(85, 239, 196, 0.1)",
-      borderColor: "rgba(85, 239, 196, 0.15)",
-    },
-  ];
-
   return (
     <div>
       <Greeting />
@@ -210,45 +170,6 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Quick Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-6">
-        {quickStats.map((stat, index) => (
-          <div
-            key={stat.label}
-            className={`glass-card animate-fade-in-up delay-${index + 3}`}
-            style={{ padding: "24px" }}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
-                  {stat.label}
-                </p>
-                <p className="text-2xl font-bold mt-2" style={{ color: stat.color }}>
-                  {loading ? (
-                    <span className="skeleton inline-block" style={{ width: "60px", height: "28px" }} />
-                  ) : (
-                    stat.value
-                  )}
-                </p>
-              </div>
-              <div
-                className="flex items-center justify-center"
-                style={{
-                  width: "44px",
-                  height: "44px",
-                  borderRadius: "var(--radius-md)",
-                  background: stat.bg,
-                  border: `1px solid ${stat.borderColor}`,
-                  color: stat.color,
-                }}
-              >
-                {stat.icon}
-              </div>
-            </div>
-          </div>
-        ))}
       </div>
     </div>
   );

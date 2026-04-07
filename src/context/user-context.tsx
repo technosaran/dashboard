@@ -1,33 +1,45 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { createClient } from "@/lib/supabase-browser";
 
 type UserContextType = {
   username: string;
-  setUsername: (name: string) => void;
+  setUsername: (name: string) => Promise<void>;
 };
 
 const UserContext = createContext<UserContextType>({
   username: "User",
-  setUsername: () => {},
+  setUsername: async () => {},
 });
+
+const supabase = createClient();
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const [username, setUsernameState] = useState("User");
 
-  useEffect(() => {
-    const stored = localStorage.getItem("username");
-    if (stored) {
-      // Use setTimeout to avoid synchronous state updates in useEffect
-      // which can trigger cascading renders warning.
-      const timeout = setTimeout(() => setUsernameState(stored), 0);
-      return () => clearTimeout(timeout);
+  const fetchUser = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user?.user_metadata?.username) {
+      setUsernameState(user.user_metadata.username);
+    } else if (user?.email) {
+      // Fallback to email if no username set
+      setUsernameState(user.email.split("@")[0]);
     }
   }, []);
 
-  const setUsername = (name: string) => {
-    setUsernameState(name);
-    localStorage.setItem("username", name);
+  useEffect(() => {
+    fetchUser();
+  }, [fetchUser]);
+
+  const setUsername = async (name: string) => {
+    const { error } = await supabase.auth.updateUser({
+      data: { username: name }
+    });
+    
+    if (!error) {
+      setUsernameState(name);
+    }
   };
 
   return (
