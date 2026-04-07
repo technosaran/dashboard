@@ -432,8 +432,8 @@ export default function AccountsPage() {
       {/* Total Balance Overview with Chart */}
       {accounts.length > 0 && (
         <div className="glass-card-static animate-fade-in-up delay-1" style={{ padding: "32px", marginBottom: "32px" }}>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-            <div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8" style={{ minHeight: "420px" }}>
+            <div className="flex flex-col" style={{ minHeight: "350px" }}>
               <div className="flex items-center gap-2 mb-3">
                 <div className="status-dot" />
                 <p className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>
@@ -443,7 +443,7 @@ export default function AccountsPage() {
               <p className="text-4xl font-bold mb-6 gradient-text">
                 ₹{totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
-              <div className="space-y-2.5 max-h-[280px] overflow-y-auto pr-2" style={{ scrollbarWidth: "thin" }}>
+              <div className="flex-1 overflow-y-auto pr-2 space-y-2.5" style={{ scrollbarWidth: "thin", maxHeight: "280px" }}>
                 {chartData.map((item, index) => (
                   <div
                     key={`${item.name}-${index}`}
@@ -487,9 +487,10 @@ export default function AccountsPage() {
                 ))}
               </div>
             </div>
-            <div className="flex justify-center items-center">
-              <ResponsiveContainer width="100%" height={320}>
-                <PieChart>
+            <div className="flex justify-center items-center" style={{ minHeight: "350px" }}>
+              <div style={{ width: "100%", height: "350px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
                   <Pie
                     data={chartData}
                     cx="50%"
@@ -530,6 +531,7 @@ export default function AccountsPage() {
                   />
                 </PieChart>
               </ResponsiveContainer>
+              </div>
             </div>
           </div>
         </div>
@@ -562,30 +564,32 @@ export default function AccountsPage() {
                 }}
               />
 
-              {/* Edit button - top right corner */}
-              <button
-                onClick={() => startEdit(account)}
-                className="absolute top-3 right-3 flex items-center justify-center rounded-lg p-1.5 transition-all z-10"
-                style={{
-                  background: "rgba(0, 0, 0, 0.3)",
-                  border: "1px solid rgba(255, 255, 255, 0.1)",
-                  color: "rgba(255, 255, 255, 0.6)",
-                  backdropFilter: "blur(8px)",
-                }}
-                onMouseEnter={(e) => { 
-                  e.currentTarget.style.background = "rgba(0, 0, 0, 0.5)";
-                  e.currentTarget.style.color = "rgba(255, 255, 255, 0.9)";
-                }}
-                onMouseLeave={(e) => { 
-                  e.currentTarget.style.background = "rgba(0, 0, 0, 0.3)";
-                  e.currentTarget.style.color = "rgba(255, 255, 255, 0.6)";
-                }}
-                title="Edit account details"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                  <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-              </button>
+              {/* Edit button - top right corner (hidden for Cash account) */}
+              {account.name !== "Cash" && (
+                <button
+                  onClick={() => startEdit(account)}
+                  className="absolute top-3 right-3 flex items-center justify-center rounded-lg p-1.5 transition-all z-10"
+                  style={{
+                    background: "rgba(0, 0, 0, 0.3)",
+                    border: "1px solid rgba(255, 255, 255, 0.1)",
+                    color: "rgba(255, 255, 255, 0.6)",
+                    backdropFilter: "blur(8px)",
+                  }}
+                  onMouseEnter={(e) => { 
+                    e.currentTarget.style.background = "rgba(0, 0, 0, 0.5)";
+                    e.currentTarget.style.color = "rgba(255, 255, 255, 0.9)";
+                  }}
+                  onMouseLeave={(e) => { 
+                    e.currentTarget.style.background = "rgba(0, 0, 0, 0.3)";
+                    e.currentTarget.style.color = "rgba(255, 255, 255, 0.6)";
+                  }}
+                  title="Edit account details"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                </button>
+              )}
 
               {/* Top row: badge + bank */}
               <div className="flex justify-between items-start mb-4">
@@ -600,7 +604,22 @@ export default function AccountsPage() {
                   >
                     {account.type}
                   </span>
-                  {account.bank_name ? (
+                  {account.name === "Cash" ? (
+                    <div className="flex items-center gap-2 mt-3">
+                      <div
+                        className="w-9 h-9 rounded-lg flex items-center justify-center"
+                        style={{
+                          background: "rgba(253, 203, 110, 0.15)",
+                          border: "1px solid rgba(253, 203, 110, 0.25)",
+                        }}
+                      >
+                        <span className="text-2xl">💵</span>
+                      </div>
+                      <span className="text-sm font-bold" style={{ color: "var(--text-secondary)" }}>
+                        Physical Cash
+                      </span>
+                    </div>
+                  ) : account.bank_name ? (
                     <div className="flex items-center gap-2 mt-3">
                       {account.bank_logo && (
                         <div
