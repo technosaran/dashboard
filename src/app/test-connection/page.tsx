@@ -1,13 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase-browser";
+import type { User } from "@supabase/supabase-js";
+import type { Tables } from "@/lib/database.types";
+
+type Account = Tables<"accounts">;
 
 export default function TestConnectionPage() {
   const [status, setStatus] = useState<{
     connected: boolean;
-    user: any;
-    accounts: any[];
+    user: User | null;
+    accounts: Account[];
     error: string | null;
   }>({
     connected: false,
@@ -16,11 +20,7 @@ export default function TestConnectionPage() {
     error: null,
   });
 
-  useEffect(() => {
-    testConnection();
-  }, []);
-
-  async function testConnection() {
+  const testConnection = useCallback(async () => {
     try {
       const supabase = createClient();
 
@@ -51,18 +51,22 @@ export default function TestConnectionPage() {
       setStatus({
         connected: true,
         user,
-        accounts: accounts || [],
+        accounts: (accounts as Account[]) || [],
         error: null,
       });
-    } catch (err: any) {
+    } catch (err) {
       setStatus({
         connected: false,
         user: null,
         accounts: [],
-        error: err.message,
+        error: err instanceof Error ? err.message : String(err),
       });
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    testConnection();
+  }, [testConnection]);
 
   return (
     <div className="min-h-screen bg-zinc-950 p-8">

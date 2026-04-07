@@ -124,73 +124,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* App Info Card */}
-      <div className="mt-5 max-w-lg animate-fade-in-up delay-2">
-        <div
-          className="glass-card-static"
-          style={{ padding: "28px", position: "relative", overflow: "hidden" }}
-        >
-          <div
-            className="absolute top-0 left-0 right-0"
-            style={{
-              height: "3px",
-              background: "var(--gradient-cool)",
-              opacity: 0.7,
-            }}
-          />
-
-          <div className="flex items-center gap-3 mb-5">
-            <div
-              style={{
-                width: "40px",
-                height: "40px",
-                borderRadius: "var(--radius-md)",
-                background: "rgba(0, 206, 201, 0.1)",
-                border: "1px solid rgba(0, 206, 201, 0.15)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24" style={{ color: "#00cec9" }}>
-                <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div>
-              <h2 className="text-base font-bold" style={{ color: "var(--text-primary)" }}>
-                About
-              </h2>
-              <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                Application info
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            {[
-              { label: "Application", value: "FinanceOS" },
-              { label: "Version", value: "1.0.0" },
-              { label: "Framework", value: "Next.js" },
-              { label: "Backend", value: "Supabase" },
-            ].map((item) => (
-              <div
-                key={item.label}
-                className="flex items-center justify-between py-2.5"
-                style={{
-                  borderBottom: "1px solid var(--border-subtle)",
-                }}
-              >
-                <span className="text-sm" style={{ color: "var(--text-secondary)" }}>
-                  {item.label}
-                </span>
-                <span className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-                  {item.value}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
+

@@ -1,61 +1,87 @@
 export type Bank = { name: string; logo: string };
 
-// Real bank logos from official sources and reliable CDNs
-// Comprehensive list of Indian Banks and Financial Institutions with original logos
+// Real bank logos from official sources/clearbit for high reliability
 export const BANKS: Bank[] = [
-  // Public Sector Banks
-  { name: "State Bank of India (SBI)", logo: "https://vignette.wikia.nocookie.net/logopedia/images/e/e0/State_Bank_of_India_Logo.svg" },
-  { name: "Punjab National Bank (PNB)", logo: "https://vignette.wikia.nocookie.net/logopedia/images/6/6c/Punjab_National_Bank_logo.svg" },
-  { name: "Bank of Baroda (BOB)",      logo: "https://vignette.wikia.nocookie.net/logopedia/images/3/3d/Bank_of_Baroda_logo.svg" },
-  { name: "Canara Bank",               logo: "https://vignette.wikia.nocookie.net/logopedia/images/0/0d/Canara_Bank_Logo.svg" },
-  { name: "Union Bank of India",       logo: "https://vignette.wikia.nocookie.net/logopedia/images/0/05/Union_Bank_of_India_Logo.svg" },
-  { name: "Bank of India (BOI)",       logo: "https://vignette.wikia.nocookie.net/logopedia/images/c/ca/Bank_of_India_logo.svg" },
-  { name: "Indian Bank",               logo: "https://vignette.wikia.nocookie.net/logopedia/images/f/f0/Indian_Bank_logo.svg" },
-  { name: "Central Bank of India (CBI)", logo: "https://vignette.wikia.nocookie.net/logopedia/images/7/7b/Central_Bank_of_India_logo.svg" },
-  { name: "Indian Overseas Bank (IOB)", logo: "https://vignette.wikia.nocookie.net/logopedia/images/6/66/Indian_Overseas_Bank_logo.svg" },
-  { name: "UCO Bank",                  logo: "https://vignette.wikia.nocookie.net/logopedia/images/7/7e/UCO_Bank_logo.svg" },
-  { name: "Bank of Maharashtra (BOM)", logo: "https://vignette.wikia.nocookie.net/logopedia/images/3/3a/Bank_of_Maharashtra_logo.svg" },
-  { name: "Punjab & Sind Bank (PSB)",  logo: "https://vignette.wikia.nocookie.net/logopedia/images/4/4b/Punjab_%26_Sind_Bank_logo.svg" },
+  // Major Public Sector Banks
+  { name: "State Bank of India (SBI)", logo: "https://logo.clearbit.com/sbi.co.in" },
+  { name: "Punjab National Bank (PNB)", logo: "https://logo.clearbit.com/pnbindia.in" },
+  { name: "Bank of Baroda (BOB)",      logo: "https://logo.clearbit.com/bankofbaroda.in" },
+  { name: "Canara Bank",               logo: "https://logo.clearbit.com/canarabank.com" },
+  { name: "Union Bank of India",       logo: "https://logo.clearbit.com/unionbankofindia.co.in" },
+  { name: "Bank of India (BOI)",       logo: "https://logo.clearbit.com/bankofindia.co.in" },
+  { name: "Indian Bank",               logo: "https://logo.clearbit.com/indianbank.in" },
+  { name: "Central Bank of India",     logo: "https://logo.clearbit.com/centralbankofindia.co.in" },
+  { name: "Indian Overseas Bank",      logo: "https://logo.clearbit.com/iob.in" },
+  { name: "UCO Bank",                  logo: "https://logo.clearbit.com/ucobank.com" },
+  { name: "Bank of Maharashtra",       logo: "https://logo.clearbit.com/bankofmaharashtra.in" },
+  { name: "Punjab & Sind Bank",        logo: "https://logo.clearbit.com/punjabandsindbank.co.in" },
 
-  // Private Sector Banks
-  { name: "HDFC Bank",                 logo: "https://vignette.wikia.nocookie.net/logopedia/images/4/4c/HDFC_Bank_logo.svg" },
-  { name: "ICICI Bank",                logo: "https://vignette.wikia.nocookie.net/logopedia/images/0/0b/ICICI_Bank_Logo.svg" },
-  { name: "Axis Bank",                 logo: "https://vignette.wikia.nocookie.net/logopedia/images/f/f6/Axis_Bank_logo.svg" },
-  { name: "Kotak Mahindra Bank",       logo: "https://vignette.wikia.nocookie.net/logopedia/images/b/b3/KotakMahindraBank_Logo.svg" },
-  { name: "IndusInd Bank",             logo: "https://vignette.wikia.nocookie.net/logopedia/images/b/b3/IndusInd_Bank_Logo.svg" },
-  { name: "Yes Bank",                  logo: "https://vignette.wikia.nocookie.net/logopedia/images/6/6f/Yes_Bank_Logo.svg" },
-  { name: "IDFC First Bank",           logo: "https://vignette.wikia.nocookie.net/logopedia/images/d/df/IDFC_FIRST_Bank_Logo.svg" },
-  { name: "Federal Bank",              logo: "https://vignette.wikia.nocookie.net/logopedia/images/4/4b/Federal_Bank_Logo.svg" },
-  { name: "South Indian Bank",         logo: "https://vignette.wikia.nocookie.net/logopedia/images/4/43/South_Indian_Bank_Logo.svg" },
-  { name: "Karnataka Bank",            logo: "https://vignette.wikia.nocookie.net/logopedia/images/b/be/Karnataka_Bank_Logo.svg" },
-  { name: "RBL Bank",                  logo: "https://vignette.wikia.nocookie.net/logopedia/images/f/f3/RBL_Bank_logo.svg" },
-  { name: "Karur Vysya Bank",          logo: "https://vignette.wikia.nocookie.net/logopedia/images/5/5e/Karur_Vysya_Bank_Logo.svg" },
-  { name: "Bandhan Bank",              logo: "https://vignette.wikia.nocookie.net/logopedia/images/8/83/Bandhan_Bank_logo.svg" },
-  { name: "IDBI Bank",                 logo: "https://vignette.wikia.nocookie.net/logopedia/images/8/87/IDBI_Bank_logo.svg" },
-  { name: "City Union Bank",           logo: "https://vignette.wikia.nocookie.net/logopedia/images/9/9e/City_Union_Bank_Logo.svg" },
-  { name: "DCB Bank",                  logo: "https://vignette.wikia.nocookie.net/logopedia/images/c/cc/DCB_Bank_logo.svg" },
-  { name: "Tamilnad Mercantile Bank",  logo: "https://vignette.wikia.nocookie.net/logopedia/images/b/b8/Tamilnad_Mercantile_Bank_logo.svg" },
-  { name: "J&K Bank",                  logo: "https://vignette.wikia.nocookie.net/logopedia/images/f/fd/J%26K_Bank_logo.svg" },
+  // Major Private Sector Banks
+  { name: "HDFC Bank",                 logo: "https://logo.clearbit.com/hdfcbank.com" },
+  { name: "ICICI Bank",                logo: "https://logo.clearbit.com/icicibank.com" },
+  { name: "Axis Bank",                 logo: "https://logo.clearbit.com/axisbank.com" },
+  { name: "Kotak Mahindra Bank",       logo: "https://logo.clearbit.com/kotak.com" },
+  { name: "IndusInd Bank",             logo: "https://logo.clearbit.com/indusind.com" },
+  { name: "Yes Bank",                  logo: "https://logo.clearbit.com/yesbank.in" },
+  { name: "IDFC First Bank",           logo: "https://logo.clearbit.com/idfcfirstbank.com" },
+  { name: "Federal Bank",              logo: "https://logo.clearbit.com/federalbank.co.in" },
+  { name: "South Indian Bank",         logo: "https://logo.clearbit.com/southindianbank.com" },
+  { name: "Karnataka Bank",            logo: "https://logo.clearbit.com/karnatakabank.com" },
+  { name: "RBL Bank",                  logo: "https://logo.clearbit.com/rblbank.com" },
+  { name: "Karur Vysya Bank",          logo: "https://logo.clearbit.com/kvb.co.in" },
+  { name: "Bandhan Bank",              logo: "https://logo.clearbit.com/bandhanbank.com" },
+  { name: "IDBI Bank",                 logo: "https://logo.clearbit.com/idbi.com" },
+  { name: "City Union Bank",           logo: "https://logo.clearbit.com/cityunionbank.com" },
+  { name: "DCB Bank",                  logo: "https://logo.clearbit.com/dcbbank.com" },
+  { name: "Tamilnad Mercantile Bank",  logo: "https://logo.clearbit.com/tmb.in" },
+  { name: "J&K Bank",                  logo: "https://logo.clearbit.com/jkbank.com" },
+  { name: "CSB Bank",                  logo: "https://logo.clearbit.com/csb.co.in" },
+  { name: "Dhanlaxmi Bank",            logo: "https://logo.clearbit.com/dhanbank.com" },
 
-  // Payments / Small Finance Banks
+  // International Banks (India Operations)
+  { name: "HSBC India",                logo: "https://logo.clearbit.com/hsbc.co.in" },
+  { name: "Standard Chartered",        logo: "https://logo.clearbit.com/sc.com" },
+  { name: "Citibank India",            logo: "https://logo.clearbit.com/citibank.co.in" },
+  { name: "DBS Bank India",            logo: "https://logo.clearbit.com/dbs.com" },
+  { name: "Deutsche Bank India",       logo: "https://logo.clearbit.com/db.com" },
+  { name: "Barclays India",            logo: "https://logo.clearbit.com/barclays.in" },
+  { name: "J.P. Morgan India",         logo: "https://logo.clearbit.com/jpmorgan.com" },
+
+  // Small Finance & Payments Banks
+  { name: "AU Small Finance Bank",     logo: "https://logo.clearbit.com/aubank.in" },
+  { name: "Equitas Small Finance Bank",logo: "https://logo.clearbit.com/equitasbank.com" },
+  { name: "Ujjivan Small Finance Bank",logo: "https://logo.clearbit.com/ujjivansfb.in" },
+  { name: "ESAF Small Finance Bank",   logo: "https://logo.clearbit.com/esafbank.com" },
+  { name: "Jana Small Finance Bank",   logo: "https://logo.clearbit.com/janabank.com" },
   { name: "PayTM Payments Bank",       logo: "https://logo.clearbit.com/paytm.com" },
   { name: "Airtel Payments Bank",      logo: "https://logo.clearbit.com/airtel.in" },
-  { name: "AU Small Finance Bank",     logo: "https://vignette.wikia.nocookie.net/logopedia/images/e/e0/AU_Small_Finance_Bank_logo.svg" },
-  { name: "Equitas Small Finance Bank",logo: "https://vignette.wikia.nocookie.net/logopedia/images/3/3b/Equitas_Small_Finance_Bank_logo.svg" },
-  { name: "Ujjivan Small Finance Bank",logo: "https://vignette.wikia.nocookie.net/logopedia/images/4/4b/Ujjivan_Small_Finance_Bank_logo.svg" },
-  { name: "India Post Payments Bank",  logo: "https://vignette.wikia.nocookie.net/logopedia/images/a/a2/India_Post_Payments_Bank_logo.svg" },
-  { name: "Fino Payments Bank",        logo: "https://vignette.wikia.nocookie.net/logopedia/images/9/91/Fino_Payments_Bank_logo.svg" },
-  { name: "Jio Payments Bank",         logo: "https://vignette.wikia.nocookie.net/logopedia/images/6/6a/Jio_Payments_Bank_Logo.svg" },
+  { name: "Jio Payments Bank",         logo: "https://logo.clearbit.com/jio.com" },
+  { name: "India Post Payments Bank",  logo: "https://logo.clearbit.com/ippbonline.com" },
+  { name: "Fino Payments Bank",        logo: "https://logo.clearbit.com/finobank.com" },
+  { name: "NSDL Payments Bank",        logo: "https://logo.clearbit.com/nsdlbank.com" },
 
-  // Investment / International
+  // Neo-Banks & Fintech
+  { name: "Jupiter",                   logo: "https://logo.clearbit.com/jupiter.money" },
+  { name: "Fi Money",                  logo: "https://logo.clearbit.com/fi.money" },
+  { name: "Niyo",                      logo: "https://logo.clearbit.com/goniyo.com" },
+  { name: "Slice",                     logo: "https://logo.clearbit.com/sliceit.com" },
+  { name: "Uni Cards",                 logo: "https://logo.clearbit.com/uni.cards" },
+  { name: "OneCard",                   logo: "https://logo.clearbit.com/getonecard.com" },
+  { name: "FamPay",                    logo: "https://logo.clearbit.com/fampay.in" },
+
+  // Investment Platforms
   { name: "Zerodha",                   logo: "https://logo.clearbit.com/zerodha.com" },
-  { name: "Groww",                     logo: "https://logo.clearbit.com/groww.in" },
   { name: "Upstox",                    logo: "https://logo.clearbit.com/upstox.com" },
-  { name: "DBS Bank",                  logo: "https://vignette.wikia.nocookie.net/logopedia/images/0/00/DBS_Bank-Logo.wine.svg" },
+  { name: "Groww",                     logo: "https://logo.clearbit.com/groww.in" },
+  { name: "Angel One",                 logo: "https://logo.clearbit.com/angelone.in" },
+  { name: "Kuvera",                    logo: "https://logo.clearbit.com/kuvera.in" },
+  { name: "Indmoney",                  logo: "https://logo.clearbit.com/indmoney.com" },
 ];
 
 export function searchBanks(query: string): Bank[] {
-  if (!query.trim()) return [];
+  if (!query.trim()) return BANKS.slice(0, 15); // Show popular banks by default
   const q = query.toLowerCase();
-  return BANKS.filter((b) => b.name.toLowerCase().includes(q)).slice(0, 6);
+  return BANKS.filter((b) => b.name.toLowerCase().includes(q)).slice(0, 12); // Show more results
 }
+
+

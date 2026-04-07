@@ -205,6 +205,16 @@ export async function adjustBalance(id: string, amount: number, note: string) {
     return { error: error.message };
   }
 
+  // Log the adjustment as a transaction
+  await supabase.from("transactions").insert({
+    user_id: user.id,
+    account_id: id,
+    amount: Math.abs(amount),
+    type: amount > 0 ? "income" : "expense",
+    description: note || "Balance adjustment",
+    date: new Date().toISOString().split('T')[0]
+  });
+
   revalidatePath("/dashboard/accounts");
   revalidatePath("/dashboard");
   return { success: true };

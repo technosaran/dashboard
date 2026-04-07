@@ -117,9 +117,10 @@ export default function DashboardPage() {
             style={{
               borderRadius: "calc(var(--radius-2xl) - 2px)",
               background: "linear-gradient(160deg, rgba(108,92,231,0.12) 0%, var(--bg-surface) 40%, rgba(0,206,201,0.08) 100%)",
-              padding: "36px 40px",
+              padding: "24px 30px",
             }}
           >
+
             {/* Decorative circles */}
             <div
               className="absolute pointer-events-none"
@@ -146,7 +147,7 @@ export default function DashboardPage() {
 
             <div className="relative z-10 flex items-center justify-between">
               <div>
-                <div className="flex items-center gap-2 mb-3">
+                <div className="flex items-center gap-2 mb-2">
                   <div
                     className="w-2 h-2 rounded-full"
                     style={{
@@ -154,20 +155,21 @@ export default function DashboardPage() {
                       boxShadow: "0 0 8px rgba(85,239,196,0.5)",
                     }}
                   />
-                  <p className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>
+                  <p className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
                     Total Net Worth
                   </p>
                 </div>
                 {loading ? (
-                  <div className="skeleton" style={{ width: "280px", height: "48px" }} />
+                  <div className="skeleton" style={{ width: "220px", height: "40px" }} />
                 ) : (
                   <>
                     <p
-                      className="text-5xl font-bold tracking-tight"
+                      className="text-4xl font-bold tracking-tight"
                       style={{ color: "var(--text-primary)" }}
                     >
                       ₹{totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </p>
+
                     <div className="flex items-center gap-3 mt-3">
                       <span
                         className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold"

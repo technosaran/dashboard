@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { createClient } from "@/lib/supabase-browser";
 import type { Tables } from "@/lib/database.types";
@@ -59,33 +59,7 @@ export default function AccountsPage() {
     bank_logo: "",
   });
 
-  useEffect(() => {
-    loadAccounts();
-
-    const channel = supabase
-      .channel("accounts-changes")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "accounts",
-        },
-        (payload) => {
-          console.log("Real-time update received:", payload);
-          loadAccounts();
-        }
-      )
-      .subscribe((status) => {
-        console.log("Real-time subscription status:", status);
-      });
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  async function loadAccounts() {
+  const loadAccounts = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -150,32 +124,49 @@ export default function AccountsPage() {
       setError(err instanceof Error ? err.message : "Failed to load accounts");
       setLoading(false);
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    loadAccounts();
+
+    const channel = supabase
+      .channel("accounts-changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "accounts",
+        },
+        () => {
+          loadAccounts();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [loadAccounts]);
 
   function handleBankSearch(query: string) {
     setBankSearch(query);
-    if (query.length >= 1) {
-      const results = searchBanks(query);
-      setBankResults(results);
-      
-      // If there's a strong match (first result starts with query), pre-view the logo
-      const topMatch = results[0];
-      if (topMatch && topMatch.name.toLowerCase().includes(query.toLowerCase()) && query.length > 2) {
-        setFormData(prev => ({ 
-          ...prev, 
-          bank_name: topMatch.name, 
-          bank_logo: topMatch.logo 
-        }));
-      } else if (query.length === 0) {
-        setFormData(prev => ({ ...prev, bank_name: "", bank_logo: "" }));
-      }
-    } else {
-      setBankResults([]);
-      if (!query) {
-        setFormData(prev => ({ ...prev, bank_name: "", bank_logo: "" }));
-      }
+    const results = searchBanks(query);
+    setBankResults(results);
+    
+    // If there's a strong match, pre-view the logo
+    const topMatch = results.find(r => r.name.toLowerCase().startsWith(query.toLowerCase()));
+    if (topMatch && query.length > 2) {
+      setFormData(prev => ({ 
+        ...prev, 
+        bank_name: topMatch.name, 
+        bank_logo: topMatch.logo 
+      }));
+    } else if (query.length === 0) {
+      setFormData(prev => ({ ...prev, bank_name: "", bank_logo: "" }));
     }
   }
+
 
   function selectBank(bank: Bank) {
     setFormData({ ...formData, bank_name: bank.name, bank_logo: bank.logo });
@@ -431,64 +422,58 @@ export default function AccountsPage() {
 
       {/* Total Balance Overview with Chart */}
       {accounts.length > 0 && (
-        <div className="glass-card-static animate-fade-in-up delay-1" style={{ padding: "32px", marginBottom: "32px" }}>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8" style={{ minHeight: "420px" }}>
-            <div className="flex flex-col" style={{ minHeight: "350px" }}>
-              <div className="flex items-center gap-2 mb-3">
-                <div className="status-dot" />
-                <p className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>
+        <div className="glass-card-static animate-fade-in-up delay-1" style={{ padding: "20px 24px", marginBottom: "24px" }}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" style={{ minHeight: "280px" }}>
+            <div className="flex flex-col justify-center">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="status-dot" style={{ width: "6px", height: "6px" }} />
+                <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
                   Portfolio Overview
                 </p>
               </div>
-              <p className="text-4xl font-bold mb-6 gradient-text">
+              <p className="text-3xl font-bold mb-4 gradient-text">
                 ₹{totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
-              <div className="flex-1 overflow-y-auto pr-2 space-y-2.5" style={{ scrollbarWidth: "thin", maxHeight: "280px" }}>
+              <div className="flex-1 overflow-y-auto pr-1 space-y-1.5" style={{ scrollbarWidth: "thin", maxHeight: "180px" }}>
                 {chartData.map((item, index) => (
                   <div
                     key={`${item.name}-${index}`}
-                    className="flex items-center justify-between rounded-xl p-3.5 transition-all cursor-default"
+                    className="flex items-center justify-between rounded-lg p-2.5 transition-all cursor-default"
                     style={{
-                      background: "rgba(15, 20, 50, 0.5)",
+                      background: "rgba(15, 20, 50, 0.4)",
                       border: "1px solid var(--border-subtle)",
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "rgba(99, 115, 255, 0.06)";
+                      e.currentTarget.style.background = "rgba(99, 115, 255, 0.08)";
                       e.currentTarget.style.borderColor = "var(--border-default)";
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "rgba(15, 20, 50, 0.5)";
+                      e.currentTarget.style.background = "rgba(15, 20, 50, 0.4)";
                       e.currentTarget.style.borderColor = "var(--border-subtle)";
                     }}
                   >
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="flex items-center gap-2.5 flex-1 min-w-0">
                       <div
-                        className="w-3 h-3 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: item.color, boxShadow: `0 0 8px ${item.color}40` }}
+                        className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: item.color, boxShadow: `0 0 6px ${item.color}40` }}
                       />
                       <div className="flex flex-col min-w-0">
-                        <span className="font-medium truncate text-sm" style={{ color: "var(--text-primary)" }}>
+                        <span className="font-medium truncate text-xs" style={{ color: "var(--text-primary)" }}>
                           {item.name}
-                        </span>
-                        <span className="text-xs capitalize" style={{ color: "var(--text-muted)" }}>
-                          {item.type}
                         </span>
                       </div>
                     </div>
-                    <div className="text-right flex-shrink-0 ml-3">
-                      <span className="font-bold text-base" style={{ color: "var(--text-primary)" }}>
-                        {getCurrencySymbol(accounts.find(a => a.name === item.name)?.currency || "INR")}{item.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    <div className="text-right flex-shrink-0 ml-2">
+                      <span className="font-bold text-sm" style={{ color: "var(--text-primary)" }}>
+                        {getCurrencySymbol(accounts.find(a => a.name === item.name)?.currency || "INR")}{item.value.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
                       </span>
-                      <div className="text-xs" style={{ color: "var(--text-muted)" }}>
-                        {((item.value / totalBalance) * 100).toFixed(1)}%
-                      </div>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
-            <div className="flex justify-center items-center" style={{ minHeight: "350px" }}>
-              <div style={{ width: "100%", height: "350px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div className="flex justify-center items-center">
+              <div style={{ width: "100%", height: "240px", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                   <Pie
@@ -496,12 +481,11 @@ export default function AccountsPage() {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ percent }) => percent && percent > 0.05 ? `${((percent || 0) * 100).toFixed(1)}%` : ''}
-                    outerRadius={115}
-                    innerRadius={65}
+                    outerRadius={85}
+                    innerRadius={55}
                     fill="#8884d8"
                     dataKey="value"
-                    paddingAngle={3}
+                    paddingAngle={4}
                     strokeWidth={0}
                   >
                     {chartData.map((entry, index) => (
@@ -523,11 +507,10 @@ export default function AccountsPage() {
                       backgroundColor: "var(--bg-elevated)",
                       border: "1px solid var(--border-default)",
                       borderRadius: "var(--radius-md)",
-                      padding: "12px 16px",
+                      padding: "8px 12px",
                       boxShadow: "var(--shadow-lg)",
+                      fontSize: "12px",
                     }}
-                    labelStyle={{ color: "var(--text-primary)", fontWeight: "bold", marginBottom: "6px" }}
-                    itemStyle={{ color: "var(--text-secondary)" }}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -536,6 +519,7 @@ export default function AccountsPage() {
           </div>
         </div>
       )}
+
 
       {/* Account Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">

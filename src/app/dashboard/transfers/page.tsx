@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase-browser";
 import type { Tables } from "@/lib/database.types";
 import { createTransfer } from "./actions";
@@ -24,42 +24,7 @@ export default function TransfersPage() {
     note: "",
   });
 
-  useEffect(() => {
-    loadData();
-
-    const channel = supabase
-      .channel("transfers-changes")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "transfers" },
-        (payload) => {
-          console.log("Real-time transfer update:", payload);
-          loadData();
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "accounts" },
-        (payload) => {
-          console.log("Real-time account update:", payload);
-          loadAccounts();
-        }
-      )
-      .subscribe((status) => {
-        console.log("Real-time subscription status:", status);
-      });
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  async function loadData() {
-    await Promise.all([loadAccounts(), loadTransfers()]);
-    setLoading(false);
-  }
-
-  async function loadAccounts() {
+  const loadAccounts = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
@@ -70,9 +35,9 @@ export default function TransfersPage() {
       .order("name");
 
     setAccounts(data || []);
-  }
+  }, []);
 
-  async function loadTransfers() {
+  const loadTransfers = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
@@ -84,7 +49,38 @@ export default function TransfersPage() {
       .limit(50);
 
     setTransfers(data || []);
-  }
+  }, []);
+
+  const loadData = useCallback(async () => {
+    await Promise.all([loadAccounts(), loadTransfers()]);
+    setLoading(false);
+  }, [loadAccounts, loadTransfers]);
+
+  useEffect(() => {
+    loadData();
+
+    const channel = supabase
+      .channel("transfers-changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "transfers" },
+        () => {
+          loadData();
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "accounts" },
+        () => {
+          loadAccounts();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [loadData, loadAccounts]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

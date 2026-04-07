@@ -17,7 +17,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const stored = localStorage.getItem("username");
-    if (stored) setUsernameState(stored);
+    if (stored) {
+      // Use setTimeout to avoid synchronous state updates in useEffect
+      // which can trigger cascading renders warning.
+      const timeout = setTimeout(() => setUsernameState(stored), 0);
+      return () => clearTimeout(timeout);
+    }
   }, []);
 
   const setUsername = (name: string) => {
