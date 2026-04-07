@@ -11,6 +11,36 @@ type Account = Tables<"accounts">;
 
 const supabase = createClient();
 
+const BankLogo = ({ src, name, size = "w-7 h-7", className = "" }: { src?: string | null; name: string | null; size?: string; className?: string }) => {
+  const [error, setError] = useState(false);
+  
+  if (!src || error) {
+    return (
+      <div 
+        className={`${size} ${className} rounded-lg flex items-center justify-center font-bold text-[10px]`}
+        style={{ 
+          background: "rgba(108, 92, 231, 0.12)",
+          color: "#a29bfe",
+          border: "1px solid rgba(108, 92, 231, 0.2)"
+        }}
+      >
+        {name?.substring(0, 2).toUpperCase() || "BK"}
+      </div>
+    );
+  }
+  
+  return (
+    <div className={`${size} ${className} rounded-lg bg-white/90 p-1 flex items-center justify-center shadow-sm`}>
+      <img 
+        src={src} 
+        alt={name || "Bank"} 
+        className="w-full h-full object-contain" 
+        onError={() => setError(true)} 
+      />
+    </div>
+  );
+};
+
 const TYPE_STYLES: Record<string, { gradient: string; badge: string; badgeBorder: string; color: string; iconBg: string }> = {
   checking:   { gradient: "linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%)", badge: "rgba(162,155,254,0.15)", badgeBorder: "rgba(162,155,254,0.25)", color: "#a29bfe", iconBg: "rgba(162,155,254,0.12)" },
   savings:    { gradient: "linear-gradient(135deg, #00cec9 0%, #55efc4 100%)", badge: "rgba(85,239,196,0.15)",  badgeBorder: "rgba(85,239,196,0.25)",  color: "#55efc4", iconBg: "rgba(85,239,196,0.12)" },
@@ -605,17 +635,7 @@ export default function AccountsPage() {
                     </div>
                   ) : account.bank_name ? (
                     <div className="flex items-center gap-2 mt-3">
-                      {account.bank_logo && (
-                        <div
-                          className="p-1.5 rounded-lg"
-                          style={{
-                            background: "rgba(255,255,255,0.9)",
-                            boxShadow: "var(--shadow-sm)",
-                          }}
-                        >
-                          <img src={account.bank_logo} alt={account.bank_name} className="w-7 h-7 object-contain" />
-                        </div>
-                      )}
+                      <BankLogo src={account.bank_logo} name={account.bank_name} size="w-9 h-9" />
                       <span className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>
                         {account.bank_name}
                       </span>
@@ -904,9 +924,7 @@ export default function AccountsPage() {
                               onMouseEnter={(e) => { e.currentTarget.style.background = "var(--glass-hover)"; }}
                               onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
                             >
-                              <div className="w-8 h-8 rounded bg-white p-1 flex items-center justify-center">
-                                <img src={bank.logo} alt={bank.name} className="w-full h-full object-contain" />
-                              </div>
+                              <BankLogo src={bank.logo} name={bank.name} size="w-8 h-8" />
                               <div className="flex flex-col">
                                 <span className="text-sm font-medium">{bank.name}</span>
                                 <span className="text-[10px] text-muted opacity-60">Click to select</span>
@@ -918,17 +936,12 @@ export default function AccountsPage() {
                     </div>
                     
                     {/* Live Preview of Selected/Inferred Logo */}
-                    <div 
-                      className={`w-12 h-12 rounded-xl flex items-center justify-center p-2 transition-all ${formData.bank_logo ? 'bg-white shadow-glow' : 'bg-black/20 border border-dashed border-white/10'}`}
-                      title={formData.bank_name || "Bank Logo Preview"}
-                    >
-                      {formData.bank_logo ? (
-                        <img src={formData.bank_logo} alt="Preview" className="w-full h-full object-contain animate-scale-in" />
-                      ) : (
-                        <svg className="w-5 h-5 text-white/10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      )}
+                    <div className="flex-shrink-0 animate-scale-in">
+                      <BankLogo 
+                        src={formData.bank_logo} 
+                        name={formData.bank_name} 
+                        size="w-12 h-12" 
+                      />
                     </div>
                   </div>
                   )}

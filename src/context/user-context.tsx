@@ -6,12 +6,14 @@ import { createClient } from "@/lib/supabase-browser";
 type UserContextType = {
   username: string;
   loading: boolean;
+  isSyncing: boolean;
   setUsername: (name: string) => void;
 };
 
 const UserContext = createContext<UserContextType>({
   username: "",
   loading: true,
+  isSyncing: false,
   setUsername: () => {},
 });
 
@@ -20,14 +22,16 @@ const supabase = createClient();
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const [username, setUsernameState] = useState("");
   const [loading, setLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const channelRef = useRef<any>(null);
 
   const fetchUser = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      if (user.user_metadata?.username) {
-        setUsernameState(user.user_metadata.username);
+      // Check if username exists in metadata (even if it's an empty string)
+      if (user.user_metadata && 'username' in user.user_metadata) {
+        setUsernameState(user.user_metadata.username || "");
       } else if (user.email) {
         setUsernameState(user.email.split("@")[0]);
       }
@@ -40,7 +44,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       
       channelRef.current = supabase.channel(channelId)
         .on("broadcast", { event: "username-update" }, ({ payload }) => {
-          if (payload.username) {
+          if (typeof payload.username === 'string') {
             console.log("Real-time (Broadcast) update:", payload.username);
             setUsernameState(payload.username);
           }
@@ -51,7 +55,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           table: "profiles", 
           filter: `id=eq.${user.id}` 
         }, (payload) => {
-          if (payload.new?.username) {
+          if (payload.new && typeof payload.new.username === 'string') {
             console.log("Real-time (DB) update:", payload.new.username);
             setUsernameState(payload.new.username);
           }
@@ -92,16 +96,21 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     }
     
     // 3. Debounce the Database update to avoid spamming
+    setIsSyncing(true);
     if (updateTimeoutRef.current) {
       clearTimeout(updateTimeoutRef.current);
     }
     
     updateTimeoutRef.current = setTimeout(async () => {
       const trimmedName = name.trim();
-      if (!trimmedName) return;
+      // Allow empty string to be saved to clear the name
+      // removed: if (!trimmedName) return;
 
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        setIsSyncing(false);
+        return;
+      }
 
       const { error } = await supabase.auth.updateUser({
         data: { username: trimmedName }
@@ -110,12 +119,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       if (error) {
         console.error("Failed to update username in database:", error);
       }
+      setIsSyncing(false);
       updateTimeoutRef.current = null;
-    }, 1000); 
+    }, 600); 
   }, []);
 
   return (
-    <UserContext.Provider value={{ username, loading, setUsername }}>
+    <UserContext.Provider value={{ username, loading, isSyncing, setUsername }}>
       {children}
     </UserContext.Provider>
   );

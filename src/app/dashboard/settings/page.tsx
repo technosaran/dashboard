@@ -4,12 +4,11 @@ import { useEffect, useState, useRef, useMemo } from "react";
 import { useUser } from "@/context/user-context";
 
 export default function SettingsPage() {
-  const { username, setUsername, loading } = useUser();
+  const { username, setUsername, loading, isSyncing } = useUser();
   const [input, setInput] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<string | null>(null);
-  const savingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const initializedRef = useRef(false);
+  const prevIsSyncingRef = useRef(false);
 
   // Sync internal input state with context once loaded
   useEffect(() => {
@@ -21,10 +20,18 @@ export default function SettingsPage() {
 
   // Sync internal input state if username changes from external broadcast
   useEffect(() => {
-    if (initializedRef.current && username !== input && !isSaving) {
+    if (initializedRef.current && username !== input && !isSyncing) {
       setInput(username);
     }
-  }, [username]);
+  }, [username, input, isSyncing]);
+
+  // Update lastSaved when sync completes
+  useEffect(() => {
+    if (prevIsSyncingRef.current && !isSyncing) {
+      setLastSaved(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+    }
+    prevIsSyncingRef.current = isSyncing;
+  }, [isSyncing]);
 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -32,44 +39,18 @@ export default function SettingsPage() {
     setInput(newVal);
     
     // Update context IMMEDIATELY for real-time UI everywhere
-    // This triggers re-renders in other components (like Greetings) instantly
     setUsername(newVal);
-    
-    setIsSaving(true);
-    
-    // UI indicator timeout
-    if (savingTimeoutRef.current) clearTimeout(savingTimeoutRef.current);
-    savingTimeoutRef.current = setTimeout(() => {
-      setIsSaving(false);
-      setLastSaved(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
-      savingTimeoutRef.current = null;
-    }, 1200);
   };
-
-  const hour = new Date().getHours();
-  const greetingText = useMemo(() => {
-    return hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
-  }, [hour]);
 
   return (
     <div>
-      {/* Header with Live Greeting Preview */}
+      {/* Header */}
       <div className="animate-fade-in-up">
-        <div className="flex items-center gap-3">
-          <h1 className="text-3xl font-bold" style={{ color: "var(--text-primary)" }}>
-            {greetingText}, {" "}
-            {loading ? (
-              <span className="inline-block w-24 h-8 bg-[var(--glass-border)] animate-pulse rounded-lg align-middle" />
-            ) : (
-              <span className="gradient-text">{username || "User"}</span>
-            )}
-          </h1>
-          <span className="inline-block animate-float text-2xl">
-            {hour < 12 ? "☀️" : hour < 18 ? "🌤️" : "🌙"}
-          </span>
-        </div>
+        <h1 className="text-3xl font-bold" style={{ color: "var(--text-primary)" }}>
+          Settings
+        </h1>
         <p className="mt-1 text-sm" style={{ color: "var(--text-secondary)" }}>
-          Your profile name is synchronized across all devices in real-time.
+          Manage your account preferences and profile identity.
         </p>
       </div>
 
@@ -118,7 +99,7 @@ export default function SettingsPage() {
             
             {/* Status Indicator */}
             <div className="ml-auto flex items-center gap-2">
-              {isSaving ? (
+              {isSyncing ? (
                 <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-[--text-muted]">
                   <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
                   Saving...
@@ -154,7 +135,7 @@ export default function SettingsPage() {
                 <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                   <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                Your greeting above will update as you type.
+                Your profile name is synchronized across all devices in real-time.
               </p>
             </div>
           </div>
