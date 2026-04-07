@@ -41,10 +41,23 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       channelRef.current = supabase.channel(channelId)
         .on("broadcast", { event: "username-update" }, ({ payload }) => {
           if (payload.username) {
+            console.log("Real-time (Broadcast) update:", payload.username);
             setUsernameState(payload.username);
           }
         })
+        .on("postgres_changes", { 
+          event: "UPDATE", 
+          schema: "public", 
+          table: "profiles", 
+          filter: `id=eq.${user.id}` 
+        }, (payload) => {
+          if (payload.new?.username) {
+            console.log("Real-time (DB) update:", payload.new.username);
+            setUsernameState(payload.new.username);
+          }
+        })
         .subscribe();
+
     }
     setLoading(false);
   }, []);
