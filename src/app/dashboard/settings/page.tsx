@@ -4,18 +4,28 @@ import { useEffect, useState, useRef, useMemo } from "react";
 import { useUser } from "@/context/user-context";
 
 export default function SettingsPage() {
-  const { username, setUsername } = useUser();
-  const [input, setInput] = useState(username);
+  const { username, setUsername, loading } = useUser();
+  const [input, setInput] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<string | null>(null);
   const savingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const initializedRef = useRef(false);
 
-  // Initial sync IF context is loaded after mount
+  // Sync internal input state with context once loaded
   useEffect(() => {
-    if (username !== "User") {
+    if (!loading && !initializedRef.current) {
+      setInput(username);
+      initializedRef.current = true;
+    }
+  }, [loading, username]);
+
+  // Sync internal input state if username changes from external broadcast
+  useEffect(() => {
+    if (initializedRef.current && username !== input && !isSaving) {
       setInput(username);
     }
-  }, [username === "User"]);
+  }, [username]);
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newVal = e.target.value;
@@ -47,16 +57,22 @@ export default function SettingsPage() {
       <div className="animate-fade-in-up">
         <div className="flex items-center gap-3">
           <h1 className="text-3xl font-bold" style={{ color: "var(--text-primary)" }}>
-            {greetingText}, <span className="gradient-text">{username}</span>
+            {greetingText}, {" "}
+            {loading ? (
+              <span className="inline-block w-24 h-8 bg-[var(--glass-border)] animate-pulse rounded-lg align-middle" />
+            ) : (
+              <span className="gradient-text">{username || "User"}</span>
+            )}
           </h1>
           <span className="inline-block animate-float text-2xl">
             {hour < 12 ? "☀️" : hour < 18 ? "🌤️" : "🌙"}
           </span>
         </div>
         <p className="mt-1 text-sm" style={{ color: "var(--text-secondary)" }}>
-          Your profile name is synchronized across all components in real-time.
+          Your profile name is synchronized across all devices in real-time.
         </p>
       </div>
+
 
       {/* Profile Card */}
       <div className="mt-8 max-w-lg animate-fade-in-up delay-1">

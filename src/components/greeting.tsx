@@ -3,7 +3,7 @@
 import { useUser } from "@/context/user-context";
 
 export default function Greeting() {
-  const { username } = useUser();
+  const { username, loading } = useUser();
   const hour = new Date().getHours();
   const greeting =
     hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
@@ -16,9 +16,14 @@ export default function Greeting() {
         style={{ color: "var(--text-primary)" }}
       >
         {greeting},{" "}
-        <span className="gradient-text">{username}</span>{" "}
-        <span className="inline-block animate-float">{emoji}</span>
+        {loading ? (
+          <span className="inline-block w-32 h-10 bg-[var(--glass-border)] animate-pulse rounded-lg align-middle" />
+        ) : (
+          <span className="gradient-text">{username || "User"}</span>
+        )}{" "}
+        {!loading && <span className="inline-block animate-float">{emoji}</span>}
       </h1>
     </div>
   );
 }
+
