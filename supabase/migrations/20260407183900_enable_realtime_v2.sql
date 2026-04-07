@@ -26,6 +26,7 @@ BEGIN
             WHEN undefined_table THEN
                 -- Table doesn't exist yet, ignore
                 NULL;
-        END LOOP;
-    END FOREACH;
+        END;
+    END LOOP;
 END $$;
+
