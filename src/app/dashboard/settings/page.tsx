@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { useUser } from "@/context/user-context";
 
 export default function SettingsPage() {
@@ -10,37 +10,51 @@ export default function SettingsPage() {
   const [lastSaved, setLastSaved] = useState<string | null>(null);
   const savingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Initial sync IF context is loaded after mount
   useEffect(() => {
-    setInput(username);
-  }, [username]);
+    if (username !== "User") {
+      setInput(username);
+    }
+  }, [username === "User"]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newVal = e.target.value;
     setInput(newVal);
     
-    if (newVal.trim()) {
-      setIsSaving(true);
-      setUsername(newVal.trim());
-      
-      // We use a local timeout just for the "Saving" indicator UX
-      if (savingTimeoutRef.current) clearTimeout(savingTimeoutRef.current);
-      savingTimeoutRef.current = setTimeout(() => {
-        setIsSaving(false);
-        setLastSaved(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
-        savingTimeoutRef.current = null;
-      }, 1000);
-    }
+    // Update context IMMEDIATELY for real-time UI everywhere
+    // This triggers re-renders in other components (like Greetings) instantly
+    setUsername(newVal);
+    
+    setIsSaving(true);
+    
+    // UI indicator timeout
+    if (savingTimeoutRef.current) clearTimeout(savingTimeoutRef.current);
+    savingTimeoutRef.current = setTimeout(() => {
+      setIsSaving(false);
+      setLastSaved(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+      savingTimeoutRef.current = null;
+    }, 1200);
   };
+
+  const hour = new Date().getHours();
+  const greetingText = useMemo(() => {
+    return hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  }, [hour]);
 
   return (
     <div>
-      {/* Header */}
+      {/* Header with Live Greeting Preview */}
       <div className="animate-fade-in-up">
-        <h1 className="text-3xl font-bold" style={{ color: "var(--text-primary)" }}>
-          Settings
-        </h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-3xl font-bold" style={{ color: "var(--text-primary)" }}>
+            {greetingText}, <span className="gradient-text">{username}</span>
+          </h1>
+          <span className="inline-block animate-float text-2xl">
+            {hour < 12 ? "☀️" : hour < 18 ? "🌤️" : "🌙"}
+          </span>
+        </div>
         <p className="mt-1 text-sm" style={{ color: "var(--text-secondary)" }}>
-          Configure your preferences and profile.
+          Your profile name is synchronized across all components in real-time.
         </p>
       </div>
 
@@ -79,10 +93,10 @@ export default function SettingsPage() {
             </div>
             <div>
               <h2 className="text-base font-bold" style={{ color: "var(--text-primary)" }}>
-                Profile
+                Profile Identity
               </h2>
               <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                Manage your display name
+                Update your name to change the dashboard greeting
               </p>
             </div>
             
@@ -98,7 +112,7 @@ export default function SettingsPage() {
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
                     <path d="M5 13l4 4L19 7" />
                   </svg>
-                  Saved at {lastSaved}
+                  Sync Complete
                 </div>
               ) : null}
             </div>
@@ -110,7 +124,7 @@ export default function SettingsPage() {
                 className="block text-xs font-semibold uppercase tracking-wider mb-2"
                 style={{ color: "var(--text-muted)" }}
               >
-                Username
+                Change Display Name
               </label>
               <input
                 type="text"
@@ -118,9 +132,13 @@ export default function SettingsPage() {
                 onChange={handleChange}
                 className="input-premium"
                 placeholder="Enter your name"
+                autoFocus
               />
-              <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>
-                Changes are saved automatically as you type.
+              <p className="text-xs mt-3 flex items-center gap-1.5" style={{ color: "var(--text-muted)" }}>
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                  <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Your greeting above will update as you type.
               </p>
             </div>
           </div>

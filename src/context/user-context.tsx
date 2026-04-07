@@ -5,12 +5,12 @@ import { createClient } from "@/lib/supabase-browser";
 
 type UserContextType = {
   username: string;
-  setUsername: (name: string) => Promise<void>;
+  setUsername: (name: string) => void;
 };
 
 const UserContext = createContext<UserContextType>({
   username: "User",
-  setUsername: async () => {},
+  setUsername: () => {},
 });
 
 const supabase = createClient();
@@ -24,7 +24,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     if (user?.user_metadata?.username) {
       setUsernameState(user.user_metadata.username);
     } else if (user?.email) {
-      // Fallback to email if no username set
       setUsernameState(user.email.split("@")[0]);
     }
   }, []);
@@ -33,24 +32,32 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     fetchUser();
   }, [fetchUser]);
 
-  const setUsername = useCallback(async (name: string) => {
-    // Update local state immediately for real-time UI feedback
+  const setUsername = useCallback((name: string) => {
+    // 1. Update local state IMMEDIATELY for 0-latency UI feedback
     setUsernameState(name);
     
-    // Debounce the Supabase update to avoid spamming the database
+    // 2. Debounce the Database update to avoid spamming
     if (updateTimeoutRef.current) {
       clearTimeout(updateTimeoutRef.current);
     }
     
     updateTimeoutRef.current = setTimeout(async () => {
+      // Trim only for the database to maintain data integrity
+      const trimmedName = name.trim();
+      if (!trimmedName) return;
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
       const { error } = await supabase.auth.updateUser({
-        data: { username: name }
+        data: { username: trimmedName }
       });
+      
       if (error) {
         console.error("Failed to update username in database:", error);
       }
       updateTimeoutRef.current = null;
-    }, 800); // 800ms debounce
+    }, 1000); 
   }, []);
 
   return (
