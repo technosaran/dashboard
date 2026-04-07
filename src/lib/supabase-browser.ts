@@ -20,6 +20,11 @@ export function createClient() {
         autoRefreshToken: true,
         detectSessionInUrl: true,
       },
+      global: {
+        headers: {
+          'x-client-info': 'supabase-js-web',
+        },
+      },
     }
   );
   

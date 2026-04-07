@@ -32,18 +32,22 @@ export default function TransfersPage() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "transfers" },
-        () => {
+        (payload) => {
+          console.log("Real-time transfer update:", payload);
           loadData();
         }
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "accounts" },
-        () => {
+        (payload) => {
+          console.log("Real-time account update:", payload);
           loadAccounts();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log("Real-time subscription status:", status);
+      });
 
     return () => {
       supabase.removeChannel(channel);

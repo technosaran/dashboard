@@ -167,3 +167,45 @@ export async function createTransfer(data: TransferData) {
   
   return { success: true };
 }
+
+export async function adjustBalance(id: string, amount: number, note: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    return { error: "Unauthorized" };
+  }
+
+  // Get current balance
+  const { data: account, error: fetchError } = await supabase
+    .from("accounts")
+    .select("balance")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single();
+
+  if (fetchError || !account) {
+    return { error: "Account not found" };
+  }
+
+  const newBalance = account.balance + amount;
+
+  if (newBalance < 0) {
+    return { error: "Insufficient balance" };
+  }
+
+  // Update balance
+  const { error } = await supabase
+    .from("accounts")
+    .update({ balance: newBalance })
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/dashboard/accounts");
+  revalidatePath("/dashboard");
+  return { success: true };
+}

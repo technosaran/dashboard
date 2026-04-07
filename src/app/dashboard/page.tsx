@@ -18,11 +18,14 @@ export default function DashboardPage() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "accounts" },
-        () => {
+        (payload) => {
+          console.log("Dashboard real-time update:", payload);
           loadTotalBalance();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log("Dashboard subscription status:", status);
+      });
 
     return () => {
       supabase.removeChannel(channel);
