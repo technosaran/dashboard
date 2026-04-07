@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { createClient } from "@/lib/supabase-browser";
 import type { Tables } from "@/lib/database.types";
 import { searchBanks, type Bank } from "@/lib/banks";
@@ -11,16 +11,12 @@ type Account = Tables<"accounts">;
 
 const supabase = createClient();
 
-const TYPE_STYLES: Record<string, { bg: string; badge: string; color: string }> = {
-  checking:   { bg: "from-blue-600 via-blue-500 to-cyan-500",         badge: "bg-blue-500/20 text-blue-100 border border-blue-400/30",       color: "#3b82f6" },
-  savings:    { bg: "from-emerald-600 via-teal-500 to-cyan-500",      badge: "bg-teal-500/20 text-teal-100 border border-teal-400/30",       color: "#14b8a6" },
-  credit:     { bg: "from-violet-600 via-purple-500 to-fuchsia-500",  badge: "bg-violet-500/20 text-violet-100 border border-violet-400/30", color: "#8b5cf6" },
-  investment: { bg: "from-indigo-600 via-blue-500 to-sky-500",        badge: "bg-indigo-500/20 text-indigo-100 border border-indigo-400/30", color: "#6366f1" },
+const TYPE_STYLES: Record<string, { gradient: string; badge: string; badgeBorder: string; color: string; iconBg: string }> = {
+  checking:   { gradient: "linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%)", badge: "rgba(162,155,254,0.15)", badgeBorder: "rgba(162,155,254,0.25)", color: "#a29bfe", iconBg: "rgba(162,155,254,0.12)" },
+  savings:    { gradient: "linear-gradient(135deg, #00cec9 0%, #55efc4 100%)", badge: "rgba(85,239,196,0.15)",  badgeBorder: "rgba(85,239,196,0.25)",  color: "#55efc4", iconBg: "rgba(85,239,196,0.12)" },
+  credit:     { gradient: "linear-gradient(135deg, #fd79a8 0%, #fdcb6e 100%)", badge: "rgba(253,121,168,0.15)", badgeBorder: "rgba(253,121,168,0.25)", color: "#fd79a8", iconBg: "rgba(253,121,168,0.12)" },
+  investment: { gradient: "linear-gradient(135deg, #0984e3 0%, #00cec9 100%)", badge: "rgba(9,132,227,0.15)",   badgeBorder: "rgba(9,132,227,0.25)",   color: "#74b9ff", iconBg: "rgba(9,132,227,0.12)" },
 };
-
-const inputCls = "w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent";
-const selectCls = "w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-blue-500";
-const btnCls = "px-4 py-2 rounded-lg font-medium transition-colors";
 
 export default function AccountsPage() {
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -107,10 +103,26 @@ export default function AccountsPage() {
 
   function handleBankSearch(query: string) {
     setBankSearch(query);
-    if (query.length > 1) {
-      setBankResults(searchBanks(query));
+    if (query.length >= 1) {
+      const results = searchBanks(query);
+      setBankResults(results);
+      
+      // If there's a strong match (first result starts with query), pre-view the logo
+      const topMatch = results[0];
+      if (topMatch && topMatch.name.toLowerCase().includes(query.toLowerCase()) && query.length > 2) {
+        setFormData(prev => ({ 
+          ...prev, 
+          bank_name: topMatch.name, 
+          bank_logo: topMatch.logo 
+        }));
+      } else if (query.length === 0) {
+        setFormData(prev => ({ ...prev, bank_name: "", bank_logo: "" }));
+      }
     } else {
       setBankResults([]);
+      if (!query) {
+        setFormData(prev => ({ ...prev, bank_name: "", bank_logo: "" }));
+      }
     }
   }
 
@@ -246,18 +258,10 @@ export default function AccountsPage() {
 
   const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
   
-  // Generate distinct colors for each account
   const accountColors = [
-    "#3b82f6", // blue
-    "#06b6d4", // cyan
-    "#8b5cf6", // violet
-    "#ec4899", // pink
-    "#f59e0b", // amber
-    "#10b981", // emerald
-    "#6366f1", // indigo
-    "#14b8a6", // teal
-    "#f97316", // orange
-    "#a855f7", // purple
+    "#a29bfe", "#55efc4", "#fd79a8", "#74b9ff",
+    "#fdcb6e", "#00cec9", "#6c5ce7", "#ff6b81",
+    "#81ecec", "#fab1a0",
   ];
   
   const chartData = accounts.map((account, index) => ({
@@ -268,13 +272,31 @@ export default function AccountsPage() {
   }));
 
   if (loading) {
-    return <div className="p-8 text-zinc-400">Loading...</div>;
+    return (
+      <div className="p-8 max-w-7xl mx-auto">
+        <div className="skeleton" style={{ width: "200px", height: "36px", marginBottom: "32px" }} />
+        <div className="skeleton" style={{ height: "300px", marginBottom: "24px" }} />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1,2,3].map(i => (
+            <div key={i} className="skeleton" style={{ height: "260px" }} />
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-white">Accounts</h1>
+    <div className="max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-8 animate-fade-in-up">
+        <div>
+          <h1 className="text-3xl font-bold" style={{ color: "var(--text-primary)" }}>
+            Accounts
+          </h1>
+          <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
+            Manage your financial accounts
+          </p>
+        </div>
         <div className="flex gap-3">
           <button
             onClick={() => {
@@ -288,42 +310,77 @@ export default function AccountsPage() {
               setError(null);
             }}
             disabled={accounts.length < 2}
-            className={`${btnCls} bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed`}
+            className="btn-secondary flex items-center gap-2"
+            style={{ opacity: accounts.length < 2 ? 0.5 : 1, cursor: accounts.length < 2 ? "not-allowed" : "pointer" }}
           >
-            Internal Transfers
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+            </svg>
+            Transfer
           </button>
           <button
             onClick={() => setShowForm(!showForm)}
-            className={`${btnCls} bg-blue-600 text-white hover:bg-blue-700`}
+            className="btn-primary flex items-center gap-2"
           >
-            + New Account
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path d="M12 4v16m8-8H4" />
+            </svg>
+            New Account
           </button>
         </div>
       </div>
 
+      {/* Total Balance Overview with Chart */}
       {accounts.length > 0 && (
-        <div className="bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-500 rounded-3xl p-8 mb-8 shadow-2xl shadow-blue-500/20">
+        <div className="glass-card-static animate-fade-in-up delay-1" style={{ padding: "32px", marginBottom: "32px" }}>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
             <div>
-              <h2 className="text-white/90 text-lg mb-2 font-medium">Total Balance</h2>
-              <p className="text-white text-5xl font-bold mb-6">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="status-dot" />
+                <p className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>
+                  Portfolio Overview
+                </p>
+              </div>
+              <p className="text-4xl font-bold mb-6 gradient-text">
                 ₹{totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 {chartData.map((item, index) => (
-                  <div key={`${item.name}-${index}`} className="flex items-center justify-between bg-white/15 backdrop-blur-sm rounded-xl p-4 hover:bg-white/25 transition-all border border-white/10">
+                  <div
+                    key={`${item.name}-${index}`}
+                    className="flex items-center justify-between rounded-xl p-3.5 transition-all cursor-default"
+                    style={{
+                      background: "rgba(15, 20, 50, 0.5)",
+                      border: "1px solid var(--border-subtle)",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "rgba(99, 115, 255, 0.06)";
+                      e.currentTarget.style.borderColor = "var(--border-default)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "rgba(15, 20, 50, 0.5)";
+                      e.currentTarget.style.borderColor = "var(--border-subtle)";
+                    }}
+                  >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className="w-3 h-3 rounded-full shadow-lg flex-shrink-0" style={{ backgroundColor: item.color }}></div>
+                      <div
+                        className="w-3 h-3 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: item.color, boxShadow: `0 0 8px ${item.color}40` }}
+                      />
                       <div className="flex flex-col min-w-0">
-                        <span className="text-white font-medium truncate">{item.name}</span>
-                        <span className="text-white/70 text-xs capitalize">{item.type}</span>
+                        <span className="font-medium truncate text-sm" style={{ color: "var(--text-primary)" }}>
+                          {item.name}
+                        </span>
+                        <span className="text-xs capitalize" style={{ color: "var(--text-muted)" }}>
+                          {item.type}
+                        </span>
                       </div>
                     </div>
                     <div className="text-right flex-shrink-0 ml-3">
-                      <span className="text-white font-bold text-lg">
+                      <span className="font-bold text-base" style={{ color: "var(--text-primary)" }}>
                         ₹{item.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
-                      <div className="text-white/80 text-xs">
+                      <div className="text-xs" style={{ color: "var(--text-muted)" }}>
                         {((item.value / totalBalance) * 100).toFixed(1)}%
                       </div>
                     </div>
@@ -340,21 +397,33 @@ export default function AccountsPage() {
                     cy="50%"
                     labelLine={false}
                     label={({ percent }) => percent && percent > 0.05 ? `${((percent || 0) * 100).toFixed(1)}%` : ''}
-                    outerRadius={110}
-                    innerRadius={60}
+                    outerRadius={115}
+                    innerRadius={65}
                     fill="#8884d8"
                     dataKey="value"
-                    paddingAngle={2}
+                    paddingAngle={3}
+                    strokeWidth={0}
                   >
                     {chartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} stroke="rgba(255,255,255,0.3)" strokeWidth={2} />
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={entry.color}
+                        stroke="rgba(6, 8, 15, 0.5)"
+                        strokeWidth={2}
+                      />
                     ))}
                   </Pie>
                   <Tooltip
                     formatter={(value) => `₹${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                    contentStyle={{ backgroundColor: "#1e293b", border: "1px solid #334155", borderRadius: "12px", padding: "12px" }}
-                    labelStyle={{ color: "#fff", fontWeight: "bold", marginBottom: "8px" }}
-                    itemStyle={{ color: "#e2e8f0" }}
+                    contentStyle={{
+                      backgroundColor: "var(--bg-elevated)",
+                      border: "1px solid var(--border-default)",
+                      borderRadius: "var(--radius-md)",
+                      padding: "12px 16px",
+                      boxShadow: "var(--shadow-lg)",
+                    }}
+                    labelStyle={{ color: "var(--text-primary)", fontWeight: "bold", marginBottom: "6px" }}
+                    itemStyle={{ color: "var(--text-secondary)" }}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -363,171 +432,121 @@ export default function AccountsPage() {
         </div>
       )}
 
-      {showForm && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 rounded-2xl p-6 max-w-2xl w-full border border-slate-700 max-h-[90vh] overflow-y-auto shadow-2xl">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-white">{editingId ? "Edit Account" : "Create Account"}</h2>
-              <button
-                onClick={resetForm}
-                className="text-slate-400 hover:text-white transition-colors"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                  <path d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            
-            {error && (
-              <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
-                {error}
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit}>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm text-zinc-400 mb-2">Account Name</label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className={inputCls}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-zinc-400 mb-2">Type</label>
-                  <select
-                    value={formData.type}
-                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                    className={selectCls}
-                  >
-                    <option value="checking">Checking</option>
-                    <option value="savings">Savings</option>
-                    <option value="credit">Credit</option>
-                    <option value="investment">Investment</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm text-zinc-400 mb-2">Balance</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={formData.balance}
-                    onChange={(e) => setFormData({ ...formData, balance: e.target.value })}
-                    className={inputCls}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-zinc-400 mb-2">Currency</label>
-                  <input
-                    type="text"
-                    value={formData.currency}
-                    onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-                    className={inputCls}
-                    maxLength={3}
-                  />
-                </div>
-                <div className="col-span-2 relative">
-                  <label className="block text-sm text-zinc-400 mb-2">Bank (optional)</label>
-                  <input
-                    type="text"
-                    value={bankSearch}
-                    onChange={(e) => handleBankSearch(e.target.value)}
-                    className={inputCls}
-                    placeholder="Search for a bank..."
-                  />
-                  {bankResults.length > 0 && (
-                    <div className="absolute z-10 w-full mt-1 bg-zinc-800 border border-zinc-700 rounded-xl max-h-48 overflow-y-auto">
-                      {bankResults.map((bank) => (
-                        <button
-                          key={bank.name}
-                          type="button"
-                          onClick={() => selectBank(bank)}
-                          className="w-full flex items-center gap-3 p-3 hover:bg-zinc-700 text-left"
-                        >
-                          <img src={bank.logo} alt={bank.name} className="w-8 h-8 rounded" />
-                          <span className="text-white">{bank.name}</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="flex gap-3 mt-6">
-                <button 
-                  type="submit" 
-                  disabled={submitting}
-                  className={`flex-1 ${btnCls} bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed`}
-                >
-                  {submitting ? "Saving..." : editingId ? "Update" : "Create"}
-                </button>
-                <button 
-                  type="button" 
-                  onClick={resetForm} 
-                  disabled={submitting}
-                  className={`flex-1 ${btnCls} bg-slate-700 text-white hover:bg-slate-600 disabled:opacity-50`}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {accounts.map((account) => {
+      {/* Account Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {accounts.map((account, index) => {
           const style = TYPE_STYLES[account.type] || TYPE_STYLES.checking;
           return (
-            <div key={account.id} className={`bg-gradient-to-br ${style.bg} rounded-2xl p-6 text-white relative h-[280px] flex flex-col`}>
+            <div
+              key={account.id}
+              className={`glass-card animate-fade-in-up delay-${Math.min(index + 2, 6)}`}
+              style={{
+                padding: "24px",
+                position: "relative",
+                overflow: "hidden",
+                minHeight: "260px",
+                display: "flex",
+                flexDirection: "column",
+              }}
+            >
+              {/* Top gradient accent bar */}
+              <div
+                className="absolute top-0 left-0 right-0"
+                style={{
+                  height: "3px",
+                  background: style.gradient,
+                  opacity: 0.8,
+                }}
+              />
+
+              {/* Top row: badge + bank */}
               <div className="flex justify-between items-start mb-4">
-                <div className="min-h-[60px]">
-                  <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${style.badge}`}>
+                <div className="min-h-[56px]">
+                  <span
+                    className="inline-block px-3 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider"
+                    style={{
+                      background: style.badge,
+                      color: style.color,
+                      border: `1px solid ${style.badgeBorder}`,
+                    }}
+                  >
                     {account.type}
                   </span>
                   {account.bank_name ? (
                     <div className="flex items-center gap-2 mt-3">
                       {account.bank_logo && (
-                        <div className="bg-white rounded-lg p-1.5 shadow-md">
-                          <img src={account.bank_logo} alt={account.bank_name} className="w-8 h-8 object-contain" />
+                        <div
+                          className="p-1.5 rounded-lg"
+                          style={{
+                            background: "rgba(255,255,255,0.9)",
+                            boxShadow: "var(--shadow-sm)",
+                          }}
+                        >
+                          <img src={account.bank_logo} alt={account.bank_name} className="w-7 h-7 object-contain" />
                         </div>
                       )}
-                      <span className="text-sm opacity-90 font-medium">{account.bank_name}</span>
+                      <span className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>
+                        {account.bank_name}
+                      </span>
                     </div>
                   ) : (
-                    <div className="h-[44px]"></div>
+                    <div style={{ height: "36px" }} />
                   )}
                 </div>
               </div>
+
+              {/* Account info */}
               <div className="flex-1 flex flex-col justify-between">
                 <div>
-                  <h3 className="text-xl font-semibold mb-2 line-clamp-1">{account.name}</h3>
-                  <p className="text-3xl font-bold mb-4">
+                  <h3
+                    className="text-lg font-semibold mb-2 truncate"
+                    style={{ color: "var(--text-primary)" }}
+                  >
+                    {account.name}
+                  </h3>
+                  <p className="text-2xl font-bold" style={{ color: style.color }}>
                     {account.currency} {account.balance.toLocaleString()}
                   </p>
                 </div>
-                <div className="flex gap-2 items-center mt-auto">
+
+                {/* Action buttons */}
+                <div className="flex gap-2 items-center mt-5">
                   <button
-                    onClick={() => {
-                      // TODO: Implement add money functionality
-                      alert("Add money feature coming soon!");
+                    onClick={() => startEdit(account)}
+                    className="flex-1 flex items-center justify-center gap-2 rounded-xl p-2.5 transition-all text-sm font-medium"
+                    style={{
+                      background: style.iconBg,
+                      border: `1px solid ${style.badgeBorder}`,
+                      color: style.color,
                     }}
-                    className="flex-1 bg-white/20 hover:bg-white/30 rounded-lg p-2.5 transition-colors flex items-center justify-center"
-                    title="Add money"
+                    onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.8"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.opacity = "1"; }}
+                    title="Edit account"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                      <path d="M12 4v16m8-8H4" />
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                      <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
+                    Edit
                   </button>
                   <button
                     onClick={() => handleDelete(account.id)}
-                    className="bg-red-500/20 hover:bg-red-500/40 rounded-lg p-2.5 transition-colors"
+                    className="flex items-center justify-center rounded-xl p-2.5 transition-all"
+                    style={{
+                      background: "rgba(255, 71, 87, 0.08)",
+                      border: "1px solid rgba(255, 71, 87, 0.15)",
+                      color: "#ff6b81",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "rgba(255, 71, 87, 0.15)";
+                      e.currentTarget.style.borderColor = "rgba(255, 71, 87, 0.3)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "rgba(255, 71, 87, 0.08)";
+                      e.currentTarget.style.borderColor = "rgba(255, 71, 87, 0.15)";
+                    }}
                     title="Delete account"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                       <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
                   </button>
@@ -539,39 +558,279 @@ export default function AccountsPage() {
       </div>
 
       {accounts.length === 0 && !showForm && (
-        <div className="text-center py-12 text-zinc-500">
-          No accounts yet. Create your first account to get started.
+        <div
+          className="glass-card-static text-center animate-fade-in-up"
+          style={{ padding: "60px 24px" }}
+        >
+          <div
+            className="mx-auto mb-4 flex items-center justify-center"
+            style={{
+              width: "56px",
+              height: "56px",
+              borderRadius: "var(--radius-lg)",
+              background: "rgba(162,155,254,0.1)",
+              border: "1px solid rgba(162,155,254,0.15)",
+            }}
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{ color: "#a29bfe" }}>
+              <path d="M3 10h18M7 15h2m4 0h2M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <p className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>No accounts yet</p>
+          <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
+            Create your first account to get started.
+          </p>
+        </div>
+      )}
+
+      {/* Create/Edit Account Modal */}
+      {showForm && (
+        <div className="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div
+            className="glass-card-static animate-scale-in max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            style={{ padding: "28px" }}
+          >
+            <div className="flex justify-between items-center mb-5">
+              <h2 className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>
+                {editingId ? "Edit Account" : "Create Account"}
+              </h2>
+              <button
+                onClick={resetForm}
+                className="p-2 rounded-lg transition-all"
+                style={{ color: "var(--text-muted)" }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text-primary)"; e.currentTarget.style.background = "var(--glass-hover)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "transparent"; }}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            {error && (
+              <div
+                className="mb-4 animate-fade-in"
+                style={{
+                  padding: "12px 16px",
+                  borderRadius: "var(--radius-md)",
+                  background: "rgba(255, 71, 87, 0.08)",
+                  border: "1px solid rgba(255, 71, 87, 0.2)",
+                  color: "#ff6b81",
+                  fontSize: "0.8125rem",
+                }}
+              >
+                {error}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit}>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
+                    Account Name
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="input-premium"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
+                    Type
+                  </label>
+                  <select
+                    value={formData.type}
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                    className="input-premium"
+                  >
+                    <option value="checking">Checking</option>
+                    <option value="savings">Savings</option>
+                    <option value="credit">Credit</option>
+                    <option value="investment">Investment</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
+                    Balance
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.balance}
+                    onChange={(e) => setFormData({ ...formData, balance: e.target.value })}
+                    className="input-premium"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
+                    Currency
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.currency}
+                    onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+                    className="input-premium"
+                    maxLength={3}
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
+                    Bank Selection
+                  </label>
+                  <div className="flex gap-3 items-start">
+                    <div className="relative flex-1">
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={bankSearch}
+                          onChange={(e) => handleBankSearch(e.target.value)}
+                          className="input-premium pl-10"
+                          placeholder="Type bank name (e.g. HDFC, SBI...)"
+                        />
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                          </svg>
+                        </div>
+                      </div>
+                      
+                      {bankResults.length > 0 && (
+                        <div
+                          className="absolute z-10 w-full mt-2 max-h-60 overflow-y-auto animate-scale-in"
+                          style={{
+                            background: "var(--bg-elevated)",
+                            border: "1px solid var(--border-default)",
+                            borderRadius: "var(--radius-md)",
+                            boxShadow: "var(--shadow-lg)",
+                            backdropFilter: "blur(12px)",
+                          }}
+                        >
+                          {bankResults.map((bank) => (
+                            <button
+                              key={bank.name}
+                              type="button"
+                              onClick={() => selectBank(bank)}
+                              className="w-full flex items-center gap-3 p-3 text-left transition-all border-b border-white/5 last:border-0"
+                              style={{ color: "var(--text-primary)" }}
+                              onMouseEnter={(e) => { e.currentTarget.style.background = "var(--glass-hover)"; }}
+                              onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                            >
+                              <div className="w-8 h-8 rounded bg-white p-1 flex items-center justify-center">
+                                <img src={bank.logo} alt={bank.name} className="w-full h-full object-contain" />
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-sm font-medium">{bank.name}</span>
+                                <span className="text-[10px] text-muted opacity-60">Click to select</span>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Live Preview of Selected/Inferred Logo */}
+                    <div 
+                      className={`w-12 h-12 rounded-xl flex items-center justify-center p-2 transition-all ${formData.bank_logo ? 'bg-white shadow-glow' : 'bg-black/20 border border-dashed border-white/10'}`}
+                      title={formData.bank_name || "Bank Logo Preview"}
+                    >
+                      {formData.bank_logo ? (
+                        <img src={formData.bank_logo} alt="Preview" className="w-full h-full object-contain animate-scale-in" />
+                      ) : (
+                        <svg className="w-5 h-5 text-white/10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      )}
+                    </div>
+                  </div>
+                  {formData.bank_name && (
+                    <p className="text-[10px] mt-2 ml-1 text-accent-primary animate-fade-in flex items-center gap-1">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      Selected: {formData.bank_name}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="flex gap-3 mt-6">
+                <button 
+                  type="submit" 
+                  disabled={submitting}
+                  className="btn-primary flex-1"
+                  style={{ opacity: submitting ? 0.6 : 1, cursor: submitting ? "not-allowed" : "pointer" }}
+                >
+                  {submitting ? "Saving..." : editingId ? "Update" : "Create"}
+                </button>
+                <button 
+                  type="button" 
+                  onClick={resetForm} 
+                  disabled={submitting}
+                  className="btn-secondary flex-1"
+                  style={{ opacity: submitting ? 0.6 : 1 }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
       {/* Transfer Modal */}
       {showTransferModal && transferFromId && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 rounded-2xl p-6 max-w-md w-full border border-slate-700 shadow-2xl">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-white">Transfer Money</h2>
+        <div className="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div
+            className="glass-card-static animate-scale-in max-w-md w-full"
+            style={{ padding: "28px" }}
+          >
+            <div className="flex justify-between items-center mb-5">
+              <h2 className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>
+                Transfer Money
+              </h2>
               <button
                 onClick={closeTransferModal}
-                className="text-slate-400 hover:text-white transition-colors"
+                className="p-2 rounded-lg transition-all"
+                style={{ color: "var(--text-muted)" }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text-primary)"; e.currentTarget.style.background = "var(--glass-hover)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "transparent"; }}
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
 
             {error && (
-              <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
+              <div
+                className="mb-4 animate-fade-in"
+                style={{
+                  padding: "12px 16px",
+                  borderRadius: "var(--radius-md)",
+                  background: "rgba(255, 71, 87, 0.08)",
+                  border: "1px solid rgba(255, 71, 87, 0.2)",
+                  color: "#ff6b81",
+                  fontSize: "0.8125rem",
+                }}
+              >
                 {error}
               </div>
             )}
 
             <form onSubmit={handleTransfer} className="space-y-4">
               <div>
-                <label className="block text-sm text-zinc-400 mb-2">From Account</label>
-                <div className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-4 py-2.5 text-sm text-white">
+                <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
+                  From Account
+                </label>
+                <div
+                  className="input-premium"
+                  style={{ opacity: 0.7 }}
+                >
                   {accounts.find((a) => a.id === transferFromId)?.name}
-                  <span className="text-zinc-400 ml-2">
+                  <span className="ml-2" style={{ color: "var(--text-muted)" }}>
                     (Balance: {accounts.find((a) => a.id === transferFromId)?.currency}{" "}
                     {accounts.find((a) => a.id === transferFromId)?.balance.toLocaleString()})
                   </span>
@@ -579,11 +838,13 @@ export default function AccountsPage() {
               </div>
 
               <div>
-                <label className="block text-sm text-zinc-400 mb-2">To Account</label>
+                <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
+                  To Account
+                </label>
                 <select
                   value={transferData.to_account_id}
                   onChange={(e) => setTransferData({ ...transferData, to_account_id: e.target.value })}
-                  className={selectCls}
+                  className="input-premium"
                   required
                 >
                   <option value="">Select destination account</option>
@@ -598,25 +859,29 @@ export default function AccountsPage() {
               </div>
 
               <div>
-                <label className="block text-sm text-zinc-400 mb-2">Amount</label>
+                <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
+                  Amount
+                </label>
                 <input
                   type="number"
                   step="0.01"
                   value={transferData.amount}
                   onChange={(e) => setTransferData({ ...transferData, amount: e.target.value })}
-                  className={inputCls}
+                  className="input-premium"
                   placeholder="0.00"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-zinc-400 mb-2">Note (optional)</label>
+                <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
+                  Note (optional)
+                </label>
                 <input
                   type="text"
                   value={transferData.note}
                   onChange={(e) => setTransferData({ ...transferData, note: e.target.value })}
-                  className={inputCls}
+                  className="input-premium"
                   placeholder="e.g., Monthly savings"
                 />
               </div>
@@ -625,7 +890,8 @@ export default function AccountsPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="flex-1 px-4 py-2.5 rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="btn-primary flex-1"
+                  style={{ opacity: submitting ? 0.6 : 1, cursor: submitting ? "not-allowed" : "pointer" }}
                 >
                   {submitting ? "Processing..." : "Transfer"}
                 </button>
@@ -633,7 +899,8 @@ export default function AccountsPage() {
                   type="button"
                   onClick={closeTransferModal}
                   disabled={submitting}
-                  className="flex-1 px-4 py-2.5 rounded-lg font-medium bg-slate-700 text-white hover:bg-slate-600 disabled:opacity-50 transition-colors"
+                  className="btn-secondary flex-1"
+                  style={{ opacity: submitting ? 0.6 : 1 }}
                 >
                   Cancel
                 </button>

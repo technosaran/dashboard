@@ -8,9 +8,39 @@ export default function DashboardLayout({
 }) {
   return (
     <UserProvider>
-      <div className="flex h-screen bg-zinc-100 dark:bg-zinc-900">
+      <div className="flex h-screen" style={{ background: "var(--bg-base)" }}>
         <Sidebar />
-        <main className="flex-1 overflow-y-auto p-10">{children}</main>
+        <main
+          className="flex-1 overflow-y-auto relative"
+          style={{ padding: "36px 40px" }}
+        >
+          {/* Ambient glow orbs */}
+          <div
+            className="pointer-events-none fixed"
+            style={{
+              top: "-15%",
+              right: "-5%",
+              width: "500px",
+              height: "500px",
+              background: "radial-gradient(circle, rgba(108,92,231,0.06) 0%, transparent 70%)",
+              filter: "blur(60px)",
+              zIndex: 0,
+            }}
+          />
+          <div
+            className="pointer-events-none fixed"
+            style={{
+              bottom: "-10%",
+              left: "30%",
+              width: "400px",
+              height: "400px",
+              background: "radial-gradient(circle, rgba(0,206,201,0.04) 0%, transparent 70%)",
+              filter: "blur(60px)",
+              zIndex: 0,
+            }}
+          />
+          <div className="relative z-10">{children}</div>
+        </main>
       </div>
     </UserProvider>
   );

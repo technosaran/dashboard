@@ -17,33 +17,178 @@ export default function SettingsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Settings</h1>
-      <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Configure your preferences.</p>
+      {/* Header */}
+      <div className="animate-fade-in-up">
+        <h1 className="text-3xl font-bold" style={{ color: "var(--text-primary)" }}>
+          Settings
+        </h1>
+        <p className="mt-1 text-sm" style={{ color: "var(--text-secondary)" }}>
+          Configure your preferences and profile.
+        </p>
+      </div>
 
-      <div className="mt-8 max-w-md rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-6 shadow-sm">
-        <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 mb-4">Profile</h2>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">
-              Username
-            </label>
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => { setInput(e.target.value); setSaved(false); }}
-              className="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 px-4 py-2.5 text-sm text-zinc-900 dark:text-zinc-50 outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
-            />
+      {/* Profile Card */}
+      <div className="mt-8 max-w-lg animate-fade-in-up delay-1">
+        <div
+          className="glass-card-static"
+          style={{ padding: "28px", position: "relative", overflow: "hidden" }}
+        >
+          {/* Top accent */}
+          <div
+            className="absolute top-0 left-0 right-0"
+            style={{
+              height: "3px",
+              background: "var(--gradient-primary)",
+              opacity: 0.7,
+            }}
+          />
+
+          <div className="flex items-center gap-3 mb-6">
+            <div
+              style={{
+                width: "40px",
+                height: "40px",
+                borderRadius: "var(--radius-md)",
+                background: "rgba(162, 155, 254, 0.12)",
+                border: "1px solid rgba(162, 155, 254, 0.2)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24" style={{ color: "#a29bfe" }}>
+                <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-base font-bold" style={{ color: "var(--text-primary)" }}>
+                Profile
+              </h2>
+              <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                Manage your display name
+              </p>
+            </div>
           </div>
-          <button
-            onClick={handleSave}
-            className={`w-full rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${
-              saved
-                ? "bg-emerald-500 text-white"
-                : "bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-200"
-            }`}
-          >
-            {saved ? "✓ Saved" : "Save Changes"}
-          </button>
+
+          <div className="space-y-5">
+            <div>
+              <label
+                className="block text-xs font-semibold uppercase tracking-wider mb-2"
+                style={{ color: "var(--text-muted)" }}
+              >
+                Username
+              </label>
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => { setInput(e.target.value); setSaved(false); }}
+                className="input-premium"
+                placeholder="Enter your name"
+              />
+              <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>
+                This name appears in your dashboard greeting.
+              </p>
+            </div>
+
+            <button
+              onClick={handleSave}
+              className={saved ? "" : "btn-primary"}
+              style={saved ? {
+                width: "100%",
+                padding: "12px 20px",
+                borderRadius: "var(--radius-md)",
+                fontSize: "0.875rem",
+                fontWeight: 600,
+                cursor: "default",
+                background: "rgba(85, 239, 196, 0.12)",
+                color: "#55efc4",
+                border: "1px solid rgba(85, 239, 196, 0.25)",
+                transition: "all 0.3s",
+              } : {
+                width: "100%",
+                padding: "12px 20px",
+              }}
+            >
+              {saved ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                    <path d="M5 13l4 4L19 7" />
+                  </svg>
+                  Saved Successfully
+                </span>
+              ) : (
+                "Save Changes"
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* App Info Card */}
+      <div className="mt-5 max-w-lg animate-fade-in-up delay-2">
+        <div
+          className="glass-card-static"
+          style={{ padding: "28px", position: "relative", overflow: "hidden" }}
+        >
+          <div
+            className="absolute top-0 left-0 right-0"
+            style={{
+              height: "3px",
+              background: "var(--gradient-cool)",
+              opacity: 0.7,
+            }}
+          />
+
+          <div className="flex items-center gap-3 mb-5">
+            <div
+              style={{
+                width: "40px",
+                height: "40px",
+                borderRadius: "var(--radius-md)",
+                background: "rgba(0, 206, 201, 0.1)",
+                border: "1px solid rgba(0, 206, 201, 0.15)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24" style={{ color: "#00cec9" }}>
+                <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-base font-bold" style={{ color: "var(--text-primary)" }}>
+                About
+              </h2>
+              <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                Application info
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {[
+              { label: "Application", value: "FinanceOS" },
+              { label: "Version", value: "1.0.0" },
+              { label: "Framework", value: "Next.js" },
+              { label: "Backend", value: "Supabase" },
+            ].map((item) => (
+              <div
+                key={item.label}
+                className="flex items-center justify-between py-2.5"
+                style={{
+                  borderBottom: "1px solid var(--border-subtle)",
+                }}
+              >
+                <span className="text-sm" style={{ color: "var(--text-secondary)" }}>
+                  {item.label}
+                </span>
+                <span className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+                  {item.value}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

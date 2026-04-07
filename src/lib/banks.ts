@@ -1,32 +1,57 @@
 export type Bank = { name: string; logo: string };
 
 // Real bank logos from official sources and reliable CDNs
+// Comprehensive list of Indian Banks and Financial Institutions with original logos
 export const BANKS: Bank[] = [
-  { name: "State Bank of India",       logo: "https://www.logo.wine/a/logo/State_Bank_of_India/State_Bank_of_India-Logo.wine.svg" },
-  { name: "HDFC Bank",                 logo: "https://companieslogo.com/img/orig/HDFCBANK.NS-b2b95a5c.png" },
-  { name: "ICICI Bank",                logo: "https://companieslogo.com/img/orig/ICICIBANK.NS-44c232c6.png" },
-  { name: "Axis Bank",                 logo: "https://companieslogo.com/img/orig/AXISBANK.NS-2f4d5c0e.png" },
-  { name: "Kotak Mahindra Bank",       logo: "https://companieslogo.com/img/orig/KOTAKBANK.NS-f68f88e5.png" },
-  { name: "Punjab National Bank",      logo: "https://companieslogo.com/img/orig/PNB.NS-8e0e0e8e.png" },
-  { name: "Bank of Baroda",            logo: "https://companieslogo.com/img/orig/BANKBARODA.NS-8a4f8e8e.png" },
-  { name: "Canara Bank",               logo: "https://companieslogo.com/img/orig/CANBK.NS-8e0e0e8e.png" },
-  { name: "Union Bank of India",       logo: "https://companieslogo.com/img/orig/UNIONBANK.NS-8e0e0e8e.png" },
-  { name: "IndusInd Bank",             logo: "https://companieslogo.com/img/orig/INDUSINDBK.NS-8e0e0e8e.png" },
-  { name: "Yes Bank",                  logo: "https://companieslogo.com/img/orig/YESBANK.NS-8e0e0e8e.png" },
-  { name: "IDFC First Bank",           logo: "https://companieslogo.com/img/orig/IDFCFIRSTB.NS-8e0e0e8e.png" },
-  { name: "Federal Bank",              logo: "https://companieslogo.com/img/orig/FEDERALBNK.NS-8e0e0e8e.png" },
-  { name: "South Indian Bank",         logo: "https://companieslogo.com/img/orig/SOUTHBANK.NS-8e0e0e8e.png" },
-  { name: "Karnataka Bank",            logo: "https://companieslogo.com/img/orig/KTKBANK.NS-8e0e0e8e.png" },
-  { name: "RBL Bank",                  logo: "https://companieslogo.com/img/orig/RBLBANK.NS-8e0e0e8e.png" },
-  { name: "Bandhan Bank",              logo: "https://companieslogo.com/img/orig/BANDHANBNK.NS-8e0e0e8e.png" },
-  { name: "UCO Bank",                  logo: "https://companieslogo.com/img/orig/UCOBANK.NS-8e0e0e8e.png" },
-  { name: "Bank of India",             logo: "https://companieslogo.com/img/orig/BANKINDIA.NS-8e0e0e8e.png" },
-  { name: "Indian Bank",               logo: "https://companieslogo.com/img/orig/INDIANB.NS-8e0e0e8e.png" },
+  // Public Sector Banks
+  { name: "State Bank of India (SBI)", logo: "https://vignette.wikia.nocookie.net/logopedia/images/e/e0/State_Bank_of_India_Logo.svg" },
+  { name: "Punjab National Bank (PNB)", logo: "https://vignette.wikia.nocookie.net/logopedia/images/6/6c/Punjab_National_Bank_logo.svg" },
+  { name: "Bank of Baroda (BOB)",      logo: "https://vignette.wikia.nocookie.net/logopedia/images/3/3d/Bank_of_Baroda_logo.svg" },
+  { name: "Canara Bank",               logo: "https://vignette.wikia.nocookie.net/logopedia/images/0/0d/Canara_Bank_Logo.svg" },
+  { name: "Union Bank of India",       logo: "https://vignette.wikia.nocookie.net/logopedia/images/0/05/Union_Bank_of_India_Logo.svg" },
+  { name: "Bank of India (BOI)",       logo: "https://vignette.wikia.nocookie.net/logopedia/images/c/ca/Bank_of_India_logo.svg" },
+  { name: "Indian Bank",               logo: "https://vignette.wikia.nocookie.net/logopedia/images/f/f0/Indian_Bank_logo.svg" },
+  { name: "Central Bank of India (CBI)", logo: "https://vignette.wikia.nocookie.net/logopedia/images/7/7b/Central_Bank_of_India_logo.svg" },
+  { name: "Indian Overseas Bank (IOB)", logo: "https://vignette.wikia.nocookie.net/logopedia/images/6/66/Indian_Overseas_Bank_logo.svg" },
+  { name: "UCO Bank",                  logo: "https://vignette.wikia.nocookie.net/logopedia/images/7/7e/UCO_Bank_logo.svg" },
+  { name: "Bank of Maharashtra (BOM)", logo: "https://vignette.wikia.nocookie.net/logopedia/images/3/3a/Bank_of_Maharashtra_logo.svg" },
+  { name: "Punjab & Sind Bank (PSB)",  logo: "https://vignette.wikia.nocookie.net/logopedia/images/4/4b/Punjab_%26_Sind_Bank_logo.svg" },
+
+  // Private Sector Banks
+  { name: "HDFC Bank",                 logo: "https://vignette.wikia.nocookie.net/logopedia/images/4/4c/HDFC_Bank_logo.svg" },
+  { name: "ICICI Bank",                logo: "https://vignette.wikia.nocookie.net/logopedia/images/0/0b/ICICI_Bank_Logo.svg" },
+  { name: "Axis Bank",                 logo: "https://vignette.wikia.nocookie.net/logopedia/images/f/f6/Axis_Bank_logo.svg" },
+  { name: "Kotak Mahindra Bank",       logo: "https://vignette.wikia.nocookie.net/logopedia/images/b/b3/KotakMahindraBank_Logo.svg" },
+  { name: "IndusInd Bank",             logo: "https://vignette.wikia.nocookie.net/logopedia/images/b/b3/IndusInd_Bank_Logo.svg" },
+  { name: "Yes Bank",                  logo: "https://vignette.wikia.nocookie.net/logopedia/images/6/6f/Yes_Bank_Logo.svg" },
+  { name: "IDFC First Bank",           logo: "https://vignette.wikia.nocookie.net/logopedia/images/d/df/IDFC_FIRST_Bank_Logo.svg" },
+  { name: "Federal Bank",              logo: "https://vignette.wikia.nocookie.net/logopedia/images/4/4b/Federal_Bank_Logo.svg" },
+  { name: "South Indian Bank",         logo: "https://vignette.wikia.nocookie.net/logopedia/images/4/43/South_Indian_Bank_Logo.svg" },
+  { name: "Karnataka Bank",            logo: "https://vignette.wikia.nocookie.net/logopedia/images/b/be/Karnataka_Bank_Logo.svg" },
+  { name: "RBL Bank",                  logo: "https://vignette.wikia.nocookie.net/logopedia/images/f/f3/RBL_Bank_logo.svg" },
+  { name: "Karur Vysya Bank",          logo: "https://vignette.wikia.nocookie.net/logopedia/images/5/5e/Karur_Vysya_Bank_Logo.svg" },
+  { name: "Bandhan Bank",              logo: "https://vignette.wikia.nocookie.net/logopedia/images/8/83/Bandhan_Bank_logo.svg" },
+  { name: "IDBI Bank",                 logo: "https://vignette.wikia.nocookie.net/logopedia/images/8/87/IDBI_Bank_logo.svg" },
+  { name: "City Union Bank",           logo: "https://vignette.wikia.nocookie.net/logopedia/images/9/9e/City_Union_Bank_Logo.svg" },
+  { name: "DCB Bank",                  logo: "https://vignette.wikia.nocookie.net/logopedia/images/c/cc/DCB_Bank_logo.svg" },
+  { name: "Tamilnad Mercantile Bank",  logo: "https://vignette.wikia.nocookie.net/logopedia/images/b/b8/Tamilnad_Mercantile_Bank_logo.svg" },
+  { name: "J&K Bank",                  logo: "https://vignette.wikia.nocookie.net/logopedia/images/f/fd/J%26K_Bank_logo.svg" },
+
+  // Payments / Small Finance Banks
   { name: "PayTM Payments Bank",       logo: "https://logo.clearbit.com/paytm.com" },
   { name: "Airtel Payments Bank",      logo: "https://logo.clearbit.com/airtel.in" },
-  { name: "Zerodha",                   logo: "https://zerodha.com/static/images/logo.svg" },
-  { name: "Groww",                     logo: "https://assets-netstorage.groww.in/web-assets/billion_groww_desktop/prod/_next/static/media/logo.8b37e88c.svg" },
-  { name: "Upstox",                    logo: "https://upstox.com/app/themes/upstox/dist/img/logo/logo.svg" },
+  { name: "AU Small Finance Bank",     logo: "https://vignette.wikia.nocookie.net/logopedia/images/e/e0/AU_Small_Finance_Bank_logo.svg" },
+  { name: "Equitas Small Finance Bank",logo: "https://vignette.wikia.nocookie.net/logopedia/images/3/3b/Equitas_Small_Finance_Bank_logo.svg" },
+  { name: "Ujjivan Small Finance Bank",logo: "https://vignette.wikia.nocookie.net/logopedia/images/4/4b/Ujjivan_Small_Finance_Bank_logo.svg" },
+  { name: "India Post Payments Bank",  logo: "https://vignette.wikia.nocookie.net/logopedia/images/a/a2/India_Post_Payments_Bank_logo.svg" },
+  { name: "Fino Payments Bank",        logo: "https://vignette.wikia.nocookie.net/logopedia/images/9/91/Fino_Payments_Bank_logo.svg" },
+  { name: "Jio Payments Bank",         logo: "https://vignette.wikia.nocookie.net/logopedia/images/6/6a/Jio_Payments_Bank_Logo.svg" },
+
+  // Investment / International
+  { name: "Zerodha",                   logo: "https://logo.clearbit.com/zerodha.com" },
+  { name: "Groww",                     logo: "https://logo.clearbit.com/groww.in" },
+  { name: "Upstox",                    logo: "https://logo.clearbit.com/upstox.com" },
+  { name: "DBS Bank",                  logo: "https://vignette.wikia.nocookie.net/logopedia/images/0/00/DBS_Bank-Logo.wine.svg" },
 ];
 
 export function searchBanks(query: string): Bank[] {
