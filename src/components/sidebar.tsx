@@ -38,7 +38,7 @@ const nav = [
   },
 ];
 
-export default function Sidebar({ toggleMobileMenu }: { toggleMobileMenu?: () => void }) {
+export default function Sidebar() {
   const pathname = usePathname();
 
   async function handleLogout() {
