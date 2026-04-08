@@ -39,12 +39,12 @@ export const BANKS: Bank[] = [
   { name: "Dhanlaxmi Bank",            logo: "https://logo.clearbit.com/dhanbank.com" },
 
   // International Banks (India Operations)
-  { name: "HSBC India",                logo: "https://logo.clearbit.com/hsbc.co.in" },
+  { name: "HSBC India",                logo: "https://logo.clearbit.com/hsbc.com" },
   { name: "Standard Chartered",        logo: "https://logo.clearbit.com/sc.com" },
-  { name: "Citibank India",            logo: "https://logo.clearbit.com/citibank.co.in" },
+  { name: "Citibank India",            logo: "https://logo.clearbit.com/citi.com" },
   { name: "DBS Bank India",            logo: "https://logo.clearbit.com/dbs.com" },
   { name: "Deutsche Bank India",       logo: "https://logo.clearbit.com/db.com" },
-  { name: "Barclays India",            logo: "https://logo.clearbit.com/barclays.in" },
+  { name: "Barclays India",            logo: "https://logo.clearbit.com/barclays.com" },
   { name: "J.P. Morgan India",         logo: "https://logo.clearbit.com/jpmorgan.com" },
 
   // Small Finance & Payments Banks
@@ -54,7 +54,7 @@ export const BANKS: Bank[] = [
   { name: "ESAF Small Finance Bank",   logo: "https://logo.clearbit.com/esafbank.com" },
   { name: "Suryoday Small Finance Bank",logo: "https://logo.clearbit.com/suryodaybank.com" },
   { name: "Jana Small Finance Bank",   logo: "https://logo.clearbit.com/janabank.com" },
-  { name: "Utkarsh Small Finance Bank",logo: "https://logo.clearbit.com/utkarsh.bank" },
+  { name: "Utkarsh Small Finance Bank",logo: "https://logo.clearbit.com/utkarshbank.in" },
   { name: "Capital Small Finance Bank",logo: "https://logo.clearbit.com/capitalbank.co.in" },
   { name: "PayTM Payments Bank",       logo: "https://logo.clearbit.com/paytm.com" },
   { name: "Airtel Payments Bank",      logo: "https://logo.clearbit.com/airtel.in" },
