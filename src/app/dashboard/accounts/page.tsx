@@ -4,152 +4,140 @@ import { useCallback, useEffect, useState } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { createClient } from "@/lib/supabase-browser";
 import type { Tables } from "@/lib/database.types";
-import { BANKS, searchBanks, type Bank } from "@/lib/banks";
+import { searchBanks, type Bank } from "@/lib/banks";
 import { createAccount, updateAccount, deleteAccount, createTransfer, adjustBalance } from "./actions";
 
 type Account = Tables<"accounts">;
 
 const supabase = createClient();
 
-// Comprehensive Domain Map for Indian Banks to ensure "Real Logos"
-const BANK_DOMAINS: Record<string, string> = {
-  "sbi": "sbi.co.in",
-  "state bank": "sbi.co.in",
-  "hdfc": "hdfcbank.com",
-  "icici": "icicibank.com",
-  "axis": "axisbank.com",
-  "kotak": "kotak.com",
-  "pnb": "pnbindia.in",
-  "punjab national": "pnbindia.in",
-  "bob": "bankofbaroda.in",
-  "bank of baroda": "bankofbaroda.in",
-  "canara": "canarabank.com",
-  "union bank": "unionbankofindia.co.in",
-  "boi": "bankofindia.co.in",
-  "bank of india": "bankofindia.co.in",
-  "idbi": "idbibank.in",
-  "yes bank": "yesbank.in",
-  "idfc": "idfcfirstbank.com",
-  "rbl": "rblbank.com",
-  "indusind": "indusind.com",
-  "federal bank": "federalbank.co.in",
-  "south indian": "southindianbank.com",
-  "karnataka bank": "karnatakabank.com",
-  "uco bank": "ucobank.com",
-  "indian bank": "indianbank.in",
-  "central bank": "centralbankofindia.co.in",
-  "indian overseas": "iob.in",
-  "bank of maharashtra": "bankofmaharashtra.in",
-  "punjab & sind": "punjabandsindbank.co.in",
-  "karur vysya": "kvb.co.in",
-  "bandhan": "bandhanbank.com",
-  "city union": "cityunionbank.com",
-  "dcb bank": "dcbbank.com",
-  "tamilnad mercantile": "tmb.in",
-  "j&k bank": "jkbank.com",
-  "csb bank": "csb.co.in",
-  "dhanlaxmi": "dhanbank.com",
-  "hsbc": "hsbc.co.in",
-  "standard chartered": "sc.com",
-  "citibank": "citibank.co.in",
-  "dbs": "dbs.com",
-  "deutsche": "db.com",
-  "barclays": "barclays.in",
-  "jpmorgan": "jpmorgan.com",
-  "au small": "aubank.in",
-  "equitas": "equitasbank.com",
-  "ujjivan": "ujjivansfb.in",
-  "esaf": "esafbank.com",
-  "jana small": "janabank.com",
-  "paytm": "paytm.com",
-  "airtel": "airtel.in",
-  "jio": "jio.com",
-  "fino": "finobank.com",
-  "nsdl": "nsdlbank.com",
-  "jupiter": "jupiter.money",
-  "fi money": "fi.money",
-  "slice": "sliceit.com",
-  "onecard": "getonecard.com",
-  "mobikwik": "mobikwik.com",
-  "phonepe": "phonepe.com",
-  "google pay": "google.com",
-  "amazon pay": "amazon.in",
-  "zerodha": "zerodha.com",
-  "upstox": "upstox.com",
-  "groww": "groww.in",
-  "angel one": "angelone.in",
-  "kuvera": "kuvera.in",
-  "indmoney": "indmoney.com"
+// Curated high-quality logo URLs for Indian banks and financial institutions
+const BANK_LOGO_URLS: Record<string, string[]> = {
+  // Major Public Sector Banks
+  "state bank of india (sbi)": ["https://logo.clearbit.com/sbi.co.in", "https://www.google.com/s2/favicons?domain=sbi.co.in&sz=128"],
+  "punjab national bank (pnb)": ["https://logo.clearbit.com/pnbindia.in", "https://www.google.com/s2/favicons?domain=pnbindia.in&sz=128"],
+  "bank of baroda (bob)": ["https://logo.clearbit.com/bankofbaroda.in", "https://www.google.com/s2/favicons?domain=bankofbaroda.in&sz=128"],
+  "canara bank": ["https://logo.clearbit.com/canarabank.com", "https://www.google.com/s2/favicons?domain=canarabank.com&sz=128"],
+  "union bank of india": ["https://logo.clearbit.com/unionbankofindia.co.in", "https://www.google.com/s2/favicons?domain=unionbankofindia.co.in&sz=128"],
+  "bank of india (boi)": ["https://logo.clearbit.com/bankofindia.co.in", "https://www.google.com/s2/favicons?domain=bankofindia.co.in&sz=128"],
+  "indian bank": ["https://logo.clearbit.com/indianbank.in", "https://www.google.com/s2/favicons?domain=indianbank.in&sz=128"],
+  "central bank of india": ["https://logo.clearbit.com/centralbankofindia.co.in", "https://www.google.com/s2/favicons?domain=centralbankofindia.co.in&sz=128"],
+  "indian overseas bank": ["https://logo.clearbit.com/iob.in", "https://www.google.com/s2/favicons?domain=iob.in&sz=128"],
+  "uco bank": ["https://logo.clearbit.com/ucobank.com", "https://www.google.com/s2/favicons?domain=ucobank.com&sz=128"],
+  "bank of maharashtra": ["https://logo.clearbit.com/bankofmaharashtra.in", "https://www.google.com/s2/favicons?domain=bankofmaharashtra.in&sz=128"],
+  "punjab & sind bank": ["https://logo.clearbit.com/punjabandsindbank.co.in", "https://www.google.com/s2/favicons?domain=punjabandsindbank.co.in&sz=128"],
+  // Major Private Sector Banks
+  "hdfc bank": ["https://logo.clearbit.com/hdfcbank.com", "https://www.google.com/s2/favicons?domain=hdfcbank.com&sz=128"],
+  "icici bank": ["https://logo.clearbit.com/icicibank.com", "https://www.google.com/s2/favicons?domain=icicibank.com&sz=128"],
+  "axis bank": ["https://logo.clearbit.com/axisbank.com", "https://www.google.com/s2/favicons?domain=axisbank.com&sz=128"],
+  "kotak mahindra bank": ["https://logo.clearbit.com/kotak.com", "https://www.google.com/s2/favicons?domain=kotak.com&sz=128"],
+  "indusind bank": ["https://logo.clearbit.com/indusind.com", "https://www.google.com/s2/favicons?domain=indusind.com&sz=128"],
+  "yes bank": ["https://logo.clearbit.com/yesbank.in", "https://www.google.com/s2/favicons?domain=yesbank.in&sz=128"],
+  "idfc first bank": ["https://logo.clearbit.com/idfcfirstbank.com", "https://www.google.com/s2/favicons?domain=idfcfirstbank.com&sz=128"],
+  "federal bank": ["https://logo.clearbit.com/federalbank.co.in", "https://www.google.com/s2/favicons?domain=federalbank.co.in&sz=128"],
+  "south indian bank": ["https://logo.clearbit.com/southindianbank.com", "https://www.google.com/s2/favicons?domain=southindianbank.com&sz=128"],
+  "karnataka bank": ["https://logo.clearbit.com/karnatakabank.com", "https://www.google.com/s2/favicons?domain=karnatakabank.com&sz=128"],
+  "rbl bank": ["https://logo.clearbit.com/rblbank.com", "https://www.google.com/s2/favicons?domain=rblbank.com&sz=128"],
+  "karur vysya bank": ["https://logo.clearbit.com/kvb.co.in", "https://www.google.com/s2/favicons?domain=kvb.co.in&sz=128"],
+  "bandhan bank": ["https://logo.clearbit.com/bandhanbank.com", "https://www.google.com/s2/favicons?domain=bandhanbank.com&sz=128"],
+  "idbi bank": ["https://logo.clearbit.com/idbibank.in", "https://www.google.com/s2/favicons?domain=idbibank.in&sz=128"],
+  "city union bank": ["https://logo.clearbit.com/cityunionbank.com", "https://www.google.com/s2/favicons?domain=cityunionbank.com&sz=128"],
+  "dcb bank": ["https://logo.clearbit.com/dcbbank.com", "https://www.google.com/s2/favicons?domain=dcbbank.com&sz=128"],
+  "tamilnad mercantile bank": ["https://logo.clearbit.com/tmb.in", "https://www.google.com/s2/favicons?domain=tmb.in&sz=128"],
+  "j&k bank": ["https://logo.clearbit.com/jkbank.com", "https://www.google.com/s2/favicons?domain=jkbank.com&sz=128"],
+  "csb bank": ["https://logo.clearbit.com/csb.co.in", "https://www.google.com/s2/favicons?domain=csb.co.in&sz=128"],
+  "dhanlaxmi bank": ["https://logo.clearbit.com/dhanbank.com", "https://www.google.com/s2/favicons?domain=dhanbank.com&sz=128"],
+  // International Banks
+  "hsbc india": ["https://logo.clearbit.com/hsbc.com", "https://www.google.com/s2/favicons?domain=hsbc.com&sz=128"],
+  "standard chartered": ["https://logo.clearbit.com/sc.com", "https://www.google.com/s2/favicons?domain=sc.com&sz=128"],
+  "citibank india": ["https://logo.clearbit.com/citi.com", "https://www.google.com/s2/favicons?domain=citi.com&sz=128"],
+  "dbs bank india": ["https://logo.clearbit.com/dbs.com", "https://www.google.com/s2/favicons?domain=dbs.com&sz=128"],
+  "deutsche bank india": ["https://logo.clearbit.com/db.com", "https://www.google.com/s2/favicons?domain=db.com&sz=128"],
+  "barclays india": ["https://logo.clearbit.com/barclays.com", "https://www.google.com/s2/favicons?domain=barclays.com&sz=128"],
+  "j.p. morgan india": ["https://logo.clearbit.com/jpmorgan.com", "https://www.google.com/s2/favicons?domain=jpmorgan.com&sz=128"],
+  // Small Finance & Payments Banks
+  "au small finance bank": ["https://logo.clearbit.com/aubank.in", "https://www.google.com/s2/favicons?domain=aubank.in&sz=128"],
+  "equitas small finance bank": ["https://logo.clearbit.com/equitasbank.com", "https://www.google.com/s2/favicons?domain=equitasbank.com&sz=128"],
+  "ujjivan small finance bank": ["https://logo.clearbit.com/ujjivansfb.in", "https://www.google.com/s2/favicons?domain=ujjivansfb.in&sz=128"],
+  "esaf small finance bank": ["https://logo.clearbit.com/esafbank.com", "https://www.google.com/s2/favicons?domain=esafbank.com&sz=128"],
+  "suryoday small finance bank": ["https://logo.clearbit.com/suryodaybank.com", "https://www.google.com/s2/favicons?domain=suryodaybank.com&sz=128"],
+  "jana small finance bank": ["https://logo.clearbit.com/janabank.com", "https://www.google.com/s2/favicons?domain=janabank.com&sz=128"],
+  "utkarsh small finance bank": ["https://logo.clearbit.com/utkarshbank.in", "https://www.google.com/s2/favicons?domain=utkarshbank.in&sz=128"],
+  "capital small finance bank": ["https://logo.clearbit.com/capitalbank.co.in", "https://www.google.com/s2/favicons?domain=capitalbank.co.in&sz=128"],
+  "paytm payments bank": ["https://logo.clearbit.com/paytm.com", "https://www.google.com/s2/favicons?domain=paytm.com&sz=128"],
+  "airtel payments bank": ["https://logo.clearbit.com/airtel.in", "https://www.google.com/s2/favicons?domain=airtel.in&sz=128"],
+  "jio payments bank": ["https://logo.clearbit.com/jio.com", "https://www.google.com/s2/favicons?domain=jio.com&sz=128"],
+  "india post payments bank": ["https://logo.clearbit.com/ippbonline.com", "https://www.google.com/s2/favicons?domain=ippbonline.com&sz=128"],
+  "fino payments bank": ["https://logo.clearbit.com/finobank.com", "https://www.google.com/s2/favicons?domain=finobank.com&sz=128"],
+  "nsdl payments bank": ["https://logo.clearbit.com/nsdlbank.com", "https://www.google.com/s2/favicons?domain=nsdlbank.com&sz=128"],
+  // Neo-Banks & Fintech
+  "jupiter": ["https://logo.clearbit.com/jupiter.money", "https://www.google.com/s2/favicons?domain=jupiter.money&sz=128"],
+  "fi money": ["https://logo.clearbit.com/fi.money", "https://www.google.com/s2/favicons?domain=fi.money&sz=128"],
+  "niyo": ["https://logo.clearbit.com/goniyo.com", "https://www.google.com/s2/favicons?domain=goniyo.com&sz=128"],
+  "slice": ["https://logo.clearbit.com/sliceit.com", "https://www.google.com/s2/favicons?domain=sliceit.com&sz=128"],
+  "uni cards": ["https://logo.clearbit.com/uni.cards", "https://www.google.com/s2/favicons?domain=uni.cards&sz=128"],
+  "onecard": ["https://logo.clearbit.com/getonecard.com", "https://www.google.com/s2/favicons?domain=getonecard.com&sz=128"],
+  "fampay": ["https://logo.clearbit.com/fampay.in", "https://www.google.com/s2/favicons?domain=fampay.in&sz=128"],
+  "mobikwik": ["https://logo.clearbit.com/mobikwik.com", "https://www.google.com/s2/favicons?domain=mobikwik.com&sz=128"],
+  "phonepe": ["https://logo.clearbit.com/phonepe.com", "https://www.google.com/s2/favicons?domain=phonepe.com&sz=128"],
+  "google pay": ["https://logo.clearbit.com/pay.google.com", "https://www.google.com/s2/favicons?domain=pay.google.com&sz=128"],
+  "amazon pay": ["https://logo.clearbit.com/amazon.in", "https://www.google.com/s2/favicons?domain=amazon.in&sz=128"],
+  // Investment Platforms
+  "zerodha": ["https://logo.clearbit.com/zerodha.com", "https://www.google.com/s2/favicons?domain=zerodha.com&sz=128"],
+  "upstox": ["https://logo.clearbit.com/upstox.com", "https://www.google.com/s2/favicons?domain=upstox.com&sz=128"],
+  "groww": ["https://logo.clearbit.com/groww.in", "https://www.google.com/s2/favicons?domain=groww.in&sz=128"],
+  "angel one": ["https://logo.clearbit.com/angelone.in", "https://www.google.com/s2/favicons?domain=angelone.in&sz=128"],
+  "kuvera": ["https://logo.clearbit.com/kuvera.in", "https://www.google.com/s2/favicons?domain=kuvera.in&sz=128"],
+  "indmoney": ["https://logo.clearbit.com/indmoney.com", "https://www.google.com/s2/favicons?domain=indmoney.com&sz=128"],
+  "et money": ["https://logo.clearbit.com/etmoney.com", "https://www.google.com/s2/favicons?domain=etmoney.com&sz=128"],
+  "smallcase": ["https://logo.clearbit.com/smallcase.com", "https://www.google.com/s2/favicons?domain=smallcase.com&sz=128"],
+  "wealthy": ["https://logo.clearbit.com/wealthy.in", "https://www.google.com/s2/favicons?domain=wealthy.in&sz=128"],
 };
 
+function getBankLogoUrls(name: string): string[] {
+  const sn = name.toLowerCase().trim();
+  // Exact match first
+  if (BANK_LOGO_URLS[sn]) return BANK_LOGO_URLS[sn];
+  // Partial match
+  const key = Object.keys(BANK_LOGO_URLS).find(k => sn.includes(k) || k.includes(sn));
+  if (key) return BANK_LOGO_URLS[key];
+  // Fallback: derive domain from name
+  const domain = sn.replace(/\s*\(.*?\)\s*/g, '').replace(/\s+bank.*/i, '').trim().replace(/\s+/g, '') + "bank.com";
+  return [
+    `https://logo.clearbit.com/${domain}`,
+    `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
+  ];
+}
+
 const BankLogo = ({ name, size = "w-7 h-7", className = "" }: { name: string | null; size?: string; className?: string }) => {
-  const [imgSrc, setImgSrc] = useState<string | null>(null);
-  const [retryAttempt, setRetryAttempt] = useState(0);
-  const [currentDomain, setCurrentDomain] = useState<string>("");
+  const [srcIndex, setSrcIndex] = useState(0);
+  const [urls, setUrls] = useState<string[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
-  
+
   const sn = (name || "").toLowerCase().trim();
 
   useEffect(() => {
     if (!name || sn === "cash") {
-      setImgSrc(null);
-      setCurrentDomain("");
+      setUrls([]);
+      setSrcIndex(0);
       setIsLoaded(false);
       return;
     }
-
-    // Determine the best domain to use
-    let domain = "";
-
-    // 1. Check official list
-    const officialBank = BANKS.find(b => 
-      b.name.toLowerCase().includes(sn) || sn.includes(b.name.toLowerCase())
-    );
-
-    if (officialBank) {
-      domain = officialBank.logo.split('logo.clearbit.com/')[1] || "sbi.co.in";
-    } else {
-      // 2. Check domain map
-      const domainKey = Object.keys(BANK_DOMAINS).find(key => 
-        sn === key || sn.includes(key)
-      );
-      if (domainKey) {
-        domain = BANK_DOMAINS[domainKey];
-      } else {
-        // 3. Intelligent Guess
-        domain = sn.replace(/\s+bank.*/i, '').trim().replace(/\s+/g, '') + "bank.com";
-      }
-    }
-
-    setCurrentDomain(domain);
-    // START with Clearbit (Higher quality logos)
-    setImgSrc(`https://logo.clearbit.com/${domain}`);
-    setRetryAttempt(0);
+    const logoUrls = getBankLogoUrls(name);
+    setUrls(logoUrls);
+    setSrcIndex(0);
     setIsLoaded(false);
   }, [name, sn]);
 
+  const imgSrc = urls[srcIndex] ?? null;
+
   const handleImgError = () => {
-    if (!currentDomain || retryAttempt > 3) return;
-
-    const nextAttempt = retryAttempt + 1;
-    const timestamp = Date.now();
     setIsLoaded(false);
-
-    if (nextAttempt === 1) {
-      // Fallback 1: Google HD Favicon
-      setImgSrc(`https://www.google.com/s2/favicons?domain=${currentDomain}&sz=256`);
-    } else if (nextAttempt === 2) {
-      // Fallback 2: DuckDuckGo Icons
-      setImgSrc(`https://icons.duckduckgo.com/ip3/${currentDomain}.ico`);
-    } else if (nextAttempt === 3) {
-      // Fallback 3: Combined secondary search
-      const cleanName = sn.replace(/\s+bank.*/i, '').trim();
-      setImgSrc(`https://www.google.com/s2/favicons?domain=${cleanName}.com&sz=128&c=${timestamp}`);
+    if (srcIndex + 1 < urls.length) {
+      setSrcIndex(srcIndex + 1);
     } else {
-      setImgSrc(null);
+      setSrcIndex(urls.length); // beyond array → show initials
     }
-    
-    setRetryAttempt(nextAttempt);
   };
 
   const getInitials = (n: string) => {
@@ -185,10 +173,10 @@ const BankLogo = ({ name, size = "w-7 h-7", className = "" }: { name: string | n
       {/* Image Layer */}
       {imgSrc && (
         <div className={`absolute inset-0 bg-white p-1 transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
-          <img 
+          <img
             key={imgSrc}
-            src={imgSrc} 
-            alt={name || "Bank"} 
+            src={imgSrc}
+            alt={name ? `${name} logo` : "Bank logo"}
             className="w-full h-full object-contain"
             onLoad={() => setIsLoaded(true)}
             onError={handleImgError}
@@ -625,34 +613,6 @@ export default function AccountsPage() {
                   paddingAngle={5}
                   dataKey="value"
                   stroke="none"
-                  labelLine={false}
-                  label={({
-                    cx,
-                    cy,
-                    midAngle,
-                    innerRadius,
-                    outerRadius,
-                    percent,
-                  }) => {
-                    if (midAngle === undefined || percent === undefined) return null;
-                    const radius = Number(innerRadius) + (Number(outerRadius) - Number(innerRadius)) * 0.5;
-                    const x = cx + radius * Math.cos(-midAngle * (Math.PI / 180));
-                    const y = cy + radius * Math.sin(-midAngle * (Math.PI / 180));
-
-                    return percent > 0.05 ? (
-                      <text
-                        x={x}
-                        y={y}
-                        fill="white"
-                        textAnchor="middle"
-                        dominantBaseline="central"
-                        className="text-[10px] font-black"
-                        style={{ pointerEvents: 'none', textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
-                      >
-                        {`${(percent * 100).toFixed(0)}%`}
-                      </text>
-                    ) : null;
-                  }}
                 >
                   {chartData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
