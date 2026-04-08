@@ -4,39 +4,159 @@ import { useCallback, useEffect, useState } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { createClient } from "@/lib/supabase-browser";
 import type { Tables } from "@/lib/database.types";
-import { searchBanks, type Bank } from "@/lib/banks";
+import { BANKS, searchBanks, type Bank } from "@/lib/banks";
 import { createAccount, updateAccount, deleteAccount, createTransfer, adjustBalance } from "./actions";
 
 type Account = Tables<"accounts">;
 
 const supabase = createClient();
 
-const BankLogo = ({ src, name, size = "w-7 h-7", className = "" }: { src?: string | null; name: string | null; size?: string; className?: string }) => {
-  const [error, setError] = useState(false);
+// Comprehensive Domain Map for Indian Banks to ensure "Real Logos"
+const BANK_DOMAINS: Record<string, string> = {
+  "sbi": "sbi.co.in",
+  "state bank": "sbi.co.in",
+  "hdfc": "hdfcbank.com",
+  "icici": "icicibank.com",
+  "axis": "axisbank.com",
+  "kotak": "kotak.com",
+  "pnb": "pnbindia.in",
+  "punjab national": "pnbindia.in",
+  "bob": "bankofbaroda.in",
+  "bank of baroda": "bankofbaroda.in",
+  "canara": "canarabank.com",
+  "union bank": "unionbankofindia.co.in",
+  "boi": "bankofindia.co.in",
+  "bank of india": "bankofindia.co.in",
+  "idbi": "idbi.com",
+  "yes bank": "yesbank.in",
+  "idfc": "idfcfirstbank.com",
+  "rbl": "rblbank.com",
+  "indusind": "indusind.com",
+  "federal bank": "federalbank.co.in",
+  "south indian": "southindianbank.com",
+  "karnataka bank": "karnatakabank.com",
+  "uco bank": "ucobank.com",
+  "indian bank": "indianbank.in",
+  "central bank": "centralbankofindia.co.in",
+  "jupiter": "jupiter.money",
+  "fi money": "fi.money",
+  "slice": "sliceit.com",
+  "onecard": "getonecard.com",
+  "paytm": "paytm.com",
+  "airtel": "airtel.in",
+  "mobikwik": "mobikwik.com",
+  "phonepe": "phonepe.com",
+  "google pay": "google.com",
+  "amazon pay": "amazon.in"
+};
+
+const BankLogo = ({ name, size = "w-7 h-7", className = "" }: { name: string | null; size?: string; className?: string }) => {
+  const [imgSrc, setImgSrc] = useState<string | null>(null);
+  const [retryAttempt, setRetryAttempt] = useState(0);
   
-  if (!src || error) {
+  const sn = (name || "").toLowerCase().trim();
+
+  useEffect(() => {
+    if (!name || sn === "cash") {
+      setImgSrc(null);
+      return;
+    }
+
+    // 1. Try to find the exact official logo from our master list
+    const officialBank = BANKS.find(b => 
+      b.name.toLowerCase().includes(sn) || sn.includes(b.name.toLowerCase())
+    );
+
+    if (officialBank) {
+      setImgSrc(`https://www.google.com/s2/favicons?domain=${officialBank.logo.split('logo.clearbit.com/')[1] || 'sbi.co.in'}&sz=256`);
+      return;
+    }
+
+    // 2. Try the Domain Map with HD Google search primary
+    const domainKey = Object.keys(BANK_DOMAINS).find(key => 
+      sn === key || sn.includes(key)
+    );
+
+    if (domainKey) {
+      setImgSrc(`https://www.google.com/s2/favicons?domain=${BANK_DOMAINS[domainKey]}&sz=256`);
+    } else {
+      // 3. Intelligent Guess
+      const clean = sn.replace(/\s+bank.*/i, '').trim().replace(/\s+/g, '');
+      if (clean.length > 1) {
+        setImgSrc(`https://www.google.com/s2/favicons?domain=${clean}bank.com&sz=256`);
+      }
+    }
+  }, [name, sn]);
+
+  const handleImgError = () => {
+    if (!name || retryAttempt > 2) return;
+
+    // Fallback Sequence: HD Google -> DuckDuckGo -> Clearbit
+    const timestamp = Date.now();
+    if (retryAttempt === 0) {
+      const currentUrl = imgSrc || "";
+      let domain = "";
+      try {
+        domain = currentUrl.split('logo.clearbit.com/')[1]?.split('?')[0] || "";
+      } catch { domain = ""; }
+      
+      if (domain) {
+        setImgSrc(`https://www.google.com/s2/favicons?domain=${domain}&sz=256&c=${timestamp}`);
+      } else {
+        const clean = sn.replace(/\s+bank.*/i, '').trim().replace(/\s+/g, '');
+        setImgSrc(`https://www.google.com/s2/favicons?domain=${clean}bank.com&sz=256&c=${timestamp}`);
+      }
+      setRetryAttempt(1);
+    } else if (retryAttempt === 1) {
+      const clean = sn.replace(/\s+bank.*/i, '').trim().replace(/\s+/g, '');
+      setImgSrc(`https://icons.duckduckgo.com/ip3/${clean}bank.com.ico?sz=256&c=${timestamp}`);
+      setRetryAttempt(2);
+    } else {
+      setImgSrc(null);
+    }
+  };
+
+  const getInitials = (n: string) => {
+    const words = n.split(' ').filter(w => !['bank', 'of', 'india', 'pvt', 'ltd', '&'].includes(w.toLowerCase()));
+    if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase();
+    return n.substring(0, 2).toUpperCase();
+  };
+
+  if (sn === "cash") {
     return (
-      <div 
-        className={`${size} ${className} rounded-lg flex items-center justify-center font-bold text-[10px]`}
-        style={{ 
-          background: "rgba(108, 92, 231, 0.12)",
-          color: "#a29bfe",
-          border: "1px solid rgba(108, 92, 231, 0.2)"
-        }}
-      >
-        {name?.substring(0, 2).toUpperCase() || "BK"}
+      <div className={`${size} ${className} flex items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold text-xs ring-1 ring-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.2)]`}>
+        ₹
       </div>
     );
   }
-  
+
+  if (imgSrc) {
+    return (
+      <div className={`${size} ${className} relative flex items-center justify-center rounded-full bg-white overflow-hidden shadow-md ring-2 ring-white/20 p-1`}>
+        <img 
+          key={imgSrc}
+          src={imgSrc} 
+          alt={name || "Bank"} 
+          className="w-full h-full object-contain"
+          onError={handleImgError}
+          referrerPolicy="no-referrer"
+        />
+      </div>
+    );
+  }
+
   return (
-    <div className={`${size} ${className} rounded-lg bg-white/90 p-1 flex items-center justify-center shadow-sm`}>
-      <img 
-        src={src} 
-        alt={name || "Bank"} 
-        className="w-full h-full object-contain" 
-        onError={() => setError(true)} 
-      />
+    <div 
+      className={`${size} ${className} flex items-center justify-center rounded-full font-black shadow-xl ring-2 ring-white/10 text-white overflow-hidden relative`}
+      style={{ 
+        background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
+        fontSize: size.includes('w-12') ? '16px' : size.includes('w-9') ? '12px' : '10px'
+      }}
+    >
+      <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.4),transparent)]" />
+      <span className="relative z-10" style={{ textShadow: "0 2px 4px rgba(0,0,0,0.3)" }}>
+        {getInitials(name || "BK")}
+      </span>
     </div>
   );
 };
@@ -408,16 +528,16 @@ export default function AccountsPage() {
   return (
     <div className="max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex justify-between items-center mb-8 animate-fade-in-up">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 animate-fade-in-up gap-4">
         <div>
-          <h1 className="text-3xl font-bold" style={{ color: "var(--text-primary)" }}>
+          <h1 className="text-4xl font-black tracking-tight" style={{ color: "var(--text-primary)" }}>
             Accounts
           </h1>
-          <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
-            Manage your financial accounts
+          <p className="text-sm mt-1.5 font-medium" style={{ color: "var(--text-muted)" }}>
+            Manage & monitor your financial footprint
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
           <button
             onClick={() => {
               if (accounts.length < 2) {
@@ -430,19 +550,19 @@ export default function AccountsPage() {
               setError(null);
             }}
             disabled={accounts.length < 2}
-            className="btn-secondary flex items-center gap-2"
+            className="btn-secondary flex-1 md:flex-none flex items-center justify-center gap-2.5 h-11 px-5"
             style={{ opacity: accounts.length < 2 ? 0.5 : 1, cursor: accounts.length < 2 ? "not-allowed" : "pointer" }}
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
               <path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
             </svg>
             Transfer
           </button>
           <button
             onClick={() => setShowForm(!showForm)}
-            className="btn-primary flex items-center gap-2"
+            className="btn-primary flex-1 md:flex-none flex items-center justify-center gap-2.5 h-11 px-5"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
               <path d="M12 4v16m8-8H4" />
             </svg>
             New Account
@@ -452,99 +572,105 @@ export default function AccountsPage() {
 
       {/* Total Balance Overview with Chart */}
       {accounts.length > 0 && (
-        <div className="glass-card-static animate-fade-in-up delay-1" style={{ padding: "20px 24px", marginBottom: "24px" }}>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" style={{ minHeight: "280px" }}>
-            <div className="flex flex-col justify-center">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="status-dot" style={{ width: "6px", height: "6px" }} />
-                <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
-                  Portfolio Overview
-                </p>
-              </div>
-              <p className="text-3xl font-bold mb-4 gradient-text">
-                ₹{totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </p>
-              <div className="flex-1 overflow-y-auto pr-1 space-y-1.5" style={{ scrollbarWidth: "thin", maxHeight: "180px" }}>
-                {chartData.map((item, index) => (
-                  <div
-                    key={`${item.name}-${index}`}
-                    className="flex items-center justify-between rounded-lg p-2.5 transition-all cursor-default"
-                    style={{
-                      background: "rgba(15, 20, 50, 0.4)",
-                      border: "1px solid var(--border-subtle)",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "rgba(99, 115, 255, 0.08)";
-                      e.currentTarget.style.borderColor = "var(--border-default)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "rgba(15, 20, 50, 0.4)";
-                      e.currentTarget.style.borderColor = "var(--border-subtle)";
-                    }}
-                  >
-                    <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                      <div
-                        className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: item.color, boxShadow: `0 0 6px ${item.color}40` }}
-                      />
-                      <div className="flex flex-col min-w-0">
-                        <span className="font-medium truncate text-xs" style={{ color: "var(--text-primary)" }}>
-                          {item.name}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="text-right flex-shrink-0 ml-2">
-                      <span className="font-bold text-sm" style={{ color: "var(--text-primary)" }}>
-                        {getCurrencySymbol(accounts.find(a => a.name === item.name)?.currency || "INR")}{item.value.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+        <div className="glass-card-static animate-fade-in-up delay-1 relative overflow-hidden" 
+             style={{ padding: "32px", marginBottom: "32px", minHeight: "280px" }}>
+          
+          {/* Chart positioned in the right corner */}
+          <div className="absolute top-1/2 -translate-y-1/2 -right-12 md:right-4 w-[280px] h-[280px] opacity-90 pointer-events-none md:pointer-events-auto">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={chartData}
+                  innerRadius={65}
+                  outerRadius={85}
+                  paddingAngle={5}
+                  dataKey="value"
+                  stroke="none"
+                >
+                  {chartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length && payload[0].value !== undefined) {
+                      return (
+                        <div className="glass-card p-3 shadow-2xl border-white/10" style={{ background: "rgba(19, 24, 51, 0.95)", backdropFilter: "blur(12px)" }}>
+                          <p className="text-xs font-bold text-white mb-1">{payload[0].name}</p>
+                          <p className="text-sm font-black text-accent-primary-light">
+                            ₹{Number(payload[0].value).toLocaleString()}
+                          </p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+            
+            {/* Center Text for Chart */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none translate-y-[-2px]">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted opacity-60">Total</p>
+              <p className="text-lg font-black text-white">₹{(totalBalance/100000).toFixed(1)}L</p>
             </div>
-            <div className="flex justify-center items-center">
-              <div style={{ width: "100%", height: "240px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                  <Pie
-                    data={chartData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    outerRadius={85}
-                    innerRadius={55}
-                    fill="#8884d8"
-                    dataKey="value"
-                    paddingAngle={4}
-                    strokeWidth={0}
-                  >
-                    {chartData.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={entry.color}
-                        stroke="rgba(6, 8, 15, 0.5)"
-                        strokeWidth={2}
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(value, name) => {
-                      const account = accounts.find(a => a.name === name);
-                      const symbol = getCurrencySymbol(account?.currency || "INR");
-                      return `${symbol}${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-                    }}
-                    contentStyle={{
-                      backgroundColor: "var(--bg-elevated)",
-                      border: "1px solid var(--border-default)",
-                      borderRadius: "var(--radius-md)",
-                      padding: "8px 12px",
-                      boxShadow: "var(--shadow-lg)",
-                      fontSize: "12px",
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-              </div>
+          </div>
+
+          <div className="relative z-10 lg:pr-[320px]">
+            <div className="flex items-center gap-2.5 mb-2">
+              <div className="w-2 h-2 rounded-full bg-accent-primary animate-pulse" />
+              <p className="text-xs font-bold uppercase tracking-widest text-muted">
+                Portfolio Assets
+              </p>
+            </div>
+            <h2 className="text-4xl font-black mb-8 gradient-text tracking-tighter">
+              ₹{totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+            </h2>
+
+            <div className="flex flex-wrap gap-3">
+              {chartData.map((item, index) => (
+                <div
+                  key={`${item.name}-${index}`}
+                  className="flex items-center gap-3 rounded-xl px-4 py-2 transition-all cursor-default w-fit min-w-[190px] h-14 flex-shrink-0"
+                  style={{
+                    background: "rgba(15, 20, 50, 0.5)",
+                    border: "1px solid var(--border-subtle)",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "rgba(99, 115, 255, 0.15)";
+                    e.currentTarget.style.borderColor = "var(--border-default)";
+                    e.currentTarget.style.transform = "translateY(-2px)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "rgba(15, 20, 50, 0.5)";
+                    e.currentTarget.style.borderColor = "var(--border-subtle)";
+                    e.currentTarget.style.transform = "translateY(0)";
+                  }}
+                >
+                  <div className="relative flex-shrink-0 scale-90">
+                    <div
+                      className="w-2 h-2 rounded-full absolute -top-1 -right-1 z-10"
+                      style={{ backgroundColor: item.color, boxShadow: `0 0 8px ${item.color}` }}
+                    />
+                    <BankLogo 
+                      name={accounts.find(a => a.name === item.name)?.bank_name || item.name} 
+                      className="w-8 h-8" 
+                    />
+                  </div>
+                  
+                  <div className="flex flex-col min-w-0 flex-1">
+                    <p className="font-bold text-[11px] text-white truncate leading-none mb-1">
+                      {item.name}
+                    </p>
+                    <p className="font-black text-[10px] text-accent-primary-light leading-none">
+                      {getCurrencySymbol(accounts.find(a => a.name === item.name)?.currency || "INR")}{item.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                      <span className="ml-2 text-[9px] font-bold text-muted opacity-60">
+                        {((item.value / totalBalance) * 100).toFixed(0)}%
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -582,24 +708,26 @@ export default function AccountsPage() {
               {account.name !== "Cash" && (
                 <button
                   onClick={() => startEdit(account)}
-                  className="absolute top-3 right-3 flex items-center justify-center rounded-lg p-1.5 transition-all z-10"
+                  className="absolute top-4 right-4 flex items-center justify-center rounded-xl p-2 transition-all z-10"
                   style={{
-                    background: "rgba(0, 0, 0, 0.3)",
+                    background: "rgba(255, 255, 255, 0.05)",
                     border: "1px solid rgba(255, 255, 255, 0.1)",
-                    color: "rgba(255, 255, 255, 0.6)",
-                    backdropFilter: "blur(8px)",
+                    color: "rgba(255, 255, 255, 0.5)",
+                    backdropFilter: "blur(12px)",
                   }}
                   onMouseEnter={(e) => { 
-                    e.currentTarget.style.background = "rgba(0, 0, 0, 0.5)";
+                    e.currentTarget.style.background = "rgba(255, 255, 255, 0.12)";
                     e.currentTarget.style.color = "rgba(255, 255, 255, 0.9)";
+                    e.currentTarget.style.transform = "scale(1.05)";
                   }}
                   onMouseLeave={(e) => { 
-                    e.currentTarget.style.background = "rgba(0, 0, 0, 0.3)";
-                    e.currentTarget.style.color = "rgba(255, 255, 255, 0.6)";
+                    e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+                    e.currentTarget.style.color = "rgba(255, 255, 255, 0.5)";
+                    e.currentTarget.style.transform = "scale(1)";
                   }}
                   title="Edit account details"
                 >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                     <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                   </svg>
                 </button>
@@ -635,7 +763,7 @@ export default function AccountsPage() {
                     </div>
                   ) : account.bank_name ? (
                     <div className="flex items-center gap-2 mt-3">
-                      <BankLogo src={account.bank_logo} name={account.bank_name} size="w-9 h-9" />
+                      <BankLogo name={account.bank_name} size="w-9 h-9" />
                       <span className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>
                         {account.bank_name}
                       </span>
@@ -662,23 +790,23 @@ export default function AccountsPage() {
 
                 {/* Action buttons */}
                 <div className="flex gap-2 items-center mt-5">
-                  <button
-                    onClick={() => startAdjust(account.id)}
-                    className="flex-1 flex items-center justify-center gap-2 rounded-lg p-2.5 transition-all text-sm font-medium"
-                    style={{
-                      background: style.iconBg,
-                      border: `1px solid ${style.badgeBorder}`,
-                      color: style.color,
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.8"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.opacity = "1"; }}
-                    title="Add/Subtract money"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                      <path d="M12 4v16m8-8H4" />
-                    </svg>
-                    Adjust Balance
-                  </button>
+                    <button
+                      onClick={() => startAdjust(account.id)}
+                      className="flex-1 flex items-center justify-center gap-2.5 rounded-xl p-3 transition-all text-[13px] font-bold tracking-tight"
+                      style={{
+                        background: style.iconBg,
+                        border: `1px solid ${style.badgeBorder}`,
+                        color: style.color,
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.7"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.transform = "translateY(0)"; }}
+                      title="Add/Subtract money"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                        <path d="M12 4v16m8-8H4" />
+                      </svg>
+                      Adjust Balance
+                    </button>
                   {account.name !== "Cash" && (
                     <button
                       onClick={() => handleDelete(account.id)}
@@ -740,21 +868,26 @@ export default function AccountsPage() {
       {showForm && (
         <div className="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4 animate-fade-in">
           <div
-            className="glass-card-static animate-scale-in max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-            style={{ padding: "28px" }}
+            className="glass-card-static animate-scale-in max-w-2xl w-full max-h-[90vh] overflow-y-auto custom-scrollbar"
+            style={{ padding: "32px", border: "1px solid var(--border-strong)" }}
           >
-            <div className="flex justify-between items-center mb-5">
-              <h2 className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>
-                {editingId ? "Edit Account" : "Create Account"}
-              </h2>
+            <div className="flex justify-between items-center mb-8">
+              <div>
+                <h2 className="text-2xl font-bold" style={{ color: "var(--text-primary)" }}>
+                  {editingId ? "Update Account" : "Add New Account"}
+                </h2>
+                <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
+                  {editingId ? "Modify your account details" : "Connect a new financial source"}
+                </p>
+              </div>
               <button
                 onClick={resetForm}
-                className="p-2 rounded-lg transition-all"
-                style={{ color: "var(--text-muted)" }}
+                className="p-2.5 rounded-xl transition-all"
+                style={{ color: "var(--text-muted)", background: "rgba(255,255,255,0.03)" }}
                 onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text-primary)"; e.currentTarget.style.background = "var(--glass-hover)"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "transparent"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -762,49 +895,50 @@ export default function AccountsPage() {
             
             {error && (
               <div
-                className="mb-4 animate-fade-in"
+                className="mb-6 animate-fade-in flex items-center gap-3"
                 style={{
-                  padding: "12px 16px",
+                  padding: "14px 18px",
                   borderRadius: "var(--radius-md)",
                   background: "rgba(255, 71, 87, 0.08)",
                   border: "1px solid rgba(255, 71, 87, 0.2)",
                   color: "#ff6b81",
-                  fontSize: "0.8125rem",
+                  fontSize: "0.875rem",
                 }}
               >
+                <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
                 {error}
               </div>
             )}
 
-            <form onSubmit={handleSubmit}>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="block text-xs font-bold uppercase tracking-widest ml-1" style={{ color: "var(--text-muted)" }}>
                     Account Name
                   </label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="input-premium"
-                    disabled={editingId ? accounts.find(a => a.id === editingId)?.name === "Cash" : false}
-                    placeholder="e.g., My Savings, Emergency Fund"
-                    required
-                  />
-                  {!editingId && (
-                    <p className="text-xs mt-1.5" style={{ color: "var(--text-muted)" }}>
-                      Give your account a nickname to identify it easily
-                    </p>
-                  )}
-                  {editingId && accounts.find(a => a.id === editingId)?.name === "Cash" && (
-                    <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
-                      Cash account name cannot be changed
-                    </p>
-                  )}
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="input-premium pl-11"
+                      disabled={editingId ? accounts.find(a => a.id === editingId)?.name === "Cash" : false}
+                      placeholder="e.g. HDFC Salary, Travel Fund"
+                      required
+                    />
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted opacity-50">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h2m4 0h2M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
-                    Type
+
+                <div className="space-y-2">
+                  <label className="block text-xs font-bold uppercase tracking-widest ml-1" style={{ color: "var(--text-muted)" }}>
+                    Account Type
                   </label>
                   <select
                     value={formData.type}
@@ -814,42 +948,36 @@ export default function AccountsPage() {
                   >
                     <option value="checking">Checking</option>
                     <option value="savings">Savings</option>
-                    <option value="credit">Credit</option>
+                    <option value="credit">Credit Card</option>
                     <option value="investment">Investment</option>
-                    <option value="cash">Cash</option>
+                    <option value="cash">Cash / Physical</option>
                   </select>
-                  {!editingId && (
-                    <p className="text-xs mt-1.5" style={{ color: "var(--text-muted)" }}>
-                      What type of account is this?
-                    </p>
-                  )}
-                  {editingId && accounts.find(a => a.id === editingId)?.name === "Cash" && (
-                    <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
-                      Cash account type cannot be changed
-                    </p>
-                  )}
                 </div>
+
                 {!editingId && (
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
-                      Initial Balance
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold uppercase tracking-widest ml-1" style={{ color: "var(--text-muted)" }}>
+                      Current Balance
                     </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={formData.balance}
-                      onChange={(e) => setFormData({ ...formData, balance: e.target.value })}
-                      className="input-premium"
-                      placeholder="0.00"
-                      required
-                    />
-                    <p className="text-xs mt-1.5" style={{ color: "var(--text-muted)" }}>
-                      How much money is currently in this account?
-                    </p>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={formData.balance}
+                        onChange={(e) => setFormData({ ...formData, balance: e.target.value })}
+                        className="input-premium pl-11"
+                        placeholder="0.00"
+                        required
+                      />
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-sm text-muted opacity-50">
+                        {formData.currency === "INR" ? "₹" : "$"}
+                      </div>
+                    </div>
                   </div>
                 )}
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
+
+                <div className="space-y-2">
+                  <label className="block text-xs font-bold uppercase tracking-widest ml-1" style={{ color: "var(--text-muted)" }}>
                     Currency
                   </label>
                   <select
@@ -858,120 +986,131 @@ export default function AccountsPage() {
                     className="input-premium"
                     disabled={editingId ? accounts.find(a => a.id === editingId)?.name === "Cash" : false}
                   >
-                    <option value="INR">INR (₹)</option>
-                    <option value="USD">USD ($)</option>
+                    <option value="INR">Indian Rupee (INR)</option>
+                    <option value="USD">US Dollar (USD)</option>
                   </select>
-                  {!editingId && (
-                    <p className="text-xs mt-1.5" style={{ color: "var(--text-muted)" }}>
-                      Which currency does this account use?
-                    </p>
-                  )}
-                  {editingId && accounts.find(a => a.id === editingId)?.name === "Cash" && (
-                    <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
-                      Cash account currency cannot be changed
-                    </p>
-                  )}
                 </div>
-                <div className="col-span-2">
-                  <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
-                    Bank Selection {editingId && accounts.find(a => a.id === editingId)?.name === "Cash" && "(Not applicable for Cash)"}
+
+                <div className="col-span-1 md:col-span-2 space-y-3 pt-2">
+                  <div className="divider-glow w-full" />
+                  <label className="block text-xs font-bold uppercase tracking-widest ml-1" style={{ color: "var(--text-muted)" }}>
+                    Bank Association
                   </label>
-                  {!editingId && (
-                    <p className="text-xs mb-2" style={{ color: "var(--text-muted)" }}>
-                      Which bank is this account with? (Optional)
-                    </p>
-                  )}
+                  
                   {editingId && accounts.find(a => a.id === editingId)?.name === "Cash" ? (
-                    <div className="input-premium" style={{ opacity: 0.5 }}>
-                      Physical cash - no bank association
+                    <div className="input-premium opacity-50 flex items-center gap-3 bg-white/5 border-dashed">
+                      <span className="text-xl">💵</span>
+                      <span className="text-sm">Physical cash - no bank needed</span>
                     </div>
                   ) : (
-                    <div className="flex gap-3 items-start">
-                    <div className="relative flex-1">
-                      <div className="relative">
-                        <input
-                          type="text"
-                          value={bankSearch}
-                          onChange={(e) => handleBankSearch(e.target.value)}
-                          className="input-premium pl-10"
-                          placeholder="Type bank name (e.g. HDFC, SBI...)"
-                        />
-                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                          </svg>
+                    <div className="flex gap-4 items-start">
+                      <div className="relative flex-1">
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value={bankSearch}
+                            onChange={(e) => handleBankSearch(e.target.value)}
+                            className="input-premium pl-11 h-14"
+                            placeholder="Search your bank (e.g. SBI, HDFC...)"
+                          />
+                          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted opacity-50">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                          </div>
                         </div>
+                        
+                        {bankResults.length > 0 && (
+                          <div
+                            className="absolute z-50 w-full mt-3 max-h-64 overflow-y-auto animate-scale-in custom-scrollbar"
+                            style={{
+                              background: "rgba(19, 24, 51, 0.95)",
+                              border: "1px solid var(--border-strong)",
+                              borderRadius: "var(--radius-lg)",
+                              boxShadow: "0 20px 50px rgba(0,0,0,0.5)",
+                              backdropFilter: "blur(20px)",
+                            }}
+                          >
+                            {bankResults.map((bank) => (
+                              <button
+                                key={bank.name}
+                                type="button"
+                                onClick={() => selectBank(bank)}
+                                className="w-full flex items-center gap-4 p-4 text-left transition-all hover:bg-white/5 border-b border-white/5 last:border-0"
+                              >
+                                <BankLogo name={bank.name} size="w-10 h-10" />
+                                <div className="flex flex-col">
+                                  <span className="text-sm font-bold text-white">{bank.name}</span>
+                                  <span className="text-[10px] text-muted tracking-wider uppercase">Click to select</span>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
                       
-                      {bankResults.length > 0 && (
-                        <div
-                          className="absolute z-10 w-full mt-2 max-h-60 overflow-y-auto animate-scale-in"
-                          style={{
-                            background: "var(--bg-elevated)",
-                            border: "1px solid var(--border-default)",
-                            borderRadius: "var(--radius-md)",
-                            boxShadow: "var(--shadow-lg)",
-                            backdropFilter: "blur(12px)",
-                          }}
-                        >
-                          {bankResults.map((bank) => (
-                            <button
-                              key={bank.name}
-                              type="button"
-                              onClick={() => selectBank(bank)}
-                              className="w-full flex items-center gap-3 p-3 text-left transition-all border-b border-white/5 last:border-0"
-                              style={{ color: "var(--text-primary)" }}
-                              onMouseEnter={(e) => { e.currentTarget.style.background = "var(--glass-hover)"; }}
-                              onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
-                            >
-                              <BankLogo src={bank.logo} name={bank.name} size="w-8 h-8" />
-                              <div className="flex flex-col">
-                                <span className="text-sm font-medium">{bank.name}</span>
-                                <span className="text-[10px] text-muted opacity-60">Click to select</span>
-                              </div>
-                            </button>
-                          ))}
+                      <div className="flex-shrink-0 animate-scale-in">
+                        <div className="p-1 rounded-2xl bg-gradient-to-br from-white/10 to-transparent border border-white/10">
+                          <BankLogo 
+                            name={formData.bank_name} 
+                            size="w-14 h-14" 
+                          />
                         </div>
-                      )}
+                      </div>
                     </div>
-                    
-                    {/* Live Preview of Selected/Inferred Logo */}
-                    <div className="flex-shrink-0 animate-scale-in">
-                      <BankLogo 
-                        src={formData.bank_logo} 
-                        name={formData.bank_name} 
-                        size="w-12 h-12" 
-                      />
-                    </div>
-                  </div>
                   )}
-                  {formData.bank_name && !(editingId && accounts.find(a => a.id === editingId)?.name === "Cash") && (
-                    <p className="text-[10px] mt-2 ml-1 text-accent-primary animate-fade-in flex items-center gap-1">
-                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                      Selected: {formData.bank_name}
-                    </p>
+                  {formData.bank_name && (
+                    <div className="flex justify-between items-center px-1">
+                      <p className="text-[11px] text-accent-primary-light font-bold flex items-center gap-1.5 animate-fade-in">
+                        <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        Linked to {formData.bank_name}
+                      </p>
+                      <button 
+                        type="button"
+                        onClick={() => { setFormData({...formData, bank_name: ""}); setBankSearch(""); }}
+                        className="text-[10px] text-muted hover:text-white transition-colors underline underline-offset-2"
+                      >
+                        Clear bank
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
-              <div className="flex gap-3 mt-6">
+
+              <div className="flex gap-4 pt-4">
                 <button 
                   type="submit" 
                   disabled={submitting}
-                  className="btn-primary flex-1"
+                  className="btn-primary flex-1 h-12 flex items-center justify-center gap-2"
                   style={{ opacity: submitting ? 0.6 : 1, cursor: submitting ? "not-allowed" : "pointer" }}
                 >
-                  {submitting ? "Saving..." : editingId ? "Update" : "Create"}
+                  {submitting ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      {editingId ? "Save Changes" : "Create Account"}
+                    </>
+                  )}
                 </button>
                 <button 
                   type="button" 
                   onClick={resetForm} 
                   disabled={submitting}
-                  className="btn-secondary flex-1"
+                  className="btn-secondary flex-1 h-12"
                   style={{ opacity: submitting ? 0.6 : 1 }}
                 >
-                  Cancel
+                  Discard
                 </button>
               </div>
             </form>
@@ -983,19 +1122,20 @@ export default function AccountsPage() {
       {showAdjustModal && adjustingAccountId && (
         <div className="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4 animate-fade-in">
           <div
-            className="glass-card-static animate-scale-in max-w-md w-full"
-            style={{ padding: "28px" }}
+            className="glass-card-static animate-scale-in max-w-md w-full overflow-hidden"
+            style={{ padding: "32px", border: "1px solid var(--border-strong)" }}
           >
-            <div className="flex justify-between items-center mb-5">
-              <h2 className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>
-                Adjust Balance
-              </h2>
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-white">Adjust Balance</h2>
+                <p className="text-xs text-muted mt-1 uppercase tracking-widest font-semibold">One-time adjustment</p>
+              </div>
               <button
                 onClick={closeAdjustModal}
-                className="p-2 rounded-lg transition-all"
-                style={{ color: "var(--text-muted)" }}
+                className="p-2 rounded-xl transition-all"
+                style={{ color: "var(--text-muted)", background: "rgba(255,255,255,0.03)" }}
                 onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text-primary)"; e.currentTarget.style.background = "var(--glass-hover)"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "transparent"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path d="M6 18L18 6M6 6l12 12" />
@@ -1004,119 +1144,130 @@ export default function AccountsPage() {
             </div>
 
             {error && (
-              <div
-                className="mb-4 animate-fade-in"
-                style={{
-                  padding: "12px 16px",
-                  borderRadius: "var(--radius-md)",
-                  background: "rgba(255, 71, 87, 0.08)",
-                  border: "1px solid rgba(255, 71, 87, 0.2)",
-                  color: "#ff6b81",
-                  fontSize: "0.8125rem",
-                }}
-              >
+              <div className="mb-6 animate-fade-in flex items-center gap-2 text-[13px] p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400">
+                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
                 {error}
               </div>
             )}
 
-            <form onSubmit={handleAdjust} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
-                    Account
-                  </label>
-                  <div
-                    className="input-premium"
-                    style={{ opacity: 0.7 }}
-                  >
-                    {accounts.find((a) => a.id === adjustingAccountId)?.name}
-                    <span className="ml-2" style={{ color: "var(--text-muted)" }}>
-                      (Current: {getCurrencySymbol(accounts.find((a) => a.id === adjustingAccountId)?.currency || "INR")}{" "}
-                      {accounts.find((a) => a.id === adjustingAccountId)?.balance.toLocaleString()})
+            <form onSubmit={handleAdjust} className="space-y-6">
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/5 space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted">Account</label>
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold text-white">{accounts.find((a) => a.id === adjustingAccountId)?.name}</span>
+                    <span className="text-xs font-medium text-accent-primary-light">
+                      {getCurrencySymbol(accounts.find((a) => a.id === adjustingAccountId)?.currency || "INR")}{" "}
+                      {accounts.find((a) => a.id === adjustingAccountId)?.balance.toLocaleString()}
                     </span>
                   </div>
                 </div>
 
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
-                  Action
+              <div className="space-y-3">
+                <label className="block text-xs font-bold uppercase tracking-widest ml-1" style={{ color: "var(--text-muted)" }}>
+                  Adjustment Type
                 </label>
-                <div className="flex gap-2">
+                <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
                     onClick={() => setAdjustData({ ...adjustData, type: "add" })}
-                    className="flex-1 rounded-lg p-3 transition-all font-medium text-sm"
+                    className="rounded-xl py-3 px-4 transition-all font-bold text-xs flex items-center justify-center gap-2 group"
                     style={{
-                      background: adjustData.type === "add" ? "rgba(85, 239, 196, 0.15)" : "rgba(100, 100, 100, 0.1)",
-                      border: adjustData.type === "add" ? "1px solid rgba(85, 239, 196, 0.3)" : "1px solid rgba(100, 100, 100, 0.2)",
+                      background: adjustData.type === "add" ? "rgba(85, 239, 196, 0.12)" : "rgba(255, 255, 255, 0.03)",
+                      border: adjustData.type === "add" ? "1px solid rgba(85, 239, 196, 0.3)" : "1px solid rgba(255, 255, 255, 0.08)",
                       color: adjustData.type === "add" ? "#55efc4" : "var(--text-muted)",
                     }}
                   >
-                    <svg className="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                      <path d="M12 4v16m8-8H4" />
-                    </svg>
-                    Add Money
+                    <div className={`w-5 h-5 rounded-full flex items-center justify-center ${adjustData.type === "add" ? "bg-[#55efc4] text-black" : "bg-white/10"}`}>
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                        <path d="M12 4v16m8-8H4" />
+                      </svg>
+                    </div>
+                    Deposit / Add
                   </button>
                   <button
                     type="button"
                     onClick={() => setAdjustData({ ...adjustData, type: "subtract" })}
-                    className="flex-1 rounded-lg p-3 transition-all font-medium text-sm"
+                    className="rounded-xl py-3 px-4 transition-all font-bold text-xs flex items-center justify-center gap-2 group"
                     style={{
-                      background: adjustData.type === "subtract" ? "rgba(255, 71, 87, 0.15)" : "rgba(100, 100, 100, 0.1)",
-                      border: adjustData.type === "subtract" ? "1px solid rgba(255, 71, 87, 0.3)" : "1px solid rgba(100, 100, 100, 0.2)",
+                      background: adjustData.type === "subtract" ? "rgba(255, 71, 87, 0.12)" : "rgba(255, 255, 255, 0.03)",
+                      border: adjustData.type === "subtract" ? "1px solid rgba(255, 71, 87, 0.3)" : "1px solid rgba(255, 255, 255, 0.08)",
                       color: adjustData.type === "subtract" ? "#ff6b81" : "var(--text-muted)",
                     }}
                   >
-                    <svg className="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                      <path d="M20 12H4" />
-                    </svg>
-                    Subtract Money
+                    <div className={`w-5 h-5 rounded-full flex items-center justify-center ${adjustData.type === "subtract" ? "bg-[#ff6b81] text-white" : "bg-white/10"}`}>
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                        <path d="M20 12H4" />
+                      </svg>
+                    </div>
+                    Withdraw / Sub
                   </button>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
+              <div className="space-y-2">
+                <label className="block text-xs font-bold uppercase tracking-widest ml-1" style={{ color: "var(--text-muted)" }}>
                   Amount
                 </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={adjustData.amount}
-                  onChange={(e) => setAdjustData({ ...adjustData, amount: e.target.value })}
-                  className="input-premium"
-                  placeholder="0.00"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={adjustData.amount}
+                    onChange={(e) => setAdjustData({ ...adjustData, amount: e.target.value })}
+                    className="input-premium pl-11 h-12 text-lg font-bold"
+                    placeholder="0.00"
+                    required
+                  />
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-sm text-muted opacity-50">
+                    {getCurrencySymbol(accounts.find(a => a.id === adjustingAccountId)?.currency || "INR")}
+                  </div>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
-                  Note
+              <div className="space-y-2">
+                <label className="block text-xs font-bold uppercase tracking-widest ml-1" style={{ color: "var(--text-muted)" }}>
+                  Adjustment Note
                 </label>
-                <input
-                  type="text"
-                  value={adjustData.note}
-                  onChange={(e) => setAdjustData({ ...adjustData, note: e.target.value })}
-                  className="input-premium"
-                  placeholder="e.g., Cash deposit, ATM withdrawal"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={adjustData.note}
+                    onChange={(e) => setAdjustData({ ...adjustData, note: e.target.value })}
+                    className="input-premium pl-11"
+                    placeholder="e.g. Cash deposit, ATM withdrawal"
+                    required
+                  />
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted opacity-50">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  </div>
+                </div>
               </div>
 
-              <div className="flex gap-3 pt-2">
+              <div className="flex gap-4 pt-2">
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="btn-primary flex-1"
+                  className="btn-primary flex-1 h-12 flex items-center justify-center gap-2"
                   style={{ opacity: submitting ? 0.6 : 1, cursor: submitting ? "not-allowed" : "pointer" }}
                 >
-                  {submitting ? "Processing..." : adjustData.type === "add" ? "Add Money" : "Subtract Money"}
+                  {submitting ? "Processing..." : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                      </svg>
+                      {adjustData.type === "add" ? "Add Money" : "Subtract Money"}
+                    </>
+                  )}
                 </button>
                 <button
                   type="button"
                   onClick={closeAdjustModal}
                   disabled={submitting}
-                  className="btn-secondary flex-1"
+                  className="btn-secondary flex-1 h-12"
                   style={{ opacity: submitting ? 0.6 : 1 }}
                 >
                   Cancel
@@ -1131,19 +1282,20 @@ export default function AccountsPage() {
       {showTransferModal && (
         <div className="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4 animate-fade-in">
           <div
-            className="glass-card-static animate-scale-in max-w-md w-full"
-            style={{ padding: "28px" }}
+            className="glass-card-static animate-scale-in max-w-md w-full overflow-hidden"
+            style={{ padding: "32px", border: "1px solid var(--border-strong)" }}
           >
-            <div className="flex justify-between items-center mb-5">
-              <h2 className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>
-                Transfer Money
-              </h2>
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-white">Transfer Money</h2>
+                <p className="text-xs text-muted mt-1 uppercase tracking-widest font-semibold">Move funds between accounts</p>
+              </div>
               <button
                 onClick={closeTransferModal}
-                className="p-2 rounded-lg transition-all"
-                style={{ color: "var(--text-muted)" }}
+                className="p-2 rounded-xl transition-all"
+                style={{ color: "var(--text-muted)", background: "rgba(255,255,255,0.03)" }}
                 onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text-primary)"; e.currentTarget.style.background = "var(--glass-hover)"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "transparent"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path d="M6 18L18 6M6 6l12 12" />
@@ -1152,79 +1304,87 @@ export default function AccountsPage() {
             </div>
 
             {error && (
-              <div
-                className="mb-4 animate-fade-in"
-                style={{
-                  padding: "12px 16px",
-                  borderRadius: "var(--radius-md)",
-                  background: "rgba(255, 71, 87, 0.08)",
-                  border: "1px solid rgba(255, 71, 87, 0.2)",
-                  color: "#ff6b81",
-                  fontSize: "0.8125rem",
-                }}
-              >
+              <div className="mb-6 animate-fade-in flex items-center gap-2 text-[13px] p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400">
+                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
                 {error}
               </div>
             )}
 
-            <form onSubmit={handleTransfer} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
-                  From Account
-                </label>
-                <select
-                  value={transferFromId || ""}
-                  onChange={(e) => setTransferFromId(e.target.value)}
-                  className="input-premium"
-                  required
-                >
-                  <option value="">Select source account</option>
-                  {accounts.map((account) => (
-                    <option key={account.id} value={account.id}>
-                      {account.name} ({getCurrencySymbol(account.currency)} {account.balance.toLocaleString()})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
-                  To Account
-                </label>
-                <select
-                  value={transferData.to_account_id}
-                  onChange={(e) => setTransferData({ ...transferData, to_account_id: e.target.value })}
-                  className="input-premium"
-                  required
-                >
-                  <option value="">Select destination account</option>
-                  {accounts
-                    .filter((a) => a.id !== transferFromId)
-                    .map((account) => (
+            <form onSubmit={handleTransfer} className="space-y-6">
+              <div className="grid grid-cols-1 gap-4">
+                <div className="space-y-2">
+                  <label className="block text-xs font-bold uppercase tracking-widest ml-1" style={{ color: "var(--text-muted)" }}>
+                    From Account
+                  </label>
+                  <select
+                    value={transferFromId || ""}
+                    onChange={(e) => setTransferFromId(e.target.value)}
+                    className="input-premium"
+                    required
+                  >
+                    <option value="">Select source account</option>
+                    {accounts.map((account) => (
                       <option key={account.id} value={account.id}>
-                        {account.name} ({getCurrencySymbol(account.currency)} {account.balance.toLocaleString()})
+                        {account.name} (Balance: {getCurrencySymbol(account.currency)} {account.balance.toLocaleString()})
                       </option>
                     ))}
-                </select>
+                  </select>
+                </div>
+
+                <div className="flex justify-center -my-2 opacity-30 select-none">
+                  <svg className="w-5 h-5 text-accent-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                  </svg>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-xs font-bold uppercase tracking-widest ml-1" style={{ color: "var(--text-muted)" }}>
+                    To Account
+                  </label>
+                  <select
+                    value={transferData.to_account_id}
+                    onChange={(e) => setTransferData({ ...transferData, to_account_id: e.target.value })}
+                    className="input-premium"
+                    required
+                  >
+                    <option value="">Select destination account</option>
+                    {accounts
+                      .filter((a) => a.id !== transferFromId)
+                      .map((account) => (
+                        <option key={account.id} value={account.id}>
+                          {account.name} (Balance: {getCurrencySymbol(account.currency)} {account.balance.toLocaleString()})
+                        </option>
+                      ))}
+                  </select>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
-                  Amount
+              <div className="divider-glow" />
+
+              <div className="space-y-2">
+                <label className="block text-xs font-bold uppercase tracking-widest ml-1" style={{ color: "var(--text-muted)" }}>
+                  Transfer Amount
                 </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={transferData.amount}
-                  onChange={(e) => setTransferData({ ...transferData, amount: e.target.value })}
-                  className="input-premium"
-                  placeholder="0.00"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={transferData.amount}
+                    onChange={(e) => setTransferData({ ...transferData, amount: e.target.value })}
+                    className="input-premium pl-11 h-12 text-lg font-bold"
+                    placeholder="0.00"
+                    required
+                  />
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-sm text-muted opacity-50">
+                    {getCurrencySymbol(accounts.find(a => a.id === transferFromId)?.currency || "INR")}
+                  </div>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
+              <div className="space-y-2">
+                <label className="block text-xs font-bold uppercase tracking-widest ml-1" style={{ color: "var(--text-muted)" }}>
                   Note (optional)
                 </label>
                 <input
@@ -1232,24 +1392,31 @@ export default function AccountsPage() {
                   value={transferData.note}
                   onChange={(e) => setTransferData({ ...transferData, note: e.target.value })}
                   className="input-premium"
-                  placeholder="e.g., Monthly savings"
+                  placeholder="e.g. Monthly savings, Bill payment"
                 />
               </div>
 
-              <div className="flex gap-3 pt-2">
+              <div className="flex gap-4 pt-4">
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="btn-primary flex-1"
+                  className="btn-primary flex-1 h-12 flex items-center justify-center gap-2"
                   style={{ opacity: submitting ? 0.6 : 1, cursor: submitting ? "not-allowed" : "pointer" }}
                 >
-                  {submitting ? "Processing..." : "Transfer"}
+                  {submitting ? "Processing..." : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                      </svg>
+                      Execute Transfer
+                    </>
+                  )}
                 </button>
                 <button
                   type="button"
                   onClick={closeTransferModal}
                   disabled={submitting}
-                  className="btn-secondary flex-1"
+                  className="btn-secondary flex-1 h-12"
                   style={{ opacity: submitting ? 0.6 : 1 }}
                 >
                   Cancel
