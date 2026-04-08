@@ -27,7 +27,7 @@ const BANK_DOMAINS: Record<string, string> = {
   "union bank": "unionbankofindia.co.in",
   "boi": "bankofindia.co.in",
   "bank of india": "bankofindia.co.in",
-  "idbi": "idbi.com",
+  "idbi": "idbibank.in",
   "yes bank": "yesbank.in",
   "idfc": "idfcfirstbank.com",
   "rbl": "rblbank.com",
@@ -38,82 +38,118 @@ const BANK_DOMAINS: Record<string, string> = {
   "uco bank": "ucobank.com",
   "indian bank": "indianbank.in",
   "central bank": "centralbankofindia.co.in",
+  "indian overseas": "iob.in",
+  "bank of maharashtra": "bankofmaharashtra.in",
+  "punjab & sind": "punjabandsindbank.co.in",
+  "karur vysya": "kvb.co.in",
+  "bandhan": "bandhanbank.com",
+  "city union": "cityunionbank.com",
+  "dcb bank": "dcbbank.com",
+  "tamilnad mercantile": "tmb.in",
+  "j&k bank": "jkbank.com",
+  "csb bank": "csb.co.in",
+  "dhanlaxmi": "dhanbank.com",
+  "hsbc": "hsbc.co.in",
+  "standard chartered": "sc.com",
+  "citibank": "citibank.co.in",
+  "dbs": "dbs.com",
+  "deutsche": "db.com",
+  "barclays": "barclays.in",
+  "jpmorgan": "jpmorgan.com",
+  "au small": "aubank.in",
+  "equitas": "equitasbank.com",
+  "ujjivan": "ujjivansfb.in",
+  "esaf": "esafbank.com",
+  "jana small": "janabank.com",
+  "paytm": "paytm.com",
+  "airtel": "airtel.in",
+  "jio": "jio.com",
+  "fino": "finobank.com",
+  "nsdl": "nsdlbank.com",
   "jupiter": "jupiter.money",
   "fi money": "fi.money",
   "slice": "sliceit.com",
   "onecard": "getonecard.com",
-  "paytm": "paytm.com",
-  "airtel": "airtel.in",
   "mobikwik": "mobikwik.com",
   "phonepe": "phonepe.com",
   "google pay": "google.com",
-  "amazon pay": "amazon.in"
+  "amazon pay": "amazon.in",
+  "zerodha": "zerodha.com",
+  "upstox": "upstox.com",
+  "groww": "groww.in",
+  "angel one": "angelone.in",
+  "kuvera": "kuvera.in",
+  "indmoney": "indmoney.com"
 };
 
 const BankLogo = ({ name, size = "w-7 h-7", className = "" }: { name: string | null; size?: string; className?: string }) => {
   const [imgSrc, setImgSrc] = useState<string | null>(null);
   const [retryAttempt, setRetryAttempt] = useState(0);
+  const [currentDomain, setCurrentDomain] = useState<string>("");
+  const [isLoaded, setIsLoaded] = useState(false);
   
   const sn = (name || "").toLowerCase().trim();
 
   useEffect(() => {
     if (!name || sn === "cash") {
       setImgSrc(null);
+      setCurrentDomain("");
+      setIsLoaded(false);
       return;
     }
 
-    // 1. Try to find the exact official logo from our master list
+    // Determine the best domain to use
+    let domain = "";
+
+    // 1. Check official list
     const officialBank = BANKS.find(b => 
       b.name.toLowerCase().includes(sn) || sn.includes(b.name.toLowerCase())
     );
 
     if (officialBank) {
-      setImgSrc(`https://www.google.com/s2/favicons?domain=${officialBank.logo.split('logo.clearbit.com/')[1] || 'sbi.co.in'}&sz=256`);
-      return;
-    }
-
-    // 2. Try the Domain Map with HD Google search primary
-    const domainKey = Object.keys(BANK_DOMAINS).find(key => 
-      sn === key || sn.includes(key)
-    );
-
-    if (domainKey) {
-      setImgSrc(`https://www.google.com/s2/favicons?domain=${BANK_DOMAINS[domainKey]}&sz=256`);
+      domain = officialBank.logo.split('logo.clearbit.com/')[1] || "sbi.co.in";
     } else {
-      // 3. Intelligent Guess
-      const clean = sn.replace(/\s+bank.*/i, '').trim().replace(/\s+/g, '');
-      if (clean.length > 1) {
-        setImgSrc(`https://www.google.com/s2/favicons?domain=${clean}bank.com&sz=256`);
+      // 2. Check domain map
+      const domainKey = Object.keys(BANK_DOMAINS).find(key => 
+        sn === key || sn.includes(key)
+      );
+      if (domainKey) {
+        domain = BANK_DOMAINS[domainKey];
+      } else {
+        // 3. Intelligent Guess
+        domain = sn.replace(/\s+bank.*/i, '').trim().replace(/\s+/g, '') + "bank.com";
       }
     }
+
+    setCurrentDomain(domain);
+    // START with Clearbit (Higher quality logos)
+    setImgSrc(`https://logo.clearbit.com/${domain}`);
+    setRetryAttempt(0);
+    setIsLoaded(false);
   }, [name, sn]);
 
   const handleImgError = () => {
-    if (!name || retryAttempt > 2) return;
+    if (!currentDomain || retryAttempt > 3) return;
 
-    // Fallback Sequence: HD Google -> DuckDuckGo -> Clearbit
+    const nextAttempt = retryAttempt + 1;
     const timestamp = Date.now();
-    if (retryAttempt === 0) {
-      const currentUrl = imgSrc || "";
-      let domain = "";
-      try {
-        domain = currentUrl.split('logo.clearbit.com/')[1]?.split('?')[0] || "";
-      } catch { domain = ""; }
-      
-      if (domain) {
-        setImgSrc(`https://www.google.com/s2/favicons?domain=${domain}&sz=256&c=${timestamp}`);
-      } else {
-        const clean = sn.replace(/\s+bank.*/i, '').trim().replace(/\s+/g, '');
-        setImgSrc(`https://www.google.com/s2/favicons?domain=${clean}bank.com&sz=256&c=${timestamp}`);
-      }
-      setRetryAttempt(1);
-    } else if (retryAttempt === 1) {
-      const clean = sn.replace(/\s+bank.*/i, '').trim().replace(/\s+/g, '');
-      setImgSrc(`https://icons.duckduckgo.com/ip3/${clean}bank.com.ico?sz=256&c=${timestamp}`);
-      setRetryAttempt(2);
+    setIsLoaded(false);
+
+    if (nextAttempt === 1) {
+      // Fallback 1: Google HD Favicon
+      setImgSrc(`https://www.google.com/s2/favicons?domain=${currentDomain}&sz=256`);
+    } else if (nextAttempt === 2) {
+      // Fallback 2: DuckDuckGo Icons
+      setImgSrc(`https://icons.duckduckgo.com/ip3/${currentDomain}.ico`);
+    } else if (nextAttempt === 3) {
+      // Fallback 3: Combined secondary search
+      const cleanName = sn.replace(/\s+bank.*/i, '').trim();
+      setImgSrc(`https://www.google.com/s2/favicons?domain=${cleanName}.com&sz=128&c=${timestamp}`);
     } else {
       setImgSrc(null);
     }
+    
+    setRetryAttempt(nextAttempt);
   };
 
   const getInitials = (n: string) => {
@@ -130,33 +166,36 @@ const BankLogo = ({ name, size = "w-7 h-7", className = "" }: { name: string | n
     );
   }
 
-  if (imgSrc) {
-    return (
-      <div className={`${size} ${className} relative flex items-center justify-center rounded-full bg-white overflow-hidden shadow-md ring-2 ring-white/20 p-1`}>
-        <img 
-          key={imgSrc}
-          src={imgSrc} 
-          alt={name || "Bank"} 
-          className="w-full h-full object-contain"
-          onError={handleImgError}
-          referrerPolicy="no-referrer"
-        />
-      </div>
-    );
-  }
-
   return (
-    <div 
-      className={`${size} ${className} flex items-center justify-center rounded-full font-black shadow-xl ring-2 ring-white/10 text-white overflow-hidden relative`}
-      style={{ 
-        background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
-        fontSize: size.includes('w-12') ? '16px' : size.includes('w-9') ? '12px' : '10px'
-      }}
-    >
-      <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.4),transparent)]" />
-      <span className="relative z-10" style={{ textShadow: "0 2px 4px rgba(0,0,0,0.3)" }}>
-        {getInitials(name || "BK")}
-      </span>
+    <div className={`${size} ${className} relative flex items-center justify-center rounded-full overflow-hidden shadow-md ring-2 ring-white/10`}>
+      {/* Background/Initials Fallback (Always there until image loads) */}
+      <div 
+        className="absolute inset-0 flex items-center justify-center font-black text-white"
+        style={{ 
+          background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
+          fontSize: size.includes('w-12') ? '16px' : size.includes('w-9') ? '12px' : '10px'
+        }}
+      >
+        <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.4),transparent)]" />
+        <span className="relative z-10" style={{ textShadow: "0 2px 4px rgba(0,0,0,0.3)" }}>
+          {getInitials(name || "BK")}
+        </span>
+      </div>
+
+      {/* Image Layer */}
+      {imgSrc && (
+        <div className={`absolute inset-0 bg-white p-1 transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
+          <img 
+            key={imgSrc}
+            src={imgSrc} 
+            alt={name || "Bank"} 
+            className="w-full h-full object-contain"
+            onLoad={() => setIsLoaded(true)}
+            onError={handleImgError}
+            referrerPolicy="no-referrer"
+          />
+        </div>
+      )}
     </div>
   );
 };
@@ -586,6 +625,34 @@ export default function AccountsPage() {
                   paddingAngle={5}
                   dataKey="value"
                   stroke="none"
+                  labelLine={false}
+                  label={({
+                    cx,
+                    cy,
+                    midAngle,
+                    innerRadius,
+                    outerRadius,
+                    percent,
+                  }) => {
+                    if (midAngle === undefined || percent === undefined) return null;
+                    const radius = Number(innerRadius) + (Number(outerRadius) - Number(innerRadius)) * 0.5;
+                    const x = cx + radius * Math.cos(-midAngle * (Math.PI / 180));
+                    const y = cy + radius * Math.sin(-midAngle * (Math.PI / 180));
+
+                    return percent > 0.05 ? (
+                      <text
+                        x={x}
+                        y={y}
+                        fill="white"
+                        textAnchor="middle"
+                        dominantBaseline="central"
+                        className="text-[10px] font-black"
+                        style={{ pointerEvents: 'none', textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
+                      >
+                        {`${(percent * 100).toFixed(0)}%`}
+                      </text>
+                    ) : null;
+                  }}
                 >
                   {chartData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />

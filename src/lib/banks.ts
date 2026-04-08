@@ -30,7 +30,7 @@ export const BANKS: Bank[] = [
   { name: "RBL Bank",                  logo: "https://logo.clearbit.com/rblbank.com" },
   { name: "Karur Vysya Bank",          logo: "https://logo.clearbit.com/kvb.co.in" },
   { name: "Bandhan Bank",              logo: "https://logo.clearbit.com/bandhanbank.com" },
-  { name: "IDBI Bank",                 logo: "https://logo.clearbit.com/idbi.com" },
+  { name: "IDBI Bank",                 logo: "https://logo.clearbit.com/idbibank.in" },
   { name: "City Union Bank",           logo: "https://logo.clearbit.com/cityunionbank.com" },
   { name: "DCB Bank",                  logo: "https://logo.clearbit.com/dcbbank.com" },
   { name: "Tamilnad Mercantile Bank",  logo: "https://logo.clearbit.com/tmb.in" },
@@ -52,7 +52,10 @@ export const BANKS: Bank[] = [
   { name: "Equitas Small Finance Bank",logo: "https://logo.clearbit.com/equitasbank.com" },
   { name: "Ujjivan Small Finance Bank",logo: "https://logo.clearbit.com/ujjivansfb.in" },
   { name: "ESAF Small Finance Bank",   logo: "https://logo.clearbit.com/esafbank.com" },
+  { name: "Suryoday Small Finance Bank",logo: "https://logo.clearbit.com/suryodaybank.com" },
   { name: "Jana Small Finance Bank",   logo: "https://logo.clearbit.com/janabank.com" },
+  { name: "Utkarsh Small Finance Bank",logo: "https://logo.clearbit.com/utkarsh.bank" },
+  { name: "Capital Small Finance Bank",logo: "https://logo.clearbit.com/capitalbank.co.in" },
   { name: "PayTM Payments Bank",       logo: "https://logo.clearbit.com/paytm.com" },
   { name: "Airtel Payments Bank",      logo: "https://logo.clearbit.com/airtel.in" },
   { name: "Jio Payments Bank",         logo: "https://logo.clearbit.com/jio.com" },
@@ -68,6 +71,10 @@ export const BANKS: Bank[] = [
   { name: "Uni Cards",                 logo: "https://logo.clearbit.com/uni.cards" },
   { name: "OneCard",                   logo: "https://logo.clearbit.com/getonecard.com" },
   { name: "FamPay",                    logo: "https://logo.clearbit.com/fampay.in" },
+  { name: "Mobikwik",                  logo: "https://logo.clearbit.com/mobikwik.com" },
+  { name: "PhonePe",                   logo: "https://logo.clearbit.com/phonepe.com" },
+  { name: "Google Pay",                logo: "https://logo.clearbit.com/google.com" },
+  { name: "Amazon Pay",                logo: "https://logo.clearbit.com/amazon.in" },
 
   // Investment Platforms
   { name: "Zerodha",                   logo: "https://logo.clearbit.com/zerodha.com" },
@@ -76,12 +83,29 @@ export const BANKS: Bank[] = [
   { name: "Angel One",                 logo: "https://logo.clearbit.com/angelone.in" },
   { name: "Kuvera",                    logo: "https://logo.clearbit.com/kuvera.in" },
   { name: "Indmoney",                  logo: "https://logo.clearbit.com/indmoney.com" },
+  { name: "ET Money",                  logo: "https://logo.clearbit.com/etmoney.com" },
+  { name: "Smallcase",                 logo: "https://logo.clearbit.com/smallcase.com" },
+  { name: "Wealthy",                   logo: "https://logo.clearbit.com/wealthy.in" },
 ];
 
 export function searchBanks(query: string): Bank[] {
   if (!query.trim()) return BANKS.slice(0, 15); // Show popular banks by default
   const q = query.toLowerCase();
-  return BANKS.filter((b) => b.name.toLowerCase().includes(q)).slice(0, 12); // Show more results
+  
+  // Sort by priority and match quality
+  return BANKS.filter((b) => {
+    const name = b.name.toLowerCase();
+    return name.includes(q) || q.includes(name.split(' ')[0]);
+  })
+  .sort((a, b) => {
+    const aName = a.name.toLowerCase();
+    const bName = b.name.toLowerCase();
+    if (aName.startsWith(q) && !bName.startsWith(q)) return -1;
+    if (!aName.startsWith(q) && bName.startsWith(q)) return 1;
+    return 0;
+  })
+  .slice(0, 12);
 }
+
 
 
