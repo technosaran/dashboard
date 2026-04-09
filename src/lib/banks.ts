@@ -56,7 +56,7 @@ export const BANKS: Bank[] = [
   { name: "Jana Small Finance Bank",   logo: "https://logo.clearbit.com/janabank.com" },
   { name: "Utkarsh Small Finance Bank",logo: "https://logo.clearbit.com/utkarshbank.in" },
   { name: "Capital Small Finance Bank",logo: "https://logo.clearbit.com/capitalbank.co.in" },
-  { name: "PayTM Payments Bank",       logo: "https://logo.clearbit.com/paytm.com" },
+  { name: "Paytm Payments Bank",       logo: "https://logo.clearbit.com/paytm.com" },
   { name: "Airtel Payments Bank",      logo: "https://logo.clearbit.com/airtel.in" },
   { name: "Jio Payments Bank",         logo: "https://logo.clearbit.com/jio.com" },
   { name: "India Post Payments Bank",  logo: "https://logo.clearbit.com/ippbonline.com" },
@@ -75,6 +75,9 @@ export const BANKS: Bank[] = [
   { name: "PhonePe",                   logo: "https://logo.clearbit.com/phonepe.com" },
   { name: "Google Pay",                logo: "https://logo.clearbit.com/google.com" },
   { name: "Amazon Pay",                logo: "https://logo.clearbit.com/amazon.in" },
+  { name: "CRED",                      logo: "https://logo.clearbit.com/cred.club" },
+  { name: "BharatPe",                  logo: "https://logo.clearbit.com/bharatpe.com" },
+  { name: "Navi",                      logo: "https://logo.clearbit.com/navi.com" },
 
   // Investment Platforms
   { name: "Zerodha",                   logo: "https://logo.clearbit.com/zerodha.com" },
@@ -86,6 +89,8 @@ export const BANKS: Bank[] = [
   { name: "ET Money",                  logo: "https://logo.clearbit.com/etmoney.com" },
   { name: "Smallcase",                 logo: "https://logo.clearbit.com/smallcase.com" },
   { name: "Wealthy",                   logo: "https://logo.clearbit.com/wealthy.in" },
+  { name: "Paytm Money",               logo: "https://logo.clearbit.com/paytmmoney.com" },
+  { name: "Coin by Zerodha",           logo: "https://logo.clearbit.com/zerodha.com" },
 ];
 
 export function searchBanks(query: string): Bank[] {

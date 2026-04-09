@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import { toast } from "react-hot-toast";
 import { createClient } from "@/lib/supabase-browser";
 import type { Tables } from "@/lib/database.types";
 import { searchBanks, type Bank } from "@/lib/banks";
@@ -14,10 +15,10 @@ const supabase = createClient();
 // Curated high-quality logo URLs for Indian banks and financial institutions
 const BANK_LOGO_URLS: Record<string, string[]> = {
   // Major Public Sector Banks
-  "state bank of india (sbi)": ["https://logo.clearbit.com/sbi.co.in", "https://www.google.com/s2/favicons?domain=sbi.co.in&sz=128"],
-  "punjab national bank (pnb)": ["https://logo.clearbit.com/pnbindia.in", "https://www.google.com/s2/favicons?domain=pnbindia.in&sz=128"],
-  "bank of baroda (bob)": ["https://logo.clearbit.com/bankofbaroda.in", "https://www.google.com/s2/favicons?domain=bankofbaroda.in&sz=128"],
-  "canara bank": ["https://logo.clearbit.com/canarabank.com", "https://www.google.com/s2/favicons?domain=canarabank.com&sz=128"],
+  "state bank of india (sbi)": ["https://logo.clearbit.com/sbi.co.in", "https://img.logo.dev/sbi.co.in?token=pk_logo_dev", "https://www.google.com/s2/favicons?domain=sbi.co.in&sz=128"],
+  "punjab national bank (pnb)": ["https://logo.clearbit.com/pnbindia.in", "https://img.logo.dev/pnbindia.in?token=pk_logo_dev", "https://www.google.com/s2/favicons?domain=pnbindia.in&sz=128"],
+  "bank of baroda (bob)": ["https://logo.clearbit.com/bankofbaroda.in", "https://img.logo.dev/bankofbaroda.in?token=pk_logo_dev", "https://www.google.com/s2/favicons?domain=bankofbaroda.in&sz=128"],
+  "canara bank": ["https://logo.clearbit.com/canarabank.com", "https://img.logo.dev/canarabank.com?token=pk_logo_dev", "https://www.google.com/s2/favicons?domain=canarabank.com&sz=128"],
   "union bank of india": ["https://logo.clearbit.com/unionbankofindia.co.in", "https://www.google.com/s2/favicons?domain=unionbankofindia.co.in&sz=128"],
   "bank of india (boi)": ["https://logo.clearbit.com/bankofindia.co.in", "https://www.google.com/s2/favicons?domain=bankofindia.co.in&sz=128"],
   "indian bank": ["https://logo.clearbit.com/indianbank.in", "https://www.google.com/s2/favicons?domain=indianbank.in&sz=128"],
@@ -27,13 +28,13 @@ const BANK_LOGO_URLS: Record<string, string[]> = {
   "bank of maharashtra": ["https://logo.clearbit.com/bankofmaharashtra.in", "https://www.google.com/s2/favicons?domain=bankofmaharashtra.in&sz=128"],
   "punjab & sind bank": ["https://logo.clearbit.com/punjabandsindbank.co.in", "https://www.google.com/s2/favicons?domain=punjabandsindbank.co.in&sz=128"],
   // Major Private Sector Banks
-  "hdfc bank": ["https://logo.clearbit.com/hdfcbank.com", "https://www.google.com/s2/favicons?domain=hdfcbank.com&sz=128"],
-  "icici bank": ["https://logo.clearbit.com/icicibank.com", "https://www.google.com/s2/favicons?domain=icicibank.com&sz=128"],
-  "axis bank": ["https://logo.clearbit.com/axisbank.com", "https://www.google.com/s2/favicons?domain=axisbank.com&sz=128"],
-  "kotak mahindra bank": ["https://logo.clearbit.com/kotak.com", "https://www.google.com/s2/favicons?domain=kotak.com&sz=128"],
-  "indusind bank": ["https://logo.clearbit.com/indusind.com", "https://www.google.com/s2/favicons?domain=indusind.com&sz=128"],
+  "hdfc bank": ["https://logo.clearbit.com/hdfcbank.com", "https://img.logo.dev/hdfcbank.com?token=pk_logo_dev", "https://www.google.com/s2/favicons?domain=hdfcbank.com&sz=128"],
+  "icici bank": ["https://logo.clearbit.com/icicibank.com", "https://img.logo.dev/icicibank.com?token=pk_logo_dev", "https://www.google.com/s2/favicons?domain=icicibank.com&sz=128"],
+  "axis bank": ["https://logo.clearbit.com/axisbank.com", "https://img.logo.dev/axisbank.com?token=pk_logo_dev", "https://www.google.com/s2/favicons?domain=axisbank.com&sz=128"],
+  "kotak mahindra bank": ["https://logo.clearbit.com/kotak.com", "https://img.logo.dev/kotak.com?token=pk_logo_dev", "https://www.google.com/s2/favicons?domain=kotak.com&sz=128"],
+  "indusind bank": ["https://logo.clearbit.com/indusind.com", "https://img.logo.dev/indusind.com?token=pk_logo_dev", "https://www.google.com/s2/favicons?domain=indusind.com&sz=128"],
   "yes bank": ["https://logo.clearbit.com/yesbank.in", "https://www.google.com/s2/favicons?domain=yesbank.in&sz=128"],
-  "idfc first bank": ["https://logo.clearbit.com/idfcfirstbank.com", "https://www.google.com/s2/favicons?domain=idfcfirstbank.com&sz=128"],
+  "idfc first bank": ["https://logo.clearbit.com/idfcfirstbank.com", "https://img.logo.dev/idfcfirstbank.com?token=pk_logo_dev", "https://www.google.com/s2/favicons?domain=idfcfirstbank.com&sz=128"],
   "federal bank": ["https://logo.clearbit.com/federalbank.co.in", "https://www.google.com/s2/favicons?domain=federalbank.co.in&sz=128"],
   "south indian bank": ["https://logo.clearbit.com/southindianbank.com", "https://www.google.com/s2/favicons?domain=southindianbank.com&sz=128"],
   "karnataka bank": ["https://logo.clearbit.com/karnatakabank.com", "https://www.google.com/s2/favicons?domain=karnatakabank.com&sz=128"],
@@ -80,8 +81,11 @@ const BANK_LOGO_URLS: Record<string, string[]> = {
   "fampay": ["https://logo.clearbit.com/fampay.in", "https://www.google.com/s2/favicons?domain=fampay.in&sz=128"],
   "mobikwik": ["https://logo.clearbit.com/mobikwik.com", "https://www.google.com/s2/favicons?domain=mobikwik.com&sz=128"],
   "phonepe": ["https://logo.clearbit.com/phonepe.com", "https://www.google.com/s2/favicons?domain=phonepe.com&sz=128"],
-  "google pay": ["https://logo.clearbit.com/pay.google.com", "https://www.google.com/s2/favicons?domain=pay.google.com&sz=128"],
+  "google pay": ["https://logo.clearbit.com/google.com", "https://www.google.com/s2/favicons?domain=google.com&sz=128"],
   "amazon pay": ["https://logo.clearbit.com/amazon.in", "https://www.google.com/s2/favicons?domain=amazon.in&sz=128"],
+  "cred": ["https://logo.clearbit.com/cred.club", "https://www.google.com/s2/favicons?domain=cred.club&sz=128"],
+  "bharatpe": ["https://logo.clearbit.com/bharatpe.com", "https://www.google.com/s2/favicons?domain=bharatpe.com&sz=128"],
+  "navi": ["https://logo.clearbit.com/navi.com", "https://www.google.com/s2/favicons?domain=navi.com&sz=128"],
   // Investment Platforms
   "zerodha": ["https://logo.clearbit.com/zerodha.com", "https://www.google.com/s2/favicons?domain=zerodha.com&sz=128"],
   "upstox": ["https://logo.clearbit.com/upstox.com", "https://www.google.com/s2/favicons?domain=upstox.com&sz=128"],
@@ -94,96 +98,43 @@ const BANK_LOGO_URLS: Record<string, string[]> = {
   "wealthy": ["https://logo.clearbit.com/wealthy.in", "https://www.google.com/s2/favicons?domain=wealthy.in&sz=128"],
 };
 
-function getBankLogoUrls(name: string): string[] {
-  const sn = name.toLowerCase().trim();
-  // Exact match first
-  if (BANK_LOGO_URLS[sn]) return BANK_LOGO_URLS[sn];
-  // Partial match
-  const key = Object.keys(BANK_LOGO_URLS).find(k => sn.includes(k) || k.includes(sn));
-  if (key) return BANK_LOGO_URLS[key];
-  // Fallback: derive domain from name
-  const domain = sn.replace(/\s*\(.*?\)\s*/g, '').replace(/\s+bank.*/i, '').trim().replace(/\s+/g, '') + "bank.com";
-  return [
-    `https://logo.clearbit.com/${domain}`,
-    `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
-  ];
-}
-
-const BankLogo = ({ name, size = "w-7 h-7", className = "" }: { name: string | null; size?: string; className?: string }) => {
-  const [srcIndex, setSrcIndex] = useState(0);
-  const [urls, setUrls] = useState<string[]>([]);
-  const [isLoaded, setIsLoaded] = useState(false);
-
-  const sn = (name || "").toLowerCase().trim();
-
-  useEffect(() => {
-    if (!name || sn === "cash") {
-      setUrls([]);
-      setSrcIndex(0);
-      setIsLoaded(false);
-      return;
-    }
-    const logoUrls = getBankLogoUrls(name);
-    setUrls(logoUrls);
-    setSrcIndex(0);
-    setIsLoaded(false);
-  }, [name, sn]);
-
-  const imgSrc = urls[srcIndex] ?? null;
-
-  const handleImgError = () => {
-    setIsLoaded(false);
-    if (srcIndex + 1 < urls.length) {
-      setSrcIndex(srcIndex + 1);
-    } else {
-      setSrcIndex(urls.length); // beyond array → show initials
-    }
+// Global Category Icons (Premium & Consistent)
+const CategoryIcon = ({ type, className = "w-6 h-6" }: { type: string; className?: string }) => {
+  const styles: Record<string, { bg: string; color: string; path: string }> = {
+    checking: { 
+      bg: "bg-indigo-500/10", 
+      color: "text-indigo-400",
+      path: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" 
+    },
+    savings: { 
+      bg: "bg-emerald-500/10", 
+      color: "text-emerald-400",
+      path: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" 
+    },
+    credit: { 
+      bg: "bg-rose-500/10", 
+      color: "text-rose-400",
+      path: "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" 
+    },
+    investment: { 
+      bg: "bg-sky-500/10", 
+      color: "text-sky-400",
+      path: "M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" 
+    },
+    cash: { 
+      bg: "bg-amber-500/10", 
+      color: "text-amber-400",
+      path: "M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" 
+    },
   };
 
-  const getInitials = (n: string) => {
-    const words = n.split(' ').filter(w => !['bank', 'of', 'india', 'pvt', 'ltd', '&'].includes(w.toLowerCase()));
-    if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase();
-    return n.substring(0, 2).toUpperCase();
-  };
-
-  if (sn === "cash") {
-    return (
-      <div className={`${size} ${className} flex items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold text-xs ring-1 ring-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.2)]`}>
-        ₹
-      </div>
-    );
-  }
+  const style = styles[type] || styles.checking;
 
   return (
-    <div className={`${size} ${className} relative flex items-center justify-center rounded-full overflow-hidden shadow-md ring-2 ring-white/10`}>
-      {/* Background/Initials Fallback (Always there until image loads) */}
-      <div 
-        className="absolute inset-0 flex items-center justify-center font-black text-white"
-        style={{ 
-          background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
-          fontSize: size.includes('w-12') ? '16px' : size.includes('w-9') ? '12px' : '10px'
-        }}
-      >
-        <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.4),transparent)]" />
-        <span className="relative z-10" style={{ textShadow: "0 2px 4px rgba(0,0,0,0.3)" }}>
-          {getInitials(name || "BK")}
-        </span>
-      </div>
-
-      {/* Image Layer */}
-      {imgSrc && (
-        <div className={`absolute inset-0 bg-white p-1 transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
-          <img
-            key={imgSrc}
-            src={imgSrc}
-            alt={name ? `${name} logo` : "Bank logo"}
-            className="w-full h-full object-contain"
-            onLoad={() => setIsLoaded(true)}
-            onError={handleImgError}
-            referrerPolicy="no-referrer"
-          />
-        </div>
-      )}
+    <div className={`p-2.5 rounded-xl border border-white/5 shadow-inner ${style.bg} ${className} flex items-center justify-center`}>
+      <svg className={`w-full h-full ${style.color}`} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d={style.path} />
+      </svg>
     </div>
   );
 };
@@ -233,8 +184,9 @@ export default function AccountsPage() {
     balance: "0",
     currency: "INR",
     bank_name: "",
-    bank_logo: "",
   });
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletingAccountId, setDeletingAccountId] = useState<string | null>(null);
 
   const loadAccounts = useCallback(async () => {
     try {
@@ -255,12 +207,9 @@ export default function AccountsPage() {
       } else {
         const accountsList = data || [];
         
-        // Check if Cash account exists, if not create it
         const hasCashAccount = accountsList.some(acc => acc.name === "Cash");
-        console.log("Has Cash account:", hasCashAccount);
         
         if (!hasCashAccount) {
-          console.log("Creating Cash account...");
           const { error: createError } = await supabase.from("accounts").insert({
             user_id: user.id,
             name: "Cash",
@@ -268,15 +217,12 @@ export default function AccountsPage() {
             balance: 0,
             currency: "INR",
             bank_name: null,
-            bank_logo: null,
           });
           
           if (createError) {
             console.error("Error creating Cash account:", createError);
             setAccounts(accountsList);
           } else {
-            console.log("Cash account created successfully");
-            // Reload accounts after creating Cash account
             const { data: updatedData, error: reloadError } = await supabase
               .from("accounts")
               .select("*")
@@ -287,7 +233,6 @@ export default function AccountsPage() {
               console.error("Error reloading accounts:", reloadError);
               setAccounts(accountsList);
             } else {
-              console.log("Accounts reloaded, total:", updatedData?.length);
               setAccounts(updatedData || []);
             }
           }
@@ -331,22 +276,20 @@ export default function AccountsPage() {
     const results = searchBanks(query);
     setBankResults(results);
     
-    // If there's a strong match, pre-view the logo
     const topMatch = results.find(r => r.name.toLowerCase().startsWith(query.toLowerCase()));
     if (topMatch && query.length > 2) {
       setFormData(prev => ({ 
         ...prev, 
         bank_name: topMatch.name, 
-        bank_logo: topMatch.logo 
       }));
     } else if (query.length === 0) {
-      setFormData(prev => ({ ...prev, bank_name: "", bank_logo: "" }));
+      setFormData(prev => ({ ...prev, bank_name: "" }));
     }
   }
 
 
   function selectBank(bank: Bank) {
-    setFormData({ ...formData, bank_name: bank.name, bank_logo: bank.logo });
+    setFormData({ ...formData, bank_name: bank.name });
     setBankSearch(bank.name);
     setBankResults([]);
   }
@@ -362,7 +305,6 @@ export default function AccountsPage() {
       balance: parseFloat(formData.balance),
       currency: formData.currency,
       bank_name: formData.bank_name || null,
-      bank_logo: formData.bank_logo || null,
     };
 
     try {
@@ -374,21 +316,22 @@ export default function AccountsPage() {
       }
 
       if (result?.error) {
-        setError(result.error);
+        toast.error(result.error);
         setSubmitting(false);
         return;
       }
 
+      toast.success(editingId ? "Account updated successfully" : "Account created successfully");
       resetForm();
       await loadAccounts();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      toast.error(err instanceof Error ? err.message : "An error occurred");
       setSubmitting(false);
     }
   }
 
   function resetForm() {
-    setFormData({ name: "", type: "checking", balance: "0", currency: "INR", bank_name: "", bank_logo: "" });
+    setFormData({ name: "", type: "checking", balance: "0", currency: "INR", bank_name: "" });
     setBankSearch("");
     setShowForm(false);
     setEditingId(null);
@@ -403,7 +346,6 @@ export default function AccountsPage() {
       balance: account.balance.toString(),
       currency: account.currency,
       bank_name: account.bank_name || "",
-      bank_logo: account.bank_logo || "",
     });
     setBankSearch(account.bank_name || "");
     setEditingId(account.id);
@@ -413,12 +355,26 @@ export default function AccountsPage() {
   async function handleDelete(id: string) {
     const account = accounts.find((a) => a.id === id);
     if (account?.name === "Cash") {
-      alert("Cannot delete the Cash account");
+      toast.error("Cannot delete the Cash account");
       return;
     }
-    if (confirm("Delete this account?")) {
-      await deleteAccount(id);
+    setDeletingAccountId(id);
+    setShowDeleteConfirm(true);
+  }
+
+  async function confirmDelete() {
+    if (!deletingAccountId) return;
+    setSubmitting(true);
+    const result = await deleteAccount(deletingAccountId);
+    if (result?.error) {
+      toast.error(result.error);
+    } else {
+      toast.success("Account deleted successfully");
+      await loadAccounts();
     }
+    setShowDeleteConfirm(false);
+    setDeletingAccountId(null);
+    setSubmitting(false);
   }
 
   function startAdjust(accountId: string) {
@@ -455,11 +411,12 @@ export default function AccountsPage() {
     const result = await adjustBalance(adjustingAccountId, finalAmount, adjustData.note);
 
     if (result?.error) {
-      setError(result.error);
+      toast.error(result.error);
       setSubmitting(false);
       return;
     }
 
+    toast.success(`Balance ${finalAmount > 0 ? 'increased' : 'decreased'} successfully`);
     closeAdjustModal();
     await loadAccounts();
   }
@@ -514,11 +471,12 @@ export default function AccountsPage() {
     });
 
     if (result?.error) {
-      setError(result.error);
+      toast.error(result.error);
       setSubmitting(false);
       return;
     }
 
+    toast.success("Transfer completed successfully");
     closeTransferModal();
     await loadAccounts();
   }
@@ -568,7 +526,7 @@ export default function AccountsPage() {
           <button
             onClick={() => {
               if (accounts.length < 2) {
-                alert("You need at least 2 accounts to make a transfer");
+                toast.error("You need at least 2 accounts to make a transfer");
                 return;
               }
               setTransferFromId(null);
@@ -600,10 +558,10 @@ export default function AccountsPage() {
       {/* Total Balance Overview with Chart */}
       {accounts.length > 0 && (
         <div className="glass-card-static animate-fade-in-up delay-1 relative overflow-hidden" 
-             style={{ padding: "32px", marginBottom: "32px", minHeight: "280px" }}>
+             style={{ padding: "clamp(20px, 5vw, 32px)", marginBottom: "32px", minHeight: "280px" }}>
           
-          {/* Chart positioned in the right corner */}
-          <div className="absolute top-1/2 -translate-y-1/2 -right-12 md:right-4 w-[280px] h-[280px] opacity-90 pointer-events-none md:pointer-events-auto">
+          {/* Chart positioned in the right corner (Mobile refined) */}
+          <div className="absolute top-1/2 -translate-y-1/2 -right-16 md:right-4 w-[240px] h-[240px] md:w-[280px] md:h-[280px] opacity-100 md:opacity-90 pointer-events-none md:pointer-events-auto">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -650,11 +608,11 @@ export default function AccountsPage() {
                 Portfolio Assets
               </p>
             </div>
-            <h2 className="text-4xl font-black mb-8 gradient-text tracking-tighter">
+            <h2 className="text-3xl md:text-4xl font-black mb-8 gradient-text tracking-tighter">
               ₹{totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
             </h2>
 
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-2 md:gap-3 overflow-visible">
               {chartData.map((item, index) => (
                 <div
                   key={`${item.name}-${index}`}
@@ -674,14 +632,14 @@ export default function AccountsPage() {
                     e.currentTarget.style.transform = "translateY(0)";
                   }}
                 >
-                  <div className="relative flex-shrink-0 scale-90">
+                  <div className="relative flex-shrink-0">
                     <div
-                      className="w-2 h-2 rounded-full absolute -top-1 -right-1 z-10"
-                      style={{ backgroundColor: item.color, boxShadow: `0 0 8px ${item.color}` }}
+                      className="w-2.5 h-2.5 rounded-full absolute -top-1 -right-1 z-10"
+                      style={{ backgroundColor: item.color, boxShadow: `0 0 10px ${item.color}` }}
                     />
-                    <BankLogo 
-                      name={accounts.find(a => a.name === item.name)?.bank_name || item.name} 
-                      className="w-8 h-8" 
+                    <CategoryIcon 
+                      type={accounts.find(a => a.name === item.name)?.type || "checking"} 
+                      className="w-11 h-11" 
                     />
                   </div>
                   
@@ -773,31 +731,12 @@ export default function AccountsPage() {
                   >
                     {account.type}
                   </span>
-                  {account.name === "Cash" ? (
-                    <div className="flex items-center gap-2 mt-3">
-                      <div
-                        className="w-9 h-9 rounded-lg flex items-center justify-center"
-                        style={{
-                          background: "rgba(253, 203, 110, 0.15)",
-                          border: "1px solid rgba(253, 203, 110, 0.25)",
-                        }}
-                      >
-                        <span className="text-2xl">💵</span>
-                      </div>
-                      <span className="text-sm font-bold" style={{ color: "var(--text-secondary)" }}>
-                        Physical Cash
-                      </span>
-                    </div>
-                  ) : account.bank_name ? (
-                    <div className="flex items-center gap-2 mt-3">
-                      <BankLogo name={account.bank_name} size="w-9 h-9" />
-                      <span className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>
-                        {account.bank_name}
-                      </span>
-                    </div>
-                  ) : (
-                    <div style={{ height: "36px" }} />
-                  )}
+                  <div className="flex items-center gap-3 mt-3">
+                    <CategoryIcon type={account.type} className="w-12 h-12" />
+                    <span className="text-base font-bold tracking-tight" style={{ color: "var(--text-secondary)" }}>
+                      {account.bank_name || account.name}
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -891,6 +830,7 @@ export default function AccountsPage() {
         </div>
       )}
 
+
       {/* Create/Edit Account Modal */}
       {showForm && (
         <div className="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4 animate-fade-in">
@@ -920,25 +860,6 @@ export default function AccountsPage() {
               </button>
             </div>
             
-            {error && (
-              <div
-                className="mb-6 animate-fade-in flex items-center gap-3"
-                style={{
-                  padding: "14px 18px",
-                  borderRadius: "var(--radius-md)",
-                  background: "rgba(255, 71, 87, 0.08)",
-                  border: "1px solid rgba(255, 71, 87, 0.2)",
-                  color: "#ff6b81",
-                  fontSize: "0.875rem",
-                }}
-              >
-                <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                {error}
-              </div>
-            )}
-
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
@@ -1065,7 +986,7 @@ export default function AccountsPage() {
                                 onClick={() => selectBank(bank)}
                                 className="w-full flex items-center gap-4 p-4 text-left transition-all hover:bg-white/5 border-b border-white/5 last:border-0"
                               >
-                                <BankLogo name={bank.name} size="w-10 h-10" />
+                                <CategoryIcon type="checking" className="w-10 h-10" />
                                 <div className="flex flex-col">
                                   <span className="text-sm font-bold text-white">{bank.name}</span>
                                   <span className="text-[10px] text-muted tracking-wider uppercase">Click to select</span>
@@ -1078,9 +999,9 @@ export default function AccountsPage() {
                       
                       <div className="flex-shrink-0 animate-scale-in">
                         <div className="p-1 rounded-2xl bg-gradient-to-br from-white/10 to-transparent border border-white/10">
-                          <BankLogo 
-                            name={formData.bank_name} 
-                            size="w-14 h-14" 
+                          <CategoryIcon 
+                            type={formData.type} 
+                            className="w-14 h-14" 
                           />
                         </div>
                       </div>
@@ -1450,6 +1371,46 @@ export default function AccountsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 modal-overlay flex items-center justify-center z-[60] p-4 animate-fade-in">
+          <div
+             className="glass-card-static animate-scale-in max-w-sm w-full overflow-hidden"
+             style={{ padding: "32px", border: "1px solid rgba(255, 71, 87, 0.2)" }}
+          >
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mb-6 text-red-500">
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">Delete Account?</h3>
+              <p className="text-sm text-muted leading-relaxed mb-8">
+                Are you sure you want to delete <span className="text-white font-bold">{accounts.find(a => a.id === deletingAccountId)?.name}</span>? 
+                This action is permanent and cannot be reversed.
+              </p>
+              
+              <div className="flex gap-3 w-full">
+                <button
+                  onClick={confirmDelete}
+                  disabled={submitting}
+                  className="flex-1 h-12 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold text-sm transition-all shadow-[0_4px_20px_rgba(239,68,68,0.3)] disabled:opacity-50"
+                >
+                  {submitting ? "Deleting..." : "Yes, Delete"}
+                </button>
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={submitting}
+                  className="flex-1 h-12 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold text-sm border border-white/10 transition-all disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -83,24 +83,19 @@ export default function Sidebar() {
         }}
       >
         {/* Logo Section */}
-        <div className="px-6 pt-7 pb-6">
-          <div className="flex items-center gap-3">
+        <div className="px-6 pt-9 pb-6">
+          <div className="flex items-center justify-start">
             <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center animate-pulse-glow"
+              className="w-14 h-14 rounded-2xl flex items-center justify-center animate-pulse-glow"
               style={{
                 background: "linear-gradient(135deg, #6c5ce7 0%, #a29bfe 50%, #00cec9 100%)",
-                boxShadow: "0 4px 20px rgba(108, 92, 231, 0.35)",
+                boxShadow: "0 8px 32px rgba(108, 92, 231, 0.4)",
+                border: "1px solid rgba(255, 255, 255, 0.15)",
               }}
             >
-              <svg className="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
+              <svg className="w-[30px] h-[30px] text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                 <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
               </svg>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[15px] font-bold tracking-tight gradient-text">FinanceOS</span>
-              <span className="text-[10px] font-medium uppercase tracking-[0.15em]" style={{ color: "var(--text-muted)" }}>
-                Premium
-              </span>
             </div>
           </div>
         </div>
@@ -131,14 +126,14 @@ export default function Sidebar() {
         </div>
       </aside>
 
-      {/* Mobile Bottom Navigation */}
+      {/* Mobile Bottom Navigation (Premium Refined) */}
       <nav 
-        className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around px-2 py-3 pb-safe"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around px-4 py-3 pb-safe border-t border-white/5"
         style={{
-          background: "var(--sidebar-bg)",
-          borderTop: "1px solid var(--sidebar-border)",
-          backdropFilter: "blur(24px) saturate(1.3)",
-          WebkitBackdropFilter: "blur(24px) saturate(1.3)",
+          background: "rgba(8, 11, 25, 0.95)",
+          backdropFilter: "blur(20px) saturate(1.5)",
+          WebkitBackdropFilter: "blur(20px) saturate(1.5)",
+          boxShadow: "0 -10px 40px rgba(0,0,0,0.4)",
         }}
       >
         {nav.map((item) => {
@@ -147,25 +142,31 @@ export default function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className="flex flex-col items-center gap-1 px-3 py-1"
+              className="flex flex-col items-center gap-1.5 px-4 py-1.5 rounded-2xl relative transition-all duration-300 active:scale-90"
               style={{
                 color: active ? "var(--accent-primary-light)" : "var(--text-muted)",
-                transition: "all 0.3s",
               }}
             >
-              {item.icon}
-              <span className="text-[10px] font-medium">{item.label}</span>
+              {active && (
+                <div className="absolute inset-0 bg-white/5 rounded-2xl animate-scale-in" />
+              )}
+              <div className={`${active ? "scale-110" : ""} transition-transform duration-300`}>
+                {item.icon}
+              </div>
+              <span className={`text-[10px] font-bold tracking-tight ${active ? "opacity-100" : "opacity-70"}`}>
+                {item.label}
+              </span>
             </Link>
           );
         })}
         <button
           onClick={handleLogout}
-          className="flex flex-col items-center gap-1 px-3 py-1 text-[--text-muted]"
+          className="flex flex-col items-center gap-1.5 px-4 py-1.5 rounded-2xl transition-all active:scale-90 text-[--text-muted]"
         >
-          <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+          <svg className="w-[18px] h-[18px] opacity-70" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
             <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
           </svg>
-          <span className="text-[10px] font-medium">Exit</span>
+          <span className="text-[10px] font-bold tracking-tight opacity-70">Exit</span>
         </button>
       </nav>
     </>
