@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, startTransition } from "react";
 import { createClient } from "@/lib/supabase-browser";
 import type { User } from "@supabase/supabase-js";
 import type { Tables } from "@/lib/database.types";
@@ -65,7 +65,7 @@ export default function TestConnectionPage() {
   }, []);
 
   useEffect(() => {
-    testConnection();
+    startTransition(testConnection);
   }, [testConnection]);
 
   return (

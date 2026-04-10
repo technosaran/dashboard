@@ -47,7 +47,7 @@ export default function Sidebar() {
     window.location.href = "/login";
   }
 
-  const NavItem = ({ label, href, icon, index }: (typeof nav)[0] & { index: number }) => {
+  const NavItem = ({ label, href, icon }: (typeof nav)[0] & { index: number }) => {
     const active = pathname === href;
     return (
       <Link

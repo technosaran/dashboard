@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, startTransition } from "react";
 import { createClient } from "@/lib/supabase-browser";
 import type { Tables } from "@/lib/database.types";
 import { createTransfer } from "./actions";
@@ -57,7 +57,7 @@ export default function TransfersPage() {
   }, [loadAccounts, loadTransfers]);
 
   useEffect(() => {
-    loadData();
+    startTransition(loadData);
 
     const channel = supabase
       .channel("transfers-changes")
@@ -65,14 +65,14 @@ export default function TransfersPage() {
         "postgres_changes",
         { event: "*", schema: "public", table: "transfers" },
         () => {
-          loadData();
+          startTransition(loadData);
         }
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "accounts" },
         () => {
-          loadAccounts();
+          startTransition(loadAccounts);
         }
       )
       .subscribe();

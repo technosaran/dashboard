@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useRef, startTransition } from "react";
 import { useUser } from "@/context/user-context";
 
 export default function SettingsPage() {
@@ -13,7 +13,7 @@ export default function SettingsPage() {
   // Sync internal input state with context once loaded
   useEffect(() => {
     if (!loading && !initializedRef.current) {
-      setInput(username);
+      startTransition(() => setInput(username));
       initializedRef.current = true;
     }
   }, [loading, username]);
@@ -21,14 +21,14 @@ export default function SettingsPage() {
   // Sync internal input state if username changes from external broadcast
   useEffect(() => {
     if (initializedRef.current && username !== input && !isSyncing) {
-      setInput(username);
+      startTransition(() => setInput(username));
     }
   }, [username, input, isSyncing]);
 
   // Update lastSaved when sync completes
   useEffect(() => {
     if (prevIsSyncingRef.current && !isSyncing) {
-      setLastSaved(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+      startTransition(() => setLastSaved(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })));
     }
     prevIsSyncingRef.current = isSyncing;
   }, [isSyncing]);

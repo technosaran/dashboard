@@ -1,7 +1,8 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, useRef, startTransition } from "react";
 import { createClient } from "@/lib/supabase-browser";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 
 type UserContextType = {
   username: string;
@@ -24,7 +25,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const channelRef = useRef<any>(null);
+  const channelRef = useRef<RealtimeChannel | null>(null);
 
   const fetchUser = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -67,11 +68,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    fetchUser();
+    startTransition(fetchUser);
     
     // Listen for auth state changes (e.g. sign in/out)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      fetchUser();
+      startTransition(fetchUser);
     });
 
     return () => {

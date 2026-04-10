@@ -1,38 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState, startTransition } from "react";
 import Greeting from "@/components/greeting";
 import { createClient } from "@/lib/supabase-browser";
+
+const supabase = createClient();
 
 export default function DashboardPage() {
   const [totalBalance, setTotalBalance] = useState(0);
   const [loading, setLoading] = useState(true);
   const [accountCount, setAccountCount] = useState(0);
-  const supabase = createClient();
 
-  useEffect(() => {
-    loadTotalBalance();
-
-    const channel = supabase
-      .channel("dashboard-accounts")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "accounts" },
-        (payload) => {
-          console.log("Dashboard real-time update:", payload);
-          loadTotalBalance();
-        }
-      )
-      .subscribe((status) => {
-        console.log("Dashboard subscription status:", status);
-      });
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  async function loadTotalBalance() {
+  const loadTotalBalance = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       setLoading(false);
@@ -50,7 +29,29 @@ export default function DashboardPage() {
       setAccountCount(accounts.length);
     }
     setLoading(false);
-  }
+  }, []);
+
+  useEffect(() => {
+    startTransition(loadTotalBalance);
+
+    const channel = supabase
+      .channel("dashboard-accounts")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "accounts" },
+        (payload) => {
+          console.log("Dashboard real-time update:", payload);
+          startTransition(loadTotalBalance);
+        }
+      )
+      .subscribe((status) => {
+        console.log("Dashboard subscription status:", status);
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [loadTotalBalance]);
 
   return (
     <div>
