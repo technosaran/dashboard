@@ -130,7 +130,7 @@ function AccountsContent() {
       }
       const { data, error } = await supabase
         .from("accounts")
-        .select("*")
+        .select("id, name, balance, currency, type, bank_name, created_at, user_id, bank_logo")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
       

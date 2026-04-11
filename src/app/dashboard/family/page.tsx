@@ -50,6 +50,8 @@ export default function FamilyPage() {
   const [recentSends, setRecentSends] = useState<SendHistory[]>([]);
   const [sending, setSending] = useState(false);
   const [activeFilter, setActiveFilter] = useState<string>("All");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Form states
   const [newName, setNewName] = useState("");
@@ -126,12 +128,21 @@ export default function FamilyPage() {
   };
 
   const handleDeleteRecipient = async (id: string) => {
-    if (!confirm("Remove this person from your list?")) return;
-    const res = await deleteRecipient(id);
+    setDeletingId(id);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deletingId) return;
+    const res = await deleteRecipient(deletingId);
     if (res.success) {
-      toast.success("Recipient removed");
+      toast.success("Recipient removed from architecture");
       fetchData();
+    } else {
+      toast.error(res.error || "Deconstruction failed");
     }
+    setShowDeleteConfirm(false);
+    setDeletingId(null);
   };
 
   const handleSendMoney = async (e: React.FormEvent) => {
@@ -641,6 +652,38 @@ export default function FamilyPage() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-md animate-fade-in">
+          <div className="glass-card-static w-full max-w-sm p-8 animate-scale-in border-red-500/20 shadow-[0_0_50px_rgba(239,68,68,0.1)]">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mb-6">
+                <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-black text-[--text-primary] mb-2">Remove Contact?</h3>
+              <p className="text-sm text-[--text-muted] mb-8 leading-relaxed">
+                Are you sure you want to remove <span className="text-[--text-primary] font-bold">{recipients.find(r => r.id === deletingId)?.name}</span>? This person will be erased from your directory.
+              </p>
+              <div className="flex gap-3 w-full">
+                <button 
+                  onClick={confirmDelete}
+                  className="flex-1 py-3 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold text-sm transition-all shadow-lg shadow-red-500/20"
+                >
+                  Confirm Removal
+                </button>
+                <button 
+                  onClick={() => { setShowDeleteConfirm(false); setDeletingId(null); }}
+                  className="flex-1 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-[--text-primary] font-bold text-sm border border-white/10 transition-all"
+                >
+                  Keep Contact
+                </button>
+              </div>
             </div>
           </div>
         </div>

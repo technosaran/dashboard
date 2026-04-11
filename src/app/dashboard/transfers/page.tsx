@@ -30,7 +30,7 @@ export default function TransfersPage() {
 
     const { data } = await supabase
       .from("accounts")
-      .select("*")
+      .select("id, name, balance, currency, type, bank_name, created_at, user_id, bank_logo")
       .eq("user_id", user.id)
       .order("name");
 
@@ -43,7 +43,7 @@ export default function TransfersPage() {
 
     const { data } = await supabase
       .from("transfers")
-      .select("*")
+      .select("id, created_at, from_account_id, to_account_id, amount, note, user_id")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(50);

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState, startTransition, useMemo } from "react";
 import { createClient } from "@/lib/supabase-browser";
 import { format, getYear, getMonth, isWithinInterval, startOfDay, endOfDay } from "date-fns";
+import { toast } from "react-hot-toast";
 
 const supabase = createClient();
 
@@ -44,6 +45,8 @@ export default function LedgerPage() {
   const [monthFilter, setMonthFilter] = useState("All Months");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [showRevertConfirm, setShowRevertConfirm] = useState(false);
+  const [revertingId, setRevertingId] = useState<string | null>(null);
 
   const fetchLogs = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -51,7 +54,7 @@ export default function LedgerPage() {
 
     const { data, error } = await supabase
       .from("ledger_logs")
-      .select("*")
+      .select("id, created_at, account_name, action_type, amount, previous_balance, new_balance, details")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
 
@@ -262,18 +265,16 @@ export default function LedgerPage() {
                         </div>
                       </td>
                       <td className="px-8 py-6 whitespace-nowrap text-center">
-                         <button
-                           onClick={async () => {
-                             if (!confirm("Proceed with deep reversal? This will restore balances and undo activity.")) return;
-                             const { revertLog } = await import("./actions");
-                             const res = await revertLog(log.id);
-                             if (res.error) alert(res.error);
-                           }}
-                           className="p-3 rounded-2xl bg-white/0 hover:bg-rose-500/10 text-[--text-muted] hover:text-rose-400 transition-all opacity-0 group-hover:opacity-100"
-                           title="Undo"
-                         >
-                           <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M3 10h10a8 8 0 018 8v2M3 10l5 5m-5-5l5-5" /></svg>
-                         </button>
+                        <button
+                          onClick={() => {
+                            setRevertingId(log.id);
+                            setShowRevertConfirm(true);
+                          }}
+                          className="p-3 rounded-2xl bg-white/0 hover:bg-rose-500/10 text-[--text-muted] hover:text-rose-400 transition-all opacity-0 group-hover:opacity-100"
+                          title="Undo"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M3 10h10a8 8 0 018 8v2M3 10l5 5m-5-5l5-5" /></svg>
+                        </button>
                       </td>
                     </tr>
                   )
@@ -297,6 +298,50 @@ export default function LedgerPage() {
            ))}
         </div>
       </div>
+
+      {/* Deep Reversal Confirmation Modal */}
+      {showRevertConfirm && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-md animate-fade-in">
+          <div className="glass-card-static w-full max-w-sm p-8 animate-scale-in border-orange-500/20 shadow-[0_0_50px_rgba(249,115,22,0.1)]">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 rounded-2xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center mb-6">
+                <svg className="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l5 5m-5-5l5-5" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-black text-[--text-primary] mb-2">Revert Operation?</h3>
+              <p className="text-sm text-[--text-muted] mb-8 leading-relaxed">
+                This will trigger a <span className="text-orange-400 font-bold">Deep Reversal</span>. Balances will be restored and this audit entry will be marked as reverted.
+              </p>
+              <div className="flex gap-3 w-full">
+                <button 
+                  onClick={async () => {
+                    if (!revertingId) return;
+                    const { revertLog } = await import("./actions");
+                    const res = await revertLog(revertingId);
+                    if (res.error) {
+                      toast.error(res.error);
+                    } else {
+                      toast.success("System state restored successfully");
+                    }
+                    setShowRevertConfirm(false);
+                    setRevertingId(null);
+                  }}
+                  className="flex-1 py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm transition-all shadow-lg shadow-orange-500/20"
+                >
+                  Confirm Reversal
+                </button>
+                <button 
+                  onClick={() => { setShowRevertConfirm(false); setRevertingId(null); }}
+                  className="flex-1 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-[--text-primary] font-bold text-sm border border-white/10 transition-all"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
