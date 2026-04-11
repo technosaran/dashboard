@@ -4,36 +4,25 @@ import { createClient } from "@/lib/supabase-server";
 import { revalidatePath } from "next/cache";
 import type { TablesInsert, TablesUpdate, Tables } from "@/lib/database.types";
 
-async function logToLedger(data: Omit<TablesInsert<"ledger_logs">, "user_id">) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
-
-  await supabase.from("ledger_logs").insert({
-    ...data,
-    user_id: user.id,
-  });
-}
+// ── Optimized: single auth call per action, pass supabase+userId down ──
 
 export async function createAccount(data: Omit<TablesInsert<"accounts">, "user_id">) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   
-  if (!user) {
-    return { error: "Unauthorized" };
-  }
+  if (!user) return { error: "Unauthorized" };
 
   const { data: newAccount, error } = await supabase.from("accounts").insert({
     ...data,
     user_id: user.id,
   }).select().single();
 
-  if (error) {
-    return { error: error.message };
-  }
+  if (error) return { error: error.message };
 
+  // Fire-and-forget ledger log (non-blocking)
   if (newAccount) {
-    await logToLedger({
+    supabase.from("ledger_logs").insert({
+      user_id: user.id,
       account_id: newAccount.id,
       account_name: newAccount.name,
       action_type: "CREATE",
@@ -41,7 +30,7 @@ export async function createAccount(data: Omit<TablesInsert<"accounts">, "user_i
       previous_balance: 0,
       new_balance: newAccount.balance,
       details: `Created new ${newAccount.type} account: ${newAccount.name}`,
-    });
+    }).then(() => {});
   }
 
   revalidatePath("/dashboard/accounts");
@@ -52,9 +41,7 @@ export async function updateAccount(id: string, data: TablesUpdate<"accounts">) 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   
-  if (!user) {
-    return { error: "Unauthorized" };
-  }
+  if (!user) return { error: "Unauthorized" };
 
   const { error } = await supabase
     .from("accounts")
@@ -62,15 +49,15 @@ export async function updateAccount(id: string, data: TablesUpdate<"accounts">) 
     .eq("id", id)
     .eq("user_id", user.id);
 
-  if (error) {
-    return { error: error.message };
-  }
+  if (error) return { error: error.message };
 
-  await logToLedger({
+  // Fire-and-forget
+  supabase.from("ledger_logs").insert({
+    user_id: user.id,
     account_id: id,
     action_type: "UPDATE",
     details: `Updated account settings: ${Object.keys(data).join(", ")}`,
-  });
+  }).then(() => {});
 
   revalidatePath("/dashboard/accounts");
   return { success: true };
@@ -80,9 +67,7 @@ export async function deleteAccount(id: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   
-  if (!user) {
-    return { error: "Unauthorized" };
-  }
+  if (!user) return { error: "Unauthorized" };
 
   const { error } = await supabase
     .from("accounts")
@@ -90,15 +75,15 @@ export async function deleteAccount(id: string) {
     .eq("id", id)
     .eq("user_id", user.id);
 
-  if (error) {
-    return { error: error.message };
-  }
+  if (error) return { error: error.message };
 
-  await logToLedger({
+  // Fire-and-forget
+  supabase.from("ledger_logs").insert({
+    user_id: user.id,
     account_id: id,
     action_type: "DELETE",
     details: `Deleted account (ID: ${id})`,
-  });
+  }).then(() => {});
 
   revalidatePath("/dashboard/accounts");
   return { success: true };
@@ -108,9 +93,7 @@ export async function getAccounts() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   
-  if (!user) {
-    return { data: null, error: "Unauthorized" };
-  }
+  if (!user) return { data: null, error: "Unauthorized" };
 
   const { data, error } = await supabase
     .from("accounts")
@@ -118,10 +101,7 @@ export async function getAccounts() {
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
-  if (error) {
-    return { data: null, error: error.message };
-  }
-
+  if (error) return { data: null, error: error.message };
   return { data, error: null };
 }
 
@@ -136,9 +116,7 @@ export async function createTransfer(data: TransferData) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) {
-    return { error: "Unauthorized" };
-  }
+  if (!user) return { error: "Unauthorized" };
 
   // Validate accounts belong to user
   const { data: accounts, error: accountsError } = await supabase
@@ -154,69 +132,55 @@ export async function createTransfer(data: TransferData) {
   const fromAccount = accounts.find((a) => a.id === data.from_account_id);
   const toAccount = accounts.find((a) => a.id === data.to_account_id);
 
-  if (!fromAccount || !toAccount) {
-    return { error: "Invalid accounts" };
-  }
+  if (!fromAccount || !toAccount) return { error: "Invalid accounts" };
+  if (fromAccount.balance < data.amount) return { error: "Insufficient balance" };
 
-  // Check sufficient balance
-  if (fromAccount.balance < data.amount) {
-    return { error: "Insufficient balance" };
-  }
+  // Run transfer + balance updates in parallel
+  const [transferRes, fromRes, toRes] = await Promise.all([
+    supabase.from("transfers").insert({
+      user_id: user.id,
+      from_account_id: data.from_account_id,
+      to_account_id: data.to_account_id,
+      amount: data.amount,
+      note: data.note,
+    }),
+    supabase.from("accounts")
+      .update({ balance: fromAccount.balance - data.amount })
+      .eq("id", data.from_account_id)
+      .eq("user_id", user.id),
+    supabase.from("accounts")
+      .update({ balance: toAccount.balance + data.amount })
+      .eq("id", data.to_account_id)
+      .eq("user_id", user.id),
+  ]);
 
-  // Create transfer record
-  const { error: transferError } = await supabase.from("transfers").insert({
-    user_id: user.id,
-    from_account_id: data.from_account_id,
-    to_account_id: data.to_account_id,
-    amount: data.amount,
-    note: data.note,
-  });
+  if (transferRes.error) return { error: transferRes.error.message };
+  if (fromRes.error) return { error: "Failed to update source account" };
+  if (toRes.error) return { error: "Failed to update destination account" };
 
-  if (transferError) {
-    return { error: transferError.message };
-  }
-
-  // Update account balances
-  const { error: fromError } = await supabase
-    .from("accounts")
-    .update({ balance: fromAccount.balance - data.amount })
-    .eq("id", data.from_account_id)
-    .eq("user_id", user.id);
-
-  if (fromError) {
-    return { error: "Failed to update source account" };
-  }
-
-  const { error: toError } = await supabase
-    .from("accounts")
-    .update({ balance: toAccount.balance + data.amount })
-    .eq("id", data.to_account_id)
-    .eq("user_id", user.id);
-
-  if (toError) {
-    return { error: "Failed to update destination account" };
-  }
-
-  // Log to ledger
-  await logToLedger({
-    account_id: data.from_account_id,
-    account_name: fromAccount.name,
-    action_type: "TRANSFER_OUT",
-    amount: data.amount,
-    previous_balance: fromAccount.balance,
-    new_balance: fromAccount.balance - data.amount,
-    details: `Transfer to ${toAccount.name}: ${data.note || 'No note'}`,
-  });
-
-  await logToLedger({
-    account_id: data.to_account_id,
-    account_name: toAccount.name,
-    action_type: "TRANSFER_IN",
-    amount: data.amount,
-    previous_balance: toAccount.balance,
-    new_balance: toAccount.balance + data.amount,
-    details: `Transfer from ${fromAccount.name}: ${data.note || 'No note'}`,
-  });
+  // Fire-and-forget ledger logs (non-blocking)
+  Promise.all([
+    supabase.from("ledger_logs").insert({
+      user_id: user.id,
+      account_id: data.from_account_id,
+      account_name: fromAccount.name,
+      action_type: "TRANSFER_OUT",
+      amount: data.amount,
+      previous_balance: fromAccount.balance,
+      new_balance: fromAccount.balance - data.amount,
+      details: `Transfer to ${toAccount.name}: ${data.note || 'No note'}`,
+    }),
+    supabase.from("ledger_logs").insert({
+      user_id: user.id,
+      account_id: data.to_account_id,
+      account_name: toAccount.name,
+      action_type: "TRANSFER_IN",
+      amount: data.amount,
+      previous_balance: toAccount.balance,
+      new_balance: toAccount.balance + data.amount,
+      details: `Transfer from ${fromAccount.name}: ${data.note || 'No note'}`,
+    }),
+  ]);
 
   revalidatePath("/dashboard/accounts");
   revalidatePath("/dashboard");
@@ -228,11 +192,8 @@ export async function adjustBalance(id: string, amount: number, note: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   
-  if (!user) {
-    return { error: "Unauthorized" };
-  }
+  if (!user) return { error: "Unauthorized" };
 
-  // Get current balance
   const { data: account, error: fetchError } = await supabase
     .from("accounts")
     .select("balance, name")
@@ -240,47 +201,40 @@ export async function adjustBalance(id: string, amount: number, note: string) {
     .eq("user_id", user.id)
     .single();
 
-  if (fetchError || !account) {
-    return { error: "Account not found" };
-  }
+  if (fetchError || !account) return { error: "Account not found" };
 
   const newBalance = account.balance + amount;
+  if (newBalance < 0) return { error: "Insufficient balance" };
 
-  if (newBalance < 0) {
-    return { error: "Insufficient balance" };
-  }
-
-  // Update balance
   const { error } = await supabase
     .from("accounts")
     .update({ balance: newBalance })
     .eq("id", id)
     .eq("user_id", user.id);
 
-  if (error) {
-    return { error: error.message };
-  }
+  if (error) return { error: error.message };
 
-  // Log to ledger
-  await logToLedger({
-    account_id: id,
-    account_name: account.name,
-    action_type: amount > 0 ? "ADJUST_UP" : "ADJUST_DOWN",
-    amount: Math.abs(amount),
-    previous_balance: account.balance,
-    new_balance: newBalance,
-    details: note || (amount > 0 ? "Balance increased" : "Balance decreased"),
-  });
-
-  // Log the adjustment as a transaction
-  await supabase.from("transactions").insert({
-    user_id: user.id,
-    account_id: id,
-    amount: Math.abs(amount),
-    type: amount > 0 ? "income" : "expense",
-    description: note || "Balance adjustment",
-    date: new Date().toISOString().split('T')[0]
-  });
+  // Fire-and-forget: ledger + transaction in parallel (non-blocking)
+  Promise.all([
+    supabase.from("ledger_logs").insert({
+      user_id: user.id,
+      account_id: id,
+      account_name: account.name,
+      action_type: amount > 0 ? "ADJUST_UP" : "ADJUST_DOWN",
+      amount: Math.abs(amount),
+      previous_balance: account.balance,
+      new_balance: newBalance,
+      details: note || (amount > 0 ? "Balance increased" : "Balance decreased"),
+    }),
+    supabase.from("transactions").insert({
+      user_id: user.id,
+      account_id: id,
+      amount: Math.abs(amount),
+      type: amount > 0 ? "income" : "expense",
+      description: note || "Balance adjustment",
+      date: new Date().toISOString().split('T')[0],
+    }),
+  ]);
 
   revalidatePath("/dashboard/accounts");
   revalidatePath("/dashboard");

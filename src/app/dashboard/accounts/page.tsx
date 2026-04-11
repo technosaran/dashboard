@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState, startTransition } from "react";
+import { useCallback, useEffect, useState, startTransition, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { toast } from "react-hot-toast";
 import { createClient } from "@/lib/supabase-browser";
@@ -72,9 +73,25 @@ function getCurrencySymbol(currency: string): string {
 }
 
 export default function AccountsPage() {
+  return (
+    <Suspense fallback={<div className="p-8"><div className="skeleton h-10 w-40 mb-8" /></div>}>
+      <AccountsContent />
+    </Suspense>
+  );
+}
+
+function AccountsContent() {
+  const searchParams = useSearchParams();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("action") === "new") {
+      setShowForm(true);
+    }
+  }, [searchParams]);
+
   const [editingId, setEditingId] = useState<string | null>(null);
   const [bankSearch, setBankSearch] = useState("");
   const [bankResults, setBankResults] = useState<Bank[]>([]);
@@ -312,29 +329,36 @@ export default function AccountsPage() {
     e.preventDefault();
     if (!adjustingAccountId) return;
 
-    setSubmitting(true);
-    setError(null);
-
     const amount = parseFloat(adjustData.amount);
     if (amount <= 0) {
       setError("Amount must be greater than 0");
-      setSubmitting(false);
       return;
     }
 
     const finalAmount = adjustData.type === "subtract" ? -amount : amount;
 
+    // Optimistic Update
+    const previousAccounts = [...accounts];
+    setAccounts(prev => prev.map(acc => 
+      acc.id === adjustingAccountId 
+        ? { ...acc, balance: acc.balance + finalAmount } 
+        : acc
+    ));
+
+    setSubmitting(true);
+    closeAdjustModal();
+
     const result = await adjustBalance(adjustingAccountId, finalAmount, adjustData.note);
 
     if (result?.error) {
       toast.error(result.error);
+      setAccounts(previousAccounts); // Rollback
       setSubmitting(false);
       return;
     }
 
     toast.success(`Balance ${finalAmount > 0 ? 'increased' : 'decreased'} successfully`);
-    closeAdjustModal();
-    await loadAccounts();
+    // Revalidation happens on server, but we also sync real-time via supabase channel
   }
 
   function closeTransferModal() {
@@ -349,28 +373,33 @@ export default function AccountsPage() {
     e.preventDefault();
     if (!transferFromId) return;
 
-    setSubmitting(true);
-    setError(null);
-
-    if (transferFromId === transferData.to_account_id) {
-      setError("Cannot transfer to the same account");
-      setSubmitting(false);
-      return;
-    }
-
     const amount = parseFloat(transferData.amount);
     if (amount <= 0) {
       setError("Amount must be greater than 0");
-      setSubmitting(false);
+      return;
+    }
+
+    if (transferFromId === transferData.to_account_id) {
+      setError("Cannot transfer to the same account");
       return;
     }
 
     const fromAccount = accounts.find((a) => a.id === transferFromId);
     if (fromAccount && fromAccount.balance < amount) {
       setError("Insufficient balance");
-      setSubmitting(false);
       return;
     }
+
+    // Optimistic Update
+    const previousAccounts = [...accounts];
+    setAccounts(prev => prev.map(acc => {
+      if (acc.id === transferFromId) return { ...acc, balance: acc.balance - amount };
+      if (acc.id === transferData.to_account_id) return { ...acc, balance: acc.balance + amount };
+      return acc;
+    }));
+
+    setSubmitting(true);
+    closeTransferModal();
 
     const result = await createTransfer({
       from_account_id: transferFromId,
@@ -381,13 +410,12 @@ export default function AccountsPage() {
 
     if (result?.error) {
       toast.error(result.error);
+      setAccounts(previousAccounts); // Rollback
       setSubmitting(false);
       return;
     }
 
     toast.success("Transfer completed successfully");
-    closeTransferModal();
-    await loadAccounts();
   }
 
   const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
@@ -466,112 +494,109 @@ export default function AccountsPage() {
 
       {/* Total Balance Overview with Chart */}
       {accounts.length > 0 && (
-        <div className="glass-card-static animate-fade-in-up delay-1 relative overflow-hidden" 
-             style={{ padding: "clamp(20px, 5vw, 32px)", marginBottom: "32px", minHeight: "280px" }}>
-          
-          {/* Chart positioned in the right corner (Mobile refined) */}
-          <div className="absolute top-1/2 -translate-y-1/2 -right-16 md:right-4 w-[240px] h-[240px] md:w-[280px] md:h-[280px] opacity-100 md:opacity-90 pointer-events-none md:pointer-events-auto">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={chartData}
-                  innerRadius={65}
-                  outerRadius={85}
-                  paddingAngle={5}
-                  dataKey="value"
-                  stroke="none"
-                >
-                  {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  content={({ active, payload }) => {
-                    if (active && payload && payload.length && payload[0].value !== undefined) {
-                      return (
-                        <div className="glass-card p-3 shadow-2xl border-white/10" style={{ background: "rgba(19, 24, 51, 0.95)", backdropFilter: "blur(12px)" }}>
-                          <p className="text-xs font-bold text-white mb-1">{payload[0].name}</p>
-                          <p className="text-sm font-black text-accent-primary-light">
-                            ₹{Number(payload[0].value).toLocaleString()}
-                          </p>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-            
-            {/* Center Text for Chart */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none translate-y-[-2px]">
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted opacity-60">Total</p>
-              <p className="text-lg font-black text-white">₹{(totalBalance/100000).toFixed(1)}L</p>
-            </div>
-          </div>
+        <div
+          className="relative overflow-hidden mb-12 animate-fade-in-up delay-1"
+          style={{
+            borderRadius: "var(--radius-3xl)",
+            background: "linear-gradient(145deg, rgba(20, 25, 55, 0.4), rgba(10, 15, 30, 0.4))",
+            border: "1px solid var(--border-subtle)",
+            padding: "var(--main-padding)",
+          }}
+        >
+          {/* Chart Section - Responsive Positioning */}
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-10">
+            <div className="relative w-full lg:w-auto flex flex-col items-center lg:items-start z-10">
+              <div className="flex items-center gap-2.5 mb-2">
+                <div className="w-2 h-2 rounded-full bg-[--accent-primary-light] animate-pulse" />
+                <p className="text-xs font-bold uppercase tracking-widest text-[--text-muted]">
+                  Portfolio Assets
+                </p>
+              </div>
+              <h2 className="text-4xl md:text-5xl font-black mb-8 tracking-tighter text-[--text-primary]">
+                ₹{totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+              </h2>
 
-          <div className="relative z-10 lg:pr-[320px]">
-            <div className="flex items-center gap-2.5 mb-2">
-              <div className="w-2 h-2 rounded-full bg-accent-primary animate-pulse" />
-              <p className="text-xs font-bold uppercase tracking-widest text-muted">
-                Portfolio Assets
-              </p>
+              {/* Asset Cards - Responsive Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 w-full">
+                {chartData.map((item, index) => (
+                  <div
+                    key={`${item.name}-${index}`}
+                    className="flex items-center gap-3 rounded-2xl px-4 py-3 transition-all cursor-default bg-white/[0.03] border border-white/5 hover:bg-white/[0.08] hover:border-white/10 group h-[72px]"
+                  >
+                    <div className="relative flex-shrink-0">
+                      <div
+                        className="w-2.5 h-2.5 rounded-full absolute -top-1 -right-1 z-10"
+                        style={{ backgroundColor: item.color, boxShadow: `0 0 10px ${item.color}` }}
+                      />
+                      {(() => {
+                        const acc = accounts.find(a => a.name === item.name);
+                        return acc?.bank_name ? (
+                          <BankLogo bankName={acc.bank_name} size={48} />
+                        ) : (
+                          <CategoryIcon 
+                            type={acc?.type || "checking"} 
+                            className="w-12 h-12" 
+                          />
+                        );
+                      })()}
+                    </div>
+                    
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <p className="font-bold text-xs text-white truncate mb-0.5">
+                        {item.name}
+                      </p>
+                      <p className="font-black text-[13px] text-[--accent-primary-light] flex items-center gap-2">
+                        {getCurrencySymbol(accounts.find(a => a.name === item.name)?.currency || "INR")}{item.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                        <span className="text-[10px] font-bold text-[--text-muted] opacity-60">
+                          {((item.value / totalBalance) * 100).toFixed(0)}%
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-            <h2 className="text-3xl md:text-4xl font-black mb-8 gradient-text tracking-tighter">
-              ₹{totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-            </h2>
 
-            <div className="flex flex-wrap gap-2 md:gap-3 overflow-visible">
-              {chartData.map((item, index) => (
-                <div
-                  key={`${item.name}-${index}`}
-                  className="flex items-center gap-3 rounded-xl px-4 py-2 transition-all cursor-default w-fit min-w-[190px] h-14 flex-shrink-0"
-                  style={{
-                    background: "rgba(15, 20, 50, 0.5)",
-                    border: "1px solid var(--border-subtle)",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "rgba(99, 115, 255, 0.15)";
-                    e.currentTarget.style.borderColor = "var(--border-default)";
-                    e.currentTarget.style.transform = "translateY(-2px)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "rgba(15, 20, 50, 0.5)";
-                    e.currentTarget.style.borderColor = "var(--border-subtle)";
-                    e.currentTarget.style.transform = "translateY(0)";
-                  }}
-                >
-                  <div className="relative flex-shrink-0">
-                    <div
-                      className="w-2.5 h-2.5 rounded-full absolute -top-1 -right-1 z-10"
-                      style={{ backgroundColor: item.color, boxShadow: `0 0 10px ${item.color}` }}
-                    />
-                    {(() => {
-                      const acc = accounts.find(a => a.name === item.name);
-                      return acc?.bank_name ? (
-                        <BankLogo bankName={acc.bank_name} size={44} />
-                      ) : (
-                        <CategoryIcon 
-                          type={acc?.type || "checking"} 
-                          className="w-11 h-11" 
-                        />
-                      );
-                    })()}
-                  </div>
-                  
-                  <div className="flex flex-col min-w-0 flex-1">
-                    <p className="font-bold text-[11px] text-white truncate leading-none mb-1">
-                      {item.name}
-                    </p>
-                    <p className="font-black text-[10px] text-accent-primary-light leading-none">
-                      {getCurrencySymbol(accounts.find(a => a.name === item.name)?.currency || "INR")}{item.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                      <span className="ml-2 text-[9px] font-bold text-muted opacity-60">
-                        {((item.value / totalBalance) * 100).toFixed(0)}%
-                      </span>
-                    </p>
-                  </div>
-                </div>
-              ))}
+            {/* Pie Chart - Centered on Mobile */}
+            <div className="relative shrink-0 w-[260px] h-[260px] md:w-[320px] md:h-[320px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={chartData}
+                    innerRadius={80}
+                    outerRadius={105}
+                    paddingAngle={4}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {chartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <div className="glass-card p-3 shadow-2xl border-white/10" style={{ background: "rgba(19, 24, 51, 0.95)", backdropFilter: "blur(12px)" }}>
+                            <p className="text-xs font-bold text-white mb-1">{payload[0].name}</p>
+                            <p className="text-sm font-black text-[--accent-primary-light]">
+                              ₹{Number(payload[0].value).toLocaleString()}
+                            </p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+              
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[--text-muted] opacity-60 mb-1">Portfolio</p>
+                <p className="text-xl font-black text-white">
+                  ₹{(totalBalance/100000).toFixed(1)}L
+                </p>
+              </div>
             </div>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import Sidebar from "@/components/sidebar";
 import { UserProvider } from "@/context/user-context";
+import QuickActions from "@/components/quick-actions";
 
 export default function DashboardLayout({
   children,
@@ -41,6 +42,7 @@ export default function DashboardLayout({
           />
           <div className="relative z-10">{children}</div>
         </main>
+        <QuickActions />
       </div>
     </UserProvider>
   );

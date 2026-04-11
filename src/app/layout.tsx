@@ -12,7 +12,8 @@ export const viewport: Viewport = {
   themeColor: "#6c5ce7",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
+  maximumScale: 5,
+  viewportFit: "cover",
 };
 
 export const metadata: Metadata = {
@@ -21,12 +22,26 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
     title: "FinanceOS",
-  }
+  },
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "32x32" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: [
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
 };
 
 import { Toaster } from "react-hot-toast";
+import { Suspense } from "react";
+import ProgressBar from "@/components/progress-bar";
 
 export default function RootLayout({
   children,
@@ -39,11 +54,14 @@ export default function RootLayout({
       className={`${inter.variable} h-full antialiased dark`}
     >
       <body className="min-h-full flex flex-col font-[var(--font-inter)]">
+        <Suspense fallback={null}>
+          <ProgressBar />
+        </Suspense>
         {children}
         <Toaster 
-          position="bottom-right"
+          position="top-center"
           toastOptions={{
-            duration: 4000,
+            duration: 3000,
             style: {
               background: "#131833",
               color: "#f0f2ff",
@@ -52,6 +70,7 @@ export default function RootLayout({
               fontSize: "14px",
               fontWeight: "500",
               boxShadow: "0 8px 32px rgba(0, 0, 0, 0.5)",
+              maxWidth: "90vw",
             },
           }}
         />

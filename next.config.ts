@@ -9,6 +9,35 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "icons.duckduckgo.com" },
     ],
   },
+
+  // Compression & performance
+  compress: true,
+
+  // Security headers
+  headers: async () => [
+    {
+      source: "/(.*)",
+      headers: [
+        { key: "X-DNS-Prefetch-Control", value: "on" },
+        { key: "X-Frame-Options", value: "DENY" },
+        { key: "X-Content-Type-Options", value: "nosniff" },
+        { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+      ],
+    },
+    {
+      // Cache static assets aggressively
+      source: "/icon-:path.png",
+      headers: [
+        { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+      ],
+    },
+    {
+      source: "/manifest.json",
+      headers: [
+        { key: "Cache-Control", value: "public, max-age=86400" },
+      ],
+    },
+  ],
 };
 
 export default nextConfig;
