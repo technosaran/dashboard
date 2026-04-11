@@ -106,20 +106,21 @@ export default function LedgerPage() {
                 <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[--text-muted]">Prev Balance</th>
                 <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[--text-muted]">New Balance</th>
                 <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[--text-muted]">Details</th>
+                <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[--text-muted] text-center">Controls</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i} className="animate-pulse">
-                    <td colSpan={7} className="px-6 py-8 text-center">
+                    <td colSpan={8} className="px-6 py-8 text-center">
                       <div className="h-4 bg-white/5 rounded w-full"></div>
                     </td>
                   </tr>
                 ))
               ) : logs.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-[--text-muted]">
+                  <td colSpan={8} className="px-6 py-12 text-center text-[--text-muted]">
                     No ledger entries found. Activities will be logged automatically.
                   </td>
                 </tr>
@@ -157,6 +158,24 @@ export default function LedgerPage() {
                       <div className="text-sm text-[--text-muted] max-w-xs truncate group-hover:whitespace-normal group-hover:overflow-visible group-hover:max-w-none transition-all">
                         {log.details}
                       </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                       <button
+                         onClick={async () => {
+                           if (!confirm("Reverting this transaction will undo the balance change. Continue?")) return;
+                           const { revertLog } = await import("./actions");
+                           const res = await revertLog(log.id);
+                           if (res.error) {
+                             alert(res.error);
+                           } else {
+                             fetchLogs();
+                           }
+                         }}
+                         className="p-2 rounded-lg bg-[--accent-primary]/0 hover:bg-[--accent-primary]/10 text-[--accent-primary]/40 hover:text-[--accent-primary] transition-all opacity-0 group-hover:opacity-100"
+                         title="Revert Transaction"
+                       >
+                         <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M11 15l-3-3m0 0l3-3m-3 3h8M3 12a9 9 0 1118 0 9 9 0 01-18 0z" /></svg>
+                       </button>
                     </td>
                   </tr>
                 ))

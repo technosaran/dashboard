@@ -514,9 +514,8 @@ function AccountsContent() {
           {/* Chart Section - Responsive Positioning */}
           <div className="flex flex-col lg:flex-row items-center justify-between gap-10">
             <div className="relative w-full lg:w-auto flex flex-col items-center lg:items-start z-10">
-              <div className="flex items-center gap-2.5 mb-2">
-                <div className="w-2 h-2 rounded-full bg-[--accent-primary-light] animate-pulse" />
-                <p className="text-xs font-bold uppercase tracking-widest text-[--text-muted]">
+              <div className="flex items-center gap-2.5 mb-1">
+                <p className="text-base font-light uppercase tracking-[0.3em] text-[--text-muted]">
                   Portfolio Assets
                 </p>
               </div>
@@ -536,10 +535,6 @@ function AccountsContent() {
                     className="flex items-center gap-3 rounded-2xl px-4 py-3 transition-all cursor-default bg-white/[0.03] border border-white/5 hover:bg-white/[0.08] hover:border-white/10 group h-[72px]"
                   >
                     <div className="relative flex-shrink-0">
-                      <div
-                        className="w-2.5 h-2.5 rounded-full absolute -top-1 -right-1 z-10"
-                        style={{ backgroundColor: item.color, boxShadow: `0 0 10px ${item.color}` }}
-                      />
                       {(() => {
                         const acc = accounts.find(a => a.id === accounts[index].id); // Match by ID for safety
                         return acc?.bank_name ? (

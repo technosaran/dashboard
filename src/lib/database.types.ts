@@ -291,12 +291,77 @@ export type Database = {
           }
         ]
       }
+      expenses: {
+        Row: {
+          id: string
+          user_id: string
+          account_id: string | null
+          description: string
+          amount: number
+          category: string
+          date: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          account_id?: string | null
+          description: string
+          amount: number
+          category: string
+          date?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          account_id?: string | null
+          description?: string
+          amount?: number
+          category?: string
+          date?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      record_expense: {
+        Args: {
+          p_user_id: string
+          p_description: string
+          p_amount: number
+          p_category: string
+          p_date: string
+          p_account_id?: string | null
+        }
+        Returns: Json
+      }
+      revert_ledger_log: {
+        Args: {
+          p_log_id: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
