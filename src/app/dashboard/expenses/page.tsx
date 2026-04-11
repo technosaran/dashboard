@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, startTransition, useMemo } from "react";
+import { useCallback, useEffect, useState, startTransition, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
 import { addExpense, deleteExpense } from "./actions";
@@ -28,6 +28,20 @@ type Expense = Tables<"expenses">;
 type Account = Tables<"accounts">;
 
 export default function ExpensesPage() {
+  return (
+    <Suspense fallback={
+      <div className="p-8 space-y-8 animate-pulse">
+        <div className="h-10 w-48 bg-white/5 rounded-xl" />
+        <div className="grid grid-cols-4 gap-6"><div className="h-32 bg-white/5 rounded-2xl" /><div className="h-32 bg-white/5 rounded-2xl" /><div className="h-32 bg-white/5 rounded-2xl" /><div className="h-32 bg-white/5 rounded-2xl" /></div>
+        <div className="h-96 bg-white/5 rounded-3xl" />
+      </div>
+    }>
+      <ExpensesContent />
+    </Suspense>
+  );
+}
+
+function ExpensesContent() {
   const searchParams = useSearchParams();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
