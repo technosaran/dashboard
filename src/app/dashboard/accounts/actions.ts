@@ -19,9 +19,9 @@ export async function createAccount(data: Omit<TablesInsert<"accounts">, "user_i
 
   if (error) return { error: error.message };
 
-  // Fire-and-forget ledger log (non-blocking)
+  // Awaited ledger log (Essential for audit)
   if (newAccount) {
-    supabase.from("ledger_logs").insert({
+    await supabase.from("ledger_logs").insert({
       user_id: user.id,
       account_id: newAccount.id,
       account_name: newAccount.name,
@@ -30,7 +30,7 @@ export async function createAccount(data: Omit<TablesInsert<"accounts">, "user_i
       previous_balance: 0,
       new_balance: newAccount.balance,
       details: `Created new ${newAccount.type} account: ${newAccount.name}`,
-    }).then(() => {});
+    });
   }
 
   revalidatePath("/dashboard/accounts");
@@ -118,48 +118,69 @@ export async function createTransfer(data: TransferData) {
 
   if (!user) return { error: "Unauthorized" };
 
-  // Validate accounts belong to user
+  // 1. Validate accounts belong to user and check currency
   const { data: accounts, error: accountsError } = await supabase
     .from("accounts")
-    .select("id, balance, name")
+    .select("id, balance, name, currency")
     .eq("user_id", user.id)
     .in("id", [data.from_account_id, data.to_account_id]);
 
   if (accountsError || !accounts || accounts.length !== 2) {
-    return { error: "Invalid accounts" };
+    return { error: "Invalid accounts selection" };
   }
 
   const fromAccount = accounts.find((a) => a.id === data.from_account_id);
   const toAccount = accounts.find((a) => a.id === data.to_account_id);
 
-  if (!fromAccount || !toAccount) return { error: "Invalid accounts" };
-  if (fromAccount.balance < data.amount) return { error: "Insufficient balance" };
+  if (!fromAccount || !toAccount) return { error: "Could not find selected accounts" };
+  
+  // Logical Bug Fix: Check currency mismatch
+  if (fromAccount.currency !== toAccount.currency) {
+    return { error: `Currency mismatch: Cannot transfer between ${fromAccount.currency} and ${toAccount.currency} accounts.` };
+  }
 
-  // Run transfer + balance updates in parallel
-  const [transferRes, fromRes, toRes] = await Promise.all([
-    supabase.from("transfers").insert({
-      user_id: user.id,
-      from_account_id: data.from_account_id,
-      to_account_id: data.to_account_id,
-      amount: data.amount,
-      note: data.note,
-    }),
-    supabase.from("accounts")
-      .update({ balance: fromAccount.balance - data.amount })
-      .eq("id", data.from_account_id)
-      .eq("user_id", user.id),
-    supabase.from("accounts")
-      .update({ balance: toAccount.balance + data.amount })
-      .eq("id", data.to_account_id)
-      .eq("user_id", user.id),
-  ]);
+  if (fromAccount.balance < data.amount) return { error: "Insufficient balance in source account" };
 
-  if (transferRes.error) return { error: transferRes.error.message };
-  if (fromRes.error) return { error: "Failed to update source account" };
-  if (toRes.error) return { error: "Failed to update destination account" };
+  // 2. Perform updates sequentially with careful await
+  // Note: True atomicity requires RPC/PostgreSQL transaction
+  
+  // Step A: Create transfer record
+  const { error: transferError } = await supabase.from("transfers").insert({
+    user_id: user.id,
+    from_account_id: data.from_account_id,
+    to_account_id: data.to_account_id,
+    amount: data.amount,
+    note: data.note,
+  });
 
-  // Fire-and-forget ledger logs (non-blocking)
-  Promise.all([
+  if (transferError) return { error: `Transaction failed: ${transferError.message}` };
+
+  // Step B: Deduct from source
+  const { error: fromError } = await supabase.from("accounts")
+    .update({ balance: fromAccount.balance - data.amount })
+    .eq("id", data.from_account_id)
+    .eq("user_id", user.id);
+
+  if (fromError) {
+    // Critical: Transfer record exists but balance deduction failed
+    return { error: "Failed to update source account balance." };
+  }
+
+  // Step C: Add to destination
+  const { error: toError } = await supabase.from("accounts")
+    .update({ balance: toAccount.balance + data.amount })
+    .eq("id", data.to_account_id)
+    .eq("user_id", user.id);
+
+  if (toError) {
+    // FATAL: Money deducted from source but not added to destination!
+    // In a production app, we should attempt an automated rollback or log a high-priority alert.
+    console.error("FATAL ERROR: Balance deducted from source but failed to add to destination", toError);
+    return { error: "Critical error during balance update. Please contact support." };
+  }
+
+  // 3. Log to ledger (Awaited for integrity)
+  await Promise.all([
     supabase.from("ledger_logs").insert({
       user_id: user.id,
       account_id: data.from_account_id,
@@ -183,6 +204,7 @@ export async function createTransfer(data: TransferData) {
   ]);
 
   revalidatePath("/dashboard/accounts");
+  revalidatePath("/dashboard/transfers");
   revalidatePath("/dashboard");
   
   return { success: true };
@@ -214,8 +236,8 @@ export async function adjustBalance(id: string, amount: number, note: string) {
 
   if (error) return { error: error.message };
 
-  // Fire-and-forget: ledger + transaction in parallel (non-blocking)
-  Promise.all([
+  // 2. Log to ledger and transactions (Awaited for integrity)
+  const [ledgerRes, transRes] = await Promise.all([
     supabase.from("ledger_logs").insert({
       user_id: user.id,
       account_id: id,
@@ -235,6 +257,9 @@ export async function adjustBalance(id: string, amount: number, note: string) {
       date: new Date().toISOString().split('T')[0],
     }),
   ]);
+
+  if (ledgerRes.error) console.error("Failed to create ledger log", ledgerRes.error);
+  if (transRes.error) console.error("Failed to create transaction record", transRes.error);
 
   revalidatePath("/dashboard/accounts");
   revalidatePath("/dashboard");

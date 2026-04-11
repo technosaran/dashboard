@@ -56,7 +56,6 @@ export default function FamilyPage() {
   const [newRelationship, setNewRelationship] = useState("Family");
   const [newAccountNumber, setNewAccountNumber] = useState("");
   const [newBankName, setNewBankName] = useState("");
-  const [newPhone, setNewPhone] = useState("");
 
   const [sendAmount, setSendAmount] = useState("");
   const [sendAccountId, setSendAccountId] = useState("");
@@ -107,7 +106,7 @@ export default function FamilyPage() {
       setNewName("");
       setNewAccountNumber("");
       setNewBankName("");
-      setNewPhone("");
+      setNewBankName("");
       toast.success(`${newName} has been added!`);
       fetchData();
     } else {
@@ -208,7 +207,7 @@ export default function FamilyPage() {
         <div className="glass-card-static p-5">
           <p className="text-[10px] font-bold uppercase tracking-widest text-[--text-muted] mb-1">Recently Sent</p>
           <p className="text-3xl font-black text-[#55efc4]">
-            ₹{totalSent.toLocaleString()}
+            {totalSent.toLocaleString()}
           </p>
         </div>
       </div>
@@ -381,7 +380,7 @@ export default function FamilyPage() {
                   </div>
                 </div>
                 <span className="text-sm font-bold text-red-400">
-                  -₹{(send.amount || 0).toLocaleString()}
+                  -{(send.amount || 0).toLocaleString()}
                 </span>
               </div>
             ))}
@@ -537,7 +536,7 @@ export default function FamilyPage() {
                   >
                     {accounts.map((acc) => (
                       <option key={acc.id} value={acc.id} style={{ background: "var(--bg-surface)" }}>
-                        {acc.name} — ₹{acc.balance.toLocaleString()}
+                        {acc.name} — {acc.currency} {acc.balance.toLocaleString()}
                       </option>
                     ))}
                   </select>
@@ -549,7 +548,9 @@ export default function FamilyPage() {
                     Amount
                   </label>
                   <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-black text-[--text-muted]">₹</span>
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-black text-[--text-muted]">
+                      {accounts.find(a => a.id === sendAccountId)?.currency === 'USD' ? '$' : '₹'}
+                    </span>
                     <input
                       required
                       type="number"
@@ -623,7 +624,7 @@ export default function FamilyPage() {
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                           <path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                         </svg>
-                        Send ₹{sendAmount ? parseFloat(sendAmount).toLocaleString() : "0"}
+                        Send {accounts.find(a => a.id === sendAccountId)?.currency === 'USD' ? '$' : '₹'}{sendAmount ? parseFloat(sendAmount).toLocaleString() : "0"}
                       </>
                     )}
                   </button>

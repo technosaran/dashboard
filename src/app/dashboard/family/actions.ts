@@ -10,8 +10,18 @@ export async function createRecipient(data: Omit<TablesInsert<"recipients">, "us
   
   if (!user) return { error: "Unauthorized" };
 
+  // Basic Validation
+  if (!data.name || data.name.trim().length < 2) {
+    return { error: "Name must be at least 2 characters long." };
+  }
+
+  if (data.account_number && data.account_number.length < 4) {
+    return { error: "Account number seems too short." };
+  }
+
   const { error } = await supabase.from("recipients").insert({
     ...data,
+    name: data.name.trim(),
     user_id: user.id,
   });
 
@@ -52,7 +62,7 @@ export async function sendMoneyToFamily(payload: {
 
   // Fetch account + recipient in parallel
   const [accountRes, recipientRes] = await Promise.all([
-    supabase.from("accounts").select("balance, name").eq("id", payload.account_id).eq("user_id", user.id).single(),
+    supabase.from("accounts").select("balance, name, currency").eq("id", payload.account_id).eq("user_id", user.id).single(),
     supabase.from("recipients").select("name").eq("id", payload.recipient_id).eq("user_id", user.id).single(),
   ]);
 
@@ -62,23 +72,29 @@ export async function sendMoneyToFamily(payload: {
   const account = accountRes.data;
   const recipient = recipientRes.data;
 
+  // Logical Bug Fix: Verify currency match (External transfers usually assume INR for now, but we should be explicit)
+  if (account.currency !== "INR") {
+    // Current UI assumes INR for family transfers. If the account is USD, we need a conversion or we should block it.
+    return { error: `Cannot send money from a ${account.currency} account. Currently only INR is supported for family transfers.` };
+  }
+
   if (account.balance < payload.amount) return { error: "Insufficient balance" };
 
   const newBalance = account.balance - payload.amount;
 
-  // Update balance
+  // 1. Update balance (Essential)
   const { error: updateError } = await supabase
     .from("accounts")
     .update({ balance: newBalance })
     .eq("id", payload.account_id)
     .eq("user_id", user.id);
 
-  if (updateError) return { error: "Failed to update balance" };
+  if (updateError) return { error: "Failed to update account balance." };
 
-  // Fire-and-forget: ledger + transaction in parallel (non-blocking)
+  // 2. Log to ledger and transactions (Awaited for integrity)
   const details = `Sent money to ${recipient.name}${payload.note ? `: ${payload.note}` : ""}`;
 
-  Promise.all([
+  const [ledgerRes, transRes] = await Promise.all([
     supabase.from("ledger_logs").insert({
       user_id: user.id,
       account_id: payload.account_id,
@@ -99,6 +115,9 @@ export async function sendMoneyToFamily(payload: {
       date: new Date().toISOString().split('T')[0],
     }),
   ]);
+
+  if (ledgerRes.error) console.error("Failed to create ledger log", ledgerRes.error);
+  if (transRes.error) console.error("Failed to create transaction record", transRes.error);
 
   revalidatePath("/dashboard/family");
   revalidatePath("/dashboard/accounts");

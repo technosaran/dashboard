@@ -418,7 +418,14 @@ function AccountsContent() {
     toast.success("Transfer completed successfully");
   }
 
-  const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
+  // Logical Fix: Group balances by currency for correct total representation
+  const balancesByCurrency = accounts.reduce((acc, account) => {
+    acc[account.currency] = (acc[account.currency] || 0) + account.balance;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const primaryCurrency = accounts[0]?.currency || "INR";
+  const totalBalance = balancesByCurrency[primaryCurrency] || 0;
   
   const accountColors = [
     "#a29bfe", "#55efc4", "#fd79a8", "#74b9ff",
@@ -431,6 +438,7 @@ function AccountsContent() {
     value: account.balance,
     color: accountColors[index % accountColors.length],
     type: account.type,
+    currency: account.currency,
   }));
 
   if (loading) {
@@ -512,9 +520,13 @@ function AccountsContent() {
                   Portfolio Assets
                 </p>
               </div>
-              <h2 className="text-4xl md:text-5xl font-black mb-8 tracking-tighter text-[--text-primary]">
-                ₹{totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-              </h2>
+              <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2 mb-8">
+                {Object.entries(balancesByCurrency).map(([curr, bal]) => (
+                  <h2 key={curr} className="text-4xl md:text-5xl font-black tracking-tighter text-[--text-primary]">
+                    {getCurrencySymbol(curr)}{bal.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                  </h2>
+                ))}
+              </div>
 
               {/* Asset Cards - Responsive Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 w-full">
@@ -529,7 +541,7 @@ function AccountsContent() {
                         style={{ backgroundColor: item.color, boxShadow: `0 0 10px ${item.color}` }}
                       />
                       {(() => {
-                        const acc = accounts.find(a => a.name === item.name);
+                        const acc = accounts.find(a => a.id === accounts[index].id); // Match by ID for safety
                         return acc?.bank_name ? (
                           <BankLogo bankName={acc.bank_name} size={48} />
                         ) : (
@@ -546,9 +558,9 @@ function AccountsContent() {
                         {item.name}
                       </p>
                       <p className="font-black text-[13px] text-[--accent-primary-light] flex items-center gap-2">
-                        {getCurrencySymbol(accounts.find(a => a.name === item.name)?.currency || "INR")}{item.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                        {getCurrencySymbol(item.currency)}{item.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                         <span className="text-[10px] font-bold text-[--text-muted] opacity-60">
-                          {((item.value / totalBalance) * 100).toFixed(0)}%
+                          {((item.value / (balancesByCurrency[item.currency] || 1)) * 100).toFixed(0)}%
                         </span>
                       </p>
                     </div>
@@ -576,11 +588,12 @@ function AccountsContent() {
                   <Tooltip
                     content={({ active, payload }) => {
                       if (active && payload && payload.length) {
+                        const data = payload[0].payload as typeof chartData[0];
                         return (
                           <div className="glass-card p-3 shadow-2xl border-white/10" style={{ background: "rgba(19, 24, 51, 0.95)", backdropFilter: "blur(12px)" }}>
-                            <p className="text-xs font-bold text-white mb-1">{payload[0].name}</p>
+                            <p className="text-xs font-bold text-white mb-1">{data.name}</p>
                             <p className="text-sm font-black text-[--accent-primary-light]">
-                              ₹{Number(payload[0].value).toLocaleString()}
+                              {getCurrencySymbol(data.currency)}{Number(data.value).toLocaleString()}
                             </p>
                           </div>
                         );
@@ -593,9 +606,13 @@ function AccountsContent() {
               
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                 <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[--text-muted] opacity-60 mb-1">Portfolio</p>
-                <p className="text-xl font-black text-white">
-                  ₹{(totalBalance/100000).toFixed(1)}L
-                </p>
+                <div className="flex flex-col items-center">
+                  {Object.entries(balancesByCurrency).map(([curr, bal]) => (
+                    <p key={curr} className="text-lg font-black text-white leading-tight">
+                      {getCurrencySymbol(curr)}{(bal/1000).toFixed(0)}K
+                    </p>
+                  ))}
+                </div>
               </div>
             </div>
           </div>

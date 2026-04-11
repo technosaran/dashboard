@@ -323,7 +323,7 @@ export default function TransfersPage() {
                 />
                 {formData.from_account_id && (
                   <p className="text-xs mt-1.5" style={{ color: "var(--text-muted)" }}>
-                    Available: ₹{getAccountBalance(formData.from_account_id).toLocaleString()}
+                    Available: {accounts.find(a => a.id === formData.from_account_id)?.currency === 'USD' ? '$' : '₹'}{getAccountBalance(formData.from_account_id).toLocaleString()}
                   </p>
                 )}
               </div>
@@ -511,7 +511,7 @@ export default function TransfersPage() {
                   {/* Amount */}
                   <div className="text-right flex-shrink-0 ml-4">
                     <p className="text-xl font-bold gradient-text">
-                      ₹{transfer.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      {accounts.find(a => a.id === transfer.from_account_id)?.currency === 'USD' ? '$' : '₹'}{transfer.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </p>
                   </div>
                 </div>
