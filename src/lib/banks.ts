@@ -1,97 +1,158 @@
-export type Bank = { name: string; logo: string };
+export type Bank = { name: string; domain: string };
 
-// Real bank logos from official sources/clearbit for high reliability
+// Bank registry mapping names to their official domains
+// Used for logo resolution via multiple logo APIs
 export const BANKS: Bank[] = [
   // Major Public Sector Banks
-  { name: "State Bank of India (SBI)", logo: "https://logo.clearbit.com/sbi.co.in" },
-  { name: "Punjab National Bank (PNB)", logo: "https://logo.clearbit.com/pnbindia.in" },
-  { name: "Bank of Baroda (BOB)",      logo: "https://logo.clearbit.com/bankofbaroda.in" },
-  { name: "Canara Bank",               logo: "https://logo.clearbit.com/canarabank.com" },
-  { name: "Union Bank of India",       logo: "https://logo.clearbit.com/unionbankofindia.co.in" },
-  { name: "Bank of India (BOI)",       logo: "https://logo.clearbit.com/bankofindia.co.in" },
-  { name: "Indian Bank",               logo: "https://logo.clearbit.com/indianbank.in" },
-  { name: "Central Bank of India",     logo: "https://logo.clearbit.com/centralbankofindia.co.in" },
-  { name: "Indian Overseas Bank",      logo: "https://logo.clearbit.com/iob.in" },
-  { name: "UCO Bank",                  logo: "https://logo.clearbit.com/ucobank.com" },
-  { name: "Bank of Maharashtra",       logo: "https://logo.clearbit.com/bankofmaharashtra.in" },
-  { name: "Punjab & Sind Bank",        logo: "https://logo.clearbit.com/punjabandsindbank.co.in" },
+  { name: "State Bank of India (SBI)",  domain: "sbi.co.in" },
+  { name: "Punjab National Bank (PNB)", domain: "pnbindia.in" },
+  { name: "Bank of Baroda (BOB)",       domain: "bankofbaroda.in" },
+  { name: "Canara Bank",                domain: "canarabank.com" },
+  { name: "Union Bank of India",        domain: "unionbankofindia.co.in" },
+  { name: "Bank of India (BOI)",        domain: "bankofindia.co.in" },
+  { name: "Indian Bank",                domain: "indianbank.in" },
+  { name: "Central Bank of India",      domain: "centralbankofindia.co.in" },
+  { name: "Indian Overseas Bank",       domain: "iob.in" },
+  { name: "UCO Bank",                   domain: "ucobank.com" },
+  { name: "Bank of Maharashtra",        domain: "bankofmaharashtra.in" },
+  { name: "Punjab & Sind Bank",         domain: "punjabandsindbank.co.in" },
 
   // Major Private Sector Banks
-  { name: "HDFC Bank",                 logo: "https://logo.clearbit.com/hdfcbank.com" },
-  { name: "ICICI Bank",                logo: "https://logo.clearbit.com/icicibank.com" },
-  { name: "Axis Bank",                 logo: "https://logo.clearbit.com/axisbank.com" },
-  { name: "Kotak Mahindra Bank",       logo: "https://logo.clearbit.com/kotak.com" },
-  { name: "IndusInd Bank",             logo: "https://logo.clearbit.com/indusind.com" },
-  { name: "Yes Bank",                  logo: "https://logo.clearbit.com/yesbank.in" },
-  { name: "IDFC First Bank",           logo: "https://logo.clearbit.com/idfcfirstbank.com" },
-  { name: "Federal Bank",              logo: "https://logo.clearbit.com/federalbank.co.in" },
-  { name: "South Indian Bank",         logo: "https://logo.clearbit.com/southindianbank.com" },
-  { name: "Karnataka Bank",            logo: "https://logo.clearbit.com/karnatakabank.com" },
-  { name: "RBL Bank",                  logo: "https://logo.clearbit.com/rblbank.com" },
-  { name: "Karur Vysya Bank",          logo: "https://logo.clearbit.com/kvb.co.in" },
-  { name: "Bandhan Bank",              logo: "https://logo.clearbit.com/bandhanbank.com" },
-  { name: "IDBI Bank",                 logo: "https://logo.clearbit.com/idbibank.in" },
-  { name: "City Union Bank",           logo: "https://logo.clearbit.com/cityunionbank.com" },
-  { name: "DCB Bank",                  logo: "https://logo.clearbit.com/dcbbank.com" },
-  { name: "Tamilnad Mercantile Bank",  logo: "https://logo.clearbit.com/tmb.in" },
-  { name: "J&K Bank",                  logo: "https://logo.clearbit.com/jkbank.com" },
-  { name: "CSB Bank",                  logo: "https://logo.clearbit.com/csb.co.in" },
-  { name: "Dhanlaxmi Bank",            logo: "https://logo.clearbit.com/dhanbank.com" },
+  { name: "HDFC Bank",                  domain: "hdfcbank.com" },
+  { name: "ICICI Bank",                 domain: "icicibank.com" },
+  { name: "Axis Bank",                  domain: "axisbank.com" },
+  { name: "Kotak Mahindra Bank",        domain: "kotak.com" },
+  { name: "IndusInd Bank",              domain: "indusind.com" },
+  { name: "Yes Bank",                   domain: "yesbank.in" },
+  { name: "IDFC First Bank",            domain: "idfcfirstbank.com" },
+  { name: "Federal Bank",               domain: "federalbank.co.in" },
+  { name: "South Indian Bank",          domain: "southindianbank.com" },
+  { name: "Karnataka Bank",             domain: "karnatakabank.com" },
+  { name: "RBL Bank",                   domain: "rblbank.com" },
+  { name: "Karur Vysya Bank",           domain: "kvb.co.in" },
+  { name: "Bandhan Bank",               domain: "bandhanbank.com" },
+  { name: "IDBI Bank",                  domain: "idbibank.in" },
+  { name: "City Union Bank",            domain: "cityunionbank.com" },
+  { name: "DCB Bank",                   domain: "dcbbank.com" },
+  { name: "Tamilnad Mercantile Bank",   domain: "tmb.in" },
+  { name: "J&K Bank",                   domain: "jkbank.com" },
+  { name: "CSB Bank",                   domain: "csb.co.in" },
+  { name: "Dhanlaxmi Bank",             domain: "dhanbank.com" },
 
   // International Banks (India Operations)
-  { name: "HSBC India",                logo: "https://logo.clearbit.com/hsbc.com" },
-  { name: "Standard Chartered",        logo: "https://logo.clearbit.com/sc.com" },
-  { name: "Citibank India",            logo: "https://logo.clearbit.com/citi.com" },
-  { name: "DBS Bank India",            logo: "https://logo.clearbit.com/dbs.com" },
-  { name: "Deutsche Bank India",       logo: "https://logo.clearbit.com/db.com" },
-  { name: "Barclays India",            logo: "https://logo.clearbit.com/barclays.com" },
-  { name: "J.P. Morgan India",         logo: "https://logo.clearbit.com/jpmorgan.com" },
+  { name: "HSBC India",                 domain: "hsbc.co.in" },
+  { name: "Standard Chartered",         domain: "sc.com" },
+  { name: "Citibank India",             domain: "citibank.co.in" },
+  { name: "DBS Bank India",             domain: "dbs.com" },
+  { name: "Deutsche Bank India",        domain: "db.com" },
+  { name: "Barclays India",             domain: "barclays.com" },
+  { name: "J.P. Morgan India",          domain: "jpmorgan.com" },
 
   // Small Finance & Payments Banks
-  { name: "AU Small Finance Bank",     logo: "https://logo.clearbit.com/aubank.in" },
-  { name: "Equitas Small Finance Bank",logo: "https://logo.clearbit.com/equitasbank.com" },
-  { name: "Ujjivan Small Finance Bank",logo: "https://logo.clearbit.com/ujjivansfb.in" },
-  { name: "ESAF Small Finance Bank",   logo: "https://logo.clearbit.com/esafbank.com" },
-  { name: "Suryoday Small Finance Bank",logo: "https://logo.clearbit.com/suryodaybank.com" },
-  { name: "Jana Small Finance Bank",   logo: "https://logo.clearbit.com/janabank.com" },
-  { name: "Utkarsh Small Finance Bank",logo: "https://logo.clearbit.com/utkarshbank.in" },
-  { name: "Capital Small Finance Bank",logo: "https://logo.clearbit.com/capitalbank.co.in" },
-  { name: "Paytm Payments Bank",       logo: "https://logo.clearbit.com/paytm.com" },
-  { name: "Airtel Payments Bank",      logo: "https://logo.clearbit.com/airtel.in" },
-  { name: "Jio Payments Bank",         logo: "https://logo.clearbit.com/jio.com" },
-  { name: "India Post Payments Bank",  logo: "https://logo.clearbit.com/ippbonline.com" },
-  { name: "Fino Payments Bank",        logo: "https://logo.clearbit.com/finobank.com" },
-  { name: "NSDL Payments Bank",        logo: "https://logo.clearbit.com/nsdlbank.com" },
+  { name: "AU Small Finance Bank",      domain: "aubank.in" },
+  { name: "Equitas Small Finance Bank", domain: "equitasbank.com" },
+  { name: "Ujjivan Small Finance Bank", domain: "ujjivansfb.in" },
+  { name: "ESAF Small Finance Bank",    domain: "esafbank.com" },
+  { name: "Suryoday Small Finance Bank",domain: "suryodaybank.com" },
+  { name: "Jana Small Finance Bank",    domain: "janabank.com" },
+  { name: "Utkarsh Small Finance Bank", domain: "utkarshbank.in" },
+  { name: "Capital Small Finance Bank", domain: "capitalbank.co.in" },
+  { name: "Paytm Payments Bank",        domain: "paytm.com" },
+  { name: "Airtel Payments Bank",       domain: "airtel.in" },
+  { name: "Jio Payments Bank",          domain: "jio.com" },
+  { name: "India Post Payments Bank",   domain: "ippbonline.com" },
+  { name: "Fino Payments Bank",         domain: "finobank.com" },
+  { name: "NSDL Payments Bank",         domain: "nsdlbank.com" },
 
   // Neo-Banks & Fintech
-  { name: "Jupiter",                   logo: "https://logo.clearbit.com/jupiter.money" },
-  { name: "Fi Money",                  logo: "https://logo.clearbit.com/fi.money" },
-  { name: "Niyo",                      logo: "https://logo.clearbit.com/goniyo.com" },
-  { name: "Slice",                     logo: "https://logo.clearbit.com/sliceit.com" },
-  { name: "Uni Cards",                 logo: "https://logo.clearbit.com/uni.cards" },
-  { name: "OneCard",                   logo: "https://logo.clearbit.com/getonecard.com" },
-  { name: "FamPay",                    logo: "https://logo.clearbit.com/fampay.in" },
-  { name: "Mobikwik",                  logo: "https://logo.clearbit.com/mobikwik.com" },
-  { name: "PhonePe",                   logo: "https://logo.clearbit.com/phonepe.com" },
-  { name: "Google Pay",                logo: "https://logo.clearbit.com/google.com" },
-  { name: "Amazon Pay",                logo: "https://logo.clearbit.com/amazon.in" },
-  { name: "CRED",                      logo: "https://logo.clearbit.com/cred.club" },
-  { name: "BharatPe",                  logo: "https://logo.clearbit.com/bharatpe.com" },
-  { name: "Navi",                      logo: "https://logo.clearbit.com/navi.com" },
+  { name: "Jupiter",                    domain: "jupiter.money" },
+  { name: "Fi Money",                   domain: "fi.money" },
+  { name: "Niyo",                       domain: "goniyo.com" },
+  { name: "Slice",                      domain: "sliceit.com" },
+  { name: "Uni Cards",                  domain: "uni.cards" },
+  { name: "OneCard",                    domain: "getonecard.com" },
+  { name: "FamPay",                     domain: "fampay.in" },
+  { name: "Mobikwik",                   domain: "mobikwik.com" },
+  { name: "PhonePe",                    domain: "phonepe.com" },
+  { name: "Google Pay",                 domain: "pay.google.com" },
+  { name: "Amazon Pay",                 domain: "amazon.in" },
+  { name: "CRED",                       domain: "cred.club" },
+  { name: "BharatPe",                   domain: "bharatpe.com" },
+  { name: "Navi",                       domain: "navi.com" },
 
   // Investment Platforms
-  { name: "Zerodha",                   logo: "https://logo.clearbit.com/zerodha.com" },
-  { name: "Upstox",                    logo: "https://logo.clearbit.com/upstox.com" },
-  { name: "Groww",                     logo: "https://logo.clearbit.com/groww.in" },
-  { name: "Angel One",                 logo: "https://logo.clearbit.com/angelone.in" },
-  { name: "Kuvera",                    logo: "https://logo.clearbit.com/kuvera.in" },
-  { name: "Indmoney",                  logo: "https://logo.clearbit.com/indmoney.com" },
-  { name: "ET Money",                  logo: "https://logo.clearbit.com/etmoney.com" },
-  { name: "Smallcase",                 logo: "https://logo.clearbit.com/smallcase.com" },
-  { name: "Wealthy",                   logo: "https://logo.clearbit.com/wealthy.in" },
-  { name: "Paytm Money",               logo: "https://logo.clearbit.com/paytmmoney.com" },
-  { name: "Coin by Zerodha",           logo: "https://logo.clearbit.com/zerodha.com" },
+  { name: "Zerodha",                    domain: "zerodha.com" },
+  { name: "Upstox",                     domain: "upstox.com" },
+  { name: "Groww",                      domain: "groww.in" },
+  { name: "Angel One",                  domain: "angelone.in" },
+  { name: "Kuvera",                     domain: "kuvera.in" },
+  { name: "Indmoney",                   domain: "indmoney.com" },
+  { name: "ET Money",                   domain: "etmoney.com" },
+  { name: "Smallcase",                  domain: "smallcase.com" },
+  { name: "Wealthy",                    domain: "wealthy.in" },
+  { name: "Paytm Money",               domain: "paytmmoney.com" },
+  { name: "Coin by Zerodha",            domain: "zerodha.com" },
 ];
+
+/**
+ * Get the logo URL for a bank using Google favicon service (high-res, no API key needed)
+ * Falls back through multiple providers for reliability
+ */
+export function getBankLogoUrl(bankNameOrDomain: string, size: number = 128): string {
+  // Try to find the bank in our registry
+  const bank = BANKS.find((b) => {
+    const q = bankNameOrDomain.toLowerCase();
+    return b.name.toLowerCase() === q || b.domain.toLowerCase() === q;
+  });
+
+  const domain = bank?.domain || guessDomainFromName(bankNameOrDomain);
+
+  // Use Google's high-res favicon service (no API key, works reliably)
+  return `https://www.google.com/s2/favicons?domain=${domain}&sz=${size}`;
+}
+
+/**
+ * Get multiple logo source URLs for fallback chain
+ */
+export function getBankLogoSources(bankNameOrDomain: string): string[] {
+  const bank = BANKS.find((b) => {
+    const q = bankNameOrDomain.toLowerCase();
+    return b.name.toLowerCase() === q || b.domain.toLowerCase() === q;
+  });
+
+  const domain = bank?.domain || guessDomainFromName(bankNameOrDomain);
+
+  return [
+    // Primary: Google favicons (most reliable, no API key)
+    `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
+    // Fallback 1: DuckDuckGo icons
+    `https://icons.duckduckgo.com/ip3/${domain}.ico`,
+    // Fallback 2: Direct favicon from the website
+    `https://${domain}/favicon.ico`,
+  ];
+}
+
+/**
+ * Get the domain registered for a bank name
+ */
+export function getBankDomain(bankName: string): string | null {
+  const bank = BANKS.find((b) => b.name.toLowerCase() === bankName.toLowerCase());
+  return bank?.domain || null;
+}
+
+/**
+ * Try to guess a domain from a bank name
+ */
+function guessDomainFromName(name: string): string {
+  const cleaned = name.toLowerCase()
+    .replace(/\(.*?\)/g, '')
+    .replace(/bank|india|ltd|limited|pvt|private/gi, '')
+    .trim()
+    .replace(/\s+/g, '')
+    .replace(/[^a-z0-9]/g, '');
+
+  return `${cleaned}.com`;
+}
 
 export function searchBanks(query: string): Bank[] {
   if (!query.trim()) return BANKS.slice(0, 15); // Show popular banks by default
@@ -111,6 +172,3 @@ export function searchBanks(query: string): Bank[] {
   })
   .slice(0, 12);
 }
-
-
-

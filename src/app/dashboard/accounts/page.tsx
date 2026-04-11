@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase-browser";
 import type { Tables } from "@/lib/database.types";
 import { searchBanks, type Bank } from "@/lib/banks";
 import { createAccount, updateAccount, deleteAccount, createTransfer, adjustBalance } from "./actions";
+import BankLogo from "@/components/bank-logo";
 
 type Account = Tables<"accounts">;
 
@@ -545,10 +546,17 @@ export default function AccountsPage() {
                       className="w-2.5 h-2.5 rounded-full absolute -top-1 -right-1 z-10"
                       style={{ backgroundColor: item.color, boxShadow: `0 0 10px ${item.color}` }}
                     />
-                    <CategoryIcon 
-                      type={accounts.find(a => a.name === item.name)?.type || "checking"} 
-                      className="w-11 h-11" 
-                    />
+                    {(() => {
+                      const acc = accounts.find(a => a.name === item.name);
+                      return acc?.bank_name ? (
+                        <BankLogo bankName={acc.bank_name} size={44} />
+                      ) : (
+                        <CategoryIcon 
+                          type={acc?.type || "checking"} 
+                          className="w-11 h-11" 
+                        />
+                      );
+                    })()}
                   </div>
                   
                   <div className="flex flex-col min-w-0 flex-1">
@@ -640,7 +648,11 @@ export default function AccountsPage() {
                     {account.type}
                   </span>
                   <div className="flex items-center gap-3 mt-3">
-                    <CategoryIcon type={account.type} className="w-12 h-12" />
+                    {account.bank_name ? (
+                      <BankLogo bankName={account.bank_name} size={48} />
+                    ) : (
+                      <CategoryIcon type={account.type} className="w-12 h-12" />
+                    )}
                     <span className="text-base font-bold tracking-tight" style={{ color: "var(--text-secondary)" }}>
                       {account.bank_name || account.name}
                     </span>
@@ -894,10 +906,10 @@ export default function AccountsPage() {
                                 onClick={() => selectBank(bank)}
                                 className="w-full flex items-center gap-4 p-4 text-left transition-all hover:bg-white/5 border-b border-white/5 last:border-0"
                               >
-                                <CategoryIcon type="checking" className="w-10 h-10" />
+                                <BankLogo bankName={bank.name} size={40} />
                                 <div className="flex flex-col">
                                   <span className="text-sm font-bold text-white">{bank.name}</span>
-                                  <span className="text-[10px] text-muted tracking-wider uppercase">Click to select</span>
+                                  <span className="text-[10px] text-muted tracking-wider uppercase">{bank.domain}</span>
                                 </div>
                               </button>
                             ))}
@@ -907,10 +919,14 @@ export default function AccountsPage() {
                       
                       <div className="flex-shrink-0 animate-scale-in">
                         <div className="p-1 rounded-2xl bg-gradient-to-br from-white/10 to-transparent border border-white/10">
-                          <CategoryIcon 
-                            type={formData.type} 
-                            className="w-14 h-14" 
-                          />
+                          {formData.bank_name ? (
+                            <BankLogo bankName={formData.bank_name} size={56} />
+                          ) : (
+                            <CategoryIcon 
+                              type={formData.type} 
+                              className="w-14 h-14" 
+                            />
+                          )}
                         </div>
                       </div>
                     </div>

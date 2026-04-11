@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -197,6 +197,98 @@ export type Database = {
             referencedRelation: "accounts"
             referencedColumns: ["id"]
           },
+        ]
+      }
+      ledger_logs: {
+        Row: {
+          id: string
+          user_id: string
+          account_id: string | null
+          account_name: string | null
+          action_type: string
+          amount: number | null
+          previous_balance: number | null
+          new_balance: number | null
+          details: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          account_id?: string | null
+          account_name?: string | null
+          action_type: string
+          amount?: number | null
+          previous_balance?: number | null
+          new_balance?: number | null
+          details?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          account_id?: string | null
+          account_name?: string | null
+          action_type?: string
+          amount?: number | null
+          previous_balance?: number | null
+          new_balance?: number | null
+          details?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ledger_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ledger_logs_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      recipients: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          relationship: string | null
+          account_number: string | null
+          bank_name: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name: string
+          relationship?: string | null
+          account_number?: string | null
+          bank_name?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          relationship?: string | null
+          account_number?: string | null
+          bank_name?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipients_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
         ]
       }
     }

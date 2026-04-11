@@ -2,7 +2,18 @@
 
 import { createClient } from "@/lib/supabase-server";
 import { revalidatePath } from "next/cache";
-import type { TablesInsert, TablesUpdate } from "@/lib/database.types";
+import type { TablesInsert, TablesUpdate, Tables } from "@/lib/database.types";
+
+async function logToLedger(data: Omit<TablesInsert<"ledger_logs">, "user_id">) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+
+  await supabase.from("ledger_logs").insert({
+    ...data,
+    user_id: user.id,
+  });
+}
 
 export async function createAccount(data: Omit<TablesInsert<"accounts">, "user_id">) {
   const supabase = await createClient();
@@ -12,13 +23,25 @@ export async function createAccount(data: Omit<TablesInsert<"accounts">, "user_i
     return { error: "Unauthorized" };
   }
 
-  const { error } = await supabase.from("accounts").insert({
+  const { data: newAccount, error } = await supabase.from("accounts").insert({
     ...data,
     user_id: user.id,
-  });
+  }).select().single();
 
   if (error) {
     return { error: error.message };
+  }
+
+  if (newAccount) {
+    await logToLedger({
+      account_id: newAccount.id,
+      account_name: newAccount.name,
+      action_type: "CREATE",
+      amount: newAccount.balance,
+      previous_balance: 0,
+      new_balance: newAccount.balance,
+      details: `Created new ${newAccount.type} account: ${newAccount.name}`,
+    });
   }
 
   revalidatePath("/dashboard/accounts");
@@ -43,6 +66,12 @@ export async function updateAccount(id: string, data: TablesUpdate<"accounts">) 
     return { error: error.message };
   }
 
+  await logToLedger({
+    account_id: id,
+    action_type: "UPDATE",
+    details: `Updated account settings: ${Object.keys(data).join(", ")}`,
+  });
+
   revalidatePath("/dashboard/accounts");
   return { success: true };
 }
@@ -64,6 +93,12 @@ export async function deleteAccount(id: string) {
   if (error) {
     return { error: error.message };
   }
+
+  await logToLedger({
+    account_id: id,
+    action_type: "DELETE",
+    details: `Deleted account (ID: ${id})`,
+  });
 
   revalidatePath("/dashboard/accounts");
   return { success: true };
@@ -108,7 +143,7 @@ export async function createTransfer(data: TransferData) {
   // Validate accounts belong to user
   const { data: accounts, error: accountsError } = await supabase
     .from("accounts")
-    .select("id, balance")
+    .select("id, balance, name")
     .eq("user_id", user.id)
     .in("id", [data.from_account_id, data.to_account_id]);
 
@@ -162,6 +197,27 @@ export async function createTransfer(data: TransferData) {
     return { error: "Failed to update destination account" };
   }
 
+  // Log to ledger
+  await logToLedger({
+    account_id: data.from_account_id,
+    account_name: fromAccount.name,
+    action_type: "TRANSFER_OUT",
+    amount: data.amount,
+    previous_balance: fromAccount.balance,
+    new_balance: fromAccount.balance - data.amount,
+    details: `Transfer to ${toAccount.name}: ${data.note || 'No note'}`,
+  });
+
+  await logToLedger({
+    account_id: data.to_account_id,
+    account_name: toAccount.name,
+    action_type: "TRANSFER_IN",
+    amount: data.amount,
+    previous_balance: toAccount.balance,
+    new_balance: toAccount.balance + data.amount,
+    details: `Transfer from ${fromAccount.name}: ${data.note || 'No note'}`,
+  });
+
   revalidatePath("/dashboard/accounts");
   revalidatePath("/dashboard");
   
@@ -179,7 +235,7 @@ export async function adjustBalance(id: string, amount: number, note: string) {
   // Get current balance
   const { data: account, error: fetchError } = await supabase
     .from("accounts")
-    .select("balance")
+    .select("balance, name")
     .eq("id", id)
     .eq("user_id", user.id)
     .single();
@@ -204,6 +260,17 @@ export async function adjustBalance(id: string, amount: number, note: string) {
   if (error) {
     return { error: error.message };
   }
+
+  // Log to ledger
+  await logToLedger({
+    account_id: id,
+    account_name: account.name,
+    action_type: amount > 0 ? "ADJUST_UP" : "ADJUST_DOWN",
+    amount: Math.abs(amount),
+    previous_balance: account.balance,
+    new_balance: newBalance,
+    details: note || (amount > 0 ? "Balance increased" : "Balance decreased"),
+  });
 
   // Log the adjustment as a transaction
   await supabase.from("transactions").insert({

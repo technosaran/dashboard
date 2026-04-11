@@ -3,6 +3,19 @@
 import { createClient } from "@/lib/supabase-server";
 import { revalidatePath } from "next/cache";
 
+import type { TablesInsert } from "@/lib/database.types";
+
+async function logToLedger(data: Omit<TablesInsert<"ledger_logs">, "user_id">) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+
+  await supabase.from("ledger_logs").insert({
+    ...data,
+    user_id: user.id,
+  });
+}
+
 type TransferData = {
   from_account_id: string;
   to_account_id: string;
@@ -21,7 +34,7 @@ export async function createTransfer(data: TransferData) {
   // Validate accounts belong to user
   const { data: accounts, error: accountsError } = await supabase
     .from("accounts")
-    .select("id, balance")
+    .select("id, balance, name")
     .eq("user_id", user.id)
     .in("id", [data.from_account_id, data.to_account_id]);
 
@@ -74,6 +87,27 @@ export async function createTransfer(data: TransferData) {
   if (toError) {
     return { error: "Failed to update destination account" };
   }
+
+  // Log to ledger
+  await logToLedger({
+    account_id: data.from_account_id,
+    account_name: fromAccount.name,
+    action_type: "TRANSFER_OUT",
+    amount: data.amount,
+    previous_balance: fromAccount.balance,
+    new_balance: fromAccount.balance - data.amount,
+    details: `Transfer to ${toAccount.name}: ${data.note || 'No note'}`,
+  });
+
+  await logToLedger({
+    account_id: data.to_account_id,
+    account_name: toAccount.name,
+    action_type: "TRANSFER_IN",
+    amount: data.amount,
+    previous_balance: toAccount.balance,
+    new_balance: toAccount.balance + data.amount,
+    details: `Transfer from ${fromAccount.name}: ${data.note || 'No note'}`,
+  });
 
   revalidatePath("/dashboard/transfers");
   revalidatePath("/dashboard/accounts");
