@@ -52,9 +52,14 @@ To test if real-time is working:
 
 ## Current Implementation
 
-Your app has real-time enabled on:
-- **Dashboard Page**: Listens to accounts table changes
-- **Accounts Page**: Listens to accounts table changes
-- **Transfers Page**: Listens to both accounts and transfers table changes
+Your app has real-time enabled on ALL core modules. All subscriptions use `startTransition` to fetch fresh data, ensuring the UI stays smooth and reactive:
 
-All subscriptions automatically reload data when changes are detected.
+- **Dashboard**: Multi-table sync (accounts, expenses, ledger_logs) for a unified overview.
+- **Accounts**: Real-time balance updates and account list synchronization.
+- **Expenses**: Full sync for expenditure charts and transaction history.
+- **Transfers**: Dual sync for transfers and account balances.
+- **Family**: Real-time recipient and shared fund tracking.
+- **Ledger**: Live audit trail updates.
+- **Settings**: Real-time profile identity synchronization.
+
+All subscriptions automatically reload data when changes are detected by listeners.

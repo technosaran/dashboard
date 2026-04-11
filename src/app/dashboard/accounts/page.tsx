@@ -194,7 +194,7 @@ function AccountsContent() {
           table: "accounts",
         },
         () => {
-          loadAccounts();
+          startTransition(loadAccounts);
         }
       )
       .subscribe();

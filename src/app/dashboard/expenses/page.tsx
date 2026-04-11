@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, startTransition, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
 import { addExpense, deleteExpense } from "./actions";
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, subMonths } from "date-fns";
@@ -27,10 +28,11 @@ type Expense = Tables<"expenses">;
 type Account = Tables<"accounts">;
 
 export default function ExpensesPage() {
+  const searchParams = useSearchParams();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(searchParams.get("action") === "new");
   const [submitting, setSubmitting] = useState(false);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");

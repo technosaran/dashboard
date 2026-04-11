@@ -65,7 +65,7 @@ export default function LedgerPage() {
     startTransition(fetchLogs);
     const channel = supabase
       .channel("ledger-updates-v4")
-      .on("postgres_changes", { event: "*", schema: "public", table: "ledger_logs" }, () => fetchLogs())
+      .on("postgres_changes", { event: "*", schema: "public", table: "ledger_logs" }, () => startTransition(fetchLogs))
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [fetchLogs]);

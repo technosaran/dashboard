@@ -8,6 +8,16 @@ export default function QuickActions() {
 
   const actions = [
     {
+      label: "Record Expense",
+      href: "/dashboard/expenses?action=new",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      ),
+      color: "bg-rose-500",
+    },
+    {
       label: "Send Money",
       href: "/dashboard/family",
       icon: (

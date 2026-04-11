@@ -90,6 +90,17 @@ export default function FamilyPage() {
 
   useEffect(() => {
     startTransition(fetchData);
+
+    const channel = supabase
+      .channel("family-realtime-v1")
+      .on("postgres_changes", { event: "*", schema: "public", table: "recipients" }, () => startTransition(fetchData))
+      .on("postgres_changes", { event: "*", schema: "public", table: "accounts" }, () => startTransition(fetchData))
+      .on("postgres_changes", { event: "*", schema: "public", table: "ledger_logs" }, () => startTransition(fetchData))
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [fetchData]);
 
   const handleAddRecipient = async (e: React.FormEvent) => {
