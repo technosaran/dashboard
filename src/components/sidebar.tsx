@@ -79,7 +79,7 @@ export default function Sidebar() {
     return (
       <Link
         href={href}
-        className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-300 ${
+        className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-300 ${
           active ? "" : "hover:bg-[var(--glass-hover)] group"
         }`}
         style={{
@@ -92,7 +92,7 @@ export default function Sidebar() {
         <span className={`${active ? "text-[--accent-primary-light]" : "group-hover:text-[--text-primary]"}`}>
           {icon}
         </span>
-        <span className="font-medium text-sm md:text-base">{label}</span>
+        <span className="font-medium text-sm">{label}</span>
       </Link>
     );
   };
@@ -101,7 +101,7 @@ export default function Sidebar() {
     <>
       {/* Desktop Sidebar */}
       <aside
-        className="hidden md:flex w-[260px] shrink-0 flex-col h-screen sticky top-0"
+        className="hidden md:flex w-[210px] shrink-0 flex-col h-screen sticky top-0"
         style={{
           background: "var(--sidebar-bg)",
           borderRight: "1px solid var(--sidebar-border)",
@@ -110,7 +110,7 @@ export default function Sidebar() {
         }}
       >
         {/* Logo Section */}
-        <div className="px-6 pt-9 pb-6">
+        <div className="px-5 pt-8 pb-5">
           <div className="flex items-center justify-start">
             <div
               className="w-14 h-14 rounded-2xl flex items-center justify-center animate-pulse-glow"

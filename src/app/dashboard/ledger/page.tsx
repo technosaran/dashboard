@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState, startTransition } from "react";
+import { useCallback, useEffect, useState, startTransition, useMemo } from "react";
 import { createClient } from "@/lib/supabase-browser";
-import { format } from "date-fns";
+import { format, getYear, getMonth, isWithinInterval, startOfDay, endOfDay } from "date-fns";
 
 const supabase = createClient();
 
@@ -17,9 +17,33 @@ type LedgerLog = {
   details: string | null;
 };
 
+const ACTION_TYPES = [
+  "All Actions",
+  "CREATE",
+  "UPDATE",
+  "DELETE",
+  "TRANSFER_IN",
+  "TRANSFER_OUT",
+  "ADJUST_UP",
+  "ADJUST_DOWN",
+  "LOG_ONLY"
+];
+
+const MONTHS = [
+  "All Months", "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"
+];
+
 export default function LedgerPage() {
   const [logs, setLogs] = useState<LedgerLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState("All Actions");
+  const [accountFilter, setAccountFilter] = useState("All Accounts");
+  const [yearFilter, setYearFilter] = useState("All Years");
+  const [monthFilter, setMonthFilter] = useState("All Months");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   const fetchLogs = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -39,22 +63,54 @@ export default function LedgerPage() {
 
   useEffect(() => {
     startTransition(fetchLogs);
-
     const channel = supabase
-      .channel("ledger-updates")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "ledger_logs" },
-        (payload) => {
-          setLogs((prev) => [payload.new as LedgerLog, ...prev]);
-        }
-      )
+      .channel("ledger-updates-v4")
+      .on("postgres_changes", { event: "*", schema: "public", table: "ledger_logs" }, () => fetchLogs())
       .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, [fetchLogs]);
+
+  const uniqueAccounts = useMemo(() => {
+    const accs = new Set<string>();
+    logs.forEach(l => { if (l.account_name) accs.add(l.account_name); });
+    return ["All Accounts", ...Array.from(accs)];
+  }, [logs]);
+
+  const uniqueYears = useMemo(() => {
+    const years = new Set<string>();
+    logs.forEach(l => years.add(getYear(new Date(l.created_at)).toString()));
+    return ["All Years", ...Array.from(years).sort((a, b) => b.localeCompare(a))];
+  }, [logs]);
+
+  const filteredLogs = useMemo(() => {
+    return logs.filter(log => {
+      const date = new Date(log.created_at);
+      const logYear = getYear(date).toString();
+      const logMonth = MONTHS[getMonth(date) + 1];
+
+      // Standard filters
+      const matchSearch = (log.details?.toLowerCase().includes(search.toLowerCase()) || 
+                           log.account_name?.toLowerCase().includes(search.toLowerCase()));
+      const matchType = typeFilter === "All Actions" || log.action_type === typeFilter;
+      const matchAccount = accountFilter === "All Accounts" || log.account_name === accountFilter;
+
+      // Conditional filters (Year/Month VS Date Range)
+      let matchDate = true;
+      if (startDate || endDate) {
+        // Date Range logic
+        const start = startDate ? startOfDay(new Date(startDate)) : new Date(0);
+        const end = endDate ? endOfDay(new Date(endDate)) : new Date();
+        matchDate = isWithinInterval(date, { start, end });
+      } else {
+        // Year/Month logic
+        const matchYear = yearFilter === "All Years" || logYear === yearFilter;
+        const matchMonth = monthFilter === "All Months" || logMonth === monthFilter;
+        matchDate = matchYear && matchMonth;
+      }
+
+      return matchSearch && matchType && matchAccount && matchDate;
+    });
+  }, [logs, search, typeFilter, accountFilter, yearFilter, monthFilter, startDate, endDate]);
 
   const getActionBadge = (type: string) => {
     const styles: Record<string, any> = {
@@ -66,173 +122,179 @@ export default function LedgerPage() {
       ADJUST_UP: { bg: "rgba(85, 239, 196, 0.12)", color: "#55efc4", text: "Adjust Up" },
       ADJUST_DOWN: { bg: "rgba(255, 118, 117, 0.12)", color: "#ff7675", text: "Adjust Down" },
     };
-
     const style = styles[type] || { bg: "rgba(255, 255, 255, 0.05)", color: "var(--text-secondary)", text: type };
-
     return (
-      <span
-        className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider"
-        style={{ background: style.bg, color: style.color, border: `1px solid ${style.bg}` }}
-      >
+      <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider" style={{ background: style.bg, color: style.color, border: `1px solid ${style.bg}` }}>
         {style.text}
       </span>
     );
   };
 
   return (
-    <div className="space-y-8 animate-fade-in">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight text-[--text-primary]">
-          Financial Ledger
-        </h1>
-        <p className="text-[--text-secondary]">
-          Automated audit trail of all account activities and balance changes.
-        </p>
+    <div className="space-y-8 animate-fade-in max-w-7xl mx-auto pb-32">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="text-4xl font-black tracking-tight text-[--text-primary]">
+            Audit Trail
+          </h1>
+          <div className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+            <p className="text-[--text-secondary] font-medium text-xs uppercase tracking-widest">
+              Centralized Ledger System
+            </p>
+          </div>
+        </div>
       </div>
 
-      <div
-        className="overflow-hidden border border-white/5 bg-[var(--bg-surface)] backdrop-blur-xl"
-        style={{ borderRadius: "var(--radius-2xl)" }}
-      >
-        {/* Table View (Hidden on Mobile) */}
+      {/* Advanced Filter Architecture */}
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-white/[0.02] border border-white/5 p-4 rounded-[32px] backdrop-blur-3xl shadow-2xl">
+          <div className="relative col-span-1 md:col-span-2">
+            <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[--text-muted]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            <input 
+              type="text" 
+              placeholder="Search audit trail..." 
+              className="input-premium pl-10 py-3 text-sm w-full"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <select className="input-premium py-3 text-sm" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
+            {ACTION_TYPES.map(t => <option key={t} value={t}>{t.replace("_", " ")}</option>)}
+          </select>
+          <select className="input-premium py-3 text-sm" value={accountFilter} onChange={(e) => setAccountFilter(e.target.value)}>
+            {uniqueAccounts.map(a => <option key={a} value={a}>{a}</option>)}
+          </select>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 px-2">
+           {/* Layer 1: Calendar Selection */}
+           <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[10px] font-black uppercase text-[--text-muted] tracking-[0.2em] ml-2">Year</span>
+                <select className="input-premium py-2.5 text-xs" value={yearFilter} onChange={(e) => {setYearFilter(e.target.value); setStartDate(""); setEndDate("");}}>
+                  {uniqueYears.map(y => <option key={y} value={y}>{y}</option>)}
+                </select>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[10px] font-black uppercase text-[--text-muted] tracking-[0.2em] ml-2">Month</span>
+                <select className="input-premium py-2.5 text-xs" value={monthFilter} onChange={(e) => {setMonthFilter(e.target.value); setStartDate(""); setEndDate("");}}>
+                  {MONTHS.map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
+              </div>
+           </div>
+
+           {/* Layer 2: Specific Date Range */}
+           <div className="grid grid-cols-2 gap-4 border-l border-white/5 pl-8">
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[10px] font-black uppercase text-[--text-muted] tracking-[0.2em] ml-2">From Date</span>
+                <input 
+                  type="date" 
+                  className="input-premium py-2 text-xs" 
+                  value={startDate} 
+                  onChange={(e) => setStartDate(e.target.value)} 
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[10px] font-black uppercase text-[--text-muted] tracking-[0.2em] ml-2">To Date</span>
+                <input 
+                  type="date" 
+                  className="input-premium py-2 text-xs" 
+                  value={endDate} 
+                  onChange={(e) => setEndDate(e.target.value)} 
+                />
+              </div>
+           </div>
+        </div>
+      </div>
+
+      <div className="overflow-hidden border border-white/5 bg-[var(--bg-surface)] backdrop-blur-xl shadow-2xl" style={{ borderRadius: "var(--radius-3xl)" }}>
+        {/* Table View */}
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-white/5 bg-white/[0.02]">
-                <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[--text-muted]">Date & Time</th>
-                <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[--text-muted]">Action</th>
-                <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[--text-muted]">Account</th>
-                <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[--text-muted]">Amount</th>
-                <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[--text-muted]">Prev Balance</th>
-                <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[--text-muted]">New Balance</th>
-                <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[--text-muted]">Details</th>
-                <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[--text-muted] text-center">Controls</th>
+              <tr className="bg-white/[0.02] border-b border-white/5">
+                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Timestamp</th>
+                <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Operation</th>
+                <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Account</th>
+                <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Amount</th>
+                <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Audit Details</th>
+                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] text-center">Controls</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i} className="animate-pulse">
-                    <td colSpan={8} className="px-6 py-8 text-center">
-                      <div className="h-4 bg-white/5 rounded w-full"></div>
-                    </td>
+                    <td colSpan={6} className="px-8 py-8"><div className="h-4 bg-white/5 rounded w-full" /></td>
                   </tr>
                 ))
-              ) : logs.length === 0 ? (
+              ) : filteredLogs.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center text-[--text-muted]">
-                    No ledger entries found. Activities will be logged automatically.
+                  <td colSpan={6} className="px-8 py-32 text-center">
+                    <div className="text-5xl mb-6 opacity-40">📅</div>
+                    <h3 className="text-2xl font-black text-[--text-primary]">No logs found in this range</h3>
+                    <p className="text-sm text-[--text-muted] mt-2">Adjust your start/end dates or clear filters to reset.</p>
                   </td>
                 </tr>
               ) : (
-                logs.map((log) => (
-                  <tr key={log.id} className="hover:bg-white/[0.02] transition-colors group">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-[--text-primary]">
-                        {format(new Date(log.created_at), "MMM d, yyyy")}
-                      </div>
-                      <div className="text-[10px] text-[--text-muted]">
-                        {format(new Date(log.created_at), "HH:mm:ss")}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {getActionBadge(log.action_type)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm font-medium text-[--text-secondary]">
-                        {log.account_name || "—"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`text-sm font-mono ${log.amount && log.amount > 0 ? "text-[--accent-primary-light]" : "text-[--text-primary]"}`}>
-                        {log.amount ? `₹${log.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-[--text-muted]">
-                      {log.previous_balance !== null ? `₹${log.previous_balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—"}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-[--text-secondary]">
-                      {log.new_balance !== null ? `₹${log.new_balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—"}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-[--text-muted] max-w-xs truncate group-hover:whitespace-normal group-hover:overflow-visible group-hover:max-w-none transition-all">
-                        {log.details}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center">
-                       <button
-                         onClick={async () => {
-                           if (!confirm("Reverting this transaction will undo the balance change. Continue?")) return;
-                           const { revertLog } = await import("./actions");
-                           const res = await revertLog(log.id);
-                           if (res.error) {
-                             alert(res.error);
-                           } else {
-                             fetchLogs();
-                           }
-                         }}
-                         className="p-2 rounded-lg bg-[--accent-primary]/0 hover:bg-[--accent-primary]/10 text-[--accent-primary]/40 hover:text-[--accent-primary] transition-all opacity-0 group-hover:opacity-100"
-                         title="Revert Transaction"
-                       >
-                         <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M11 15l-3-3m0 0l3-3m-3 3h8M3 12a9 9 0 1118 0 9 9 0 01-18 0z" /></svg>
-                       </button>
-                    </td>
-                  </tr>
-                ))
+                filteredLogs.map((log) => {
+                  const isDebit = ["ADJUST_DOWN", "TRANSFER_OUT", "DELETE"].includes(log.action_type);
+                  return (
+                    <tr key={log.id} className="hover:bg-white/[0.02] transition-colors group">
+                      <td className="px-8 py-6 whitespace-nowrap">
+                        <div className="text-sm font-bold text-[--text-primary]">{format(new Date(log.created_at), "MMM d, yyyy")}</div>
+                        <div className="text-[10px] font-medium text-[--text-muted] tracking-tight">{format(new Date(log.created_at), "HH:mm:ss")}</div>
+                      </td>
+                      <td className="px-6 py-6 whitespace-nowrap">{getActionBadge(log.action_type)}</td>
+                      <td className="px-6 py-6 whitespace-nowrap"><span className="text-sm font-bold text-[--text-secondary]">{log.account_name || "—"}</span></td>
+                      <td className="px-6 py-6 whitespace-nowrap">
+                        <div className="flex flex-col">
+                           <span className={`text-lg font-black ${isDebit ? "text-red-400" : "text-emerald-400"}`}>
+                             {log.amount ? `${isDebit ? '-' : '+'}₹${log.amount.toLocaleString()}` : "—"}
+                           </span>
+                           <span className="text-[10px] font-black text-[--text-muted]">Net: ₹{log.new_balance?.toLocaleString()}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-6 min-w-[300px]">
+                        <div className="text-sm font-medium text-[--text-muted] leading-relaxed group-hover:text-[--text-secondary] transition-colors">
+                          {log.details}
+                        </div>
+                      </td>
+                      <td className="px-8 py-6 whitespace-nowrap text-center">
+                         <button
+                           onClick={async () => {
+                             if (!confirm("Proceed with deep reversal? This will restore balances and undo activity.")) return;
+                             const { revertLog } = await import("./actions");
+                             const res = await revertLog(log.id);
+                             if (res.error) alert(res.error);
+                           }}
+                           className="p-3 rounded-2xl bg-white/0 hover:bg-rose-500/10 text-[--text-muted] hover:text-rose-400 transition-all opacity-0 group-hover:opacity-100"
+                           title="Undo"
+                         >
+                           <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M3 10h10a8 8 0 018 8v2M3 10l5 5m-5-5l5-5" /></svg>
+                         </button>
+                      </td>
+                    </tr>
+                  )
+                })
               )}
             </tbody>
           </table>
         </div>
 
-        {/* Mobile View (Cards) */}
+        {/* Mobile View */}
         <div className="md:hidden divide-y divide-white/5">
-          {loading ? (
-            Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="p-4 space-y-3 animate-pulse">
-                <div className="h-4 bg-white/5 rounded w-1/3"></div>
-                <div className="h-8 bg-white/5 rounded w-full"></div>
-              </div>
-            ))
-          ) : logs.length === 0 ? (
-            <div className="px-6 py-12 text-center text-[--text-muted]">
-              No entries found.
-            </div>
-          ) : (
-            logs.map((log) => (
-              <div key={log.id} className="p-5 space-y-4">
-                <div className="flex justify-between items-start">
-                  <div className="space-y-0.5">
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-[--text-muted]">
-                      {format(new Date(log.created_at), "MMM d, HH:mm")}
-                    </div>
-                    <div className="font-bold text-[--text-primary]">
-                      {log.account_name || "Account Activity"}
-                    </div>
-                  </div>
-                  {getActionBadge(log.action_type)}
+           {filteredLogs.map(l => (
+             <div key={l.id} className="p-6">
+                <div className="flex justify-between items-center mb-3">
+                   <div className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">{format(new Date(l.created_at), "MMM d, yyyy")}</div>
+                   {getActionBadge(l.action_type)}
                 </div>
-
-                <div className="grid grid-cols-2 gap-4 pt-1">
-                  <div>
-                    <div className="text-[9px] font-bold uppercase tracking-widest text-[--text-muted] mb-1">Amount</div>
-                    <div className={`text-sm font-black ${log.amount && log.amount > 0 ? "text-[--accent-primary-light]" : "text-[--text-primary]"}`}>
-                      {log.amount ? `₹${log.amount.toLocaleString()}` : "—"}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-[9px] font-bold uppercase tracking-widest text-[--text-muted] mb-1">New Balance</div>
-                    <div className="text-sm font-black text-[--text-secondary]">
-                      {log.new_balance !== null ? `₹${log.new_balance.toLocaleString()}` : "—"}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="px-3 py-2.5 rounded-xl bg-white/[0.03] border border-white/5 text-xs text-[--text-muted]">
-                  {log.details}
-                </div>
-              </div>
-            ))
-          )}
+                <div className="text-xl font-bold mb-2">₹{l.amount?.toLocaleString()}</div>
+                <div className="text-xs text-[--text-muted]">{l.details}</div>
+             </div>
+           ))}
         </div>
       </div>
     </div>

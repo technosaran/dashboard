@@ -362,6 +362,16 @@ export type Database = {
         }
         Returns: Json
       }
+      process_transfer: {
+        Args: {
+          p_user_id: string
+          p_from_account_id: string
+          p_to_account_id: string
+          p_amount: number
+          p_note?: string | null
+        }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
