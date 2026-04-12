@@ -116,27 +116,30 @@ export default function DashboardPage() {
           
           <div className="relative z-10 space-y-6">
             <div>
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-3">
                 <div className="status-dot scale-75" />
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Consolidated Net Worth</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.25em] text-[--text-muted] opacity-80">Consolidated Net Worth</span>
               </div>
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tighter text-[--text-primary] break-words">
+              <h2 className="text-[2.5rem] sm:text-4xl md:text-5xl font-black tracking-tighter text-[--text-primary] break-words drop-shadow-[0_0_30px_rgba(108,92,231,0.3)]">
                 ₹{stats.totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0 })}
               </h2>
             </div>
 
-            <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-4 sm:gap-8 items-center pt-4 border-t border-white/5">
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-6 sm:gap-8 items-center pt-5 border-t border-white/10">
               <div className="space-y-1">
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Monthly Burn</p>
-                <p className="text-lg md:text-xl font-black text-rose-400">₹{stats.monthlySpend.toLocaleString()}</p>
+                <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[--text-muted] opacity-60">Monthly Burn</p>
+                <p className="text-xl md:text-2xl font-black text-rose-400">₹{stats.monthlySpend.toLocaleString()}</p>
               </div>
               <div className="space-y-1">
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Channels</p>
-                <p className="text-lg md:text-xl font-black text-[--accent-primary-light]">{stats.accountCount}</p>
+                <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[--text-muted] opacity-60">Channels</p>
+                <p className="text-xl md:text-2xl font-black text-[--accent-primary-light]">{stats.accountCount}</p>
               </div>
               <div className="space-y-1 col-span-2 sm:col-span-1">
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Updates</p>
-                <p className="text-lg md:text-xl font-black text-[#55efc4]">Real-time</p>
+                <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[--text-muted] opacity-60">Status</p>
+                <p className="text-xl md:text-2xl font-black text-[#55efc4] flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[#55efc4] shadow-[0_0_8px_#55efc4]" />
+                  Real-time
+                </p>
               </div>
             </div>
           </div>

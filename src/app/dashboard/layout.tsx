@@ -9,7 +9,7 @@ export default function DashboardLayout({
 }) {
   return (
     <UserProvider>
-      <div className="flex flex-col md:flex-row h-screen overflow-hidden w-full" style={{ background: "var(--bg-base)" }}>
+      <div className="flex flex-col md:flex-row h-[100dvh] overflow-hidden w-full relative" style={{ background: "var(--bg-base)" }}>
         <Sidebar />
         <main className="flex-1 overflow-y-auto overflow-x-hidden relative w-full">
           {/* Ambient glow orbs - Adjusted for mobile */}

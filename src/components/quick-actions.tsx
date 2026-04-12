@@ -60,18 +60,18 @@ export default function QuickActions() {
       )}
 
       {/* Action Buttons */}
-      <div className={`flex flex-col items-end gap-3 mb-4 transition-all duration-300 ${isOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"}`}>
+      <div className={`flex flex-col items-end gap-3 mb-5 transition-all duration-500 cubic-bezier(0.34, 1.56, 0.64, 1) ${isOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"}`}>
         {actions.map((action, i) => (
           <Link
             key={i}
             href={action.href}
             onClick={() => setIsOpen(false)}
-            className="flex items-center gap-3 group"
+            className="flex items-center gap-4 group no-underline"
           >
-            <span className="bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-lg text-xs font-bold text-white border border-white/10 shadow-xl">
+            <span className="bg-white/10 backdrop-blur-xl px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-white border border-white/10 shadow-2xl transition-all active:scale-95">
               {action.label}
             </span>
-            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-2xl ${action.color}`}>
+            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-2xl transition-all active:scale-90 ${action.color} border border-white/20`}>
               {action.icon}
             </div>
           </Link>
@@ -81,14 +81,17 @@ export default function QuickActions() {
       {/* Main Toggle Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-14 h-14 rounded-2xl shadow-2xl flex items-center justify-center text-white transition-all duration-500 active:scale-90 ${isOpen ? "bg-rose-500 rotate-45" : "bg-indigo-600 rotate-0"}`}
+        className={`w-16 h-16 rounded-[24px] shadow-2xl flex items-center justify-center text-white transition-all duration-500 active:scale-90 ${isOpen ? "bg-rose-500 rotate-45" : "bg-indigo-600 rotate-0"}`}
         style={{
           background: isOpen ? "" : "linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%)",
-          boxShadow: isOpen ? "0 10px 30px rgba(244, 63, 94, 0.4)" : "0 10px 30px rgba(108, 92, 231, 0.4)"
+          boxShadow: isOpen 
+            ? "0 20px 40px rgba(244, 63, 94, 0.4), inset 0 0 20px rgba(255,255,255,0.2)" 
+            : "0 20px 40px rgba(108, 92, 231, 0.4), inset 0 0 20px rgba(255,255,255,0.2)",
+          border: "1px solid rgba(255,255,255,0.1)"
         }}
       >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+        <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
         </svg>
       </button>
     </div>

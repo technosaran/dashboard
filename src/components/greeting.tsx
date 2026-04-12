@@ -25,16 +25,16 @@ export default function Greeting() {
   return (
     <div className="animate-fade-in-up">
       <h1
-        className="text-4xl md:text-5xl font-black tracking-tight"
+        className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tight leading-tight"
         style={{ color: "var(--text-primary)" }}
       >
         {greeting},{" "}
         {loading ? (
-          <span className="inline-block w-32 h-10 bg-[var(--glass-border)] animate-pulse rounded-lg align-middle" />
+          <span className="inline-block w-24 h-8 bg-[var(--glass-border)] animate-pulse rounded-lg align-middle" />
         ) : (
           <span className="gradient-text">{username || "User"}</span>
         )}{" "}
-        {!loading && <span className="inline-block animate-float">{emoji}</span>}
+        {!loading && <span className="inline-block animate-float ml-1">{emoji}</span>}
       </h1>
     </div>
   );

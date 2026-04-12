@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
+import { useState } from "react";
 
 const nav = [
   {
@@ -36,20 +37,20 @@ const nav = [
     ),
   },
   {
-    label: "Income",
-    href: "/dashboard/income",
-    icon: (
-      <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-        <path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-      </svg>
-    ),
-  },
-  {
     label: "Expenses",
     href: "/dashboard/expenses",
     icon: (
       <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
         <path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+  },
+  {
+    label: "Income",
+    href: "/dashboard/income",
+    icon: (
+      <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+        <path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
       </svg>
     ),
   },
@@ -76,6 +77,7 @@ const nav = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
 
   async function handleLogout() {
     const supabase = createClient();
@@ -105,6 +107,10 @@ export default function Sidebar() {
       </Link>
     );
   };
+
+  // Split nav for mobile
+  const mainNav = nav.slice(0, 4);
+  const moreNav = nav.slice(4);
 
   return (
     <>
@@ -162,49 +168,89 @@ export default function Sidebar() {
         </div>
       </aside>
 
+      {/* Mobile More Overlay */}
+      <div 
+        className={`md:hidden fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm transition-all duration-300 ${isMoreOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        onClick={() => setIsMoreOpen(false)}
+      >
+        <div 
+          className={`fixed bottom-24 right-4 left-4 glass-card p-6 transition-all duration-500 transform ${isMoreOpen ? "translate-y-0 scale-100" : "translate-y-10 scale-95 opacity-0"}`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="grid grid-cols-2 gap-4">
+            {moreNav.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setIsMoreOpen(false)}
+                className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-white/5 border border-white/5 active:bg-white/10 transition-all no-underline"
+              >
+                <div className="text-[--accent-primary-light]">
+                  {item.icon}
+                </div>
+                <span className="text-xs font-bold text-[--text-primary] uppercase tracking-wider">{item.label}</span>
+              </Link>
+            ))}
+            <button
+              onClick={handleLogout}
+              className="col-span-2 flex items-center justify-center gap-3 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 font-bold text-sm uppercase tracking-widest active:bg-rose-500/20 transition-all mt-2"
+            >
+              <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              Exit Portfolio
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Mobile Bottom Navigation (Premium Refined) */}
       <nav 
-        className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between px-2 py-1 pb-safe border-t border-white/5"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-1 pb-safe border-t border-white/5"
         style={{
-          background: "rgba(8, 11, 25, 0.98)",
-          backdropFilter: "blur(25px) saturate(1.8)",
-          WebkitBackdropFilter: "blur(25px) saturate(1.8)",
-          boxShadow: "0 -8px 32px rgba(0,0,0,0.5)",
+          background: "rgba(8, 11, 26, 0.96)",
+          backdropFilter: "blur(30px) saturate(2)",
+          WebkitBackdropFilter: "blur(30px) saturate(2)",
+          boxShadow: "0 -4px 32px rgba(0,0,0,0.5)",
         }}
       >
-        {nav.map((item) => {
+        {mainNav.map((item) => {
           const active = pathname === item.href;
           return (
             <Link
               key={item.href}
               href={item.href}
-              className="flex-1 flex flex-col items-center justify-center gap-1 min-h-[56px] relative transition-all duration-300 active:scale-95"
+              className="flex-1 flex flex-col items-center justify-center min-h-[60px] relative transition-all duration-300 active:scale-90"
               style={{
                 color: active ? "var(--accent-primary-light)" : "var(--text-muted)",
               }}
             >
               {active && (
-                <div className="absolute inset-x-2 top-1 bottom-1 bg-white/5 rounded-xl animate-scale-in" />
+                <div className="absolute inset-x-2 -top-1 h-0.5 bg-gradient-to-r from-transparent via-[--accent-primary-light] to-transparent blur-[0.5px] rounded-full animate-fade-in" />
               )}
-              <div className={`${active ? "scale-110 text-[--accent-primary-light]" : "opacity-70"} transition-all duration-300 flex items-center justify-center`}>
+              <div className={`${active ? "scale-110 -translate-y-2 text-[--accent-primary-light]" : "opacity-60"} transition-all duration-300 flex items-center justify-center`}>
                 {item.icon}
               </div>
-              <span className={`text-[9px] font-bold uppercase tracking-wider ${active ? "opacity-100" : "opacity-50"}`}>
+              <span className={`text-[8px] font-black uppercase tracking-widest transition-all duration-300 absolute bottom-2 ${active ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"}`}>
                 {item.label}
               </span>
             </Link>
           );
         })}
+        
+        {/* More Toggle */}
         <button
-          onClick={handleLogout}
-          className="flex-1 flex flex-col items-center justify-center gap-1 min-h-[56px] transition-all active:scale-95 text-[--text-muted]"
+          onClick={() => setIsMoreOpen(!isMoreOpen)}
+          className={`flex-1 flex flex-col items-center justify-center min-h-[60px] transition-all active:scale-90 relative ${isMoreOpen ? "text-[--accent-primary-light]" : "text-[--text-muted]"}`}
         >
-          <div className="opacity-70 flex items-center justify-center">
-            <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-              <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          <div className={`${isMoreOpen ? "scale-110 -translate-y-2 rotate-90" : "opacity-60"} transition-all duration-500 flex items-center justify-center`}>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </div>
-          <span className="text-[9px] font-bold uppercase tracking-wider opacity-50">Exit</span>
+          <span className={`text-[8px] font-black uppercase tracking-widest transition-all duration-300 absolute bottom-2 ${isMoreOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"}`}>
+            More
+          </span>
         </button>
       </nav>
     </>
