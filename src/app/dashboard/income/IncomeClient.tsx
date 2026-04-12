@@ -55,7 +55,7 @@ export default function IncomeClient({ initialIncomes, initialAccounts }: Income
     if (!user) return;
 
     const [incRes, accRes] = await Promise.all([
-      supabase.from("incomes").select("*").eq("user_id", user.id).order("date", { ascending: false }),
+      supabase.from("incomes").select("*").eq("user_id", user.id).order("date", { ascending: false }).order("created_at", { ascending: false }),
       supabase.from("accounts").select("*").eq("user_id", user.id).order("name")
     ]);
 

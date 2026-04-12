@@ -1,12 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-  display: "swap",
-});
+// High-performance system font stack
+const inter = { variable: "font-sans" };
 
 export const viewport: Viewport = {
   themeColor: "#6c5ce7",

@@ -56,7 +56,7 @@ export default function ExpensesClient({ initialExpenses, initialAccounts }: Exp
     if (!user) return;
 
     const [expRes, accRes] = await Promise.all([
-      supabase.from("expenses").select("*").eq("user_id", user.id).order("date", { ascending: false }),
+      supabase.from("expenses").select("*").eq("user_id", user.id).order("date", { ascending: false }).order("created_at", { ascending: false }),
       supabase.from("accounts").select("*").eq("user_id", user.id).order("name")
     ]);
 

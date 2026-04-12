@@ -34,9 +34,12 @@ export async function updateAccount(id: string, data: TablesUpdate<"accounts">) 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
+  // SECURITY: Prevent direct balance manipulation via generic update
+  const { balance, ...safeData } = data;
+
   const { error } = await supabase
     .from("accounts")
-    .update(data)
+    .update(safeData)
     .eq("id", id)
     .eq("user_id", user.id);
 

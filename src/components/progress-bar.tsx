@@ -13,13 +13,35 @@ export default function ProgressBar() {
   }, []);
 
   useEffect(() => {
-    // Whenever the route changes, complete the progress bar
+    // ── Instant Interaction Feedback ────────────────────────
+    // Listen for all clicks on the page. If it's a link, start the progress bar.
+    const handleAnchorClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const anchor = target.closest("a");
+
+      if (
+        anchor && 
+        anchor.href && 
+        anchor.href.startsWith(window.location.origin) && 
+        !anchor.href.includes("#") &&
+        anchor.target !== "_blank"
+      ) {
+        NProgress.start();
+      }
+    };
+
+    window.addEventListener("click", handleAnchorClick);
+    return () => window.removeEventListener("click", handleAnchorClick);
+  }, []);
+
+  useEffect(() => {
+    // Whenever the route changes (or finishes), complete the progress bar
     NProgress.done();
     
-    // As a backup, if nprogress is stuck, clear it after a delay
+    // Clear any stuck progress bars
     const timer = setTimeout(() => {
       NProgress.done();
-    }, 5000);
+    }, 8000);
     
     return () => clearTimeout(timer);
   }, [pathname, searchParams]);

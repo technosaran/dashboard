@@ -17,7 +17,8 @@ export default async function IncomePage() {
       .from("incomes")
       .select("*")
       .eq("user_id", user.id)
-      .order("date", { ascending: false }),
+      .order("date", { ascending: false })
+      .order("created_at", { ascending: false }),
     supabase
       .from("accounts")
       .select("*")
