@@ -64,6 +64,16 @@ export async function deleteAccount(id: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
+  // Capture account snapshot for revert/undo support
+  const { data: account } = await supabase
+    .from("accounts")
+    .select("*")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single();
+
+  if (!account) return { error: "Account not found" };
+
   const { error } = await supabase
     .from("accounts")
     .delete()
@@ -72,12 +82,14 @@ export async function deleteAccount(id: string) {
 
   if (error) return { error: error.message };
 
-  supabase.from("ledger_logs").insert({
+  await supabase.from("ledger_logs").insert({
     user_id: user.id,
     account_id: id,
+    account_name: account.name,
     action_type: "DELETE",
-    details: `Deleted account (ID: ${id})`,
-  }).then(() => {});
+    details: `Deleted account: ${account.name}`,
+    metadata: account // Store full snapshot for recovery
+  });
 
   revalidatePath("/dashboard/accounts");
   return { success: true };
