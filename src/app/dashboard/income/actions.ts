@@ -39,10 +39,7 @@ export async function addIncome(formData: {
   }
 
   // Global revalidation
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/income");
-  revalidatePath("/dashboard/accounts");
-  revalidatePath("/dashboard/ledger");
+  revalidatePath("/dashboard", "layout");
   
   return { success: true };
 }
@@ -83,10 +80,7 @@ export async function deleteIncome(incomeId: string) {
     return { error: result.error || "Failed to reverse income entry" };
   }
 
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/income");
-  revalidatePath("/dashboard/accounts");
-  revalidatePath("/dashboard/ledger");
+  revalidatePath("/dashboard", "layout");
 
   return { success: true };
 }

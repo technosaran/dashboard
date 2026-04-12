@@ -41,34 +41,43 @@ export type Database = {
     Tables: {
       accounts: {
         Row: {
+          account_number: string | null
           balance: number
           bank_logo: string | null
           bank_name: string | null
+          color: string | null
           created_at: string
           currency: string
           id: string
+          institution: string | null
           name: string
           type: string
           user_id: string
         }
         Insert: {
+          account_number?: string | null
           balance?: number
           bank_logo?: string | null
           bank_name?: string | null
+          color?: string | null
           created_at?: string
           currency?: string
           id?: string
+          institution?: string | null
           name: string
           type: string
           user_id: string
         }
         Update: {
+          account_number?: string | null
           balance?: number
           bank_logo?: string | null
           bank_name?: string | null
+          color?: string | null
           created_at?: string
           currency?: string
           id?: string
+          institution?: string | null
           name?: string
           type?: string
           user_id?: string
@@ -444,6 +453,34 @@ export type Database = {
           p_category: string
           p_date: string
           p_account_id?: string | null
+        }
+        Returns: Json
+      }
+      adjust_account_balance: {
+        Args: {
+          p_user_id: string
+          p_account_id: string
+          p_amount: number
+          p_note: string
+        }
+        Returns: Json
+      }
+      create_account_atomic: {
+        Args: {
+          p_user_id: string
+          p_name: string
+          p_type: string
+          p_balance: number
+          p_color?: string | null
+          p_institution?: string | null
+          p_account_number?: string | null
+        }
+        Returns: Json
+      }
+      delete_account_atomic: {
+        Args: {
+          p_user_id: string
+          p_account_id: string
         }
         Returns: Json
       }
