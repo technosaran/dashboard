@@ -46,10 +46,10 @@ export default function SettingsPage() {
     <div className="flex flex-col gap-[var(--section-gap)] animate-fade-in">
       {/* Header */}
       <div>
-        <h1 className="text-4xl font-black tracking-tight text-[--text-primary]">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[--text-primary]">
           Settings
         </h1>
-        <p className="mt-1 text-sm text-[--text-secondary]">
+        <p className="mt-1 text-[13px] md:text-sm text-[--text-secondary]">
           Manage your account preferences and profile identity.
         </p>
       </div>
@@ -58,8 +58,7 @@ export default function SettingsPage() {
       {/* Profile Card */}
       <div className="max-w-2xl animate-fade-in-up delay-1">
         <div
-          className="glass-card-static"
-          style={{ padding: "32px", position: "relative", overflow: "hidden" }}
+          className="glass-card-static p-6 md:p-10 relative overflow-hidden"
         >
           {/* Top accent */}
           <div
@@ -98,18 +97,19 @@ export default function SettingsPage() {
             </div>
             
             {/* Status Indicator */}
-            <div className="ml-auto flex items-center gap-2">
+            <div className="ml-auto">
               {isSyncing ? (
-                <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-[--text-muted]">
-                  <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
-                  Saving...
+                <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-[--text-muted]">
+                  <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+                  <span className="hidden sm:inline">Encrypting...</span>
+                  <span className="sm:hidden">Busy</span>
                 </div>
               ) : lastSaved ? (
-                <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-[--accent-primary-light]">
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-emerald-400">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={3.5} viewBox="0 0 24 24">
                     <path d="M5 13l4 4L19 7" />
                   </svg>
-                  Sync Complete
+                  <span className="hidden sm:inline">Sync Verified</span>
                 </div>
               ) : null}
             </div>
@@ -127,9 +127,8 @@ export default function SettingsPage() {
                 type="text"
                 value={input}
                 onChange={handleChange}
-                className="input-premium"
+                className="input-premium h-14 md:h-12 text-[16px] md:text-sm font-bold"
                 placeholder="Enter your name"
-                autoFocus
               />
               <p className="text-xs mt-3 flex items-center gap-1.5" style={{ color: "var(--text-muted)" }}>
                 <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">

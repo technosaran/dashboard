@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase-browser";
 import { createRecipient, deleteRecipient, sendMoneyToFamily } from "./actions";
 import { getAccounts } from "../accounts/actions";
 import { toast } from "react-hot-toast";
+import { format } from "date-fns";
 
 const supabase = createClient();
 
@@ -196,18 +197,18 @@ export default function FamilyPage() {
   return (
     <div className="flex flex-col gap-[var(--section-gap)] animate-fade-in">
       {/* Header */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-4xl md:text-5xl font-black tracking-tight text-[--text-primary]">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[--text-primary]">
             Family & Friends
           </h1>
-          <p className="text-sm mt-1.5 font-medium text-[--text-muted]">
+          <p className="text-[13px] md:text-sm mt-1 font-medium text-[--text-muted]">
             Send money to your loved ones instantly
           </p>
         </div>
         <button
           onClick={() => setIsAddingRecipient(true)}
-          className="btn-primary h-12 px-8 flex items-center gap-2.5 rounded-2xl shadow-xl shadow-[--accent-primary]/25 transition-all hover:scale-105 active:scale-95"
+          className="btn-primary h-[48px] px-6 md:px-8 flex-1 md:flex-none flex items-center justify-center gap-2.5 rounded-2xl shadow-xl shadow-[--accent-primary]/25 transition-all hover:scale-105 active:scale-95 text-sm"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
             <path d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
@@ -217,32 +218,32 @@ export default function FamilyPage() {
       </div>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="glass-card-static p-8">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted] mb-1">Total Contacts</p>
-          <p className="text-3xl font-black text-[--text-primary]">{recipients.length}</p>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="glass-card-static p-5 md:p-8">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted] mb-1">Contacts</p>
+          <p className="text-2xl md:text-3xl font-black text-[--text-primary]">{recipients.length}</p>
         </div>
-        <div className="glass-card-static p-8">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted] mb-1">Family Members</p>
-          <p className="text-3xl font-black text-[--accent-primary-light]">
+        <div className="glass-card-static p-5 md:p-8">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted] mb-1">Family</p>
+          <p className="text-2xl md:text-3xl font-black text-[--accent-primary-light]">
             {recipients.filter(r => r.relationship === "Family").length}
           </p>
         </div>
-        <div className="glass-card-static p-8">
+        <div className="glass-card-static p-5 md:p-8 col-span-2 md:col-span-1">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted] mb-1">Recently Sent</p>
-          <p className="text-3xl font-black text-[#55efc4]">
-            {totalSent.toLocaleString()}
+          <p className="text-2xl md:text-3xl font-black text-[#55efc4]">
+            ₹{totalSent.toLocaleString()}
           </p>
         </div>
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 overflow-x-auto pb-2 -mb-2 no-scrollbar">
         {["All", "Family", "Friend", "Other"].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveFilter(tab)}
-            className="px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all"
+            className="px-5 py-2.5 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap min-h-[40px] flex items-center justify-center"
             style={{
               background: activeFilter === tab ? "var(--accent-primary)" : "rgba(255,255,255,0.03)",
               color: activeFilter === tab ? "white" : "var(--text-muted)",
@@ -376,35 +377,29 @@ export default function FamilyPage() {
       {/* Recent Activity */}
       {recentSends.length > 0 && (
         <div className="glass-card-static overflow-hidden" style={{ borderRadius: "var(--radius-xl)" }}>
-          <div className="px-6 py-4 border-b border-white/5">
-            <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-[--text-muted]">
-              Recent Transfers
+          <div className="px-5 md:px-6 py-4 border-b border-white/5">
+            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">
+              Recent Activity
             </h3>
           </div>
           <div className="divide-y divide-white/5">
             {recentSends.slice(0, 5).map((send) => (
-              <div key={send.id} className="px-6 py-4 flex items-center justify-between hover:bg-white/[0.02] transition-colors">
+              <div key={send.id} className="px-5 md:px-6 py-4 flex items-center justify-between hover:bg-white/[0.02] transition-colors">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center flex-shrink-0">
                     <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                       <path d="M17 8l4 4m0 0l-4 4m4-4H3" />
                     </svg>
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-[--text-primary]">{send.details}</p>
-                    <p className="text-[10px] text-[--text-muted]">
-                      {new Date(send.created_at).toLocaleDateString("en-IN", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                    <p className="text-[13px] font-bold text-[--text-primary] line-clamp-1">{send.details}</p>
+                    <p className="text-[10px] text-[--text-muted] font-medium">
+                      {format(new Date(send.created_at), "MMM d, h:mm a")}
                     </p>
                   </div>
                 </div>
-                <span className="text-sm font-bold text-red-400">
-                  -{(send.amount || 0).toLocaleString()}
+                <span className="text-sm font-black text-red-400 whitespace-nowrap ml-4">
+                  -₹{(send.amount || 0).toLocaleString()}
                 </span>
               </div>
             ))}
@@ -414,22 +409,29 @@ export default function FamilyPage() {
 
       {/* Add Recipient Modal */}
       {isAddingRecipient && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 modal-overlay animate-fade-in">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-xl animate-fade-in shadow-2xl">
           <div
-            className="glass-card-static w-full max-w-md animate-scale-in overflow-hidden"
-            style={{ border: "1px solid var(--border-strong)" }}
+            className="glass-card-static w-full max-w-md animate-scale-in overflow-y-auto max-h-[95vh] border-white/10"
           >
-            <div className="px-8 pt-8 pb-6">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 rounded-2xl flex items-center justify-center"
-                  style={{ background: RELATIONSHIP_CONFIG[newRelationship]?.gradient || RELATIONSHIP_CONFIG.Other.gradient }}
+            <div className="px-6 md:px-8 pt-8 pb-6">
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center"
+                    style={{ background: RELATIONSHIP_CONFIG[newRelationship]?.gradient || RELATIONSHIP_CONFIG.Other.gradient }}
+                  >
+                    <span className="text-xl">{RELATIONSHIP_CONFIG[newRelationship]?.emoji || "👤"}</span>
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-black text-[--text-primary]">Add Contact</h2>
+                    <p className="text-[10px] uppercase tracking-widest text-[--text-muted] font-bold">New Entry</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setIsAddingRecipient(false)}
+                  className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 text-[--text-muted] hover:text-[--text-primary] transition-colors"
                 >
-                  <span className="text-xl">{RELATIONSHIP_CONFIG[newRelationship]?.emoji || "👤"}</span>
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-[--text-primary]">Add Contact</h2>
-                  <p className="text-xs text-[--text-muted]">Send money to them anytime</p>
-                </div>
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
               </div>
 
               <form onSubmit={handleAddRecipient} className="space-y-8">
@@ -621,21 +623,11 @@ export default function FamilyPage() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsSendingMoney(false);
-                      setSelectedRecipient(null);
-                    }}
-                    className="btn-secondary flex-1 h-12"
-                  >
-                    Cancel
-                  </button>
+                <div className="flex flex-col sm:flex-row gap-3 pt-2">
                   <button
                     type="submit"
                     disabled={sending}
-                    className="btn-primary flex-1 h-12 flex items-center justify-center gap-2"
+                    className="btn-primary flex-1 h-14 text-sm font-black flex items-center justify-center gap-2 order-1 sm:order-2"
                     style={{ opacity: sending ? 0.6 : 1 }}
                   >
                     {sending ? (
@@ -645,12 +637,22 @@ export default function FamilyPage() {
                       </svg>
                     ) : (
                       <>
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                           <path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                         </svg>
                         Send {accounts.find(a => a.id === sendAccountId)?.currency === 'USD' ? '$' : '₹'}{sendAmount ? parseFloat(sendAmount).toLocaleString() : "0"}
                       </>
                     )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsSendingMoney(false);
+                      setSelectedRecipient(null);
+                    }}
+                    className="btn-secondary flex-1 h-14 text-sm font-black order-2 sm:order-1"
+                  >
+                    Close
                   </button>
                 </div>
               </form>

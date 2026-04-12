@@ -164,59 +164,59 @@ function ExpensesContent() {
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-4xl md:text-5xl font-black tracking-tight text-[--text-primary]">Expense Tracking</h1>
-          <p className="text-[--text-secondary] text-sm mt-1">Monitor your spending and analyze your monthly expenditure.</p>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[--text-primary]">Expense Tracking</h1>
+          <p className="text-[--text-secondary] text-[13px] md:text-sm mt-1">Monitor your spending and analyze your monthly expenditure.</p>
         </div>
-        <div className="flex items-center gap-3">
-          <button className="btn-secondary px-5 py-2.5 flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          <button className="btn-secondary h-[44px] px-5 flex-1 md:flex-none flex items-center justify-center gap-2 text-sm">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-            Export CSV
+            Export
           </button>
           <button 
             onClick={() => setShowAddModal(true)}
-            className="btn-primary h-12 px-8 flex items-center gap-2.5 shadow-xl shadow-[--accent-primary]/25 rounded-2xl transition-all hover:scale-105 active:scale-95"
+            className="btn-primary h-[48px] px-6 flex-1 md:flex-none flex items-center justify-center gap-2.5 shadow-xl shadow-[--accent-primary]/25 rounded-2xl transition-all hover:scale-105 active:scale-95 text-sm"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
-            Record Expense
+            Record
           </button>
         </div>
       </div>
 
       {/* Analytics KPI Row */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="glass-card-static p-8 flex flex-col justify-between group">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+        <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between group">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Net Consumption</p>
-          <div className="mt-3 flex items-end justify-between">
-            <h3 className="text-2xl font-black">₹{stats.totalSpent.toLocaleString()}</h3>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">All Time</span>
+          <div className="mt-3 flex flex-col sm:flex-row sm:items-end justify-between gap-2">
+            <h3 className="text-xl md:text-2xl font-black truncate">₹{stats.totalSpent.toLocaleString()}</h3>
+            <span className="text-[9px] w-fit px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">All Time</span>
           </div>
         </div>
-        <div className="glass-card-static p-8 flex flex-col justify-between">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Monthly Throughput</p>
-          <div className="mt-3 flex items-end justify-between">
-            <h3 className="text-2xl font-black">₹{stats.monthlyTotal.toLocaleString()}</h3>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[--accent-primary]/10 text-[--accent-primary] border border-[--accent-primary]/20">{format(new Date(), "MMMM")}</span>
+        <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Monthly Flow</p>
+          <div className="mt-3 flex flex-col sm:flex-row sm:items-end justify-between gap-2">
+            <h3 className="text-xl md:text-2xl font-black truncate">₹{stats.monthlyTotal.toLocaleString()}</h3>
+            <span className="text-[9px] w-fit px-2 py-0.5 rounded-full bg-[--accent-primary]/10 text-[--accent-primary] border border-[--accent-primary]/20 font-bold">{format(new Date(), "MMM")}</span>
           </div>
         </div>
-        <div className="glass-card-static p-8 flex flex-col justify-between">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Avg Transaction</p>
-          <div className="mt-3 flex items-end justify-between">
-            <h3 className="text-2xl font-black">₹{(expenses.length ? stats.totalSpent / expenses.length : 0).toLocaleString(undefined, {maximumFractionDigits: 0})}</h3>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-[--text-muted]">{expenses.length} points</span>
+        <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Average</p>
+          <div className="mt-3 flex flex-col sm:flex-row sm:items-end justify-between gap-2">
+            <h3 className="text-xl md:text-2xl font-black truncate">₹{(expenses.length ? stats.totalSpent / expenses.length : 0).toLocaleString(undefined, {maximumFractionDigits: 0})}</h3>
+            <span className="text-[9px] w-fit px-2 py-0.5 rounded-full bg-white/5 text-[--text-muted]">{expenses.length} txns</span>
           </div>
         </div>
-        <div className="glass-card-static p-8 flex flex-col justify-between bg-gradient-to-br from-[--accent-primary]/10 to-transparent">
+        <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between bg-gradient-to-br from-[--accent-primary]/10 to-transparent">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Top Sector</p>
-          <div className="mt-3 flex items-end justify-between">
-            <h3 className="text-2xl font-black">{stats.pieData[0]?.name || "None"}</h3>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-[--text-muted]">Highest Spend</span>
+          <div className="mt-3 flex flex-col sm:flex-row sm:items-end justify-between gap-2">
+            <h3 className="text-xl md:text-2xl font-black truncate">{stats.pieData[0]?.name || "None"}</h3>
+            <span className="text-[9px] w-fit px-2 py-0.5 rounded-full bg-white/5 text-[--text-muted]">Highest</span>
           </div>
         </div>
       </div>
 
       {/* Visual Analytics */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 glass-card-static p-8">
+        <div className="lg:col-span-2 glass-card-static p-5 md:p-8">
           <div className="flex items-center justify-between mb-8">
             <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-[--text-muted]">Expenditure Velocity</h3>
             <div className="flex items-center gap-2">
@@ -246,7 +246,7 @@ function ExpensesContent() {
           </div>
         </div>
 
-        <div className="glass-card-static p-8">
+        <div className="glass-card-static p-5 md:p-8">
           <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-[--text-muted] mb-8">Asset Allocation</h3>
           <div className="h-[240px] w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -308,24 +308,23 @@ function ExpensesContent() {
           </div>
         </div>
 
-        {/* Table Content */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+        {/* Table Content - Responsive Mobile Optimized */}
+        <div className="overflow-x-auto w-full">
+          <table className="w-full text-left border-collapse min-w-[650px] md:min-w-0">
             <thead>
               <tr className="bg-white/[0.02] border-b border-white/5">
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Date</th>
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Ref / Description</th>
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Segment</th>
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Channel</th>
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] text-right">Debit Amount</th>
-
+                <th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Date</th>
+                <th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Ref / Description</th>
+                <th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Segment</th>
+                <th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] hidden sm:table-cell">Channel</th>
+                <th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] text-right">Amount</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/[0.03]">
               {filteredExpenses.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-20 text-center text-[--text-muted] text-sm italic">
-                    No expenses found matching your criteria.
+                    No transactions found matching your criteria.
                   </td>
                 </tr>
               ) : (
@@ -334,35 +333,34 @@ function ExpensesContent() {
                   const account = accounts.find(a => a.id === exp.account_id);
                   return (
                     <tr key={exp.id} className="hover:bg-white/[0.015] transition-colors group">
-                      <td className="px-6 py-6 whitespace-nowrap">
-                        <p className="text-sm font-bold text-[--text-primary]">{format(parseISO(exp.date), "MMM d, yyyy")}</p>
-                        <p className="text-[10px] text-[--text-muted] tracking-tighter uppercase font-mono">Verified Record</p>
+                      <td className="px-4 md:px-6 py-5 whitespace-nowrap">
+                        <p className="text-[13px] font-bold text-[--text-primary]">{format(parseISO(exp.date), "MMM d, yy")}</p>
+                        <p className="text-[9px] text-[--text-muted] uppercase font-bold">Verified</p>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-4 md:px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-xl">
+                          <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-lg flex-shrink-0">
                             {theme.icon}
                           </div>
-                          <p className="text-sm font-medium text-[--text-primary] group-hover:text-[--accent-primary] transition-colors">
+                          <p className="text-[13px] font-medium text-[--text-primary] group-hover:text-[--accent-primary] transition-colors truncate max-w-[120px] md:max-w-none">
                             {exp.description}
                           </p>
                         </div>
                       </td>
-                      <td className="px-6 py-6 whitespace-nowrap">
-                        <span className="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-[0.2em] bg-white/5 border border-white/10 text-[--text-secondary]" style={{color: theme.color}}>
+                      <td className="px-4 md:px-6 py-5 whitespace-nowrap">
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-[0.1em] bg-white/5 border border-white/10" style={{color: theme.color}}>
                           {exp.category}
                         </span>
                       </td>
-                      <td className="px-6 py-6 whitespace-nowrap">
+                      <td className="px-4 md:px-6 py-5 whitespace-nowrap hidden sm:table-cell">
                         <div className="flex items-center gap-2">
                           <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                          <span className="text-xs font-medium text-[--text-secondary]">{account?.name || "Direct Log"}</span>
+                          <span className="text-[11px] font-medium text-[--text-secondary]">{account?.name || "Cash"}</span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
-                        <p className="text-lg font-black text-[--text-primary]">₹{Number(exp.amount).toLocaleString()}</p>
+                      <td className="px-4 md:px-6 py-4 whitespace-nowrap text-right">
+                        <p className="text-[15px] md:text-base font-black text-[--text-primary]">₹{Number(exp.amount).toLocaleString()}</p>
                       </td>
-
                     </tr>
                   )
                 })
@@ -374,17 +372,20 @@ function ExpensesContent() {
 
       {/* Transaction Entry Drawer / Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-[--bg-base]/80 backdrop-blur-xl animate-fade-in">
-          <div className="glass-card-static w-full max-w-2xl p-10 animate-scale-in border-[--accent-primary]/20 shadow-[0_0_100px_rgba(108,92,231,0.15)]">
-            <div className="flex items-center justify-between mb-10">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-[--accent-primary]/20 flex items-center justify-center">
-                  <svg className="w-6 h-6 text-[--accent-primary]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-xl animate-fade-in shadow-2xl">
+          <div className="glass-card-static w-full max-w-2xl p-6 md:p-10 animate-scale-in border-[--accent-primary]/20 shadow-[0_0_100px_rgba(108,92,231,0.15)] max-h-[95vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-8 md:mb-10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-[--accent-primary]/20 flex items-center justify-center">
+                  <svg className="w-5 h-5 md:w-6 md:h-6 text-[--accent-primary]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                 </div>
-                <h2 className="text-3xl font-black">Record Transaction</h2>
+                <h2 className="text-xl md:text-3xl font-black">Record Transaction</h2>
               </div>
-              <button onClick={() => setShowAddModal(false)} className="text-[--text-muted] hover:text-[--text-primary] transition-colors">
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg>
+              <button 
+                onClick={() => setShowAddModal(false)} 
+                className="text-[--text-muted] hover:text-[--text-primary] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+              >
+                <svg className="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
 
@@ -439,9 +440,9 @@ function ExpensesContent() {
               <button 
                 type="submit" 
                 disabled={submitting} 
-                className="btn-primary w-full h-16 text-xl font-black rounded-2xl shadow-xl shadow-[--accent-primary]/20 transition-all active:scale-95"
+                className="btn-primary w-full h-14 md:h-16 text-lg md:text-xl font-black rounded-2xl shadow-xl shadow-[--accent-primary]/20 transition-all active:scale-95"
               >
-                {submitting ? "Processing..." : "Confirm Expense"}
+                {submitting ? "Processing..." : "Confirm Record"}
               </button>
             </form>
           </div>

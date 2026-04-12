@@ -139,65 +139,65 @@ export default function LedgerPage() {
     <div className="flex flex-col gap-[var(--section-gap)] animate-fade-in">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-4xl md:text-5xl font-black tracking-tight text-[--text-primary]">Audit Trail</h1>
-          <p className="text-[--text-secondary] text-sm mt-1 uppercase tracking-[0.2em] font-bold">Financial History</p>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[--text-primary]">Audit Trail</h1>
+          <p className="text-[11px] md:text-sm mt-1 uppercase tracking-[0.2em] font-black text-[--text-muted]">Financial Registry</p>
         </div>
       </div>
 
       {/* Advanced Filter Architecture */}
       <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-white/[0.02] border border-white/5 p-4 rounded-[32px] backdrop-blur-3xl shadow-2xl">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-4 bg-white/[0.02] border border-white/5 p-4 md:p-5 rounded-3xl md:rounded-[32px] backdrop-blur-3xl shadow-2xl">
           <div className="relative col-span-1 md:col-span-2">
             <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[--text-muted]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
             <input 
               type="text" 
               placeholder="Search audit trail..." 
-              className="input-premium pl-10 py-3 text-sm w-full"
+              className="input-premium pl-11 py-3 text-[16px] md:text-sm w-full h-[48px] md:h-auto"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <select className="input-premium py-3 text-sm" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
+          <select className="input-premium py-3 text-[16px] md:text-sm h-[48px] md:h-auto" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
             {ACTION_TYPES.map(t => <option key={t} value={t}>{t.replace("_", " ")}</option>)}
           </select>
-          <select className="input-premium py-3 text-sm" value={accountFilter} onChange={(e) => setAccountFilter(e.target.value)}>
+          <select className="input-premium py-3 text-[16px] md:text-sm h-[48px] md:h-auto" value={accountFilter} onChange={(e) => setAccountFilter(e.target.value)}>
             {uniqueAccounts.map(a => <option key={a} value={a}>{a}</option>)}
           </select>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 px-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 px-1">
            {/* Layer 1: Calendar Selection */}
            <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
-                <span className="text-[10px] font-black uppercase text-[--text-muted] tracking-[0.2em] ml-2">Year</span>
-                <select className="input-premium py-2.5 text-xs" value={yearFilter} onChange={(e) => {setYearFilter(e.target.value); setStartDate(""); setEndDate("");}}>
+                <span className="text-[10px] font-black uppercase text-[--text-muted] tracking-[0.2em] ml-2">Registry Year</span>
+                <select className="input-premium py-2.5 text-[16px] md:text-xs h-[44px] md:h-auto" value={yearFilter} onChange={(e) => {setYearFilter(e.target.value); setStartDate(""); setEndDate("");}}>
                   {uniqueYears.map(y => <option key={y} value={y}>{y}</option>)}
                 </select>
               </div>
               <div className="flex flex-col gap-1.5">
-                <span className="text-[10px] font-black uppercase text-[--text-muted] tracking-[0.2em] ml-2">Month</span>
-                <select className="input-premium py-2.5 text-xs" value={monthFilter} onChange={(e) => {setMonthFilter(e.target.value); setStartDate(""); setEndDate("");}}>
+                <span className="text-[10px] font-black uppercase text-[--text-muted] tracking-[0.2em] ml-2">Log Month</span>
+                <select className="input-premium py-2.5 text-[16px] md:text-xs h-[44px] md:h-auto" value={monthFilter} onChange={(e) => {setMonthFilter(e.target.value); setStartDate(""); setEndDate("");}}>
                   {MONTHS.map(m => <option key={m} value={m}>{m}</option>)}
                 </select>
               </div>
            </div>
-
+ 
            {/* Layer 2: Specific Date Range */}
-           <div className="grid grid-cols-2 gap-4 border-l border-white/5 pl-8">
+           <div className="grid grid-cols-2 gap-4 md:border-l md:border-white/5 md:pl-8">
               <div className="flex flex-col gap-1.5">
-                <span className="text-[10px] font-black uppercase text-[--text-muted] tracking-[0.2em] ml-2">From Date</span>
+                <span className="text-[10px] font-black uppercase text-[--text-muted] tracking-[0.2em] ml-2">Bound Start</span>
                 <input 
                   type="date" 
-                  className="input-premium py-2 text-xs" 
+                  className="input-premium py-2 text-[16px] md:text-xs h-[44px] md:h-auto" 
                   value={startDate} 
                   onChange={(e) => setStartDate(e.target.value)} 
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <span className="text-[10px] font-black uppercase text-[--text-muted] tracking-[0.2em] ml-2">To Date</span>
+                <span className="text-[10px] font-black uppercase text-[--text-muted] tracking-[0.2em] ml-2">Bound End</span>
                 <input 
                   type="date" 
-                  className="input-premium py-2 text-xs" 
+                  className="input-premium py-2 text-[16px] md:text-xs h-[44px] md:h-auto" 
                   value={endDate} 
                   onChange={(e) => setEndDate(e.target.value)} 
                 />
@@ -280,17 +280,48 @@ export default function LedgerPage() {
         </div>
 
         {/* Mobile View */}
-        <div className="md:hidden divide-y divide-white/5">
-           {filteredLogs.map(l => (
-             <div key={l.id} className="p-6">
-                <div className="flex justify-between items-center mb-3">
-                   <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">{format(new Date(l.created_at), "MMM d, yyyy")}</div>
-                   {getActionBadge(l.action_type)}
-                </div>
-                <div className="text-xl font-bold mb-2">₹{l.amount?.toLocaleString()}</div>
-                <div className="text-xs text-[--text-muted]">{l.details}</div>
-             </div>
-           ))}
+        <div className="md:hidden divide-y divide-white/[0.03]">
+           {filteredLogs.map(l => {
+             const isDebit = ["ADJUST_DOWN", "TRANSFER_OUT", "DELETE"].includes(l.action_type);
+             return (
+               <div key={l.id} className="p-5 active:bg-white/[0.02] transition-colors">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex flex-col">
+                      <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">{format(new Date(l.created_at), "MMM d, yyyy")}</div>
+                      <div className="text-[10px] font-bold text-[--text-muted]">{format(new Date(l.created_at), "HH:mm:ss")}</div>
+                    </div>
+                    {getActionBadge(l.action_type)}
+                  </div>
+                  <div className="flex items-end justify-between mb-3">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-black uppercase tracking-tight text-[--text-muted] mb-1">Impact</span>
+                      <div className={`text-2xl font-black ${isDebit ? "text-red-400" : "text-emerald-400"}`}>
+                        {l.amount ? `${isDebit ? '-' : '+'}₹${l.amount.toLocaleString()}` : "—"}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] font-black text-[--text-muted] block mb-1 uppercase tracking-tight">Account Log</span>
+                      <div className="text-[13px] font-black text-[--text-primary]">{l.account_name || "System"}</div>
+                    </div>
+                  </div>
+                  <div className="px-4 py-3 rounded-2xl bg-white/[0.02] border border-white/5">
+                    <div className="text-xs text-[--text-secondary] font-medium leading-relaxed">{l.details}</div>
+                  </div>
+                  <div className="mt-4 flex items-center justify-between">
+                    <div className="text-[10px] font-black text-[--text-muted]">Balance After: ₹{l.new_balance?.toLocaleString()}</div>
+                    <button
+                      onClick={() => {
+                        setRevertingId(l.id);
+                        setShowRevertConfirm(true);
+                      }}
+                      className="px-4 py-2 rounded-xl bg-rose-500/10 text-rose-400 text-[10px] font-black uppercase tracking-widest border border-rose-500/20 active:scale-95 transition-all"
+                    >
+                      Undo
+                    </button>
+                  </div>
+               </div>
+             );
+           })}
         </div>
       </div>
 

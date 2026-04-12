@@ -3,6 +3,7 @@
 export const dynamic = "force-dynamic";
 
 import { useCallback, useEffect, useState, startTransition } from "react";
+import { format } from "date-fns";
 import { createClient } from "@/lib/supabase-browser";
 import type { Tables } from "@/lib/database.types";
 import { createTransfer } from "./actions";
@@ -162,26 +163,26 @@ export default function TransfersPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-4xl md:text-5xl font-black tracking-tight text-[--text-primary]">Internal Transfers</h1>
-          <p className="text-sm mt-1 text-[--text-secondary]">Transfer money between your accounts</p>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[--text-primary]">Internal Transfers</h1>
+          <p className="text-[13px] md:text-sm mt-1 text-[--text-secondary]">Transfer money between your accounts</p>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
-          className={`btn-primary h-12 px-8 flex items-center gap-2.5 rounded-2xl shadow-xl shadow-[--accent-primary]/25 transition-all hover:scale-105 active:scale-95 ${showForm ? "btn-secondary" : ""}`}
+          className={`btn-primary h-[48px] px-6 md:px-8 flex-1 md:flex-none flex items-center justify-center gap-2.5 rounded-2xl shadow-xl shadow-[--accent-primary]/25 transition-all hover:scale-105 active:scale-95 text-sm ${showForm ? "btn-secondary" : ""}`}
         >
           {showForm ? (
             <>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path d="M6 18L18 6M6 6l12 12" />
               </svg>
-              Cancel
+              <span>Cancel</span>
             </>
           ) : (
             <>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path d="M12 4v16m8-8H4" />
               </svg>
-              New Transfer
+              <span>New Transfer</span>
             </>
           )}
         </button>
@@ -226,7 +227,7 @@ export default function TransfersPage() {
 
       {/* Transfer Form */}
       {showForm && accounts.length >= 2 && (
-        <div className="glass-card-static animate-scale-in p-8 mb-8">
+        <div className="glass-card-static animate-scale-in p-5 md:p-8 mb-8">
           <div className="flex items-center gap-3 mb-5">
             <div
               style={{
@@ -339,11 +340,11 @@ export default function TransfersPage() {
               </div>
             </div>
 
-            <div className="flex gap-3 mt-6">
+            <div className="flex flex-col sm:flex-row gap-3 mt-6">
               <button
                 type="submit"
                 disabled={submitting}
-                className="btn-primary"
+                className="btn-primary h-[48px] px-8 flex-1 sm:flex-none flex items-center justify-center text-sm"
                 style={{ opacity: submitting ? 0.6 : 1, cursor: submitting ? "not-allowed" : "pointer" }}
               >
                 {submitting ? (
@@ -355,17 +356,17 @@ export default function TransfersPage() {
                     Processing...
                   </span>
                 ) : (
-                  "Transfer"
+                  "Initiate Transfer"
                 )}
               </button>
               <button
                 type="button"
                 onClick={resetForm}
                 disabled={submitting}
-                className="btn-secondary"
+                className="btn-secondary h-[48px] px-8 flex-1 sm:flex-none flex items-center justify-center text-sm"
                 style={{ opacity: submitting ? 0.6 : 1 }}
               >
-                Cancel
+                Close
               </button>
             </div>
           </form>
@@ -438,81 +439,60 @@ export default function TransfersPage() {
         ) : (
           <div>
             {transfers.map((transfer, index) => (
-              <div
-                key={transfer.id}
-                className={`animate-fade-in-up delay-${Math.min(index + 1, 6)}`}
-                style={{
-                  padding: "20px 24px",
-                  borderBottom: index < transfers.length - 1 ? "1px solid var(--border-subtle)" : "none",
-                  transition: "background 0.2s",
-                  cursor: "default",
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = "var(--glass-hover)"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
+                <div
+                  className={`animate-fade-in-up delay-${Math.min(index + 1, 6)}`}
+                  style={{
+                    padding: "16px 20px md:20px 24px",
+                    borderBottom: index < transfers.length - 1 ? "1px solid var(--border-subtle)" : "none",
+                    transition: "background 0.2s",
+                    cursor: "default",
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "var(--glass-hover)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3 md:gap-4">
                     {/* Transfer icon */}
-                    <div
-                      style={{
-                        width: "44px",
-                        height: "44px",
-                        borderRadius: "var(--radius-md)",
-                        background: "rgba(162, 155, 254, 0.1)",
-                        border: "1px solid rgba(162, 155, 254, 0.15)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        flexShrink: 0,
-                      }}
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24" style={{ color: "#a29bfe" }}>
-                        <path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                      </svg>
-                    </div>
+                      <div
+                        className="w-10 h-10 md:w-11 md:h-11 rounded-xl bg-[--accent-primary]/10 border border-[--accent-primary]/20 flex items-center justify-center flex-shrink-0"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24" style={{ color: "var(--accent-primary)" }}>
+                          <path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                        </svg>
+                      </div>
 
                     {/* Transfer details */}
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>
-                          {getAccountName(transfer.from_account_id)}
-                        </span>
-                        <div
-                          className="flex items-center justify-center"
-                          style={{
-                            width: "24px",
-                            height: "24px",
-                            borderRadius: "50%",
-                            background: "rgba(108, 92, 231, 0.12)",
-                          }}
-                        >
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24" style={{ color: "#a29bfe" }}>
+                      <div>
+                        <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
+                          <span className="font-bold text-[13px] md:text-sm text-[--text-primary]">
+                            {getAccountName(transfer.from_account_id)}
+                          </span>
+                          <svg className="w-3 h-3 text-[--text-muted]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                             <path d="M9 5l7 7-7 7" />
                           </svg>
+                          <span className="font-bold text-[13px] md:text-sm text-[--text-primary]">
+                            {getAccountName(transfer.to_account_id)}
+                          </span>
                         </div>
-                        <span className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>
-                          {getAccountName(transfer.to_account_id)}
-                        </span>
-                      </div>
-                      {transfer.note && (
-                        <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
-                          {transfer.note}
+                        {transfer.note && (
+                          <p className="text-[11px] md:text-sm mt-0.5 text-[--text-secondary] line-clamp-1">
+                            {transfer.note}
+                          </p>
+                        )}
+                        <p className="text-[10px] mt-0.5 text-[--text-muted] font-medium">
+                          {format(new Date(transfer.created_at), "MMM d, h:mm a")}
                         </p>
-                      )}
-                      <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
-                        {new Date(transfer.created_at).toLocaleString()}
+                      </div>
+                    </div>
+
+                    {/* Amount */}
+                    <div className="text-left sm:text-right flex-shrink-0 sm:ml-4 pl-[52px] sm:pl-0">
+                      <p className="text-lg md:text-xl font-black text-[--text-primary]">
+                        {accounts.find(a => a.id === transfer.from_account_id)?.currency === 'USD' ? '$' : '₹'}{transfer.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </p>
                     </div>
                   </div>
-
-                  {/* Amount */}
-                  <div className="text-right flex-shrink-0 ml-4">
-                    <p className="text-xl font-bold gradient-text">
-                      {accounts.find(a => a.id === transfer.from_account_id)?.currency === 'USD' ? '$' : '₹'}{transfer.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </p>
-                  </div>
                 </div>
-              </div>
             ))}
           </div>
         )}

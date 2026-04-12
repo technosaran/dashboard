@@ -164,13 +164,13 @@ function IncomeContent() {
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-4xl md:text-5xl font-black tracking-tight text-[--text-primary]">Income Strategy</h1>
-          <p className="text-[--text-secondary] text-sm mt-2.5">Monitor your revenue streams and track financial growth.</p>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[--text-primary]">Income Strategy</h1>
+          <p className="text-[--text-secondary] text-[13px] md:text-sm mt-1">Monitor your revenue streams and track financial growth.</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 w-full md:w-auto">
           <button 
             onClick={() => setShowAddModal(true)}
-            className="btn-primary h-12 px-8 flex items-center gap-2.5 shadow-xl shadow-[--accent-primary]/25 rounded-2xl transition-all hover:scale-105 active:scale-95"
+            className="btn-primary h-[48px] px-6 flex-1 md:flex-none flex items-center justify-center gap-2.5 shadow-xl shadow-[--accent-primary]/25 rounded-2xl transition-all hover:scale-105 active:scale-95 text-sm"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
             Log Income
@@ -179,40 +179,40 @@ function IncomeContent() {
       </div>
 
       {/* Analytics KPI Row */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="glass-card-static p-8 flex flex-col justify-between">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+        <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between group">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Net Throughput</p>
-          <div className="mt-3 flex items-end justify-between">
-            <h3 className="text-2xl font-black">₹{stats.totalIncome.toLocaleString()}</h3>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Lifetime</span>
+          <div className="mt-3 flex flex-col sm:flex-row sm:items-end justify-between gap-2">
+            <h3 className="text-xl md:text-2xl font-black truncate">₹{stats.totalIncome.toLocaleString()}</h3>
+            <span className="text-[9px] w-fit px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Lifetime</span>
           </div>
         </div>
-        <div className="glass-card-static p-8 flex flex-col justify-between">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Monthly Yield</p>
-          <div className="mt-3 flex items-end justify-between">
-            <h3 className="text-2xl font-black">₹{stats.monthlyTotal.toLocaleString()}</h3>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[--accent-primary]/10 text-[--accent-primary] border border-[--accent-primary]/20">{format(new Date(), "MMMM")}</span>
+        <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Monthly Flow</p>
+          <div className="mt-3 flex flex-col sm:flex-row sm:items-end justify-between gap-2">
+            <h3 className="text-xl md:text-2xl font-black truncate">₹{stats.monthlyTotal.toLocaleString()}</h3>
+            <span className="text-[9px] w-fit px-2 py-0.5 rounded-full bg-[--accent-primary]/10 text-[--accent-primary] border border-[--accent-primary]/20 font-bold">{format(new Date(), "MMM")}</span>
           </div>
         </div>
-        <div className="glass-card-static p-8 flex flex-col justify-between">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Avg Transaction</p>
-          <div className="mt-3 flex items-end justify-between">
-            <h3 className="text-2xl font-black">₹{(incomes.length ? stats.totalIncome / incomes.length : 0).toLocaleString(undefined, {maximumFractionDigits: 0})}</h3>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-[--text-muted]">{incomes.length} points</span>
+        <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Average</p>
+          <div className="mt-3 flex flex-col sm:flex-row sm:items-end justify-between gap-2">
+            <h3 className="text-xl md:text-2xl font-black truncate">₹{(incomes.length ? stats.totalIncome / incomes.length : 0).toLocaleString(undefined, {maximumFractionDigits: 0})}</h3>
+            <span className="text-[9px] w-fit px-2 py-0.5 rounded-full bg-white/5 text-[--text-muted]">{incomes.length} pts</span>
           </div>
         </div>
-        <div className="glass-card-static p-8 flex flex-col justify-between bg-gradient-to-br from-[--accent-primary]/10 to-transparent">
+        <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between bg-gradient-to-br from-[--accent-primary]/10 to-transparent">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Primary Source</p>
-          <div className="mt-3 flex items-end justify-between">
-            <h3 className="text-2xl font-black truncate max-w-[120px]">{stats.pieData[0]?.name || "None"}</h3>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-[--text-muted]">Top Sector</span>
+          <div className="mt-3 flex flex-col sm:flex-row sm:items-end justify-between gap-2">
+            <h3 className="text-xl md:text-2xl font-black truncate">{stats.pieData[0]?.name || "None"}</h3>
+            <span className="text-[9px] w-fit px-2 py-0.5 rounded-full bg-white/5 text-[--text-muted]">Top</span>
           </div>
         </div>
       </div>
 
       {/* Visual Analytics */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 glass-card-static p-8">
+        <div className="lg:col-span-2 glass-card-static p-5 md:p-8">
           <div className="flex items-center justify-between mb-8">
             <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-[--text-muted]">Income Velocity</h3>
             <div className="flex items-center gap-2">
@@ -242,7 +242,7 @@ function IncomeContent() {
           </div>
         </div>
 
-        <div className="glass-card-static p-8">
+        <div className="glass-card-static p-5 md:p-8">
           <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-[--text-muted] mb-8">Source Distribution</h3>
           <div className="h-[240px] w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -303,15 +303,15 @@ function IncomeContent() {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+        <div className="overflow-x-auto w-full">
+          <table className="w-full text-left border-collapse min-w-[650px] md:min-w-0">
             <thead>
               <tr className="bg-white/[0.02] border-b border-white/5">
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Timestamp</th>
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Identity / Source</th>
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Classification</th>
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Destination</th>
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] text-right">Amount</th>
+                <th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Date</th>
+                <th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Source</th>
+                <th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Segment</th>
+                <th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] hidden sm:table-cell">Destination</th>
+                <th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] text-right">Credit</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/[0.03]">
@@ -327,36 +327,36 @@ function IncomeContent() {
                   const account = accounts.find(a => a.id === inc.account_id);
                   return (
                     <tr key={inc.id} className="hover:bg-white/[0.015] transition-colors group text-[--text-primary]">
-                      <td className="px-6 py-6 whitespace-nowrap">
-                        <p className="text-sm font-bold">{format(parseISO(inc.date), "MMM d, yyyy")}</p>
-                        <p className="text-[10px] text-emerald-500/60 tracking-tighter uppercase font-mono">Credit Confirmed</p>
+                      <td className="px-4 md:px-6 py-5 whitespace-nowrap">
+                        <p className="text-[13px] font-bold">{format(parseISO(inc.date), "MMM d, yy")}</p>
+                        <p className="text-[9px] text-emerald-500/60 font-bold uppercase">Credit</p>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-4 md:px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-xl">
+                          <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-lg flex-shrink-0">
                             {theme.icon}
                           </div>
-                          <p className="text-sm font-medium group-hover:text-emerald-400 transition-colors">
+                          <p className="text-[13px] font-medium group-hover:text-emerald-400 transition-colors truncate max-w-[120px] md:max-w-none">
                             {inc.description}
                           </p>
                         </div>
                       </td>
-                      <td className="px-6 py-6 whitespace-nowrap">
-                        <span className="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-[0.2em] bg-emerald-500/5 border border-emerald-500/10 text-emerald-400">
+                      <td className="px-4 md:px-6 py-5 whitespace-nowrap">
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-[0.1em] bg-emerald-500/5 border border-emerald-500/10 text-emerald-400">
                           {inc.category}
                         </span>
                       </td>
-                      <td className="px-6 py-6 whitespace-nowrap">
+                      <td className="px-4 md:px-6 py-5 whitespace-nowrap hidden sm:table-cell">
                         <div className="flex items-center gap-2">
                           <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                          <span className="text-xs font-medium text-[--text-secondary]">{account?.name || "Suspense Log"}</span>
+                          <span className="text-[11px] font-medium text-[--text-secondary]">{account?.name || "Direct Log"}</span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
-                        <p className="text-lg font-black text-emerald-400">+₹{Number(inc.amount).toLocaleString()}</p>
+                      <td className="px-4 md:px-6 py-4 whitespace-nowrap text-right">
+                        <p className="text-[15px] md:text-base font-black text-emerald-400">+₹{Number(inc.amount).toLocaleString()}</p>
                       </td>
                     </tr>
-                  )
+                  );
                 })
               )}
             </tbody>
@@ -366,17 +366,20 @@ function IncomeContent() {
 
       {/* Entry Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-[--bg-base]/80 backdrop-blur-xl animate-fade-in">
-          <div className="glass-card-static w-full max-w-2xl p-10 animate-scale-in border-emerald-500/20 shadow-[0_0_100px_rgba(16,185,129,0.1)]">
-            <div className="flex items-center justify-between mb-10">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 flex items-center justify-center">
-                  <svg className="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-xl animate-fade-in shadow-2xl">
+          <div className="glass-card-static w-full max-w-2xl p-6 md:p-10 animate-scale-in border-emerald-500/20 shadow-[0_0_100px_rgba(16,185,129,0.1)] max-h-[95vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-8 md:mb-10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                  <svg className="w-5 h-5 md:w-6 md:h-6 text-emerald-400" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
                 </div>
-                <h2 className="text-3xl font-black">Declare Income</h2>
+                <h2 className="text-xl md:text-3xl font-black">Declare Revenue</h2>
               </div>
-              <button onClick={() => setShowAddModal(false)} className="text-[--text-muted] hover:text-[--text-primary] transition-colors">
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg>
+              <button 
+                onClick={() => setShowAddModal(false)}
+                className="text-[--text-muted] hover:text-[--text-primary] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+              >
+                <svg className="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
 
@@ -428,7 +431,13 @@ function IncomeContent() {
                   </select>
                 </div>
               </div>
-              <button type="submit" disabled={submitting} className="btn-primary w-full py-5 text-xl font-black bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20">{submitting ? "Deploying..." : "Finalize Income Entry"}</button>
+              <button 
+                type="submit" 
+                disabled={submitting} 
+                className="btn-primary w-full h-14 md:h-16 text-lg md:text-xl font-black bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20 rounded-2xl transition-all"
+              >
+                {submitting ? "Deploying..." : "Finalize Entry"}
+              </button>
             </form>
           </div>
         </div>

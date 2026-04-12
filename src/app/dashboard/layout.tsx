@@ -9,24 +9,24 @@ export default function DashboardLayout({
 }) {
   return (
     <UserProvider>
-      <div className="flex flex-col md:flex-row h-screen overflow-hidden" style={{ background: "var(--bg-base)" }}>
+      <div className="flex flex-col md:flex-row h-screen overflow-hidden w-full" style={{ background: "var(--bg-base)" }}>
         <Sidebar />
-        <main className="flex-1 overflow-y-auto relative w-full">
-          {/* Ambient glow orbs */}
+        <main className="flex-1 overflow-y-auto overflow-x-hidden relative w-full">
+          {/* Ambient glow orbs - Adjusted for mobile */}
           <div
             className="pointer-events-none fixed"
             style={{
-              top: "-15%",
+              top: "-5%",
               right: "-5%",
-              width: "500px",
-              height: "500px",
+              width: "300px",
+              height: "300px",
               background: "radial-gradient(circle, rgba(108,92,231,0.06) 0%, transparent 70%)",
-              filter: "blur(60px)",
+              filter: "blur(40px)",
               zIndex: 0,
             }}
           />
           <div
-            className="pointer-events-none fixed"
+            className="pointer-events-none fixed lg:flex hidden"
             style={{
               bottom: "-10%",
               left: "30%",
@@ -37,7 +37,7 @@ export default function DashboardLayout({
               zIndex: 0,
             }}
           />
-          <div className="relative z-10 pt-[5rem] pb-[var(--page-padding-y)] px-[var(--page-padding-x)] max-w-[var(--page-max-width)]">
+          <div className="relative z-10 pt-20 md:pt-14 pb-[var(--page-padding-y)] px-[var(--page-padding-x)] max-w-[var(--page-max-width)] mx-auto w-full overflow-x-hidden">
             {children}
           </div>
         </main>

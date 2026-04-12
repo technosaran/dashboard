@@ -454,12 +454,12 @@ function AccountsContent() {
   return (
     <div className="flex flex-col gap-[var(--section-gap)] animate-fade-in">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6">
         <div>
-          <h1 className="text-4xl md:text-5xl font-black tracking-tight text-[--text-primary]">Accounts Portfolio</h1>
-          <p className="text-sm mt-1.5 font-medium text-[--text-muted]">Manage & monitor your financial footprint</p>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[--text-primary]">Accounts Portfolio</h1>
+          <p className="text-[13px] md:text-sm mt-1 md:mt-1.5 font-medium text-[--text-muted]">Manage & monitor your financial footprint</p>
         </div>
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+        <div className="grid grid-cols-2 lg:flex items-center gap-3 w-full md:w-auto">
           <button
             onClick={() => {
               if (accounts.length < 2) {
@@ -472,22 +472,22 @@ function AccountsContent() {
               setError(null);
             }}
             disabled={accounts.length < 2}
-            className="btn-secondary h-12 px-8 flex-1 md:flex-none flex items-center justify-center gap-2.5 rounded-2xl transition-all"
+            className="btn-secondary h-[48px] md:h-12 px-2 md:px-8 flex-1 md:flex-none flex items-center justify-center gap-2 rounded-2xl transition-all text-sm"
             style={{ opacity: accounts.length < 2 ? 0.5 : 1, cursor: accounts.length < 2 ? "not-allowed" : "pointer" }}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
               <path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
             </svg>
-            Transfer
+            <span className="truncate">Transfer</span>
           </button>
           <button
             onClick={() => setShowForm(!showForm)}
-            className="btn-primary h-12 px-8 flex-1 md:flex-none flex items-center justify-center gap-2.5 rounded-2xl shadow-xl shadow-[--accent-primary]/25 transition-all hover:scale-105 active:scale-95"
+            className="btn-primary h-[48px] md:h-12 px-2 md:px-8 flex-1 md:flex-none flex items-center justify-center gap-2 rounded-2xl shadow-xl shadow-[--accent-primary]/25 transition-all hover:scale-105 active:scale-95 text-sm"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
               <path d="M12 4v16m8-8H4" />
             </svg>
-            New Account
+            <span className="truncate">New Account</span>
           </button>
         </div>
       </div>
@@ -497,15 +497,15 @@ function AccountsContent() {
         <div className="glass-card-static relative overflow-hidden animate-fade-in-up delay-1 p-8 md:p-10">
           {/* Chart Section - Responsive Positioning */}
           <div className="flex flex-col lg:flex-row items-center justify-between gap-10">
-            <div className="relative w-full lg:w-auto flex flex-col items-center lg:items-start z-10">
+            <div className="relative w-full lg:w-auto flex flex-col items-center lg:items-start z-10 w-full">
               <div className="flex items-center gap-2.5 mb-1">
-                <p className="text-base font-light uppercase tracking-[0.3em] text-[--text-muted]">
+                <p className="text-xs md:text-base font-light uppercase tracking-[0.3em] text-[--text-muted]">
                   Portfolio Assets
                 </p>
               </div>
-              <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2 mb-8">
+              <div className="flex flex-wrap items-baseline justify-center lg:justify-start gap-x-6 gap-y-2 mb-8">
                 {Object.entries(balancesByCurrency).map(([curr, bal]) => (
-                  <h2 key={curr} className="text-4xl md:text-5xl font-black tracking-tighter text-[--text-primary]">
+                  <h2 key={curr} className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tighter text-[--text-primary]">
                     {getCurrencySymbol(curr)}{bal.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                   </h2>
                 ))}
@@ -600,7 +600,7 @@ function AccountsContent() {
 
 
       {/* Account Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {accounts.map((account, index) => {
           const style = TYPE_STYLES[account.type] || TYPE_STYLES.checking;
           return (
@@ -699,7 +699,7 @@ function AccountsContent() {
                 <div className="flex gap-2 items-center mt-5">
                     <button
                       onClick={() => startAdjust(account.id)}
-                      className="flex-1 flex items-center justify-center gap-2.5 rounded-xl p-3 transition-all text-[13px] font-bold tracking-tight"
+                      className="flex-1 flex items-center justify-center gap-2.5 rounded-xl min-h-[44px] p-3 transition-all text-[13px] font-bold tracking-tight"
                       style={{
                         background: style.iconBg,
                         border: `1px solid ${style.badgeBorder}`,
@@ -712,12 +712,12 @@ function AccountsContent() {
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
                         <path d="M12 4v16m8-8H4" />
                       </svg>
-                      Adjust Balance
+                      Adjust
                     </button>
                   {account.name !== "Cash" && (
                     <button
                       onClick={() => handleDelete(account.id)}
-                      className="flex items-center justify-center rounded-lg p-2.5 transition-all"
+                      className="flex items-center justify-center rounded-lg min-h-[44px] min-w-[44px] p-2.5 transition-all"
                       style={{
                         background: "rgba(255, 71, 87, 0.08)",
                         border: "1px solid rgba(255, 71, 87, 0.15)",
@@ -776,16 +776,16 @@ function AccountsContent() {
       {showForm && (
         <div className="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4 animate-fade-in">
           <div
-            className="glass-card-static animate-scale-in max-w-2xl w-full max-h-[90vh] overflow-y-auto custom-scrollbar"
-            style={{ padding: "32px", border: "1px solid var(--border-strong)" }}
+            className="glass-card-static animate-scale-in max-w-2xl w-full max-h-[95vh] md:max-h-[90vh] overflow-y-auto custom-scrollbar"
+            style={{ padding: "24px md:32px", border: "1px solid var(--border-strong)" }}
           >
-            <div className="flex justify-between items-center mb-8">
+            <div className="flex justify-between items-center mb-6 md:mb-8">
               <div>
-                <h2 className="text-2xl font-bold" style={{ color: "var(--text-primary)" }}>
+                <h2 className="text-xl md:text-2xl font-bold" style={{ color: "var(--text-primary)" }}>
                   {editingId ? "Update Account" : "Add New Account"}
                 </h2>
-                <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
-                  {editingId ? "Modify your account details" : "Connect a new financial source"}
+                <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+                  {editingId ? "Modify details" : "Connect new source"}
                 </p>
               </div>
               <button
@@ -976,7 +976,7 @@ function AccountsContent() {
                 <button 
                   type="submit" 
                   disabled={submitting}
-                  className="btn-primary flex-1 h-12 flex items-center justify-center gap-2"
+                  className="btn-primary flex-1 h-[48px] md:h-12 flex items-center justify-center gap-2"
                   style={{ opacity: submitting ? 0.6 : 1, cursor: submitting ? "not-allowed" : "pointer" }}
                 >
                   {submitting ? (
@@ -1000,7 +1000,7 @@ function AccountsContent() {
                   type="button" 
                   onClick={resetForm} 
                   disabled={submitting}
-                  className="btn-secondary flex-1 h-12"
+                  className="btn-secondary flex-1 h-[48px] md:h-12"
                   style={{ opacity: submitting ? 0.6 : 1 }}
                 >
                   Discard

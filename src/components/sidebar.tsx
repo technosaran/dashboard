@@ -164,12 +164,12 @@ export default function Sidebar() {
 
       {/* Mobile Bottom Navigation (Premium Refined) */}
       <nav 
-        className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around px-4 py-3 pb-safe border-t border-white/5"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between px-2 py-1 pb-safe border-t border-white/5"
         style={{
-          background: "rgba(8, 11, 25, 0.95)",
-          backdropFilter: "blur(20px) saturate(1.5)",
-          WebkitBackdropFilter: "blur(20px) saturate(1.5)",
-          boxShadow: "0 -10px 40px rgba(0,0,0,0.4)",
+          background: "rgba(8, 11, 25, 0.98)",
+          backdropFilter: "blur(25px) saturate(1.8)",
+          WebkitBackdropFilter: "blur(25px) saturate(1.8)",
+          boxShadow: "0 -8px 32px rgba(0,0,0,0.5)",
         }}
       >
         {nav.map((item) => {
@@ -178,18 +178,18 @@ export default function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className="flex flex-col items-center gap-1.5 px-4 py-1.5 rounded-2xl relative transition-all duration-300 active:scale-90"
+              className="flex-1 flex flex-col items-center justify-center gap-1 min-h-[56px] relative transition-all duration-300 active:scale-95"
               style={{
                 color: active ? "var(--accent-primary-light)" : "var(--text-muted)",
               }}
             >
               {active && (
-                <div className="absolute inset-0 bg-white/5 rounded-2xl animate-scale-in" />
+                <div className="absolute inset-x-2 top-1 bottom-1 bg-white/5 rounded-xl animate-scale-in" />
               )}
-              <div className={`${active ? "scale-110" : ""} transition-transform duration-300`}>
+              <div className={`${active ? "scale-110 text-[--accent-primary-light]" : "opacity-70"} transition-all duration-300 flex items-center justify-center`}>
                 {item.icon}
               </div>
-              <span className={`text-[10px] font-bold tracking-tight ${active ? "opacity-100" : "opacity-70"}`}>
+              <span className={`text-[9px] font-bold uppercase tracking-wider ${active ? "opacity-100" : "opacity-50"}`}>
                 {item.label}
               </span>
             </Link>
@@ -197,12 +197,14 @@ export default function Sidebar() {
         })}
         <button
           onClick={handleLogout}
-          className="flex flex-col items-center gap-1.5 px-4 py-1.5 rounded-2xl transition-all active:scale-90 text-[--text-muted]"
+          className="flex-1 flex flex-col items-center justify-center gap-1 min-h-[56px] transition-all active:scale-95 text-[--text-muted]"
         >
-          <svg className="w-[18px] h-[18px] opacity-70" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-            <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-          </svg>
-          <span className="text-[10px] font-bold tracking-tight opacity-70">Exit</span>
+          <div className="opacity-70 flex items-center justify-center">
+            <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+              <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+          </div>
+          <span className="text-[9px] font-bold uppercase tracking-wider opacity-50">Exit</span>
         </button>
       </nav>
     </>

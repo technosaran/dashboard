@@ -27,23 +27,23 @@ export default function LoginPage() {
       <div
         className="pointer-events-none absolute"
         style={{
-          top: "-20%",
+          top: "-10%",
           left: "-10%",
-          width: "600px",
-          height: "600px",
-          background: "radial-gradient(circle, rgba(108,92,231,0.12) 0%, transparent 60%)",
-          filter: "blur(80px)",
+          width: "300px",
+          height: "300px",
+          background: "radial-gradient(circle, rgba(108,92,231,0.15) 0%, transparent 70%)",
+          filter: "blur(60px)",
         }}
       />
       <div
         className="pointer-events-none absolute"
         style={{
-          bottom: "-15%",
+          bottom: "0%",
           right: "-10%",
-          width: "500px",
-          height: "500px",
-          background: "radial-gradient(circle, rgba(0,206,201,0.08) 0%, transparent 60%)",
-          filter: "blur(80px)",
+          width: "250px",
+          height: "250px",
+          background: "radial-gradient(circle, rgba(0,206,201,0.12) 0%, transparent 70%)",
+          filter: "blur(60px)",
         }}
       />
       <div
@@ -94,7 +94,7 @@ export default function LoginPage() {
             style={{
               borderRadius: "calc(var(--radius-2xl) - 1px)",
               background: "var(--bg-surface)",
-              padding: "36px 32px",
+              padding: "32px 24px sm:36px 32px",
             }}
           >
             {/* Subtle inner glow */}
@@ -132,12 +132,12 @@ export default function LoginPage() {
                   >
                     Email
                   </label>
-                  <input
+                   <input
                     name="email"
                     type="email"
                     required
                     autoComplete="email"
-                    className="input-premium"
+                    className="input-premium h-14 md:h-12 text-[16px] md:text-sm"
                     placeholder="you@example.com"
                   />
                 </div>
@@ -148,12 +148,12 @@ export default function LoginPage() {
                   >
                     Password
                   </label>
-                  <input
+                   <input
                     name="password"
                     type="password"
                     required
                     autoComplete="current-password"
-                    className="input-premium"
+                    className="input-premium h-14 md:h-12 text-[16px] md:text-sm"
                     placeholder="••••••••"
                   />
                 </div>
@@ -174,14 +174,11 @@ export default function LoginPage() {
                   </div>
                 )}
 
-                <button
+                 <button
                   type="submit"
                   disabled={loading}
-                  className="btn-primary w-full mt-2"
+                  className="btn-primary w-full mt-2 h-14 md:h-12 text-[16px] md:text-sm font-black flex items-center justify-center rounded-2xl md:rounded-xl transition-all active:scale-95"
                   style={{
-                    padding: "12px 20px",
-                    fontSize: "0.9375rem",
-                    borderRadius: "var(--radius-md)",
                     opacity: loading ? 0.6 : 1,
                     cursor: loading ? "not-allowed" : "pointer",
                   }}
