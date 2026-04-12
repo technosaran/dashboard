@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useCallback, useEffect, useState, startTransition, useMemo } from "react";
 import Greeting from "@/components/greeting";
 import { createClient } from "@/lib/supabase-browser";
@@ -50,6 +52,7 @@ export default function DashboardPage() {
       .channel("dashboard-realtime-master")
       .on("postgres_changes", { event: "*", schema: "public", table: "accounts" }, () => startTransition(fetchData))
       .on("postgres_changes", { event: "*", schema: "public", table: "expenses" }, () => startTransition(fetchData))
+      .on("postgres_changes", { event: "*", schema: "public", table: "incomes" }, () => startTransition(fetchData))
       .on("postgres_changes", { event: "*", schema: "public", table: "ledger_logs" }, () => startTransition(fetchData))
       .subscribe();
 

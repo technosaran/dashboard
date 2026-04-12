@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useCallback, useEffect, useState, startTransition, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
@@ -185,18 +187,12 @@ function AccountsContent() {
     startTransition(loadAccounts);
 
     const channel = supabase
-      .channel("accounts-changes")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "accounts",
-        },
-        () => {
-          startTransition(loadAccounts);
-        }
-      )
+      .channel("accounts-realtime-v1")
+      .on("postgres_changes", { event: "*", schema: "public", table: "accounts" }, () => startTransition(loadAccounts))
+      .on("postgres_changes", { event: "*", schema: "public", table: "expenses" }, () => startTransition(loadAccounts))
+      .on("postgres_changes", { event: "*", schema: "public", table: "incomes" }, () => startTransition(loadAccounts))
+      .on("postgres_changes", { event: "*", schema: "public", table: "transfers" }, () => startTransition(loadAccounts))
+      .on("postgres_changes", { event: "*", schema: "public", table: "ledger_logs" }, () => startTransition(loadAccounts))
       .subscribe();
 
     return () => {

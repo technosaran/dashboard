@@ -8,6 +8,16 @@ export default function QuickActions() {
 
   const actions = [
     {
+      label: "Log Income",
+      href: "/dashboard/income?action=new",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+        </svg>
+      ),
+      color: "bg-emerald-500",
+    },
+    {
       label: "Record Expense",
       href: "/dashboard/expenses?action=new",
       icon: (
@@ -35,7 +45,7 @@ export default function QuickActions() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
         </svg>
       ),
-      color: "bg-emerald-500",
+      color: "bg-emerald-600",
     },
   ];
 

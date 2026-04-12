@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useCallback, useEffect, useState, startTransition, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";

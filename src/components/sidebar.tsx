@@ -36,6 +36,15 @@ const nav = [
     ),
   },
   {
+    label: "Income",
+    href: "/dashboard/income",
+    icon: (
+      <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+        <path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+      </svg>
+    ),
+  },
+  {
     label: "Expenses",
     href: "/dashboard/expenses",
     icon: (

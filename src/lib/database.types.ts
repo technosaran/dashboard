@@ -210,6 +210,8 @@ export type Database = {
           previous_balance: number | null
           new_balance: number | null
           details: string | null
+          source_id: string | null
+          source_type: string | null
           created_at: string
         }
         Insert: {
@@ -222,6 +224,8 @@ export type Database = {
           previous_balance?: number | null
           new_balance?: number | null
           details?: string | null
+          source_id?: string | null
+          source_type?: string | null
           created_at?: string
         }
         Update: {
@@ -234,6 +238,8 @@ export type Database = {
           previous_balance?: number | null
           new_balance?: number | null
           details?: string | null
+          source_id?: string | null
+          source_type?: string | null
           created_at?: string
         }
         Relationships: [
@@ -339,6 +345,54 @@ export type Database = {
           }
         ]
       }
+      incomes: {
+        Row: {
+          id: string
+          user_id: string
+          account_id: string | null
+          description: string
+          amount: number
+          category: string
+          date: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          account_id?: string | null
+          description: string
+          amount: number
+          category: string
+          date?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          account_id?: string | null
+          description?: string
+          amount?: number
+          category?: string
+          date?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incomes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incomes_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -379,6 +433,17 @@ export type Database = {
           p_recipient_id: string
           p_amount: number
           p_note?: string | null
+        }
+        Returns: Json
+      }
+      record_income: {
+        Args: {
+          p_user_id: string
+          p_description: string
+          p_amount: number
+          p_category: string
+          p_date: string
+          p_account_id?: string | null
         }
         Returns: Json
       }

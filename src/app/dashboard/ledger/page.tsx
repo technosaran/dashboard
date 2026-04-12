@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useCallback, useEffect, useState, startTransition, useMemo } from "react";
 import { createClient } from "@/lib/supabase-browser";
 import { format, getYear, getMonth, isWithinInterval, startOfDay, endOfDay } from "date-fns";

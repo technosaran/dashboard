@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useCallback, useEffect, useState, startTransition } from "react";
 import { createClient } from "@/lib/supabase-browser";
 import type { Tables } from "@/lib/database.types";
