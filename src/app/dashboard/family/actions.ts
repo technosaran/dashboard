@@ -80,44 +80,20 @@ export async function sendMoneyToFamily(payload: {
 
   if (account.balance < payload.amount) return { error: "Insufficient balance" };
 
-  const newBalance = account.balance - payload.amount;
+  // Call the atomic RPC function
+  const { data, error: rpcError } = await supabase.rpc("process_family_transfer", {
+    p_user_id: user.id,
+    p_account_id: payload.account_id,
+    p_recipient_id: payload.recipient_id,
+    p_amount: payload.amount,
+    p_note: payload.note
+  });
 
-  // 1. Update balance (Essential)
-  const { error: updateError } = await supabase
-    .from("accounts")
-    .update({ balance: newBalance })
-    .eq("id", payload.account_id)
-    .eq("user_id", user.id);
+  if (rpcError) return { error: rpcError.message };
+  
+  const result = data as { success: boolean; error?: string };
+  if (!result.success) return { error: result.error || "Failed to process transfer" };
 
-  if (updateError) return { error: "Failed to update account balance." };
-
-  // 2. Log to ledger and transactions (Awaited for integrity)
-  const details = `Sent money to ${recipient.name}${payload.note ? `: ${payload.note}` : ""}`;
-
-  const [ledgerRes, transRes] = await Promise.all([
-    supabase.from("ledger_logs").insert({
-      user_id: user.id,
-      account_id: payload.account_id,
-      account_name: account.name,
-      action_type: "SEND_MONEY",
-      amount: payload.amount,
-      previous_balance: account.balance,
-      new_balance: newBalance,
-      details,
-    }),
-    supabase.from("transactions").insert({
-      user_id: user.id,
-      account_id: payload.account_id,
-      amount: payload.amount,
-      type: "expense",
-      description: details,
-      category: "Family & Friends",
-      date: new Date().toISOString().split('T')[0],
-    }),
-  ]);
-
-  if (ledgerRes.error) console.error("Failed to create ledger log", ledgerRes.error);
-  if (transRes.error) console.error("Failed to create transaction record", transRes.error);
 
   revalidatePath("/dashboard/family");
   revalidatePath("/dashboard/accounts");

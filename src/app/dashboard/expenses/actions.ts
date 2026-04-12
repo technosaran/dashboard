@@ -49,22 +49,4 @@ export async function addExpense(formData: {
   return { success: true };
 }
 
-export async function deleteExpense(id: string) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Unauthorized" };
 
-  const { error } = await supabase
-    .from("expenses")
-    .delete()
-    .eq("id", id)
-    .eq("user_id", user.id);
-
-  if (error) {
-    console.error("Error deleting expense:", error);
-    return { error: error.message };
-  }
-
-  revalidatePath("/dashboard/expenses");
-  return { success: true };
-}

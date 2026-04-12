@@ -372,6 +372,16 @@ export type Database = {
         }
         Returns: Json
       }
+      process_family_transfer: {
+        Args: {
+          p_user_id: string
+          p_account_id: string
+          p_recipient_id: string
+          p_amount: number
+          p_note?: string | null
+        }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never

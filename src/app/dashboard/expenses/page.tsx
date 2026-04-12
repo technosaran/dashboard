@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState, startTransition, useMemo, Suspense } 
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { createClient } from "@/lib/supabase-browser";
-import { addExpense, deleteExpense } from "./actions";
+import { addExpense } from "./actions";
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, subMonths } from "date-fns";
 import type { Tables } from "@/lib/database.types";
 import { 
@@ -51,8 +51,7 @@ function ExpensesContent() {
   const [submitting, setSubmitting] = useState(false);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+
   
   const [formData, setFormData] = useState({
     description: "",
@@ -150,25 +149,7 @@ function ExpensesContent() {
     setSubmitting(false);
   }
 
-  async function handleDelete(id: string) {
-    setDeletingId(id);
-    setShowDeleteConfirm(true);
-  }
 
-  async function confirmDelete() {
-    if (!deletingId) return;
-    setSubmitting(true);
-    const result = await deleteExpense(deletingId);
-    if (!result?.error) {
-      toast.success("Record purged from ledger");
-      fetchData();
-    } else {
-      toast.error(result.error);
-    }
-    setSubmitting(false);
-    setShowDeleteConfirm(false);
-    setDeletingId(null);
-  }
 
   if (loading) return <div className="p-8 space-y-8 animate-pulse">
     <div className="h-10 w-48 bg-white/5 rounded-xl" />
@@ -335,13 +316,13 @@ function ExpensesContent() {
                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Segment</th>
                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Channel</th>
                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-[--text-muted] text-right">Debit Amount</th>
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-[--text-muted] text-center">Controls</th>
+
               </tr>
             </thead>
             <tbody className="divide-y divide-white/[0.03]">
               {filteredExpenses.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-20 text-center text-[--text-muted] text-sm italic">
+                  <td colSpan={5} className="px-6 py-20 text-center text-[--text-muted] text-sm italic">
                     Infrastructure query returned no results.
                   </td>
                 </tr>
@@ -379,14 +360,7 @@ function ExpensesContent() {
                       <td className="px-6 py-4 whitespace-nowrap text-right">
                         <p className="text-lg font-black text-[--text-primary]">₹{Number(exp.amount).toLocaleString()}</p>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <button 
-                          onClick={() => handleDelete(exp.id)}
-                          className="p-2 rounded-lg bg-red-400/0 hover:bg-red-400/10 text-red-400/30 hover:text-red-400 transition-all"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                        </button>
-                      </td>
+
                     </tr>
                   )
                 })
@@ -442,39 +416,7 @@ function ExpensesContent() {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-md animate-fade-in">
-          <div className="glass-card-static w-full max-w-sm p-8 animate-scale-in border-red-500/20 shadow-[0_0_50px_rgba(239,68,68,0.1)]">
-            <div className="flex flex-col items-center text-center">
-              <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mb-6">
-                <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-black text-[--text-primary] mb-2">Delete Expense?</h3>
-              <p className="text-sm text-[--text-muted] mb-8 leading-relaxed">
-                Are you sure you want to delete this record? This action will restore the balance to the linked account if one was used.
-              </p>
-              <div className="flex gap-3 w-full">
-                <button 
-                  onClick={confirmDelete}
-                  disabled={submitting}
-                  className="flex-1 py-3 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold text-sm transition-all shadow-lg shadow-red-500/20 disabled:opacity-50"
-                >
-                  {submitting ? "Purging..." : "Confirm Delete"}
-                </button>
-                <button 
-                  onClick={() => { setShowDeleteConfirm(false); setDeletingId(null); }}
-                  className="flex-1 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-[--text-primary] font-bold text-sm border border-white/10 transition-all"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 }
