@@ -194,11 +194,11 @@ export default function FamilyPage() {
   const totalSent = recentSends.reduce((sum, s) => sum + (s.amount || 0), 0);
 
   return (
-    <div className="space-y-8 animate-fade-in pb-24">
+    <div className="flex flex-col gap-[var(--section-gap)] animate-fade-in">
       {/* Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-black tracking-tight text-[--text-primary]">
+          <h1 className="text-4xl md:text-5xl font-black tracking-tight text-[--text-primary]">
             Family & Friends
           </h1>
           <p className="text-sm mt-1.5 font-medium text-[--text-muted]">
@@ -207,7 +207,7 @@ export default function FamilyPage() {
         </div>
         <button
           onClick={() => setIsAddingRecipient(true)}
-          className="btn-primary flex items-center gap-2.5 h-11 px-5"
+          className="btn-primary h-12 px-8 flex items-center gap-2.5 rounded-2xl shadow-xl shadow-[--accent-primary]/25 transition-all hover:scale-105 active:scale-95"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
             <path d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
@@ -218,18 +218,18 @@ export default function FamilyPage() {
 
       {/* Stats Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="glass-card-static p-5">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-[--text-muted] mb-1">Total Contacts</p>
+        <div className="glass-card-static p-8">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted] mb-1">Total Contacts</p>
           <p className="text-3xl font-black text-[--text-primary]">{recipients.length}</p>
         </div>
-        <div className="glass-card-static p-5">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-[--text-muted] mb-1">Family Members</p>
+        <div className="glass-card-static p-8">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted] mb-1">Family Members</p>
           <p className="text-3xl font-black text-[--accent-primary-light]">
             {recipients.filter(r => r.relationship === "Family").length}
           </p>
         </div>
-        <div className="glass-card-static p-5">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-[--text-muted] mb-1">Recently Sent</p>
+        <div className="glass-card-static p-8">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted] mb-1">Recently Sent</p>
           <p className="text-3xl font-black text-[#55efc4]">
             {totalSent.toLocaleString()}
           </p>
@@ -255,7 +255,7 @@ export default function FamilyPage() {
       </div>
 
       {/* Recipients Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {loading ? (
           Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="h-64 skeleton" style={{ borderRadius: "var(--radius-xl)" }} />
@@ -300,7 +300,7 @@ export default function FamilyPage() {
                           {person.name}
                         </h3>
                         <span
-                          className="text-[10px] font-bold uppercase tracking-widest"
+                          className="text-[10px] font-bold uppercase tracking-[0.2em]"
                           style={{ color: config.color }}
                         >
                           {config.emoji} {person.relationship}
@@ -377,7 +377,7 @@ export default function FamilyPage() {
       {recentSends.length > 0 && (
         <div className="glass-card-static overflow-hidden" style={{ borderRadius: "var(--radius-xl)" }}>
           <div className="px-6 py-4 border-b border-white/5">
-            <h3 className="text-sm font-bold uppercase tracking-widest text-[--text-muted]">
+            <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-[--text-muted]">
               Recent Transfers
             </h3>
           </div>
@@ -432,22 +432,22 @@ export default function FamilyPage() {
                 </div>
               </div>
 
-              <form onSubmit={handleAddRecipient} className="space-y-4">
+              <form onSubmit={handleAddRecipient} className="space-y-8">
                 <div>
-                  <label className="block text-xs font-bold text-[--text-muted] uppercase tracking-widest mb-1.5 ml-1">
+                  <label className="block text-xs font-bold text-[--text-muted] uppercase tracking-[0.2em] mb-1.5 ml-1">
                     Full Name *
                   </label>
                   <input
                     required
                     value={newName}
                     onChange={(e) => setNewName(e.target.value)}
-                    className="input-premium h-12"
+                    className="input-premium"
                     placeholder="e.g. Priya Sharma"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-[--text-muted] uppercase tracking-widest mb-1.5 ml-1">
+                  <label className="block text-xs font-bold text-[--text-muted] uppercase tracking-[0.2em] mb-1.5 ml-1">
                     Relationship
                   </label>
                   <div className="grid grid-cols-3 gap-2">
@@ -476,7 +476,7 @@ export default function FamilyPage() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-bold text-[--text-muted] uppercase tracking-widest mb-1.5 ml-1">
+                    <label className="block text-xs font-bold text-[--text-muted] uppercase tracking-[0.2em] mb-1.5 ml-1">
                       Bank Name
                     </label>
                     <input
@@ -487,7 +487,7 @@ export default function FamilyPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-[--text-muted] uppercase tracking-widest mb-1.5 ml-1">
+                    <label className="block text-xs font-bold text-[--text-muted] uppercase tracking-[0.2em] mb-1.5 ml-1">
                       Account No.
                     </label>
                     <input
@@ -540,7 +540,7 @@ export default function FamilyPage() {
                   <h2 className="text-xl font-bold text-[--text-primary]">
                     Send to {selectedRecipient.name}
                   </h2>
-                  <p className="text-xs text-[--text-muted] uppercase tracking-widest font-bold mt-0.5">
+                  <p className="text-xs text-[--text-muted] uppercase tracking-[0.2em] font-bold mt-0.5">
                     {getConfig(selectedRecipient.relationship).emoji} {selectedRecipient.relationship}
                   </p>
                 </div>
@@ -549,7 +549,7 @@ export default function FamilyPage() {
               <form onSubmit={handleSendMoney} className="space-y-5">
                 {/* Account Selector */}
                 <div>
-                  <label className="block text-xs font-bold text-[--text-muted] uppercase tracking-widest mb-1.5 ml-1">
+                  <label className="block text-xs font-bold text-[--text-muted] uppercase tracking-[0.2em] mb-1.5 ml-1">
                     From Account
                   </label>
                   <select
@@ -568,7 +568,7 @@ export default function FamilyPage() {
 
                 {/* Amount Input */}
                 <div>
-                  <label className="block text-xs font-bold text-[--text-muted] uppercase tracking-widest mb-1.5 ml-1">
+                  <label className="block text-xs font-bold text-[--text-muted] uppercase tracking-[0.2em] mb-1.5 ml-1">
                     Amount
                   </label>
                   <div className="relative">
@@ -609,7 +609,7 @@ export default function FamilyPage() {
 
                 {/* Note */}
                 <div>
-                  <label className="block text-xs font-bold text-[--text-muted] uppercase tracking-widest mb-1.5 ml-1">
+                  <label className="block text-xs font-bold text-[--text-muted] uppercase tracking-[0.2em] mb-1.5 ml-1">
                     Note (Optional)
                   </label>
                   <input

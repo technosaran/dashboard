@@ -439,7 +439,7 @@ function AccountsContent() {
 
   if (loading) {
     return (
-      <div className="p-8 max-w-7xl mx-auto">
+      <div className="flex flex-col gap-[var(--section-gap)] max-w-[var(--page-max-width)] mx-auto animate-pulse">
         <div className="skeleton" style={{ width: "200px", height: "36px", marginBottom: "32px" }} />
         <div className="skeleton" style={{ height: "300px", marginBottom: "24px" }} />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -452,16 +452,12 @@ function AccountsContent() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="flex flex-col gap-[var(--section-gap)] animate-fade-in">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 animate-fade-in-up gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-4xl font-black tracking-tight" style={{ color: "var(--text-primary)" }}>
-            Accounts
-          </h1>
-          <p className="text-sm mt-1.5 font-medium" style={{ color: "var(--text-muted)" }}>
-            Manage & monitor your financial footprint
-          </p>
+          <h1 className="text-4xl md:text-5xl font-black tracking-tight text-[--text-primary]">Accounts Portfolio</h1>
+          <p className="text-sm mt-1.5 font-medium text-[--text-muted]">Manage & monitor your financial footprint</p>
         </div>
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
           <button
@@ -476,7 +472,7 @@ function AccountsContent() {
               setError(null);
             }}
             disabled={accounts.length < 2}
-            className="btn-secondary flex-1 md:flex-none flex items-center justify-center gap-2.5 h-11 px-5"
+            className="btn-secondary h-12 px-8 flex-1 md:flex-none flex items-center justify-center gap-2.5 rounded-2xl transition-all"
             style={{ opacity: accounts.length < 2 ? 0.5 : 1, cursor: accounts.length < 2 ? "not-allowed" : "pointer" }}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
@@ -486,7 +482,7 @@ function AccountsContent() {
           </button>
           <button
             onClick={() => setShowForm(!showForm)}
-            className="btn-primary flex-1 md:flex-none flex items-center justify-center gap-2.5 h-11 px-5"
+            className="btn-primary h-12 px-8 flex-1 md:flex-none flex items-center justify-center gap-2.5 rounded-2xl shadow-xl shadow-[--accent-primary]/25 transition-all hover:scale-105 active:scale-95"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
               <path d="M12 4v16m8-8H4" />
@@ -498,15 +494,7 @@ function AccountsContent() {
 
       {/* Total Balance Overview with Chart */}
       {accounts.length > 0 && (
-        <div
-          className="relative overflow-hidden mb-12 animate-fade-in-up delay-1"
-          style={{
-            borderRadius: "var(--radius-3xl)",
-            background: "linear-gradient(145deg, rgba(20, 25, 55, 0.4), rgba(10, 15, 30, 0.4))",
-            border: "1px solid var(--border-subtle)",
-            padding: "var(--main-padding)",
-          }}
-        >
+        <div className="glass-card-static relative overflow-hidden animate-fade-in-up delay-1 p-8 md:p-10">
           {/* Chart Section - Responsive Positioning */}
           <div className="flex flex-col lg:flex-row items-center justify-between gap-10">
             <div className="relative w-full lg:w-auto flex flex-col items-center lg:items-start z-10">
@@ -612,7 +600,7 @@ function AccountsContent() {
 
 
       {/* Account Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {accounts.map((account, index) => {
           const style = TYPE_STYLES[account.type] || TYPE_STYLES.checking;
           return (
@@ -813,7 +801,7 @@ function AccountsContent() {
               </button>
             </div>
             
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="block text-xs font-bold uppercase tracking-widest ml-1" style={{ color: "var(--text-muted)" }}>
@@ -1057,7 +1045,7 @@ function AccountsContent() {
               </div>
             )}
 
-            <form onSubmit={handleAdjust} className="space-y-6">
+            <form onSubmit={handleAdjust} className="space-y-8">
                 <div className="p-4 rounded-2xl bg-white/5 border border-white/5 space-y-1">
                   <label className="text-[10px] font-bold uppercase tracking-widest text-muted">Account</label>
                   <div className="flex justify-between items-center">
@@ -1217,7 +1205,7 @@ function AccountsContent() {
               </div>
             )}
 
-            <form onSubmit={handleTransfer} className="space-y-6">
+            <form onSubmit={handleTransfer} className="space-y-8">
               <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-2">
                   <label className="block text-xs font-bold uppercase tracking-widest ml-1" style={{ color: "var(--text-muted)" }}>

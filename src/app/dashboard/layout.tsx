@@ -11,10 +11,7 @@ export default function DashboardLayout({
     <UserProvider>
       <div className="flex flex-col md:flex-row h-screen overflow-hidden" style={{ background: "var(--bg-base)" }}>
         <Sidebar />
-        <main
-          className="flex-1 overflow-y-auto relative w-full"
-          style={{ padding: "var(--main-padding, 24px 20px)" }}
-        >
+        <main className="flex-1 overflow-y-auto relative w-full">
           {/* Ambient glow orbs */}
           <div
             className="pointer-events-none fixed"
@@ -40,7 +37,9 @@ export default function DashboardLayout({
               zIndex: 0,
             }}
           />
-          <div className="relative z-10">{children}</div>
+          <div className="relative z-10 pt-[5rem] pb-[var(--page-padding-y)] px-[var(--page-padding-x)] max-w-[var(--page-max-width)]">
+            {children}
+          </div>
         </main>
         <QuickActions />
       </div>

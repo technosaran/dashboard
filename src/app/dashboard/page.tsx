@@ -96,15 +96,10 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-10 pb-20 max-w-7xl mx-auto">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div>
-          <Greeting />
-          <p className="mt-2 text-sm font-medium text-[--text-secondary] animate-fade-in-up delay-1">
-            Real-time financial synchronization active. All systems nominal.
-          </p>
-        </div>
-        <div className="flex gap-3 animate-fade-in-up delay-1">
+    <div className="flex flex-col gap-[var(--section-gap)] animate-fade-in">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <Greeting />
+        <div className="flex gap-3">
           <Link href="/dashboard/accounts?action=new" className="btn-primary flex items-center gap-2">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
             Add Account
@@ -132,16 +127,16 @@ export default function DashboardPage() {
 
             <div className="flex flex-wrap gap-8 items-center pt-4 border-t border-white/5">
               <div className="space-y-1">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-[--text-muted]">Monthly Burn</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Monthly Burn</p>
                 <p className="text-xl font-black text-rose-400">₹{stats.monthlySpend.toLocaleString()}</p>
               </div>
               <div className="space-y-1">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-[--text-muted]">Active Channels</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Active Channels</p>
                 <p className="text-xl font-black text-[--accent-primary-light]">{stats.accountCount} Accounts</p>
               </div>
               <div className="space-y-1">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-[--text-muted]">Data Velocity</p>
-                <p className="text-xl font-black text-[#55efc4]">Live Sync</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Updates</p>
+                <p className="text-xl font-black text-[#55efc4]">Real-time</p>
               </div>
             </div>
           </div>
@@ -182,8 +177,8 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Recent Activity */}
         <div className="glass-card-static flex flex-col overflow-hidden">
-          <div className="p-6 border-b border-white/5 flex items-center justify-between">
-            <h3 className="text-sm font-black uppercase tracking-widest text-[--text-muted]">Infrastructure Logs</h3>
+          <div className="p-8 border-b border-white/5 flex items-center justify-between">
+            <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[--text-muted]">Recent Activity</h3>
             <Link href="/dashboard/ledger" className="text-[10px] font-bold text-[--accent-primary] hover:underline">View Full Audit</Link>
           </div>
           <div className="flex-1 divide-y divide-white/5">
@@ -214,8 +209,8 @@ export default function DashboardPage() {
         </div>
 
         {/* Quick Insights / Navigation */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <Link href="/dashboard/expenses" className="glass-card p-6 flex flex-col justify-between group no-underline">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+          <Link href="/dashboard/expenses" className="glass-card p-8 flex flex-col justify-between group no-underline">
             <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
               <svg className="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             </div>
@@ -225,7 +220,7 @@ export default function DashboardPage() {
             </div>
           </Link>
 
-          <Link href="/dashboard/family" className="glass-card p-6 flex flex-col justify-between group no-underline">
+          <Link href="/dashboard/family" className="glass-card p-8 flex flex-col justify-between group no-underline">
             <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
               <svg className="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
             </div>
@@ -235,18 +230,15 @@ export default function DashboardPage() {
             </div>
           </Link>
 
-          <div className="col-span-1 sm:col-span-2 glass-card-static p-6 flex items-center justify-between border-dashed border-white/10">
+          <div className="col-span-1 sm:col-span-2 glass-card-static p-8 flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center animate-pulse">
-                <div className="w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(108,92,231,0.5)]" />
+              <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
+                <div className="w-2 h-2 rounded-full bg-indigo-500" />
               </div>
               <div>
-                <p className="text-xs font-bold text-[--text-primary]">Continuous Integration</p>
-                <p className="text-[10px] text-[--text-muted]">Database monitoring active and healthy.</p>
+                <p className="text-xs font-bold text-[--text-primary]">System Status</p>
+                <p className="text-[10px] text-[--text-muted]">All accounts synchronized.</p>
               </div>
-            </div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-[#55efc4] bg-[#55efc4]/10 px-3 py-1 rounded-full border border-[#55efc4]/20">
-              Live
             </div>
           </div>
         </div>

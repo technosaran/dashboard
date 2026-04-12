@@ -43,23 +43,23 @@ export default function SettingsPage() {
   };
 
   return (
-    <div>
+    <div className="flex flex-col gap-[var(--section-gap)] animate-fade-in">
       {/* Header */}
-      <div className="animate-fade-in-up">
-        <h1 className="text-3xl font-bold" style={{ color: "var(--text-primary)" }}>
+      <div>
+        <h1 className="text-4xl font-black tracking-tight text-[--text-primary]">
           Settings
         </h1>
-        <p className="mt-1 text-sm" style={{ color: "var(--text-secondary)" }}>
+        <p className="mt-1 text-sm text-[--text-secondary]">
           Manage your account preferences and profile identity.
         </p>
       </div>
 
 
       {/* Profile Card */}
-      <div className="mt-8 max-w-lg animate-fade-in-up delay-1">
+      <div className="max-w-2xl animate-fade-in-up delay-1">
         <div
           className="glass-card-static"
-          style={{ padding: "28px", position: "relative", overflow: "hidden" }}
+          style={{ padding: "32px", position: "relative", overflow: "hidden" }}
         >
           {/* Top accent */}
           <div

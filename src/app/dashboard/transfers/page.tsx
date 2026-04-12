@@ -158,21 +158,16 @@ export default function TransfersPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="flex flex-col gap-[var(--section-gap)] animate-fade-in">
       {/* Header */}
-      <div className="flex justify-between items-center mb-8 animate-fade-in-up">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-bold" style={{ color: "var(--text-primary)" }}>
-            Internal Transfers
-          </h1>
-          <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
-            Transfer money between your accounts
-          </p>
+          <h1 className="text-4xl md:text-5xl font-black tracking-tight text-[--text-primary]">Internal Transfers</h1>
+          <p className="text-sm mt-1 text-[--text-secondary]">Transfer money between your accounts</p>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
-          className={showForm ? "btn-secondary" : "btn-primary"}
-          style={{ display: "flex", alignItems: "center", gap: "8px" }}
+          className={`btn-primary h-12 px-8 flex items-center gap-2.5 rounded-2xl shadow-xl shadow-[--accent-primary]/25 transition-all hover:scale-105 active:scale-95 ${showForm ? "btn-secondary" : ""}`}
         >
           {showForm ? (
             <>
@@ -231,7 +226,7 @@ export default function TransfersPage() {
 
       {/* Transfer Form */}
       {showForm && accounts.length >= 2 && (
-        <div className="glass-card-static animate-scale-in" style={{ padding: "28px", marginBottom: "32px" }}>
+        <div className="glass-card-static animate-scale-in p-8 mb-8">
           <div className="flex items-center gap-3 mb-5">
             <div
               style={{
@@ -270,11 +265,11 @@ export default function TransfersPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit}>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
-                  From Account
+          <form onSubmit={handleSubmit} className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-3">
+                <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">
+                  From Source Account
                 </label>
                 <select
                   value={formData.from_account_id}
@@ -282,18 +277,23 @@ export default function TransfersPage() {
                   className="input-premium"
                   required
                 >
-                  <option value="">Select account</option>
+                  <option value="">Select source account</option>
                   {accounts.map((account) => (
                     <option key={account.id} value={account.id}>
                       {account.name} ({account.currency} {account.balance.toLocaleString()})
                     </option>
                   ))}
                 </select>
+                {formData.from_account_id && (
+                  <p className="text-[10px] font-bold text-[--text-muted]">
+                    Available: {accounts.find(a => a.id === formData.from_account_id)?.currency === 'USD' ? '$' : '₹'}{getAccountBalance(formData.from_account_id).toLocaleString()}
+                  </p>
+                )}
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
-                  To Account
+              <div className="space-y-3">
+                <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">
+                  Destination Account
                 </label>
                 <select
                   value={formData.to_account_id}
@@ -301,7 +301,7 @@ export default function TransfersPage() {
                   className="input-premium"
                   required
                 >
-                  <option value="">Select account</option>
+                  <option value="">Select destination</option>
                   {accounts.map((account) => (
                     <option key={account.id} value={account.id}>
                       {account.name} ({account.currency} {account.balance.toLocaleString()})
@@ -310,9 +310,9 @@ export default function TransfersPage() {
                 </select>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
-                  Amount
+              <div className="space-y-3">
+                <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">
+                  Transfer Amount
                 </label>
                 <input
                   type="number"
@@ -323,23 +323,18 @@ export default function TransfersPage() {
                   placeholder="0.00"
                   required
                 />
-                {formData.from_account_id && (
-                  <p className="text-xs mt-1.5" style={{ color: "var(--text-muted)" }}>
-                    Available: {accounts.find(a => a.id === formData.from_account_id)?.currency === 'USD' ? '$' : '₹'}{getAccountBalance(formData.from_account_id).toLocaleString()}
-                  </p>
-                )}
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
-                  Note (optional)
+              <div className="space-y-3">
+                <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">
+                  Allocation Note (Optional)
                 </label>
                 <input
                   type="text"
                   value={formData.note}
                   onChange={(e) => setFormData({ ...formData, note: e.target.value })}
                   className="input-premium"
-                  placeholder="e.g., Monthly savings"
+                  placeholder="e.g. Monthly reallocation"
                 />
               </div>
             </div>

@@ -24,14 +24,8 @@ export default function Greeting() {
 
   return (
     <div className="animate-fade-in-up">
-      <div className="flex items-center gap-3 mb-1">
-        <div className={`w-1.5 h-1.5 rounded-full transition-all duration-500 ${isLive ? "bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]" : "bg-rose-500"}`} />
-        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">
-          {isLive ? "Automatic Real-time Connection Active" : "Establishing Secure Handshake..."}
-        </span>
-      </div>
       <h1
-        className="text-4xl font-bold tracking-tight"
+        className="text-4xl md:text-5xl font-black tracking-tight"
         style={{ color: "var(--text-primary)" }}
       >
         {greeting},{" "}

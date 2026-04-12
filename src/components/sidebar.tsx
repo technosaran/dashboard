@@ -138,8 +138,8 @@ export default function Sidebar() {
 
         <div className="divider-glow mx-4" />
 
-        <nav className="flex-1 px-3 pt-6 space-y-1">
-          <p className="px-3 pb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-[--text-muted]">
+        <nav className="flex-1 px-4 pt-10 space-y-2">
+          <p className="px-4 pb-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-[--text-muted] opacity-60">
             Navigation
           </p>
           {nav.map((item, index) => (

@@ -136,18 +136,11 @@ export default function LedgerPage() {
   };
 
   return (
-    <div className="space-y-8 animate-fade-in max-w-7xl mx-auto pb-32">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div className="space-y-1">
-          <h1 className="text-4xl font-black tracking-tight text-[--text-primary]">
-            Audit Trail
-          </h1>
-          <div className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
-            <p className="text-[--text-secondary] font-medium text-xs uppercase tracking-widest">
-              Centralized Ledger System
-            </p>
-          </div>
+    <div className="flex flex-col gap-[var(--section-gap)] animate-fade-in">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+          <h1 className="text-4xl md:text-5xl font-black tracking-tight text-[--text-primary]">Audit Trail</h1>
+          <p className="text-[--text-secondary] text-sm mt-1 uppercase tracking-[0.2em] font-bold">Financial History</p>
         </div>
       </div>
 
@@ -213,7 +206,7 @@ export default function LedgerPage() {
         </div>
       </div>
 
-      <div className="overflow-hidden border border-white/5 bg-[var(--bg-surface)] backdrop-blur-xl shadow-2xl" style={{ borderRadius: "var(--radius-3xl)" }}>
+      <div className="glass-card-static overflow-hidden">
         {/* Table View */}
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse">
@@ -223,8 +216,8 @@ export default function LedgerPage() {
                 <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Operation</th>
                 <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Account</th>
                 <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Amount</th>
-                <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Audit Details</th>
-                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] text-center">Controls</th>
+                <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Details</th>
+                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
@@ -291,7 +284,7 @@ export default function LedgerPage() {
            {filteredLogs.map(l => (
              <div key={l.id} className="p-6">
                 <div className="flex justify-between items-center mb-3">
-                   <div className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">{format(new Date(l.created_at), "MMM d, yyyy")}</div>
+                   <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">{format(new Date(l.created_at), "MMM d, yyyy")}</div>
                    {getActionBadge(l.action_type)}
                 </div>
                 <div className="text-xl font-bold mb-2">₹{l.amount?.toLocaleString()}</div>
@@ -311,9 +304,9 @@ export default function LedgerPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l5 5m-5-5l5-5" />
                 </svg>
               </div>
-              <h3 className="text-xl font-black text-[--text-primary] mb-2">Revert Operation?</h3>
+              <h3 className="text-xl font-black text-[--text-primary] mb-2">Undo this action?</h3>
               <p className="text-sm text-[--text-muted] mb-8 leading-relaxed">
-                This will trigger a <span className="text-orange-400 font-bold">Deep Reversal</span>. Balances will be restored and this audit entry will be marked as reverted.
+                This will restore your balance and remove this record from your history.
               </p>
               <div className="flex gap-3 w-full">
                 <button 
@@ -331,7 +324,7 @@ export default function LedgerPage() {
                   }}
                   className="flex-1 py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm transition-all shadow-lg shadow-orange-500/20"
                 >
-                  Confirm Reversal
+                  Confirm Undo
                 </button>
                 <button 
                   onClick={() => { setShowRevertConfirm(false); setRevertingId(null); }}
