@@ -97,8 +97,8 @@ export default function DashboardClient({
       </div>
 
       {/* Hero Overview */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8">
-        <div className="lg:col-span-2 glass-card-static p-5 md:p-8 relative overflow-hidden group">
+      <div className="grid grid-cols-1 gap-4 md:gap-8">
+        <div className="glass-card-static p-5 md:p-8 relative overflow-hidden group">
           <div className="absolute top-0 right-0 p-4 md:p-8 opacity-10 group-hover:opacity-20 transition-opacity">
             <svg className="w-24 h-24 md:w-32 md:h-32" fill="none" stroke="currentColor" strokeWidth={1} viewBox="0 0 24 24"><path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
           </div>
@@ -107,134 +107,16 @@ export default function DashboardClient({
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <div className="status-dot scale-75" />
-                <span className="text-[10px] font-black uppercase tracking-[0.25em] text-[--text-muted] opacity-80">Consolidated Net Worth</span>
+                <span className="text-xl md:text-2xl font-black uppercase tracking-[0.1em] text-[--text-primary] opacity-90">Net Worth</span>
               </div>
-              <h2 className="text-[2.5rem] sm:text-4xl md:text-5xl font-black tracking-tighter text-[--text-primary] break-words drop-shadow-[0_0_30px_rgba(108,92,231,0.3)]">
+              <h2 className="text-[4rem] sm:text-7xl md:text-8xl font-black tracking-tighter text-[--text-primary] leading-none drop-shadow-[0_0_30px_rgba(255,255,255,0.1)] italic">
                 ₹{stats.totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0 })}
               </h2>
             </div>
 
-            <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-6 sm:gap-8 items-center pt-5 border-t border-white/10">
-              <div className="space-y-1">
-                <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[--text-muted] opacity-60">Monthly Burn</p>
-                <p className="text-xl md:text-2xl font-black text-rose-400">₹{stats.monthlySpend.toLocaleString()}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[--text-muted] opacity-60">Channels</p>
-                <p className="text-xl md:text-2xl font-black text-[--accent-primary-light]">{stats.accountCount}</p>
-              </div>
-              <div className="space-y-1 col-span-2 sm:col-span-1">
-                <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[--text-muted] opacity-60">Status</p>
-                <p className="text-xl md:text-2xl font-black text-[#55efc4] flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#55efc4] shadow-[0_0_8px_#55efc4]" />
-                  Real-time
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="glass-card-static p-8 flex flex-col items-center justify-center text-center">
-            <div className="mb-4">
-              <div className="w-16 h-16 rounded-2xl bg-[--accent-primary]/10 border border-[--accent-primary]/20 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                <svg className="w-8 h-8 text-[--accent-primary]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-              </div>
-              <h3 className="text-lg font-bold">Smart Allocation</h3>
-              <p className="text-xs text-[--text-muted] mt-1 max-w-[200px]">Automated analysis of your spending distribution.</p>
-            </div>
-            
-            <div className="w-full h-32">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={stats.pieData.length > 0 ? stats.pieData : [{name: 'Empty', value: 1}]}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={35}
-                    outerRadius={50}
-                    paddingAngle={4}
-                    dataKey="value"
-                    stroke="none"
-                  >
-                    {stats.pieData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                    {stats.pieData.length === 0 && <Cell fill="rgba(255,255,255,0.05)" />}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-        </div>
-      </div>
-
-      {/* Main Grid: Activity & Insights */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8">
-        {/* Recent Activity */}
-        <div className="glass-card-static flex flex-col overflow-hidden">
-          <div className="p-5 md:p-8 border-b border-white/5 flex items-center justify-between">
-            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Recent Activity</h3>
-            <Link href="/dashboard/ledger" className="text-[10px] font-bold text-[--accent-primary] hover:underline">View Full Audit</Link>
-          </div>
-          <div className="flex-1 divide-y divide-white/5">
-            {recentLogs.length === 0 ? (
-              <div className="p-10 text-center text-xs text-[--text-muted]">No recent operations logged.</div>
-            ) : (
-              recentLogs.map((log, i) => (
-                <div key={log.id} className="p-5 hover:bg-white/[0.02] transition-colors flex items-center justify-between group">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-lg">
-                      {log.action_type.includes("TRANSFER") ? "🔄" : log.action_type.includes("ADJUST") ? "⚡" : "📝"}
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-[--text-primary] group-hover:text-[--accent-primary-light] transition-colors">{log.details}</p>
-                      <p className="text-[10px] text-[--text-muted]">{format(new Date(log.created_at), "MMM d, HH:mm")}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className={`text-sm font-black ${log.action_type.includes("DOWN") || log.action_type.includes("OUT") ? "text-rose-400" : "text-emerald-400"}`}>
-                      {log.amount ? `₹${log.amount.toLocaleString()}` : "—"}
-                    </p>
-                    <p className="text-[10px] font-medium text-[--text-muted]">Verified</p>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* Quick Insights / Navigation */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-8">
-          <Link href="/dashboard/expenses" className="glass-card p-6 md:p-8 flex flex-col justify-between group no-underline">
-            <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center group-hover:scale-110 transition-transform mb-4">
-              <svg className="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            </div>
-            <div>
-              <h4 className="text-base md:text-lg font-bold text-[--text-primary]">Analyze Spend</h4>
-              <p className="text-[11px] md:text-xs text-[--text-muted] mt-1">Deep-dive into your expenditure patterns.</p>
-            </div>
-          </Link>
-
-          <Link href="/dashboard/family" className="glass-card p-6 md:p-8 flex flex-col justify-between group no-underline">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center group-hover:scale-110 transition-transform mb-4">
-              <svg className="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-            </div>
-            <div>
-              <h4 className="text-base md:text-lg font-bold text-[--text-primary]">Family Sync</h4>
-              <p className="text-[11px] md:text-xs text-[--text-muted] mt-1">Manage shared funds and transfers.</p>
-            </div>
-          </Link>
-
-          <div className="col-span-1 sm:col-span-2 glass-card-static p-8 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
-                <div className="w-2 h-2 rounded-full bg-indigo-500" />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-[--text-primary]">System Status</p>
-                <p className="text-[10px] text-[--text-muted]">All accounts synchronized.</p>
-              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
 }
