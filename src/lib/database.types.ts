@@ -402,6 +402,117 @@ export type Database = {
           }
         ]
       }
+      investments: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          type: string
+          symbol: string | null
+          quantity: number
+          buy_price: number
+          current_price: number
+          currency: string
+          notes: string | null
+          bought_at: string | null
+          realized_pnl: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name: string
+          type: string
+          symbol?: string | null
+          quantity?: number
+          buy_price?: number
+          current_price?: number
+          currency?: string
+          notes?: string | null
+          bought_at?: string | null
+          realized_pnl?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          type?: string
+          symbol?: string | null
+          quantity?: number
+          buy_price?: number
+          current_price?: number
+          currency?: string
+          notes?: string | null
+          bought_at?: string | null
+          realized_pnl?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      stock_trades: {
+        Row: {
+          id: string
+          user_id: string
+          investment_id: string | null
+          symbol: string
+          trade_type: string
+          quantity: number
+          price: number
+          charges: number
+          total_amount: number
+          trade_date: string
+          exchange: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          investment_id?: string | null
+          symbol: string
+          trade_type: string
+          quantity: number
+          price: number
+          charges?: number
+          total_amount: number
+          trade_date?: string
+          exchange?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          investment_id?: string | null
+          symbol?: string
+          trade_type?: string
+          quantity?: number
+          price?: number
+          charges?: number
+          total_amount?: number
+          trade_date?: string
+          exchange?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_trades_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_trades_investment_id_fkey"
+            columns: ["investment_id"]
+            isOneToOne: false
+            referencedRelation: "investments"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -481,6 +592,24 @@ export type Database = {
         Args: {
           p_user_id: string
           p_account_id: string
+        }
+        Returns: Json
+      }
+      record_investment: {
+        Args: {
+          p_user_id: string
+          p_name: string
+          p_type: string
+          p_symbol: string | null
+          p_quantity: number
+          p_buy_price: number
+          p_current_price: number
+          p_currency: string
+          p_notes: string | null
+          p_date: string
+          p_account_id: string | null
+          p_total_cost: number
+          p_trade_type: string
         }
         Returns: Json
       }

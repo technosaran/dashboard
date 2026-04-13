@@ -188,7 +188,7 @@ export default function AccountsClient({ initialAccounts }: AccountsClientProps)
           </div>
           <div className="shrink-0 w-[260px] h-[260px] md:w-[320px] md:h-[320px] relative">
             <ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={chartData} innerRadius={80} outerRadius={105} paddingAngle={4} dataKey="value" stroke="none">{chartData.map((e, i) => (<Cell key={i} fill={e.color} />))}</Pie><Tooltip /></PieChart></ResponsiveContainer>
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center"><p className="text-[10px] uppercase font-bold text-[--text-muted] mb-1">Portfolio</p><div className="flex flex-col">{Object.entries(balancesByCurrency).map(([c,b]) => (<p key={c} className="text-lg font-black">{getCurrencySymbol(c)}{(b/1000).toFixed(0)}K</p>))}</div></div>
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center"><p className="text-[10px] uppercase font-bold text-[--text-muted] mb-1">Portfolio</p><div className="flex flex-col">{Object.entries(balancesByCurrency).map(([c,b]) => (<p key={c} className="text-lg font-black">{getCurrencySymbol(c)}{b.toLocaleString()}</p>))}</div></div>
           </div>
         </div>
       </div>
@@ -261,6 +261,26 @@ export default function AccountsClient({ initialAccounts }: AccountsClientProps)
                 <button type="submit" className="btn-primary w-full h-14 font-black shadow-xl shadow-[--accent-primary]/20 mt-4">Execute Transfer</button>
               </form>
            </div>
+        </div>
+      )}
+
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-md animate-fade-in">
+          <div className="glass-card-static w-full max-w-sm p-8 animate-scale-in">
+            <div className="flex flex-col items-center text-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-rose-500/15 border border-rose-500/25 flex items-center justify-center">
+                <svg className="w-7 h-7 text-rose-400" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-[--text-primary]">Delete Account</h3>
+                <p className="text-sm text-[--text-secondary] mt-2">Are you sure you want to delete <span className="font-bold text-rose-400">{accounts.find(a => a.id === deletingAccountId)?.name}</span>? This action cannot be undone.</p>
+              </div>
+              <div className="flex gap-3 w-full mt-2">
+                <button onClick={() => { setShowDeleteConfirm(false); setDeletingAccountId(null); }} className="btn-secondary flex-1 h-12 font-bold rounded-xl">Cancel</button>
+                <button onClick={confirmDelete} className="btn-danger flex-1 h-12 font-bold rounded-xl">Delete</button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -6,6 +6,7 @@ import { login } from "./actions";
 export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [focused, setFocused] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -19,195 +20,593 @@ export default function LoginPage() {
   }
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden"
-      style={{ background: "var(--bg-base)" }}
-    >
-      {/* Ambient background orbs */}
-      <div
-        className="pointer-events-none absolute"
-        style={{
-          top: "-10%",
-          left: "-10%",
-          width: "300px",
-          height: "300px",
-          background: "radial-gradient(circle, rgba(108,92,231,0.15) 0%, transparent 70%)",
-          filter: "blur(60px)",
-        }}
-      />
-      <div
-        className="pointer-events-none absolute"
-        style={{
-          bottom: "0%",
-          right: "-10%",
-          width: "250px",
-          height: "250px",
-          background: "radial-gradient(circle, rgba(0,206,201,0.12) 0%, transparent 70%)",
-          filter: "blur(60px)",
-        }}
-      />
-      <div
-        className="pointer-events-none absolute"
-        style={{
-          top: "40%",
-          right: "20%",
-          width: "300px",
-          height: "300px",
-          background: "radial-gradient(circle, rgba(253,121,168,0.06) 0%, transparent 60%)",
-          filter: "blur(60px)",
-        }}
-      />
+    <div className="login-page">
+      {/* Animated background */}
+      <div className="login-bg">
+        <div className="login-grid" />
+        <div className="login-orb login-orb--1" />
+        <div className="login-orb login-orb--2" />
+        <div className="login-orb login-orb--3" />
+        <div className="login-radial" />
+      </div>
 
-      <div className="w-full max-w-[400px] relative z-10 animate-scale-in">
+      <div className="login-content">
         {/* Logo */}
-        <div className="flex items-center gap-3 justify-center mb-10">
-          <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center animate-pulse-glow"
-            style={{
-              background: "linear-gradient(135deg, #6c5ce7 0%, #a29bfe 50%, #00cec9 100%)",
-              boxShadow: "0 4px 25px rgba(108, 92, 231, 0.4)",
-            }}
-          >
-            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
+        <div className="login-logo-group">
+          <div className="login-logo-icon">
+            <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
               <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
             </svg>
           </div>
-          <div className="flex flex-col">
-            <span className="text-lg font-bold tracking-tight gradient-text">FinanceOS</span>
-            <span className="text-[10px] font-medium uppercase tracking-[0.15em]" style={{ color: "var(--text-muted)" }}>
-              Premium Dashboard
-            </span>
+          <div className="login-logo-text">
+            <span className="login-logo-name">FinanceOS</span>
+            <span className="login-logo-sub">Premium Dashboard</span>
           </div>
         </div>
 
-        {/* Login Card */}
-        <div
-          className="relative overflow-hidden"
-          style={{
-            borderRadius: "var(--radius-2xl)",
-            padding: "1px",
-            background: "linear-gradient(135deg, rgba(108,92,231,0.3), rgba(0,206,201,0.15), rgba(108,92,231,0.1))",
-          }}
-        >
-          <div
-            className="relative"
-            style={{
-              borderRadius: "calc(var(--radius-2xl) - 1px)",
-              background: "var(--bg-surface)",
-              padding: "32px 24px sm:36px 32px",
-            }}
-          >
-            {/* Subtle inner glow */}
-            <div
-              className="absolute pointer-events-none"
-              style={{
-                top: 0,
-                left: 0,
-                right: 0,
-                height: "120px",
-                background: "linear-gradient(180deg, rgba(108,92,231,0.05) 0%, transparent 100%)",
-                borderRadius: "calc(var(--radius-2xl) - 1px) calc(var(--radius-2xl) - 1px) 0 0",
-              }}
-            />
+        {/* Card */}
+        <div className="login-card-wrapper">
+          <div className="login-card">
+            {/* Card top glow */}
+            <div className="login-card-glow" />
 
-            <div className="relative z-10">
-              <h1
-                className="text-2xl font-bold"
-                style={{ color: "var(--text-primary)" }}
-              >
-                Welcome back
-              </h1>
-              <p
-                className="text-sm mt-1.5 mb-7"
-                style={{ color: "var(--text-secondary)" }}
-              >
+            <div className="login-card-inner">
+              <h1 className="login-title">Welcome back</h1>
+              <p className="login-subtitle">
                 Sign in to access your financial dashboard
               </p>
 
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <div>
-                  <label
-                    className="block text-xs font-semibold uppercase tracking-wider mb-2"
-                    style={{ color: "var(--text-muted)" }}
-                  >
+              <form onSubmit={handleSubmit} className="login-form">
+                {/* Email field */}
+                <div className={`login-field ${focused === "email" ? "login-field--focused" : ""}`}>
+                  <label className="login-label" htmlFor="login-email">
                     Email
                   </label>
-                   <input
-                    name="email"
-                    type="email"
-                    required
-                    autoComplete="email"
-                    className="input-premium h-14 md:h-12 text-[16px] md:text-sm"
-                    placeholder="you@example.com"
-                  />
-                </div>
-                <div>
-                  <label
-                    className="block text-xs font-semibold uppercase tracking-wider mb-2"
-                    style={{ color: "var(--text-muted)" }}
-                  >
-                    Password
-                  </label>
-                   <input
-                    name="password"
-                    type="password"
-                    required
-                    autoComplete="current-password"
-                    className="input-premium h-14 md:h-12 text-[16px] md:text-sm"
-                    placeholder="••••••••"
-                  />
+                  <div className="login-input-wrap">
+                    <span className="login-input-icon">
+                      <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                        <rect x="2" y="4" width="20" height="16" rx="3" />
+                        <path d="M22 7l-10 7L2 7" />
+                      </svg>
+                    </span>
+                    <input
+                      id="login-email"
+                      name="email"
+                      type="email"
+                      required
+                      autoComplete="email"
+                      placeholder="you@example.com"
+                      onFocus={() => setFocused("email")}
+                      onBlur={() => setFocused(null)}
+                    />
+                  </div>
                 </div>
 
+                {/* Password field */}
+                <div className={`login-field ${focused === "password" ? "login-field--focused" : ""}`}>
+                  <label className="login-label" htmlFor="login-password">
+                    Password
+                  </label>
+                  <div className="login-input-wrap">
+                    <span className="login-input-icon">
+                      <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                        <rect x="3" y="11" width="18" height="11" rx="3" />
+                        <path d="M7 11V7a5 5 0 0110 0v4" />
+                        <circle cx="12" cy="16.5" r="1.5" fill="currentColor" stroke="none" />
+                      </svg>
+                    </span>
+                    <input
+                      id="login-password"
+                      name="password"
+                      type="password"
+                      required
+                      autoComplete="current-password"
+                      placeholder="••••••••"
+                      onFocus={() => setFocused("password")}
+                      onBlur={() => setFocused(null)}
+                    />
+                  </div>
+                </div>
+
+                {/* Error message */}
                 {error && (
-                  <div
-                    className="animate-fade-in"
-                    style={{
-                      padding: "10px 14px",
-                      borderRadius: "var(--radius-md)",
-                      background: "rgba(255, 71, 87, 0.08)",
-                      border: "1px solid rgba(255, 71, 87, 0.2)",
-                      color: "#ff6b81",
-                      fontSize: "0.8125rem",
-                    }}
-                  >
+                  <div className="login-error animate-fade-in">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M12 8v4M12 16h.01" />
+                    </svg>
                     {error}
                   </div>
                 )}
 
-                 <button
+                {/* Submit */}
+                <button
                   type="submit"
                   disabled={loading}
-                  className="btn-primary w-full mt-2 h-14 md:h-12 text-[16px] md:text-sm font-black flex items-center justify-center rounded-2xl md:rounded-xl transition-all active:scale-95"
+                  className="login-submit"
                   style={{
-                    opacity: loading ? 0.6 : 1,
+                    opacity: loading ? 0.65 : 1,
                     cursor: loading ? "not-allowed" : "pointer",
                   }}
                 >
                   {loading ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                    <span className="login-submit-loading">
+                      <svg className="login-spinner" fill="none" viewBox="0 0 24 24">
+                        <circle className="login-spinner-track" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3.5" />
+                        <path className="login-spinner-head" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                       </svg>
-                      Signing in...
+                      Signing in…
                     </span>
                   ) : (
-                    "Sign in"
+                    <span className="login-submit-inner">
+                      Sign in
+                      <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path d="M5 12h14M13 6l6 6-6 6" />
+                      </svg>
+                    </span>
                   )}
+                  <div className="login-submit-shimmer" />
                 </button>
               </form>
             </div>
           </div>
         </div>
 
-        {/* Footer text */}
-        <p
-          className="text-center text-xs mt-6"
-          style={{ color: "var(--text-muted)" }}
-        >
+        {/* Footer */}
+        <p className="login-footer">
           Premium financial management, made simple.
         </p>
       </div>
+
+      <style>{`
+        /* ── Login Page Scoped Styles ──────────────────── */
+
+        .login-page {
+          min-height: 100dvh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 24px 16px;
+          position: relative;
+          overflow: hidden;
+          background: var(--bg-base);
+        }
+
+        /* ── Animated Background ────────────────────────── */
+
+        .login-bg {
+          position: fixed;
+          inset: 0;
+          z-index: 0;
+          pointer-events: none;
+        }
+
+        .login-grid {
+          position: absolute;
+          inset: 0;
+          background-image:
+            linear-gradient(rgba(108, 92, 231, 0.04) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(108, 92, 231, 0.04) 1px, transparent 1px);
+          background-size: 60px 60px;
+          mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, black 20%, transparent 80%);
+          -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, black 20%, transparent 80%);
+        }
+
+        .login-orb {
+          position: absolute;
+          border-radius: 50%;
+          filter: blur(80px);
+          will-change: transform;
+        }
+
+        .login-orb--1 {
+          width: 500px;
+          height: 500px;
+          top: -15%;
+          left: -8%;
+          background: radial-gradient(circle, rgba(108, 92, 231, 0.18) 0%, transparent 70%);
+          animation: loginOrbFloat1 12s ease-in-out infinite;
+        }
+
+        .login-orb--2 {
+          width: 400px;
+          height: 400px;
+          bottom: -10%;
+          right: -8%;
+          background: radial-gradient(circle, rgba(0, 206, 201, 0.14) 0%, transparent 70%);
+          animation: loginOrbFloat2 15s ease-in-out infinite;
+        }
+
+        .login-orb--3 {
+          width: 300px;
+          height: 300px;
+          top: 50%;
+          left: 60%;
+          background: radial-gradient(circle, rgba(253, 121, 168, 0.08) 0%, transparent 70%);
+          animation: loginOrbFloat3 18s ease-in-out infinite;
+        }
+
+        .login-radial {
+          position: absolute;
+          inset: 0;
+          background: radial-gradient(ellipse 80% 70% at 50% 40%, rgba(108, 92, 231, 0.06) 0%, transparent 70%);
+        }
+
+        @keyframes loginOrbFloat1 {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          33% { transform: translate(30px, 25px) scale(1.05); }
+          66% { transform: translate(-15px, 10px) scale(0.97); }
+        }
+
+        @keyframes loginOrbFloat2 {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          33% { transform: translate(-25px, -20px) scale(1.03); }
+          66% { transform: translate(20px, -10px) scale(0.98); }
+        }
+
+        @keyframes loginOrbFloat3 {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          50% { transform: translate(-30px, -25px) scale(1.08); }
+        }
+
+        /* ── Content ────────────────────────────────────── */
+
+        .login-content {
+          width: 100%;
+          max-width: 420px;
+          position: relative;
+          z-index: 1;
+          animation: loginEnter 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        @keyframes loginEnter {
+          from {
+            opacity: 0;
+            transform: translateY(20px) scale(0.97);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+
+        /* ── Logo ───────────────────────────────────────── */
+
+        .login-logo-group {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          justify-content: center;
+          margin-bottom: 40px;
+        }
+
+        .login-logo-icon {
+          width: 46px;
+          height: 46px;
+          border-radius: 14px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 50%, #00cec9 100%);
+          box-shadow:
+            0 6px 30px rgba(108, 92, 231, 0.4),
+            0 0 0 1px rgba(108, 92, 231, 0.3);
+          color: white;
+          animation: loginLogoPulse 4s ease-in-out infinite;
+        }
+
+        @keyframes loginLogoPulse {
+          0%, 100% { box-shadow: 0 6px 30px rgba(108, 92, 231, 0.35), 0 0 0 1px rgba(108, 92, 231, 0.3); }
+          50% { box-shadow: 0 6px 40px rgba(108, 92, 231, 0.55), 0 0 0 1px rgba(108, 92, 231, 0.4); }
+        }
+
+        .login-logo-text {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .login-logo-name {
+          font-size: 1.2rem;
+          font-weight: 800;
+          letter-spacing: -0.02em;
+          background: var(--gradient-primary);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+
+        .login-logo-sub {
+          font-size: 0.65rem;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.15em;
+          color: var(--text-muted);
+          margin-top: 1px;
+        }
+
+        /* ── Card ────────────────────────────────────────── */
+
+        .login-card-wrapper {
+          position: relative;
+          border-radius: 28px;
+          padding: 1.5px;
+          background: linear-gradient(
+            160deg,
+            rgba(108, 92, 231, 0.45) 0%,
+            rgba(0, 206, 201, 0.2) 40%,
+            rgba(108, 92, 231, 0.08) 100%
+          );
+          box-shadow:
+            0 12px 60px rgba(0, 0, 0, 0.45),
+            0 0 80px rgba(108, 92, 231, 0.07);
+        }
+
+        .login-card {
+          position: relative;
+          border-radius: 26.5px;
+          background: linear-gradient(
+            170deg,
+            rgba(14, 18, 42, 0.97) 0%,
+            rgba(10, 14, 32, 0.99) 100%
+          );
+          overflow: hidden;
+        }
+
+        .login-card-glow {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 140px;
+          background: linear-gradient(
+            180deg,
+            rgba(108, 92, 231, 0.08) 0%,
+            rgba(0, 206, 201, 0.02) 50%,
+            transparent 100%
+          );
+          pointer-events: none;
+        }
+
+        .login-card-inner {
+          position: relative;
+          z-index: 1;
+          padding: 40px 36px 36px;
+        }
+
+        @media (max-width: 480px) {
+          .login-card-inner {
+            padding: 32px 24px 28px;
+          }
+        }
+
+        /* ── Typography ─────────────────────────────────── */
+
+        .login-title {
+          font-size: 1.65rem;
+          font-weight: 800;
+          letter-spacing: -0.03em;
+          color: var(--text-primary);
+          line-height: 1.2;
+        }
+
+        .login-subtitle {
+          font-size: 0.875rem;
+          color: var(--text-secondary);
+          margin-top: 6px;
+          margin-bottom: 32px;
+          line-height: 1.5;
+        }
+
+        /* ── Form ────────────────────────────────────────── */
+
+        .login-form {
+          display: flex;
+          flex-direction: column;
+          gap: 22px;
+        }
+
+        /* ── Field ───────────────────────────────────────── */
+
+        .login-field {
+          position: relative;
+        }
+
+        .login-label {
+          display: block;
+          font-size: 0.7rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.12em;
+          color: var(--text-muted);
+          margin-bottom: 8px;
+          transition: color 0.3s ease;
+        }
+
+        .login-field--focused .login-label {
+          color: var(--accent-primary-light);
+        }
+
+        .login-input-wrap {
+          position: relative;
+          display: flex;
+          align-items: center;
+        }
+
+        .login-input-icon {
+          position: absolute;
+          left: 16px;
+          display: flex;
+          align-items: center;
+          color: var(--text-muted);
+          transition: color 0.3s ease;
+          z-index: 2;
+          pointer-events: none;
+        }
+
+        .login-field--focused .login-input-icon {
+          color: var(--accent-primary-light);
+        }
+
+        .login-input-wrap input {
+          width: 100%;
+          height: 52px;
+          padding: 0 18px 0 48px;
+          border-radius: 14px;
+          border: 1.5px solid var(--border-default);
+          background: rgba(10, 14, 32, 0.5);
+          color: var(--text-primary);
+          font-size: 0.9375rem !important;
+          font-weight: 500;
+          outline: none;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.12);
+        }
+
+        .login-input-wrap input::placeholder {
+          color: var(--text-muted);
+          opacity: 0.5;
+          font-weight: 400;
+        }
+
+        .login-input-wrap input:focus {
+          border-color: var(--accent-primary);
+          background: rgba(10, 14, 32, 0.8);
+          box-shadow:
+            0 0 0 4px rgba(108, 92, 231, 0.1),
+            0 0 24px rgba(108, 92, 231, 0.06),
+            inset 0 2px 6px rgba(0, 0, 0, 0.15);
+        }
+
+        /* ── Error ───────────────────────────────────────── */
+
+        .login-error {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 12px 16px;
+          border-radius: 12px;
+          background: rgba(255, 71, 87, 0.07);
+          border: 1px solid rgba(255, 71, 87, 0.18);
+          color: #ff6b81;
+          font-size: 0.8125rem;
+          font-weight: 500;
+          line-height: 1.4;
+        }
+
+        .login-error svg {
+          flex-shrink: 0;
+        }
+
+        /* ── Submit Button ───────────────────────────────── */
+
+        .login-submit {
+          position: relative;
+          width: 100%;
+          height: 52px;
+          margin-top: 4px;
+          border: none;
+          border-radius: 14px;
+          background: linear-gradient(135deg, #6c5ce7 0%, #7f6cf0 50%, #a29bfe 100%);
+          color: white;
+          font-size: 0.9375rem;
+          font-weight: 700;
+          letter-spacing: 0.01em;
+          cursor: pointer;
+          overflow: hidden;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          box-shadow:
+            0 6px 24px rgba(108, 92, 231, 0.35),
+            0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .login-submit:hover:not(:disabled) {
+          transform: translateY(-2px);
+          box-shadow:
+            0 10px 36px rgba(108, 92, 231, 0.45),
+            0 4px 12px rgba(0, 0, 0, 0.25);
+        }
+
+        .login-submit:active:not(:disabled) {
+          transform: translateY(0) scale(0.98);
+        }
+
+        .login-submit-inner {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          position: relative;
+          z-index: 1;
+        }
+
+        .login-submit-inner svg {
+          transition: transform 0.3s ease;
+        }
+
+        .login-submit:hover:not(:disabled) .login-submit-inner svg {
+          transform: translateX(3px);
+        }
+
+        .login-submit-shimmer {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(
+            105deg,
+            transparent 35%,
+            rgba(255, 255, 255, 0.12) 45%,
+            rgba(255, 255, 255, 0.18) 50%,
+            rgba(255, 255, 255, 0.12) 55%,
+            transparent 65%
+          );
+          background-size: 250% 100%;
+          animation: loginShimmer 4s ease-in-out infinite;
+          pointer-events: none;
+        }
+
+        @keyframes loginShimmer {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+
+        /* ── Loading Spinner ──────────────────────────────── */
+
+        .login-submit-loading {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          position: relative;
+          z-index: 1;
+        }
+
+        .login-spinner {
+          width: 18px;
+          height: 18px;
+          animation: spin 0.75s linear infinite;
+        }
+
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+
+        .login-spinner-track {
+          opacity: 0.2;
+        }
+
+        .login-spinner-head {
+          opacity: 0.9;
+        }
+
+        /* ── Footer ──────────────────────────────────────── */
+
+        .login-footer {
+          text-align: center;
+          font-size: 0.75rem;
+          color: var(--text-muted);
+          margin-top: 28px;
+          letter-spacing: 0.02em;
+        }
+      `}</style>
     </div>
   );
 }
