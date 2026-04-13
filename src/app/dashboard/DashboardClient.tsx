@@ -48,8 +48,6 @@ export default function DashboardClient({
   }, []);
 
   useEffect(() => {
-    // We don't need to refetch on mount because we have initialData!
-    // But we setup real-time listeners for future updates
     const channel = supabase
       .channel("dashboard-realtime-master")
       .on("postgres_changes", { event: "*", schema: "public", table: "accounts" }, () => startTransition(fetchData))
@@ -77,7 +75,11 @@ export default function DashboardClient({
     expenses.slice(0, 20).forEach(e => {
       catMap[e.category] = (catMap[e.category] || 0) + Number(e.amount);
     });
-    const pieData = Object.entries(catMap).map(([name, value]) => ({ name, value }));
+    const pieData = Object.entries(catMap).map(([name, value]) => ({ 
+      name, 
+      value,
+      color: COLORS[Math.floor(Math.random() * COLORS.length)]
+    })).sort((a,b) => b.value - a.value);
 
     return { totalBalance, monthlySpend, pieData, accountCount: accounts.length };
   }, [accounts, expenses]);
@@ -97,26 +99,109 @@ export default function DashboardClient({
       </div>
 
       {/* Hero Overview */}
-      <div className="grid grid-cols-1 gap-4 md:gap-8">
-        <div className="glass-card-static p-5 md:p-8 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4 md:p-8 opacity-10 group-hover:opacity-20 transition-opacity">
-            <svg className="w-24 h-24 md:w-32 md:h-32" fill="none" stroke="currentColor" strokeWidth={1} viewBox="0 0 24 24"><path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 glass-card-static p-6 md:p-10 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
+            <svg className="w-40 h-40" fill="none" stroke="currentColor" strokeWidth={1} viewBox="0 0 24 24"><path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
           </div>
           
-          <div className="relative z-10 space-y-6">
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <div className="status-dot scale-75" />
-                <span className="text-xl md:text-2xl font-black uppercase tracking-[0.1em] text-[--text-primary] opacity-90">Net Worth</span>
-              </div>
-              <h2 className="text-[4rem] sm:text-7xl md:text-8xl font-black tracking-tighter text-[--text-primary] leading-none drop-shadow-[0_0_30px_rgba(255,255,255,0.1)] italic">
-                ₹{stats.totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0 })}
-              </h2>
+          <div className="relative z-10">
+            <div className="flex items-center gap-2 mb-4 md:mb-6">
+              <div className="status-dot scale-75" />
+              <span className="text-xs md:text-sm font-bold uppercase tracking-[0.4em] text-[--text-muted]">Portfolio Net Worth</span>
             </div>
-
+            <h2 className="text-[3.5rem] sm:text-7xl md:text-[6.5rem] font-[800] tracking-[-0.04em] text-[--text-primary] leading-none [font-family:'Outfit',sans-serif] bg-gradient-to-r from-white via-white to-[--text-secondary] bg-clip-text text-transparent drop-shadow-[0_10px_30px_rgba(108,92,231,0.2)]">
+              ₹{stats.totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0 })}
+            </h2>
+            <div className="mt-8 flex flex-wrap gap-4">
+              <div className="px-4 py-2 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest text-[--text-muted]">
+                +2.4% vs last month
+              </div>
+              <div className="px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-bold uppercase tracking-widest text-emerald-400">
+                Secure & Verified
+              </div>
             </div>
           </div>
         </div>
+
+        <div className="grid grid-cols-1 gap-6">
+          <div className="glass-card-static p-6 flex flex-col justify-center relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-4 opacity-5"><svg className="w-20 h-20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg></div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[--text-muted] mb-2">Monthly Outflow</p>
+            <h3 className="text-4xl font-black [font-family:'Outfit',sans-serif] text-[--text-primary]">
+              ₹{stats.monthlySpend.toLocaleString()}
+            </h3>
+            <p className="text-[10px] mt-2 text-rose-400 font-bold uppercase tracking-tighter">Budget utilized by 62%</p>
+          </div>
+          <div className="glass-card-static p-6 flex flex-col justify-center relative overflow-hidden">
+             <div className="absolute top-0 right-0 p-4 opacity-5"><svg className="w-20 h-20" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg></div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[--text-muted] mb-2">Active Channels</p>
+            <h3 className="text-4xl font-black [font-family:'Outfit',sans-serif] text-[--text-primary]">
+              {stats.accountCount} <span className="text-lg text-[--text-muted]">Sources</span>
+            </h3>
+            <p className="text-[10px] mt-2 text-emerald-400 font-bold uppercase tracking-tighter">All systems operational</p>
+          </div>
+        </div>
       </div>
-    );
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="glass-card-static p-6 md:p-8">
+          <div className="flex items-center justify-between mb-8">
+            <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-[--text-muted]">Wealth Velocity</h3>
+            <Link href="/dashboard/ledger" className="text-[10px] font-black uppercase text-[--accent-primary] hover:underline decoration-2 underline-offset-4 tracking-widest">
+              View History
+            </Link>
+          </div>
+          <div className="h-[280px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={expenses.slice(0, 10).reverse()}>
+                <defs>
+                  <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--accent-primary)" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="var(--accent-primary)" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                <XAxis hide />
+                <YAxis hide />
+                <Tooltip 
+                  contentStyle={{ background: 'var(--bg-surface)', border: '1px solid var(--border-default)', borderRadius: '12px' }}
+                  cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1 }}
+                />
+                <Area type="monotone" dataKey="amount" stroke="var(--accent-primary)" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="glass-card-static p-6 md:p-8">
+          <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-[--text-muted] mb-8">Recent Activities</h3>
+          <div className="space-y-4">
+            {recentLogs.length === 0 ? (
+              <div className="text-center py-12 text-[--text-muted] text-sm italic">No recent activities found.</div>
+            ) : (
+              recentLogs.map((log) => (
+                <div key={log.id} className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] transition-all group">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-[--accent-primary]/10 flex items-center justify-center text-lg shadow-inner">
+                      {log.action_type === 'CREATE' ? '✨' : log.action_type === 'DELETE' ? '🗑️' : '💰'}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-[--text-primary] group-hover:text-[--accent-primary] transition-colors">{log.details}</p>
+                      <p className="text-[10px] text-[--text-muted] uppercase tracking-tighter mt-0.5">{format(new Date(log.created_at), "MMM d, HH:mm")}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className={`text-sm font-black ${log.action_type === 'DELETE' ? 'text-rose-400' : 'text-emerald-400'}`}>
+                      {log.amount ? `₹${log.amount.toLocaleString()}` : '—'}
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }

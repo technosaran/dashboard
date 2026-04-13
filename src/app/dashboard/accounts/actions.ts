@@ -3,8 +3,6 @@
 import { createClient } from "@/lib/supabase-server";
 import { revalidatePath } from "next/cache";
 
-// ── Optimized: single auth call per action ──
-
 export async function createAccount(data: {
   name: string;
   type: string;
@@ -16,18 +14,18 @@ export async function createAccount(data: {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
-  const { error } = await supabase
-    .from("accounts")
-    .insert({
-      user_id: user.id,
-      name: data.name,
-      type: data.type,
-      balance: data.balance ?? 0,
-      currency: data.currency || "INR",
-      bank_name: data.bank_name || null,
-    });
+  const { data: rpcData, error } = await supabase.rpc("create_account_atomic", {
+    p_user_id: user.id,
+    p_name: data.name,
+    p_type: data.type,
+    p_balance: data.balance ?? 0,
+    p_currency: data.currency || 'INR',
+    p_bank_name: data.bank_name || null
+  });
 
   if (error) return { error: error.message };
+  const result = rpcData as { success: boolean, error?: string };
+  if (!result.success) return { error: result.error || "Failed to create account" };
 
   revalidatePath("/dashboard", "layout");
   return { success: true };
@@ -39,7 +37,7 @@ export async function updateAccount(id: string, data: Record<string, unknown>) {
   if (!user) return { error: "Unauthorized" };
 
   // SECURITY: Prevent direct balance manipulation via generic update
-  const { balance, user_id, id: _id, created_at, ...safeData } = data as Record<string, unknown>;
+  const { balance, user_id, id: _id, created_at, ...safeData } = data;
 
   const { error } = await supabase
     .from("accounts")
@@ -48,6 +46,22 @@ export async function updateAccount(id: string, data: Record<string, unknown>) {
     .eq("user_id", user.id);
 
   if (error) return { error: error.message };
+
+  // Get account name for logging
+  const { data: account } = await supabase
+    .from("accounts")
+    .select("name")
+    .eq("id", id)
+    .single();
+
+  // Log update - awaited for integrity
+  await supabase.from("ledger_logs").insert({
+    user_id: user.id,
+    account_id: id,
+    account_name: account?.name || "Account",
+    action_type: "UPDATE",
+    details: `Updated settings for ${account?.name || 'account'}: ${Object.keys(safeData).join(", ")}`,
+  });
 
   revalidatePath("/dashboard", "layout");
   return { success: true };
@@ -58,13 +72,14 @@ export async function deleteAccount(id: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
-  const { error } = await supabase
-    .from("accounts")
-    .delete()
-    .eq("id", id)
-    .eq("user_id", user.id);
+  const { data: rpcData, error } = await supabase.rpc("delete_account_atomic_v2" as any, {
+    p_user_id: user.id,
+    p_account_id: id
+  });
 
   if (error) return { error: error.message };
+  const result = rpcData as { success: boolean, error?: string };
+  if (!result.success) return { error: result.error || "Failed to delete account" };
 
   revalidatePath("/dashboard", "layout");
   return { success: true };
@@ -97,52 +112,17 @@ export async function createTransfer(data: TransferData) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
-  // Get source account
-  const { data: fromAccount } = await supabase
-    .from("accounts")
-    .select("balance, currency")
-    .eq("id", data.from_account_id)
-    .eq("user_id", user.id)
-    .single();
-
-  if (!fromAccount) return { error: "Source account not found" };
-  if (fromAccount.balance < data.amount) return { error: "Insufficient balance" };
-
-  // Get destination account
-  const { data: toAccount } = await supabase
-    .from("accounts")
-    .select("balance, currency")
-    .eq("id", data.to_account_id)
-    .eq("user_id", user.id)
-    .single();
-
-  if (!toAccount) return { error: "Destination account not found" };
-  if (fromAccount.currency !== toAccount.currency) return { error: "Currency mismatch" };
-
-  // Debit source
-  const { error: debitErr } = await supabase
-    .from("accounts")
-    .update({ balance: fromAccount.balance - data.amount })
-    .eq("id", data.from_account_id);
-
-  if (debitErr) return { error: debitErr.message };
-
-  // Credit destination
-  const { error: creditErr } = await supabase
-    .from("accounts")
-    .update({ balance: toAccount.balance + data.amount })
-    .eq("id", data.to_account_id);
-
-  if (creditErr) return { error: creditErr.message };
-
-  // Record transfer
-  await supabase.from("transfers").insert({
-    user_id: user.id,
-    from_account_id: data.from_account_id,
-    to_account_id: data.to_account_id,
-    amount: data.amount,
-    note: data.note,
+  const { data: rpcData, error } = await supabase.rpc("process_transfer", {
+    p_user_id: user.id,
+    p_from_account_id: data.from_account_id,
+    p_to_account_id: data.to_account_id,
+    p_amount: data.amount,
+    p_note: data.note || null
   });
+
+  if (error) return { error: error.message };
+  const result = rpcData as { success: boolean, error?: string };
+  if (!result.success) return { error: result.error || "Transfer failed" };
 
   revalidatePath("/dashboard", "layout");
   return { success: true };
@@ -153,26 +133,16 @@ export async function adjustBalance(id: string, amount: number, note: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
-  // Get current balance
-  const { data: account } = await supabase
-    .from("accounts")
-    .select("balance")
-    .eq("id", id)
-    .eq("user_id", user.id)
-    .single();
-
-  if (!account) return { error: "Account not found" };
-
-  const newBalance = account.balance + amount;
-  if (newBalance < 0) return { error: "Insufficient balance" };
-
-  const { error } = await supabase
-    .from("accounts")
-    .update({ balance: newBalance })
-    .eq("id", id)
-    .eq("user_id", user.id);
+  const { data: rpcData, error } = await supabase.rpc("adjust_account_balance", {
+    p_user_id: user.id,
+    p_account_id: id,
+    p_amount: amount,
+    p_note: note
+  });
 
   if (error) return { error: error.message };
+  const result = rpcData as { success: boolean, error?: string };
+  if (!result.success) return { error: result.error || "Adjustment failed" };
 
   revalidatePath("/dashboard", "layout");
   return { success: true };

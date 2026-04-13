@@ -162,7 +162,7 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
     try {
       const res = await getStockDetails(symbol, formData.exchange);
       if ("error" in res) {
-        setFetchError(res.error);
+        setFetchError(res.error || "Stock not found");
       } else {
         setFormData(prev => ({
           ...prev,
@@ -565,225 +565,189 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
         )
       )}
 
-      {/* ── Add/Edit Modal ── */}
       {showForm && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-sm bg-[#1a1a1a] border border-[#252525] shadow-2xl rounded-sm p-8 animate-scale-in">
-            <div className="flex justify-between items-center mb-8">
-              <h2 className="text-lg font-medium text-[#eee]">
-                {editingId ? "Edit holding" : "Add holding"}
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="w-full max-w-md bg-[--bg-surface] border border-[--border-default] shadow-[0_20px_60px_rgba(0,0,0,0.8)] rounded-lg p-6 md:p-8 animate-scale-in max-h-[95vh] overflow-y-auto custom-scrollbar">
+            <div className="flex justify-between items-center mb-6 sticky top-0 bg-[#1a1a1a] z-20 pb-2">
+              <h2 className="text-xl font-bold text-[#eee] [font-family:'Outfit',sans-serif]">
+                {editingId ? "Modify Portfolio" : (formData.trade_type === 'buy' ? 'Add Equity' : 'Sell Equity')}
               </h2>
-              <button onClick={resetForm} className="text-[#666] hover:text-[#eee] transition-colors">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <button onClick={resetForm} className="p-2 hover:bg-[#252525] rounded-full transition-colors">
+                <svg className="w-6 h-6 text-[#666]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="relative">
-                <label className="absolute -top-2 left-2 px-1 bg-[#1a1a1a] text-[10px] text-[#666] uppercase tracking-wide">Stock Symbol</label>
-                <input
-                  required value={formData.symbol}
-                  onChange={e => setFormData({ ...formData, symbol: e.target.value.toUpperCase() })}
-                  onFocus={() => { if (suggestions.length > 0) setShowSuggestions(true); }}
-                  className="w-full h-12 px-4 bg-transparent border border-[#252525] rounded-sm text-[13px] text-[#eee] focus:border-[#387ed1] outline-none font-medium uppercase placeholder:text-[#333]"
-                  placeholder="e.g. SBIN, RELIANCE, TCS"
-                  autoComplete="off"
-                />
-                
-                {/* Suggestions Dropdown */}
-                {showSuggestions && (
-                  <div className="absolute z-[400] top-full left-0 right-0 mt-1 bg-[#1a1a1a] border border-[#252525] rounded-sm shadow-2xl max-h-48 overflow-y-auto overflow-x-hidden animate-fade-in-up">
-                    {suggestions.map((s, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => {
-                          setFormData({ ...formData, symbol: s.symbol, name: s.name });
-                          setShowSuggestions(false);
-                          // Auto-fetch price for selected
-                          handleFetchPrice(s.symbol);
-                        }}
-                        className="w-full px-4 py-3 flex flex-col items-start border-b border-[#252525] last:border-0 hover:bg-[#252525] transition-colors text-left"
-                      >
-                        <div className="flex justify-between w-full">
-                          <span className="text-[13px] font-bold text-[#eee]">{s.symbol}</span>
-                          <span className="text-[10px] text-[#666] uppercase">{s.exchange}</span>
-                        </div>
-                        <span className="text-[11px] text-[#9b9b9b] truncate w-full">{s.name}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="relative">
+                  <label className="absolute -top-2 left-2 px-1 bg-[#1a1a1a] text-[10px] text-[#666] uppercase tracking-widest font-bold z-10">Symbol</label>
+                  <input
+                    required value={formData.symbol}
+                    onChange={e => setFormData({ ...formData, symbol: e.target.value.toUpperCase() })}
+                    onFocus={() => { if (suggestions.length > 0) setShowSuggestions(true); }}
+                    className="w-full h-12 px-4 bg-transparent border border-[#252525] rounded-md text-[13px] text-[#eee] focus:border-[#387ed1] outline-none font-bold uppercase placeholder:text-[#333]"
+                    placeholder="SBIN"
+                    autoComplete="off"
+                  />
+                  
+                  {/* Suggestions Dropdown */}
+                  {showSuggestions && (
+                    <div className="absolute z-[400] top-full left-0 right-0 mt-1 bg-[#1f1f1f] border border-[#252525] rounded-md shadow-2xl max-h-48 overflow-y-auto overflow-x-hidden animate-fade-in-up">
+                      {suggestions.map((s, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            setFormData({ ...formData, symbol: s.symbol, name: s.name });
+                            setShowSuggestions(false);
+                            handleFetchPrice(s.symbol);
+                          }}
+                          className="w-full px-4 py-3 flex flex-col items-start border-b border-[#252525] last:border-0 hover:bg-[#387ed122] transition-colors text-left"
+                        >
+                          <div className="flex justify-between w-full">
+                            <span className="text-[13px] font-bold text-[#eee]">{s.symbol}</span>
+                            <span className="text-[10px] text-[#387ed1] font-bold">{s.exchange}</span>
+                          </div>
+                          <span className="text-[11px] text-[#666] truncate w-full">{s.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
-                {fetchError && (
-                  <p className="absolute -bottom-5 left-0 text-[10px] text-[#df514c] animate-fade-in">{fetchError}</p>
-                )}
-              </div>
-
-              <div className="flex gap-2 p-1 bg-[#252525] rounded-sm">
-                 <button
-                   type="button"
-                   onClick={() => setFormData({ ...formData, exchange: "NSE" })}
-                   className={`flex-1 h-8 text-[11px] font-medium rounded-sm transition-all ${formData.exchange === "NSE" ? "bg-[#387ed1] text-white" : "text-[#666] hover:text-[#999]"}`}
-                 >
-                   NSE
-                 </button>
-                 <button
-                   type="button"
-                   onClick={() => setFormData({ ...formData, exchange: "BSE" })}
-                   className={`flex-1 h-8 text-[11px] font-medium rounded-sm transition-all ${formData.exchange === "BSE" ? "bg-[#387ed1] text-white" : "text-[#666] hover:text-[#999]"}`}
-                 >
-                   BSE
-                 </button>
+                <div className="flex gap-1 p-1 bg-[#151515] rounded-md border border-[#252525]">
+                   <button
+                     type="button"
+                     onClick={() => setFormData({ ...formData, exchange: "NSE" })}
+                     className={`flex-1 h-10 text-[10px] font-bold rounded-md transition-all ${formData.exchange === "NSE" ? "bg-[#387ed1] text-white shadow-lg" : "text-[#555] hover:text-[#eee]"}`}
+                   >
+                     NSE
+                   </button>
+                   <button
+                     type="button"
+                     onClick={() => setFormData({ ...formData, exchange: "BSE" })}
+                     className={`flex-1 h-10 text-[10px] font-bold rounded-md transition-all ${formData.exchange === "BSE" ? "bg-[#387ed1] text-white shadow-lg" : "text-[#555] hover:text-[#eee]"}`}
+                   >
+                     BSE
+                   </button>
+                </div>
               </div>
 
               <div className="relative">
-                <label className="absolute -top-2 left-2 px-1 bg-[#1a1a1a] text-[10px] text-[#666] uppercase tracking-wide">Company Name</label>
+                <label className="absolute -top-2 left-2 px-1 bg-[#1a1a1a] text-[10px] text-[#666] uppercase tracking-widest font-bold z-10">Company Name</label>
                 <input
                   required value={formData.name}
                   onChange={e => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full h-12 px-4 bg-transparent border border-[#252525] rounded-sm text-[13px] text-[#eee] focus:border-[#387ed1] outline-none placeholder:text-[#333]"
-                  placeholder="e.g. State Bank of India"
+                  className="w-full h-12 px-4 bg-transparent border border-[#252525] rounded-md text-[13px] text-[#eee] focus:border-[#387ed1] outline-none font-medium placeholder:text-[#333]"
+                  placeholder="State Bank of India"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="relative">
-                  <label className="absolute -top-2 left-2 px-1 bg-[#1a1a1a] text-[10px] text-[#666] uppercase tracking-wide">Quantity</label>
+                  <label className="absolute -top-2 left-2 px-1 bg-[#1a1a1a] text-[10px] text-[#666] uppercase tracking-widest font-bold z-10">Qty.</label>
                   <input
                     required type="number" step="any"
                     value={formData.quantity}
                     onChange={e => setFormData({ ...formData, quantity: e.target.value })}
-                    className="w-full h-12 px-4 bg-transparent border border-[#252525] rounded-sm text-[13px] text-[#eee] tabular-nums outline-none focus:border-[#387ed1]"
+                    className="w-full h-12 px-4 bg-transparent border border-[#252525] rounded-md text-[13px] text-[#eee] tabular-nums outline-none focus:border-[#387ed1] font-bold"
                     placeholder="0"
                   />
                 </div>
                 <div className="relative">
-                  <label className="absolute -top-2 left-2 px-1 bg-[#1a1a1a] text-[10px] text-[#666] uppercase tracking-wide">Avg. Price</label>
+                  <label className="absolute -top-2 left-2 px-1 bg-[#1a1a1a] text-[10px] text-[#666] uppercase tracking-widest font-bold z-10">Avg. Price</label>
                   <input
                     required type="number" step="0.01"
                     value={formData.buy_price}
                     onChange={e => setFormData({ ...formData, buy_price: e.target.value })}
-                    className="w-full h-12 px-4 bg-transparent border border-[#252525] rounded-sm text-[13px] text-[#eee] tabular-nums outline-none focus:border-[#387ed1]"
+                    className="w-full h-12 px-4 bg-transparent border border-[#252525] rounded-md text-[13px] text-[#eee] tabular-nums outline-none focus:border-[#387ed1] font-bold"
                     placeholder="0.00"
                   />
                 </div>
               </div>
 
-              <div className="relative">
-                <label className="absolute -top-2 left-2 px-1 bg-[#1a1a1a] text-[10px] text-[#666] uppercase tracking-wide">Current LTP</label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="relative">
-                  <input
-                    required type="number" step="0.01"
-                    value={formData.current_price}
-                    onChange={e => setFormData({ ...formData, current_price: e.target.value })}
-                    className={`w-full h-12 px-4 bg-transparent border border-[#252525] rounded-sm text-[13px] text-[#eee] tabular-nums outline-none focus:border-[#387ed1] transition-all ${fetchingPrice ? "opacity-50" : ""}`}
-                    placeholder="0.00"
-                  />
-                  {fetchingPrice && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                      <div className="w-4 h-4 border-2 border-[#387ed1] border-t-transparent rounded-full animate-spin" />
-                    </div>
-                  )}
+                  <label className="absolute -top-2 left-2 px-1 bg-[#1a1a1a] text-[10px] text-[#666] uppercase tracking-widest font-bold z-10">Market LTP</label>
+                  <div className="relative">
+                    <input
+                      required type="number" step="0.01"
+                      value={formData.current_price}
+                      onChange={e => setFormData({ ...formData, current_price: e.target.value })}
+                      className={`w-full h-12 px-4 bg-transparent border border-[#252525] rounded-md text-[13px] text-[#eee] tabular-nums outline-none focus:border-[#387ed1] font-bold transition-all ${fetchingPrice ? "opacity-50" : ""}`}
+                      placeholder="0.00"
+                    />
+                    {fetchingPrice && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <div className="w-4 h-4 border-2 border-[#387ed1] border-t-transparent rounded-full animate-spin" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="relative">
+                  <label className="absolute -top-2 left-2 px-1 bg-[#1a1a1a] text-[10px] text-[#666] uppercase tracking-widest font-bold z-10">Wallet</label>
+                  <select
+                    value={formData.deduct_from_account || ""}
+                    onChange={e => setFormData({ ...formData, deduct_from_account: e.target.value })}
+                    className="w-full h-12 px-4 pr-10 bg-transparent border border-[#252525] rounded-md text-[12px] text-[#eee] outline-none focus:border-[#387ed1] appearance-none font-bold"
+                    disabled={!!editingId}
+                  >
+                    <option value="" className="bg-[#1a1a1a]">N/A (Historical)</option>
+                    {accounts.map(acc => (
+                      <option key={acc.id} value={acc.id} className="bg-[#1a1a1a]">
+                        {acc.name} (₹{formatNum(acc.balance)})
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#666]">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                      <path d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
                 </div>
               </div>
 
-              <div className="relative">
-                <label className="absolute -top-2 left-2 px-1 bg-[#1a1a1a] text-[10px] text-[#666] uppercase tracking-wide">Deduct from Account (Optional)</label>
-                <select
-                  value={formData.deduct_from_account || ""}
-                  onChange={e => setFormData({ ...formData, deduct_from_account: e.target.value })}
-                  className="w-full h-12 px-4 bg-transparent border border-[#252525] rounded-sm text-[13px] text-[#eee] outline-none focus:border-[#387ed1] appearance-none"
-                  disabled={!!editingId} // Disable deduction when editing
-                >
-                  <option value="" className="bg-[#1a1a1a]">Do not deduct funds</option>
-                  {accounts.map(acc => (
-                    <option key={acc.id} value={acc.id} className="bg-[#1a1a1a]">
-                      {acc.name} (Balance: {formatNum(acc.balance)})
-                    </option>
-                  ))}
-                </select>
-                {/* Custom arrow for select */}
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#666]">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                    <path d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-              </div>
-
-              {/* Mode Header (Fixed) */}
-              <div className={`p-2 rounded-sm text-center text-[11px] font-bold tracking-widest uppercase mb-4 shadow-sm border ${
-                formData.trade_type === 'buy' 
-                ? "bg-[#4caf501a] text-[#4caf50] border-[#4caf5033]" 
-                : "bg-[#df514c1a] text-[#df514c] border-[#df514c33]"
-              }`}>
-                {formData.trade_type === 'buy' ? 'Buy Equity' : 'Sell Equity'}
-              </div>
-
-              {/* ── Zerodha Charges Breakdown ── */}
+              {/* Zerodha Charges Breakdown (Condensed) */}
               {parseFloat(formData.quantity) > 0 && parseFloat(formData.buy_price) > 0 && (
-                <div className="bg-[#1f1f1f] rounded-sm p-4 space-y-3 border border-[#252525] animate-fade-in shadow-xl">
-                   <div className="flex justify-between items-center text-[10px] text-[#666] uppercase tracking-wide border-b border-[#252525] pb-2 mb-2">
-                     <span>Zerodha Charges Breakdown</span>
-                     <span className="text-[#387ed1] lowercase">Equity Delivery</span>
+                <div className="bg-[#151515] rounded-md p-4 border border-[#252525] animate-fade-in">
+                   <div className="flex justify-between items-baseline mb-3">
+                     <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#555]">Charges breakdown</span>
+                     <span className="text-[10px] text-[#387ed1] font-bold">Zerodha Delivery</span>
                    </div>
                    
-                   <div className="space-y-2">
-                     <div className="flex justify-between text-[11px]">
-                       <span className="text-[#9b9b9b]">Equity Turnover</span>
-                       <span className="text-[#eee]">₹{formatNum(zerodhaCharges.turnover)}</span>
-                     </div>
-                     <div className="flex justify-between text-[11px]">
-                       <span className="text-[#9b9b9b]">Brokerage</span>
-                       <span className="text-[#4caf50]">₹0.00</span>
-                     </div>
-                     <div className="flex justify-between text-[11px]">
-                       <span className="text-[#9b9b9b]">STT/CTT (0.1%)</span>
+                   <div className="columns-2 gap-6 space-y-2">
+                     <div className="flex justify-between text-[11px] break-inside-avoid">
+                       <span className="text-[#666]">STT (0.1%)</span>
                        <span className="text-[#eee]">₹{formatNum(zerodhaCharges.stt)}</span>
                      </div>
-                     <div className="flex justify-between text-[11px]">
-                       <span className="text-[#9b9b9b]">Exchange Txn Charges</span>
+                     <div className="flex justify-between text-[11px] break-inside-avoid">
+                       <span className="text-[#666]">Txn Fee</span>
                        <span className="text-[#eee]">₹{formatNum(zerodhaCharges.txnCharge)}</span>
                      </div>
-                     {formData.trade_type === "buy" && (
-                       <div className="flex justify-between text-[11px]">
-                         <span className="text-[#9b9b9b]">Stamp Duty (0.015%)</span>
-                         <span className="text-[#eee]">₹{formatNum(zerodhaCharges.stampDuty)}</span>
-                       </div>
-                     )}
-                     {formData.trade_type === "sell" && (
-                       <div className="flex justify-between text-[11px]">
-                         <span className="text-[#9b9b9b]">DP Charges (incl. GST)</span>
-                         <span className="text-[#eee]">₹{formatNum(zerodhaCharges.dpCharges)}</span>
-                       </div>
-                     )}
-                     <div className="flex justify-between text-[11px]">
-                       <span className="text-[#9b9b9b]">GST (18%)</span>
+                     <div className="flex justify-between text-[11px] break-inside-avoid">
+                       <span className="text-[#666]">GST (18%)</span>
                        <span className="text-[#eee]">₹{formatNum(zerodhaCharges.gst)}</span>
                      </div>
-                     <div className="flex justify-between text-[12px] pt-3 border-t border-[#333] font-bold">
-                       <span className="text-[#eee]">{formData.trade_type === 'buy' ? 'TOTAL PAYABLE' : 'NET RECEIVABLE'}</span>
+                     <div className="flex justify-between text-[11px] break-inside-avoid font-bold pt-1 border-t border-[#252525]">
+                       <span className="text-[#999]">TOTAL</span>
                        <span className={formData.trade_type === 'buy' ? 'text-[#df514c]' : 'text-[#4caf50]'}>₹{formatNum(zerodhaCharges.netAmount)}</span>
                      </div>
                    </div>
-                   
-                   <p className="text-[10px] text-[#666] italic text-center pt-1">
-                     *Calculated based on Zerodha standard rates for {formData.exchange}
-                   </p>
                 </div>
               )}
 
               <button
                 type="submit" disabled={submitting}
-                className={`w-full h-12 text-white text-[13px] font-bold rounded-sm transition-all mt-2 uppercase tracking-widest shadow-lg ${
+                className={`w-full h-14 text-white text-[14px] font-black rounded-md transition-all mt-4 uppercase tracking-[0.2em] shadow-xl ${
                   formData.trade_type === 'buy'
-                  ? "bg-[#4caf50] hover:bg-[#43a047] shadow-[#4caf501a]"
-                  : "bg-[#df514c] hover:bg-[#c64541] shadow-[#df514c1a]"
+                  ? "bg-[#4caf50] hover:bg-[#43a047] shadow-[#4caf5022]"
+                  : "bg-[#df514c] hover:bg-[#c64541] shadow-[#df514c22]"
                 }`}
               >
-                {submitting ? "Processing..." : editingId ? "Update Record" : formData.trade_type}
+                {submitting ? "Processing..." : editingId ? "Save Changes" : `Commit ${formData.trade_type}`}
               </button>
             </form>
           </div>

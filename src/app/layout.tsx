@@ -1,8 +1,18 @@
 import type { Metadata, Viewport } from "next";
+import { Outfit, Inter } from "next/font/google";
 import "./globals.css";
 
-// High-performance system font stack
-const inter = { variable: "font-sans" };
+const outfit = Outfit({ 
+  subsets: ["latin"],
+  variable: "--font-outfit",
+  display: "swap"
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap"
+});
 
 export const viewport: Viewport = {
   themeColor: "#6c5ce7",
@@ -47,9 +57,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} h-full antialiased dark`}
+      className={`${outfit.variable} ${inter.variable} h-full antialiased dark`}
     >
-      <body className="min-h-full flex flex-col font-[var(--font-inter)]">
+      <body className="min-h-full flex flex-col font-sans">
         <Suspense fallback={null}>
           <ProgressBar />
         </Suspense>

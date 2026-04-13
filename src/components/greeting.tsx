@@ -25,7 +25,7 @@ export default function Greeting() {
   return (
     <div className="animate-fade-in-up">
       <h1
-        className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tight leading-tight"
+        className="text-2xl sm:text-3xl md:text-5xl font-bold tracking-tight leading-tight [font-family:'Outfit',sans-serif]"
         style={{ color: "var(--text-primary)" }}
       >
         {greeting},{" "}
