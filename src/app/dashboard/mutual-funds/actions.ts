@@ -57,12 +57,13 @@ export async function recordMFInvestment(data: {
     date: string;
     account_id: string;
     stamp_duty: number;
+    trade_type?: "buy" | "sell";
 }) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Unauthorized" };
 
-    const { data: res, error } = await supabase.rpc("record_mf_investment_v2" as any, {
+    const { data: res, error } = await supabase.rpc("record_mf_investment_v3" as any, {
         p_user_id: user.id,
         p_fund_name: data.fund_name,
         p_scheme_code: data.scheme_code,
@@ -73,7 +74,8 @@ export async function recordMFInvestment(data: {
         p_amc_name: data.amc_name,
         p_date: data.date,
         p_account_id: data.account_id,
-        p_stamp_duty: data.stamp_duty
+        p_stamp_duty: data.stamp_duty,
+        p_trade_type: data.trade_type || "buy"
     });
 
     if (error) return { error: error.message };

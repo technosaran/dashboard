@@ -23,6 +23,7 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [showAllCharges, setShowAllCharges] = useState(false);
 
   const [formData, setFormData] = useState({
     fund_name: "",
@@ -34,6 +35,7 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
     amc_name: "HDFC",
     date: new Date().toISOString().split("T")[0],
     account_id: "",
+    trade_type: "buy" as "buy" | "sell"
   });
 
   const stampDuty = useMemo(() => {
@@ -43,8 +45,8 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
 
   const totalDeduction = useMemo(() => {
     const amount = parseFloat(formData.units || "0") * parseFloat(formData.nav || "0");
-    return amount + stampDuty;
-  }, [formData.units, formData.nav, stampDuty]);
+    return formData.trade_type === 'buy' ? amount + stampDuty : amount - stampDuty;
+  }, [formData.units, formData.nav, stampDuty, formData.trade_type]);
 
   const supabase = createClient();
 
@@ -111,6 +113,23 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
     }
   };
 
+  const startSell = (mf: MF) => {
+    setFormData({
+        fund_name: mf.fund_name,
+        scheme_code: (mf as any).fund_symbol || "",
+        units: mf.units.toString(),
+        nav: mf.current_nav.toString(),
+        investment_type: mf.investment_type || "LUMPSUM",
+        category: mf.category || "Equity",
+        amc_name: mf.amc_name || "",
+        date: new Date().toISOString().split("T")[0],
+        account_id: "",
+        trade_type: "sell"
+    });
+    setSearchQuery(mf.fund_name);
+    setShowAddModal(true);
+  };
+
   async function handleAddMF(e: React.FormEvent) {
     if (!formData.account_id) {
         toast.error("Please select a channeling account");
@@ -122,15 +141,17 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
       ...formData,
       units: parseFloat(formData.units),
       nav: parseFloat(formData.nav),
-      stamp_duty: stampDuty
+      stamp_duty: stampDuty,
+      trade_type: formData.trade_type
     });
     if (!res?.error) {
-      toast.success("Investment deployed successfully");
+      toast.success(formData.trade_type === 'buy' ? "Investment deployed successfully" : "Redemption processed successfully");
       setShowAddModal(false);
       setFormData({ 
         fund_name: "", scheme_code: "", units: "", nav: "", 
         investment_type: "SIP", category: "Equity", amc_name: "HDFC",
-        date: new Date().toISOString().split("T")[0], account_id: "" 
+        date: new Date().toISOString().split("T")[0], account_id: "",
+        trade_type: "buy"
       });
       setSearchQuery("");
     } else {
@@ -144,7 +165,7 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
     setRefreshing(true);
     const toastId = toast.loading("Syncing with Market NAVs...");
     try {
-        await refreshNAV(mfs.map(m => ({ id: m.id, scheme_code: m.scheme_code || "" })));
+        await refreshNAV(mfs.map(m => ({ id: m.id, scheme_code: (m as any).fund_symbol || "" })));
         toast.success("Portfolio revalued!", { id: toastId });
     } catch (e) {
         toast.error("Sync failed", { id: toastId });
@@ -165,7 +186,7 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
             <button onClick={handleRefreshAll} disabled={refreshing} className="btn-secondary !h-11 !px-4 flex items-center justify-center">
                 <svg className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
             </button>
-            <button onClick={() => setShowAddModal(true)} className="btn-primary !h-11 !px-8">
+            <button onClick={() => { setFormData(prev => ({ ...prev, trade_type: 'buy' })); setSearchQuery(""); setShowAddModal(true); }} className="btn-primary !h-11 !px-8">
                 Record Investment
             </button>
         </div>
@@ -223,7 +244,29 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
                                     {mf.amc_name?.substring(0, 3)}
                                 </div>
                                 <div className="flex flex-col">
-                                    <span className="font-bold text-[14px] text-[#eee] group-hover:text-[--accent-primary-light] transition-colors">{mf.fund_name}</span>
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-bold text-[14px] text-[#eee] group-hover:text-[--accent-primary-light] transition-colors">{mf.fund_name}</span>
+                                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button 
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    toast(`Total Charges: ₹${(Number(mf.units) * Number(mf.avg_nav) * 0.00005).toFixed(4)} (Stamp Duty)`, {
+                                                        icon: '👁️',
+                                                        style: { background: '#1a1a1a', color: '#eee', border: '1px solid #333', fontSize: '11px', fontWeight: 'bold' }
+                                                    });
+                                                }}
+                                                className="p-1 hover:bg-white/5 rounded text-[10px]"
+                                            >
+                                                👁️
+                                            </button>
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); startSell(mf); }}
+                                                className="px-2 py-0.5 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white text-[9px] font-black uppercase rounded transition-all"
+                                            >
+                                                Redeem
+                                            </button>
+                                        </div>
+                                    </div>
                                     <span className="text-[10px] text-[#666] font-bold uppercase tracking-wide mt-0.5">{mf.category} • {mf.investment_type}</span>
                                 </div>
                             </div>
@@ -249,7 +292,7 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-xl animate-fade-in px-4">
           <div className="glass-card-static w-full max-w-3xl p-8 md:p-12 rounded-3xl animate-scale-in">
             <div className="flex justify-between items-center mb-12">
-              <h2 className="text-3xl font-black tracking-tight">Investment Log</h2>
+              <h2 className="text-3xl font-black tracking-tight">{formData.trade_type === 'buy' ? 'Investment Log' : 'Asset Redemption'}</h2>
               <button onClick={() => setShowAddModal(false)} className="text-[--text-muted] hover:text-[--text-primary] transition-colors p-2">
                 <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
@@ -266,6 +309,7 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
                         placeholder="Search for Axis, HDFC, SBI Mutual Funds..." 
                         value={searchQuery}
                         onChange={(e) => handleSearch(e.target.value)}
+                        disabled={formData.trade_type === 'sell'}
                     />
                     <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#666]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.3-4.3" /></svg>
                     {isSearching && <div className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-[--accent-primary] border-t-transparent rounded-full animate-spin" />}
@@ -289,7 +333,7 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
                   <input required type="number" step="0.001" className="input-premium h-12" placeholder="0.000" value={formData.units} onChange={e => setFormData({...formData, units: e.target.value})} />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">Avg. Buy Price (NAV)</label>
+                  <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">{formData.trade_type === 'buy' ? 'Avg. Buy Price (NAV)' : 'Redemption NAV'}</label>
                   <input required type="number" step="0.0001" className="input-premium h-12" placeholder="0.0000" value={formData.nav} onChange={e => setFormData({...formData, nav: e.target.value})} />
                 </div>
                 <div className="space-y-2 col-span-2 md:col-span-1">
@@ -303,9 +347,9 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-2">
-                    <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">Capital Source</label>
+                    <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">{formData.trade_type === 'buy' ? 'Capital Source' : 'Deposit To'}</label>
                     <select required className="input-premium h-12" value={formData.account_id} onChange={e => setFormData({...formData, account_id: e.target.value})}>
-                        <option value="">Fund Account</option>
+                        <option value="">{formData.trade_type === 'buy' ? 'Fund Account' : 'Dest. Account'}</option>
                         {accounts.map(acc => <option key={acc.id} value={acc.id} style={{background: '#131833'}}>{acc.name} (₹{acc.balance.toLocaleString()})</option>)}
                     </select>
                 </div>
@@ -321,24 +365,46 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
                 </div>
               </div>
 
-              {/* Charge Summary Box */}
-              <div className="bg-[#131833] border border-[#252525] rounded-2xl p-5 space-y-3">
+              {/* Charge Summary Box (With Toggle) */}
+              <div className="bg-[#131833] border border-[#252525] rounded-2xl p-5 space-y-4">
                 <div className="flex justify-between items-center">
-                    <span className="text-xs text-[#666] font-bold uppercase tracking-wide">Investment Value</span>
-                    <span className="text-sm font-bold">₹{(parseFloat(formData.units || "0") * parseFloat(formData.nav || "0")).toLocaleString()}</span>
+                    <div className="flex flex-col">
+                        <span className="text-[9px] font-black text-[#555] uppercase tracking-widest">Transaction Levies</span>
+                        <div className="flex items-center gap-2 mt-1">
+                            <span className="text-[14px] font-black text-rose-400">₹{stampDuty.toFixed(4)}</span>
+                            <button 
+                                type="button" 
+                                onClick={() => setShowAllCharges(!showAllCharges)}
+                                className="text-[9px] font-black text-[--accent-primary-light] uppercase tracking-widest hover:underline"
+                            >
+                                {showAllCharges ? "Hide Details" : "See More"}
+                            </button>
+                        </div>
+                    </div>
+                    <span className="text-[9px] text-[#387ed1] border border-[#387ed1]/20 px-2 py-0.5 rounded font-black uppercase">SEBI Regulatory</span>
                 </div>
-                <div className="flex justify-between items-center text-xs">
-                    <span className="text-[#666] font-bold uppercase tracking-wide">Govt Stamp Duty (0.005%)</span>
-                    <span className="text-rose-400 font-bold">+₹{stampDuty.toFixed(4)}</span>
-                </div>
-                <div className="pt-2 border-t border-[#252525] flex justify-between items-center">
-                    <span className="text-sm font-black text-white uppercase tracking-widest">Total Channeling</span>
+
+                {showAllCharges && (
+                    <div className="space-y-2 pt-2 border-t border-white/5 animate-fade-in">
+                        <div className="flex justify-between items-center text-[11px]">
+                            <span className="text-[#666] font-bold uppercase tracking-wide">Investment Value</span>
+                            <span className="text-[#eee] font-bold">₹{(parseFloat(formData.units || "0") * parseFloat(formData.nav || "0")).toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-[11px]">
+                            <span className="text-[#666] font-bold uppercase tracking-wide">Stamp Duty (0.005%)</span>
+                            <span className="text-rose-400 font-bold">{formData.trade_type === 'buy' ? '+' : '-'}₹{stampDuty.toFixed(4)}</span>
+                        </div>
+                    </div>
+                )}
+
+                <div className="pt-3 border-t border-[#252525] flex justify-between items-center">
+                    <span className="text-[11px] font-black text-[#666] uppercase tracking-widest">{formData.trade_type === 'buy' ? 'Net Payable' : 'Net Receivable'}</span>
                     <span className="text-base font-black text-[--accent-primary-light]">₹{totalDeduction.toLocaleString()}</span>
                 </div>
               </div>
 
               <button type="submit" disabled={submitting} className="btn-primary w-full shadow-2xl mt-4">
-                 {submitting ? "Deploying Capital..." : "Authorize Investment"}
+                 {submitting ? (formData.trade_type === 'buy' ? "Deploying Capital..." : "Liquidating...") : (formData.trade_type === 'buy' ? "Authorize Investment" : "Authorize Redemption")}
               </button>
             </form>
           </div>

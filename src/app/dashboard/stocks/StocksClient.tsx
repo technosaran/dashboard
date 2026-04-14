@@ -18,7 +18,7 @@ import { calculateZerodhaCharges } from "@/lib/investment-utils";
 import { useRealTimeSync } from "@/hooks/use-realtime-sync";
 import { getAccounts } from "../accounts/actions";
 
-type Stock = Tables<"investments">;
+type Stock = Tables<"investments"> & { total_charges?: number };
 
 type Account = {
   id: string;
@@ -58,6 +58,7 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [showAllCharges, setShowAllCharges] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [fetchingPrice, setFetchingPrice] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -132,16 +133,23 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
 
   // Debounced search for suggestions
   useEffect(() => {
+    if (editingId) return;
     const timer = setTimeout(async () => {
-      if (formData.symbol.length >= 2 && !editingId) {
+      if (formData.symbol.length >= 2) {
         const results = await searchStocks(formData.symbol, formData.exchange);
         setSuggestions(results);
         setShowSuggestions(results.length > 0);
+        
+        // If there's an exact match in suggestions, we can preemptively fetch price
+        const exactMatch = results.find(r => r.symbol === formData.symbol.toUpperCase());
+        if (exactMatch) {
+            handleFetchPrice(exactMatch.symbol);
+        }
       } else {
         setSuggestions([]);
         setShowSuggestions(false);
       }
-    }, 300);
+    }, 400);
     return () => clearTimeout(timer);
   }, [formData.symbol, formData.exchange, editingId]);
 
@@ -186,17 +194,7 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
     setFetchingPrice(false);
   }
 
-  // Auto-fetch stock details when symbol or exchange changes
-  useEffect(() => {
-    if (editingId) return;
-    const symbol = formData.symbol.trim();
-    if (symbol.length < 2) {
-      setFetchError(null);
-      return;
-    }
-    const timeout = setTimeout(() => handleFetchPrice(symbol), 1000);
-    return () => clearTimeout(timeout);
-  }, [formData.symbol, formData.exchange, editingId]);
+  // Removed redundant auto-fetch useEffect to prevent "asking two times" feel
 
   async function handleRefreshAll() {
     if (refreshing) return;
@@ -302,7 +300,7 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
       name: inv.name, 
       symbol: (inv.symbol || "").split(".")[0],
       quantity: inv.quantity.toString(), 
-      buy_price: inv.buy_price.toString(), // For record keeping
+      buy_price: inv.current_price.toString(), // Default to LTP for sell
       current_price: inv.current_price.toString(), 
       currency: inv.currency,
       notes: "", 
@@ -493,7 +491,22 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
                     >
                       <td className="py-4 px-4">
                         <div className="flex flex-col">
-                          <span className="text-[13px] font-medium text-[#eee]">{inv.symbol?.split('.')[0] || inv.name}</span>
+                          <div className="flex items-center gap-2">
+                             <span className="text-[13px] font-medium text-[#eee]">{inv.symbol?.split('.')[0] || inv.name}</span>
+                             <button 
+                               onClick={(e) => {
+                                 e.stopPropagation();
+                                 toast(`Charges Paid: ₹${formatNum(inv.total_charges || calculateZerodhaCharges(inv.quantity, inv.buy_price, inv.symbol?.endsWith('.BO') ? 'BSE' : 'NSE', true).totalCharges)}`, {
+                                   icon: '👁️',
+                                   style: { background: '#1a1a1a', color: '#eee', border: '1px solid #333', fontSize: '11px', fontWeight: 'bold' }
+                                 });
+                               }}
+                               className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-white/5 rounded text-[10px]"
+                               title="View Charges"
+                             >
+                               👁️
+                             </button>
+                          </div>
                           <span className="text-[10px] text-[#666] font-normal">{inv.name}</span>
                         </div>
                         
@@ -713,7 +726,9 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
                 </div>
 
                 <div className="relative">
-                  <label className="absolute -top-2 left-2 px-1 bg-[#1a1a1a] text-[10px] text-[#666] uppercase tracking-widest font-bold z-10">Wallet</label>
+                  <label className="absolute -top-2 left-2 px-1 bg-[#1a1a1a] text-[10px] text-[#666] uppercase tracking-widest font-bold z-10">
+                    {formData.trade_type === 'buy' ? 'Deduct From' : 'Deposit To'}
+                  </label>
                   <select
                     value={formData.deduct_from_account || ""}
                     onChange={e => setFormData({ ...formData, deduct_from_account: e.target.value })}
@@ -735,31 +750,62 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
                 </div>
               </div>
 
-              {/* Zerodha Charges Breakdown (Condensed) */}
+              {/* Zerodha Charges Breakdown (Condensed with Toggle) */}
               {parseFloat(formData.quantity) > 0 && parseFloat(formData.buy_price) > 0 && (
-                <div className="bg-[#151515] rounded-md p-4 border border-[#252525] animate-fade-in">
-                   <div className="flex justify-between items-baseline mb-3">
-                     <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#555]">Charges breakdown</span>
-                     <span className="text-[10px] text-[#387ed1] font-bold">Zerodha Delivery</span>
+                <div className="bg-[#151515] rounded-xl p-4 border border-[#252525] animate-fade-in">
+                   <div className="flex justify-between items-center mb-0">
+                     <div className="flex flex-col">
+                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[#555]">Levies & Taxes</span>
+                        <div className="flex items-center gap-2 mt-1">
+                           <span className="text-[13px] font-black text-[#eee]">₹{formatNum(zerodhaCharges.totalCharges)}</span>
+                           <button 
+                             type="button"
+                             onClick={() => setShowAllCharges(!showAllCharges)}
+                             className="text-[9px] font-black text-[--accent-primary-light] uppercase tracking-widest hover:underline"
+                           >
+                             {showAllCharges ? "Hide Details" : "See More"}
+                           </button>
+                        </div>
+                     </div>
+                     <span className="text-[9px] text-[#387ed1] border border-[#387ed1]/20 px-2 py-0.5 rounded font-black uppercase">Zerodha Delivery</span>
                    </div>
                    
-                   <div className="columns-2 gap-6 space-y-2">
-                     <div className="flex justify-between text-[11px] break-inside-avoid">
-                       <span className="text-[#666]">STT (0.1%)</span>
-                       <span className="text-[#eee]">₹{formatNum(zerodhaCharges.stt)}</span>
+                   {showAllCharges && (
+                     <div className="grid grid-cols-2 gap-x-8 gap-y-2 mt-4 pt-4 border-t border-white/5 animate-fade-in">
+                       <div className="flex justify-between text-[11px]">
+                         <span className="text-[#666]">STT (0.1%)</span>
+                         <span className="text-[#eee]">₹{formatNum(zerodhaCharges.stt)}</span>
+                       </div>
+                       <div className="flex justify-between text-[11px]">
+                         <span className="text-[#666]">Txn Fee</span>
+                         <span className="text-[#eee]">₹{formatNum(zerodhaCharges.txnCharge)}</span>
+                       </div>
+                       <div className="flex justify-between text-[11px]">
+                         <span className="text-[#666]">GST (18%)</span>
+                         <span className="text-[#eee]">₹{formatNum(zerodhaCharges.gst)}</span>
+                       </div>
+                       <div className="flex justify-between text-[11px]">
+                         <span className="text-[#666]">Stamp Duty</span>
+                         <span className="text-[#eee]">₹{formatNum(zerodhaCharges.stampDuty)}</span>
+                       </div>
+                       <div className="flex justify-between text-[11px]">
+                         <span className="text-[#666]">SEBI Fee</span>
+                         <span className="text-[#eee]">₹{formatNum(zerodhaCharges.sebiCharge)}</span>
+                       </div>
+                       {zerodhaCharges.dpCharges > 0 && (
+                        <div className="flex justify-between text-[11px]">
+                          <span className="text-[#666]">DP Charges</span>
+                          <span className="text-[#eee]">₹{formatNum(zerodhaCharges.dpCharges)}</span>
+                        </div>
+                       )}
                      </div>
-                     <div className="flex justify-between text-[11px] break-inside-avoid">
-                       <span className="text-[#666]">Txn Fee</span>
-                       <span className="text-[#eee]">₹{formatNum(zerodhaCharges.txnCharge)}</span>
-                     </div>
-                     <div className="flex justify-between text-[11px] break-inside-avoid">
-                       <span className="text-[#666]">GST (18%)</span>
-                       <span className="text-[#eee]">₹{formatNum(zerodhaCharges.gst)}</span>
-                     </div>
-                     <div className="flex justify-between text-[11px] break-inside-avoid font-bold pt-1 border-t border-[#252525]">
-                       <span className="text-[#999]">TOTAL</span>
-                       <span className={formData.trade_type === 'buy' ? 'text-[#df514c]' : 'text-[#4caf50]'}>₹{formatNum(zerodhaCharges.netAmount)}</span>
-                     </div>
+                   )}
+                   
+                   <div className="mt-4 pt-3 border-t border-white/5 flex justify-between items-center">
+                      <span className="text-[10px] font-black text-[#666] uppercase tracking-widest">Net Outflow</span>
+                      <span className={`text-[15px] font-black tabular-nums ${formData.trade_type === 'buy' ? 'text-rose-400' : 'text-emerald-400'}`}>
+                        ₹{formatNum(zerodhaCharges.netAmount)}
+                      </span>
                    </div>
                 </div>
               )}

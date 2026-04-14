@@ -10,6 +10,7 @@ import { createGoal, updateGoalAmount, deleteGoal } from "./actions";
 import { useRealTimeSync } from "@/hooks/use-realtime-sync";
 
 type Goal = Tables<"goals">;
+type Account = Tables<"accounts">;
 
 const GOAL_CATEGORIES = [
   { label: "Home", icon: "🏠", color: "#6366f1" },
@@ -22,11 +23,13 @@ const GOAL_CATEGORIES = [
   { label: "Others", icon: "🎯", color: "#64748b" },
 ];
 
-export default function GoalsClient({ initialGoals }: { initialGoals: Goal[] }) {
+export default function GoalsClient({ initialGoals, initialAccounts }: { initialGoals: Goal[], initialAccounts: Account[] }) {
   const [goals, setGoals] = useState<Goal[]>(initialGoals);
+  const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showContributeModal, setShowContributeModal] = useState(false);
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
+  const [selectedAccountId, setSelectedAccountId] = useState<string>(initialAccounts[0]?.id || "");
   const [submitting, setSubmitting] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -35,6 +38,7 @@ export default function GoalsClient({ initialGoals }: { initialGoals: Goal[] }) 
     current_amount: "0",
     deadline: "",
     category: "Others",
+    account_id: "",
   });
 
   const [contributeAmount, setContributeAmount] = useState("");
@@ -43,17 +47,20 @@ export default function GoalsClient({ initialGoals }: { initialGoals: Goal[] }) 
   const fetchData = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const { data } = await supabase
-      .from("goals")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
-    if (data) setGoals(data);
+    
+    const [goalData, accData] = await Promise.all([
+      supabase.from("goals").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+      supabase.from("accounts").select("*").eq("user_id", user.id).order("name")
+    ]);
+
+    if (goalData.data) setGoals(goalData.data);
+    if (accData.data) setAccounts(accData.data);
   }, [supabase]);
 
   useEffect(() => {
     const channel = supabase.channel("goals-v2")
       .on("postgres_changes", { event: "*", schema: "public", table: "goals" }, () => startTransition(fetchData))
+      .on("postgres_changes", { event: "*", schema: "public", table: "accounts" }, () => startTransition(fetchData))
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [fetchData, supabase]);
@@ -79,7 +86,7 @@ export default function GoalsClient({ initialGoals }: { initialGoals: Goal[] }) 
     if (!res?.error) {
       toast.success("Goal established.");
       setShowAddModal(false);
-      setFormData({ name: "", target_amount: "", current_amount: "0", deadline: "", category: "Others" });
+      setFormData({ name: "", target_amount: "", current_amount: "0", deadline: "", category: "Others", account_id: "" });
     } else {
       toast.error(res.error);
     }
@@ -88,9 +95,12 @@ export default function GoalsClient({ initialGoals }: { initialGoals: Goal[] }) 
 
   async function handleContribute(e: React.FormEvent) {
     e.preventDefault();
-    if (!selectedGoalId) return;
+    if (!selectedGoalId || !selectedAccountId) {
+      toast.error("Please select an account.");
+      return;
+    }
     setSubmitting(true);
-    const res = await updateGoalAmount(selectedGoalId, parseFloat(contributeAmount));
+    const res = await updateGoalAmount(selectedGoalId, parseFloat(contributeAmount), selectedAccountId);
     if (!res?.error) {
       toast.success("Capital injected.");
       setShowContributeModal(false);
@@ -256,6 +266,26 @@ export default function GoalsClient({ initialGoals }: { initialGoals: Goal[] }) 
                    <input type="date" className="input-premium h-12 text-sm" value={formData.deadline} onChange={e => setFormData({...formData, deadline: e.target.value})} />
                  </div>
                </div>
+               
+               {Number(formData.current_amount) > 0 && (
+                 <div className="space-y-2 animate-fade-in">
+                   <label className="text-[10px] font-black uppercase tracking-widest text-[--accent-primary-light] ml-1">Deduct Initial From</label>
+                   <select 
+                     required
+                     className="input-premium h-12 text-sm border-[--accent-primary]/30" 
+                     value={formData.account_id} 
+                     onChange={e => setFormData({...formData, account_id: e.target.value})}
+                   >
+                     <option value="" style={{background: '#0c1021'}}>Select Account...</option>
+                     {accounts.map(acc => (
+                       <option key={acc.id} value={acc.id} style={{background: '#0c1021'}}>
+                         {acc.name} (₹{Number(acc.balance).toLocaleString()})
+                       </option>
+                     ))}
+                   </select>
+                 </div>
+               )}
+
                <button type="submit" disabled={submitting} className="btn-primary w-full shadow-2xl mt-4">
                  {submitting ? "Establishing..." : "Commit Goal"}
                </button>
@@ -267,15 +297,35 @@ export default function GoalsClient({ initialGoals }: { initialGoals: Goal[] }) 
       {/* Focus Contribution Modal */}
       {showContributeModal && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-xl animate-fade-in">
-          <div className="glass-card-static w-full max-w-sm p-10 animate-scale-in text-center border-white/10 shadow-2xl">
-             <div className="w-16 h-16 rounded-2xl bg-[--accent-primary]/10 flex items-center justify-center text-3xl mx-auto mb-6">💰</div>
-             <h3 className="text-2xl font-black mb-1">Inject Savings</h3>
-             <p className="text-[10px] text-[--text-muted] font-black uppercase tracking-[0.2em] mb-10">Asset Allocation</p>
+          <div className="glass-card-static w-full max-w-sm p-8 animate-scale-in text-center border-white/10 shadow-2xl">
+             <div className="w-14 h-14 rounded-2xl bg-[--accent-primary]/10 flex items-center justify-center text-2xl mx-auto mb-4">💰</div>
+             <h3 className="text-xl font-black mb-1">Inject Savings</h3>
+             <p className="text-[10px] text-[--text-muted] font-black uppercase tracking-[0.2em] mb-6">Asset Allocation</p>
              <form onSubmit={handleContribute} className="space-y-6">
-               <input required autoFocus type="number" step="0.01" className="bg-transparent border-b-2 border-white/10 w-full text-4xl font-black text-center py-4 outline-none focus:border-[--accent-primary] transition-colors tabular-nums" placeholder="0.00" value={contributeAmount} onChange={e => setContributeAmount(e.target.value)} />
-               <div className="flex gap-3">
-                 <button type="button" onClick={() => setShowContributeModal(false)} className="btn-secondary flex-1">Cancel</button>
-                 <button type="submit" disabled={submitting} className="btn-primary flex-[1.5] shadow-xl shadow-[--accent-primary]/20">Confirm</button>
+               <div className="space-y-4">
+                 <div className="space-y-1 text-left">
+                   <label className="text-[9px] font-black text-[--text-muted] uppercase tracking-widest ml-1">Debit From</label>
+                   <select 
+                    required
+                    className="input-premium !h-11 text-xs" 
+                    value={selectedAccountId} 
+                    onChange={e => setSelectedAccountId(e.target.value)}
+                   >
+                     {accounts.map(acc => (
+                       <option key={acc.id} value={acc.id} style={{background: '#0c1021'}}>
+                         {acc.name} (₹{Number(acc.balance).toLocaleString()})
+                       </option>
+                     ))}
+                   </select>
+                 </div>
+                 <div className="space-y-1 text-left">
+                    <label className="text-[9px] font-black text-[--text-muted] uppercase tracking-widest ml-1">Amount (₹)</label>
+                    <input required autoFocus type="number" step="0.01" className="bg-transparent border-b-2 border-white/10 w-full text-3xl font-black text-center py-2 outline-none focus:border-[--accent-primary] transition-colors tabular-nums" placeholder="0.00" value={contributeAmount} onChange={e => setContributeAmount(e.target.value)} />
+                 </div>
+               </div>
+               <div className="flex gap-3 pt-2">
+                 <button type="button" onClick={() => setShowContributeModal(false)} className="btn-secondary h-11 text-[10px]">Cancel</button>
+                 <button type="submit" disabled={submitting} className="btn-primary flex-[1.5] h-11 text-[10px] shadow-xl shadow-[--accent-primary]/20">Confirm</button>
                </div>
              </form>
           </div>
