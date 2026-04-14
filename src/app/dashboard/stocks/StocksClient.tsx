@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState, startTransition, useMemo } from "react";
 import { toast } from "react-hot-toast";
 import { createClient } from "@/lib/supabase-browser";
+import { format } from "date-fns";
 import { 
   createInvestment, 
   updateInvestment, 
@@ -24,6 +25,11 @@ type Stock = {
   quantity: number;
   buy_price: number;
   current_price: number;
+  previous_close: number | null;
+  day_change: number | null;
+  day_change_percent: number | null;
+  market_state: string | null;
+  last_fetch_at: string | null;
   currency: string;
   notes: string | null;
   bought_at: string | null;
@@ -105,12 +111,23 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
       .eq("user_id", user.id)
       .eq("type", "stock")
       .order("created_at", { ascending: false });
-    if (data) setStocks(data);
+    if (data) setStocks(data as any);
   }, []);
 
   useEffect(() => {
     if (activeTab === "history") loadTrades();
   }, [activeTab, loadTrades]);
+
+  // Automated price refresh on mount (once every 15 mins max to be polite)
+  useEffect(() => {
+    const lastRefresh = localStorage.getItem("last_stock_refresh");
+    const now = Date.now();
+    if (!lastRefresh || now - parseInt(lastRefresh) > 15 * 60 * 1000) {
+      handleRefreshAll().then(() => {
+        localStorage.setItem("last_stock_refresh", now.toString());
+      });
+    }
+  }, []);
 
   const loadAccounts = useCallback(async () => {
     const res = await getAccounts();
@@ -353,12 +370,23 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
         <div className="flex items-center gap-10">
           <div className="flex flex-col">
             <h1 className="text-xl font-medium text-[#eee]">Equity Portfolio ({stocks.length})</h1>
+            <div className="flex items-center gap-2 mt-1">
+              <div className={`w-1.5 h-1.5 rounded-full ${stocks.some(s => s.market_state === 'REGULAR') ? 'bg-[#4caf50] animate-pulse' : 'bg-[#df514c]'}`} />
+              <span className="text-[10px] text-[#666] uppercase tracking-wider font-bold">
+                {stocks.some(s => s.market_state === 'REGULAR') ? 'Market Open' : 'Market Closed'}
+              </span>
+            </div>
           </div>
           <div className="h-10 w-[1px] bg-[#252525] hidden sm:block" />
           <div className="flex gap-12">
             <div className="flex flex-col">
               <span className="text-[10px] text-[#9b9b9b] uppercase tracking-wider mb-1">Total investment</span>
               <span className="text-xl font-normal tabular-nums">{formatNum(totalInvested)}</span>
+              {stocks.length > 0 && stocks[0].last_fetch_at && (
+                <span className="text-[9px] text-[#555] mt-1 tabular-nums font-bold uppercase tracking-tight">
+                  Last Updated: {format(new Date(stocks[0].last_fetch_at), "HH:mm")}
+                </span>
+              )}
             </div>
             <div className="flex flex-col">
               <span className="text-[10px] text-[#9b9b9b] uppercase tracking-wider mb-1">Current value</span>
@@ -458,6 +486,9 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
                   <th className="py-3 px-4 font-medium text-right cursor-pointer hover:text-[#eee] group" onClick={() => handleSort("pnl")}>
                     P&L <SortIcon col="pnl" />
                   </th>
+                  <th className="py-3 px-4 font-medium text-right">
+                    Day Chg.
+                  </th>
                   <th className="py-3 px-4 font-medium text-right cursor-pointer hover:text-[#eee] group" onClick={() => handleSort("pnlPercent")}>
                     Net chg. <SortIcon col="pnlPercent" />
                   </th>
@@ -504,6 +535,16 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
                       <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[#eee]">{formatNum(currentVal)}</td>
                       <td className={`py-4 px-4 text-right tabular-nums text-[13px] font-medium ${isProfit ? "text-[#4caf50]" : "text-[#df514c]"}`}>
                         {formatNum(pnl)}
+                      </td>
+                      <td className="py-4 px-4 text-right tabular-nums">
+                        <div className="flex flex-col items-end">
+                           <span className={`text-[12px] font-medium ${inv.day_change && inv.day_change >= 0 ? "text-[#4caf50]" : "text-[#df514c]"}`}>
+                             {inv.day_change ? (inv.day_change > 0 ? "+" : "") + formatNum(inv.day_change) : "—"}
+                           </span>
+                           <span className={`text-[10px] font-bold ${inv.day_change_percent && inv.day_change_percent >= 0 ? "text-[#4caf50]" : "text-[#df514c]"}`}>
+                             {inv.day_change_percent ? (inv.day_change_percent > 0 ? "+" : "") + inv.day_change_percent.toFixed(2) + "%" : ""}
+                           </span>
+                        </div>
                       </td>
                       <td className={`py-4 px-4 text-right tabular-nums text-[13px] font-medium ${isProfit ? "text-[#4caf50]" : "text-[#df514c]"}`}>
                         {isProfit ? "+" : ""}{pnlPct.toFixed(2)}%

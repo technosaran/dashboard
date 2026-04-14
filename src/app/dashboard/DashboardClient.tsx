@@ -14,36 +14,36 @@ import Link from "next/link";
 const supabase = createClient();
 
 type Account = Tables<"accounts">;
-type Expense = Tables<"expenses">;
+type Transaction = Tables<"transactions">;
 type LedgerLog = Tables<"ledger_logs">;
 
 interface DashboardClientProps {
   initialAccounts: Account[];
-  initialExpenses: Expense[];
+  initialTransactions: Transaction[];
   initialLogs: LedgerLog[];
 }
 
 export default function DashboardClient({ 
   initialAccounts, 
-  initialExpenses, 
+  initialTransactions, 
   initialLogs 
 }: DashboardClientProps) {
   const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
-  const [expenses, setExpenses] = useState<Expense[]>(initialExpenses);
+  const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
   const [recentLogs, setRecentLogs] = useState<LedgerLog[]>(initialLogs);
 
   const fetchData = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const [accRes, expRes, logRes] = await Promise.all([
+    const [accRes, transRes, logRes] = await Promise.all([
       supabase.from("accounts").select("*").eq("user_id", user.id),
-      supabase.from("expenses").select("*").eq("user_id", user.id).order("date", { ascending: false }),
+      supabase.from("transactions").select("*").eq("user_id", user.id).order("date", { ascending: false }),
       supabase.from("ledger_logs").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5)
     ]);
 
     if (accRes.data) setAccounts(accRes.data);
-    if (expRes.data) setExpenses(expRes.data);
+    if (transRes.data) setTransactions(transRes.data);
     if (logRes.data) setRecentLogs(logRes.data as LedgerLog[]);
   }, []);
 
@@ -51,8 +51,9 @@ export default function DashboardClient({
     const channel = supabase
       .channel("dashboard-realtime-master")
       .on("postgres_changes", { event: "*", schema: "public", table: "accounts" }, () => startTransition(fetchData))
-      .on("postgres_changes", { event: "*", schema: "public", table: "expenses" }, () => startTransition(fetchData))
+      .on("postgres_changes", { event: "*", schema: "public", table: "transactions" }, () => startTransition(fetchData))
       .on("postgres_changes", { event: "*", schema: "public", table: "incomes" }, () => startTransition(fetchData))
+      .on("postgres_changes", { event: "*", schema: "public", table: "expenses" }, () => startTransition(fetchData))
       .on("postgres_changes", { event: "*", schema: "public", table: "ledger_logs" }, () => startTransition(fetchData))
       .subscribe();
 
@@ -65,24 +66,36 @@ export default function DashboardClient({
   const stats = useMemo(() => {
     const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
     const now = new Date();
-    const currentMonthExpenses = expenses.filter(e => 
-      isWithinInterval(new Date(e.date), { start: startOfMonth(now), end: endOfMonth(now) })
+    const currentMonthTxns = transactions.filter(t => 
+      isWithinInterval(new Date(t.date), { start: startOfMonth(now), end: endOfMonth(now) })
     );
-    const monthlySpend = currentMonthExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
+
+    const monthlySpend = currentMonthTxns
+      .filter(t => t.type === 'expense')
+      .reduce((sum, t) => sum + Number(t.amount), 0);
+
+    const monthlyIncome = currentMonthTxns
+      .filter(t => t.type === 'income')
+      .reduce((sum, t) => sum + Number(t.amount), 0);
     
     // Category Data for Pie
     const catMap: Record<string, number> = {};
-    expenses.slice(0, 20).forEach(e => {
-      catMap[e.category] = (catMap[e.category] || 0) + Number(e.amount);
-    });
+    transactions
+      .filter(t => t.type === 'expense')
+      .slice(0, 50) // Use more data for better pie
+      .forEach(t => {
+        const cat = t.category || "Others";
+        catMap[cat] = (catMap[cat] || 0) + Number(t.amount);
+      });
+
     const pieData = Object.entries(catMap).map(([name, value]) => ({ 
       name, 
       value,
       color: COLORS[Math.floor(Math.random() * COLORS.length)]
     })).sort((a,b) => b.value - a.value);
 
-    return { totalBalance, monthlySpend, pieData, accountCount: accounts.length };
-  }, [accounts, expenses]);
+    return { totalBalance, monthlySpend, monthlyIncome, pieData, accountCount: accounts.length };
+  }, [accounts, transactions]);
 
   const COLORS = ["#6c5ce7", "#00cec9", "#fd79a8", "#fdcb6e", "#a29bfe"];
 
@@ -127,11 +140,15 @@ export default function DashboardClient({
         <div className="grid grid-cols-1 gap-6">
           <div className="glass-card-static p-6 flex flex-col justify-center relative overflow-hidden">
             <div className="absolute top-0 right-0 p-4 opacity-5"><svg className="w-20 h-20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg></div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[--text-muted] mb-2">Monthly Outflow</p>
-            <h3 className="text-4xl font-black [font-family:'Outfit',sans-serif] text-[--text-primary]">
-              ₹{stats.monthlySpend.toLocaleString()}
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[--text-muted] mb-2">Monthly Cashflow</p>
+            <div className="flex items-baseline gap-2">
+              <span className="text-xs text-emerald-400 font-bold">+₹{stats.monthlyIncome.toLocaleString()}</span>
+              <span className="text-xs text-rose-400 font-bold">-₹{stats.monthlySpend.toLocaleString()}</span>
+            </div>
+            <h3 className="text-4xl font-black [font-family:'Outfit',sans-serif] text-[--text-primary] mt-1">
+              ₹{(stats.monthlyIncome - stats.monthlySpend).toLocaleString()}
             </h3>
-            <p className="text-[10px] mt-2 text-rose-400 font-bold uppercase tracking-tighter">Budget utilized by 62%</p>
+            <p className="text-[10px] mt-2 text-[--text-muted] font-bold uppercase tracking-tighter">Net savings this month</p>
           </div>
           <div className="glass-card-static p-6 flex flex-col justify-center relative overflow-hidden">
              <div className="absolute top-0 right-0 p-4 opacity-5"><svg className="w-20 h-20" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg></div>
@@ -154,7 +171,7 @@ export default function DashboardClient({
           </div>
           <div className="h-[280px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={expenses.slice(0, 10).reverse()}>
+              <AreaChart data={transactions.filter(t => t.type === 'expense').slice(0, 10).reverse()}>
                 <defs>
                   <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="var(--accent-primary)" stopOpacity={0.3}/>

@@ -154,37 +154,40 @@ export async function getStockDetails(symbol: string, exchange: string = "NSE") 
     if (MANUAL_MAPPINGS[cleanQuery]) cleanQuery = MANUAL_MAPPINGS[cleanQuery];
 
     const suffix = exchange === "BSE" ? ".BO" : ".NS";
-    const ticker = `${cleanQuery}${suffix}`;
-    const searchUrl = `https://query2.finance.yahoo.com/v1/finance/search?q=${cleanQuery}&quotesCount=10`;
-    const searchRes = await fetch(searchUrl, { headers: { "User-Agent": "Mozilla/5.0" }, cache: "no-store" });
-    if (!searchRes.ok) throw new Error("Search failed");
-    const searchData = await searchRes.json();
-    const quotes = searchData.quotes || [];
+    const ticker = cleanQuery.includes(".") ? cleanQuery : `${cleanQuery}${suffix}`;
     
-    let bestMatch = quotes.find((q: any) => q.symbol === ticker);
-    if (!bestMatch) bestMatch = quotes.find((q: any) => q.symbol.split(".")[0] === cleanQuery && q.symbol.endsWith(suffix) && q.quoteType === "EQUITY");
-    if (!bestMatch) bestMatch = quotes.find((q: any) => q.quoteType === "EQUITY" && q.symbol.endsWith(suffix));
-
-    const finalTicker = bestMatch ? bestMatch.symbol : ticker;
-    const finalName = bestMatch ? (bestMatch.shortname || bestMatch.longname) : cleanQuery;
-
-    const url = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(finalTicker)}?interval=1d&range=1d`;
-    const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" }, cache: "no-store" });
-    if (!res.ok) throw new Error(`Market data unavailable for ${finalTicker}`);
+    // Use the v8 chart API which is quite stable
+    const url = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1d&range=1d`;
+    const res = await fetch(url, { 
+      headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" }, 
+      cache: "no-store" 
+    });
+    
+    if (!res.ok) throw new Error(`Market data unavailable for ${ticker}`);
     const data = await res.json();
     const result = data.chart.result?.[0];
     if (!result || !result.meta) throw new Error("No market data in response");
 
+    const meta = result.meta;
+    const price = meta.regularMarketPrice;
+    const prevClose = meta.previousClose;
+    const change = price - prevClose;
+    const changePercent = prevClose > 0 ? (change / prevClose) * 100 : 0;
+
     return {
-      name: finalName || finalTicker.split(".")[0],
-      price: result.meta.regularMarketPrice,
-      previousClose: result.meta.previousClose,
-      currency: "INR",
-      symbol: finalTicker,
-      exchange: result.meta.exchangeName || (finalTicker.endsWith(".NS") ? "NSE" : "BSE")
+      name: meta.symbol.split(".")[0], // Could fetch name from search if needed
+      price: price,
+      previousClose: prevClose,
+      dayChange: change,
+      dayChangePercent: changePercent,
+      currency: meta.currency || "INR",
+      symbol: meta.symbol,
+      exchange: meta.exchangeName || (meta.symbol.endsWith(".NS") ? "NSE" : "BSE"),
+      marketState: meta.marketState || 'REGULAR'
     };
   } catch (error: any) {
-    return { error: `Not found on ${exchange}. Check symbol.` };
+    console.error("Stock fetch error:", error);
+    return { error: `Market data sync failed. Check symbol or try later.` };
   }
 }
 
@@ -193,7 +196,12 @@ export async function refreshAllPrices() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
-  const { data: stocks, error: fetchError } = await supabase.from("investments").select("id, symbol").eq("user_id", user.id).eq("type", "stock");
+  const { data: stocks, error: fetchError } = await supabase
+    .from("investments")
+    .select("id, symbol")
+    .eq("user_id", user.id)
+    .eq("type", "stock");
+
   if (fetchError || !stocks) return { error: fetchError?.message || "No stocks found" };
 
   const results = await Promise.all(stocks.map(async (stock) => {
@@ -201,11 +209,27 @@ export async function refreshAllPrices() {
     try {
       const exchange = stock.symbol.endsWith(".BO") ? "BSE" : "NSE";
       const res = await getStockDetails(stock.symbol, exchange);
-      if ("error" in res || !res.price) return { id: stock.id, error: "Price not found" };
-      await supabase.from("investments").update({ current_price: res.price, updated_at: new Date().toISOString() }).eq("id", stock.id);
+      
+      if ("error" in res || !res.price) return { id: stock.id, error: res.error || "Price not found" };
+      
+      const { error: updateError } = await supabase
+        .from("investments")
+        .update({ 
+          current_price: res.price, 
+          previous_close: res.previousClose,
+          day_change: res.dayChange,
+          day_change_percent: res.dayChangePercent,
+          market_state: res.marketState,
+          last_fetch_at: new Date().toISOString(),
+          updated_at: new Date().toISOString() 
+        })
+        .eq("id", stock.id);
+
+      if (updateError) throw updateError;
       return { id: stock.id, success: true };
-    } catch (e) {
-      return { id: stock.id, error: "Fetch failed" };
+    } catch (e: any) {
+      console.error(`Refresh error for ${stock.symbol}:`, e);
+      return { id: stock.id, error: e.message || "Fetch failed" };
     }
   }));
 
