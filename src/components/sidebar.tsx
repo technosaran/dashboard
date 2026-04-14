@@ -190,49 +190,55 @@ export default function Sidebar() {
         onClick={() => setIsMoreOpen(false)}
       >
         <div 
-          className={`fixed bottom-0 left-0 right-0 glass-card rounded-t-[32px] p-8 pb-12 transition-all duration-500 cubic-bezier(0.32, 0.72, 0, 1) transform ${isMoreOpen ? "translate-y-0" : "translate-y-full"}`}
+          className={`fixed bottom-0 left-0 right-0 glass-card rounded-t-[40px] p-6 pb-[calc(env(safe-area-inset-bottom,0px)+1.5rem)] transition-all duration-500 cubic-bezier(0.32, 0.72, 0, 1) transform ${isMoreOpen ? "translate-y-0" : "translate-y-full"}`}
           onClick={(e) => e.stopPropagation()}
           style={{ 
-            background: "rgba(12, 16, 33, 0.98)",
-            boxShadow: "0 -8px 40px rgba(0,0,0,0.4)" 
+            background: "rgba(10, 13, 28, 0.99)",
+            boxShadow: "0 -20px 60px rgba(0,0,0,0.8)",
+            borderTop: "1px solid rgba(255,255,255,0.08)"
           }}
         >
-          <div className="w-12 h-1.5 bg-white/10 rounded-full mx-auto mb-8" />
-          <div className="grid grid-cols-2 gap-4">
+          <div className="w-10 h-1 bg-white/10 rounded-full mx-auto mb-8 opacity-40" />
+          
+          <div className="grid grid-cols-3 gap-3 mb-6">
             {moreNav.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={() => setIsMoreOpen(false)}
-                className="flex flex-col items-center gap-3 p-5 rounded-[24px] bg-white/[0.03] border border-white/5 active:bg-white/10 active:scale-95 transition-all no-underline"
+                className="flex flex-col items-center justify-center p-4 rounded-[28px] bg-white/[0.02] border border-white/[0.04] active:bg-white/10 transition-all no-underline gap-2"
               >
-                <div className="w-12 h-12 rounded-2xl bg-[--accent-primary]/10 flex items-center justify-center text-[--accent-primary-light]">
+                <div className="w-10 h-10 rounded-full bg-[--accent-primary]/10 flex items-center justify-center text-[--accent-primary-light]">
                   {item.icon}
                 </div>
-                <span className="text-[10px] font-black text-[--text-primary] uppercase tracking-[0.2em]">{item.label}</span>
+                <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.15em] text-center">{item.label}</span>
               </Link>
             ))}
-            <button
-              onClick={handleLogout}
-              className="col-span-2 flex items-center justify-center gap-4 h-16 rounded-[24px] bg-rose-500/10 border border-rose-500/20 text-rose-400 font-black text-xs uppercase tracking-[0.2em] active:bg-rose-500/20 active:scale-[0.98] transition-all mt-4"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+          </div>
+
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center justify-between px-6 h-14 rounded-[24px] bg-rose-500/[0.03] border border-rose-500/10 text-rose-500 font-bold text-[10px] uppercase tracking-[0.2em] active:bg-rose-500/10 active:scale-[0.98] transition-all"
+          >
+            <div className="flex items-center gap-3">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                 <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
-              Terminate Session
-            </button>
-          </div>
+              <span>Terminate Session</span>
+            </div>
+            <div className="text-[10px] font-black opacity-30 tracking-tight">V2.0.4</div>
+          </button>
         </div>
       </div>
 
       {/* Mobile Bottom Navigation (Premium Refined) */}
       <nav 
-        className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-1 pb-safe border-t border-white/5"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between px-4 pb-safe border-t border-white/5 pt-1.5"
         style={{
-          background: "rgba(8, 11, 26, 0.96)",
-          backdropFilter: "blur(30px) saturate(2)",
-          WebkitBackdropFilter: "blur(30px) saturate(2)",
-          boxShadow: "0 -4px 32px rgba(0,0,0,0.5)",
+          background: "rgba(8, 11, 26, 0.98)",
+          backdropFilter: "blur(40px) saturate(2)",
+          WebkitBackdropFilter: "blur(40px) saturate(2)",
+          boxShadow: "0 -8px 40px rgba(0,0,0,0.6)",
         }}
       >
         {mainNav.map((item) => {
@@ -241,18 +247,18 @@ export default function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className="flex-1 flex flex-col items-center justify-center min-h-[60px] relative transition-all duration-300 active:scale-90"
+              className="flex-1 flex flex-col items-center justify-center min-h-[56px] relative transition-all duration-300 active:scale-95"
               style={{
                 color: active ? "var(--accent-primary-light)" : "var(--text-muted)",
               }}
             >
               {active && (
-                <div className="absolute inset-x-2 -top-1 h-0.5 bg-gradient-to-r from-transparent via-[--accent-primary-light] to-transparent blur-[0.5px] rounded-full animate-fade-in" />
+                <div className="absolute inset-x-2 -top-[1.5px] h-[3px] bg-gradient-to-r from-transparent via-[--accent-primary-light] to-transparent blur-[0.5px] rounded-full animate-fade-in" />
               )}
-              <div className={`${active ? "scale-110 -translate-y-2 text-[--accent-primary-light]" : "opacity-60"} transition-all duration-300 flex items-center justify-center`}>
+              <div className={`${active ? "scale-110 -translate-y-1.5 text-[--accent-primary-light]" : "opacity-50"} transition-all duration-300 flex items-center justify-center`}>
                 {item.icon}
               </div>
-              <span className={`text-[8px] font-black uppercase tracking-widest transition-all duration-300 absolute bottom-2 ${active ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"}`}>
+              <span className={`text-[9px] font-black uppercase tracking-widest transition-all duration-300 absolute bottom-1.5 ${active ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"}`}>
                 {item.label}
               </span>
             </Link>
@@ -262,14 +268,14 @@ export default function Sidebar() {
         {/* More Toggle */}
         <button
           onClick={() => setIsMoreOpen(!isMoreOpen)}
-          className={`flex-1 flex flex-col items-center justify-center min-h-[60px] transition-all active:scale-90 relative ${isMoreOpen ? "text-[--accent-primary-light]" : "text-[--text-muted]"}`}
+          className={`flex-1 flex flex-col items-center justify-center min-h-[56px] transition-all active:scale-95 relative ${isMoreOpen ? "text-[--accent-primary-light]" : "text-[--text-muted]"}`}
         >
-          <div className={`${isMoreOpen ? "scale-110 -translate-y-2 rotate-90" : "opacity-60"} transition-all duration-500 flex items-center justify-center`}>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+          <div className={`${isMoreOpen ? "scale-110 -translate-y-1.5 rotate-90" : "opacity-50"} transition-all duration-500 flex items-center justify-center`}>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
               <path d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </div>
-          <span className={`text-[8px] font-black uppercase tracking-widest transition-all duration-300 absolute bottom-2 ${isMoreOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"}`}>
+          <span className={`text-[9px] font-black uppercase tracking-widest transition-all duration-300 absolute bottom-1.5 ${isMoreOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"}`}>
             More
           </span>
         </button>

@@ -12,6 +12,9 @@ const nextConfig: NextConfig = {
 
   // Compression & performance
   compress: true,
+  
+  // Build optimizations
+  productionBrowserSourceMaps: false,
 
   // Security headers
   headers: async () => [

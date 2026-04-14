@@ -69,6 +69,8 @@ html, body {
   user-select: none;
   -webkit-tap-highlight-color: transparent;
   scroll-behavior: smooth;
+  overscroll-behavior-y: none; /* Prevent pull-to-refresh on mobile browsers */
+  padding-bottom: env(safe-area-inset-bottom, 0); /* Support for notches */
 }
 
 input, textarea, [contenteditable="true"] {
@@ -228,6 +230,22 @@ input, textarea, [contenteditable="true"] {
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* Premium Table Responsiveness */
+.table-responsive-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0 -1.25rem;
+  padding: 0 1.25rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-default) transparent;
+}
+
+@media (max-width: 768px) {
+  .pb-safe {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem) !important;
+  }
 }
 
 /* StatusIndicator */

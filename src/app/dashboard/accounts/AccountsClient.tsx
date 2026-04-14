@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, startTransition } from "react";
 import { useSearchParams } from "next/navigation";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import dynamic from "next/dynamic";
 import { toast } from "react-hot-toast";
 import { createClient } from "@/lib/supabase-browser";
 import type { Tables } from "@/lib/database.types";
@@ -11,6 +11,13 @@ import { createAccount, updateAccount, deleteAccount, createTransfer, adjustBala
 import BankLogo from "@/components/bank-logo";
 
 import { useRealTimeSync } from "@/hooks/use-realtime-sync";
+
+// Dynamic imports for chart performance
+const PieChart = dynamic(() => import("recharts").then(mod => mod.PieChart), { ssr: false });
+const Pie = dynamic(() => import("recharts").then(mod => mod.Pie), { ssr: false });
+const Cell = dynamic(() => import("recharts").then(mod => mod.Cell), { ssr: false });
+const ResponsiveContainer = dynamic(() => import("recharts").then(mod => mod.ResponsiveContainer), { ssr: false });
+const Tooltip = dynamic(() => import("recharts").then(mod => mod.Tooltip), { ssr: false });
 
 type Account = Tables<"accounts">;
 
