@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 
 import { createClient } from "@/lib/supabase-server";
 import StocksClient from "./StocksClient";
@@ -30,8 +31,10 @@ export default async function StocksPage() {
     .order("created_at", { ascending: false });
 
   return (
-    <StocksClient
+    <Suspense fallback={null}>
+      <StocksClient
       initialStocks={(stocks as Stock[]) || []}
     />
+    </Suspense>
   );
 }

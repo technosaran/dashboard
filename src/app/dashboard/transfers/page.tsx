@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase-server";
 import TransfersClient from "./TransfersClient";
 import { redirect } from "next/navigation";
@@ -27,9 +28,11 @@ export default async function TransfersPage() {
   ]);
 
   return (
-    <TransfersClient 
+    <Suspense fallback={null}>
+      <TransfersClient 
       initialAccounts={accRes.data || []}
       initialTransfers={transRes.data || []}
     />
+    </Suspense>
   );
 }

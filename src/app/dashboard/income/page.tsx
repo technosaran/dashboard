@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 
 import { createClient } from "@/lib/supabase-server";
 import IncomeClient from "./IncomeClient";
@@ -34,9 +35,11 @@ export default async function IncomePage() {
   ]);
 
   return (
-    <IncomeClient 
+    <Suspense fallback={null}>
+      <IncomeClient 
       initialIncomes={incRes.data || []}
       initialAccounts={accRes.data || []}
     />
+    </Suspense>
   );
 }

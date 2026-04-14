@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 
 import { createClient } from "@/lib/supabase-server";
 import ExpensesClient from "./ExpensesClient";
@@ -34,9 +35,11 @@ export default async function ExpensesPage() {
   ]);
 
   return (
-    <ExpensesClient 
+    <Suspense fallback={null}>
+      <ExpensesClient 
       initialExpenses={expRes.data || []}
       initialAccounts={accRes.data || []}
     />
+    </Suspense>
   );
 }
