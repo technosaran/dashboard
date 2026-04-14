@@ -30,9 +30,11 @@ const Area = dynamic(() => import("recharts").then((mod) => mod.Area), { ssr: fa
 
 import { useRealTimeSync } from "@/hooks/use-realtime-sync";
 
-const CATEGORIES = [
+export const CATEGORIES = [
   { label: "Rent", icon: "🏠", color: "var(--accent-primary-light)" },
   { label: "Food", icon: "🍔", color: "#fab1a0" },
+  { label: "Travel", icon: "✈️", color: "#00cec9" },
+  { label: "Investment", icon: "📈", color: "#81ecec" },
   { label: "Transport", icon: "🚌", color: "var(--accent-secondary)" },
   { label: "Utilities", icon: "⚡", color: "var(--warning)" },
   { label: "Entertainment", icon: "🎬", color: "#a29bfe" },

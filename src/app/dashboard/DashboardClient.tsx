@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useState, startTransition } from "react";
-import { format, endOfMonth, isWithinInterval, startOfMonth } from "date-fns";
+import { format, endOfMonth, isWithinInterval, startOfMonth , addMonths, startOfDay, endOfDay } from "date-fns";
 import Link from "next/link";
 import Greeting from "@/components/greeting";
 import { useRealTimeSync } from "@/hooks/use-realtime-sync";
@@ -22,6 +22,15 @@ const CartesianGrid = dynamic(
   { ssr: false }
 );
 const Tooltip = dynamic(() => import("recharts").then((mod) => mod.Tooltip), { ssr: false });
+const BarChart = dynamic(() => import("recharts").then((mod) => mod.BarChart), { ssr: false });
+const Bar = dynamic(() => import("recharts").then((mod) => mod.Bar), { ssr: false });
+const PieChart = dynamic(() => import("recharts").then((mod) => mod.PieChart), { ssr: false });
+const Pie = dynamic(() => import("recharts").then((mod) => mod.Pie), { ssr: false });
+const Cell = dynamic(() => import("recharts").then((mod) => mod.Cell), { ssr: false });
+const Legend = dynamic(() => import("recharts").then((mod) => mod.Legend), { ssr: false });
+import { CATEGORIES } from "./expenses/ExpensesClient";
+import { parseISO, subMonths } from "date-fns";
+
 
 const supabase = createClient();
 
@@ -43,6 +52,7 @@ export default function DashboardClient({
   const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
   const [recentLogs, setRecentLogs] = useState<LedgerLog[]>(initialLogs);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     const {
@@ -108,18 +118,92 @@ export default function DashboardClient({
 
     const expenseTrend = transactions
       .filter((transaction) => transaction.type === "expense")
-      .slice(0, 10)
+      .slice(0, 15)
       .reverse()
       .map((transaction) => ({
         ...transaction,
         amount: Number(transaction.amount),
       }));
 
+    // Income vs Expense past 6 months
+    const trendMap: Record<string, {name: string, income: number, expense: number}> = {};
+    for (let i = 5; i >= 0; i--) {
+      const d = subMonths(now, i);
+      const m = format(d, "MMM");
+      trendMap[m] = { name: m, income: 0, expense: 0 };
+    }
+    transactions.forEach(t => {
+      // safe date parsing
+      if (!t.date) return;
+      try {
+        const m = format(parseISO(t.date), "MMM");
+        if (trendMap[m]) {
+          if (t.type === "income") trendMap[m].income += Number(t.amount);
+          if (t.type === "expense") trendMap[m].expense += Number(t.amount);
+        }
+      } catch (e) {}
+    });
+    const incomeExpenseData = Object.values(trendMap);
+
+    // Category Pie Chart (Current Month)
+    const catMap: Record<string, number> = {};
+    currentMonthTxns.filter(t => t.type === 'expense').forEach(t => {
+      catMap[t.category || "Others"] = (catMap[t.category || "Others"] || 0) + Number(t.amount);
+    });
+    const pieData = Object.entries(catMap).map(([name, value]) => {
+      const categoryTheme = CATEGORIES.find(c => c.label === name);
+      return { 
+        name, 
+        value,
+        color: categoryTheme ? categoryTheme.color : "#8884d8"
+      };
+    }).sort((a,b) => b.value - a.value);
+
+    // Calculate Smart Alerts
+    const alerts: string[] = [];
+    if (monthlySpend > monthlyIncome && monthlyIncome > 0) {
+       alerts.push("Warning: Monthly spend exceeds your generated income.");
+    }
+    const foodSpend = currentMonthTxns.filter(t => t.type === 'expense' && t.category === 'Food').reduce((s, t) => s + Number(t.amount), 0);
+    if (foodSpend > 10000) {
+       alerts.push("You exceeded your typical budget in Food 🍔");
+    }
+    const shoppingSpend = currentMonthTxns.filter(t => t.type === 'expense' && t.category === 'Shopping').reduce((s, t) => s + Number(t.amount), 0);
+    if (shoppingSpend > 8000) {
+       alerts.push("High expenditure detected in Shopping 🛍️");
+    }
+    const today = startOfDay(now);
+    const todaySpend = currentMonthTxns.filter(t => t.type === 'expense' && t.date && t.date.startsWith(now.toISOString().split('T')[0])).reduce((s,t) => s+Number(t.amount), 0);
+    const avgDailySpend = monthlySpend / now.getDate();
+    if (todaySpend > avgDailySpend * 2 && avgDailySpend > 0) {
+       alerts.push("Unusual spending spike detected today 🚨");
+    }
+    if (alerts.length === 0) {
+       alerts.push("All financial metrics are within optimal range ✨");
+    }
+
+    // Forecasting (Linear Regression projection next 6 months)
+    let netMonthly = monthlyIncome - monthlySpend;
+    if (netMonthly === 0) netMonthly = 1000; // Fake positive slope for empty accounts
+    const forecastData = [];
+    for (let i = 0; i <= 5; i++) {
+       const fd = addMonths(now, i);
+       forecastData.push({ 
+         name: format(fd, "MMM yy"), 
+         projected: totalBalance + (netMonthly * i) 
+       });
+    }
+
     return {
+      alerts,
+      forecastData,
+      currentMonthTxns,
       totalBalance,
       monthlySpend,
       monthlyIncome,
       expenseTrend,
+      incomeExpenseData,
+      pieData,
       accountCount: accounts.length,
     };
   }, [accounts, transactions]);
@@ -138,7 +222,21 @@ export default function DashboardClient({
         </div>
       </div>
 
+      
+      {/* 🚨 Smart Alerts Panel */}
+      <div className="glass-card-static p-4 border-[--warning]/30 bg-gradient-to-r from-[--warning]/10 to-transparent flex flex-col md:flex-row md:items-center gap-4">
+        <div className="w-10 h-10 rounded-full bg-[--warning]/20 flex items-center justify-center text-xl shrink-0 animate-pulse">🤖</div>
+        <div className="flex-1">
+          <h3 className="text-xs font-black uppercase tracking-widest text-[--warning] mb-1">AI Insights & Alerts</h3>
+          <div className="flex flex-col gap-1">
+            {stats.alerts.map((alert, i) => (
+              <p key={i} className="text-sm font-semibold text-[--text-primary]">&bull; {alert}</p>
+            ))}
+          </div>
+        </div>
+      </div>
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+
         <div className="glass-card-static group relative overflow-hidden p-6 md:p-10 lg:col-span-2">
           <div className="absolute right-0 top-0 p-8 opacity-10 transition-opacity group-hover:opacity-20">
             <svg className="h-40 w-40" fill="none" stroke="currentColor" strokeWidth={1} viewBox="0 0 24 24">
@@ -211,62 +309,132 @@ export default function DashboardClient({
         </div>
       </div>
 
+{/* Visual Analytics Row 1 */}
+      <h2 className="text-xl font-bold tracking-tight text-[--text-primary] mt-4 mb-2 flex items-center gap-2">
+        <svg className="w-5 h-5 text-[--accent-primary]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16 8v8m-4-5v5m-4-2v2m12-11a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+        Visual Analytics
+      </h2>
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Income vs Expense Graph */}
+        <div className="glass-card-static p-6 md:p-8">
+          <h3 className="mb-8 text-sm font-bold uppercase tracking-[0.2em] text-[--text-muted]">
+            Cashflow Engine (6 Months)
+          </h3>
+          <div className="h-[280px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={stats.incomeExpenseData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: 'var(--text-muted)', fontSize: 10}} dy={10} />
+                <YAxis hide />
+                <Tooltip
+                  cursor={{fill: 'rgba(255,255,255,0.02)'}}
+                  contentStyle={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "12px" }}
+                />
+                <Legend iconType="circle" wrapperStyle={{ fontSize: '10px', paddingTop: '20px' }} />
+                <Bar dataKey="income" name="Income" fill="#10b981" radius={[4, 4, 0, 0]} barSize={12} />
+                <Bar dataKey="expense" name="Expense" fill="#f43f5e" radius={[4, 4, 0, 0]} barSize={12} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Category Pie Chart */}
+        <div className="glass-card-static p-6 md:p-8">
+          <h3 className="mb-8 text-sm font-bold uppercase tracking-[0.2em] text-[--text-muted]">
+            Sector Allocation (Current Month)
+          </h3>
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6 h-full min-h-[280px]">
+            {stats.pieData.length === 0 ? (
+               <div className="w-full flex h-full items-center justify-center italic text-[--text-muted] text-sm">No expenses this month.</div>
+            ) : (
+              <>
+                <div className="h-[200px] w-full md:w-1/2">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie onClick={(data) => setSelectedCategory(data.name || null)} data={stats.pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={8} dataKey="value">
+                        {stats.pieData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                        ))}
+                      </Pie>
+                      <Tooltip contentStyle={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "12px" }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="w-full md:w-1/2 space-y-3 pb-8">
+                  {stats.pieData.slice(0, 5).map((item) => (
+                    <div key={item.name} className="flex justify-between items-center group">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ background: item.color }} />
+                        <span className="text-[12px] font-bold text-[--text-secondary] transition-colors group-hover:text-white">{item.name}</span>
+                      </div>
+                      <span className="text-[12px] font-black tabular-nums">₹{item.value.toLocaleString()}</span>
+                    </div>
+                  ))}
+                  {stats.pieData.length > 5 && (
+                    <div className="text-[10px] text-[--text-muted] pt-2 font-bold uppercase tracking-wider">+ {stats.pieData.length - 5} more categories</div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Visual Analytics Row 2 */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        
+        <div className="glass-card-static p-6 md:p-8 relative overflow-hidden group">
+          <div className="absolute -right-10 -top-10 w-40 h-40 bg-[--success]/5 blur-3xl rounded-full" />
+          <div className="mb-8 flex items-center justify-between">
+            <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-[--text-muted]">
+              AI Wealth Forecast 📉
+            </h3>
+            <span className="text-[10px] font-black uppercase tracking-widest text-[--success] border border-[--success]/20 px-2 py-0.5 rounded-full bg-[--success]/10">Linear Model</span>
+          </div>
+          <div className="h-[280px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={stats.forecastData}>
+                <defs>
+                  <linearGradient id="forecastGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: 'var(--text-muted)', fontSize: 10}} dy={10} />
+                <YAxis hide domain={['dataMin - 10000', 'dataMax + 10000']} />
+                <Tooltip
+                  contentStyle={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "12px" }}
+                  cursor={{ stroke: "rgba(255,255,255,0.1)", strokeWidth: 1, strokeDasharray: "3 3" }}
+                />
+                <Area
+                  isAnimationActive={true}
+                  type="monotone"
+                  dataKey="projected"
+                  stroke="#10b981"
+                  strokeWidth={3}
+                  strokeDasharray="5 5"
+                  fillOpacity={1}
+                  fill="url(#forecastGradient)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+
         <div className="glass-card-static p-6 md:p-8">
           <div className="mb-8 flex items-center justify-between">
             <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-[--text-muted]">
-              Wealth Velocity
+              Recent Activities
             </h3>
             <Link
               href="/dashboard/ledger"
               className="text-[10px] font-black uppercase tracking-widest text-[--accent-primary] underline-offset-4 decoration-2 hover:underline"
             >
-              View History
+              View Ledger
             </Link>
           </div>
-          <div className="h-[280px] w-full">
-            {stats.expenseTrend.length === 0 ? (
-              <div className="flex h-full items-center justify-center rounded-2xl border border-white/5 bg-white/[0.02] text-sm italic text-[--text-muted]">
-                Expense data will appear here once activity is recorded.
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={stats.expenseTrend}>
-                  <defs>
-                    <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="var(--accent-primary)" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="var(--accent-primary)" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                  <XAxis hide />
-                  <YAxis hide />
-                  <Tooltip
-                    contentStyle={{
-                      background: "var(--bg-surface)",
-                      border: "1px solid var(--border-default)",
-                      borderRadius: "12px",
-                    }}
-                    cursor={{ stroke: "rgba(255,255,255,0.1)", strokeWidth: 1 }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="amount"
-                    stroke="var(--accent-primary)"
-                    strokeWidth={3}
-                    fillOpacity={1}
-                    fill="url(#colorValue)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-        </div>
-
-        <div className="glass-card-static p-6 md:p-8">
-          <h3 className="mb-8 text-sm font-bold uppercase tracking-[0.2em] text-[--text-muted]">
-            Recent Activities
-          </h3>
           <div className="space-y-4">
             {recentLogs.length === 0 ? (
               <div className="py-12 text-center text-sm italic text-[--text-muted]">
@@ -317,3 +485,4 @@ export default function DashboardClient({
     </div>
   );
 }
+

@@ -220,13 +220,21 @@ export default function GoalsClient({ initialGoals, initialAccounts }: { initial
 
               <div className="space-y-4">
                 <div className="flex items-end justify-between">
-                  <div className="flex flex-col">
+                  <div className="flex flex-col flex-1">
                     <span className="text-[10px] font-bold text-[--text-muted] uppercase tracking-wider mb-1">Saved</span>
                     <span className="text-xl font-bold">₹{Number(goal.current_amount).toLocaleString()}</span>
                   </div>
-                  <div className="flex flex-col items-end">
+                  
+                  {Number(goal.current_amount) < Number(goal.target_amount) && daysLeft !== null && daysLeft > 0 && (
+                    <div className="flex flex-col items-center flex-1 border-x border-white/10 px-2 mx-2">
+                       <span className="text-[9px] font-bold text-[--text-muted] uppercase tracking-wider mb-1">Needs</span>
+                       <span className="text-[13px] font-black text-[--accent-primary-light]">₹{Math.ceil((Number(goal.target_amount) - Number(goal.current_amount)) / Math.max(1, Math.ceil(daysLeft / 30.44))).toLocaleString()}/mo</span>
+                    </div>
+                  )}
+                  
+                  <div className="flex flex-col items-end flex-1">
                     <span className="text-[10px] font-bold text-[--text-muted] uppercase tracking-wider mb-1">Target</span>
-                    <span className="text-sm font-semibold opacity-60">₹{Number(goal.target_amount).toLocaleString()}</span>
+                    <span className="text-[13px] font-semibold opacity-80">₹{Number(goal.target_amount).toLocaleString()}</span>
                   </div>
                 </div>
 
