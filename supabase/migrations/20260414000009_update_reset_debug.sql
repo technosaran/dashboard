@@ -1,5 +1,5 @@
 
--- Function to completely erase all financial data for a user with debug info
+-- Update the reset function to use the diagnostic logic
 CREATE OR REPLACE FUNCTION reset_user_data(p_user_id UUID)
 RETURNS JSON AS $$
 DECLARE
@@ -42,3 +42,6 @@ EXCEPTION WHEN OTHERS THEN
     RETURN json_build_object('success', false, 'error', SQLERRM);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+GRANT EXECUTE ON FUNCTION reset_user_data(UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION reset_user_data(UUID) TO service_role;

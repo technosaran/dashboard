@@ -46,16 +46,25 @@ export default function SettingsPage() {
   };
 
   const handleReset = async () => {
-    if (!confirm("CRITICAL WARNING: This will permanently erase ALL your accounts, transactions, stocks, and history. This action cannot be undone. Are you absolutely sure?")) {
-      return;
-    }
+    const isConfirmed = confirm("CRITICAL WARNING: This will permanently erase ALL your records (accounts, transactions, stocks, goals). This action is IRREVERSIBLE. Are you absolutely sure?");
+    
+    if (!isConfirmed) return;
 
-    const { error } = await resetUserData();
-    if (error) {
-      toast.error(error);
-    } else {
-      toast.success("Application reset successfully");
-      window.location.href = "/dashboard";
+    const toastId = toast.loading("Executing full data erasure...");
+    try {
+      const result = await resetUserData();
+      
+      if (result.error) {
+        toast.error(`Reset failed: ${result.error}`, { id: toastId });
+      } else {
+        toast.success("All data erased successfully", { id: toastId });
+        // Force a hard reload to clear all local state and contexts
+        setTimeout(() => {
+          window.location.href = "/dashboard?reset=success";
+        }, 1500);
+      }
+    } catch (e: any) {
+      toast.error(`A system error occurred: ${e.message}`, { id: toastId });
     }
   };
 

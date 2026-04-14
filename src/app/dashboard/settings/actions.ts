@@ -14,6 +14,11 @@ export async function resetUserData() {
 
   if (error) return { error: error.message };
   
+  const result = data as any;
+  if (result && result.success === false) {
+    return { error: result.error || "Database reset failed internally" };
+  }
+  
   // Revalidate all major paths
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/accounts");
