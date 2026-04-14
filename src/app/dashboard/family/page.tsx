@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase-server";
+import type { Tables } from "@/lib/database.types";
 import FamilyClient from "./FamilyClient";
 import { redirect } from "next/navigation";
 import { getAccounts } from "../accounts/actions";
@@ -27,9 +28,9 @@ export default async function FamilyPage() {
 
   return (
     <FamilyClient 
-      initialRecipients={recipRes.data || []}
+      initialRecipients={(recipRes.data as Tables<"recipients">[]) || []}
       initialAccounts={accRes.data || []}
-      initialHistory={(historyRes.data || []) as any}
+      initialHistory={(historyRes.data as Tables<"ledger_logs">[]) || []}
     />
   );
 }

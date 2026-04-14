@@ -119,7 +119,7 @@ export default function LedgerClient({ initialLogs }: LedgerClientProps) {
   }, [logs, search, typeFilter, accountFilter, yearFilter, monthFilter, startDate, endDate]);
 
   const getActionBadge = (type: string) => {
-    const styles: Record<string, any> = {
+    const styles: Record<string, { bg: string; color: string; text: string }> = {
       CREATE: { bg: "rgba(85, 239, 196, 0.12)", color: "#55efc4", text: "Created" },
       DELETE: { bg: "rgba(255, 118, 117, 0.12)", color: "#ff7675", text: "Deleted" },
       UPDATE: { bg: "rgba(116, 185, 255, 0.12)", color: "#74b9ff", text: "Updated" },

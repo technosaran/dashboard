@@ -1,6 +1,9 @@
 import { createClient } from "@/lib/supabase-server";
 import StocksClient from "./StocksClient";
 import { redirect } from "next/navigation";
+import type { Tables } from "@/lib/database.types";
+
+export type Stock = Tables<"investments">;
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +24,7 @@ export default async function StocksPage() {
 
   return (
     <StocksClient
-      initialStocks={(stocks as any) || []}
+      initialStocks={(stocks as Stock[]) || []}
     />
   );
 }

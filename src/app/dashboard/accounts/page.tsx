@@ -13,11 +13,13 @@ export default async function AccountsPage() {
   }
 
   // Fetch accounts on the server
-  let { data: accounts, error } = await supabase
+  const { data: fetchedAccounts } = await supabase
     .from("accounts")
     .select("*")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
+
+  let accounts = fetchedAccounts || [];
 
   // Handle auto-creation of Cash account on the server if missing
   if (accounts && !accounts.some(acc => acc.name === "Cash")) {

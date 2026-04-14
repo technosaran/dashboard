@@ -11,9 +11,19 @@ export async function searchStocks(query: string, exchange: string = "NSE") {
     const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" }, cache: "no-store" });
     if (!res.ok) return [];
     const data = await res.json();
-    return (data.quotes || [])
-      .filter((q: any) => q.quoteType === "EQUITY" && q.symbol.endsWith(suffix))
-      .map((q: any) => ({
+    
+    interface YahooQuote {
+      quoteType: string;
+      symbol: string;
+      shortname?: string;
+      longname?: string;
+      name?: string;
+      exchange: string;
+    }
+
+    return (data.quotes as YahooQuote[] || [])
+      .filter((q) => q.quoteType === "EQUITY" && q.symbol.endsWith(suffix))
+      .map((q) => ({
         symbol: q.symbol.split(".")[0],
         fullSymbol: q.symbol,
         name: q.shortname || q.longname || q.name,
@@ -185,8 +195,8 @@ export async function getStockDetails(symbol: string, exchange: string = "NSE") 
       exchange: meta.exchangeName || (meta.symbol.endsWith(".NS") ? "NSE" : "BSE"),
       marketState: meta.marketState || 'REGULAR'
     };
-  } catch (error: any) {
-    console.error("Stock fetch error:", error);
+  } catch (error) {
+    console.error("Stock fetch error:", error instanceof Error ? error.message : "Internal Error");
     return { error: `Market data sync failed. Check symbol or try later.` };
   }
 }
@@ -227,9 +237,9 @@ export async function refreshAllPrices() {
 
       if (updateError) throw updateError;
       return { id: stock.id, success: true };
-    } catch (e: any) {
-      console.error(`Refresh error for ${stock.symbol}:`, e);
-      return { id: stock.id, error: e.message || "Fetch failed" };
+    } catch (e) {
+      console.error(`Refresh error for ${stock.symbol}:`, e instanceof Error ? e.message : "Internal Error");
+      return { id: stock.id, error: e instanceof Error ? e.message : "Fetch failed" };
     }
   }));
 

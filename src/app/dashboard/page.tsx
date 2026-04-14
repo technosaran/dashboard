@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase-server";
+import type { Tables } from "@/lib/database.types";
 import DashboardClient from "./DashboardClient";
 import { redirect } from "next/navigation";
 
@@ -23,7 +24,7 @@ export default async function DashboardPage() {
     <DashboardClient 
       initialAccounts={accRes.data || []}
       initialTransactions={transRes.data || []}
-      initialLogs={(logRes.data || []) as any}
+      initialLogs={(logRes.data as Tables<"ledger_logs">[]) || []}
     />
   );
 }

@@ -72,7 +72,7 @@ export async function deleteAccount(id: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
-  const { data: rpcData, error } = await supabase.rpc("delete_account_atomic_v2" as any, {
+  const { data: rpcData, error } = await supabase.rpc("delete_account_atomic_v2", {
     p_user_id: user.id,
     p_account_id: id
   });

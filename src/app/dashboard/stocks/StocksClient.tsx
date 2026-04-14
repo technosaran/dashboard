@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, startTransition, useMemo } from "react";
+import type { Tables } from "@/lib/database.types";
 import { toast } from "react-hot-toast";
 import { createClient } from "@/lib/supabase-browser";
 import { format } from "date-fns";
@@ -16,27 +17,7 @@ import {
 import { calculateZerodhaCharges } from "@/lib/investment-utils";
 import { getAccounts } from "../accounts/actions";
 
-type Stock = {
-  id: string;
-  user_id: string;
-  name: string;
-  type: string;
-  symbol: string | null;
-  quantity: number;
-  buy_price: number;
-  current_price: number;
-  previous_close: number | null;
-  day_change: number | null;
-  day_change_percent: number | null;
-  market_state: string | null;
-  last_fetch_at: string | null;
-  currency: string;
-  notes: string | null;
-  bought_at: string | null;
-  realized_pnl: number;
-  created_at: string;
-  updated_at: string;
-};
+type Stock = Tables<"investments">;
 
 type Account = {
   id: string;
@@ -95,11 +76,11 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
   });
 
   const [activeTab, setActiveTab] = useState<"holdings" | "history">("holdings");
-  const [trades, setTrades] = useState<any[]>([]);
+  const [trades, setTrades] = useState<Tables<"stock_trades">[]>([]);
 
   const loadTrades = useCallback(async () => {
     const res = await getStockTrades();
-    if (res.data) setTrades(res.data);
+    if (res.data) setTrades(res.data as Tables<"stock_trades">[]);
   }, []);
 
   const loadStocks = useCallback(async () => {
@@ -111,7 +92,7 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
       .eq("user_id", user.id)
       .eq("type", "stock")
       .order("created_at", { ascending: false });
-    if (data) setStocks(data as any);
+    if (data) setStocks(data as Stock[]);
   }, []);
 
   useEffect(() => {
@@ -138,7 +119,14 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
     if (showForm) loadAccounts();
   }, [showForm, loadAccounts]);
 
-  const [suggestions, setSuggestions] = useState<any[]>([]);
+  interface Suggestion {
+    symbol: string;
+    fullSymbol: string;
+    name?: string;
+    exchange: string;
+  }
+
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   // Debounced search for suggestions
@@ -641,7 +629,7 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
                           key={idx}
                           type="button"
                           onClick={() => {
-                            setFormData({ ...formData, symbol: s.symbol, name: s.name });
+                            setFormData({ ...formData, symbol: s.symbol, name: s.name || "" });
                             setShowSuggestions(false);
                             handleFetchPrice(s.symbol);
                           }}

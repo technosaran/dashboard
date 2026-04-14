@@ -416,6 +416,11 @@ export type Database = {
           notes: string | null
           bought_at: string | null
           realized_pnl: number
+          previous_close: number | null
+          day_change: number | null
+          day_change_percent: number | null
+          market_state: string | null
+          last_fetch_at: string | null
           created_at: string
           updated_at: string
         }
@@ -432,6 +437,11 @@ export type Database = {
           notes?: string | null
           bought_at?: string | null
           realized_pnl?: number
+          previous_close?: number | null
+          day_change?: number | null
+          day_change_percent?: number | null
+          market_state?: string | null
+          last_fetch_at?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -448,6 +458,11 @@ export type Database = {
           notes?: string | null
           bought_at?: string | null
           realized_pnl?: number
+          previous_close?: number | null
+          day_change?: number | null
+          day_change_percent?: number | null
+          market_state?: string | null
+          last_fetch_at?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -467,6 +482,7 @@ export type Database = {
           trade_date: string
           exchange: string
           created_at: string
+          ledger_log_id: string | null
         }
         Insert: {
           id?: string
@@ -481,6 +497,7 @@ export type Database = {
           trade_date?: string
           exchange?: string
           created_at?: string
+          ledger_log_id?: string | null
         }
         Update: {
           id?: string
@@ -495,6 +512,7 @@ export type Database = {
           trade_date?: string
           exchange?: string
           created_at?: string
+          ledger_log_id?: string | null
         }
         Relationships: [
           {
@@ -595,6 +613,13 @@ export type Database = {
         }
         Returns: Json
       }
+      delete_account_atomic_v2: {
+        Args: {
+          p_user_id: string
+          p_account_id: string
+        }
+        Returns: Json
+      }
       record_investment: {
         Args: {
           p_user_id: string
@@ -610,6 +635,7 @@ export type Database = {
           p_account_id: string | null
           p_total_cost: number
           p_trade_type: string
+          p_charges: number
         }
         Returns: Json
       }

@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -25,10 +25,9 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // ── Optimized Session Check ──────────────────────────────
-  // getSession is faster than getUser for navigation redirects
-  const { data: { session } } = await supabase.auth.getSession();
-  const user = session?.user;
+  // ── Optimized & Secure User Check ────────────────────────
+  // getUser() is the secure way to verify user auth in Proxy
+  const { data: { user } } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
 

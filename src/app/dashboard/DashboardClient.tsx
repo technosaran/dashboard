@@ -66,6 +66,8 @@ export default function DashboardClient({
     };
   }, [fetchData]);
 
+  const COLORS = ["#6c5ce7", "#00cec9", "#fd79a8", "#fdcb6e", "#a29bfe", "#ffeaa7", "#fab1a0", "#74b9ff"];
+
   // Derived Stats
   const stats = useMemo(() => {
     const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
@@ -92,16 +94,23 @@ export default function DashboardClient({
         catMap[cat] = (catMap[cat] || 0) + Number(t.amount);
       });
 
+    // Deterministic Category Colors
+    const getColor = (str: string) => {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      return COLORS[Math.abs(hash) % COLORS.length];
+    };
+
     const pieData = Object.entries(catMap).map(([name, value]) => ({ 
       name, 
       value,
-      color: COLORS[Math.floor(Math.random() * COLORS.length)]
+      color: getColor(name)
     })).sort((a,b) => b.value - a.value);
 
     return { totalBalance, monthlySpend, monthlyIncome, pieData, accountCount: accounts.length };
-  }, [accounts, transactions]);
-
-  const COLORS = ["#6c5ce7", "#00cec9", "#fd79a8", "#fdcb6e", "#a29bfe"];
+  }, [accounts, transactions, COLORS]);
 
   return (
     <div className="flex flex-col gap-[var(--section-gap)] animate-fade-in">
