@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, startTransition } from "react";
 import type { Tables } from "@/lib/database.types";
 import { toast } from "react-hot-toast";
@@ -42,7 +44,8 @@ interface StocksClientProps {
 export default function StocksClient({ initialStocks }: StocksClientProps) {
   const [stocks, setStocks] = useState<Stock[]>(initialStocks);
   const [accounts, setAccounts] = useState<Account[]>([]);
-  const [showForm, setShowForm] = useState(false);
+  const searchParams = useSearchParams();
+  const [showForm, setShowForm] = useState(searchParams?.get("action") === "new");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [showAllCharges, setShowAllCharges] = useState(false);
@@ -367,7 +370,7 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
       </div>
 
       {/* Summary Cards Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-4 mb-4">
+      <div className="hidden md:grid grid-cols-2 md:grid-cols-4 gap-4 px-4 mb-4">
         <div className="glass-card-static p-6 flex flex-col gap-2">
           <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Total Invested</span>
           <span className="text-xl md:text-2xl font-black tabular-nums">₹{totalInvested.toLocaleString()}</span>

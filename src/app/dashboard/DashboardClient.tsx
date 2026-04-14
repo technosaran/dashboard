@@ -209,7 +209,87 @@ export default function DashboardClient({
   }, [accounts, transactions]);
 
   return (
-    <div className="flex flex-col gap-[var(--section-gap)] animate-fade-in">
+    <>
+      {/* 📱 MOBILE EXCLUSIVE: DATA ENTRY HUB */}
+      <div className="flex flex-col gap-6 md:hidden min-h-screen animate-fade-in relative z-20 pb-24">
+        {/* Mobile Header / Balance */}
+        <div className="glass-card-static p-8 text-center flex flex-col items-center justify-center relative overflow-hidden">
+          <div className="absolute -right-10 -top-10 w-40 h-40 bg-[--accent-primary]/10 blur-3xl rounded-full" />
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[--text-muted] mb-2">Net Worth</p>
+          <h2 className="text-4xl font-black text-white tracking-tighter">
+             ₹{stats.totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0 })}
+          </h2>
+          <div className="mt-4 flex gap-4">
+             <div className="flex flex-col items-center">
+               <span className="text-[9px] font-bold uppercase text-[--success] tracking-widest">+₹{stats.monthlyIncome.toLocaleString()}</span>
+               <span className="text-[8px] text-[--text-muted] uppercase">In</span>
+             </div>
+             <div className="w-px h-6 bg-white/10" />
+             <div className="flex flex-col items-center">
+               <span className="text-[9px] font-bold uppercase text-[--danger] tracking-widest">-₹{stats.monthlySpend.toLocaleString()}</span>
+               <span className="text-[8px] text-[--text-muted] uppercase">Out</span>
+             </div>
+          </div>
+        </div>
+
+        {/* Quick Action Grid */}
+        <div className="px-1">
+          <h3 className="text-xs font-black uppercase tracking-widest text-[--text-muted] mb-4">Command Center</h3>
+          <div className="grid grid-cols-2 gap-3">
+            <Link href="/dashboard/expenses?action=new" className="glass-card-static p-4 flex flex-col items-center justify-center gap-3 active:scale-95 transition-transform border-[--danger]/20 bg-[--danger]/5 hover:bg-[--danger]/10">
+               <div className="w-12 h-12 rounded-full bg-[--danger]/20 flex items-center justify-center text-xl shadow-[0_0_15px_rgba(255,118,117,0.3)]">🔴</div>
+               <span className="text-xs font-bold uppercase tracking-wider text-[--danger]">Expense</span>
+            </Link>
+            <Link href="/dashboard/income?action=new" className="glass-card-static p-4 flex flex-col items-center justify-center gap-3 active:scale-95 transition-transform border-[--success]/20 bg-[--success]/5 hover:bg-[--success]/10">
+               <div className="w-12 h-12 rounded-full bg-[--success]/20 flex items-center justify-center text-xl shadow-[0_0_15px_rgba(0,184,148,0.3)]">🟢</div>
+               <span className="text-xs font-bold uppercase tracking-wider text-[--success]">Income</span>
+            </Link>
+            <Link href="/dashboard/transfers?action=new" className="glass-card-static p-4 flex flex-col items-center justify-center gap-3 active:scale-95 transition-transform border-[--accent-primary]/20 bg-[--accent-primary]/5 hover:bg-[--accent-primary]/10">
+               <div className="w-12 h-12 rounded-full bg-[--accent-primary]/20 flex items-center justify-center text-xl shadow-[0_0_15px_rgba(108,92,231,0.3)]">🔄</div>
+               <span className="text-xs font-bold uppercase tracking-wider text-[--accent-primary-light]">Transfer</span>
+            </Link>
+            <Link href="/dashboard/family" className="glass-card-static p-4 flex flex-col items-center justify-center gap-3 active:scale-95 transition-transform border-[--warning]/20 bg-[--warning]/5 hover:bg-[--warning]/10">
+               <div className="w-12 h-12 rounded-full bg-[--warning]/20 flex items-center justify-center text-xl shadow-[0_0_15px_rgba(253,203,110,0.3)]">👥</div>
+               <span className="text-xs font-bold uppercase tracking-wider text-[--warning]">Send Money</span>
+            </Link>
+          </div>
+        </div>
+
+        {/* Investment Log */}
+        <div className="px-1 mt-2">
+          <h3 className="text-xs font-black uppercase tracking-widest text-[--text-muted] mb-4">Invest & Capital</h3>
+          <div className="flex flex-col gap-3">
+             <Link href="/dashboard/stocks?action=new" className="glass-card-static p-4 flex items-center gap-4 active:scale-95 transition-transform">
+               <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center text-lg shadow-[0_0_15px_rgba(59,130,246,0.3)]">📈</div>
+               <div className="flex flex-col">
+                 <span className="text-sm font-bold text-white">Record Stock Trade</span>
+                 <span className="text-[9px] font-black uppercase tracking-widest text-[--text-muted]">Equities & Market</span>
+               </div>
+               <svg className="w-5 h-5 ml-auto text-[--text-muted]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+             </Link>
+             <Link href="/dashboard/mutual-funds?action=new" className="glass-card-static p-4 flex items-center gap-4 active:scale-95 transition-transform">
+               <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center text-lg shadow-[0_0_15px_rgba(168,85,247,0.3)]">🏦</div>
+               <div className="flex flex-col">
+                 <span className="text-sm font-bold text-white">Log Mutual Fund</span>
+                 <span className="text-[9px] font-black uppercase tracking-widest text-[--text-muted]">SIP & Lumpsum</span>
+               </div>
+               <svg className="w-5 h-5 ml-auto text-[--text-muted]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+             </Link>
+             <Link href="/dashboard/goals?action=new" className="glass-card-static p-4 flex items-center gap-4 active:scale-95 transition-transform">
+               <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center text-lg shadow-[0_0_15px_rgba(16,185,129,0.3)]">🎯</div>
+               <div className="flex flex-col">
+                 <span className="text-sm font-bold text-white">Contribute To Goal</span>
+                 <span className="text-[9px] font-black uppercase tracking-widest text-[--text-muted]">Milestone Tracking</span>
+               </div>
+               <svg className="w-5 h-5 ml-auto text-[--text-muted]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+             </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* 💻 DESKTOP EXCLUSIVE: FULL ANALYTICS */}
+      <div className="hidden md:flex flex-col gap-[var(--section-gap)] animate-fade-in relative z-20">
+
       <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
         <Greeting />
         <div className="flex gap-3">
@@ -483,6 +563,7 @@ export default function DashboardClient({
         </div>
       </div>
     </div>
+    </>
   );
 }
 

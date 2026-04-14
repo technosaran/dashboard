@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState, startTransition } from "react";
 import { format } from "date-fns";
 import { createClient } from "@/lib/supabase-browser";
@@ -19,7 +21,8 @@ interface TransfersClientProps {
 export default function TransfersClient({ initialAccounts, initialTransfers }: TransfersClientProps) {
   const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
   const [transfers, setTransfers] = useState<Transfer[]>(initialTransfers);
-  const [showForm, setShowForm] = useState(false);
+  const searchParams = useSearchParams();
+  const [showForm, setShowForm] = useState(searchParams?.get("action") === "new");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -117,7 +120,7 @@ export default function TransfersClient({ initialAccounts, initialTransfers }: T
   return (
     <div className="flex flex-col gap-[var(--section-gap)] animate-fade-in">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
+        <div className="hidden md:block">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[--text-primary]">Internal Transfers</h1>
           <p className="text-[13px] md:text-sm mt-1 text-[--text-secondary]">Transfer money between your accounts</p>
         </div>

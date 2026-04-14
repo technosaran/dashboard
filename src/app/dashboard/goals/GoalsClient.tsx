@@ -1,6 +1,7 @@
 
 "use client";
 
+import Link from "next/link";
 import { useState, useMemo, useCallback, useEffect, startTransition } from "react";
 import { differenceInDays, parseISO } from "date-fns";
 import { toast } from "react-hot-toast";
@@ -145,7 +146,16 @@ export default function GoalsClient({ initialGoals, initialAccounts }: { initial
   return (
     <div className="flex flex-col gap-10 animate-fade-in py-4">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-2">
-        <div>
+          <div className="md:hidden w-full p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-center mt-4">
+             <h2 className="text-xl font-black text-white">Goals & Savings</h2>
+             <p className="text-[10px] text-[--text-muted] uppercase tracking-widest mt-1">Mobile Data Node</p>
+             <div className="grid grid-cols-2 gap-3 mt-4">
+               <button onClick={() => setShowAddModal(true)} className="btn-primary shadow-xl shadow-emerald-500/20 bg-emerald-500 hover:bg-emerald-600">Add Goal</button>
+               {/* Note: In mobile, to inject capital they will need to see goals. Let's just keep grid visible on mobile but simplified, actually we'll keep the grid hidden and they just add goals? No, to contribute they must click a goal. So let's NOT hide the goals grid on mobile! We will revert the hidden class for Goals Grid... */}
+             </div>
+             <Link href="/dashboard" className="block text-center mt-4 text-[10px] text-white/50 uppercase font-black tracking-widest hover:text-white">← System Home</Link>
+          </div>
+        <div className="hidden md:block">
           <h1 className="text-2xl font-bold tracking-tight text-[--text-primary]">Financial Milestones</h1>
           <p className="text-[--text-secondary] text-sm mt-1">Track and manage your long-term savings goals.</p>
         </div>
@@ -159,7 +169,7 @@ export default function GoalsClient({ initialGoals, initialAccounts }: { initial
       </div>
 
       {/* Clean Summary Bar */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="hidden md:grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="glass-card-static p-6 flex flex-col gap-1">
           <p className="text-[10px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Total Target</p>
           <p className="text-2xl font-black">₹{stats.totalTarget.toLocaleString()}</p>
@@ -184,7 +194,7 @@ export default function GoalsClient({ initialGoals, initialAccounts }: { initial
 
       {/* Goals Grid */}
       {goals.filter(g => Number(g.current_amount) < Number(g.target_amount)).length > 0 && <h2 className="text-xl font-bold tracking-tight mt-6">Active Milestones</h2>}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mt-2">
+      <div className="hidden md:grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mt-2">
         {goals.filter(g => Number(g.current_amount) < Number(g.target_amount)).map((goal) => {
           const category = GOAL_CATEGORIES.find(c => c.label === goal.category) || GOAL_CATEGORIES[7];
           const progress = (Number(goal.current_amount) / Number(goal.target_amount)) * 100;

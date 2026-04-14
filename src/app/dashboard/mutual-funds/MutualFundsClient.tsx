@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect, startTransition } from "react";
+import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { createClient } from "@/lib/supabase-browser";
 import type { Tables } from "@/lib/database.types";
@@ -18,7 +19,8 @@ type MFSchemeSearchResult = {
 export default function MutualFundsClient({ initialIncomes, initialAccounts }: { initialIncomes: MF[], initialAccounts: Account[] }) {
   const [mfs, setMfs] = useState<MF[]>(initialIncomes);
   const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
-  const [showAddModal, setShowAddModal] = useState(false);
+  const searchParams = useSearchParams();
+  const [showAddModal, setShowAddModal] = useState(searchParams?.get("action") === "new");
   const [submitting, setSubmitting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   
@@ -202,7 +204,7 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-4">
+      <div className="hidden md:grid grid-cols-2 md:grid-cols-4 gap-4 px-4">
         <div className="glass-card-static p-6 flex flex-col gap-2">
             <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Invested Capital</span>
             <span className="text-xl md:text-2xl font-black tabular-nums">₹{stats.totalInvested.toLocaleString()}</span>
@@ -354,7 +356,7 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="hidden md:grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-2">
                     <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">{formData.trade_type === 'buy' ? 'Capital Source' : 'Deposit To'}</label>
                     <select required className="input-premium h-12" value={formData.account_id} onChange={e => setFormData({...formData, account_id: e.target.value})}>
