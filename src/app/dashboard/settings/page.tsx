@@ -7,7 +7,6 @@ export default function SettingsPage() {
   const { username, setUsername, loading, isSyncing } = useUser();
   const [input, setInput] = useState("");
   const [lastSaved, setLastSaved] = useState<string | null>(null);
-
   const initializedRef = useRef(false);
   const prevIsSyncingRef = useRef(false);
 
