@@ -2,15 +2,18 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect, startTransition } from "react";
-import { format } from "date-fns";
 import { toast } from "react-hot-toast";
 import { createClient } from "@/lib/supabase-browser";
 import type { Tables } from "@/lib/database.types";
 import { recordMFInvestment, refreshNAV, searchMFSchemes, getLiveNAV } from "./actions";
 import { useRealTimeSync } from "@/hooks/use-realtime-sync";
 
-type MF = Tables<"mutual_funds"> & { scheme_code?: string };
+type MF = Tables<"mutual_funds"> & { scheme_code?: string; fund_symbol?: string | null };
 type Account = Tables<"accounts">;
+type MFSchemeSearchResult = {
+  schemeCode: number;
+  schemeName: string;
+};
 
 export default function MutualFundsClient({ initialIncomes, initialAccounts }: { initialIncomes: MF[], initialAccounts: Account[] }) {
   const [mfs, setMfs] = useState<MF[]>(initialIncomes);
@@ -21,7 +24,7 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
   
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<MFSchemeSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showAllCharges, setShowAllCharges] = useState(false);
 
@@ -93,7 +96,7 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
     setIsSearching(false);
   };
 
-  const selectScheme = async (scheme: any) => {
+  const selectScheme = async (scheme: MFSchemeSearchResult) => {
     setFormData({ ...formData, fund_name: scheme.schemeName, scheme_code: scheme.schemeCode.toString() });
     setSearchResults([]);
     setSearchQuery(scheme.schemeName);
@@ -116,7 +119,7 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
   const startSell = (mf: MF) => {
     setFormData({
         fund_name: mf.fund_name,
-        scheme_code: (mf as any).fund_symbol || "",
+        scheme_code: mf.fund_symbol || mf.scheme_code || "",
         units: mf.units.toString(),
         nav: mf.current_nav.toString(),
         investment_type: mf.investment_type || "LUMPSUM",
@@ -165,9 +168,9 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
     setRefreshing(true);
     const toastId = toast.loading("Syncing with Market NAVs...");
     try {
-        await refreshNAV(mfs.map(m => ({ id: m.id, scheme_code: (m as any).fund_symbol || "" })));
+        await refreshNAV(mfs.map((mf) => ({ id: mf.id, scheme_code: mf.fund_symbol || mf.scheme_code || "" })));
         toast.success("Portfolio revalued!", { id: toastId });
-    } catch (e) {
+    } catch {
         toast.error("Sync failed", { id: toastId });
     }
     setRefreshing(false);

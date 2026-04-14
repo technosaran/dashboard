@@ -3,6 +3,11 @@
 import { createClient } from "@/lib/supabase-server";
 import { revalidatePath } from "next/cache";
 
+type RecordInvestmentResult = {
+  success: boolean;
+  error?: string | null;
+};
+
 export async function searchStocks(query: string, exchange: string = "NSE") {
   if (!query || query.length < 2) return [];
   try {
@@ -29,7 +34,7 @@ export async function searchStocks(query: string, exchange: string = "NSE") {
         name: q.shortname || q.longname || q.name,
         exchange: q.exchange
       }));
-  } catch (e) {
+  } catch {
     return [];
   }
 }
@@ -45,13 +50,32 @@ export async function createInvestment(data: {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
-  const isBuy = data.trade_type !== "sell";
   const tradeDate = data.bought_at || new Date().toISOString().split("T")[0];
   const turnover = data.quantity * data.buy_price;
   const totalCost = data.total_cost_with_charges ?? turnover;
   const charges = Math.abs(totalCost - turnover);
 
-  const { data: rpcRes, error: rpcErr } = await (supabase as any).rpc("record_investment", {
+  const rpc = supabase.rpc as unknown as (
+    fn: "record_investment",
+    args: {
+      p_user_id: string;
+      p_name: string;
+      p_type: "stock";
+      p_symbol: string;
+      p_quantity: number;
+      p_buy_price: number;
+      p_current_price: number;
+      p_currency: string;
+      p_notes: string | null;
+      p_date: string;
+      p_account_id: string | null;
+      p_total_cost: number;
+      p_trade_type: "buy" | "sell";
+      p_charges: number;
+    }
+  ) => Promise<{ data: RecordInvestmentResult | null; error: { message: string } | null }>;
+
+  const { data: rpcRes, error: rpcErr } = await rpc("record_investment", {
     p_user_id: user.id,
     p_name: data.name,
     p_type: "stock",
@@ -69,8 +93,7 @@ export async function createInvestment(data: {
   });
 
   if (rpcErr) return { error: rpcErr.message };
-  const result = rpcRes as { success: boolean; error?: string };
-  if (!result.success) return { error: result.error || "Failed to record investment" };
+  if (!rpcRes?.success) return { error: rpcRes?.error || "Failed to record investment" };
 
   revalidatePath("/dashboard/stocks");
   revalidatePath("/dashboard/ledger");

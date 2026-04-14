@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect, startTransition } from "react";
-import { format, differenceInDays, parseISO } from "date-fns";
+import { differenceInDays, parseISO } from "date-fns";
 import { toast } from "react-hot-toast";
 import { createClient } from "@/lib/supabase-browser";
 import type { Tables } from "@/lib/database.types";

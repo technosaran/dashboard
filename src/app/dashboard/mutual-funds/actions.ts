@@ -4,6 +4,11 @@
 import { createClient } from "@/lib/supabase-server";
 import { revalidatePath } from "next/cache";
 
+type MutualFundRpcResult = {
+    success?: boolean;
+    error?: string | null;
+} | null;
+
 export async function getMutualFunds() {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -24,7 +29,7 @@ export async function searchMFSchemes(query: string) {
         const res = await fetch(`https://api.mfapi.in/mf/search?q=${encodeURIComponent(query)}`);
         const data = await res.json();
         return data.slice(0, 10); // Return top 10 matches
-    } catch (e) {
+    } catch {
         return [];
     }
 }
@@ -41,7 +46,7 @@ export async function getLiveNAV(schemeCode: string) {
                 amc: data.meta.amc
             };
         }
-    } catch (e) {
+    } catch {
         return null;
     }
 }
@@ -63,7 +68,25 @@ export async function recordMFInvestment(data: {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Unauthorized" };
 
-    const { data: res, error } = await (supabase as any).rpc("record_mf_investment_v3", {
+    const rpc = supabase.rpc as unknown as (
+        fn: "record_mf_investment_v3",
+        args: {
+            p_user_id: string;
+            p_fund_name: string;
+            p_scheme_code: string;
+            p_units: number;
+            p_nav: number;
+            p_investment_type: string;
+            p_category: string;
+            p_amc_name: string;
+            p_date: string;
+            p_account_id: string;
+            p_stamp_duty: number;
+            p_trade_type: "buy" | "sell";
+        }
+    ) => Promise<{ data: MutualFundRpcResult; error: { message: string } | null }>;
+
+    const { data: res, error } = await rpc("record_mf_investment_v3", {
         p_user_id: user.id,
         p_fund_name: data.fund_name,
         p_scheme_code: data.scheme_code,

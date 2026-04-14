@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const nav = [
   {
@@ -106,6 +106,17 @@ export default function Sidebar() {
   const pathname = usePathname();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
 
+  useEffect(() => {
+    if (!isMoreOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isMoreOpen]);
+
   async function handleLogout() {
     const supabase = createClient();
     await supabase.auth.signOut();
@@ -147,8 +158,8 @@ export default function Sidebar() {
         style={{
           background: "var(--sidebar-bg)",
           borderRight: "1px solid var(--sidebar-border)",
-          backdropFilter: "blur(24px) saturate(1.3)",
-          WebkitBackdropFilter: "blur(24px) saturate(1.3)",
+          backdropFilter: "blur(18px) saturate(1.15)",
+          WebkitBackdropFilter: "blur(18px) saturate(1.15)",
         }}
       >
         <div className="px-6 pt-10 pb-4">
@@ -236,8 +247,8 @@ export default function Sidebar() {
         className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between px-4 pb-safe border-t border-white/5 pt-1.5"
         style={{
           background: "rgba(8, 11, 26, 0.98)",
-          backdropFilter: "blur(40px) saturate(2)",
-          WebkitBackdropFilter: "blur(40px) saturate(2)",
+          backdropFilter: "blur(20px) saturate(1.4)",
+          WebkitBackdropFilter: "blur(20px) saturate(1.4)",
           boxShadow: "0 -8px 40px rgba(0,0,0,0.6)",
         }}
       >
@@ -267,7 +278,9 @@ export default function Sidebar() {
         
         {/* More Toggle */}
         <button
+          type="button"
           onClick={() => setIsMoreOpen(!isMoreOpen)}
+          aria-expanded={isMoreOpen}
           className={`flex-1 flex flex-col items-center justify-center min-h-[56px] transition-all active:scale-95 relative ${isMoreOpen ? "text-[--accent-primary-light]" : "text-[--text-muted]"}`}
         >
           <div className={`${isMoreOpen ? "scale-110 -translate-y-1.5 rotate-90" : "opacity-50"} transition-all duration-500 flex items-center justify-center`}>

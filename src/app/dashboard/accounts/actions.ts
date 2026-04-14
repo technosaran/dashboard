@@ -37,7 +37,10 @@ export async function updateAccount(id: string, data: Record<string, unknown>) {
   if (!user) return { error: "Unauthorized" };
 
   // SECURITY: Prevent direct balance manipulation via generic update
-  const { balance, user_id, id: _id, created_at, ...safeData } = data;
+  const blockedFields = new Set(["balance", "user_id", "id", "created_at"]);
+  const safeData = Object.fromEntries(
+    Object.entries(data).filter(([key]) => !blockedFields.has(key))
+  );
 
   const { error } = await supabase
     .from("accounts")

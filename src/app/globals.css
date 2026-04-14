@@ -22,6 +22,9 @@
   
   --border-default: rgba(99, 115, 255, 0.15);
   --border-strong: rgba(99, 115, 255, 0.25);
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --gradient-primary: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-primary-light) 55%, var(--accent-secondary) 100%);
   
   --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.5);
@@ -66,27 +69,47 @@ html, body {
   color: var(--text-primary);
   font-family: var(--font-outfit), var(--font-inter), sans-serif;
   font-feature-settings: "tnum" 1;
-  user-select: none;
   -webkit-tap-highlight-color: transparent;
-  scroll-behavior: smooth;
   overscroll-behavior-y: none; /* Prevent pull-to-refresh on mobile browsers */
   padding-bottom: env(safe-area-inset-bottom, 0); /* Support for notches */
+  color-scheme: dark;
 }
 
 input, textarea, [contenteditable="true"] {
   user-select: text;
 }
 
+.glass-card,
 .glass-card-static {
   background: var(--bg-surface);
-  border: 1px solid var(--border-default);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-md);
   padding: 1.5rem;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.glass-card {
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.glass-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+.glass-card-static {
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.glass-card-static:hover {
+  border-color: var(--border-strong);
 }
 
 @media (max-width: 640px) {
+  .glass-card,
   .glass-card-static {
     padding: 1.25rem;
   }
@@ -223,6 +246,13 @@ input, textarea, [contenteditable="true"] {
   animation: pulse-glow 3s ease-in-out infinite;
 }
 
+.delay-1 { animation-delay: 0.08s; }
+.delay-2 { animation-delay: 0.16s; }
+.delay-3 { animation-delay: 0.24s; }
+.delay-4 { animation-delay: 0.32s; }
+.delay-5 { animation-delay: 0.4s; }
+.delay-6 { animation-delay: 0.48s; }
+
 /* Hide scrollbar but keep functionality */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
@@ -255,4 +285,43 @@ input, textarea, [contenteditable="true"] {
   border-radius: 50%; 
   background: var(--success); 
   box-shadow: 0 0 12px var(--success); 
+}
+
+.skeleton {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.02) 0%,
+      rgba(255, 255, 255, 0.08) 50%,
+      rgba(255, 255, 255, 0.02) 100%
+    )
+    0 0 / 200% 100% no-repeat,
+    var(--bg-elevated);
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+.modal-overlay {
+  background: rgba(6, 8, 15, 0.84);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:focus-within {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

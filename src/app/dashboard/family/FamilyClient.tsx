@@ -75,8 +75,12 @@ export default function FamilyClient({
   const [sendNote, setSendNote] = useState("");
 
   const fetchData = useCallback(async () => {
+    setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
     const [recipRes, accRes, historyRes] = await Promise.all([
       supabase.from("recipients").select("*").eq("user_id", user.id).order("name"),
@@ -93,6 +97,7 @@ export default function FamilyClient({
     if (recipRes.data) setRecipients(recipRes.data as Recipient[]);
     if (accRes.data) setAccounts(accRes.data as Account[]);
     if (historyRes.data) setRecentSends(historyRes.data as SendHistory[]);
+    setLoading(false);
   }, []);
 
   useEffect(() => {

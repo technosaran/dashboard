@@ -1,10 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState, startTransition, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, startTransition } from "react";
 import type { Tables } from "@/lib/database.types";
 import { toast } from "react-hot-toast";
 import { createClient } from "@/lib/supabase-browser";
-import { format } from "date-fns";
 import { 
   createInvestment, 
   updateInvestment, 
@@ -28,18 +27,6 @@ type Account = {
 };
 
 const supabase = createClient();
-
-const COLORS = {
-  green: "var(--success)",
-  red: "var(--danger)",
-  blue: "var(--accent-primary-light)",
-  bg: "var(--bg-elevated)",
-  bgSecondary: "var(--bg-surface)",
-  border: "var(--border-default)",
-  textMuted: "var(--text-muted)",
-  textPrimary: "var(--text-primary)",
-  rowHover: "var(--glass-hover)"
-};
 
 type SortKey = "name" | "pnl" | "pnlPercent" | "current_value" | "quantity";
 type SortDir = "asc" | "desc";
@@ -67,7 +54,6 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
-  const [showActionsId, setShowActionsId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     name: "", symbol: "", quantity: "", buy_price: "", current_price: "",
@@ -79,6 +65,8 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
 
   const [activeTab, setActiveTab] = useState<"holdings" | "history">("holdings");
   const [trades, setTrades] = useState<Tables<"stock_trades">[]>([]);
+  const refreshAllRef = useRef<(() => Promise<void>) | null>(null);
+  const fetchPriceRef = useRef<((symbol: string) => Promise<void>) | null>(null);
 
   const loadTrades = useCallback(async () => {
     const res = await getStockTrades();
@@ -106,7 +94,7 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
     const lastRefresh = localStorage.getItem("last_stock_refresh");
     const now = Date.now();
     if (!lastRefresh || now - parseInt(lastRefresh) > 15 * 60 * 1000) {
-      handleRefreshAll().then(() => {
+      refreshAllRef.current?.().then(() => {
         localStorage.setItem("last_stock_refresh", now.toString());
       });
     }
@@ -143,7 +131,7 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
         // If there's an exact match in suggestions, we can preemptively fetch price
         const exactMatch = results.find(r => r.symbol === formData.symbol.toUpperCase());
         if (exactMatch) {
-            handleFetchPrice(exactMatch.symbol);
+            void fetchPriceRef.current?.(exactMatch.symbol);
         }
       } else {
         setSuggestions([]);
@@ -188,11 +176,13 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
           currency: res.currency || prev.currency
         }));
       }
-    } catch (e) {
+    } catch {
       setFetchError("Fetch failed");
     }
     setFetchingPrice(false);
   }
+
+  fetchPriceRef.current = handleFetchPrice;
 
   // Removed redundant auto-fetch useEffect to prevent "asking two times" feel
 
@@ -208,17 +198,18 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
       } else {
         toast.error(res.error || "Failed to refresh prices", { id: toastId });
       }
-    } catch (e) {
+    } catch {
       toast.error("Network error during refresh", { id: toastId });
     } finally {
       setRefreshing(false);
     }
   }
 
+  refreshAllRef.current = handleRefreshAll;
+
   // --- Computed ---
   const totalInvested = stocks.reduce((s, i) => s + Number(i.buy_price || 0) * Number(i.quantity || 0), 0);
   const totalCurrent = stocks.reduce((s, i) => s + Number(i.current_price || 0) * Number(i.quantity || 0), 0);
-  const totalRealizedPnL = stocks.reduce((s, i) => s + Number(i.realized_pnl || 0), 0);
   const totalPnL = totalCurrent - totalInvested;
   const totalPnLPercent = totalInvested > 0 ? (totalPnL / totalInvested) * 100 : 0;
 
@@ -291,7 +282,6 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
     });
     setEditingId(inv.id);
     setShowForm(true);
-    setShowActionsId(null);
   }
 
   function startSell(inv: Stock) {
@@ -311,7 +301,6 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
     });
     setEditingId(null); // Selling is a new "transaction" record usually, or we could handle it as a specific sell logic
     setShowForm(true);
-    setShowActionsId(null);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -354,7 +343,6 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
     if (!res?.error) { toast.success("Stock deleted"); loadStocks(); } else toast.error(res.error);
     setShowDeleteConfirm(false);
     setDeletingId(null);
-    setShowActionsId(null);
   }
 
   const SortIcon = ({ col }: { col: SortKey }) => (
@@ -404,7 +392,7 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
           </div>
         </div>
         <div className="glass-card-static p-6 flex flex-col gap-2">
-          <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Day's P&L</span>
+          <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Day&apos;s P&amp;L</span>
           <div className="flex flex-col">
             <span className={`text-xl md:text-2xl font-black tabular-nums ${totalDayPnL >= 0 ? "text-[--success]" : "text-[--danger]"}`}>
               {totalDayPnL >= 0 ? "+" : ""}{formatNum(totalDayPnL)}
@@ -723,6 +711,11 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
                       </div>
                     )}
                   </div>
+                  {fetchError && (
+                    <p className="mt-2 text-[11px] font-medium text-rose-400">
+                      {fetchError}
+                    </p>
+                  )}
                 </div>
 
                 <div className="relative">

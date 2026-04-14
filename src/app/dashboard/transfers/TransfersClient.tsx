@@ -19,7 +19,6 @@ interface TransfersClientProps {
 export default function TransfersClient({ initialAccounts, initialTransfers }: TransfersClientProps) {
   const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
   const [transfers, setTransfers] = useState<Transfer[]>(initialTransfers);
-  const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);

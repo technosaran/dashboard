@@ -1,26 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useUser } from "@/context/user-context";
-import { createClient } from "@/lib/supabase-browser";
 
 export default function Greeting() {
   const { username, loading } = useUser();
-  const [isLive, setIsLive] = useState(false);
   const hour = new Date().getHours();
   const greeting =
     hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
   const emoji = hour < 12 ? "☀️" : hour < 18 ? "🌤️" : "🌙";
-
-  useEffect(() => {
-    const supabase = createClient();
-    const channel = supabase.channel("system-health")
-      .on("system", { event: "presence" }, () => {})
-      .subscribe((status) => {
-        setIsLive(status === "SUBSCRIBED");
-      });
-    return () => { supabase.removeChannel(channel); };
-  }, []);
 
   return (
     <div className="animate-fade-in-up">
@@ -30,7 +17,7 @@ export default function Greeting() {
       >
         {greeting},{" "}
         {loading ? (
-          <span className="inline-block w-24 h-8 bg-[var(--glass-border)] animate-pulse rounded-lg align-middle" />
+          <span className="inline-block w-24 h-8 rounded-lg align-middle skeleton" />
         ) : (
           <span className="gradient-text">{username || "User"}</span>
         )}{" "}
@@ -39,4 +26,3 @@ export default function Greeting() {
     </div>
   );
 }
-

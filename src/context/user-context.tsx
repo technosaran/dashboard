@@ -1,8 +1,16 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, useCallback, useRef, startTransition } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  startTransition,
+} from "react";
 import { createClient } from "@/lib/supabase-browser";
-import type { RealtimeChannel } from "@supabase/supabase-js";
+import type { RealtimeChannel, User } from "@supabase/supabase-js";
 
 type UserContextType = {
   username: string;
@@ -24,116 +32,151 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [username, setUsernameState] = useState("");
   const [loading, setLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
-  const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const updateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
 
-  const fetchUser = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      // Check if username exists in metadata (even if it's an empty string)
-      if (user.user_metadata && 'username' in user.user_metadata) {
-        setUsernameState(user.user_metadata.username || "");
-      } else if (user.email) {
-        setUsernameState(user.email.split("@")[0]);
-      }
-      
-      // Subscribe to user-specific real-time channel for cross-device sync
-      const channelId = `user-sync:${user.id}`;
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-      }
-      
-      channelRef.current = supabase.channel(channelId)
-        .on("broadcast", { event: "username-update" }, ({ payload }) => {
-          if (typeof payload.username === 'string') {
-            console.log("Real-time (Broadcast) update:", payload.username);
-            setUsernameState(payload.username);
-          }
-        })
-        .on("postgres_changes", { 
-          event: "UPDATE", 
-          schema: "public", 
-          table: "profiles", 
-          filter: `id=eq.${user.id}` 
-        }, (payload) => {
-          if (payload.new && typeof payload.new.username === 'string') {
-            console.log("Real-time (DB) update:", payload.new.username);
-            setUsernameState(payload.new.username);
-          }
-        })
-        .subscribe();
-
+  const applyUser = useCallback((user: User | null) => {
+    if (!user) {
+      setUsernameState("");
+      setCurrentUserId(null);
+      return;
     }
-    setLoading(false);
+
+    setCurrentUserId(user.id);
+
+    if (user.user_metadata && "username" in user.user_metadata) {
+      setUsernameState(typeof user.user_metadata.username === "string" ? user.user_metadata.username : "");
+      return;
+    }
+
+    setUsernameState(user.email ? user.email.split("@")[0] : "");
   }, []);
 
-  useEffect(() => {
-    startTransition(fetchUser);
+  const fetchUser = useCallback(async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    // Handle background/foreground transitions for mobile PWA
+    applyUser(user);
+    setLoading(false);
+  }, [applyUser]);
+
+  useEffect(() => {
+    startTransition(() => {
+      void fetchUser();
+    });
+
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
-        console.log("App resumed, forcing real-time re-sync...");
-        startTransition(fetchUser);
+        startTransition(() => {
+          void fetchUser();
+        });
       }
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
-    
-    // Listen for auth state changes (e.g. sign in/out)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      startTransition(fetchUser);
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(() => {
+      startTransition(() => {
+        void fetchUser();
+      });
     });
 
     return () => {
       subscription.unsubscribe();
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
+
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
       }
     };
   }, [fetchUser]);
 
+  useEffect(() => {
+    if (!currentUserId) {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+      return;
+    }
+
+    const channel = supabase
+      .channel(`user-sync:${currentUserId}`)
+      .on("broadcast", { event: "username-update" }, ({ payload }) => {
+        if (typeof payload.username === "string") {
+          setUsernameState(payload.username);
+        }
+      })
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "profiles",
+          filter: `id=eq.${currentUserId}`,
+        },
+        (payload) => {
+          if (payload.new && typeof payload.new.username === "string") {
+            setUsernameState(payload.new.username);
+          }
+        }
+      )
+      .subscribe();
+
+    channelRef.current = channel;
+
+    return () => {
+      supabase.removeChannel(channel);
+      if (channelRef.current === channel) {
+        channelRef.current = null;
+      }
+    };
+  }, [currentUserId]);
+
   const setUsername = useCallback((name: string) => {
-    // 1. Update local state IMMEDIATELY for 0-latency UI feedback
     setUsernameState(name);
-    
-    // 2. Broadcast to other devices/tabs
+
     if (channelRef.current) {
-      channelRef.current.send({
+      void channelRef.current.send({
         type: "broadcast",
         event: "username-update",
         payload: { username: name },
       });
     }
-    
-    // 3. Debounce the Database update to avoid spamming
+
     setIsSyncing(true);
+
     if (updateTimeoutRef.current) {
       clearTimeout(updateTimeoutRef.current);
     }
-    
+
     updateTimeoutRef.current = setTimeout(async () => {
       const trimmedName = name.trim();
-      // Allow empty string to be saved to clear the name
-      // removed: if (!trimmedName) return;
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         setIsSyncing(false);
+        updateTimeoutRef.current = null;
         return;
       }
 
       const { error } = await supabase.auth.updateUser({
-        data: { username: trimmedName }
+        data: { username: trimmedName },
       });
-      
+
       if (error) {
-        console.error("Failed to update username in database:", error);
+        console.error("Failed to update username:", error.message);
       }
+
       setIsSyncing(false);
       updateTimeoutRef.current = null;
-    }, 600); 
+    }, 600);
   }, []);
 
   return (
@@ -144,4 +187,3 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 }
 
 export const useUser = () => useContext(UserContext);
-

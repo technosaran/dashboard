@@ -55,8 +55,12 @@ export default function LedgerClient({ initialLogs }: LedgerClientProps) {
   const [revertingId, setRevertingId] = useState<string | null>(null);
 
   const fetchLogs = useCallback(async () => {
+    setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
     const { data } = await supabase
       .from("ledger_logs")
@@ -67,6 +71,7 @@ export default function LedgerClient({ initialLogs }: LedgerClientProps) {
     if (data) {
       setLogs(data as LedgerLog[]);
     }
+    setLoading(false);
   }, []);
 
   useEffect(() => {

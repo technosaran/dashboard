@@ -4,6 +4,11 @@
 import { createClient } from "@/lib/supabase-server";
 import { revalidatePath } from "next/cache";
 
+type GoalRpcResult = {
+    success: boolean;
+    error?: string | null;
+};
+
 export async function createGoal(data: {
     name: string;
     target_amount: number;
@@ -16,7 +21,20 @@ export async function createGoal(data: {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Unauthorized" };
 
-    const { data: res, error } = await supabase.rpc("initialize_goal" as any, {
+    const rpc = supabase.rpc as unknown as (
+        fn: "initialize_goal",
+        args: {
+            p_user_id: string;
+            p_name: string;
+            p_target_amount: number;
+            p_initial_amount: number;
+            p_deadline: string | null;
+            p_category: string;
+            p_account_id: string | null;
+        }
+    ) => Promise<{ data: GoalRpcResult | null; error: { message: string } | null }>;
+
+    const { data: res, error } = await rpc("initialize_goal", {
         p_user_id: user.id,
         p_name: data.name,
         p_target_amount: data.target_amount,
@@ -27,7 +45,7 @@ export async function createGoal(data: {
     });
 
     if (error) return { error: error.message };
-    if (!res.success) return { error: res.error };
+    if (!res?.success) return { error: res?.error || "Failed to create goal" };
     
     revalidatePath("/dashboard/goals");
     revalidatePath("/dashboard/ledger");

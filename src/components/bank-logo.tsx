@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { getBankDomain } from "@/lib/banks";
 
 type BankLogoProps = {
@@ -243,12 +244,14 @@ export default function BankLogo({ bankName, size = 40, className = "" }: BankLo
 
       {/* Real logo image (fades in over the abbreviation) */}
       {sources.length > 0 && !allFailed && (
-        <img
+        <Image
           src={sources[srcIndex]}
           alt={`${bankName} logo`}
+          width={size}
+          height={size}
+          sizes={`${size}px`}
           onLoad={handleImgLoad}
           onError={handleImgError}
-          loading="lazy"
           style={{
             position: "absolute",
             inset: "0",
@@ -265,4 +268,3 @@ export default function BankLogo({ bankName, size = 40, className = "" }: BankLo
     </div>
   );
 }
-

@@ -9,35 +9,37 @@ export default function DashboardLayout({
 }) {
   return (
     <UserProvider>
-      <div className="flex flex-col md:flex-row h-[100dvh] overflow-hidden w-full relative" style={{ background: "var(--bg-base)" }}>
+      <div
+        className="flex min-h-[100dvh] flex-col overflow-hidden md:h-[100dvh] md:flex-row w-full relative"
+        style={{ background: "var(--bg-base)" }}
+      >
         <Sidebar />
-        <main className="flex-1 overflow-y-auto overflow-x-hidden relative w-full">
-          {/* Ambient glow orbs - Adjusted for mobile */}
+        <main className="relative w-full flex-1 overflow-y-auto overflow-x-hidden">
           <div
-            className="pointer-events-none fixed"
+            className="pointer-events-none absolute hidden md:block"
             style={{
-              top: "-5%",
-              right: "-5%",
-              width: "300px",
-              height: "300px",
+              top: "-4rem",
+              right: "-6rem",
+              width: "18rem",
+              height: "18rem",
               background: "radial-gradient(circle, rgba(108,92,231,0.06) 0%, transparent 70%)",
-              filter: "blur(40px)",
+              filter: "blur(32px)",
               zIndex: 0,
             }}
           />
           <div
-            className="pointer-events-none fixed lg:flex hidden"
+            className="pointer-events-none absolute hidden xl:flex"
             style={{
-              bottom: "-10%",
-              left: "30%",
-              width: "400px",
-              height: "400px",
+              bottom: "-8rem",
+              left: "24%",
+              width: "22rem",
+              height: "22rem",
               background: "radial-gradient(circle, rgba(0,206,201,0.04) 0%, transparent 70%)",
-              filter: "blur(60px)",
+              filter: "blur(44px)",
               zIndex: 0,
             }}
           />
-          <div className="relative z-10 pt-[var(--page-padding-y)] pb-[calc(var(--page-padding-y)*2)] px-[var(--page-padding-x)] max-w-[var(--page-max-width)] mx-auto w-full overflow-x-hidden">
+          <div className="relative z-10 mx-auto w-full max-w-[var(--page-max-width)] overflow-x-hidden px-[var(--page-padding-x)] pt-[var(--page-padding-y)] pb-[calc(var(--page-padding-y)*2+6.5rem)] md:pb-[calc(var(--page-padding-y)*2)]">
             {children}
           </div>
         </main>

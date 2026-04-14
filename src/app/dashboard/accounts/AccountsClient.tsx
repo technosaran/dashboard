@@ -59,14 +59,12 @@ interface AccountsClientProps {
 export default function AccountsClient({ initialAccounts }: AccountsClientProps) {
   const searchParams = useSearchParams();
   const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
-  const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(searchParams.get("action") === "new");
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [bankSearch, setBankSearch] = useState("");
   const [bankResults, setBankResults] = useState<Bank[]>([]);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [transferFromId, setTransferFromId] = useState<string | null>(null);
   const [transferData, setTransferData] = useState({ to_account_id: "", amount: "", note: "" });

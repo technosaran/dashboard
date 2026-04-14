@@ -70,8 +70,6 @@ export async function sendMoneyToFamily(payload: {
   if (recipientRes.error || !recipientRes.data) return { error: "Recipient not found" };
 
   const account = accountRes.data;
-  const recipient = recipientRes.data;
-
   // Logical Bug Fix: Verify currency match (External transfers usually assume INR for now, but we should be explicit)
   if (account.currency !== "INR") {
     // Current UI assumes INR for family transfers. If the account is USD, we need a conversion or we should block it.

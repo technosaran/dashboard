@@ -1,18 +1,32 @@
 "use client";
 
-import { useCallback, useEffect, useState, startTransition, useMemo } from "react";
+import dynamic from "next/dynamic";
+import { useCallback, useEffect, useMemo, useState, startTransition } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { createClient } from "@/lib/supabase-browser";
 import { addExpense } from "./actions";
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, subMonths } from "date-fns";
 import type { Tables } from "@/lib/database.types";
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
-  PieChart, Pie, Cell, LineChart, Line, AreaChart, Area
-} from "recharts";
 
 const supabase = createClient();
+
+const XAxis = dynamic(() => import("recharts").then((mod) => mod.XAxis), { ssr: false });
+const YAxis = dynamic(() => import("recharts").then((mod) => mod.YAxis), { ssr: false });
+const CartesianGrid = dynamic(
+  () => import("recharts").then((mod) => mod.CartesianGrid),
+  { ssr: false }
+);
+const Tooltip = dynamic(() => import("recharts").then((mod) => mod.Tooltip), { ssr: false });
+const ResponsiveContainer = dynamic(
+  () => import("recharts").then((mod) => mod.ResponsiveContainer),
+  { ssr: false }
+);
+const PieChart = dynamic(() => import("recharts").then((mod) => mod.PieChart), { ssr: false });
+const Pie = dynamic(() => import("recharts").then((mod) => mod.Pie), { ssr: false });
+const Cell = dynamic(() => import("recharts").then((mod) => mod.Cell), { ssr: false });
+const AreaChart = dynamic(() => import("recharts").then((mod) => mod.AreaChart), { ssr: false });
+const Area = dynamic(() => import("recharts").then((mod) => mod.Area), { ssr: false });
 
 import { useRealTimeSync } from "@/hooks/use-realtime-sync";
 
@@ -39,7 +53,6 @@ export default function ExpensesClient({ initialExpenses, initialAccounts }: Exp
   const searchParams = useSearchParams();
   const [expenses, setExpenses] = useState<Expense[]>(initialExpenses);
   const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
-  const [loading, setLoading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(searchParams.get("action") === "new");
   const [submitting, setSubmitting] = useState(false);
   const [search, setSearch] = useState("");

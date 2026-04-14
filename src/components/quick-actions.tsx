@@ -50,7 +50,7 @@ export default function QuickActions() {
   ];
 
   return (
-    <div className="md:hidden fixed bottom-24 right-5 z-[100]">
+    <div className="md:hidden fixed bottom-[5.75rem] right-5 z-[100]">
       {/* Backdrop */}
       {isOpen && (
         <div 
@@ -83,7 +83,9 @@ export default function QuickActions() {
 
       {/* Main Toggle Button */}
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
+        aria-expanded={isOpen}
         className={`w-16 h-16 rounded-[24px] shadow-2xl flex items-center justify-center text-white transition-all duration-500 active:scale-90 ${isOpen ? "rotate-45" : "rotate-0"}`}
         style={{
           background: isOpen ? "var(--danger)" : "linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-primary-light) 100%)",

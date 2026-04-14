@@ -4,7 +4,6 @@ import { useEffect, useState, useRef, startTransition } from "react";
 import { useUser } from "@/context/user-context";
 import { resetUserData } from "./actions";
 import { toast } from "react-hot-toast";
-import { useRouter } from "next/navigation";
 
 export default function SettingsPage() {
   const { username, setUsername, loading, isSyncing } = useUser();
@@ -63,8 +62,9 @@ export default function SettingsPage() {
           window.location.href = "/dashboard?reset=success";
         }, 1500);
       }
-    } catch (e: any) {
-      toast.error(`A system error occurred: ${e.message}`, { id: toastId });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      toast.error(`A system error occurred: ${message}`, { id: toastId });
     }
   };
 

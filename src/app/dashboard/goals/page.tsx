@@ -1,7 +1,6 @@
 
 import { createClient } from "@/lib/supabase-server";
 import GoalsClient from "./GoalsClient";
-import type { Tables } from "@/lib/database.types";
 
 export const metadata = {
   title: "Goals | FinanceOS",
