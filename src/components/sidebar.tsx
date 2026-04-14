@@ -128,7 +128,7 @@ export default function Sidebar() {
     return (
       <Link
         href={href}
-        className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-300 ${
+        className={`flex items-center gap-3 px-3 py-1 rounded-xl transition-all duration-300 ${
           active ? "" : "hover:bg-[var(--glass-hover)] group"
         }`}
         style={{
@@ -162,7 +162,7 @@ export default function Sidebar() {
           WebkitBackdropFilter: "blur(18px) saturate(1.15)",
         }}
       >
-        <div className="px-6 pt-10 pb-4">
+        <div className="px-6 pt-4 pb-2">
           <div className="flex flex-col">
             <h2 className="text-xl font-black text-white tracking-tighter">Finance<span className="text-[--accent-primary-light]">OS</span></h2>
             <p className="text-[10px] font-black text-[--text-muted] uppercase tracking-[0.2em] leading-none mt-1">Institutional Build</p>
@@ -171,7 +171,7 @@ export default function Sidebar() {
 
         <div className="divider-glow mx-6" />
 
-        <nav className="flex-1 px-4 pt-6 space-y-2 overflow-y-auto no-scrollbar">
+        <nav className="flex-1 px-4 pt-2 space-y-0.5 overflow-visible no-scrollbar">
           <p className="px-4 pb-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-[--text-muted] opacity-60">
             Navigation
           </p>
@@ -182,7 +182,7 @@ export default function Sidebar() {
 
         <div className="divider-glow mx-4" />
 
-        <div className="px-3 py-6">
+        <div className="px-3 py-2">
           <button
             onClick={handleLogout}
             className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-[13px] font-bold uppercase tracking-widest transition-all hover:bg-red-500/10 hover:text-red-400 border border-transparent hover:border-red-500/20 text-[--text-muted]"

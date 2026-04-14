@@ -76,3 +76,20 @@ export async function deleteGoal(id: string) {
     if (error) return { error: error.message };
     revalidatePath("/dashboard/goals");
 }
+
+export async function updateGoal(id: string, data: { name: string; target_amount: number; deadline?: string; category: string }) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Unauthorized" };
+
+    const { error } = await supabase.from("goals").update({
+        name: data.name,
+        target_amount: data.target_amount,
+        deadline: data.deadline || null,
+        category: data.category
+    }).eq("id", id).eq("user_id", user.id);
+
+    if (error) return { error: error.message };
+    revalidatePath("/dashboard/goals");
+    return { success: true };
+}

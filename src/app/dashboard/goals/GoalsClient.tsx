@@ -6,7 +6,7 @@ import { differenceInDays, parseISO } from "date-fns";
 import { toast } from "react-hot-toast";
 import { createClient } from "@/lib/supabase-browser";
 import type { Tables } from "@/lib/database.types";
-import { createGoal, updateGoalAmount, deleteGoal } from "./actions";
+import { createGoal, updateGoalAmount, deleteGoal, updateGoal } from "./actions";
 import { useRealTimeSync } from "@/hooks/use-realtime-sync";
 
 type Goal = Tables<"goals">;
@@ -30,6 +30,7 @@ export default function GoalsClient({ initialGoals, initialAccounts }: { initial
   const [showContributeModal, setShowContributeModal] = useState(false);
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
   const [selectedAccountId, setSelectedAccountId] = useState<string>(initialAccounts[0]?.id || "");
+  const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -74,19 +75,43 @@ export default function GoalsClient({ initialGoals, initialAccounts }: { initial
     return { totalTarget, totalCurrent, overallProgress };
   }, [goals]);
 
+  function startEdit(goal: Goal) {
+    setEditingGoalId(goal.id);
+    setFormData({
+      name: goal.name,
+      target_amount: goal.target_amount.toString(),
+      current_amount: goal.current_amount.toString(),
+      deadline: goal.deadline || "",
+      category: goal.category || "Others",
+      account_id: "",
+    });
+    setShowAddModal(true);
+  }
+
   async function handleAddGoal(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
-    const res = await createGoal({
-      ...formData,
-      target_amount: parseFloat(formData.target_amount),
-      current_amount: parseFloat(formData.current_amount),
-      deadline: formData.deadline || undefined,
-    });
+    let res;
+    if (editingGoalId) {
+      res = await updateGoal(editingGoalId, {
+        name: formData.name,
+        target_amount: parseFloat(formData.target_amount),
+        deadline: formData.deadline || undefined,
+        category: formData.category
+      });
+    } else {
+      res = await createGoal({
+        ...formData,
+        target_amount: parseFloat(formData.target_amount),
+        current_amount: parseFloat(formData.current_amount),
+        deadline: formData.deadline || undefined,
+      });
+    }
     if (!res?.error) {
-      toast.success("Goal established.");
+      toast.success(editingGoalId ? "Goal updated." : "Goal established.");
       setShowAddModal(false);
       setFormData({ name: "", target_amount: "", current_amount: "0", deadline: "", category: "Others", account_id: "" });
+      setEditingGoalId(null);
     } else {
       toast.error(res.error);
     }
@@ -158,8 +183,9 @@ export default function GoalsClient({ initialGoals, initialAccounts }: { initial
       </div>
 
       {/* Goals Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {goals.map((goal) => {
+      {goals.filter(g => Number(g.current_amount) < Number(g.target_amount)).length > 0 && <h2 className="text-xl font-bold tracking-tight mt-6">Active Milestones</h2>}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mt-2">
+        {goals.filter(g => Number(g.current_amount) < Number(g.target_amount)).map((goal) => {
           const category = GOAL_CATEGORIES.find(c => c.label === goal.category) || GOAL_CATEGORIES[7];
           const progress = (Number(goal.current_amount) / Number(goal.target_amount)) * 100;
           const daysLeft = goal.deadline ? differenceInDays(parseISO(goal.deadline), new Date()) : null;
@@ -229,13 +255,48 @@ export default function GoalsClient({ initialGoals, initialAccounts }: { initial
         })}
       </div>
 
+      {goals.filter(g => Number(g.current_amount) >= Number(g.target_amount)).length > 0 && (
+         <>
+           <h2 className="text-xl font-bold tracking-tight text-[--success] mt-8 group flex items-center gap-2">
+             Completed Achievements <span className="opacity-0 group-hover:opacity-100 text-sm">🎉</span>
+           </h2>
+           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mt-2 opacity-80 hover:opacity-100 transition-opacity">
+             {goals.filter(g => Number(g.current_amount) >= Number(g.target_amount)).map((goal) => {
+               const category = GOAL_CATEGORIES.find(c => c.label === goal.category) || GOAL_CATEGORIES[7];
+               return (
+                 <div key={goal.id} className="glass-card p-6 flex flex-col border-[--success]/20 hover:border-[--success]/50 group">
+                   <div className="flex items-center justify-between mb-6">
+                     <div className="flex flex-col">
+                       <h3 className="font-bold text-[15px]">{goal.name}</h3>
+                       <p className="text-[10px] font-semibold text-[--text-muted] uppercase tracking-wide">Achieved</p>
+                     </div>
+                     <div className="flex gap-1">
+                       <button onClick={() => startEdit(goal)} className="p-2 text-[--text-muted] hover:text-blue-400 transition-colors opacity-0 group-hover:opacity-100" title="Edit Goal"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
+                       <button onClick={() => handleDeleteGoal(goal.id)} className="p-2 text-[--text-muted] hover:text-rose-400 transition-colors opacity-0 group-hover:opacity-100"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                     </div>
+                   </div>
+                   <div className="space-y-4">
+                     <div className="flex items-end justify-between">
+                       <div className="flex flex-col">
+                         <span className="text-[10px] font-bold text-[--text-muted] uppercase tracking-wider mb-1">Final Amount</span>
+                         <span className="text-xl font-bold text-[--success]">₹{Number(goal.current_amount).toLocaleString()}</span>
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+               );
+             })}
+           </div>
+         </>
+      )}
+
       {/* Standardized Add Modal */}
       {showAddModal && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-xl animate-fade-in">
           <div className="glass-card-static w-full max-w-xl p-8 md:p-12 animate-scale-in">
              <div className="flex justify-between items-center mb-10">
-               <h2 className="text-3xl font-black tracking-tight">Set Milestone</h2>
-               <button onClick={() => setShowAddModal(false)} className="text-[--text-muted] hover:text-[--text-primary] transition-colors p-2">
+               <h2 className="text-3xl font-black tracking-tight">{editingGoalId ? "Update Milestone" : "Set Milestone"}</h2>
+               <button onClick={() => { setShowAddModal(false); setEditingGoalId(null); setFormData({ name: "", target_amount: "", current_amount: "0", deadline: "", category: "Others", account_id: "" }); }} className="text-[--text-muted] hover:text-[--text-primary] transition-colors p-2">
                  <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg>
                </button>
              </div>
@@ -267,7 +328,7 @@ export default function GoalsClient({ initialGoals, initialAccounts }: { initial
                  </div>
                </div>
                
-               {Number(formData.current_amount) > 0 && (
+               {!editingGoalId && Number(formData.current_amount) > 0 && (
                  <div className="space-y-2 animate-fade-in">
                    <label className="text-[10px] font-black uppercase tracking-widest text-[--accent-primary-light] ml-1">Deduct Initial From</label>
                    <select 
@@ -287,7 +348,7 @@ export default function GoalsClient({ initialGoals, initialAccounts }: { initial
                )}
 
                <button type="submit" disabled={submitting} className="btn-primary w-full shadow-2xl mt-4">
-                 {submitting ? "Establishing..." : "Commit Goal"}
+                 {submitting ? (editingGoalId ? "Updating..." : "Establishing...") : (editingGoalId ? "Update Goal" : "Commit Goal")}
                </button>
              </form>
           </div>

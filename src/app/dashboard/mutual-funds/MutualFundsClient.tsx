@@ -163,6 +163,14 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
     setSubmitting(false);
   }
 
+  useEffect(() => {
+    handleRefreshAll();
+    const timer = setInterval(() => {
+      handleRefreshAll();
+    }, 15000);
+    return () => clearInterval(timer);
+  }, []);
+
   async function handleRefreshAll() {
     if (refreshing) return;
     setRefreshing(true);
@@ -186,9 +194,7 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
           <p className="text-[10px] text-[--text-muted] font-black uppercase tracking-[0.2em] mt-1">Live NAV Tracking Console</p>
         </div>
         <div className="flex items-center gap-3 w-full md:w-auto">
-            <button onClick={handleRefreshAll} disabled={refreshing} className="btn-secondary !h-11 !px-4 flex items-center justify-center">
-                <svg className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-            </button>
+            {/* Auto refreshing enabled */}
             <button onClick={() => { setFormData(prev => ({ ...prev, trade_type: 'buy' })); setSearchQuery(""); setShowAddModal(true); }} className="btn-primary !h-11 !px-8">
                 Record Investment
             </button>

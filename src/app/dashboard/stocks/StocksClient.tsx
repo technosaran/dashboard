@@ -91,13 +91,11 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
 
   // Automated price refresh on mount (once every 15 mins max to be polite)
   useEffect(() => {
-    const lastRefresh = localStorage.getItem("last_stock_refresh");
-    const now = Date.now();
-    if (!lastRefresh || now - parseInt(lastRefresh) > 15 * 60 * 1000) {
-      refreshAllRef.current?.().then(() => {
-        localStorage.setItem("last_stock_refresh", now.toString());
-      });
-    }
+    refreshAllRef.current?.();
+    const timer = setInterval(() => {
+      refreshAllRef.current?.();
+    }, 15000);
+    return () => clearInterval(timer);
   }, []);
 
   const loadAccounts = useCallback(async () => {
@@ -361,9 +359,7 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
           <p className="text-[10px] text-[--text-muted] font-black uppercase tracking-[0.2em] mt-1">Live Asset Tracking</p>
         </div>
         <div className="flex items-center gap-3 w-full md:w-auto">
-            <button onClick={handleRefreshAll} disabled={refreshing} className="btn-secondary !h-11 !px-4 flex items-center justify-center">
-                <svg className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-            </button>
+            {/* Auto refresh enabled */}
             <button onClick={() => setShowForm(true)} className="btn-primary !h-11 !px-8">
                 Add Stock
             </button>
