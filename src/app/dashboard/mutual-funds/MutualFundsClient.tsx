@@ -10,6 +10,7 @@ import { recordMFInvestment, refreshNAV, searchMFSchemes, getLiveNAV } from "./a
 import { useRealTimeSync } from "@/hooks/use-realtime-sync";
 
 type MF = Tables<"mutual_funds"> & { scheme_code?: string; fund_symbol?: string | null };
+type MFTrade = Tables<"mutual_fund_trades">;
 type Account = Tables<"accounts">;
 type MFSchemeSearchResult = {
   schemeCode: number;
@@ -23,6 +24,7 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
   const [showAddModal, setShowAddModal] = useState(searchParams?.get("action") === "new");
   const [submitting, setSubmitting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [trades, setTrades] = useState<MFTrade[]>([]);
   
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
@@ -59,18 +61,21 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     
-    const [mfRes, accRes] = await Promise.all([
+    const [mfRes, accRes, tradeRes] = await Promise.all([
         supabase.from("mutual_funds").select("*").eq("user_id", user.id).order("fund_name"),
-        supabase.from("accounts").select("*").eq("user_id", user.id).order("name")
+        supabase.from("accounts").select("*").eq("user_id", user.id).order("name"),
+        supabase.from("mutual_fund_trades").select("*").eq("user_id", user.id).order("date", { ascending: false }).limit(20)
     ]);
 
     if (mfRes.data) setMfs(mfRes.data);
     if (accRes.data) setAccounts(accRes.data);
+    if (tradeRes.data) setTrades(tradeRes.data);
   }, [supabase]);
 
   useEffect(() => {
     const channel = supabase.channel("mf-live")
       .on("postgres_changes", { event: "*", schema: "public", table: "mutual_funds" }, () => startTransition(fetchData))
+      .on("postgres_changes", { event: "*", schema: "public", table: "mutual_fund_trades" }, () => startTransition(fetchData))
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [fetchData, supabase]);
@@ -150,7 +155,7 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
       trade_type: formData.trade_type
     });
     if (!res?.error) {
-      toast.success(formData.trade_type === 'buy' ? "Investment deployed successfully" : "Redemption processed successfully");
+      toast.success(formData.trade_type === 'buy' ? "Wealth deployed into mutual fund" : "Mutual fund units liquidated successfully");
       setShowAddModal(false);
       setFormData({ 
         fund_name: "", scheme_code: "", units: "", nav: "", 
@@ -296,6 +301,56 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
             })}
           </tbody>
         </table>
+      </div>
+
+      {/* Trade History Section */}
+      <div className="mx-4 mt-8">
+        <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-black tracking-tight">Trade History</h2>
+            <span className="text-[10px] font-black text-[--text-muted] uppercase tracking-widest">Recent 20 Logs</span>
+        </div>
+        <div className="border border-white/5 rounded-2xl overflow-hidden bg-white/[0.01]">
+            <table className="w-full text-left border-collapse">
+                <thead>
+                    <tr className="border-b border-white/5 bg-white/[0.02]">
+                        <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest">Date</th>
+                        <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest">Scheme</th>
+                        <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest">Action</th>
+                        <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">Units</th>
+                        <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">NAV</th>
+                        <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">Amount</th>
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-white/[0.03]">
+                    {trades.length === 0 ? (
+                        <tr><td colSpan={6} className="px-6 py-12 text-center text-[#666] italic text-sm">No transaction history recorded yet.</td></tr>
+                    ) : trades.map((trade) => (
+                        <tr key={trade.id} className="hover:bg-white/[0.01] transition-colors">
+                            <td className="px-6 py-4 text-[12px] font-bold text-[--text-muted] tabular-nums">
+                                {trade.date}
+                            </td>
+                            <td className="px-6 py-4">
+                                <span className="text-[13px] font-bold text-[#eee]">{trade.fund_name}</span>
+                            </td>
+                            <td className="px-6 py-4">
+                                <span className={`px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${trade.trade_type === 'BUY' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                                    {trade.trade_type}
+                                </span>
+                            </td>
+                            <td className="px-6 py-4 text-right font-medium tabular-nums text-[#eee] text-[13px]">
+                                {Number(trade.units).toFixed(3)}
+                            </td>
+                            <td className="px-6 py-4 text-right font-medium tabular-nums text-[#666] text-[13px]">
+                                ₹{Number(trade.nav).toFixed(3)}
+                            </td>
+                            <td className="px-6 py-4 text-right font-black tabular-nums text-[#eee] text-[14px]">
+                                ₹{Number(trade.amount).toLocaleString()}
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
       </div>
 
       {/* Record Investment Modal */}

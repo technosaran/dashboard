@@ -109,7 +109,7 @@ export default function AccountsClient({ initialAccounts }: AccountsClientProps)
     const data = { name: formData.name, type: formData.type, balance: parseFloat(formData.balance), currency: formData.currency, bank_name: formData.bank_name || null };
     const result = editingId ? await updateAccount(editingId, data) : await createAccount(data);
     if (!result?.error) {
-      toast.success(editingId ? "Account updated" : "Account created");
+      toast.success(editingId ? "Financial node updated successfully" : "New account initialized successfully");
       resetForm();
       loadAccounts();
     } else {
@@ -141,7 +141,7 @@ export default function AccountsClient({ initialAccounts }: AccountsClientProps)
   async function confirmDelete() {
     if (!deletingAccountId) return;
     const res = await deleteAccount(deletingAccountId);
-    if (!res?.error) { toast.success("Deleted"); loadAccounts(); } else toast.error(res.error);
+    if (!res?.error) { toast.success("Account permanently removed from portfolio"); loadAccounts(); } else toast.error(res.error);
     setShowDeleteConfirm(false);
     setDeletingAccountId(null);
   }
@@ -152,14 +152,14 @@ export default function AccountsClient({ initialAccounts }: AccountsClientProps)
     const amount = parseFloat(adjustData.amount);
     const finalAmount = adjustData.type === "subtract" ? -amount : amount;
     const res = await adjustBalance(adjustingAccountId, finalAmount, adjustData.note);
-    if (!res?.error) { toast.success("Balance updated"); setShowAdjustModal(false); loadAccounts(); } else toast.error(res.error);
+    if (!res?.error) { toast.success("Balance adjustment finalized"); setShowAdjustModal(false); loadAccounts(); } else toast.error(res.error);
   }
 
   async function handleTransfer(e: React.FormEvent) {
     e.preventDefault();
     if (!transferFromId) return;
     const res = await createTransfer({ from_account_id: transferFromId, to_account_id: transferData.to_account_id, amount: parseFloat(transferData.amount), note: transferData.note || null });
-    if (!res?.error) { toast.success("Transfer complete"); setShowTransferModal(false); loadAccounts(); } else toast.error(res.error);
+    if (!res?.error) { toast.success("Inter-account transfer executed successfully"); setShowTransferModal(false); loadAccounts(); } else toast.error(res.error);
   }
 
   const balancesByCurrency = accounts.reduce((acc, a) => { acc[a.currency] = (acc[a.currency] || 0) + a.balance; return acc; }, {} as Record<string, number>);

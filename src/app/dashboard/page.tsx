@@ -14,10 +14,12 @@ export default async function DashboardPage() {
   }
 
   // Fetch all initial data on server for instant load
-  const [accRes, transRes, logRes] = await Promise.all([
+  const [accRes, transRes, logRes, invRes, mfRes] = await Promise.all([
     supabase.from("accounts").select("*").eq("user_id", user.id),
     supabase.from("transactions").select("*").eq("user_id", user.id).order("date", { ascending: false }),
-    supabase.from("ledger_logs").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5)
+    supabase.from("ledger_logs").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5),
+    supabase.from("investments").select("*").eq("user_id", user.id),
+    supabase.from("mutual_funds").select("*").eq("user_id", user.id)
   ]);
 
   return (
@@ -25,6 +27,8 @@ export default async function DashboardPage() {
       initialAccounts={accRes.data || []}
       initialTransactions={transRes.data || []}
       initialLogs={(logRes.data as Tables<"ledger_logs">[]) || []}
+      initialInvestments={invRes.data || []}
+      initialMutualFunds={mfRes.data || []}
     />
   );
 }

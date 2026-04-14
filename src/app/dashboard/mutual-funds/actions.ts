@@ -69,7 +69,7 @@ export async function recordMFInvestment(data: {
     if (!user) return { error: "Unauthorized" };
 
     const rpc = supabase.rpc as unknown as (
-        fn: "record_mf_investment_v3",
+        fn: "record_mf_investment_v4",
         args: {
             p_user_id: string;
             p_fund_name: string;
@@ -86,7 +86,7 @@ export async function recordMFInvestment(data: {
         }
     ) => Promise<{ data: MutualFundRpcResult; error: { message: string } | null }>;
 
-    const { data: res, error } = await rpc("record_mf_investment_v3", {
+    const { data: res, error } = await rpc("record_mf_investment_v4", {
         p_user_id: user.id,
         p_fund_name: data.fund_name,
         p_scheme_code: data.scheme_code,
@@ -103,6 +103,8 @@ export async function recordMFInvestment(data: {
 
     if (error) return { error: error.message };
     revalidatePath("/dashboard/mutual-funds");
+    revalidatePath("/dashboard/ledger");
+    revalidatePath("/dashboard");
     return res;
 }
 

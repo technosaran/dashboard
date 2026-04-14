@@ -136,7 +136,7 @@ export default function IncomeClient({ initialIncomes, initialAccounts }: Income
       account_id: formData.account_id || undefined 
     });
     if (!result?.error) {
-      toast.success("Income record deployed successfully");
+      toast.success("Revenue inflow registered successfully");
       setFormData({ description: "", amount: "", category: "Salary", date: new Date().toISOString().split("T")[0], account_id: "" });
       setShowAddModal(false);
     } else {

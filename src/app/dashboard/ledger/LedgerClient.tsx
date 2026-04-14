@@ -44,9 +44,6 @@ interface LedgerClientProps {
 export default function LedgerClient({ initialLogs }: LedgerClientProps) {
   const [logs, setLogs] = useState<LedgerLog[]>(initialLogs);
   const [loading, setLoading] = useState(false);
-  const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState("All Actions");
-  const [accountFilter, setAccountFilter] = useState("All Accounts");
   const [yearFilter, setYearFilter] = useState("All Years");
   const [monthFilter, setMonthFilter] = useState("All Months");
   const [startDate, setStartDate] = useState("");
@@ -103,10 +100,9 @@ export default function LedgerClient({ initialLogs }: LedgerClientProps) {
       const logMonth = MONTHS[getMonth(date) + 1];
 
       // Standard filters
-      const matchSearch = (log.details?.toLowerCase().includes(search.toLowerCase()) || 
-                           log.account_name?.toLowerCase().includes(search.toLowerCase()));
-      const matchType = typeFilter === "All Actions" || log.action_type === typeFilter;
-      const matchAccount = accountFilter === "All Accounts" || log.account_name === accountFilter;
+      const matchSearch = true;
+      const matchType = true;
+      const matchAccount = true;
 
       // Conditional filters (Year/Month VS Date Range)
       let matchDate = true;
@@ -124,7 +120,7 @@ export default function LedgerClient({ initialLogs }: LedgerClientProps) {
 
       return matchSearch && matchType && matchAccount && matchDate;
     });
-  }, [logs, search, typeFilter, accountFilter, yearFilter, monthFilter, startDate, endDate]);
+  }, [logs, yearFilter, monthFilter, startDate, endDate]);
 
   const getActionBadge = (type: string) => {
     const styles: Record<string, { bg: string; color: string; text: string }> = {
@@ -155,24 +151,6 @@ export default function LedgerClient({ initialLogs }: LedgerClientProps) {
       </div>
 
       <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-white/[0.02] border border-white/5 p-4 md:p-6 rounded-[var(--radius-2xl)] backdrop-blur-3xl shadow-2xl">
-          <div className="relative col-span-1 md:col-span-2">
-            <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[--text-muted]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-            <input 
-              type="text" 
-              placeholder="Search audit trail..." 
-              className="input-premium pl-11"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-          <select className="input-premium" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
-            {ACTION_TYPES.map(t => <option key={t} value={t}>{t.replace("_", " ")}</option>)}
-          </select>
-          <select className="input-premium" value={accountFilter} onChange={(e) => setAccountFilter(e.target.value)}>
-            {uniqueAccounts.map(a => <option key={a} value={a}>{a}</option>)}
-          </select>
-        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 px-1">
            <div className="grid grid-cols-2 gap-4">

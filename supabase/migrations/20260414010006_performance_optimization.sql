@@ -3,7 +3,7 @@
 CREATE INDEX IF NOT EXISTS idx_accounts_user_id ON public.accounts(user_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON public.transactions(user_id);
 CREATE INDEX IF NOT EXISTS idx_transfers_user_id ON public.transfers(user_id);
-CREATE INDEX IF NOT EXISTS idx_deposits_user_id ON public.deposits(user_id);
+-- CREATE INDEX IF NOT EXISTS idx_deposits_user_id ON public.deposits(user_id); -- Table removed
 CREATE INDEX IF NOT EXISTS idx_profiles_id ON public.profiles(id);
 CREATE INDEX IF NOT EXISTS idx_investments_user_id ON public.investments(user_id);
 CREATE INDEX IF NOT EXISTS idx_stock_trades_user_id ON public.stock_trades(user_id);
@@ -45,13 +45,13 @@ CREATE POLICY "Users can create their own transfers" ON public.transfers
     FOR INSERT WITH CHECK (user_id = (SELECT auth.uid()));
 
 -- Deposits
-DROP POLICY IF EXISTS "Users can view their own deposits" ON public.deposits;
-CREATE POLICY "Users can view their own deposits" ON public.deposits
-    FOR SELECT USING (user_id = (SELECT auth.uid()));
+-- DROP POLICY IF EXISTS "Users can view their own deposits" ON public.deposits; -- Table removed
+-- CREATE POLICY "Users can view their own deposits" ON public.deposits
+--     FOR SELECT USING (user_id = (SELECT auth.uid())); -- Table removed
 
-DROP POLICY IF EXISTS "Users can create their own deposits" ON public.deposits;
-CREATE POLICY "Users can create their own deposits" ON public.deposits
-    FOR INSERT WITH CHECK (user_id = (SELECT auth.uid()));
+-- DROP POLICY IF EXISTS "Users can create their own deposits" ON public.deposits; -- Table removed
+-- CREATE POLICY "Users can create their own deposits" ON public.deposits
+--     FOR INSERT WITH CHECK (user_id = (SELECT auth.uid())); -- Table removed
 
 -- Ledger Logs
 DROP POLICY IF EXISTS "Users can view their own ledger logs" ON public.ledger_logs;

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState, startTransition } from "react";
 import { format } from "date-fns";
+import { toast } from "react-hot-toast";
 import { createClient } from "@/lib/supabase-browser";
 import type { Tables } from "@/lib/database.types";
 import { createTransfer } from "./actions";
@@ -64,21 +65,21 @@ export default function TransfersClient({ initialAccounts, initialTransfers }: T
     setError(null);
 
     if (formData.from_account_id === formData.to_account_id) {
-      setError("Cannot transfer to the same account");
+      toast.error("Security block: Source and destination accounts must be distinct");
       setSubmitting(false);
       return;
     }
 
     const amount = parseFloat(formData.amount);
     if (amount <= 0) {
-      setError("Amount must be greater than 0");
+      toast.error("Illegal amount: Transfer value must be positive");
       setSubmitting(false);
       return;
     }
 
     const fromAccount = accounts.find((a) => a.id === formData.from_account_id);
     if (fromAccount && fromAccount.balance < amount) {
-      setError("Insufficient balance in source account");
+      toast.error("Insufficient balance: Source account cannot fund this movement");
       setSubmitting(false);
       return;
     }
@@ -91,11 +92,12 @@ export default function TransfersClient({ initialAccounts, initialTransfers }: T
     });
 
     if (result?.error) {
-      setError(result.error);
+      toast.error(result.error);
       setSubmitting(false);
       return;
     }
 
+    toast.success("Capital movement executed: Accounts updated");
     resetForm();
     await loadData();
   }
@@ -153,7 +155,7 @@ export default function TransfersClient({ initialAccounts, initialTransfers }: T
               <p className="text-[10px] text-[--text-muted] font-black uppercase tracking-[0.2em] mt-0.5">Internal Reallocation</p>
             </div>
           </div>
-          {error && (<div className="mb-8 animate-fade-in px-5 py-3 rounded-xl bg-[--danger]/5 border border-[--danger]/20 text-[--danger] text-xs font-bold">{error}</div>)}
+          
           <form onSubmit={handleSubmit} className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-3"><label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">From Source Account</label><select value={formData.from_account_id} onChange={(e) => setFormData({ ...formData, from_account_id: e.target.value })} className="input-premium" required><option value="">Select source account</option>{accounts.map((account) => (<option key={account.id} value={account.id}>{account.name} ({account.currency} {account.balance.toLocaleString()})</option>))}</select>{formData.from_account_id && (<p className="text-[10px] font-bold text-[--text-muted]">Available: {accounts.find(a => a.id === formData.from_account_id)?.currency === 'USD' ? '$' : '₹'}{getAccountBalance(formData.from_account_id).toLocaleString()}</p>)}</div>

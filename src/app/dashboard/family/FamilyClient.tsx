@@ -127,7 +127,7 @@ export default function FamilyClient({
       setNewName("");
       setNewAccountNumber("");
       setNewBankName("");
-      toast.success(`${newName} has been added!`);
+      toast.success(`Recipient initialized: ${newName} added to directory`);
       fetchData();
     } else {
       toast.error(res.error || "Failed to add recipient");
@@ -182,7 +182,7 @@ export default function FamilyClient({
       setSendNote("");
       setSelectedRecipient(null);
       setSending(false);
-      toast.success(`₹${amount.toLocaleString()} sent to ${selectedRecipient.name}!`);
+      toast.success(`Wealth transfer successful: ₹${amount.toLocaleString()} sent to ${selectedRecipient.name}`);
       fetchData();
     } else {
       setSending(false);

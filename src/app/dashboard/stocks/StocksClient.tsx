@@ -329,7 +329,7 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
       ? await updateInvestment(editingId, payload)
       : await createInvestment(payload);
     if (!result?.error) {
-      toast.success(editingId ? "Stock updated" : "Stock added");
+      toast.success(editingId ? "Equity position updated successfully" : "New equity position registered in portfolio");
       resetForm();
       loadStocks();
     } else {
@@ -341,7 +341,7 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
   async function confirmDelete() {
     if (!deletingId) return;
     const res = await deleteInvestment(deletingId);
-    if (!res?.error) { toast.success("Stock deleted"); loadStocks(); } else toast.error(res.error);
+    if (!res?.error) { toast.success("Investment record purged from architecture"); loadStocks(); } else toast.error(res.error);
     setShowDeleteConfirm(false);
     setDeletingId(null);
   }

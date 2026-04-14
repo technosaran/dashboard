@@ -42,16 +42,22 @@ interface DashboardClientProps {
   initialAccounts: Account[];
   initialTransactions: Transaction[];
   initialLogs: LedgerLog[];
+  initialInvestments: Tables<"investments">[];
+  initialMutualFunds: Tables<"mutual_funds">[];
 }
 
 export default function DashboardClient({
   initialAccounts,
   initialTransactions,
   initialLogs,
+  initialInvestments,
+  initialMutualFunds
 }: DashboardClientProps) {
   const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
   const [recentLogs, setRecentLogs] = useState<LedgerLog[]>(initialLogs);
+  const [investments, setInvestments] = useState<Tables<"investments">[]>(initialInvestments || []);
+  const [mutualFunds, setMutualFunds] = useState<Tables<"mutual_funds">[]>(initialMutualFunds || []);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
@@ -61,7 +67,7 @@ export default function DashboardClient({
 
     if (!user) return;
 
-    const [accRes, transRes, logRes] = await Promise.all([
+    const [accRes, transRes, logRes, invRes, mfRes] = await Promise.all([
       supabase.from("accounts").select("*").eq("user_id", user.id),
       supabase
         .from("transactions")
@@ -74,11 +80,15 @@ export default function DashboardClient({
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
         .limit(5),
+      supabase.from("investments").select("*").eq("user_id", user.id),
+      supabase.from("mutual_funds").select("*").eq("user_id", user.id),
     ]);
 
     if (accRes.data) setAccounts(accRes.data);
     if (transRes.data) setTransactions(transRes.data);
     if (logRes.data) setRecentLogs(logRes.data as LedgerLog[]);
+    if (invRes.data) setInvestments(invRes.data);
+    if (mfRes.data) setMutualFunds(mfRes.data);
   }, []);
 
   useRealTimeSync(fetchData);
@@ -91,6 +101,8 @@ export default function DashboardClient({
       .on("postgres_changes", { event: "*", schema: "public", table: "incomes" }, () => startTransition(fetchData))
       .on("postgres_changes", { event: "*", schema: "public", table: "expenses" }, () => startTransition(fetchData))
       .on("postgres_changes", { event: "*", schema: "public", table: "ledger_logs" }, () => startTransition(fetchData))
+      .on("postgres_changes", { event: "*", schema: "public", table: "investments" }, () => startTransition(fetchData))
+      .on("postgres_changes", { event: "*", schema: "public", table: "mutual_funds" }, () => startTransition(fetchData))
       .subscribe();
 
     return () => {
@@ -99,7 +111,11 @@ export default function DashboardClient({
   }, [fetchData]);
 
   const stats = useMemo(() => {
-    const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
+    const cashBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
+    const stockBalance = investments.reduce((sum, inv) => sum + (Number(inv.quantity) * Number(inv.current_price || 0)), 0);
+    const mfBalance = mutualFunds.reduce((sum, mf) => sum + (Number(mf.units) * Number(mf.current_nav || 0)), 0);
+    const totalBalance = cashBalance + stockBalance + mfBalance;
+    
     const now = new Date();
     const currentMonthTxns = transactions.filter((transaction) =>
       isWithinInterval(new Date(transaction.date), {
@@ -133,7 +149,6 @@ export default function DashboardClient({
       trendMap[m] = { name: m, income: 0, expense: 0 };
     }
     transactions.forEach(t => {
-      // safe date parsing
       if (!t.date) return;
       try {
         const m = format(parseISO(t.date), "MMM");
@@ -159,44 +174,14 @@ export default function DashboardClient({
       };
     }).sort((a,b) => b.value - a.value);
 
-    // Calculate Smart Alerts
-    const alerts: string[] = [];
-    if (monthlySpend > monthlyIncome && monthlyIncome > 0) {
-       alerts.push("Warning: Monthly spend exceeds your generated income.");
-    }
-    const foodSpend = currentMonthTxns.filter(t => t.type === 'expense' && t.category === 'Food').reduce((s, t) => s + Number(t.amount), 0);
-    if (foodSpend > 10000) {
-       alerts.push("You exceeded your typical budget in Food 🍔");
-    }
-    const shoppingSpend = currentMonthTxns.filter(t => t.type === 'expense' && t.category === 'Shopping').reduce((s, t) => s + Number(t.amount), 0);
-    if (shoppingSpend > 8000) {
-       alerts.push("High expenditure detected in Shopping 🛍️");
-    }
-    const today = startOfDay(now);
-    const todaySpend = currentMonthTxns.filter(t => t.type === 'expense' && t.date && t.date.startsWith(now.toISOString().split('T')[0])).reduce((s,t) => s+Number(t.amount), 0);
-    const avgDailySpend = monthlySpend / now.getDate();
-    if (todaySpend > avgDailySpend * 2 && avgDailySpend > 0) {
-       alerts.push("Unusual spending spike detected today 🚨");
-    }
-    if (alerts.length === 0) {
-       alerts.push("All financial metrics are within optimal range ✨");
-    }
-
-    // Forecasting (Linear Regression projection next 6 months)
-    let netMonthly = monthlyIncome - monthlySpend;
-    if (netMonthly === 0) netMonthly = 1000; // Fake positive slope for empty accounts
-    const forecastData = [];
-    for (let i = 0; i <= 5; i++) {
-       const fd = addMonths(now, i);
-       forecastData.push({ 
-         name: format(fd, "MMM yy"), 
-         projected: totalBalance + (netMonthly * i) 
-       });
-    }
+    // Spending Velocity (Alternative to Forecast)
+    const velocityData = currentMonthTxns
+        .filter(t => t.type === 'expense')
+        .slice(-10)
+        .map(t => ({ name: t.date, amount: Number(t.amount) }));
 
     return {
-      alerts,
-      forecastData,
+      velocityData,
       currentMonthTxns,
       totalBalance,
       monthlySpend,
@@ -303,18 +288,6 @@ export default function DashboardClient({
       </div>
 
       
-      {/* 🚨 Smart Alerts Panel */}
-      <div className="glass-card-static p-4 border-[--warning]/30 bg-gradient-to-r from-[--warning]/10 to-transparent flex flex-col md:flex-row md:items-center gap-4">
-        <div className="w-10 h-10 rounded-full bg-[--warning]/20 flex items-center justify-center text-xl shrink-0 animate-pulse">🤖</div>
-        <div className="flex-1">
-          <h3 className="text-xs font-black uppercase tracking-widest text-[--warning] mb-1">AI Insights & Alerts</h3>
-          <div className="flex flex-col gap-1">
-            {stats.alerts.map((alert, i) => (
-              <p key={i} className="text-sm font-semibold text-[--text-primary]">&bull; {alert}</p>
-            ))}
-          </div>
-        </div>
-      </div>
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
 
         <div className="glass-card-static group relative overflow-hidden p-6 md:p-10 lg:col-span-2">
@@ -335,11 +308,11 @@ export default function DashboardClient({
               ₹{stats.totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0 })}
             </h2>
             <div className="mt-8 flex flex-wrap gap-3">
-              <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-[--text-muted]">
-                +2.4% vs last month
+              <div className="rounded-full border border-[--accent-primary]/20 bg-[--accent-primary]/10 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-[--accent-primary-light]">
+                Institutional Grade
               </div>
               <div className="rounded-full border border-[--success]/20 bg-[--success]/10 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-[--success]">
-                Secure & Verified
+                Live Sync Active
               </div>
             </div>
           </div>
@@ -463,44 +436,58 @@ export default function DashboardClient({
       {/* Visual Analytics Row 2 */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         
-        <div className="glass-card-static p-6 md:p-8 relative overflow-hidden group">
-          <div className="absolute -right-10 -top-10 w-40 h-40 bg-[--success]/5 blur-3xl rounded-full" />
+        
+        <div className="glass-card-static p-6 md:p-8">
           <div className="mb-8 flex items-center justify-between">
             <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-[--text-muted]">
-              AI Wealth Forecast 📉
+              Spending Velocity (Recent Trend)
             </h3>
-            <span className="text-[10px] font-black uppercase tracking-widest text-[--success] border border-[--success]/20 px-2 py-0.5 rounded-full bg-[--success]/10">Linear Model</span>
+            <Link
+              href="/dashboard/expenses"
+              className="text-[10px] font-black uppercase tracking-widest text-[--accent-primary] underline-offset-4 decoration-2 hover:underline"
+            >
+              Analyze
+            </Link>
           </div>
           <div className="h-[280px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={stats.forecastData}>
-                <defs>
-                  <linearGradient id="forecastGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: 'var(--text-muted)', fontSize: 10}} dy={10} />
-                <YAxis hide domain={['dataMin - 10000', 'dataMax + 10000']} />
-                <Tooltip
-                  contentStyle={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "12px" }}
-                  cursor={{ stroke: "rgba(255,255,255,0.1)", strokeWidth: 1, strokeDasharray: "3 3" }}
-                />
-                <Area
-                  isAnimationActive={true}
-                  type="monotone"
-                  dataKey="projected"
-                  stroke="#10b981"
-                  strokeWidth={3}
-                  strokeDasharray="5 5"
-                  fillOpacity={1}
-                  fill="url(#forecastGradient)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            {stats.expenseTrend.length === 0 ? (
+              <div className="flex h-full items-center justify-center rounded-2xl border border-white/5 bg-white/[0.02] text-sm italic text-[--text-muted]">
+                Expense data will appear here once activity is recorded.
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={stats.expenseTrend}>
+                  <defs>
+                    <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="var(--accent-primary)" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="var(--accent-primary)" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                  <XAxis hide />
+                  <YAxis hide />
+                  <Tooltip
+                    contentStyle={{
+                      background: "var(--bg-surface)",
+                      border: "1px solid var(--border-default)",
+                      borderRadius: "12px",
+                    }}
+                    cursor={{ stroke: "rgba(255,255,255,0.1)", strokeWidth: 1 }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="amount"
+                    stroke="var(--accent-primary)"
+                    strokeWidth={3}
+                    fillOpacity={1}
+                    fill="url(#colorValue)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
+
 
 
         <div className="glass-card-static p-6 md:p-8">

@@ -135,7 +135,7 @@ export default function ExpensesClient({ initialExpenses, initialAccounts }: Exp
     setSubmitting(true);
     const result = await addExpense({ ...formData, amount: parseFloat(formData.amount), account_id: formData.account_id || undefined });
     if (!result?.error) {
-      toast.success("Expenditure logged successfully");
+      toast.success("Daily expenditure recorded: Ledger updated");
       setFormData({ description: "", amount: "", category: "Food", date: new Date().toISOString().split("T")[0], account_id: "" });
       setShowAddModal(false);
     } else {
