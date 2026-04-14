@@ -10,32 +10,34 @@ import { searchBanks, type Bank } from "@/lib/banks";
 import { createAccount, updateAccount, deleteAccount, createTransfer, adjustBalance } from "./actions";
 import BankLogo from "@/components/bank-logo";
 
+import { useRealTimeSync } from "@/hooks/use-realtime-sync";
+
 type Account = Tables<"accounts">;
 
 const supabase = createClient();
 
 const CategoryIcon = ({ type, className = "w-6 h-6" }: { type: string; className?: string }) => {
   const styles: Record<string, { bg: string; color: string; path: string }> = {
-    checking: { bg: "bg-indigo-500/10", color: "text-indigo-400", path: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" },
-    savings: { bg: "bg-emerald-500/10", color: "text-emerald-400", path: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" },
-    credit: { bg: "bg-rose-500/10", color: "text-rose-400", path: "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" },
-    investment: { bg: "bg-sky-500/10", color: "text-sky-400", path: "M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" },
-    cash: { bg: "bg-amber-500/10", color: "text-amber-400", path: "M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" },
+    checking: { bg: "rgba(108, 92, 231, 0.1)", color: "var(--accent-primary-light)", path: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" },
+    savings: { bg: "rgba(0, 184, 148, 0.1)", color: "var(--success)", path: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" },
+    credit: { bg: "rgba(214, 48, 49, 0.1)", color: "var(--danger)", path: "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" },
+    investment: { bg: "rgba(9, 132, 227, 0.1)", color: "#74b9ff", path: "M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" },
+    cash: { bg: "rgba(253, 203, 110, 0.1)", color: "var(--warning)", path: "M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" },
   };
   const style = styles[type] || styles.checking;
   return (
     <div className={`p-2.5 rounded-xl border border-white/5 shadow-inner ${style.bg} ${className} flex items-center justify-center`}>
-      <svg className={`w-full h-full ${style.color}`} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d={style.path} /></svg>
+      <svg className="w-full h-full" style={{ color: style.color }} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d={style.path} /></svg>
     </div>
   );
 };
 
 const TYPE_STYLES: Record<string, { gradient: string; badge: string; badgeBorder: string; color: string; iconBg: string }> = {
-  checking: { gradient: "linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%)", badge: "rgba(162,155,254,0.15)", badgeBorder: "rgba(162,155,254,0.25)", color: "#a29bfe", iconBg: "rgba(162,155,254,0.12)" },
-  savings: { gradient: "linear-gradient(135deg, #00cec9 0%, #55efc4 100%)", badge: "rgba(85,239,196,0.15)", badgeBorder: "rgba(85,239,196,0.25)", color: "#55efc4", iconBg: "rgba(85,239,196,0.12)" },
-  credit: { gradient: "linear-gradient(135deg, #fd79a8 0%, #fdcb6e 100%)", badge: "rgba(253,121,168,0.15)", badgeBorder: "rgba(253,121,168,0.25)", color: "#fd79a8", iconBg: "rgba(253,121,168,0.12)" },
-  investment: { gradient: "linear-gradient(135deg, #0984e3 0%, #00cec9 100%)", badge: "rgba(9,132,227,0.15)", badgeBorder: "rgba(9,132,227,0.25)", color: "#74b9ff", iconBg: "rgba(9,132,227,0.12)" },
-  cash: { gradient: "linear-gradient(135deg, #fdcb6e 0%, #ffeaa7 100%)", badge: "rgba(253,203,110,0.15)", badgeBorder: "rgba(253,203,110,0.25)", color: "#fdcb6e", iconBg: "rgba(253,203,110,0.12)" },
+  checking: { gradient: "linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-primary-light) 100%)", badge: "rgba(162,155,254,0.1)", badgeBorder: "rgba(162,155,254,0.2)", color: "var(--accent-primary-light)", iconBg: "rgba(162,155,254,0.1)" },
+  savings: { gradient: "linear-gradient(135deg, var(--success) 0%, #55efc4 100%)", badge: "rgba(0, 184, 148, 0.1)", badgeBorder: "rgba(0, 184, 148, 0.2)", color: "var(--success)", iconBg: "rgba(0, 184, 148, 0.1)" },
+  credit: { gradient: "linear-gradient(135deg, #fd79a8 0%, var(--warning) 100%)", badge: "rgba(214, 48, 49, 0.1)", badgeBorder: "rgba(214, 48, 49, 0.2)", color: "var(--danger)", iconBg: "rgba(214, 48, 49, 0.1)" },
+  investment: { gradient: "linear-gradient(135deg, #0984e3 0%, var(--accent-secondary) 100%)", badge: "rgba(116, 185, 255, 0.1)", badgeBorder: "rgba(116, 185, 255, 0.2)", color: "#74b9ff", iconBg: "rgba(116, 185, 255, 0.1)" },
+  cash: { gradient: "linear-gradient(135deg, var(--warning) 0%, #ffeaa7 100%)", badge: "rgba(253, 203, 110, 0.1)", badgeBorder: "rgba(253, 203, 110, 0.2)", color: "var(--warning)", iconBg: "rgba(253, 203, 110, 0.1)" },
 };
 
 function getCurrencySymbol(currency: string): string {
@@ -81,6 +83,8 @@ export default function AccountsClient({ initialAccounts }: AccountsClientProps)
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [loadAccounts]);
+
+  useRealTimeSync(loadAccounts);
 
   function handleBankSearch(query: string) {
     setBankSearch(query);
@@ -164,31 +168,64 @@ export default function AccountsClient({ initialAccounts }: AccountsClientProps)
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[--text-primary]">Accounts Portfolio</h1>
           <p className="text-[13px] md:text-sm mt-1 font-medium text-[--text-muted]">Manage your financial footprint</p>
         </div>
-        <div className="grid grid-cols-2 lg:flex items-center gap-3 w-full md:w-auto">
-          <button onClick={() => { setTransferFromId(null); setShowTransferModal(true); }} className="btn-secondary h-[48px] px-8 flex items-center justify-center gap-2 rounded-2xl text-sm"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>Transfer</button>
-          <button onClick={() => setShowForm(true)} className="btn-primary h-[48px] px-8 flex items-center justify-center gap-2 rounded-2xl text-sm"><svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>New Account</button>
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+          <button onClick={() => { setTransferFromId(null); setShowTransferModal(true); }} className="btn-secondary w-full sm:w-auto flex items-center justify-center gap-2"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>Transfer</button>
+          <button onClick={() => setShowForm(true)} className="btn-primary w-full sm:w-auto flex items-center justify-center gap-2"><svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>New Account</button>
         </div>
       </div>
 
-      <div className="glass-card-static relative overflow-hidden p-8 md:p-10">
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-10">
-          <div className="z-10 w-full">
-            <p className="text-xs font-light uppercase tracking-[0.3em] text-[--text-muted] mb-2">Portfolio Assets</p>
-            <div className="flex flex-wrap items-baseline gap-6 mb-8">
-              {Object.entries(balancesByCurrency).map(([curr, bal]) => (<h2 key={curr} className="text-3xl md:text-5xl font-black tracking-tighter text-[--text-primary]">{getCurrencySymbol(curr)}{bal.toLocaleString()}</h2>))}
+      <div className="glass-card-static relative overflow-hidden p-6 md:p-10">
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-8 md:gap-10">
+          <div className="z-10 w-full text-center lg:text-left">
+            <p className="text-[10px] md:text-xs font-bold uppercase tracking-[0.3em] text-[--text-muted] mb-2">Portfolio Assets</p>
+            <div className="flex flex-wrap items-baseline justify-center lg:justify-start gap-4 md:gap-6 mb-8">
+              {Object.entries(balancesByCurrency).map(([curr, bal]) => (
+                <h2 key={curr} className="text-3xl md:text-5xl font-black tracking-tight text-[--text-primary]">
+                  {getCurrencySymbol(curr)}{bal.toLocaleString()}
+                </h2>
+              ))}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
               {chartData.map((item, i) => (
-                <div key={i} className="flex items-center gap-3 rounded-2xl px-4 py-3 bg-white/[0.03] border border-white/5 h-[72px]">
-                   <div className="relative flex-shrink-0">{accounts[i].bank_name ? <BankLogo bankName={accounts[i].bank_name!} size={48} /> : <CategoryIcon type={accounts[i].type} className="w-12 h-12" />}</div>
-                   <div className="flex flex-col min-w-0 flex-1"><p className="font-bold text-xs text-white truncate">{item.name}</p><p className="font-black text-[13px] text-[--accent-primary-light]">{getCurrencySymbol(item.currency)}{item.value.toLocaleString()}</p></div>
+                <div key={i} className="flex items-center gap-3 rounded-2xl px-4 py-3 bg-white/[0.03] border border-white/5 h-[64px] md:h-[72px] hover:bg-white/[0.05] transition-all">
+                   <div className="relative flex-shrink-0">
+                     {accounts[i].bank_name ? <BankLogo bankName={accounts[i].bank_name!} size={40} /> : <CategoryIcon type={accounts[i].type} className="w-10 h-10" />}
+                   </div>
+                   <div className="flex flex-col min-w-0 flex-1 text-left">
+                     <p className="font-bold text-[11px] md:text-xs text-[--text-secondary] truncate">{item.name}</p>
+                     <p className="font-black text-[13px] md:text-sm text-[--accent-primary-light]">{getCurrencySymbol(item.currency)}{item.value.toLocaleString()}</p>
+                   </div>
                 </div>
               ))}
             </div>
           </div>
-          <div className="shrink-0 w-[260px] h-[260px] md:w-[320px] md:h-[320px] relative">
-            <ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={chartData} innerRadius={80} outerRadius={105} paddingAngle={4} dataKey="value" stroke="none">{chartData.map((e, i) => (<Cell key={i} fill={e.color} />))}</Pie><Tooltip /></PieChart></ResponsiveContainer>
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center"><p className="text-[10px] uppercase font-bold text-[--text-muted] mb-1">Portfolio</p><div className="flex flex-col">{Object.entries(balancesByCurrency).map(([c,b]) => (<p key={c} className="text-lg font-black">{getCurrencySymbol(c)}{b.toLocaleString()}</p>))}</div></div>
+          <div className="shrink-0 w-[240px] h-[240px] md:w-[320px] md:h-[320px] relative">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie 
+                  data={chartData} 
+                  innerRadius={70} 
+                  outerRadius={95} 
+                  paddingAngle={4} 
+                  dataKey="value" 
+                  stroke="none"
+                  animationDuration={1000}
+                >
+                  {chartData.map((e, i) => (<Cell key={i} fill={e.color} />))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
+              <p className="text-[9px] uppercase font-black text-[--text-muted] mb-1 tracking-widest">Net Value</p>
+              <div className="flex flex-col gap-0.5">
+                {Object.entries(balancesByCurrency).map(([c,b]) => (
+                  <p key={c} className="text-base md:text-lg font-black text-[--text-primary] leading-tight">
+                    {getCurrencySymbol(c)}{b.toLocaleString()}
+                  </p>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -207,8 +244,8 @@ export default function AccountsClient({ initialAccounts }: AccountsClientProps)
                 <h3 className="text-lg font-bold truncate">{a.name}</h3>
                 <p className="text-2xl font-black mt-1" style={{ color: style.color }}>{getCurrencySymbol(a.currency)} {a.balance.toLocaleString()}</p>
                 <div className="flex gap-2 mt-6">
-                  <button onClick={() => { setAdjustingAccountId(a.id); setShowAdjustModal(true); }} className="flex-1 py-3 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2" style={{ background: style.iconBg, color: style.color, border: `1px solid ${style.badgeBorder}` }}><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>Adjust</button>
-                  {a.name !== "Cash" && <button onClick={() => handleDelete(a.id)} className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500/20"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>}
+                  <button onClick={() => { setAdjustingAccountId(a.id); setShowAdjustModal(true); }} className="flex-1 h-12 rounded-xl font-bold text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-2" style={{ background: style.iconBg, color: style.color, border: `1px solid ${style.badgeBorder}` }}><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>Adjust balance</button>
+                  {a.name !== "Cash" && <button onClick={() => handleDelete(a.id)} className="w-12 h-12 rounded-xl bg-[--danger]/10 border border-[--danger]/20 text-[--danger] hover:bg-[--danger]/20 transition-all flex items-center justify-center"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>}
                 </div>
               </div>
             </div>
@@ -232,7 +269,7 @@ export default function AccountsClient({ initialAccounts }: AccountsClientProps)
                   <input value={bankSearch} onChange={e => handleBankSearch(e.target.value)} className="input-premium" placeholder="Search Banks..." />
                   {bankResults.length > 0 && <div className="absolute top-full left-0 right-0 mt-2 bg-[--bg-surface] border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden">{bankResults.slice(0, 5).map(b => <button key={b.name} type="button" onClick={() => selectBank(b)} className="w-full p-4 flex items-center gap-3 hover:bg-white/5 text-left border-b border-white/5 last:border-0"><BankLogo bankName={b.name} size={32} /><div><p className="font-bold text-sm">{b.name}</p><p className="text-[10px] text-[--text-muted]">{b.domain}</p></div></button>)}</div>}
                 </div>
-                <button type="submit" disabled={submitting} className="btn-primary w-full h-14 font-black shadow-xl shadow-[--accent-primary]/20 transition-all active:scale-95 mt-4">{submitting ? "Processing Registry..." : (editingId ? "Update Portfolio" : "Activate Account")}</button>
+                <button type="submit" disabled={submitting} className="btn-primary w-full shadow-xl shadow-[--accent-primary]/20 transition-all mt-4">{submitting ? "Processing Registry..." : (editingId ? "Update Portfolio" : "Activate Account")}</button>
               </form>
            </div>
         </div>
@@ -242,8 +279,8 @@ export default function AccountsClient({ initialAccounts }: AccountsClientProps)
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-md animate-fade-in"><div className="glass-card-static w-full max-w-sm p-8 animate-scale-in">
           <div className="flex justify-between items-center mb-6"><div><h3 className="text-xl font-black">Adjust Balance</h3><p className="text-[10px] font-bold text-[--text-muted] uppercase tracking-widest">Balance Modification</p></div><button onClick={() => setShowAdjustModal(false)} className="text-[--text-muted]"><svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg></button></div>
           <form onSubmit={handleAdjust} className="space-y-6">
-            <div className="grid grid-cols-2 gap-2"><button type="button" onClick={() => setAdjustData({...adjustData, type: 'add'})} className={`py-4 rounded-xl font-bold transition-all border ${adjustData.type === 'add' ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : 'bg-white/5 border-white/10 text-[--text-muted]'}`}>INCREMENT</button><button type="button" onClick={() => setAdjustData({...adjustData, type: 'subtract'})} className={`py-4 rounded-xl font-bold transition-all border ${adjustData.type === 'subtract' ? 'bg-rose-500/20 border-rose-500 text-rose-400' : 'bg-white/5 border-white/10 text-[--text-muted]'}`}>DECREMENT</button></div>
-            <div><label className="block text-[10px] font-black text-[--text-muted] mb-2 uppercase tracking-widest">Amount</label><input required type="number" step="0.01" value={adjustData.amount} onChange={e => setAdjustData({...adjustData, amount: e.target.value})} className="input-premium h-14 text-xl font-black" placeholder="0.00" /></div>
+            <div className="grid grid-cols-2 gap-2"><button type="button" onClick={() => setAdjustData({...adjustData, type: 'add'})} className={`py-4 rounded-xl font-bold transition-all border ${adjustData.type === 'add' ? 'bg-[--success]/20 border-[--success] text-[--success]' : 'bg-white/5 border-white/10 text-[--text-muted]'}`}>INCREMENT</button><button type="button" onClick={() => setAdjustData({...adjustData, type: 'subtract'})} className={`py-4 rounded-xl font-bold transition-all border ${adjustData.type === 'subtract' ? 'bg-[--danger]/20 border-[--danger] text-[--danger]' : 'bg-white/5 border-white/10 text-[--text-muted]'}`}>DECREMENT</button></div>
+            <div><label className="block text-[10px] font-black text-[--text-muted] mb-2 uppercase tracking-widest">Amount</label><input required type="number" step="0.01" value={adjustData.amount} onChange={e => setAdjustData({...adjustData, amount: e.target.value})} className="input-premium !h-14 text-xl font-black" placeholder="0.00" /></div>
             <div><label className="block text-[10px] font-black text-[--text-muted] mb-2 uppercase tracking-widest">Reason / Note</label><input value={adjustData.note} onChange={e => setAdjustData({...adjustData, note: e.target.value})} className="input-premium" placeholder="Why the change?" /></div>
             <button type="submit" className="btn-primary w-full h-14 font-black mt-2">Finalize Adjustment</button>
           </form>
@@ -257,8 +294,8 @@ export default function AccountsClient({ initialAccounts }: AccountsClientProps)
               <form onSubmit={handleTransfer} className="space-y-6">
                 <div><label className="block text-[10px] font-black text-[--text-muted] mb-2 ml-1">SOURCE ACCOUNT</label><select required value={transferFromId || ""} onChange={e => setTransferFromId(e.target.value)} className="input-premium h-14"><option value="">Select source</option>{accounts.map(a => <option key={a.id} value={a.id} style={{background: "var(--bg-surface)"}}>{a.name} ({getCurrencySymbol(a.currency)}{a.balance.toLocaleString()})</option>)}</select></div>
                 <div><label className="block text-[10px] font-black text-[--text-muted] mb-2 ml-1">DESTINATION ACCOUNT</label><select required value={transferData.to_account_id} onChange={e => setTransferData({...transferData, to_account_id: e.target.value})} className="input-premium h-14"><option value="">Select target</option>{accounts.map(a => a.id !== transferFromId && <option key={a.id} value={a.id} style={{background: "var(--bg-surface)"}}>{a.name} ({getCurrencySymbol(a.currency)}{a.balance.toLocaleString()})</option>)}</select></div>
-                <div><label className="block text-[10px] font-black text-[--text-muted] mb-2 ml-1">AMOUNT</label><input required type="number" step="0.01" value={transferData.amount} onChange={e => setTransferData({...transferData, amount: e.target.value})} className="input-premium h-14 text-xl font-black" placeholder="0.00" /></div>
-                <button type="submit" className="btn-primary w-full h-14 font-black shadow-xl shadow-[--accent-primary]/20 mt-4">Execute Transfer</button>
+                <div><label className="block text-[10px] font-black text-[--text-muted] mb-2 ml-1">AMOUNT</label><input required type="number" step="0.01" value={transferData.amount} onChange={e => setTransferData({...transferData, amount: e.target.value})} className="input-premium !h-14 text-xl font-black" placeholder="0.00" /></div>
+                <button type="submit" className="btn-primary w-full shadow-xl shadow-[--accent-primary]/20 mt-4">Execute Transfer</button>
               </form>
            </div>
         </div>

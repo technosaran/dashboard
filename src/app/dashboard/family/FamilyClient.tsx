@@ -36,9 +36,9 @@ type SendHistory = {
 const QUICK_AMOUNTS = [500, 1000, 2000, 5000, 10000];
 
 const RELATIONSHIP_CONFIG: Record<string, { gradient: string; emoji: string; color: string }> = {
-  Family: { gradient: "linear-gradient(135deg, #6c5ce7, #a29bfe)", emoji: "👨‍👩‍👧‍👦", color: "#a29bfe" },
-  Friend: { gradient: "linear-gradient(135deg, #00cec9, #55efc4)", emoji: "🤝", color: "#55efc4" },
-  Other: { gradient: "linear-gradient(135deg, #fd79a8, #fdcb6e)", emoji: "👤", color: "#fdcb6e" },
+  Family: { gradient: "linear-gradient(135deg, var(--accent-primary), var(--accent-primary-light))", emoji: "👨‍👩‍👧‍👦", color: "var(--accent-primary-light)" },
+  Friend: { gradient: "linear-gradient(135deg, var(--accent-secondary), #55efc4)", emoji: "🤝", color: "var(--success)" },
+  Other: { gradient: "linear-gradient(135deg, var(--warning), #fab1a0)", emoji: "👤", color: "var(--warning)" },
 };
 
 interface FamilyClientProps {
@@ -207,7 +207,7 @@ export default function FamilyClient({
         </div>
         <button
           onClick={() => setIsAddingRecipient(true)}
-          className="btn-primary h-[48px] px-6 md:px-8 flex-1 md:flex-none flex items-center justify-center gap-2.5 rounded-2xl shadow-xl shadow-[--accent-primary]/25 transition-all hover:scale-105 active:scale-95 text-sm"
+          className="btn-primary flex-1 md:flex-none gap-2"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
             <path d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
@@ -230,7 +230,7 @@ export default function FamilyClient({
         </div>
         <div className="glass-card-static p-5 md:p-8 col-span-2 md:col-span-1">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted] mb-1">Recently Sent</p>
-          <p className="text-2xl md:text-3xl font-black text-[#55efc4]">
+          <p className="text-2xl md:text-3xl font-black text-[--success]">
             ₹{totalSent.toLocaleString()}
           </p>
         </div>
@@ -445,8 +445,8 @@ export default function FamilyClient({
                   <div><label className="block text-xs font-bold text-[--text-muted] uppercase tracking-[0.2em] mb-1.5 ml-1">Account No.</label><input value={newAccountNumber} onChange={(e) => setNewAccountNumber(e.target.value)} className="input-premium" placeholder="e.g. 1234..." /></div>
                 </div>
                 <div className="flex gap-3 pt-4">
-                  <button type="button" onClick={() => setIsAddingRecipient(false)} className="btn-secondary flex-1 h-12">Cancel</button>
-                  <button type="submit" className="btn-primary flex-1 h-12">Save Contact</button>
+                  <button type="button" onClick={() => setIsAddingRecipient(false)} className="btn-secondary flex-1">Cancel</button>
+                  <button type="submit" className="btn-primary flex-1">Save Contact</button>
                 </div>
               </form>
             </div>
@@ -466,7 +466,24 @@ export default function FamilyClient({
                 <div><label className="block text-xs font-bold text-[--text-muted] uppercase tracking-[0.2em] mb-1.5 ml-1">From Account</label><select required value={sendAccountId} onChange={(e) => setSendAccountId(e.target.value)} className="input-premium h-14">{accounts.map((acc) => (<option key={acc.id} value={acc.id} style={{ background: "var(--bg-surface)" }}>{acc.name} — {acc.currency} {acc.balance.toLocaleString()}</option>))}</select></div>
                 <div><label className="block text-xs font-bold text-[--text-muted] uppercase tracking-[0.2em] mb-1.5 ml-1">Amount</label><div className="relative"><span className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-black text-[--text-muted]">{accounts.find(a => a.id === sendAccountId)?.currency === 'USD' ? '$' : '₹'}</span><input required type="number" step="0.01" min="1" value={sendAmount} onChange={(e) => setSendAmount(e.target.value)} className="input-premium pl-10 h-16 text-2xl font-black" style={{ color: "var(--accent-primary-light)" }} placeholder="0" /></div><div className="flex gap-2 mt-3 flex-wrap">{QUICK_AMOUNTS.map((amt) => (<button key={amt} type="button" onClick={() => setSendAmount(amt.toString())} className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all" style={{ background: sendAmount === amt.toString() ? "var(--accent-primary)" : "rgba(255,255,255,0.03)", color: sendAmount === amt.toString() ? "white" : "var(--text-muted)", border: `1px solid ${sendAmount === amt.toString() ? "var(--accent-primary)" : "rgba(255,255,255,0.05)"}` }}>₹{amt.toLocaleString()}</button>))}</div></div>
                 <div><label className="block text-xs font-bold text-[--text-muted] uppercase tracking-[0.2em] mb-1.5 ml-1">Note (Optional)</label><input value={sendNote} onChange={(e) => setSendNote(e.target.value)} className="input-premium h-12" placeholder="What's this for?" /></div>
-                <div className="flex flex-col sm:flex-row gap-3 pt-2"><button type="submit" disabled={sending} className="btn-primary flex-1 h-14 text-sm font-black flex items-center justify-center gap-2 order-1 sm:order-2" style={{ opacity: sending ? 0.6 : 1 }}>{sending ? (<svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>) : (<><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>Send {accounts.find(a => a.id === sendAccountId)?.currency === 'USD' ? '$' : '₹'}{sendAmount ? parseFloat(sendAmount).toLocaleString() : "0"}</>)}</button><button type="button" onClick={() => { setIsSendingMoney(false); setSelectedRecipient(null); }} className="btn-secondary flex-1 h-14 text-sm font-black order-2 sm:order-1">Close</button></div>
+                <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                  <button type="submit" disabled={sending} className="btn-primary flex-1 shadow-xl shadow-[--accent-primary]/20 order-1 sm:order-2">
+                    {sending ? (
+                      <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                          <path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                        </svg>
+                        Send {accounts.find(a => a.id === sendAccountId)?.currency === 'USD' ? '$' : '₹'}{sendAmount ? parseFloat(sendAmount).toLocaleString() : "0"}
+                      </>
+                    )}
+                  </button>
+                  <button type="button" onClick={() => { setIsSendingMoney(false); setSelectedRecipient(null); }} className="btn-secondary flex-1">Close</button>
+                </div>
               </form>
             </div>
           </div>
@@ -479,7 +496,7 @@ export default function FamilyClient({
               <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mb-6"><svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></div>
               <h3 className="text-xl font-black text-[--text-primary] mb-2">Remove Contact?</h3>
               <p className="text-sm text-[--text-muted] mb-8 leading-relaxed">Are you sure you want to remove <span className="text-[--text-primary] font-bold">{recipients.find(r => r.id === deletingId)?.name}</span>? This person will be erased from your directory.</p>
-              <div className="flex gap-3 w-full"><button onClick={confirmDelete} className="flex-1 py-3 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold text-sm transition-all shadow-lg shadow-red-500/20">Confirm Removal</button><button onClick={() => { setShowDeleteConfirm(false); setDeletingId(null); }} className="flex-1 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-[--text-primary] font-bold text-sm border border-white/10 transition-all">Keep Contact</button></div>
+              <div className="flex gap-3 w-full"><button onClick={confirmDelete} className="btn-danger flex-1 shadow-lg shadow-[--danger]/20">Confirm Removal</button><button onClick={() => { setShowDeleteConfirm(false); setDeletingId(null); }} className="btn-secondary flex-1">Keep Contact</button></div>
             </div>
           </div>
         </div>

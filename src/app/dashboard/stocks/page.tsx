@@ -1,7 +1,14 @@
+
 import { createClient } from "@/lib/supabase-server";
 import StocksClient from "./StocksClient";
 import { redirect } from "next/navigation";
 import type { Tables } from "@/lib/database.types";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Stocks",
+  description: "Advanced equity tracking with real-time performance analytics.",
+};
 
 export type Stock = Tables<"investments">;
 

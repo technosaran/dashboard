@@ -119,6 +119,137 @@ export type Database = {
           },
         ]
       }
+      mutual_funds: {
+        Row: {
+          amc_name: string | null
+          avg_nav: number
+          category: string | null
+          created_at: string
+          current_nav: number
+          fund_name: string
+          fund_symbol: string | null
+          id: string
+          investment_type: string | null
+          last_nav_updated_at: string | null
+          units: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amc_name?: string | null
+          avg_nav?: number
+          category?: string | null
+          created_at?: string
+          current_nav?: number
+          fund_name: string
+          fund_symbol?: string | null
+          id?: string
+          investment_type?: string | null
+          last_nav_updated_at?: string | null
+          units?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amc_name?: string | null
+          avg_nav?: number
+          category?: string | null
+          created_at?: string
+          current_nav?: number
+          fund_name?: string
+          fund_symbol?: string | null
+          id?: string
+          investment_type?: string | null
+          last_nav_updated_at?: string | null
+          units?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      mutual_fund_trades: {
+        Row: {
+          amount: number
+          created_at: string
+          date: string | null
+          fund_name: string
+          id: string
+          mf_id: string | null
+          nav: number
+          trade_type: string
+          units: number
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          date?: string | null
+          fund_name: string
+          id?: string
+          mf_id?: string | null
+          nav: number
+          trade_type: string
+          units: number
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          date?: string | null
+          fund_name?: string
+          id?: string
+          mf_id?: string | null
+          nav?: number
+          trade_type?: string
+          units?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mutual_fund_trades_mf_id_fkey"
+            columns: ["mf_id"]
+            isOneToOne: false
+            referencedRelation: "mutual_funds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      goals: {
+        Row: {
+          category: string | null
+          created_at: string
+          current_amount: number
+          deadline: string | null
+          id: string
+          name: string
+          target_amount: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          current_amount?: number
+          deadline?: string | null
+          id?: string
+          name: string
+          target_amount?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          current_amount?: number
+          deadline?: string | null
+          id?: string
+          name?: string
+          target_amount?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           account_id: string
@@ -639,6 +770,28 @@ export type Database = {
         }
         Returns: Json
       }
+      record_mf_investment: {
+        Args: {
+          p_user_id: string
+          p_fund_name: string
+          p_fund_symbol: string
+          p_units: number
+          p_nav: number
+          p_investment_type: string
+          p_category: string
+          p_amc_name: string
+          p_date: string
+          p_account_id: string
+        }
+        Returns: Json
+      }
+      contribute_to_goal: {
+        Args: {
+          p_goal_id: string
+          p_amount: number
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
@@ -774,3 +927,5 @@ export const Constants = {
     Enums: {},
   },
 } as const
+
+

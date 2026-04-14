@@ -1,6 +1,13 @@
+
 import { createClient } from "@/lib/supabase-server";
 import IncomeClient from "./IncomeClient";
 import { redirect } from "next/navigation";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Income Tracking",
+  description: "Monitor your cash flow and earnings. Categorize your revenue sources with precision.",
+};
 
 export const dynamic = "force-dynamic";
 

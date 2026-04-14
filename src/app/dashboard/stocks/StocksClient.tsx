@@ -15,6 +15,7 @@ import {
   getStockTrades
 } from "./actions";
 import { calculateZerodhaCharges } from "@/lib/investment-utils";
+import { useRealTimeSync } from "@/hooks/use-realtime-sync";
 import { getAccounts } from "../accounts/actions";
 
 type Stock = Tables<"investments">;
@@ -28,16 +29,16 @@ type Account = {
 
 const supabase = createClient();
 
-const KITE_COLORS = {
-  green: "#4caf50",
-  red: "#df514c",
-  blue: "#387ed1",
-  bg: "#1a1a1a",
-  bgSecondary: "#1f1f1f",
-  border: "#252525",
-  textMuted: "#9b9b9b",
-  textPrimary: "#eeeeee",
-  rowHover: "#252525"
+const COLORS = {
+  green: "var(--success)",
+  red: "var(--danger)",
+  blue: "var(--accent-primary-light)",
+  bg: "var(--bg-elevated)",
+  bgSecondary: "var(--bg-surface)",
+  border: "var(--border-default)",
+  textMuted: "var(--text-muted)",
+  textPrimary: "var(--text-primary)",
+  rowHover: "var(--glass-hover)"
 };
 
 type SortKey = "name" | "pnl" | "pnlPercent" | "current_value" | "quantity";
@@ -160,6 +161,9 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
     return () => { supabase.removeChannel(channel); };
   }, [loadStocks]);
 
+  useRealTimeSync(loadStocks);
+  useRealTimeSync(loadTrades);
+
   async function handleFetchPrice(symbol: string) {
     if (symbol.length < 2 || editingId) return;
     setFetchingPrice(true);
@@ -214,14 +218,18 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
   }
 
   // --- Computed ---
-  const totalInvested = stocks.reduce((s, i) => s + i.buy_price * i.quantity, 0);
-  const totalCurrent = stocks.reduce((s, i) => s + i.current_price * i.quantity, 0);
-  const totalRealizedPnL = stocks.reduce((s, i) => s + (i.realized_pnl || 0), 0);
+  const totalInvested = stocks.reduce((s, i) => s + Number(i.buy_price || 0) * Number(i.quantity || 0), 0);
+  const totalCurrent = stocks.reduce((s, i) => s + Number(i.current_price || 0) * Number(i.quantity || 0), 0);
+  const totalRealizedPnL = stocks.reduce((s, i) => s + Number(i.realized_pnl || 0), 0);
   const totalPnL = totalCurrent - totalInvested;
   const totalPnLPercent = totalInvested > 0 ? (totalPnL / totalInvested) * 100 : 0;
 
+  const totalDayPnL = stocks.reduce((s, i) => s + Number(i.day_change || 0) * Number(i.quantity || 0), 0);
+  const prevDayValue = totalCurrent - totalDayPnL;
+  const totalDayPnLPercent = prevDayValue > 0 ? (totalDayPnL / prevDayValue) * 100 : 0;
+
   const filtered = useMemo(() => {
-    let list = stocks;
+    let list = stocks.filter(i => Number(i.quantity) > 0);
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(i =>
@@ -231,14 +239,21 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
     }
     return [...list].sort((a, b) => {
       let cmp = 0;
+      const aq = Number(a.quantity);
+      const bq = Number(b.quantity);
+      const abp = Number(a.buy_price);
+      const bbp = Number(b.buy_price);
+      const acp = Number(a.current_price);
+      const bcp = Number(b.current_price);
+
       if (sortKey === "name") cmp = a.name.localeCompare(b.name);
-      else if (sortKey === "pnl") cmp = ((a.current_price - a.buy_price) * a.quantity) - ((b.current_price - b.buy_price) * b.quantity);
+      else if (sortKey === "pnl") cmp = ((acp - abp) * aq) - ((bcp - bbp) * bq);
       else if (sortKey === "pnlPercent") {
-        const pa = a.buy_price > 0 ? ((a.current_price - a.buy_price) / a.buy_price) * 100 : 0;
-        const pb = b.buy_price > 0 ? ((b.current_price - b.buy_price) / b.buy_price) * 100 : 0;
+        const pa = abp > 0 ? ((acp - abp) / abp) * 100 : 0;
+        const pb = bbp > 0 ? ((bcp - bbp) / bbp) * 100 : 0;
         cmp = pa - pb;
-      } else if (sortKey === "current_value") cmp = (a.current_price * a.quantity) - (b.current_price * b.quantity);
-      else if (sortKey === "quantity") cmp = a.quantity - b.quantity;
+      } else if (sortKey === "current_value") cmp = (acp * aq) - (bcp * bq);
+      else if (sortKey === "quantity") cmp = aq - bq;
       return sortDir === "asc" ? cmp : -cmp;
     });
   }, [stocks, search, sortKey, sortDir]);
@@ -351,104 +366,85 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
   );
 
   return (
-    <div className="flex flex-col gap-0 animate-fade-in font-sans text-[#eee]" style={{ maxWidth: "1250px", margin: "0 auto", width: "100%", paddingBottom: "100px" }}>
+    <div className="flex flex-col gap-0 animate-fade-in text-[--text-primary] py-6" style={{ maxWidth: "1250px", margin: "0 auto", width: "100%", paddingBottom: "100px" }}>
       
-      {/* ── Kite Summary Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#252525] pb-8 mb-6 gap-6">
-        <div className="flex items-center gap-10">
-          <div className="flex flex-col">
-            <h1 className="text-xl font-medium text-[#eee]">Equity Portfolio ({stocks.length})</h1>
-            <div className="flex items-center gap-2 mt-1">
-              <div className={`w-1.5 h-1.5 rounded-full ${stocks.some(s => s.market_state === 'REGULAR') ? 'bg-[#4caf50] animate-pulse' : 'bg-[#df514c]'}`} />
-              <span className="text-[10px] text-[#666] uppercase tracking-wider font-bold">
-                {stocks.some(s => s.market_state === 'REGULAR') ? 'Market Open' : 'Market Closed'}
-              </span>
-            </div>
-          </div>
-          <div className="h-10 w-[1px] bg-[#252525] hidden sm:block" />
-          <div className="flex gap-12">
-            <div className="flex flex-col">
-              <span className="text-[10px] text-[#9b9b9b] uppercase tracking-wider mb-1">Total investment</span>
-              <span className="text-xl font-normal tabular-nums">{formatNum(totalInvested)}</span>
-              {stocks.length > 0 && stocks[0].last_fetch_at && (
-                <span className="text-[9px] text-[#555] mt-1 tabular-nums font-bold uppercase tracking-tight">
-                  Last Updated: {format(new Date(stocks[0].last_fetch_at), "HH:mm")}
-                </span>
-              )}
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[10px] text-[#9b9b9b] uppercase tracking-wider mb-1">Current value</span>
-              <span className="text-xl font-normal tabular-nums">{formatNum(totalCurrent)}</span>
-            </div>
-          </div>
+      {/* ── Portfolio Overview Header ── */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 px-4 mb-8">
+        <div>
+          <h1 className="text-3xl font-black tracking-tight text-[--text-primary]">Stocks Portfolio</h1>
+          <p className="text-[10px] text-[--text-muted] font-black uppercase tracking-[0.2em] mt-1">Live Asset Tracking</p>
         </div>
-        
-        <div className="flex items-center gap-10">
-          <div className="flex flex-col items-end">
-            <span className="text-[10px] text-[#9b9b9b] uppercase tracking-wider mb-1">Realized P&L</span>
-            <span className={`text-xl font-medium tabular-nums ${totalRealizedPnL >= 0 ? "text-[#4caf50]" : "text-[#df514c]"}`}>
-              {totalRealizedPnL >= 0 ? "+" : ""}{formatNum(totalRealizedPnL)}
+        <div className="flex items-center gap-3 w-full md:w-auto">
+            <button onClick={handleRefreshAll} disabled={refreshing} className="btn-secondary !h-11 !px-4 flex items-center justify-center">
+                <svg className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+            </button>
+            <button onClick={() => setShowForm(true)} className="btn-primary !h-11 !px-8">
+                Add Stock
+            </button>
+        </div>
+      </div>
+
+      {/* Summary Cards Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-4 mb-4">
+        <div className="glass-card-static p-6 flex flex-col gap-2">
+          <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Total Invested</span>
+          <span className="text-xl md:text-2xl font-black tabular-nums">₹{totalInvested.toLocaleString()}</span>
+        </div>
+        <div className="glass-card-static p-6 flex flex-col gap-2">
+          <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Current Value</span>
+          <span className="text-xl md:text-2xl font-black tabular-nums">₹{totalCurrent.toLocaleString()}</span>
+        </div>
+        <div className="glass-card-static p-6 flex flex-col gap-2">
+          <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Unrealized P&L</span>
+          <div className="flex flex-col">
+            <span className={`text-xl md:text-2xl font-black tabular-nums ${totalPnL >= 0 ? "text-[--success]" : "text-[--danger]"}`}>
+              {totalPnL >= 0 ? "+" : ""}{formatNum(totalPnL)}
+            </span>
+            <span className={`text-[10px] font-black ${totalPnL >= 0 ? "text-[--success]" : "text-[--danger]"} opacity-60`}>
+              ({totalPnL >= 0 ? "+" : ""}{totalPnLPercent.toFixed(2)}%)
             </span>
           </div>
-
-          <div className="flex flex-col items-end">
-            <span className="text-[10px] text-[#9b9b9b] uppercase tracking-wider mb-1">Unrealized P&L</span>
-            <div className="flex items-center gap-2">
-               <span className={`text-xl font-medium tabular-nums ${totalPnL >= 0 ? "text-[#4caf50]" : "text-[#df514c]"}`}>
-                {totalPnL >= 0 ? "+" : ""}{formatNum(totalPnL)}
-              </span>
-              <span className={`text-[11px] font-medium ${totalPnL >= 0 ? "text-[#4caf50]" : "text-[#df514c]"}`}>
-                ({totalPnL >= 0 ? "+" : ""}{totalPnLPercent.toFixed(2)}%)
-              </span>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={handleRefreshAll}
-              disabled={refreshing}
-              className="h-9 px-4 bg-[#252525] hover:bg-[#333] text-[#eee] text-sm font-medium rounded transition-colors flex items-center justify-center disabled:opacity-50"
-              title="Refresh LTP for all stocks"
-            >
-              <svg className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-            </button>
-            <button
-              onClick={() => setShowForm(true)}
-              className="h-9 px-6 bg-[#387ed1] hover:bg-[#2c69b1] text-white text-sm font-medium rounded transition-colors"
-            >
-              Add Stock
-            </button>
+        </div>
+        <div className="glass-card-static p-6 flex flex-col gap-2">
+          <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Day's P&L</span>
+          <div className="flex flex-col">
+            <span className={`text-xl md:text-2xl font-black tabular-nums ${totalDayPnL >= 0 ? "text-[--success]" : "text-[--danger]"}`}>
+              {totalDayPnL >= 0 ? "+" : ""}{formatNum(totalDayPnL)}
+            </span>
+            <span className={`text-[10px] font-black ${totalDayPnL >= 0 ? "text-[--success]" : "text-[--danger]"} opacity-60`}>
+              ({totalDayPnL >= 0 ? "+" : ""}{totalDayPnLPercent.toFixed(2)}%)
+            </span>
           </div>
         </div>
       </div>
 
+
       {/* ── Tabs & Search ── */}
-      <div className="flex items-center justify-between mb-4 border-b border-[#252525]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 border-b border-white/5 gap-4 px-4">
         <div className="flex items-center gap-8">
            <button 
              onClick={() => setActiveTab("holdings")}
-             className={`text-sm font-medium pb-3 px-1 transition-all ${activeTab === 'holdings' ? 'text-[#387ed1] border-b-2 border-[#387ed1]' : 'text-[#666] hover:text-[#999]'}`}
+             className={`text-xs font-black uppercase tracking-widest pb-3 px-1 transition-all ${activeTab === 'holdings' ? 'text-[--accent-primary-light] border-b-2 border-[--accent-primary-light]' : 'text-[--text-muted] hover:text-[--text-primary]'}`}
            >
-             Holdings ({stocks.length})
+             Holdings ({stocks.filter(s => Number(s.quantity) > 0).length})
            </button>
            <button 
              onClick={() => setActiveTab("history")}
-             className={`text-sm font-medium pb-3 px-1 transition-all ${activeTab === 'history' ? 'text-[#387ed1] border-b-2 border-[#387ed1]' : 'text-[#666] hover:text-[#999]'}`}
+             className={`text-xs font-black uppercase tracking-widest pb-3 px-1 transition-all ${activeTab === 'history' ? 'text-[--accent-primary-light] border-b-2 border-[--accent-primary-light]' : 'text-[--text-muted] hover:text-[--text-primary]'}`}
            >
              History
            </button>
         </div>
 
-        <div className="relative w-80 group pb-3">
-           <svg className="absolute left-0 top-[40%] -translate-y-1/2 w-4 h-4 text-[#666] group-focus-within:text-[#387ed1] transition-colors" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+        <div className="relative w-full sm:w-64 md:w-80 group pb-3">
+           <svg className="absolute left-0 top-[40%] -translate-y-1/2 w-4 h-4 text-[--text-muted] group-focus-within:text-[--accent-primary-light] transition-colors" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
             <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.3-4.3" />
           </svg>
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder={`Search ${activeTab}...`}
-            className="w-full h-8 pl-7 pr-3 bg-transparent text-sm text-[#eee] placeholder:text-[#555] outline-none transition-colors border-none"
+            className="w-full h-8 pl-7 pr-3 bg-transparent text-[13px] text-[--text-primary] placeholder:text-white/10 outline-none transition-colors border-none font-medium"
           />
         </div>
       </div>
@@ -459,30 +455,30 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
           <div className="w-full mt-4 overflow-hidden">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-[#252525] text-[11px] text-[#9b9b9b] uppercase font-medium">
-                  <th className="py-3 px-4 font-medium transition-colors cursor-pointer hover:text-[#eee] group" onClick={() => handleSort("name")}>
+                <tr className="border-b border-white/5 bg-white/[0.01] text-[9px] text-[--text-muted] uppercase font-black tracking-widest">
+                  <th className="py-4 px-6 font-black transition-colors cursor-pointer hover:text-[--text-primary] group" onClick={() => handleSort("name")}>
                     Instrument <SortIcon col="name" />
                   </th>
-                  <th className="py-3 px-4 font-medium text-right cursor-pointer hover:text-[#eee] group" onClick={() => handleSort("quantity")}>
+                  <th className="py-4 px-4 font-black text-right cursor-pointer hover:text-[--text-primary] group" onClick={() => handleSort("quantity")}>
                     Qty. <SortIcon col="quantity" />
                   </th>
-                  <th className="py-3 px-4 font-medium text-right">Avg. cost</th>
-                  <th className="py-3 px-4 font-medium text-right">LTP</th>
-                  <th className="py-3 px-4 font-medium text-right cursor-pointer hover:text-[#eee] group" onClick={() => handleSort("current_value")}>
+                  <th className="py-4 px-4 font-black text-right">Avg. cost</th>
+                  <th className="py-4 px-4 font-black text-right">LTP</th>
+                  <th className="py-4 px-4 font-black text-right cursor-pointer hover:text-[--text-primary] group" onClick={() => handleSort("current_value")}>
                     Cur. val <SortIcon col="current_value" />
                   </th>
-                  <th className="py-3 px-4 font-medium text-right cursor-pointer hover:text-[#eee] group" onClick={() => handleSort("pnl")}>
+                  <th className="py-4 px-4 font-black text-right cursor-pointer hover:text-[--text-primary] group" onClick={() => handleSort("pnl")}>
                     P&L <SortIcon col="pnl" />
                   </th>
-                  <th className="py-3 px-4 font-medium text-right">
+                  <th className="py-4 px-4 font-black text-right">
                     Day Chg.
                   </th>
-                  <th className="py-3 px-4 font-medium text-right cursor-pointer hover:text-[#eee] group" onClick={() => handleSort("pnlPercent")}>
+                  <th className="py-4 px-4 font-black text-right cursor-pointer hover:text-[--text-primary] group" onClick={() => handleSort("pnlPercent")}>
                     Net chg. <SortIcon col="pnlPercent" />
                   </th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-white/[0.03]">
                 {filtered.map((inv) => {
                   const invested = inv.buy_price * inv.quantity;
                   const currentVal = inv.current_price * inv.quantity;
@@ -493,7 +489,7 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
                   return (
                     <tr 
                       key={inv.id} 
-                      className="border-b border-[#252525] hover:bg-[#1f1f1f] transition-all group relative cursor-default"
+                      className="hover:bg-white/[0.015] transition-all group relative cursor-default"
                     >
                       <td className="py-4 px-4">
                         <div className="flex flex-col">
@@ -526,11 +522,11 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
                       </td>
                       <td className="py-4 px-4 text-right tabular-nums">
                         <div className="flex flex-col items-end">
-                           <span className={`text-[12px] font-medium ${inv.day_change && inv.day_change >= 0 ? "text-[#4caf50]" : "text-[#df514c]"}`}>
-                             {inv.day_change ? (inv.day_change > 0 ? "+" : "") + formatNum(inv.day_change) : "—"}
+                           <span className={`text-[12px] font-medium ${inv.day_change !== null && inv.day_change >= 0 ? "text-[#4caf50]" : "text-[#df514c]"}`}>
+                             {inv.day_change !== null ? (inv.day_change > 0 ? "+" : "") + formatNum(inv.day_change) : "—"}
                            </span>
-                           <span className={`text-[10px] font-bold ${inv.day_change_percent && inv.day_change_percent >= 0 ? "text-[#4caf50]" : "text-[#df514c]"}`}>
-                             {inv.day_change_percent ? (inv.day_change_percent > 0 ? "+" : "") + inv.day_change_percent.toFixed(2) + "%" : ""}
+                           <span className={`text-[10px] font-bold ${inv.day_change_percent !== null && inv.day_change_percent >= 0 ? "text-[#4caf50]" : "text-[#df514c]"}`}>
+                             {inv.day_change_percent !== null ? (inv.day_change_percent > 0 ? "+" : "") + Number(inv.day_change_percent).toFixed(2) + "%" : ""}
                            </span>
                         </div>
                       </td>
@@ -595,14 +591,14 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
       )}
 
       {showForm && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-          <div className="w-full max-w-md bg-[--bg-surface] border border-[--border-default] shadow-[0_20px_60px_rgba(0,0,0,0.8)] rounded-lg p-6 md:p-8 animate-scale-in max-h-[95vh] overflow-y-auto custom-scrollbar">
-            <div className="flex justify-between items-center mb-6 sticky top-0 bg-[#1a1a1a] z-20 pb-2">
-              <h2 className="text-xl font-bold text-[#eee] [font-family:'Outfit',sans-serif]">
-                {editingId ? "Modify Portfolio" : (formData.trade_type === 'buy' ? 'Add Equity' : 'Sell Equity')}
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-md animate-fade-in shadow-2xl">
+          <div className="glass-card-static w-full max-w-xl p-6 md:p-10 animate-scale-in max-h-[95vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-10 pb-2">
+              <h2 className="text-2xl font-black">
+                {editingId ? "Modify Portfolio" : (formData.trade_type === 'buy' ? 'Asset Acquisition' : 'Asset Disposal')}
               </h2>
-              <button onClick={resetForm} className="p-2 hover:bg-[#252525] rounded-full transition-colors">
-                <svg className="w-6 h-6 text-[#666]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <button onClick={resetForm} className="p-2 hover:bg-white/5 rounded-full transition-colors">
+                <svg className="w-8 h-8 text-[--text-muted]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                   <path d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -770,13 +766,9 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
 
               <button
                 type="submit" disabled={submitting}
-                className={`w-full h-14 text-white text-[14px] font-black rounded-md transition-all mt-4 uppercase tracking-[0.2em] shadow-xl ${
-                  formData.trade_type === 'buy'
-                  ? "bg-[#4caf50] hover:bg-[#43a047] shadow-[#4caf5022]"
-                  : "bg-[#df514c] hover:bg-[#c64541] shadow-[#df514c22]"
-                }`}
+                className="btn-primary w-full shadow-2xl mt-4"
               >
-                {submitting ? "Processing..." : editingId ? "Save Changes" : `Commit ${formData.trade_type}`}
+                {submitting ? "Processing Transaction..." : (editingId ? "Finalize Updates" : (formData.trade_type === 'buy' ? "Authorize Buy Order" : "Authorize Sell Order"))}
               </button>
             </form>
           </div>

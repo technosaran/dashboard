@@ -2,6 +2,9 @@
 
 import { useEffect, useState, useRef, startTransition } from "react";
 import { useUser } from "@/context/user-context";
+import { resetUserData } from "./actions";
+import { toast } from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
 export default function SettingsPage() {
   const { username, setUsername, loading, isSyncing } = useUser();
@@ -40,6 +43,20 @@ export default function SettingsPage() {
     
     // Update context IMMEDIATELY for real-time UI everywhere
     setUsername(newVal);
+  };
+
+  const handleReset = async () => {
+    if (!confirm("CRITICAL WARNING: This will permanently erase ALL your accounts, transactions, stocks, and history. This action cannot be undone. Are you absolutely sure?")) {
+      return;
+    }
+
+    const { error } = await resetUserData();
+    if (error) {
+      toast.error(error);
+    } else {
+      toast.success("Application reset successfully");
+      window.location.href = "/dashboard";
+    }
   };
 
   return (
@@ -136,11 +153,55 @@ export default function SettingsPage() {
                 </svg>
                 Your profile name is synchronized across all devices in real-time.
               </p>
-            </div>
           </div>
         </div>
       </div>
+    </div>
 
+      {/* Danger Zone */}
+      <div className="max-w-2xl animate-fade-in-up delay-2">
+        <div className="glass-card-static p-6 md:p-10 border-rose-500/20 bg-rose-500/[0.02]">
+          <div className="flex items-center gap-3 mb-6">
+            <div
+              style={{
+                width: "40px",
+                height: "40px",
+                borderRadius: "var(--radius-md)",
+                background: "rgba(255, 71, 87, 0.12)",
+                border: "1px solid rgba(255, 71, 87, 0.2)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <svg className="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-rose-500">
+                Danger Zone
+              </h2>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-rose-500/60 mt-0.5">
+                Destructive Actions
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 p-5 rounded-2xl bg-rose-500/5 border border-rose-500/10">
+            <div>
+              <h3 className="text-sm font-bold text-[--text-primary]">Reset Application Data</h3>
+              <p className="text-xs text-[--text-muted] mt-1">Erase all transactions, accounts, and investment history permanently.</p>
+            </div>
+            <button 
+              onClick={handleReset}
+              className="btn-danger !h-11 !px-6 whitespace-nowrap shadow-xl shadow-rose-500/20"
+            >
+              Reset All Data
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

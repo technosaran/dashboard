@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState, startTransition, useMemo } from "reac
 import { createClient } from "@/lib/supabase-browser";
 import { format, getYear, getMonth, isWithinInterval, startOfDay, endOfDay } from "date-fns";
 import { toast } from "react-hot-toast";
+import { useRealTimeSync } from "@/hooks/use-realtime-sync";
 
 const supabase = createClient();
 
@@ -76,6 +77,8 @@ export default function LedgerClient({ initialLogs }: LedgerClientProps) {
     return () => { supabase.removeChannel(channel); };
   }, [fetchLogs]);
 
+  useRealTimeSync(fetchLogs);
+
   const uniqueAccounts = useMemo(() => {
     const accs = new Set<string>();
     logs.forEach(l => { if (l.account_name) accs.add(l.account_name); });
@@ -120,18 +123,18 @@ export default function LedgerClient({ initialLogs }: LedgerClientProps) {
 
   const getActionBadge = (type: string) => {
     const styles: Record<string, { bg: string; color: string; text: string }> = {
-      CREATE: { bg: "rgba(85, 239, 196, 0.12)", color: "#55efc4", text: "Created" },
-      DELETE: { bg: "rgba(255, 118, 117, 0.12)", color: "#ff7675", text: "Deleted" },
+      CREATE: { bg: "rgba(0, 184, 148, 0.12)", color: "var(--success)", text: "Created" },
+      DELETE: { bg: "rgba(214, 48, 49, 0.12)", color: "var(--danger)", text: "Deleted" },
       UPDATE: { bg: "rgba(116, 185, 255, 0.12)", color: "#74b9ff", text: "Updated" },
-      TRANSFER_IN: { bg: "rgba(85, 239, 196, 0.12)", color: "#55efc4", text: "Transfer In" },
-      TRANSFER_OUT: { bg: "rgba(255, 118, 117, 0.12)", color: "#ff7675", text: "Transfer Out" },
-      ADJUST_UP: { bg: "rgba(85, 239, 196, 0.12)", color: "#55efc4", text: "Adjust Up" },
-      ADJUST_DOWN: { bg: "rgba(255, 118, 117, 0.12)", color: "#ff7675", text: "Adjust Down" },
-      SEND_MONEY: { bg: "rgba(255, 118, 117, 0.12)", color: "#ff7675", text: "Family Transfer" },
+      TRANSFER_IN: { bg: "rgba(0, 184, 148, 0.12)", color: "var(--success)", text: "Transfer In" },
+      TRANSFER_OUT: { bg: "rgba(214, 48, 49, 0.12)", color: "var(--danger)", text: "Transfer Out" },
+      ADJUST_UP: { bg: "rgba(0, 184, 148, 0.12)", color: "var(--success)", text: "Adjust Up" },
+      ADJUST_DOWN: { bg: "rgba(214, 48, 49, 0.12)", color: "var(--danger)", text: "Adjust Down" },
+      SEND_MONEY: { bg: "rgba(214, 48, 49, 0.12)", color: "var(--danger)", text: "Family Transfer" },
     };
     const style = styles[type] || { bg: "rgba(255, 255, 255, 0.05)", color: "var(--text-secondary)", text: type };
     return (
-      <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider" style={{ background: style.bg, color: style.color, border: `1px solid ${style.bg}` }}>
+      <span className="px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider inline-flex items-center" style={{ background: style.bg, color: style.color }}>
         {style.text}
       </span>
     );
@@ -147,21 +150,21 @@ export default function LedgerClient({ initialLogs }: LedgerClientProps) {
       </div>
 
       <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-4 bg-white/[0.02] border border-white/5 p-4 md:p-5 rounded-3xl md:rounded-[32px] backdrop-blur-3xl shadow-2xl">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-white/[0.02] border border-white/5 p-4 md:p-6 rounded-[var(--radius-2xl)] backdrop-blur-3xl shadow-2xl">
           <div className="relative col-span-1 md:col-span-2">
             <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[--text-muted]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
             <input 
               type="text" 
               placeholder="Search audit trail..." 
-              className="input-premium pl-11 py-3 text-[16px] md:text-sm w-full h-[48px] md:h-auto"
+              className="input-premium pl-11"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <select className="input-premium py-3 text-[16px] md:text-sm h-[48px] md:h-auto" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
+          <select className="input-premium" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
             {ACTION_TYPES.map(t => <option key={t} value={t}>{t.replace("_", " ")}</option>)}
           </select>
-          <select className="input-premium py-3 text-[16px] md:text-sm h-[48px] md:h-auto" value={accountFilter} onChange={(e) => setAccountFilter(e.target.value)}>
+          <select className="input-premium" value={accountFilter} onChange={(e) => setAccountFilter(e.target.value)}>
             {uniqueAccounts.map(a => <option key={a} value={a}>{a}</option>)}
           </select>
         </div>
@@ -170,13 +173,13 @@ export default function LedgerClient({ initialLogs }: LedgerClientProps) {
            <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
                 <span className="text-[10px] font-black uppercase text-[--text-muted] tracking-[0.2em] ml-2">Registry Year</span>
-                <select className="input-premium py-2.5 text-[16px] md:text-xs h-[44px] md:h-auto" value={yearFilter} onChange={(e) => {setYearFilter(e.target.value); setStartDate(""); setEndDate("");}}>
+                <select className="input-premium !h-[44px] !text-xs" value={yearFilter} onChange={(e) => {setYearFilter(e.target.value); setStartDate(""); setEndDate("");}}>
                   {uniqueYears.map(y => <option key={y} value={y}>{y}</option>)}
                 </select>
               </div>
               <div className="flex flex-col gap-1.5">
                 <span className="text-[10px] font-black uppercase text-[--text-muted] tracking-[0.2em] ml-2">Log Month</span>
-                <select className="input-premium py-2.5 text-[16px] md:text-xs h-[44px] md:h-auto" value={monthFilter} onChange={(e) => {setMonthFilter(e.target.value); setStartDate(""); setEndDate("");}}>
+                <select className="input-premium !h-[44px] !text-xs" value={monthFilter} onChange={(e) => {setMonthFilter(e.target.value); setStartDate(""); setEndDate("");}}>
                   {MONTHS.map(m => <option key={m} value={m}>{m}</option>)}
                 </select>
               </div>
@@ -187,7 +190,7 @@ export default function LedgerClient({ initialLogs }: LedgerClientProps) {
                 <span className="text-[10px] font-black uppercase text-[--text-muted] tracking-[0.2em] ml-2">Bound Start</span>
                 <input 
                   type="date" 
-                  className="input-premium py-2 text-[16px] md:text-xs h-[44px] md:h-auto" 
+                  className="input-premium !h-[44px] !text-xs" 
                   value={startDate} 
                   onChange={(e) => setStartDate(e.target.value)} 
                 />
@@ -196,7 +199,7 @@ export default function LedgerClient({ initialLogs }: LedgerClientProps) {
                 <span className="text-[10px] font-black uppercase text-[--text-muted] tracking-[0.2em] ml-2">Bound End</span>
                 <input 
                   type="date" 
-                  className="input-premium py-2 text-[16px] md:text-xs h-[44px] md:h-auto" 
+                  className="input-premium !h-[44px] !text-xs" 
                   value={endDate} 
                   onChange={(e) => setEndDate(e.target.value)} 
                 />
@@ -246,7 +249,7 @@ export default function LedgerClient({ initialLogs }: LedgerClientProps) {
                       <td className="px-6 py-6 whitespace-nowrap"><span className="text-sm font-bold text-[--text-secondary]">{log.account_name || "—"}</span></td>
                       <td className="px-6 py-6 whitespace-nowrap">
                         <div className="flex flex-col">
-                           <span className={`text-lg font-black ${isDebit ? "text-red-400" : "text-emerald-400"}`}>
+                           <span className={`text-lg font-black ${isDebit ? "text-[--danger]" : "text-[--success]"}`}>
                              {log.amount ? `${isDebit ? '-' : '+'}₹${log.amount.toLocaleString()}` : "—"}
                            </span>
                            <span className="text-[10px] font-black text-[--text-muted]">Net: ₹{log.new_balance?.toLocaleString()}</span>
@@ -292,7 +295,7 @@ export default function LedgerClient({ initialLogs }: LedgerClientProps) {
                   <div className="flex items-end justify-between mb-3">
                     <div className="flex flex-col">
                       <span className="text-[10px] font-black uppercase tracking-tight text-[--text-muted] mb-1">Impact</span>
-                      <div className={`text-2xl font-black ${isDebit ? "text-red-400" : "text-emerald-400"}`}>
+                      <div className={`text-2xl font-black ${isDebit ? "text-[--danger]" : "text-[--success]"}`}>
                         {l.amount ? `${isDebit ? '-' : '+'}₹${l.amount.toLocaleString()}` : "—"}
                       </div>
                     </div>

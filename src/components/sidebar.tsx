@@ -73,6 +73,24 @@ const nav = [
     ),
   },
   {
+    label: "Mutual Funds",
+    href: "/dashboard/mutual-funds",
+    icon: (
+      <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+      </svg>
+    ),
+  },
+  {
+    label: "Goals",
+    href: "/dashboard/goals",
+    icon: (
+      <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+        <path d="M13 10V3L4 14h7v7l9-11h-7z" />
+      </svg>
+    ),
+  },
+  {
     label: "Settings",
     href: "/dashboard/settings",
     icon: (
@@ -112,7 +130,7 @@ export default function Sidebar() {
         <span className={`${active ? "text-[--accent-primary-light]" : "group-hover:text-[--text-primary]"}`}>
           {icon}
         </span>
-        <span className="font-medium text-sm">{label}</span>
+        <span className="font-semibold text-[13px] tracking-tight">{label}</span>
       </Link>
     );
   };
@@ -133,27 +151,16 @@ export default function Sidebar() {
           WebkitBackdropFilter: "blur(24px) saturate(1.3)",
         }}
       >
-        {/* Logo Section */}
-        <div className="px-5 pt-8 pb-5">
-          <div className="flex items-center justify-start">
-            <div
-              className="w-14 h-14 rounded-2xl flex items-center justify-center animate-pulse-glow"
-              style={{
-                background: "linear-gradient(135deg, #6c5ce7 0%, #a29bfe 50%, #00cec9 100%)",
-                boxShadow: "0 8px 32px rgba(108, 92, 231, 0.4)",
-                border: "1px solid rgba(255, 255, 255, 0.15)",
-              }}
-            >
-              <svg className="w-[30px] h-[30px] text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-              </svg>
-            </div>
+        <div className="px-6 pt-10 pb-4">
+          <div className="flex flex-col">
+            <h2 className="text-xl font-black text-white tracking-tighter">Finance<span className="text-[--accent-primary-light]">OS</span></h2>
+            <p className="text-[10px] font-black text-[--text-muted] uppercase tracking-[0.2em] leading-none mt-1">Institutional Build</p>
           </div>
         </div>
 
-        <div className="divider-glow mx-4" />
+        <div className="divider-glow mx-6" />
 
-        <nav className="flex-1 px-4 pt-10 space-y-2">
+        <nav className="flex-1 px-4 pt-6 space-y-2 overflow-y-auto no-scrollbar">
           <p className="px-4 pb-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-[--text-muted] opacity-60">
             Navigation
           </p>
@@ -164,12 +171,12 @@ export default function Sidebar() {
 
         <div className="divider-glow mx-4" />
 
-        <div className="px-3 py-4">
+        <div className="px-3 py-6">
           <button
             onClick={handleLogout}
-            className="flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all hover:bg-red-500/10 hover:text-red-400 border border-transparent hover:border-red-500/20 text-[--text-secondary]"
+            className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-[13px] font-bold uppercase tracking-widest transition-all hover:bg-red-500/10 hover:text-red-400 border border-transparent hover:border-red-500/20 text-[--text-muted]"
           >
-            <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+            <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
             </svg>
             Sign Out
@@ -177,37 +184,42 @@ export default function Sidebar() {
         </div>
       </aside>
 
-      {/* Mobile More Overlay */}
+      {/* Mobile More Overlay — Hardened Native-feel Drawer */}
       <div 
-        className={`md:hidden fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm transition-all duration-300 ${isMoreOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        className={`md:hidden fixed inset-0 z-[60] bg-black/60 backdrop-blur-md transition-all duration-500 ease-in-out ${isMoreOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}
         onClick={() => setIsMoreOpen(false)}
       >
         <div 
-          className={`fixed bottom-24 right-4 left-4 glass-card p-6 transition-all duration-500 transform ${isMoreOpen ? "translate-y-0 scale-100" : "translate-y-10 scale-95 opacity-0"}`}
+          className={`fixed bottom-0 left-0 right-0 glass-card rounded-t-[32px] p-8 pb-12 transition-all duration-500 cubic-bezier(0.32, 0.72, 0, 1) transform ${isMoreOpen ? "translate-y-0" : "translate-y-full"}`}
           onClick={(e) => e.stopPropagation()}
+          style={{ 
+            background: "rgba(12, 16, 33, 0.98)",
+            boxShadow: "0 -8px 40px rgba(0,0,0,0.4)" 
+          }}
         >
+          <div className="w-12 h-1.5 bg-white/10 rounded-full mx-auto mb-8" />
           <div className="grid grid-cols-2 gap-4">
             {moreNav.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={() => setIsMoreOpen(false)}
-                className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-white/5 border border-white/5 active:bg-white/10 transition-all no-underline"
+                className="flex flex-col items-center gap-3 p-5 rounded-[24px] bg-white/[0.03] border border-white/5 active:bg-white/10 active:scale-95 transition-all no-underline"
               >
-                <div className="text-[--accent-primary-light]">
+                <div className="w-12 h-12 rounded-2xl bg-[--accent-primary]/10 flex items-center justify-center text-[--accent-primary-light]">
                   {item.icon}
                 </div>
-                <span className="text-xs font-bold text-[--text-primary] uppercase tracking-wider">{item.label}</span>
+                <span className="text-[10px] font-black text-[--text-primary] uppercase tracking-[0.2em]">{item.label}</span>
               </Link>
             ))}
             <button
               onClick={handleLogout}
-              className="col-span-2 flex items-center justify-center gap-3 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 font-bold text-sm uppercase tracking-widest active:bg-rose-500/20 transition-all mt-2"
+              className="col-span-2 flex items-center justify-center gap-4 h-16 rounded-[24px] bg-rose-500/10 border border-rose-500/20 text-rose-400 font-black text-xs uppercase tracking-[0.2em] active:bg-rose-500/20 active:scale-[0.98] transition-all mt-4"
             >
-              <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
-              Exit Portfolio
+              Terminate Session
             </button>
           </div>
         </div>

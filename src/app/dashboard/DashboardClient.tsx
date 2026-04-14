@@ -136,14 +136,14 @@ export default function DashboardClient({
               <div className="status-dot scale-75" />
               <span className="text-xs md:text-sm font-bold uppercase tracking-[0.4em] text-[--text-muted]">Portfolio Net Worth</span>
             </div>
-            <h2 className="text-[3.5rem] sm:text-7xl md:text-[6.5rem] font-[800] tracking-[-0.04em] text-[--text-primary] leading-none [font-family:'Outfit',sans-serif] bg-gradient-to-r from-white via-white to-[--text-secondary] bg-clip-text text-transparent drop-shadow-[0_10px_30px_rgba(108,92,231,0.2)]">
+            <h2 className="text-[clamp(2.5rem,10vw,5rem)] font-[900] tracking-[-0.05em] text-[--text-primary] leading-[1] [font-family:'Outfit',sans-serif] bg-gradient-to-r from-white via-white to-[--text-secondary] bg-clip-text text-transparent drop-shadow-[0_10px_30px_rgba(108,92,231,0.2)]">
               ₹{stats.totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0 })}
             </h2>
-            <div className="mt-8 flex flex-wrap gap-4">
+            <div className="mt-8 flex flex-wrap gap-3">
               <div className="px-4 py-2 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest text-[--text-muted]">
                 +2.4% vs last month
               </div>
-              <div className="px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-bold uppercase tracking-widest text-emerald-400">
+              <div className="px-4 py-2 rounded-full bg-[--success]/10 border border-[--success]/20 text-[10px] font-bold uppercase tracking-widest text-[--success]">
                 Secure & Verified
               </div>
             </div>
@@ -151,25 +151,25 @@ export default function DashboardClient({
         </div>
 
         <div className="grid grid-cols-1 gap-6">
-          <div className="glass-card-static p-6 flex flex-col justify-center relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-4 opacity-5"><svg className="w-20 h-20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg></div>
+          <div className="glass-card-static p-6 flex flex-col justify-center relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity"><svg className="w-20 h-20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg></div>
             <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[--text-muted] mb-2">Monthly Cashflow</p>
             <div className="flex items-baseline gap-2">
-              <span className="text-xs text-emerald-400 font-bold">+₹{stats.monthlyIncome.toLocaleString()}</span>
-              <span className="text-xs text-rose-400 font-bold">-₹{stats.monthlySpend.toLocaleString()}</span>
+              <span className="text-xs text-[--success] font-bold">+₹{stats.monthlyIncome.toLocaleString()}</span>
+              <span className="text-xs text-[--danger] font-bold">-₹{stats.monthlySpend.toLocaleString()}</span>
             </div>
             <h3 className="text-4xl font-black [font-family:'Outfit',sans-serif] text-[--text-primary] mt-1">
               ₹{(stats.monthlyIncome - stats.monthlySpend).toLocaleString()}
             </h3>
-            <p className="text-[10px] mt-2 text-[--text-muted] font-bold uppercase tracking-tighter">Net savings this month</p>
+            <p className="text-[10px] mt-2 text-[--text-muted] font-bold uppercase tracking-widest">Net savings this month</p>
           </div>
-          <div className="glass-card-static p-6 flex flex-col justify-center relative overflow-hidden">
-             <div className="absolute top-0 right-0 p-4 opacity-5"><svg className="w-20 h-20" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg></div>
+          <div className="glass-card-static p-6 flex flex-col justify-center relative overflow-hidden group">
+             <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity"><svg className="w-20 h-20" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg></div>
             <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[--text-muted] mb-2">Active Channels</p>
             <h3 className="text-4xl font-black [font-family:'Outfit',sans-serif] text-[--text-primary]">
               {stats.accountCount} <span className="text-lg text-[--text-muted]">Sources</span>
             </h3>
-            <p className="text-[10px] mt-2 text-emerald-400 font-bold uppercase tracking-tighter">All systems operational</p>
+            <p className="text-[10px] mt-2 text-[--success] font-bold uppercase tracking-widest">All systems operational</p>
           </div>
         </div>
       </div>
@@ -211,19 +211,23 @@ export default function DashboardClient({
               <div className="text-center py-12 text-[--text-muted] text-sm italic">No recent activities found.</div>
             ) : (
               recentLogs.map((log) => (
-                <div key={log.id} className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] transition-all group">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-[--accent-primary]/10 flex items-center justify-center text-lg shadow-inner">
+                <div key={log.id} className="flex items-center justify-between p-4 md:p-5 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] transition-all group">
+                  <div className="flex items-center gap-3 md:gap-4 min-w-0">
+                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-[--accent-primary]/10 flex items-center justify-center text-lg md:text-xl shadow-inner shrink-0">
                       {log.action_type === 'CREATE' ? '✨' : log.action_type === 'DELETE' ? '🗑️' : '💰'}
                     </div>
-                    <div>
-                      <p className="text-sm font-bold text-[--text-primary] group-hover:text-[--accent-primary] transition-colors">{log.details}</p>
-                      <p className="text-[10px] text-[--text-muted] uppercase tracking-tighter mt-0.5">{format(new Date(log.created_at), "MMM d, HH:mm")}</p>
+                    <div className="min-w-0">
+                      <p className="text-[13px] md:text-sm font-bold text-[--text-primary] group-hover:text-[--accent-primary-light] transition-colors truncate">
+                        {log.details}
+                      </p>
+                      <p className="text-[9px] md:text-[10px] text-[--text-muted] uppercase tracking-widest mt-1 font-bold">
+                        {format(new Date(log.created_at), "MMM d, HH:mm")}
+                      </p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className={`text-sm font-black ${log.action_type === 'DELETE' ? 'text-rose-400' : 'text-emerald-400'}`}>
-                      {log.amount ? `₹${log.amount.toLocaleString()}` : '—'}
+                  <div className="text-right pl-4">
+                    <p className={`text-[13px] md:text-sm font-black whitespace-nowrap ${log.action_type === 'DELETE' || log.action_type === 'TRANSFER_OUT' || log.action_type === 'SEND_MONEY' || log.action_type === 'ADJUST_DOWN' ? 'text-[--danger]' : 'text-[--success]'}`}>
+                      {log.amount ? `${(log.action_type === 'DELETE' || log.action_type === 'TRANSFER_OUT' || log.action_type === 'SEND_MONEY' || log.action_type === 'ADJUST_DOWN') ? '-' : '+'}₹${log.amount.toLocaleString()}` : '—'}
                     </p>
                   </div>
                 </div>

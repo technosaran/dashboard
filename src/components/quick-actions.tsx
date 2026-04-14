@@ -15,7 +15,7 @@ export default function QuickActions() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
         </svg>
       ),
-      color: "bg-emerald-500",
+      color: "var(--success)",
     },
     {
       label: "Record Expense",
@@ -25,7 +25,7 @@ export default function QuickActions() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       ),
-      color: "bg-rose-500",
+      color: "var(--danger)",
     },
     {
       label: "Send Money",
@@ -35,7 +35,7 @@ export default function QuickActions() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
         </svg>
       ),
-      color: "bg-indigo-500",
+      color: "var(--accent-primary)",
     },
     {
       label: "Add Account",
@@ -45,7 +45,7 @@ export default function QuickActions() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
         </svg>
       ),
-      color: "bg-emerald-600",
+      color: "var(--accent-secondary)",
     },
   ];
 
@@ -71,7 +71,10 @@ export default function QuickActions() {
             <span className="bg-white/10 backdrop-blur-xl px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-white border border-white/10 shadow-2xl transition-all active:scale-95">
               {action.label}
             </span>
-            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-2xl transition-all active:scale-90 ${action.color} border border-white/20`}>
+            <div 
+              className="w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-2xl transition-all active:scale-90 border border-white/20"
+              style={{ background: action.color }}
+            >
               {action.icon}
             </div>
           </Link>
@@ -81,11 +84,11 @@ export default function QuickActions() {
       {/* Main Toggle Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-16 h-16 rounded-[24px] shadow-2xl flex items-center justify-center text-white transition-all duration-500 active:scale-90 ${isOpen ? "bg-rose-500 rotate-45" : "bg-indigo-600 rotate-0"}`}
+        className={`w-16 h-16 rounded-[24px] shadow-2xl flex items-center justify-center text-white transition-all duration-500 active:scale-90 ${isOpen ? "rotate-45" : "rotate-0"}`}
         style={{
-          background: isOpen ? "" : "linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%)",
+          background: isOpen ? "var(--danger)" : "linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-primary-light) 100%)",
           boxShadow: isOpen 
-            ? "0 20px 40px rgba(244, 63, 94, 0.4), inset 0 0 20px rgba(255,255,255,0.2)" 
+            ? "0 20px 40px rgba(214, 48, 49, 0.4), inset 0 0 20px rgba(255,255,255,0.2)" 
             : "0 20px 40px rgba(108, 92, 231, 0.4), inset 0 0 20px rgba(255,255,255,0.2)",
           border: "1px solid rgba(255,255,255,0.1)"
         }}

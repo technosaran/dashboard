@@ -23,8 +23,33 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "FinanceOS — Your Financial Command Center",
-  description: "Premium personal finance dashboard to manage accounts, track wealth, and transfer funds with ease.",
+  title: {
+    default: "FinanceOS — Premium Financial Control",
+    template: "%s | FinanceOS"
+  },
+  description: "Next-gen personal wealth management console. Securely track accounts, stocks, mutual funds, and net worth with institutional-grade precision.",
+  keywords: ["personal finance", "stock tracker", "wealth management", "budgeting", "net worth", "investment dashboard"],
+  authors: [{ name: "FinanceOS Team" }],
+  creator: "FinanceOS",
+  publisher: "TechnoSaran",
+  metadataBase: new URL("https://finance-os.app"),
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://finance-os.app",
+    title: "FinanceOS — Your Financial Command Center",
+    description: "Institutional-grade wealth management for elite traders and investors.",
+    siteName: "FinanceOS",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "FinanceOS — Wealth Refined",
+    description: "Track your global financial footprint from a single premium console.",
+    creator: "@technosaran",
+  },
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
