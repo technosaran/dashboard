@@ -16,7 +16,7 @@ export async function createGoal(data: {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Unauthorized" };
 
-    const { data: res, error } = await supabase.rpc("initialize_goal", {
+    const { data: res, error } = await supabase.rpc("initialize_goal" as any, {
         p_user_id: user.id,
         p_name: data.name,
         p_target_amount: data.target_amount,

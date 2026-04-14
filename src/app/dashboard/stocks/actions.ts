@@ -51,7 +51,7 @@ export async function createInvestment(data: {
   const totalCost = data.total_cost_with_charges ?? turnover;
   const charges = Math.abs(totalCost - turnover);
 
-  const { data: rpcRes, error: rpcErr } = await supabase.rpc("record_investment", {
+  const { data: rpcRes, error: rpcErr } = await (supabase as any).rpc("record_investment", {
     p_user_id: user.id,
     p_name: data.name,
     p_type: "stock",

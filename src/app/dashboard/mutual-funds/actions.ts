@@ -63,7 +63,7 @@ export async function recordMFInvestment(data: {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Unauthorized" };
 
-    const { data: res, error } = await supabase.rpc("record_mf_investment_v3" as any, {
+    const { data: res, error } = await (supabase as any).rpc("record_mf_investment_v3", {
         p_user_id: user.id,
         p_fund_name: data.fund_name,
         p_scheme_code: data.scheme_code,
