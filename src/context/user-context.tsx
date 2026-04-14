@@ -69,6 +69,16 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     startTransition(fetchUser);
+
+    // Handle background/foreground transitions for mobile PWA
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        console.log("App resumed, forcing real-time re-sync...");
+        startTransition(fetchUser);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
     
     // Listen for auth state changes (e.g. sign in/out)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
@@ -77,6 +87,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       subscription.unsubscribe();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
       }

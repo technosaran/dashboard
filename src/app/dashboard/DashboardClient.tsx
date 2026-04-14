@@ -10,6 +10,7 @@ import {
   PieChart, Pie, Cell
 } from "recharts";
 import Link from "next/link";
+import { useRealTimeSync } from "@/hooks/use-realtime-sync";
 
 const supabase = createClient();
 
@@ -46,6 +47,9 @@ export default function DashboardClient({
     if (transRes.data) setTransactions(transRes.data);
     if (logRes.data) setRecentLogs(logRes.data as LedgerLog[]);
   }, []);
+
+  // Force re-sync on foreground/focus (PWA Fix)
+  useRealTimeSync(fetchData);
 
   useEffect(() => {
     const channel = supabase

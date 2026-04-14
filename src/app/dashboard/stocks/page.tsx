@@ -21,7 +21,7 @@ export default async function StocksPage() {
 
   return (
     <StocksClient
-      initialStocks={stocks || []}
+      initialStocks={(stocks as any) || []}
     />
   );
 }
