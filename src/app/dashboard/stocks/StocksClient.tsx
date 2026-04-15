@@ -307,7 +307,7 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (submitting || submitLockRef.current) return;
+    if (submitLockRef.current) return;
     submitLockRef.current = true;
     setSubmitting(true);
     try {

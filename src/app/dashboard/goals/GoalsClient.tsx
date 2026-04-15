@@ -131,11 +131,12 @@ export default function GoalsClient({ initialGoals, initialAccounts }: { initial
   async function handleContribute(e: React.FormEvent) {
     e.preventDefault();
     if (submitLockRef.current) return;
+    submitLockRef.current = true;
     if (!selectedGoalId || !selectedAccountId) {
       toast.error("Please select an account.");
+      submitLockRef.current = false;
       return;
     }
-    submitLockRef.current = true;
     setSubmitting(true);
     try {
       const res = await updateGoalAmount(selectedGoalId, parseFloat(contributeAmount), selectedAccountId);
