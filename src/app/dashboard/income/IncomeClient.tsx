@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState, startTransition } from "react";
+import { useCallback, useEffect, useMemo, useState, startTransition, useDeferredValue } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { createClient } from "@/lib/supabase-browser";
@@ -49,7 +49,7 @@ const CartesianGrid = dynamic(
 const Tooltip = dynamic(() => import("recharts").then((mod) => mod.Tooltip), { ssr: false });
 const ResponsiveContainer = dynamic(
   () => import("recharts").then((mod) => mod.ResponsiveContainer),
-  { ssr: false }
+  { ssr: false, loading: () => <div className="skeleton h-full w-full rounded-2xl border border-white/5" /> }
 );
 const PieChart = dynamic(() => import("recharts").then((mod) => mod.PieChart), { ssr: false });
 const Pie = dynamic(() => import("recharts").then((mod) => mod.Pie), { ssr: false });
@@ -84,6 +84,7 @@ export default function IncomeClient({ initialIncomes, initialAccounts }: Income
   const [showAddModal, setShowAddModal] = useState(searchParams.get("action") === "new");
   const [submitting, setSubmitting] = useState(false);
   const [search, setSearch] = useState("");
+  const deferredSearch = useDeferredValue(search);
   const [categoryFilter, setCategoryFilter] = useState("All");
 
   const [formData, setFormData] = useState({
@@ -160,11 +161,11 @@ export default function IncomeClient({ initialIncomes, initialAccounts }: Income
 
   const filteredIncomes = useMemo(() => {
     return incomes.filter(i => {
-      const matchSearch = i.description.toLowerCase().includes(search.toLowerCase());
+      const matchSearch = i.description.toLowerCase().includes(deferredSearch.toLowerCase());
       const matchCat = categoryFilter === "All" || i.category === categoryFilter;
       return matchSearch && matchCat;
     });
-  }, [incomes, search, categoryFilter]);
+  }, [incomes, deferredSearch, categoryFilter]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -185,7 +186,7 @@ export default function IncomeClient({ initialIncomes, initialAccounts }: Income
   }
 
   return (
-    <div className="flex flex-col gap-[var(--section-gap)] animate-fade-in">
+    <div className="flex flex-col gap-[var(--section-gap)]">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="md:hidden p-4 rounded-xl border border-[--success]/20 bg-[--success]/5 text-center mt-4">
              <h2 className="text-xl font-black text-white">Record Income</h2>
@@ -228,10 +229,6 @@ export default function IncomeClient({ initialIncomes, initialAccounts }: Income
         <div className="overflow-x-auto w-full">
           {incomes.length === 0 ? (
             <div className="py-24 flex flex-col items-center text-center">
-               <div className="relative mb-8">
-                 <div className="absolute inset-0 bg-[--success]/20 blur-3xl rounded-full scale-150" />
-                 <img src="/assets/empty_state.png" alt="Revenue Growth" className="w-48 h-48 md:w-64 md:h-64 object-contain relative z-10 animate-float" />
-               </div>
                <h3 className="text-2xl font-black text-white mb-2">Track Your Wealth Inflow</h3>
                <p className="text-sm text-[--text-muted] max-w-sm mb-8">No revenue streams detected. Start by logging your first income to visualize your growth strategy.</p>
                <button onClick={() => setShowAddModal(true)} className="btn-primary shadow-2xl shadow-[--success]/20 px-10 bg-[--success] hover:bg-[--success]">Log Your First Income</button>
@@ -249,7 +246,7 @@ export default function IncomeClient({ initialIncomes, initialAccounts }: Income
 
       {showAddModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-xl animate-fade-in shadow-2xl">
-          <div className="glass-card-static w-full max-w-2xl p-6 md:p-10 animate-scale-in border-emerald-500/20 shadow-[0_0_100px_rgba(16,185,129,0.1)] max-h-[95vh] overflow-y-auto">
+          <div className="glass-card-static w-full max-w-2xl p-6 md:p-10 border-emerald-500/20 shadow-[0_0_100px_rgba(16,185,129,0.1)] max-h-[95vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-8 md:mb-10"><div className="flex items-center gap-3"><div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center"><svg className="w-5 h-5 md:w-6 md:h-6 text-emerald-400" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg></div><h2 className="text-xl md:text-3xl font-black">Declare Revenue</h2></div><button onClick={() => setShowAddModal(false)} className="text-[--text-muted] hover:text-[--text-primary] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"><svg className="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg></button></div>
             <form onSubmit={handleSubmit} className="space-y-8"><div className="grid grid-cols-1 md:grid-cols-2 gap-8"><div className="space-y-3"><label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">{formData.category === "Salary" ? "Company / Employer" : "Description / Source"}</label><input type="text" required className="input-premium" placeholder={formData.category === "Salary" ? "e.g. Google" : "e.g. Freelance Web Design"} value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} /></div><div className="space-y-3"><label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Amount Received</label><input type="number" required className="input-premium" placeholder="0.00" value={formData.amount} onChange={e => setFormData({ ...formData, amount: e.target.value })} /></div><div className="space-y-3"><label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Income Stream</label><select className="input-premium" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })}>{INCOME_CATEGORIES.map(c => <option key={c.label} value={c.label}>{c.label}</option>)}</select></div><div className="space-y-3"><label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Deposit into Account</label><select className="input-premium" value={formData.account_id} onChange={e => setFormData({ ...formData, account_id: e.target.value })}><option value="">Suspense (No Account)</option>{accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}</select></div></div><button type="submit" disabled={submitting} className="btn-primary w-full shadow-xl shadow-[--accent-primary]/20 mt-4">{submitting ? "Deploying..." : "Finalize Entry"}</button>
 </form>

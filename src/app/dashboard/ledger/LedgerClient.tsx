@@ -123,7 +123,7 @@ export default function LedgerClient({ initialLogs }: LedgerClientProps) {
   };
 
   return (
-    <div className="flex flex-col gap-[var(--section-gap)] animate-fade-in">
+    <div className="flex flex-col gap-[var(--section-gap)]">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[--text-primary]">Audit Trail</h1>
@@ -195,14 +195,17 @@ export default function LedgerClient({ initialLogs }: LedgerClientProps) {
               ) : filteredLogs.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-8 py-32 text-center">
-                    <div className="text-5xl mb-6 opacity-40">📅</div>
+
                     <h3 className="text-2xl font-black text-[--text-primary]">No logs found in this range</h3>
                     <p className="text-sm text-[--text-muted] mt-2">Adjust your start/end dates or clear filters to reset.</p>
                   </td>
                 </tr>
               ) : (
                 filteredLogs.map((log) => {
-                  const isDebit = ["ADJUST_DOWN", "TRANSFER_OUT", "DELETE", "SEND_MONEY"].includes(log.action_type);
+                  const isDebit = log.new_balance !== null && log.previous_balance !== null 
+                    ? log.new_balance < log.previous_balance 
+                    : ["ADJUST_DOWN", "TRANSFER_OUT", "DELETE", "SEND_MONEY"].includes(log.action_type);
+                  
                   return (
                     <tr key={log.id} className="hover:bg-white/[0.02] transition-colors group">
                       <td className="px-8 py-6 whitespace-nowrap">
@@ -213,8 +216,8 @@ export default function LedgerClient({ initialLogs }: LedgerClientProps) {
                       <td className="px-6 py-6 whitespace-nowrap"><span className="text-sm font-bold text-[--text-secondary]">{log.account_name || "—"}</span></td>
                       <td className="px-6 py-6 whitespace-nowrap">
                         <div className="flex flex-col">
-                           <span className={`text-lg font-black ${isDebit ? "text-[--danger]" : "text-[--success]"}`}>
-                             {log.amount ? `${isDebit ? '-' : '+'}₹${log.amount.toLocaleString()}` : "—"}
+                           <span className="text-lg font-black" style={{ color: isDebit ? "var(--danger)" : "var(--success)" }}>
+                             {log.amount !== null ? `${isDebit ? '-' : '+'}₹${log.amount.toLocaleString()}` : "—"}
                            </span>
                            <span className="text-[10px] font-black text-[--text-muted]">Net: ₹{log.new_balance?.toLocaleString()}</span>
                         </div>
@@ -246,7 +249,10 @@ export default function LedgerClient({ initialLogs }: LedgerClientProps) {
 
         <div className="md:hidden divide-y divide-white/[0.03]">
            {filteredLogs.map(l => {
-             const isDebit = ["ADJUST_DOWN", "TRANSFER_OUT", "DELETE", "SEND_MONEY"].includes(l.action_type);
+             const isDebit = l.new_balance !== null && l.previous_balance !== null 
+               ? l.new_balance < l.previous_balance 
+               : ["ADJUST_DOWN", "TRANSFER_OUT", "DELETE", "SEND_MONEY"].includes(l.action_type);
+
              return (
                <div key={l.id} className="p-5 active:bg-white/[0.02] transition-colors">
                   <div className="flex justify-between items-start mb-4">
@@ -259,8 +265,8 @@ export default function LedgerClient({ initialLogs }: LedgerClientProps) {
                   <div className="flex items-end justify-between mb-3">
                     <div className="flex flex-col">
                       <span className="text-[10px] font-black uppercase tracking-tight text-[--text-muted] mb-1">Impact</span>
-                      <div className={`text-2xl font-black ${isDebit ? "text-[--danger]" : "text-[--success]"}`}>
-                        {l.amount ? `${isDebit ? '-' : '+'}₹${l.amount.toLocaleString()}` : "—"}
+                      <div className="text-2xl font-black" style={{ color: isDebit ? "var(--danger)" : "var(--success)" }}>
+                        {l.amount !== null ? `${isDebit ? '-' : '+'}₹${l.amount.toLocaleString()}` : "—"}
                       </div>
                     </div>
                     <div className="text-right">

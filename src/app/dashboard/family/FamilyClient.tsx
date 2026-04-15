@@ -224,7 +224,7 @@ export default function FamilyClient({
   const totalSent = recentSends.reduce((sum, s) => sum + (s.amount || 0), 0);
 
   return (
-    <div className="flex flex-col gap-[var(--section-gap)] animate-fade-in">
+    <div className="flex flex-col gap-[var(--section-gap)]">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
@@ -313,10 +313,7 @@ export default function FamilyClient({
               className="col-span-full py-24 text-center glass-card-static"
               style={{ borderStyle: "dashed" }}
             >
-              <div className="relative inline-block mb-8">
-                <div className="absolute inset-0 bg-[--accent-secondary]/10 blur-3xl rounded-full" />
-                <img src="/assets/family.png" alt="No Contacts" className="w-40 h-40 relative z-10" />
-              </div>
+
               <p className="text-2xl font-black text-[--text-primary]">
                 {activeFilter === "All" ? "Network Offline" : `No ${activeFilter.toLowerCase()} nodes`}
               </p>

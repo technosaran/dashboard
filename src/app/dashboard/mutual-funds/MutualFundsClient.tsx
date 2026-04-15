@@ -214,7 +214,7 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
   }, [handleRefreshAll]);
 
   return (
-    <div className="flex flex-col gap-8 animate-fade-in text-[--text-primary] py-6" style={{ maxWidth: "1280px", margin: "0 auto", width: "100%", paddingBottom: "100px" }}>
+    <div className="flex flex-col gap-8 text-[--text-primary] py-6" style={{ maxWidth: "1280px", margin: "0 auto", width: "100%", paddingBottom: "100px" }}>
       
       {/* Portfolio Overview */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 px-4">
@@ -377,7 +377,7 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
       {/* Record Investment Modal */}
       {showAddModal && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-xl animate-fade-in px-4">
-          <div className="glass-card-static w-full max-w-3xl p-8 md:p-12 rounded-3xl animate-scale-in">
+          <div className="glass-card-static w-full max-w-3xl p-8 md:p-12 rounded-3xl">
             <div className="flex justify-between items-center mb-12">
               <h2 className="text-3xl font-black tracking-tight">{formData.trade_type === 'buy' ? 'Investment Log' : 'Asset Redemption'}</h2>
               <button onClick={() => setShowAddModal(false)} className="text-[--text-muted] hover:text-[--text-primary] transition-colors p-2">

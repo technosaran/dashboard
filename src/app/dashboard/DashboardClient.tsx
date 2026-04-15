@@ -11,7 +11,7 @@ import type { Tables } from "@/lib/database.types";
 
 const ResponsiveContainer = dynamic(
   () => import("recharts").then((mod) => mod.ResponsiveContainer),
-  { ssr: false }
+  { ssr: false, loading: () => <div className="skeleton h-full w-full rounded-2xl border border-white/5" /> }
 );
 const AreaChart = dynamic(() => import("recharts").then((mod) => mod.AreaChart), { ssr: false });
 const Area = dynamic(() => import("recharts").then((mod) => mod.Area), { ssr: false });
@@ -370,12 +370,6 @@ export default function DashboardClient({
       <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
         <Greeting />
         <div className="flex gap-3">
-          <Link href="/dashboard/accounts?action=new" className="btn-primary flex items-center gap-2">
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-              <path d="M12 4v16m8-8H4" />
-            </svg>
-            Add Account
-          </Link>
         </div>
       </div>
 

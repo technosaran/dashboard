@@ -125,6 +125,7 @@ export default function Sidebar() {
     return (
       <Link
         href={href}
+        prefetch={true}
         className={`flex items-center gap-3 px-3 py-1 rounded-xl transition-all duration-300 ${active ? "" : "hover:bg-[var(--glass-hover)] group"}`}
         style={{
           color: active ? "var(--accent-primary-light)" : "var(--text-secondary)",
@@ -157,7 +158,7 @@ export default function Sidebar() {
       <div className={`md:hidden fixed inset-0 z-[100] bg-black/80 backdrop-blur-md transition-all duration-500 ${isQuickActionOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`} onClick={() => setIsQuickActionOpen(false)}>
         <div className={`absolute bottom-32 left-8 right-8 grid grid-cols-2 gap-4 transition-all duration-500 ${isQuickActionOpen ? "translate-y-0 scale-100" : "translate-y-16 scale-90"}`} onClick={e => e.stopPropagation()}>
           {quickActions.map((action) => (
-            <Link key={action.label} href={action.href} onClick={() => setIsQuickActionOpen(false)} className="glass-card-static p-6 flex flex-col items-center justify-center gap-3 no-underline transition-all active:scale-95" style={{ background: "rgba(20, 24, 48, 0.95)", border: `1px solid ${action.color}30` }}>
+            <Link key={action.label} href={action.href} prefetch={true} onClick={() => setIsQuickActionOpen(false)} className="glass-card-static p-6 flex flex-col items-center justify-center gap-3 no-underline transition-all active:scale-95" style={{ background: "rgba(20, 24, 48, 0.95)", border: `1px solid ${action.color}30` }}>
               <div className="text-3xl filter drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">{action.icon}</div>
               <span className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: action.color }}>{action.label}</span>
             </Link>
@@ -191,7 +192,7 @@ export default function Sidebar() {
           <div className="w-10 h-1 bg-white/10 rounded-full mx-auto mb-8 opacity-40" />
           <div className="grid grid-cols-3 gap-3 mb-6">
             {moreNav.map((item) => (
-              <Link key={item.href} href={item.href} onClick={() => setIsMoreOpen(false)} className="flex flex-col items-center justify-center p-4 rounded-[28px] bg-white/[0.02] border border-white/[0.04] active:bg-white/10 transition-all no-underline gap-2">
+              <Link key={item.label} href={item.href} prefetch={true} onClick={() => setIsMoreOpen(false)} className="flex flex-col items-center justify-center p-4 rounded-[28px] bg-white/[0.02] border border-white/[0.04] active:bg-white/10 transition-all no-underline gap-2">
                 <div className="w-10 h-10 rounded-full bg-[--accent-primary]/10 flex items-center justify-center text-[--accent-primary-light]">{item.icon}</div>
                 <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.15em] text-center">{item.label}</span>
               </Link>
@@ -218,7 +219,7 @@ export default function Sidebar() {
         {mobileNavLeft.map((item) => {
           const active = pathname === item.href;
           return (
-            <Link key={item.href} href={item.href} className={`flex-1 flex flex-col items-center justify-center h-full relative transition-all active:scale-90 ${active ? "text-[--accent-primary-light]" : "text-[--text-muted]"}`}>
+            <Link key={item.label} href={item.href} prefetch={true} className={`flex-1 flex flex-col items-center justify-center h-full relative transition-all active:scale-90 ${active ? "text-[--accent-primary-light]" : "text-[--text-muted]"}`}>
               <div className={`${active ? "scale-110 -translate-y-1" : "opacity-40"} transition-all duration-300`}>{item.icon}</div>
               <span className={`text-[8px] font-black uppercase tracking-widest absolute bottom-2 transition-all duration-300 ${active ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"}`}>{item.label}</span>
             </Link>
@@ -240,7 +241,7 @@ export default function Sidebar() {
         {mobileNavRight.map((item) => {
           const active = pathname === item.href;
           return (
-            <Link key={item.href} href={item.href} className={`flex-1 flex flex-col items-center justify-center h-full relative transition-all active:scale-90 ${active ? "text-[--accent-primary-light]" : "text-[--text-muted]"}`}>
+            <Link key={item.label} href={item.href} prefetch={true} className={`flex-1 flex flex-col items-center justify-center h-full relative transition-all active:scale-90 ${active ? "text-[--accent-primary-light]" : "text-[--text-muted]"}`}>
               <div className={`${active ? "scale-110 -translate-y-1" : "opacity-40"} transition-all duration-300`}>{item.icon}</div>
               <span className={`text-[8px] font-black uppercase tracking-widest absolute bottom-2 transition-all duration-300 ${active ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"}`}>{item.label}</span>
             </Link>

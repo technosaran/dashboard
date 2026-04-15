@@ -357,7 +357,7 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
   );
 
   return (
-    <div className="flex flex-col gap-0 animate-fade-in text-[--text-primary] py-6" style={{ maxWidth: "1250px", margin: "0 auto", width: "100%", paddingBottom: "100px" }}>
+    <div className="flex flex-col gap-0 text-[--text-primary] py-6" style={{ maxWidth: "1250px", margin: "0 auto", width: "100%", paddingBottom: "100px" }}>
       
       {/* ── Portfolio Overview Header ── */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 px-4 mb-8">
@@ -608,7 +608,7 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
 
       {showForm && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-md animate-fade-in shadow-2xl">
-          <div className="glass-card-static w-full max-w-xl p-6 md:p-10 animate-scale-in max-h-[95vh] overflow-y-auto">
+          <div className="glass-card-static w-full max-w-xl p-6 md:p-10 max-h-[95vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-10 pb-2">
               <h2 className="text-2xl font-black">
                 {editingId ? "Modify Portfolio" : (formData.trade_type === 'buy' ? 'Asset Acquisition' : 'Asset Disposal')}

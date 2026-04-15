@@ -160,7 +160,7 @@ export default function GoalsClient({ initialGoals, initialAccounts }: { initial
   }
 
   return (
-    <div className="flex flex-col gap-10 animate-fade-in py-4">
+    <div className="flex flex-col gap-10 py-4">
       <div className="flex flex-col gap-6 px-2">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="md:hidden w-full p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-center mt-4">
@@ -303,10 +303,7 @@ export default function GoalsClient({ initialGoals, initialAccounts }: { initial
             </div>
           ) : (
             <div className="py-24 text-center">
-              <div className="relative inline-block mb-8">
-                <div className="absolute inset-0 bg-[--accent-primary]/20 blur-3xl rounded-full" />
-                <img src="/assets/success.png" alt="No Goals" className="w-32 h-32 md:w-40 md:h-40 relative z-10 animate-float" />
-              </div>
+
               <h3 className="text-2xl font-black text-white">No Active Objectives</h3>
               <p className="text-sm text-[--text-muted] mt-2 max-w-xs mx-auto">Initialize a new financial milestone to begin tracking your progress.</p>
             </div>
@@ -343,10 +340,7 @@ export default function GoalsClient({ initialGoals, initialAccounts }: { initial
             </div>
           ) : (
             <div className="py-24 text-center">
-              <div className="relative inline-block mb-8">
-                <div className="absolute inset-0 bg-[--success]/20 blur-3xl rounded-full" />
-                <img src="/assets/success.png" alt="Mission Accomplished" className="w-32 h-32 md:w-40 md:h-40 relative z-10" />
-              </div>
+
               <h3 className="text-2xl font-black text-white">Registry Empty</h3>
               <p className="text-sm text-[--text-muted] mt-2 max-w-xs mx-auto">No archived breakthroughs detected. Your achievements will manifest here.</p>
             </div>
@@ -356,7 +350,7 @@ export default function GoalsClient({ initialGoals, initialAccounts }: { initial
 
       {showAddModal && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-xl animate-fade-in">
-          <div className="glass-card-static w-full max-w-xl p-8 md:p-12 animate-scale-in">
+          <div className="glass-card-static w-full max-w-xl p-8 md:p-12">
              <div className="flex justify-between items-center mb-10">
                <h2 className="text-3xl font-black tracking-tight">{editingGoalId ? "Update Milestone" : "Set Milestone"}</h2>
                <button onClick={() => { setShowAddModal(false); setEditingGoalId(null); setFormData({ name: "", target_amount: "", current_amount: "0", deadline: "", category: "Others", account_id: "" }); }} className="text-[--text-muted] hover:text-[--text-primary] transition-colors p-2">
