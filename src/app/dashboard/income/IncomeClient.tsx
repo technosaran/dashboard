@@ -11,6 +11,34 @@ import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, subMonths
 import type { Tables } from "@/lib/database.types";
 
 const supabase = createClient();
+const CHART_COLOR_FALLBACKS = [
+  "#6c5ce7",
+  "#00cec9",
+  "#00b894",
+  "#fdcb6e",
+  "#d63031",
+  "#a29bfe",
+  "#fab1a0",
+  "#81ecec",
+  "#ff7675",
+  "#74b9ff",
+];
+const CSS_COLOR_MAP: Record<string, string> = {
+  "var(--accent-primary)": "#6c5ce7",
+  "var(--accent-primary-light)": "#a29bfe",
+  "var(--accent-secondary)": "#00cec9",
+  "var(--success)": "#00b894",
+  "var(--warning)": "#fdcb6e",
+  "var(--danger)": "#d63031",
+  "var(--text-muted)": "#5a6180",
+};
+function getColorByLabel(label: string) {
+  let hash = 0;
+  for (let i = 0; i < label.length; i += 1) {
+    hash = (hash * 31 + label.charCodeAt(i)) >>> 0;
+  }
+  return CHART_COLOR_FALLBACKS[hash % CHART_COLOR_FALLBACKS.length];
+}
 
 const XAxis = dynamic(() => import("recharts").then((mod) => mod.XAxis), { ssr: false });
 const YAxis = dynamic(() => import("recharts").then((mod) => mod.YAxis), { ssr: false });
@@ -99,11 +127,21 @@ export default function IncomeClient({ initialIncomes, initialAccounts }: Income
     incomes.forEach(i => {
       catMap[i.category] = (catMap[i.category] || 0) + Number(i.amount);
     });
-    const pieData = Object.entries(catMap).map(([name, value]) => ({ 
-      name, 
-      value,
-      color: INCOME_CATEGORIES.find(c => c.label === name)?.color || "#8884d8"
-    })).sort((a, b) => b.value - a.value);
+    const pieData = Object.entries(catMap)
+      .map(([name, value]) => {
+        const categoryColor = INCOME_CATEGORIES.find((c) => c.label === name)?.color;
+        const resolvedColor =
+          (categoryColor && CSS_COLOR_MAP[categoryColor]) ||
+          categoryColor ||
+          getColorByLabel(name);
+
+        return {
+          name,
+          value,
+          color: resolvedColor,
+        };
+      })
+      .sort((a, b) => b.value - a.value);
 
     const trendMap: Record<string, number> = {};
     for (let i = 5; i >= 0; i--) {
