@@ -44,6 +44,8 @@
   --sidebar-border: rgba(99, 115, 255, 0.1);
   --sidebar-active: rgba(108, 92, 231, 0.1);
   --glass-hover: rgba(255, 255, 255, 0.03);
+  --font-outfit: "Outfit", "Segoe UI", "Inter", "Roboto", sans-serif;
+  --font-inter: "Inter", "Segoe UI", "Roboto", sans-serif;
 }
 
 @media (max-width: 1024px) {

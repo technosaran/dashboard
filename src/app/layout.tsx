@@ -1,18 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Outfit, Inter } from "next/font/google";
 import "./globals.css";
-
-const outfit = Outfit({ 
-  subsets: ["latin"],
-  variable: "--font-outfit",
-  display: "swap"
-});
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap"
-});
 
 export const viewport: Viewport = {
   themeColor: "#6c5ce7",
@@ -82,7 +69,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${outfit.variable} ${inter.variable} h-full antialiased dark`}
+      className="h-full antialiased dark"
     >
       <body className="min-h-full flex flex-col overflow-x-hidden bg-[--bg-base] text-[--text-primary] font-sans">
         <Suspense fallback={null}>

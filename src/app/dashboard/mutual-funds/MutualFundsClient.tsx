@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo, useCallback, useEffect, startTransition } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef, startTransition } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { createClient } from "@/lib/supabase-browser";
@@ -23,8 +23,8 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
   const searchParams = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(searchParams?.get("action") === "new");
   const [submitting, setSubmitting] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
   const [trades, setTrades] = useState<MFTrade[]>([]);
+  const refreshInFlightRef = useRef(false);
   
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
@@ -171,8 +171,8 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
   }
 
   const handleRefreshAll = useCallback(async () => {
-    if (refreshing) return;
-    setRefreshing(true);
+    if (refreshInFlightRef.current) return;
+    refreshInFlightRef.current = true;
     const toastId = toast.loading("Syncing with Market NAVs...");
     try {
         await refreshNAV(mfs.map((mf) => ({ id: mf.id, scheme_code: mf.fund_symbol || mf.scheme_code || "" })));
@@ -180,15 +180,17 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
     } catch {
         toast.error("Sync failed", { id: toastId });
     }
-    setRefreshing(false);
-  }, [mfs, refreshing]);
+    refreshInFlightRef.current = false;
+  }, [mfs]);
 
   useEffect(() => {
     handleRefreshAll();
     const timer = setInterval(() => {
       handleRefreshAll();
     }, 15000);
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(timer);
+    };
   }, [handleRefreshAll]);
 
   return (
