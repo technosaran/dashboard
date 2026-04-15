@@ -32,6 +32,10 @@ const CSS_COLOR_MAP: Record<string, string> = {
   "var(--danger)": "#d63031",
   "var(--text-muted)": "#5a6180",
 };
+function getColorByLabel(label: string) {
+  const hash = Array.from(label).reduce((total, char) => total + char.charCodeAt(0), 0);
+  return CHART_COLOR_FALLBACKS[hash % CHART_COLOR_FALLBACKS.length];
+}
 
 const XAxis = dynamic(() => import("recharts").then((mod) => mod.XAxis), { ssr: false });
 const YAxis = dynamic(() => import("recharts").then((mod) => mod.YAxis), { ssr: false });
@@ -121,12 +125,12 @@ export default function IncomeClient({ initialIncomes, initialAccounts }: Income
       catMap[i.category] = (catMap[i.category] || 0) + Number(i.amount);
     });
     const pieData = Object.entries(catMap)
-      .map(([name, value], index) => {
+      .map(([name, value]) => {
         const categoryColor = INCOME_CATEGORIES.find((c) => c.label === name)?.color;
         const resolvedColor =
           (categoryColor && CSS_COLOR_MAP[categoryColor]) ||
           categoryColor ||
-          CHART_COLOR_FALLBACKS[index % CHART_COLOR_FALLBACKS.length];
+          getColorByLabel(name);
 
         return {
           name,
