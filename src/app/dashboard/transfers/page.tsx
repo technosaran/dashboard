@@ -2,6 +2,12 @@ import { Suspense } from "react";
 import { createClient } from "@/lib/supabase-server";
 import TransfersClient from "./TransfersClient";
 import { redirect } from "next/navigation";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Transfers",
+  description: "Execute and manage inter-account fund transfers with full audit trail.",
+};
 
 export const dynamic = "force-dynamic";
 

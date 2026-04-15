@@ -3,6 +3,12 @@ import type { Tables } from "@/lib/database.types";
 import FamilyClient from "./FamilyClient";
 import { redirect } from "next/navigation";
 import { getAccounts } from "../accounts/actions";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Family",
+  description: "Manage family members and send money to your loved ones securely.",
+};
 
 export const dynamic = "force-dynamic";
 

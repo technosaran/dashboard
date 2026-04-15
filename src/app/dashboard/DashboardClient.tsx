@@ -191,7 +191,7 @@ export default function DashboardClient({
       pieData,
       accountCount: accounts.length,
     };
-  }, [accounts, transactions]);
+  }, [accounts, transactions, investments, mutualFunds]);
 
   return (
     <>

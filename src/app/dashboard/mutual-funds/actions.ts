@@ -110,6 +110,9 @@ export async function recordMFInvestment(data: {
 
 export async function refreshNAV(mfs: { id: string, scheme_code: string }[]) {
     const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return [];
+
     const results = [];
 
     for (const mf of mfs) {

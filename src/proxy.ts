@@ -32,7 +32,7 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Public routes that don't need auth
-  const isPublicRoute = pathname === "/login" || pathname === "/" || pathname === "/test-connection";
+  const isPublicRoute = pathname === "/login" || pathname === "/";
   const isStaticAsset = pathname.startsWith("/_next") || pathname.startsWith("/favicon") || pathname.includes(".");
 
   if (isStaticAsset) {

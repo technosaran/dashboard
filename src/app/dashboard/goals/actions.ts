@@ -50,6 +50,7 @@ export async function createGoal(data: {
     revalidatePath("/dashboard/goals");
     revalidatePath("/dashboard/ledger");
     revalidatePath("/dashboard/accounts");
+    return { success: true };
 }
 
 export async function updateGoalAmount(goalId: string, amount: number, accountId: string) {
@@ -68,13 +69,18 @@ export async function updateGoalAmount(goalId: string, amount: number, accountId
     revalidatePath("/dashboard/goals");
     revalidatePath("/dashboard/ledger");
     revalidatePath("/dashboard/accounts");
+    return { success: true };
 }
 
 export async function deleteGoal(id: string) {
     const supabase = await createClient();
-    const { error } = await supabase.from("goals").delete().eq("id", id);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Unauthorized" };
+
+    const { error } = await supabase.from("goals").delete().eq("id", id).eq("user_id", user.id);
     if (error) return { error: error.message };
     revalidatePath("/dashboard/goals");
+    return { success: true };
 }
 
 export async function updateGoal(id: string, data: { name: string; target_amount: number; deadline?: string; category: string }) {

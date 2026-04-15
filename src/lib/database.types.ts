@@ -731,6 +731,8 @@ export type Database = {
           p_name: string
           p_type: string
           p_balance: number
+          p_currency?: string
+          p_bank_name?: string | null
           p_color?: string | null
           p_institution?: string | null
           p_account_number?: string | null
@@ -787,10 +789,47 @@ export type Database = {
       }
       contribute_to_goal: {
         Args: {
+          p_user_id: string
           p_goal_id: string
+          p_account_id: string
           p_amount: number
         }
-        Returns: undefined
+        Returns: Json
+      }
+      initialize_goal: {
+        Args: {
+          p_user_id: string
+          p_name: string
+          p_target_amount: number
+          p_initial_amount: number
+          p_deadline: string | null
+          p_category: string
+          p_account_id: string | null
+        }
+        Returns: Json
+      }
+      record_mf_investment_v4: {
+        Args: {
+          p_user_id: string
+          p_fund_name: string
+          p_scheme_code: string
+          p_units: number
+          p_nav: number
+          p_investment_type: string
+          p_category: string
+          p_amc_name: string
+          p_date: string
+          p_account_id: string
+          p_stamp_duty: number
+          p_trade_type: string
+        }
+        Returns: Json
+      }
+      reset_user_data: {
+        Args: {
+          p_user_id: string
+        }
+        Returns: Json
       }
     }
     Enums: {

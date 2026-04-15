@@ -58,12 +58,14 @@ export async function updateAccount(id: string, data: Record<string, unknown>) {
     .single();
 
   // Log update - awaited for integrity
+  const allowedLogKeys = ["name", "type", "currency", "bank_name", "institution", "color", "account_number"];
+  const changedFields = Object.keys(safeData).filter(k => allowedLogKeys.includes(k));
   await supabase.from("ledger_logs").insert({
     user_id: user.id,
     account_id: id,
     account_name: account?.name || "Account",
     action_type: "UPDATE",
-    details: `Updated settings for ${account?.name || 'account'}: ${Object.keys(safeData).join(", ")}`,
+    details: `Updated settings for ${account?.name || 'account'}: ${changedFields.join(", ") || "metadata"}`,
   });
 
   revalidatePath("/dashboard", "layout");
