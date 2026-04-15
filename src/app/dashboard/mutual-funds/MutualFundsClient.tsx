@@ -24,8 +24,10 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
   const [showAddModal, setShowAddModal] = useState(searchParams?.get("action") === "new");
   const [submitting, setSubmitting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState<"holdings" | "history">("holdings");
   const [trades, setTrades] = useState<MFTrade[]>([]);
   const refreshingRef = useRef(false);
+  const submitLockRef = useRef(false);
   const mfsRef = useRef<MF[]>(mfs);
   const isMountedRef = useRef(true);
   
@@ -154,33 +156,40 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
   };
 
   async function handleAddMF(e: React.FormEvent) {
+    e.preventDefault();
+    if (submitLockRef.current) return;
+    submitLockRef.current = true;
     if (!formData.account_id) {
         toast.error("Please select a channeling account");
+        submitLockRef.current = false;
         return;
     }
-    e.preventDefault();
     setSubmitting(true);
-    const res = await recordMFInvestment({
-      ...formData,
-      units: parseFloat(formData.units),
-      nav: parseFloat(formData.nav),
-      stamp_duty: stampDuty,
-      trade_type: formData.trade_type
-    });
-    if (!res?.error) {
-      toast.success(formData.trade_type === 'buy' ? "Wealth deployed into mutual fund" : "Mutual fund units liquidated successfully");
-      setShowAddModal(false);
-      setFormData({ 
-        fund_name: "", scheme_code: "", units: "", nav: "", 
-        investment_type: "SIP", category: "Equity", amc_name: "HDFC",
-        date: new Date().toISOString().split("T")[0], account_id: "",
-        trade_type: "buy"
+    try {
+      const res = await recordMFInvestment({
+        ...formData,
+        units: parseFloat(formData.units),
+        nav: parseFloat(formData.nav),
+        stamp_duty: stampDuty,
+        trade_type: formData.trade_type
       });
-      setSearchQuery("");
-    } else {
-      toast.error(res.error);
+      if (!res?.error) {
+        toast.success(formData.trade_type === 'buy' ? "Wealth deployed into mutual fund" : "Mutual fund units liquidated successfully");
+        setShowAddModal(false);
+        setFormData({ 
+          fund_name: "", scheme_code: "", units: "", nav: "", 
+          investment_type: "SIP", category: "Equity", amc_name: "HDFC",
+          date: new Date().toISOString().split("T")[0], account_id: "",
+          trade_type: "buy"
+        });
+        setSearchQuery("");
+      } else {
+        toast.error(res.error);
+      }
+    } finally {
+      setSubmitting(false);
+      submitLockRef.current = false;
     }
-    setSubmitting(false);
   }
 
   const handleRefreshAll = useCallback(async () => {
@@ -250,126 +259,125 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
         </div>
       </div>
 
-      {/* Modern MF Table */}
-      <div className="mx-4 border border-white/5 rounded-2xl overflow-hidden bg-white/[0.01]">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="border-b border-white/5 bg-white/[0.02]">
-              <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest">Growth Scheme</th>
-              <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">Volume</th>
-              <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">Avg NAV</th>
-              <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">Live NAV</th>
-              <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">P&L</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-white/[0.03]">
-            {mfs.length === 0 ? (
-                <tr><td colSpan={5} className="px-6 py-24 text-center text-[#666] italic text-sm">Synchronize with Zerodha Coin or manual entry to view portfolio.</td></tr>
-            ) : mfs.map((mf) => {
-                const investment = Number(mf.units) * Number(mf.avg_nav);
-                const currentVal = Number(mf.units) * Number(mf.current_nav);
-                const pnl = currentVal - investment;
-                const pnlPercent = investment > 0 ? (pnl / investment) * 100 : 0;
-                return (
-                    <tr key={mf.id} className="hover:bg-white/[0.01] group transition-colors">
-                        <td className="px-6 py-5">
-                            <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center font-black text-[9px] text-[--accent-primary-light] shadow-inner">
-                                    {mf.amc_name?.substring(0, 3)}
-                                </div>
-                                <div className="flex flex-col">
-                                    <div className="flex items-center gap-2">
-                                        <span className="font-bold text-[14px] text-[#eee] group-hover:text-[--accent-primary-light] transition-colors">{mf.fund_name}</span>
-                                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button 
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    toast(`Total Charges: ₹${(Number(mf.units) * Number(mf.avg_nav) * 0.00005).toFixed(4)} (Stamp Duty)`, {
-                                                        icon: '👁️',
-                                                        style: { background: '#1a1a1a', color: '#eee', border: '1px solid #333', fontSize: '11px', fontWeight: 'bold' }
-                                                    });
-                                                }}
-                                                className="p-1 hover:bg-white/5 rounded text-[10px]"
-                                            >
-                                                👁️
-                                            </button>
-                                            <button 
-                                                onClick={(e) => { e.stopPropagation(); startSell(mf); }}
-                                                className="px-2 py-0.5 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white text-[9px] font-black uppercase rounded transition-all"
-                                            >
-                                                Redeem
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <span className="text-[10px] text-[#666] font-bold uppercase tracking-wide mt-0.5">{mf.category} • {mf.investment_type}</span>
-                                </div>
-                            </div>
-                        </td>
-                        <td className="px-6 py-5 text-right font-bold tabular-nums text-[#eee] text-[14px]">{Number(mf.units).toFixed(3)}</td>
-                        <td className="px-6 py-5 text-right font-medium tabular-nums text-[#666] text-[13px]">₹{Number(mf.avg_nav).toFixed(3)}</td>
-                        <td className="px-6 py-5 text-right font-bold tabular-nums text-[#eee] text-[14px]">₹{Number(mf.current_nav).toFixed(3)}</td>
-                        <td className="px-6 py-5 text-right whitespace-nowrap">
-                            <div className={`flex flex-col items-end ${pnl >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
-                                <span className="text-[14px] font-bold tabular-nums">{pnl >= 0 ? "+" : "-"}₹{Math.abs(pnl).toLocaleString()}</span>
-                                <span className="text-[11px] font-bold tabular-nums opacity-60">{pnl >= 0 ? "+" : ""}{pnlPercent.toFixed(2)}%</span>
-                            </div>
-                        </td>
-                    </tr>
-                );
-            })}
-          </tbody>
-        </table>
+      <div className="mx-4 flex items-center gap-1 bg-white/5 p-1 rounded-xl w-fit">
+        <button
+          onClick={() => setActiveTab("holdings")}
+          className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === "holdings" ? "bg-[--accent-primary] text-white shadow-lg shadow-[--accent-primary]/20" : "text-[--text-muted] hover:text-[--text-primary]"}`}
+        >
+          Holdings ({mfs.length})
+        </button>
+        <button
+          onClick={() => setActiveTab("history")}
+          className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === "history" ? "bg-[--success] text-white shadow-lg shadow-[--success]/20" : "text-[--text-muted] hover:text-[--text-primary]"}`}
+        >
+          History ({trades.length})
+        </button>
       </div>
 
-      {/* Trade History Section */}
-      <div className="mx-4 mt-8">
-        <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-black tracking-tight">Trade History</h2>
-            <span className="text-[10px] font-black text-[--text-muted] uppercase tracking-widest">Recent 20 Logs</span>
+      {activeTab === "holdings" ? (
+        <div className="mx-4 border border-white/5 rounded-2xl overflow-hidden bg-white/[0.01]">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-white/5 bg-white/[0.02]">
+                <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest">Growth Scheme</th>
+                <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">Volume</th>
+                <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">Avg NAV</th>
+                <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">Live NAV</th>
+                <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">P&L</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/[0.03]">
+              {mfs.length === 0 ? (
+                  <tr><td colSpan={5} className="px-6 py-24 text-center text-[#666] italic text-sm">Synchronize with Zerodha Coin or manual entry to view portfolio.</td></tr>
+              ) : mfs.map((mf) => {
+                  const investment = Number(mf.units) * Number(mf.avg_nav);
+                  const currentVal = Number(mf.units) * Number(mf.current_nav);
+                  const pnl = currentVal - investment;
+                  const pnlPercent = investment > 0 ? (pnl / investment) * 100 : 0;
+                  return (
+                      <tr key={mf.id} className="hover:bg-white/[0.01] group transition-colors">
+                          <td className="px-6 py-5">
+                              <div className="flex items-center gap-4">
+                                  <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center font-black text-[9px] text-[--accent-primary-light] shadow-inner">
+                                      {mf.amc_name?.substring(0, 3)}
+                                  </div>
+                                  <div className="flex flex-col">
+                                      <div className="flex items-center gap-2">
+                                          <span className="font-bold text-[14px] text-[#eee] group-hover:text-[--accent-primary-light] transition-colors">{mf.fund_name}</span>
+                                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                              <button 
+                                                  onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      toast(`Total Charges: ₹${(Number(mf.units) * Number(mf.avg_nav) * 0.00005).toFixed(4)} (Stamp Duty)`, {
+                                                          icon: '👁️',
+                                                          style: { background: '#1a1a1a', color: '#eee', border: '1px solid #333', fontSize: '11px', fontWeight: 'bold' }
+                                                      });
+                                                  }}
+                                                  className="p-1 hover:bg-white/5 rounded text-[10px]"
+                                              >
+                                                  👁️
+                                              </button>
+                                              <button 
+                                                  onClick={(e) => { e.stopPropagation(); startSell(mf); }}
+                                                  className="px-2 py-0.5 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white text-[9px] font-black uppercase rounded transition-all"
+                                              >
+                                                  Redeem
+                                              </button>
+                                          </div>
+                                      </div>
+                                      <span className="text-[10px] text-[#666] font-bold uppercase tracking-wide mt-0.5">{mf.category} • {mf.investment_type}</span>
+                                  </div>
+                              </div>
+                          </td>
+                          <td className="px-6 py-5 text-right font-bold tabular-nums text-[#eee] text-[14px]">{Number(mf.units).toFixed(3)}</td>
+                          <td className="px-6 py-5 text-right font-medium tabular-nums text-[#666] text-[13px]">₹{Number(mf.avg_nav).toFixed(3)}</td>
+                          <td className="px-6 py-5 text-right font-bold tabular-nums text-[#eee] text-[14px]">₹{Number(mf.current_nav).toFixed(3)}</td>
+                          <td className="px-6 py-5 text-right whitespace-nowrap">
+                              <div className={`flex flex-col items-end ${pnl >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                                  <span className="text-[14px] font-bold tabular-nums">{pnl >= 0 ? "+" : "-"}₹{Math.abs(pnl).toLocaleString()}</span>
+                                  <span className="text-[11px] font-bold tabular-nums opacity-60">{pnl >= 0 ? "+" : ""}{pnlPercent.toFixed(2)}%</span>
+                              </div>
+                          </td>
+                      </tr>
+                  );
+              })}
+            </tbody>
+          </table>
         </div>
-        <div className="border border-white/5 rounded-2xl overflow-hidden bg-white/[0.01]">
-            <table className="w-full text-left border-collapse">
-                <thead>
-                    <tr className="border-b border-white/5 bg-white/[0.02]">
-                        <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest">Date</th>
-                        <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest">Scheme</th>
-                        <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest">Action</th>
-                        <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">Units</th>
-                        <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">NAV</th>
-                        <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">Amount</th>
-                    </tr>
-                </thead>
-                <tbody className="divide-y divide-white/[0.03]">
-                    {trades.length === 0 ? (
-                        <tr><td colSpan={6} className="px-6 py-12 text-center text-[#666] italic text-sm">No transaction history recorded yet.</td></tr>
-                    ) : trades.map((trade) => (
-                        <tr key={trade.id} className="hover:bg-white/[0.01] transition-colors">
-                            <td className="px-6 py-4 text-[12px] font-bold text-[--text-muted] tabular-nums">
-                                {trade.date}
-                            </td>
-                            <td className="px-6 py-4">
-                                <span className="text-[13px] font-bold text-[#eee]">{trade.fund_name}</span>
-                            </td>
-                            <td className="px-6 py-4">
-                                <span className={`px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${trade.trade_type === 'BUY' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
-                                    {trade.trade_type}
-                                </span>
-                            </td>
-                            <td className="px-6 py-4 text-right font-medium tabular-nums text-[#eee] text-[13px]">
-                                {Number(trade.units).toFixed(3)}
-                            </td>
-                            <td className="px-6 py-4 text-right font-medium tabular-nums text-[#666] text-[13px]">
-                                ₹{Number(trade.nav).toFixed(3)}
-                            </td>
-                            <td className="px-6 py-4 text-right font-black tabular-nums text-[#eee] text-[14px]">
-                                ₹{Number(trade.amount).toLocaleString()}
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+      ) : (
+        <div className="mx-4 border border-white/5 rounded-2xl overflow-hidden bg-white/[0.01]">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-white/5 bg-white/[0.02]">
+                <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest">Date</th>
+                <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest">Scheme</th>
+                <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest">Action</th>
+                <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">Units</th>
+                <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">NAV</th>
+                <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">Amount</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/[0.03]">
+              {trades.length === 0 ? (
+                <tr><td colSpan={6} className="px-6 py-12 text-center text-[#666] italic text-sm">No transaction history recorded yet.</td></tr>
+              ) : trades.map((trade) => (
+                <tr key={trade.id} className="hover:bg-white/[0.01] transition-colors">
+                  <td className="px-6 py-4 text-[12px] font-bold text-[--text-muted] tabular-nums">{trade.date}</td>
+                  <td className="px-6 py-4"><span className="text-[13px] font-bold text-[#eee]">{trade.fund_name}</span></td>
+                  <td className="px-6 py-4">
+                    <span className={`px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${trade.trade_type === 'BUY' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                      {trade.trade_type}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-right font-medium tabular-nums text-[#eee] text-[13px]">{Number(trade.units).toFixed(3)}</td>
+                  <td className="px-6 py-4 text-right font-medium tabular-nums text-[#666] text-[13px]">₹{Number(trade.nav).toFixed(3)}</td>
+                  <td className="px-6 py-4 text-right font-black tabular-nums text-[#eee] text-[14px]">₹{Number(trade.amount).toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      </div>
+      )}
 
       {/* Record Investment Modal */}
       {showAddModal && (
@@ -429,7 +437,7 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
                 </div>
               </div>
 
-              <div className="hidden md:grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-2">
                     <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">{formData.trade_type === 'buy' ? 'Capital Source' : 'Deposit To'}</label>
                     <select required className="input-premium h-12" value={formData.account_id} onChange={e => setFormData({...formData, account_id: e.target.value})}>

@@ -33,6 +33,27 @@ import { parseISO, subMonths } from "date-fns";
 
 
 const supabase = createClient();
+const CHART_COLOR_FALLBACKS = [
+  "#6c5ce7",
+  "#00cec9",
+  "#00b894",
+  "#fdcb6e",
+  "#d63031",
+  "#a29bfe",
+  "#fab1a0",
+  "#81ecec",
+  "#ff7675",
+  "#74b9ff",
+];
+const CSS_COLOR_MAP: Record<string, string> = {
+  "var(--accent-primary)": "#6c5ce7",
+  "var(--accent-primary-light)": "#a29bfe",
+  "var(--accent-secondary)": "#00cec9",
+  "var(--success)": "#00b894",
+  "var(--warning)": "#fdcb6e",
+  "var(--danger)": "#d63031",
+  "var(--text-muted)": "#5a6180",
+};
 
 type Account = Tables<"accounts">;
 type Transaction = Tables<"transactions">;
@@ -114,6 +135,8 @@ export default function DashboardClient({
     const cashBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
     const stockBalance = investments.reduce((sum, inv) => sum + (Number(inv.quantity) * Number(inv.current_price || 0)), 0);
     const mfBalance = mutualFunds.reduce((sum, mf) => sum + (Number(mf.units) * Number(mf.current_nav || 0)), 0);
+    const stockCount = investments.filter((inv) => Number(inv.quantity) > 0).length;
+    const mfCount = mutualFunds.filter((mf) => Number(mf.units) > 0).length;
     const totalBalance = cashBalance + stockBalance + mfBalance;
     
     const now = new Date();
@@ -165,12 +188,14 @@ export default function DashboardClient({
     currentMonthTxns.filter(t => t.type === 'expense').forEach(t => {
       catMap[t.category || "Others"] = (catMap[t.category || "Others"] || 0) + Number(t.amount);
     });
-    const pieData = Object.entries(catMap).map(([name, value]) => {
+    const pieData = Object.entries(catMap).map(([name, value], index) => {
       const categoryTheme = CATEGORIES.find(c => c.label === name);
+      const themedColor = categoryTheme?.color;
+      const resolvedColor = (themedColor && CSS_COLOR_MAP[themedColor]) || themedColor || CHART_COLOR_FALLBACKS[index % CHART_COLOR_FALLBACKS.length];
       return { 
         name, 
         value,
-        color: categoryTheme ? categoryTheme.color : "#8884d8"
+        color: resolvedColor
       };
     }).sort((a,b) => b.value - a.value);
 
@@ -190,6 +215,10 @@ export default function DashboardClient({
       incomeExpenseData,
       pieData,
       accountCount: accounts.length,
+      stockBalance,
+      mfBalance,
+      stockCount,
+      mfCount,
     };
   }, [accounts, transactions, investments, mutualFunds]);
 
@@ -268,8 +297,34 @@ export default function DashboardClient({
                </div>
                <svg className="w-5 h-5 ml-auto text-[--text-muted]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
              </Link>
-          </div>
-        </div>
+           </div>
+         </div>
+
+         <div className="px-1">
+           <h3 className="text-xs font-black uppercase tracking-widest text-[--text-muted] mb-4">Portfolio Snapshot</h3>
+           <div className="grid grid-cols-1 gap-3">
+             <div className="glass-card-static p-4 flex items-center justify-between border-blue-500/20 bg-blue-500/5">
+               <div className="flex items-center gap-3">
+                 <div className="w-9 h-9 rounded-lg bg-blue-500/20 flex items-center justify-center">📈</div>
+                 <div className="flex flex-col">
+                   <span className="text-xs font-black uppercase tracking-wider text-white">Stocks</span>
+                   <span className="text-[9px] font-black uppercase tracking-widest text-[--text-muted]">{stats.stockCount} holding{stats.stockCount === 1 ? "" : "s"}</span>
+                 </div>
+               </div>
+               <span className="text-sm font-black tabular-nums text-white">₹{stats.stockBalance.toLocaleString()}</span>
+             </div>
+             <div className="glass-card-static p-4 flex items-center justify-between border-purple-500/20 bg-purple-500/5">
+               <div className="flex items-center gap-3">
+                 <div className="w-9 h-9 rounded-lg bg-purple-500/20 flex items-center justify-center">🏦</div>
+                 <div className="flex flex-col">
+                   <span className="text-xs font-black uppercase tracking-wider text-white">Mutual Funds</span>
+                   <span className="text-[9px] font-black uppercase tracking-widest text-[--text-muted]">{stats.mfCount} fund{stats.mfCount === 1 ? "" : "s"}</span>
+                 </div>
+               </div>
+               <span className="text-sm font-black tabular-nums text-white">₹{stats.mfBalance.toLocaleString()}</span>
+             </div>
+           </div>
+         </div>
       </div>
 
       {/* 💻 DESKTOP EXCLUSIVE: FULL ANALYTICS */}
@@ -553,4 +608,3 @@ export default function DashboardClient({
     </>
   );
 }
-
