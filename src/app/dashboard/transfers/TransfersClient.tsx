@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState, startTransition } from "react";
 import { format } from "date-fns";
@@ -25,7 +24,6 @@ export default function TransfersClient({ initialAccounts, initialTransfers }: T
   const searchParams = useSearchParams();
   const [showForm, setShowForm] = useState(searchParams?.get("action") === "new");
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     from_account_id: "",
     to_account_id: "",
@@ -62,7 +60,6 @@ export default function TransfersClient({ initialAccounts, initialTransfers }: T
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
-    setError(null);
 
     if (formData.from_account_id === formData.to_account_id) {
       toast.error("Security block: Source and destination accounts must be distinct");
@@ -106,7 +103,6 @@ export default function TransfersClient({ initialAccounts, initialTransfers }: T
     setFormData({ from_account_id: "", to_account_id: "", amount: "", note: "" });
     setShowForm(false);
     setSubmitting(false);
-    setError(null);
   }
 
   function getAccountName(accountId: string) {

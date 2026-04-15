@@ -105,17 +105,14 @@ const nav = [
 export default function Sidebar() {
   const pathname = usePathname();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const [isQuickActionOpen, setIsQuickActionOpen] = useState(false);
 
   useEffect(() => {
-    if (!isMoreOpen) return;
-
+    if (!isMoreOpen && !isQuickActionOpen) return;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [isMoreOpen]);
+    return () => { document.body.style.overflow = previousOverflow; };
+  }, [isMoreOpen, isQuickActionOpen]);
 
   async function handleLogout() {
     const supabase = createClient();
@@ -128,9 +125,7 @@ export default function Sidebar() {
     return (
       <Link
         href={href}
-        className={`flex items-center gap-3 px-3 py-1 rounded-xl transition-all duration-300 ${
-          active ? "" : "hover:bg-[var(--glass-hover)] group"
-        }`}
+        className={`flex items-center gap-3 px-3 py-1 rounded-xl transition-all duration-300 ${active ? "" : "hover:bg-[var(--glass-hover)] group"}`}
         style={{
           color: active ? "var(--accent-primary-light)" : "var(--text-secondary)",
           background: active ? "var(--sidebar-active)" : "transparent",
@@ -138,159 +133,123 @@ export default function Sidebar() {
           textDecoration: "none",
         }}
       >
-        <span className={`${active ? "text-[--accent-primary-light]" : "group-hover:text-[--text-primary]"}`}>
-          {icon}
-        </span>
+        <span className={`${active ? "text-[--accent-primary-light]" : "group-hover:text-[--text-primary]"}`}>{icon}</span>
         <span className="font-semibold text-[13px] tracking-tight">{label}</span>
       </Link>
     );
   };
 
-  // Split nav for mobile
-  const mainNav = nav.slice(0, 4);
-  const moreNav = nav.slice(4);
+  const quickActions = [
+    { label: "Expense", href: "/dashboard/expenses?action=new", icon: "🔴", color: "var(--danger)" },
+    { label: "Income", href: "/dashboard/income?action=new", icon: "🟢", color: "var(--success)" },
+    { label: "Transfer", href: "/dashboard/transfers?action=new", icon: "🔄", color: "var(--accent-primary-light)" },
+    { label: "Trade", href: "/dashboard/stocks?action=new", icon: "📈", color: "#3b82f6" },
+    { label: "Funds", href: "/dashboard/mutual-funds?action=new", icon: "🏦", color: "#a855f7" },
+  ];
+
+  const mobileNavLeft = nav.slice(0, 2); // Dashboard, Accounts
+  const mobileNavRight = [nav[2]]; // Ledger
+  const moreNav = nav.slice(3);
 
   return (
     <>
-      {/* Desktop Sidebar */}
-      <aside
-        className="hidden md:flex w-[210px] shrink-0 flex-col h-screen sticky top-0"
-        style={{
-          background: "var(--sidebar-bg)",
-          borderRight: "1px solid var(--sidebar-border)",
-          backdropFilter: "blur(18px) saturate(1.15)",
-          WebkitBackdropFilter: "blur(18px) saturate(1.15)",
-        }}
-      >
-        <div className="px-6 pt-4 pb-2">
-          <div className="flex flex-col">
-            <h2 className="text-xl font-black text-white tracking-tighter">Finance<span className="text-[--accent-primary-light]">OS</span></h2>
-            <p className="text-[10px] font-black text-[--text-muted] uppercase tracking-[0.2em] leading-none mt-1">Institutional Build</p>
-          </div>
-        </div>
-
-        <div className="divider-glow mx-6" />
-
-        <nav className="flex-1 px-4 pt-2 space-y-0.5 overflow-visible no-scrollbar">
-          <p className="px-4 pb-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-[--text-muted] opacity-60">
-            Navigation
-          </p>
-          {nav.map((item, index) => (
-            <NavItem key={item.href} {...item} index={index} />
+      {/* Universal Quick Action Hub */}
+      <div className={`md:hidden fixed inset-0 z-[100] bg-black/80 backdrop-blur-md transition-all duration-500 ${isQuickActionOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`} onClick={() => setIsQuickActionOpen(false)}>
+        <div className={`absolute bottom-32 left-8 right-8 grid grid-cols-2 gap-4 transition-all duration-500 ${isQuickActionOpen ? "translate-y-0 scale-100" : "translate-y-16 scale-90"}`} onClick={e => e.stopPropagation()}>
+          {quickActions.map((action) => (
+            <Link key={action.label} href={action.href} onClick={() => setIsQuickActionOpen(false)} className="glass-card-static p-6 flex flex-col items-center justify-center gap-3 no-underline transition-all active:scale-95" style={{ background: "rgba(20, 24, 48, 0.95)", border: `1px solid ${action.color}30` }}>
+              <div className="text-3xl filter drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">{action.icon}</div>
+              <span className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: action.color }}>{action.label}</span>
+            </Link>
           ))}
+          <button onClick={() => setIsQuickActionOpen(false)} className="col-span-2 glass-card-static py-4 flex items-center justify-center bg-white/5 border-white/10 mt-2">
+            <span className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Cancel</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Desktop Sidebar */}
+      <aside className="hidden md:flex w-[210px] shrink-0 flex-col h-screen sticky top-0" style={{ background: "var(--sidebar-bg)", borderRight: "1px solid var(--sidebar-border)", backdropFilter: "blur(18px) saturate(1.15)", WebkitBackdropFilter: "blur(18px) saturate(1.15)" }}>
+        <div className="px-6 pt-4 pb-2"><div className="flex flex-col"><h2 className="text-xl font-black text-white tracking-tighter">Finance<span className="text-[--accent-primary-light]">OS</span></h2><p className="text-[10px] font-black text-[--text-muted] uppercase tracking-[0.2em] leading-none mt-1">Institutional Build</p></div></div>
+        <div className="divider-glow mx-6" />
+        <nav className="flex-1 px-4 pt-2 space-y-0.5 overflow-visible no-scrollbar">
+          <p className="px-4 pb-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-[--text-muted] opacity-60">Navigation</p>
+          {nav.map((item, index) => (<NavItem key={item.href} {...item} index={index} />))}
         </nav>
-
         <div className="divider-glow mx-4" />
-
         <div className="px-3 py-2">
-          <button
-            onClick={handleLogout}
-            className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-[13px] font-bold uppercase tracking-widest transition-all hover:bg-red-500/10 hover:text-red-400 border border-transparent hover:border-red-500/20 text-[--text-muted]"
-          >
-            <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
+          <button onClick={handleLogout} className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-[13px] font-bold uppercase tracking-widest transition-all hover:bg-red-500/10 hover:text-red-400 border border-transparent hover:border-red-500/20 text-[--text-muted]">
+            <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
             Sign Out
           </button>
         </div>
       </aside>
 
-      {/* Mobile More Overlay — Hardened Native-feel Drawer */}
-      <div 
-        className={`md:hidden fixed inset-0 z-[60] bg-black/60 backdrop-blur-md transition-all duration-500 ease-in-out ${isMoreOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}
-        onClick={() => setIsMoreOpen(false)}
-      >
-        <div 
-          className={`fixed bottom-0 left-0 right-0 glass-card rounded-t-[40px] p-6 pb-[calc(env(safe-area-inset-bottom,0px)+1.5rem)] transition-all duration-500 cubic-bezier(0.32, 0.72, 0, 1) transform ${isMoreOpen ? "translate-y-0" : "translate-y-full"}`}
-          onClick={(e) => e.stopPropagation()}
-          style={{ 
-            background: "rgba(10, 13, 28, 0.99)",
-            boxShadow: "0 -20px 60px rgba(0,0,0,0.8)",
-            borderTop: "1px solid rgba(255,255,255,0.08)"
-          }}
-        >
+      {/* Mobile More Overlay */}
+      <div className={`md:hidden fixed inset-0 z-[60] bg-black/60 backdrop-blur-md transition-all duration-500 ease-in-out ${isMoreOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`} onClick={() => setIsMoreOpen(false)}>
+        <div className={`fixed bottom-0 left-0 right-0 glass-card rounded-t-[40px] p-6 pb-[calc(env(safe-area-inset-bottom,0px)+1.5rem)] transition-all duration-500 cubic-bezier(0.32, 0.72, 0, 1) transform ${isMoreOpen ? "translate-y-0" : "translate-y-full"}`} onClick={(e) => e.stopPropagation()} style={{ background: "rgba(10, 13, 28, 0.99)", boxShadow: "0 -20px 60px rgba(0,0,0,0.8)", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
           <div className="w-10 h-1 bg-white/10 rounded-full mx-auto mb-8 opacity-40" />
-          
           <div className="grid grid-cols-3 gap-3 mb-6">
             {moreNav.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setIsMoreOpen(false)}
-                className="flex flex-col items-center justify-center p-4 rounded-[28px] bg-white/[0.02] border border-white/[0.04] active:bg-white/10 transition-all no-underline gap-2"
-              >
-                <div className="w-10 h-10 rounded-full bg-[--accent-primary]/10 flex items-center justify-center text-[--accent-primary-light]">
-                  {item.icon}
-                </div>
+              <Link key={item.href} href={item.href} onClick={() => setIsMoreOpen(false)} className="flex flex-col items-center justify-center p-4 rounded-[28px] bg-white/[0.02] border border-white/[0.04] active:bg-white/10 transition-all no-underline gap-2">
+                <div className="w-10 h-10 rounded-full bg-[--accent-primary]/10 flex items-center justify-center text-[--accent-primary-light]">{item.icon}</div>
                 <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.15em] text-center">{item.label}</span>
               </Link>
             ))}
           </div>
-
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center justify-between px-6 h-14 rounded-[24px] bg-rose-500/[0.03] border border-rose-500/10 text-rose-500 font-bold text-[10px] uppercase tracking-[0.2em] active:bg-rose-500/10 active:scale-[0.98] transition-all"
-          >
-            <div className="flex items-center gap-3">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-              <span>Terminate Session</span>
-            </div>
+          <button onClick={handleLogout} className="w-full flex items-center justify-between px-6 h-14 rounded-[24px] bg-rose-500/[0.03] border border-rose-500/10 text-rose-500 font-bold text-[10px] uppercase tracking-[0.2em] active:bg-rose-500/10 transition-all">
+            <div className="flex items-center gap-3"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg><span>Terminate Session</span></div>
             <div className="text-[10px] font-black opacity-30 tracking-tight">V2.0.4</div>
           </button>
         </div>
       </div>
 
-      {/* Mobile Bottom Navigation (Premium Refined) */}
+      {/* Mobile Bottom Navigation (FAB Optimized) */}
       <nav 
-        className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between px-4 pb-safe border-t border-white/5 pt-1.5"
+        className="md:hidden fixed bottom-2 left-4 right-4 z-[90] flex items-center justify-between px-1 h-[72px] border border-white/10 rounded-[32px] transition-transform duration-300"
         style={{
-          background: "rgba(8, 11, 26, 0.98)",
-          backdropFilter: "blur(20px) saturate(1.4)",
-          WebkitBackdropFilter: "blur(20px) saturate(1.4)",
-          boxShadow: "0 -8px 40px rgba(0,0,0,0.6)",
+          background: "rgba(10, 14, 32, 0.98)",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          boxShadow: "0 10px 40px rgba(0,0,0,0.8)",
         }}
       >
-        {mainNav.map((item) => {
+        {/* Left Side */}
+        {mobileNavLeft.map((item) => {
           const active = pathname === item.href;
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex-1 flex flex-col items-center justify-center min-h-[56px] relative transition-all duration-300 active:scale-95"
-              style={{
-                color: active ? "var(--accent-primary-light)" : "var(--text-muted)",
-              }}
-            >
-              {active && (
-                <div className="absolute inset-x-2 -top-[1.5px] h-[3px] bg-gradient-to-r from-transparent via-[--accent-primary-light] to-transparent blur-[0.5px] rounded-full animate-fade-in" />
-              )}
-              <div className={`${active ? "scale-110 -translate-y-1.5 text-[--accent-primary-light]" : "opacity-50"} transition-all duration-300 flex items-center justify-center`}>
-                {item.icon}
-              </div>
-              <span className={`text-[9px] font-black uppercase tracking-widest transition-all duration-300 absolute bottom-1.5 ${active ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"}`}>
-                {item.label}
-              </span>
+            <Link key={item.href} href={item.href} className={`flex-1 flex flex-col items-center justify-center h-full relative transition-all active:scale-90 ${active ? "text-[--accent-primary-light]" : "text-[--text-muted]"}`}>
+              <div className={`${active ? "scale-110 -translate-y-1" : "opacity-40"} transition-all duration-300`}>{item.icon}</div>
+              <span className={`text-[8px] font-black uppercase tracking-widest absolute bottom-2 transition-all duration-300 ${active ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"}`}>{item.label}</span>
+            </Link>
+          );
+        })}
+
+        {/* UNIVERSAL FAB */}
+        <div className="flex-1 flex justify-center h-full items-center relative">
+           <button 
+             onClick={() => setIsQuickActionOpen(!isQuickActionOpen)}
+             className={`w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all duration-500 active:scale-95 absolute -top-4 z-[110] ${isQuickActionOpen ? "bg-rose-500 rotate-45" : "bg-gradient-to-br from-[--accent-primary] to-[--accent-primary-light]"}`}
+             style={{ boxShadow: isQuickActionOpen ? "0 8px 32px rgba(244,63,94,0.5)" : "0 8px 24px rgba(108,92,231,0.4)" }}
+           >
+             <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
+           </button>
+        </div>
+
+        {/* Right Side */}
+        {mobileNavRight.map((item) => {
+          const active = pathname === item.href;
+          return (
+            <Link key={item.href} href={item.href} className={`flex-1 flex flex-col items-center justify-center h-full relative transition-all active:scale-90 ${active ? "text-[--accent-primary-light]" : "text-[--text-muted]"}`}>
+              <div className={`${active ? "scale-110 -translate-y-1" : "opacity-40"} transition-all duration-300`}>{item.icon}</div>
+              <span className={`text-[8px] font-black uppercase tracking-widest absolute bottom-2 transition-all duration-300 ${active ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"}`}>{item.label}</span>
             </Link>
           );
         })}
         
-        {/* More Toggle */}
-        <button
-          type="button"
-          onClick={() => setIsMoreOpen(!isMoreOpen)}
-          aria-expanded={isMoreOpen}
-          className={`flex-1 flex flex-col items-center justify-center min-h-[56px] transition-all active:scale-95 relative ${isMoreOpen ? "text-[--accent-primary-light]" : "text-[--text-muted]"}`}
-        >
-          <div className={`${isMoreOpen ? "scale-110 -translate-y-1.5 rotate-90" : "opacity-50"} transition-all duration-500 flex items-center justify-center`}>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-              <path d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </div>
-          <span className={`text-[9px] font-black uppercase tracking-widest transition-all duration-300 absolute bottom-1.5 ${isMoreOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"}`}>
-            More
-          </span>
+        <button onClick={() => setIsMoreOpen(true)} className={`flex-1 flex flex-col items-center justify-center h-full relative transition-all active:scale-90 ${isMoreOpen ? "text-[--accent-primary-light]" : "text-[--text-muted]"}`}>
+          <div className={`${isMoreOpen ? "scale-110 translate-y-0" : "opacity-40"} transition-all duration-300`}><svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" /></svg></div>
+          <span className={`text-[8px] font-black uppercase tracking-widest absolute bottom-2 transition-all duration-300 ${isMoreOpen ? "opacity-100" : "opacity-0 translate-y-2"}`}>More</span>
         </button>
       </nav>
     </>

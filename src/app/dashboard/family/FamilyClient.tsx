@@ -13,8 +13,6 @@ type Recipient = {
   id: string;
   name: string;
   relationship: string | null;
-  account_number: string | null;
-  bank_name: string | null;
   created_at: string;
 };
 
@@ -63,12 +61,13 @@ export default function FamilyClient({
   const [activeFilter, setActiveFilter] = useState<string>("All");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [activeView, setActiveView] = useState<"directory" | "history">("directory");
+  const [isEditingRecipient, setIsEditingRecipient] = useState(false);
+  const [editingRecipient, setEditingRecipient] = useState<Recipient | null>(null);
 
   // Form states
   const [newName, setNewName] = useState("");
   const [newRelationship, setNewRelationship] = useState("Family");
-  const [newAccountNumber, setNewAccountNumber] = useState("");
-  const [newBankName, setNewBankName] = useState("");
 
   const [sendAmount, setSendAmount] = useState("");
   const [sendAccountId, setSendAccountId] = useState(initialAccounts[0]?.id || "");
@@ -115,23 +114,49 @@ export default function FamilyClient({
 
   const handleAddRecipient = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = await createRecipient({
+    let res;
+    if (isEditingRecipient && editingRecipient) {
+      res = await supabase
+        .from("recipients")
+        .update({
+          name: newName,
+          relationship: newRelationship,
+        })
+        .eq("id", editingRecipient.id);
+      
+      if (!res.error) {
+        toast.success(`Contact parameters recalibrated: ${newName} updated`);
+        setIsAddingRecipient(false);
+        setIsEditingRecipient(false);
+        setEditingRecipient(null);
+        fetchData();
+      } else {
+        toast.error(res.error.message || "Recalibration failed");
+      }
+      return;
+    }
+
+    res = await createRecipient({
       name: newName,
       relationship: newRelationship,
-      account_number: newAccountNumber || null,
-      bank_name: newBankName || null,
     });
 
     if (res.success) {
       setIsAddingRecipient(false);
       setNewName("");
-      setNewAccountNumber("");
-      setNewBankName("");
       toast.success(`Recipient initialized: ${newName} added to directory`);
       fetchData();
     } else {
       toast.error(res.error || "Failed to add recipient");
     }
+  };
+
+  const startEdit = (person: Recipient) => {
+    setEditingRecipient(person);
+    setNewName(person.name);
+    setNewRelationship(person.relationship || "Other");
+    setIsEditingRecipient(true);
+    setIsAddingRecipient(true);
   };
 
   const handleDeleteRecipient = async (id: string) => {
@@ -241,171 +266,147 @@ export default function FamilyClient({
         </div>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-2 -mb-2 no-scrollbar">
-        {["All", "Family", "Friend", "Other"].map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveFilter(tab)}
-            className="px-5 py-2.5 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap min-h-[40px] flex items-center justify-center"
-            style={{
-              background: activeFilter === tab ? "var(--accent-primary)" : "rgba(255,255,255,0.03)",
-              color: activeFilter === tab ? "white" : "var(--text-muted)",
-              border: `1px solid ${activeFilter === tab ? "var(--accent-primary)" : "rgba(255,255,255,0.05)"}`,
-            }}
+      {/* Filter Tabs & History Toggle */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex gap-2 overflow-x-auto pb-2 -mb-2 no-scrollbar">
+          {(["All", "Family", "Friend", "Other"] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveFilter(tab)}
+              className="px-5 py-2.5 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap min-h-[40px] flex items-center justify-center"
+              style={{
+                background: activeFilter === tab ? "var(--accent-primary)" : "rgba(255,255,255,0.03)",
+                color: activeFilter === tab ? "white" : "var(--text-muted)",
+                border: `1px solid ${activeFilter === tab ? "var(--accent-primary)" : "rgba(255,255,255,0.05)"}`,
+              }}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+        
+        <div className="flex bg-white/5 p-1 rounded-2xl w-fit">
+          <button 
+            onClick={() => setActiveView("directory")}
+            className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeView === "directory" ? "bg-[--accent-primary] text-white shadow-lg" : "text-[--text-muted]"}`}
           >
-            {tab}
+            Directory
           </button>
-        ))}
+          <button 
+            onClick={() => setActiveView("history")}
+            className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeView === "history" ? "bg-[--accent-primary] text-white shadow-lg" : "text-[--text-muted]"}`}
+          >
+            History
+          </button>
+        </div>
       </div>
 
-      {/* Recipients Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {loading ? (
-          Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-64 skeleton" style={{ borderRadius: "var(--radius-xl)" }} />
-          ))
-        ) : filteredRecipients.length === 0 ? (
-          <div
-            className="col-span-full py-20 text-center glass-card-static"
-            style={{ borderStyle: "dashed" }}
-          >
-            <div className="text-5xl mb-4">👥</div>
-            <p className="text-lg font-semibold text-[--text-primary]">
-              {activeFilter === "All" ? "No contacts yet" : `No ${activeFilter.toLowerCase()} contacts`}
-            </p>
-            <p className="text-sm text-[--text-muted] mt-1">
-              Click &ldquo;Add Person&rdquo; to get started
-            </p>
-          </div>
-        ) : (
-          filteredRecipients.map((person, index) => {
-            const config = getConfig(person.relationship);
-            return (
-              <div
-                key={person.id}
-                className={`glass-card group animate-fade-in-up delay-${Math.min(index + 1, 6)}`}
-                style={{ padding: "24px" }}
-              >
-                <div className="flex flex-col h-full">
-                  <div className="flex items-start justify-between mb-5">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-black text-white shadow-lg"
-                        style={{
-                          background: config.gradient,
-                          boxShadow: `0 8px 24px ${config.color}33`,
-                        }}
-                      >
-                        {person.name.charAt(0).toUpperCase()}
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-bold text-[--text-primary] leading-tight">
-                          {person.name}
-                        </h3>
-                        <span
-                          className="text-[10px] font-bold uppercase tracking-[0.2em]"
-                          style={{ color: config.color }}
-                        >
-                          {config.emoji} {person.relationship}
-                        </span>
-                      </div>
+      {/* Main View Render */}
+      {activeView === "directory" ? (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {loading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="h-64 skeleton" style={{ borderRadius: "var(--radius-xl)" }} />
+            ))
+          ) : filteredRecipients.length === 0 ? (
+            <div
+              className="col-span-full py-24 text-center glass-card-static"
+              style={{ borderStyle: "dashed" }}
+            >
+              <div className="relative inline-block mb-8">
+                <div className="absolute inset-0 bg-[--accent-secondary]/10 blur-3xl rounded-full" />
+                <img src="/assets/family.png" alt="No Contacts" className="w-40 h-40 relative z-10" />
+              </div>
+              <p className="text-2xl font-black text-[--text-primary]">
+                {activeFilter === "All" ? "Network Offline" : `No ${activeFilter.toLowerCase()} nodes`}
+              </p>
+              <p className="text-sm text-[--text-muted] mt-3 max-w-sm mx-auto">
+                Establish new connections by clicking &ldquo;Add Person&rdquo; to populate your financial inner circle.
+              </p>
+            </div>
+          ) : (
+            filteredRecipients.map((person, index) => {
+              const config = getConfig(person.relationship);
+              return (
+                <div key={person.id} className="glass-card flex flex-col min-h-[260px] p-6 relative overflow-hidden transition-transform hover:-translate-y-1 group">
+                  <div className="absolute top-0 left-0 right-0 h-[3px]" style={{ background: config.gradient }} />
+                  
+                  <div className="flex justify-between items-start mb-6">
+                    <div className="flex flex-col gap-4">
+                       <span className="w-fit px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider" style={{ background: `${config.color}20`, color: config.color, border: `1px solid ${config.color}30` }}>
+                         {person.relationship}
+                       </span>
+                       <div className="flex items-center gap-3">
+                         <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl font-black text-white shadow-lg" style={{ background: config.gradient, boxShadow: `0 8px 16px ${config.color}33` }}>
+                           {person.name.charAt(0).toUpperCase()}
+                         </div>
+                       </div>
                     </div>
-                    <button
-                      onClick={() => handleDeleteRecipient(person.id)}
-                      className="opacity-0 group-hover:opacity-100 p-2 rounded-lg hover:bg-red-500/10 text-[--text-muted] hover:text-red-400 transition-all"
-                    >
+                    <button onClick={() => startEdit(person)} className="p-2 rounded-xl bg-white/5 border border-white/10 text-[--text-muted] hover:text-white transition-all">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                        <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                       </svg>
                     </button>
                   </div>
 
-                  {person.bank_name && (
-                    <div className="flex items-center gap-2 mb-5 px-3 py-2 rounded-lg bg-white/[0.02] border border-white/5">
-                      <svg className="w-4 h-4 text-[--text-muted]" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                        <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                      </svg>
-                      <span className="text-xs text-[--text-secondary] font-medium">
-                        {person.bank_name}
-                        {person.account_number && (
-                          <span className="text-[--text-muted]"> • ****{person.account_number.slice(-4)}</span>
-                        )}
-                      </span>
+                  <div className="mt-auto">
+                    <h3 className="text-xl font-black truncate">{person.name}</h3>
+                    
+                    <div className="flex gap-2 mt-6">
+                      <button
+                        onClick={() => { setSelectedRecipient(person); setSendAmount(""); setSendNote(""); setIsSendingMoney(true); }}
+                        className="flex-1 h-12 rounded-xl font-bold text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-2"
+                        style={{ background: `${config.color}15`, color: config.color, border: `1px solid ${config.color}30` }}
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+                        Wealth Transfer
+                      </button>
+                      <button onClick={() => handleDeleteRecipient(person.id)} className="w-12 h-12 rounded-xl bg-[--danger]/10 border border-[--danger]/20 text-[--danger] hover:bg-[--danger]/20 transition-all flex items-center justify-center">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                      </button>
                     </div>
-                  )}
-
-                  <button
-                    onClick={() => {
-                      setSelectedRecipient(person);
-                      setSendAmount("");
-                      setSendNote("");
-                      setIsSendingMoney(true);
-                    }}
-                    className="mt-auto w-full py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2"
-                    style={{
-                      background: `${config.color}15`,
-                      border: `1px solid ${config.color}25`,
-                      color: config.color,
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = config.gradient;
-                      e.currentTarget.style.color = "white";
-                      e.currentTarget.style.borderColor = "transparent";
-                      e.currentTarget.style.transform = "translateY(-1px)";
-                      e.currentTarget.style.boxShadow = `0 8px 24px ${config.color}33`;
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = `${config.color}15`;
-                      e.currentTarget.style.color = config.color;
-                      e.currentTarget.style.borderColor = `${config.color}25`;
-                      e.currentTarget.style.transform = "translateY(0)";
-                      e.currentTarget.style.boxShadow = "none";
-                    }}
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                      <path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                    </svg>
-                    Send Money
-                  </button>
+                  </div>
                 </div>
-              </div>
-            );
-          })
-        )}
-      </div>
-
-      {recentSends.length > 0 && (
-        <div className="glass-card-static overflow-hidden" style={{ borderRadius: "var(--radius-xl)" }}>
-          <div className="px-5 md:px-6 py-4 border-b border-white/5">
-            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">
-              Recent Activity
-            </h3>
+              );
+            })
+          )}
+        </div>
+      ) : (
+        <div className="glass-card-static overflow-hidden animate-fade-in">
+          <div className="px-6 py-4 border-b border-white/5 bg-white/[0.01]">
+            <h3 className="text-sm font-black uppercase tracking-widest">Transaction Repository</h3>
           </div>
           <div className="divide-y divide-white/5">
-            {recentSends.slice(0, 5).map((send) => (
-              <div key={send.id} className="px-5 md:px-6 py-4 flex items-center justify-between hover:bg-white/[0.02] transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                      <path d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                    </svg>
+            {recentSends.length === 0 ? (
+               <div className="py-20 text-center italic text-[--text-muted]">No wealth transfers recorded in current sequence.</div>
+            ) : (
+              recentSends.map((send) => (
+                <div key={send.id} className="px-6 py-5 flex items-center justify-between hover:bg-white/[0.02] transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-red-400/10 flex items-center justify-center">
+                      <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                        <path d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-white">{send.details}</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-[--text-muted] mt-0.5">
+                        {format(new Date(send.created_at), "PPP • p")}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-[13px] font-bold text-[--text-primary] line-clamp-1">{send.details}</p>
-                    <p className="text-[10px] text-[--text-muted] font-medium">
-                      {format(new Date(send.created_at), "MMM d, h:mm a")}
-                    </p>
+                  <div className="text-right">
+                    <p className="text-lg font-black text-red-400">-₹{(send.amount || 0).toLocaleString()}</p>
+                    <p className="text-[9px] font-bold text-emerald-400 uppercase tracking-widest">Execution Confirmed</p>
                   </div>
                 </div>
-                <span className="text-sm font-black text-red-400 whitespace-nowrap ml-4">
-                  -₹{(send.amount || 0).toLocaleString()}
-                </span>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       )}
+
+
 
       {isAddingRecipient && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-xl animate-fade-in shadow-2xl">
@@ -419,11 +420,11 @@ export default function FamilyClient({
                     <span className="text-xl">{RELATIONSHIP_CONFIG[newRelationship]?.emoji || "👤"}</span>
                   </div>
                   <div>
-                    <h2 className="text-xl font-black text-[--text-primary]">Add Contact</h2>
-                    <p className="text-[10px] uppercase tracking-widest text-[--text-muted] font-bold">New Entry</p>
+                    <h2 className="text-xl font-black text-[--text-primary]">{isEditingRecipient ? "Edit Contact" : "Add Contact"}</h2>
+                    <p className="text-[10px] uppercase tracking-widest text-[--text-muted] font-bold">{isEditingRecipient ? "Update Registry" : "New Entry"}</p>
                   </div>
                 </div>
-                <button onClick={() => setIsAddingRecipient(false)} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 text-[--text-muted] hover:text-[--text-primary] transition-colors">
+                <button onClick={() => { setIsAddingRecipient(false); setIsEditingRecipient(false); setEditingRecipient(null); setNewName(""); }} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 text-[--text-muted] hover:text-[--text-primary] transition-colors">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
               </div>
@@ -445,13 +446,9 @@ export default function FamilyClient({
                     })}
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><label className="block text-xs font-bold text-[--text-muted] uppercase tracking-[0.2em] mb-1.5 ml-1">Bank Name</label><input value={newBankName} onChange={(e) => setNewBankName(e.target.value)} className="input-premium" placeholder="e.g. HDFC" /></div>
-                  <div><label className="block text-xs font-bold text-[--text-muted] uppercase tracking-[0.2em] mb-1.5 ml-1">Account No.</label><input value={newAccountNumber} onChange={(e) => setNewAccountNumber(e.target.value)} className="input-premium" placeholder="e.g. 1234..." /></div>
-                </div>
                 <div className="flex gap-3 pt-4">
-                  <button type="button" onClick={() => setIsAddingRecipient(false)} className="btn-secondary flex-1">Cancel</button>
-                  <button type="submit" className="btn-primary flex-1">Save Contact</button>
+                  <button type="button" onClick={() => { setIsAddingRecipient(false); setIsEditingRecipient(false); setEditingRecipient(null); setNewName(""); }} className="btn-secondary flex-1">Cancel</button>
+                  <button type="submit" className="btn-primary flex-1">{isEditingRecipient ? "Save Changes" : "Save Contact"}</button>
                 </div>
               </form>
             </div>

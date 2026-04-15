@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, startTransition } from "react";
 import type { Tables } from "@/lib/database.types";
@@ -98,7 +97,7 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
     refreshAllRef.current?.();
     const timer = setInterval(() => {
       refreshAllRef.current?.();
-    }, 15000);
+    }, 60000); // Increased to 60s for better mobile performance
     return () => clearInterval(timer);
   }, []);
 
@@ -443,7 +442,8 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
       {activeTab === "holdings" ? (
         filtered.length > 0 ? (
           <div className="w-full mt-4 overflow-hidden">
-            <table className="w-full text-left border-collapse">
+            {/* Desktop Table */}
+            <table className="hidden md:table w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-white/5 bg-white/[0.01] text-[9px] text-[--text-muted] uppercase font-black tracking-widest">
                   <th className="py-4 px-6 font-black transition-colors cursor-pointer hover:text-[--text-primary] group" onClick={() => handleSort("name")}>
@@ -485,64 +485,75 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
                         <div className="flex flex-col">
                           <div className="flex items-center gap-2">
                              <span className="text-[13px] font-medium text-[#eee]">{inv.symbol?.split('.')[0] || inv.name}</span>
-                             <button 
-                               onClick={(e) => {
-                                 e.stopPropagation();
-                                 toast(`Charges Paid: ₹${formatNum(inv.total_charges || calculateZerodhaCharges(inv.quantity, inv.buy_price, inv.symbol?.endsWith('.BO') ? 'BSE' : 'NSE', true).totalCharges)}`, {
-                                   icon: '👁️',
-                                   style: { background: '#1a1a1a', color: '#eee', border: '1px solid #333', fontSize: '11px', fontWeight: 'bold' }
-                                 });
-                               }}
-                               className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-white/5 rounded text-[10px]"
-                               title="View Charges"
-                             >
-                               👁️
-                             </button>
                           </div>
                           <span className="text-[10px] text-[#666] font-normal">{inv.name}</span>
                         </div>
-                        
-                        {/* Hover Actions */}
                         <div className="absolute left-0 top-0 bottom-0 flex items-center bg-[#1f1f1f] px-4 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto shadow-xl">
-                          <button 
-                            onClick={() => startSell(inv)}
-                            className="h-7 px-3 bg-[#df514c1a] hover:bg-[#df514c] text-[#df514c] hover:text-white text-[11px] font-bold rounded transition-colors mr-2 uppercase tracking-tight"
-                          >
-                            SELL
-                          </button>
-                          <button 
-                            onClick={() => startEdit(inv)}
-                            className="h-7 px-3 bg-[#387ed11a] hover:bg-[#387ed1] text-[#387ed1] hover:text-white text-[11px] font-medium rounded transition-colors"
-                          >
-                            EDIT
-                          </button>
+                          <button onClick={() => startSell(inv)} className="h-7 px-3 bg-[#df514c1a] hover:bg-[#df514c] text-[#df514c] hover:text-white text-[11px] font-bold rounded transition-colors mr-2 uppercase tracking-tight">SELL</button>
+                          <button onClick={() => startEdit(inv)} className="h-7 px-3 bg-[#387ed11a] hover:bg-[#387ed1] text-[#387ed1] hover:text-white text-[11px] font-medium rounded transition-colors">EDIT</button>
                         </div>
                       </td>
                       <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[#9b9b9b]">{inv.quantity}</td>
                       <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[#9b9b9b]">{formatNum(inv.buy_price)}</td>
                       <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[#eee] font-normal">{formatNum(inv.current_price)}</td>
                       <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[#eee]">{formatNum(currentVal)}</td>
-                      <td className={`py-4 px-4 text-right tabular-nums text-[13px] font-medium ${isProfit ? "text-[#4caf50]" : "text-[#df514c]"}`}>
-                        {formatNum(pnl)}
-                      </td>
+                      <td className={`py-4 px-4 text-right tabular-nums text-[13px] font-medium ${isProfit ? "text-[#4caf50]" : "text-[#df514c]"}`}>{formatNum(pnl)}</td>
                       <td className="py-4 px-4 text-right tabular-nums">
                         <div className="flex flex-col items-end">
-                           <span className={`text-[12px] font-medium ${inv.day_change !== null && inv.day_change >= 0 ? "text-[#4caf50]" : "text-[#df514c]"}`}>
-                             {inv.day_change !== null ? (inv.day_change > 0 ? "+" : "") + formatNum(inv.day_change) : "—"}
-                           </span>
-                           <span className={`text-[10px] font-bold ${inv.day_change_percent !== null && inv.day_change_percent >= 0 ? "text-[#4caf50]" : "text-[#df514c]"}`}>
-                             {inv.day_change_percent !== null ? (inv.day_change_percent > 0 ? "+" : "") + Number(inv.day_change_percent).toFixed(2) + "%" : ""}
-                           </span>
+                           <span className={`text-[12px] font-medium ${inv.day_change !== null && inv.day_change >= 0 ? "text-[#4caf50]" : "text-[#df514c]"}`}>{inv.day_change !== null ? (inv.day_change > 0 ? "+" : "") + formatNum(inv.day_change) : "—"}</span>
+                           <span className={`text-[10px] font-bold ${inv.day_change_percent !== null && inv.day_change_percent >= 0 ? "text-[#4caf50]" : "text-[#df514c]"}`}>{inv.day_change_percent !== null ? (inv.day_change_percent > 0 ? "+" : "") + Number(inv.day_change_percent).toFixed(2) + "%" : ""}</span>
                         </div>
                       </td>
-                      <td className={`py-4 px-4 text-right tabular-nums text-[13px] font-medium ${isProfit ? "text-[#4caf50]" : "text-[#df514c]"}`}>
-                        {isProfit ? "+" : ""}{pnlPct.toFixed(2)}%
-                      </td>
+                      <td className={`py-4 px-4 text-right tabular-nums text-[13px] font-medium ${isProfit ? "text-[#4caf50]" : "text-[#df514c]"}`}>{isProfit ? "+" : ""}{pnlPct.toFixed(2)}%</td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
+
+            {/* Mobile Cards */}
+            <div className="md:hidden space-y-4 px-1">
+               {filtered.map((inv) => {
+                  const invested = inv.buy_price * inv.quantity;
+                  const currentVal = inv.current_price * inv.quantity;
+                  const pnl = currentVal - invested;
+                  const pnlPct = invested > 0 ? (pnl / invested) * 100 : 0;
+                  const isProfit = pnl >= 0;
+                  return (
+                    <div key={inv.id} className="glass-card-static p-4 active:bg-white/[0.04] transition-all">
+                       <div className="flex justify-between items-start mb-3">
+                          <div onClick={() => startEdit(inv)} className="flex flex-col">
+                             <span className="text-sm font-black text-white">{inv.symbol?.split('.')[0]}</span>
+                             <span className="text-[10px] text-[--text-muted] uppercase font-bold">{inv.name}</span>
+                          </div>
+                          <div className="text-right">
+                             <div className={`text-[15px] font-black ${isProfit ? "text-[--success]" : "text-[--danger]"}`}>
+                                {isProfit ? "+" : ""}₹{formatNum(pnl)}
+                             </div>
+                             <div className={`text-[10px] font-bold opacity-60 ${isProfit ? "text-[--success]" : "text-[--danger]"}`}>
+                                {isProfit ? "+" : ""}{pnlPct.toFixed(2)}%
+                             </div>
+                          </div>
+                       </div>
+                       <div className="grid grid-cols-2 gap-y-4 border-t border-white/5 pt-4 mb-4">
+                          <div><p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-1">Holding</p><p className="text-[13px] font-black">{inv.quantity} <span className="opacity-40 font-bold ml-1">@ ₹{formatNum(inv.buy_price)}</span></p></div>
+                          <div className="text-right"><p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-1">Current Value</p><p className="text-[13px] font-black">₹{formatNum(currentVal)}</p></div>
+                          <div><p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-1">LTP</p><p className="text-[13px] font-black">₹{formatNum(inv.current_price)}</p></div>
+                          <div className="text-right">
+                             <p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-1">Day Return</p>
+                             <p className={`text-[13px] font-black ${inv.day_change && inv.day_change >= 0 ? "text-[--success]" : "text-[--danger]"}`}>
+                                {inv.day_change ? (inv.day_change > 0 ? "+" : "") + formatNum(inv.day_change) : "—"}
+                             </p>
+                          </div>
+                       </div>
+                       <div className="flex gap-2">
+                          <button onClick={() => startSell(inv)} className="flex-1 py-3 bg-[--danger]/10 text-[--danger] text-[10px] font-black uppercase tracking-widest rounded-xl active:bg-[--danger]/20">Exit Position</button>
+                          <button onClick={() => startEdit(inv)} className="flex-1 py-3 bg-white/5 text-[--text-muted] text-[10px] font-black uppercase tracking-widest rounded-xl">View Details</button>
+                       </div>
+                    </div>
+                  );
+               })}
+            </div>
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-32 border border-dashed border-[#252525] rounded-sm bg-[#1a1a1a]/50">

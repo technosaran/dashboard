@@ -49,8 +49,8 @@ export const CATEGORIES = [
   { label: "Utilities", icon: "⚡", color: "var(--warning)" },
   { label: "Entertainment", icon: "🎬", color: "#a29bfe" },
   { label: "Shopping", icon: "🛍️", color: "#ff7675" },
-  { label: "Subscription", icon: "💳", color: "var(--success)" },
-  { label: "Others", icon: "📦", color: "var(--text-muted)" },
+  { label: "Subscription", icon: "💳", color: "#6c5ce7" },
+  { label: "Others", icon: "📦", color: "#fdcb6e" },
 ];
 
 type Expense = Tables<"expenses">;
@@ -117,7 +117,8 @@ export default function ExpensesClient({ initialExpenses, initialAccounts }: Exp
       return {
       name, 
       value,
-      color,
+      fill: color,
+      color: color,
     };
     }).sort((a, b) => b.value - a.value);
 
@@ -238,12 +239,24 @@ export default function ExpensesClient({ initialExpenses, initialAccounts }: Exp
           <div className="text-[10px] font-bold text-[--text-muted]">Showing {filteredExpenses.length} of {expenses.length} results</div>
         </div>
         <div className="overflow-x-auto w-full">
-          <table className="w-full text-left border-collapse min-w-[650px] md:min-w-0">
-            <thead><tr className="bg-white/[0.02] border-b border-white/5"><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Date</th><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Ref / Description</th><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Segment</th><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] hidden sm:table-cell">Channel</th><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] text-right">Amount</th></tr></thead>
-            <tbody className="divide-y divide-white/[0.03]">
-              {filteredExpenses.length === 0 ? (<tr><td colSpan={5} className="px-6 py-20 text-center text-[--text-muted] text-sm italic">No transactions found matching your criteria.</td></tr>) : (filteredExpenses.map((exp) => { const theme = CATEGORIES.find(c => c.label === exp.category) || CATEGORIES[7]; const account = accounts.find(a => a.id === exp.account_id); return (<tr key={exp.id} className="hover:bg-white/[0.015] transition-colors group"><td className="px-4 md:px-6 py-5 whitespace-nowrap"><p className="text-[13px] font-bold text-[--text-primary]">{format(parseISO(exp.date), "MMM d, yy")}</p><p className="text-[9px] text-[--text-muted] uppercase font-bold">Verified</p></td><td className="px-4 md:px-6 py-4"><div className="flex items-center gap-3"><div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-lg flex-shrink-0">{theme.icon}</div><p className="text-[13px] font-medium text-[--text-primary] group-hover:text-[--accent-primary] transition-colors truncate max-w-[120px] md:max-w-none">{exp.description}</p></div></td><td className="px-4 md:px-6 py-5 whitespace-nowrap"><span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-[0.1em] bg-white/5 border border-white/10" style={{color: theme.color}}>{exp.category}</span></td><td className="px-4 md:px-6 py-5 whitespace-nowrap hidden sm:table-cell"><div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" /><span className="text-[11px] font-medium text-[--text-secondary]">{account?.name || "Cash"}</span></div></td><td className="px-4 md:px-6 py-4 whitespace-nowrap text-right"><p className="text-[15px] md:text-base font-black text-[--text-primary]">₹{Number(exp.amount).toLocaleString()}</p></td></tr>) }))}
-            </tbody>
-          </table>
+          {expenses.length === 0 ? (
+            <div className="py-24 flex flex-col items-center text-center">
+               <div className="relative mb-8">
+                 <div className="absolute inset-0 bg-[--accent-primary]/20 blur-3xl rounded-full scale-150" />
+                 <img src="/assets/empty_state.png" alt="Start Journey" className="w-48 h-48 md:w-64 md:h-64 object-contain relative z-10 animate-float" />
+               </div>
+               <h3 className="text-2xl font-black text-white mb-2">Initialize Your Financial Ledger</h3>
+               <p className="text-sm text-[--text-muted] max-w-sm mb-8">Start by adding your first expense. Track every rupee to gain total control over your capital.</p>
+               <button onClick={() => setShowAddModal(true)} className="btn-primary shadow-2xl shadow-[--accent-primary]/20 px-10">Add Your First Expense</button>
+            </div>
+          ) : (
+            <table className="w-full text-left border-collapse min-w-[650px] md:min-w-0">
+              <thead><tr className="bg-white/[0.02] border-b border-white/5"><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Date</th><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Ref / Description</th><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Segment</th><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] hidden sm:table-cell">Channel</th><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] text-right">Amount</th></tr></thead>
+              <tbody className="divide-y divide-white/[0.03]">
+                {filteredExpenses.length === 0 ? (<tr><td colSpan={5} className="px-6 py-20 text-center text-[--text-muted] text-sm italic">No transactions found matching your criteria.</td></tr>) : (filteredExpenses.map((exp) => { const theme = CATEGORIES.find(c => c.label === exp.category) || CATEGORIES[7]; const account = accounts.find(a => a.id === exp.account_id); return (<tr key={exp.id} className="hover:bg-white/[0.015] transition-colors group"><td className="px-4 md:px-6 py-5 whitespace-nowrap"><p className="text-[13px] font-bold text-[--text-primary]">{format(parseISO(exp.date), "MMM d, yy")}</p><p className="text-[9px] text-[--text-muted] uppercase font-bold">Verified</p></td><td className="px-4 md:px-6 py-4"><div className="flex items-center gap-3"><div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-lg flex-shrink-0">{theme.icon}</div><p className="text-[13px] font-medium text-[--text-primary] group-hover:text-[--accent-primary] transition-colors truncate max-w-[120px] md:max-w-none">{exp.description}</p></div></td><td className="px-4 md:px-6 py-5 whitespace-nowrap"><span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-[0.1em] bg-white/5 border border-white/10" style={{color: theme.color}}>{exp.category}</span></td><td className="px-4 md:px-6 py-5 whitespace-nowrap hidden sm:table-cell"><div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" /><span className="text-[11px] font-medium text-[--text-secondary]">{account?.name || "Cash"}</span></div></td><td className="px-4 md:px-6 py-4 whitespace-nowrap text-right"><p className="text-[15px] md:text-base font-black text-[--text-primary]">₹{Number(exp.amount).toLocaleString()}</p></td></tr>) }))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
 

@@ -15,10 +15,6 @@ export async function createRecipient(data: Omit<TablesInsert<"recipients">, "us
     return { error: "Name must be at least 2 characters long." };
   }
 
-  if (data.account_number && data.account_number.length < 4) {
-    return { error: "Account number seems too short." };
-  }
-
   const { error } = await supabase.from("recipients").insert({
     ...data,
     name: data.name.trim(),

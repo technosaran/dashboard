@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useState, startTransition } from "react";
-import { format, endOfMonth, isWithinInterval, startOfMonth , addMonths, startOfDay, endOfDay } from "date-fns";
+import { format, endOfMonth, isWithinInterval, startOfMonth , addMonths, startOfDay } from "date-fns";
 import Link from "next/link";
 import Greeting from "@/components/greeting";
 import { useRealTimeSync } from "@/hooks/use-realtime-sync";
@@ -79,7 +79,6 @@ export default function DashboardClient({
   const [recentLogs, setRecentLogs] = useState<LedgerLog[]>(initialLogs);
   const [investments, setInvestments] = useState<Tables<"investments">[]>(initialInvestments || []);
   const [mutualFunds, setMutualFunds] = useState<Tables<"mutual_funds">[]>(initialMutualFunds || []);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     const {
@@ -94,13 +93,14 @@ export default function DashboardClient({
         .from("transactions")
         .select("*")
         .eq("user_id", user.id)
-        .order("date", { ascending: false }),
+        .order("date", { ascending: false })
+        .limit(100), // Optimization: Only fetch last 100 for dashboard overview
       supabase
         .from("ledger_logs")
         .select("*")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
-        .limit(5),
+        .limit(10), // Increased slightly for better mobile history view
       supabase.from("investments").select("*").eq("user_id", user.id),
       supabase.from("mutual_funds").select("*").eq("user_id", user.id),
     ]);
@@ -189,12 +189,15 @@ export default function DashboardClient({
       catMap[t.category || "Others"] = (catMap[t.category || "Others"] || 0) + Number(t.amount);
     });
     const pieData = Object.entries(catMap).map(([name, value], index) => {
-      const categoryTheme = CATEGORIES.find(c => c.label === name);
-      const themedColor = categoryTheme?.color;
-      const resolvedColor = (themedColor && CSS_COLOR_MAP[themedColor]) || themedColor || CHART_COLOR_FALLBACKS[index % CHART_COLOR_FALLBACKS.length];
+      const dashboardColors = [
+        "#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A", "#98D8C8", 
+        "#F7DC6F", "#BB8FCE", "#82E0AA", "#F1948A", "#85C1E9"
+      ];
+      const resolvedColor = dashboardColors[index % dashboardColors.length];
       return { 
         name, 
         value,
+        fill: resolvedColor,
         color: resolvedColor
       };
     }).sort((a,b) => b.value - a.value);
@@ -266,6 +269,40 @@ export default function DashboardClient({
                <div className="w-12 h-12 rounded-full bg-[--warning]/20 flex items-center justify-center text-xl shadow-[0_0_15px_rgba(253,203,110,0.3)]">👥</div>
                <span className="text-xs font-bold uppercase tracking-wider text-[--warning]">Send Money</span>
             </Link>
+          </div>
+        </div>
+
+        {/* 📱 RECENT PULSE (Exclusive for Mobile visibility) */}
+        <div className="px-1">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xs font-black uppercase tracking-widest text-[--text-muted]">Financial Pulse</h3>
+            <span className="status-dot scale-50" title="Real-time Synced" />
+          </div>
+          <div className="space-y-3">
+            {recentLogs.slice(0, 3).map((log) => {
+               const isOut = ["DELETE", "TRANSFER_OUT", "SEND_MONEY", "ADJUST_DOWN"].includes(log.action_type);
+               return (
+                 <div key={log.id} className="glass-card-static p-4 flex items-center justify-between hover:bg-white/[0.04]">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center text-base">
+                        {log.action_type === "CREATE" ? "✨" : isOut ? "📉" : "📈"}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[11px] font-bold text-white truncate max-w-[140px]">{log.details}</span>
+                        <span className="text-[8px] font-black uppercase text-[--text-muted]">{format(new Date(log.created_at), "HH:mm")} • {log.account_name}</span>
+                      </div>
+                    </div>
+                    <span className={`text-[13px] font-black ${isOut ? "text-red-400" : "text-emerald-400"}`}>
+                      {log.amount ? `${isOut ? "-" : "+"}₹${log.amount.toLocaleString()}` : "—"}
+                    </span>
+                 </div>
+               );
+            })}
+            {recentLogs.length === 0 && (
+              <div className="py-8 text-center glass-card-static text-[10px] uppercase font-bold text-[--text-muted] border-dashed">
+                Waiting for interaction...
+              </div>
+            )}
           </div>
         </div>
 
@@ -345,150 +382,65 @@ export default function DashboardClient({
       
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
 
-        <div className="glass-card-static group relative overflow-hidden p-6 md:p-10 lg:col-span-2">
-          <div className="absolute right-0 top-0 p-8 opacity-10 transition-opacity group-hover:opacity-20">
-            <svg className="h-40 w-40" fill="none" stroke="currentColor" strokeWidth={1} viewBox="0 0 24 24">
-              <path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-            </svg>
-          </div>
-
-          <div className="relative z-10">
-            <div className="mb-4 flex items-center gap-2 md:mb-6">
-              <div className="status-dot scale-75" />
-              <span className="text-xs font-bold uppercase tracking-[0.4em] text-[--text-muted] md:text-sm">
-                Portfolio Net Worth
-              </span>
-            </div>
-            <h2 className="bg-gradient-to-r from-white via-white to-[--text-secondary] bg-clip-text text-[clamp(2.5rem,10vw,5rem)] font-[900] leading-none tracking-[-0.05em] text-transparent drop-shadow-[0_10px_30px_rgba(108,92,231,0.2)] [font-family:'Outfit',sans-serif]">
-              ₹{stats.totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0 })}
-            </h2>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <div className="rounded-full border border-[--accent-primary]/20 bg-[--accent-primary]/10 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-[--accent-primary-light]">
-                Institutional Grade
+        <div className="glass-card-static group relative overflow-hidden p-6 md:p-10 lg:col-span-3">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-10">
+            <div className="relative z-10">
+              <div className="mb-4 flex items-center gap-2 md:mb-6">
+                <div className="status-dot scale-75" />
+                <span className="text-xs font-bold uppercase tracking-[0.4em] text-[--text-muted] md:text-sm">
+                  Portfolio Net Worth
+                </span>
               </div>
-              <div className="rounded-full border border-[--success]/20 bg-[--success]/10 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-[--success]">
-                Live Sync Active
-              </div>
+              <h2 className="bg-gradient-to-r from-white via-white to-[--text-secondary] bg-clip-text text-[clamp(2.5rem,10vw,4rem)] font-[900] leading-none tracking-[-0.05em] text-transparent drop-shadow-[0_10px_30px_rgba(108,92,231,0.2)] [font-family:'Outfit',sans-serif]">
+                ₹{stats.totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0 })}
+              </h2>
+              <div className="mt-8" />
             </div>
-          </div>
-        </div>
 
-        <div className="grid grid-cols-1 gap-6">
-          <div className="glass-card-static group relative flex flex-col justify-center overflow-hidden p-6">
-            <div className="absolute right-0 top-0 p-4 opacity-5 transition-opacity group-hover:opacity-10">
-              <svg className="h-20 w-20" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
-              </svg>
-            </div>
-            <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.3em] text-[--text-muted]">
-              Monthly Cashflow
-            </p>
-            <div className="flex items-baseline gap-2">
-              <span className="text-xs font-bold text-[--success]">
-                +₹{stats.monthlyIncome.toLocaleString()}
-              </span>
-              <span className="text-xs font-bold text-[--danger]">
-                -₹{stats.monthlySpend.toLocaleString()}
-              </span>
-            </div>
-            <h3 className="mt-1 text-4xl font-black text-[--text-primary] [font-family:'Outfit',sans-serif]">
-              ₹{(stats.monthlyIncome - stats.monthlySpend).toLocaleString()}
-            </h3>
-            <p className="mt-2 text-[10px] font-bold uppercase tracking-widest text-[--text-muted]">
-              Net savings this month
-            </p>
-          </div>
-          <div className="glass-card-static group relative flex flex-col justify-center overflow-hidden p-6">
-            <div className="absolute right-0 top-0 p-4 opacity-5 transition-opacity group-hover:opacity-10">
-              <svg className="h-20 w-20" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z" />
-              </svg>
-            </div>
-            <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.3em] text-[--text-muted]">
-              Active Channels
-            </p>
-            <h3 className="text-4xl font-black text-[--text-primary] [font-family:'Outfit',sans-serif]">
-              {stats.accountCount} <span className="text-lg text-[--text-muted]">Sources</span>
-            </h3>
-            <p className="mt-2 text-[10px] font-bold uppercase tracking-widest text-[--success]">
-              All systems operational
-            </p>
-          </div>
-        </div>
-      </div>
-
-{/* Visual Analytics Row 1 */}
-      <h2 className="text-xl font-bold tracking-tight text-[--text-primary] mt-4 mb-2 flex items-center gap-2">
-        <svg className="w-5 h-5 text-[--accent-primary]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16 8v8m-4-5v5m-4-2v2m12-11a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-        Visual Analytics
-      </h2>
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Income vs Expense Graph */}
-        <div className="glass-card-static p-6 md:p-8">
-          <h3 className="mb-8 text-sm font-bold uppercase tracking-[0.2em] text-[--text-muted]">
-            Cashflow Engine (6 Months)
-          </h3>
-          <div className="h-[280px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={stats.incomeExpenseData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: 'var(--text-muted)', fontSize: 10}} dy={10} />
-                <YAxis hide />
-                <Tooltip
-                  cursor={{fill: 'rgba(255,255,255,0.02)'}}
-                  contentStyle={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "12px" }}
-                />
-                <Legend iconType="circle" wrapperStyle={{ fontSize: '10px', paddingTop: '20px' }} />
-                <Bar dataKey="income" name="Income" fill="#10b981" radius={[4, 4, 0, 0]} barSize={12} />
-                <Bar dataKey="expense" name="Expense" fill="#f43f5e" radius={[4, 4, 0, 0]} barSize={12} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Category Pie Chart */}
-        <div className="glass-card-static p-6 md:p-8">
-          <h3 className="mb-8 text-sm font-bold uppercase tracking-[0.2em] text-[--text-muted]">
-            Sector Allocation (Current Month)
-          </h3>
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6 h-full min-h-[280px]">
-            {stats.pieData.length === 0 ? (
-               <div className="w-full flex h-full items-center justify-center italic text-[--text-muted] text-sm">No expenses this month.</div>
-            ) : (
-              <>
-                <div className="h-[200px] w-full md:w-1/2">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie onClick={(data) => setSelectedCategory(data.name || null)} data={stats.pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={8} dataKey="value">
-                        {stats.pieData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
-                        ))}
-                      </Pie>
-                      <Tooltip contentStyle={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "12px" }} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="w-full md:w-1/2 space-y-3 pb-8">
-                  {stats.pieData.slice(0, 5).map((item) => (
-                    <div key={item.name} className="flex justify-between items-center group">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2.5 h-2.5 rounded-full" style={{ background: item.color }} />
-                        <span className="text-[12px] font-bold text-[--text-secondary] transition-colors group-hover:text-white">{item.name}</span>
-                      </div>
-                      <span className="text-[12px] font-black tabular-nums">₹{item.value.toLocaleString()}</span>
+            {/* SECTOR ALLOCATION MERGED HERE */}
+            <div className="flex-1 max-w-md w-full">
+              <div className="flex items-center gap-6 h-full">
+                {stats.pieData.length === 0 ? (
+                  <div className="w-full flex h-[200px] items-center justify-center italic text-[--text-muted] text-sm bg-white/5 rounded-3xl">No expenses recorded.</div>
+                ) : (
+                  <>
+                    <div className="w-1/2 space-y-2">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-[--text-muted] mb-3">Sector Allocation</p>
+                      {stats.pieData.slice(0, 4).map((item) => (
+                        <div key={item.name} className="flex justify-between items-center group">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full" style={{ background: item.color }} />
+                            <span className="text-[10px] font-bold text-[--text-secondary] truncate max-w-[80px]">{item.name}</span>
+                          </div>
+                          <span className="text-[10px] font-black tabular-nums">₹{item.value.toLocaleString()}</span>
+                        </div>
+                      ))}
+                      {stats.pieData.length > 4 && (
+                        <div className="text-[9px] text-[--text-muted] pt-1 font-bold uppercase tracking-wider group-hover:text-[--accent-primary-light] transition-colors">
+                          + {stats.pieData.length - 4} more
+                        </div>
+                      )}
                     </div>
-                  ))}
-                  {stats.pieData.length > 5 && (
-                    <div className="text-[10px] text-[--text-muted] pt-2 font-bold uppercase tracking-wider">+ {stats.pieData.length - 5} more categories</div>
-                  )}
-                </div>
-              </>
-            )}
+                    <div className="h-[180px] w-1/2">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie data={stats.pieData} cx="50%" cy="50%" innerRadius={55} outerRadius={80} paddingAngle={6} dataKey="value">
+                            {stats.pieData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.fill} stroke="none" />
+                            ))}
+                          </Pie>
+                          <Tooltip contentStyle={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "12px" }} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Visual Analytics Row 2 */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         
         

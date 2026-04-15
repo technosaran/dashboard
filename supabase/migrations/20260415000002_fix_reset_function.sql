@@ -1,0 +1,27 @@
+-- migration: 20260415000002_fix_reset_function.sql
+-- Purpose: Remove obsolete 'deposits' relation from reset logic to match hardened schema.
+
+CREATE OR REPLACE FUNCTION public.reset_user_data(p_user_id UUID) RETURNS JSON AS $$
+BEGIN
+    IF p_user_id IS NULL OR (auth.role() = 'authenticated' AND p_user_id != auth.uid()) THEN RAISE EXCEPTION 'Unauthorized'; END IF;
+    
+    DELETE FROM public.ledger_logs WHERE user_id = p_user_id;
+    DELETE FROM public.transactions WHERE user_id = p_user_id;
+    DELETE FROM public.transfers WHERE user_id = p_user_id;
+    DELETE FROM public.expenses WHERE user_id = p_user_id;
+    DELETE FROM public.incomes WHERE user_id = p_user_id;
+    DELETE FROM public.stock_trades WHERE user_id = p_user_id;
+    DELETE FROM public.investments WHERE user_id = p_user_id;
+    DELETE FROM public.mutual_fund_trades WHERE user_id = p_user_id;
+    DELETE FROM public.mutual_funds WHERE user_id = p_user_id;
+    DELETE FROM public.goals WHERE user_id = p_user_id;
+    DELETE FROM public.recipients WHERE user_id = p_user_id;
+    DELETE FROM public.accounts WHERE user_id = p_user_id;
+    
+    RETURN json_build_object('success', true, 'message', 'Institutional Reset Complete');
+EXCEPTION WHEN OTHERS THEN
+    RETURN json_build_object('success', false, 'error', SQLERRM);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+GRANT EXECUTE ON FUNCTION reset_user_data(UUID) TO authenticated;

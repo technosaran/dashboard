@@ -37,12 +37,16 @@ export default function SettingsPage() {
 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newVal = e.target.value;
-    setInput(newVal);
-    
-    // Update context IMMEDIATELY for real-time UI everywhere
-    setUsername(newVal);
+    setInput(e.target.value);
   };
+
+  useEffect(() => {
+    if (!initializedRef.current) return;
+    const t = setTimeout(() => {
+      if (input !== username) setUsername(input);
+    }, 500);
+    return () => clearTimeout(t);
+  }, [input, username, setUsername]);
 
   const handleReset = async () => {
     const isConfirmed = confirm("CRITICAL WARNING: This will permanently erase ALL your records (accounts, transactions, stocks, goals). This action is IRREVERSIBLE. Are you absolutely sure?");

@@ -163,8 +163,14 @@ export default function AccountsClient({ initialAccounts }: AccountsClientProps)
   }
 
   const balancesByCurrency = accounts.reduce((acc, a) => { acc[a.currency] = (acc[a.currency] || 0) + a.balance; return acc; }, {} as Record<string, number>);
-  const accountColors = ["#a29bfe", "#55efc4", "#fd79a8", "#74b9ff", "#fdcb6e", "#00cec9", "#6c5ce7", "#ff6b81"];
-  const chartData = accounts.map((a, i) => ({ name: a.name, value: a.balance, color: accountColors[i % accountColors.length], currency: a.currency }));
+  const accountColors = ["#6c5ce7", "#00cec9", "#00b894", "#fdcb6e", "#d63031", "#a29bfe", "#fab1a0", "#ff7675"];
+  const chartData = accounts.map((a, i) => ({ 
+    name: a.name, 
+    value: a.balance, 
+    fill: accountColors[i % accountColors.length],
+    color: accountColors[i % accountColors.length], 
+    currency: a.currency 
+  }));
 
   return (
     <div className="flex flex-col gap-[var(--section-gap)] animate-fade-in">
@@ -216,7 +222,7 @@ export default function AccountsClient({ initialAccounts }: AccountsClientProps)
                   stroke="none"
                   animationDuration={1000}
                 >
-                  {chartData.map((e, i) => (<Cell key={i} fill={e.color} />))}
+                  {chartData.map((e, i) => (<Cell key={`cell-${i}`} fill={e.fill} />))}
                 </Pie>
                 <Tooltip />
               </PieChart>
@@ -284,7 +290,22 @@ export default function AccountsClient({ initialAccounts }: AccountsClientProps)
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-md animate-fade-in"><div className="glass-card-static w-full max-w-sm p-8 animate-scale-in">
           <div className="flex justify-between items-center mb-6"><div><h3 className="text-xl font-black">Adjust Balance</h3><p className="text-[10px] font-bold text-[--text-muted] uppercase tracking-widest">Balance Modification</p></div><button onClick={() => setShowAdjustModal(false)} className="text-[--text-muted]"><svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg></button></div>
           <form onSubmit={handleAdjust} className="space-y-6">
-            <div className="grid grid-cols-2 gap-2"><button type="button" onClick={() => setAdjustData({...adjustData, type: 'add'})} className={`py-4 rounded-xl font-bold transition-all border ${adjustData.type === 'add' ? 'bg-[--success]/20 border-[--success] text-[--success]' : 'bg-white/5 border-white/10 text-[--text-muted]'}`}>INCREMENT</button><button type="button" onClick={() => setAdjustData({...adjustData, type: 'subtract'})} className={`py-4 rounded-xl font-bold transition-all border ${adjustData.type === 'subtract' ? 'bg-[--danger]/20 border-[--danger] text-[--danger]' : 'bg-white/5 border-white/10 text-[--text-muted]'}`}>DECREMENT</button></div>
+            <div className="grid grid-cols-2 gap-2">
+              <button 
+                type="button" 
+                onClick={() => setAdjustData({...adjustData, type: 'add'})} 
+                className={`py-4 rounded-xl font-black transition-all border shadow-lg ${adjustData.type === 'add' ? 'bg-emerald-500 border-emerald-400 text-white shadow-emerald-500/20' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'}`}
+              >
+                INCREMENT
+              </button>
+              <button 
+                type="button" 
+                onClick={() => setAdjustData({...adjustData, type: 'subtract'})} 
+                className={`py-4 rounded-xl font-black transition-all border shadow-lg ${adjustData.type === 'subtract' ? 'bg-rose-500 border-rose-400 text-white shadow-rose-500/20' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'}`}
+              >
+                DECREMENT
+              </button>
+            </div>
             <div><label className="block text-[10px] font-black text-[--text-muted] mb-2 uppercase tracking-widest">Amount</label><input required type="number" step="0.01" value={adjustData.amount} onChange={e => setAdjustData({...adjustData, amount: e.target.value})} className="input-premium !h-14 text-xl font-black" placeholder="0.00" /></div>
             <div><label className="block text-[10px] font-black text-[--text-muted] mb-2 uppercase tracking-widest">Reason / Note</label><input value={adjustData.note} onChange={e => setAdjustData({...adjustData, note: e.target.value})} className="input-premium" placeholder="Why the change?" /></div>
             <button type="submit" className="btn-primary w-full h-14 font-black mt-2">Finalize Adjustment</button>

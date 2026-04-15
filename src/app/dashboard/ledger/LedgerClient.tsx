@@ -19,19 +19,6 @@ type LedgerLog = {
   details: string | null;
 };
 
-const ACTION_TYPES = [
-  "All Actions",
-  "CREATE",
-  "UPDATE",
-  "DELETE",
-  "TRANSFER_IN",
-  "TRANSFER_OUT",
-  "ADJUST_UP",
-  "ADJUST_DOWN",
-  "LOG_ONLY",
-  "SEND_MONEY"
-];
-
 const MONTHS = [
   "All Months", "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December"
@@ -80,12 +67,6 @@ export default function LedgerClient({ initialLogs }: LedgerClientProps) {
   }, [fetchLogs]);
 
   useRealTimeSync(fetchLogs);
-
-  const uniqueAccounts = useMemo(() => {
-    const accs = new Set<string>();
-    logs.forEach(l => { if (l.account_name) accs.add(l.account_name); });
-    return ["All Accounts", ...Array.from(accs)];
-  }, [logs]);
 
   const uniqueYears = useMemo(() => {
     const years = new Set<string>();

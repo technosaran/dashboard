@@ -1,5 +1,3 @@
-import { Suspense } from "react";
-
 import { createClient } from "@/lib/supabase-server";
 import GoalsClient from "./GoalsClient";
 import { redirect } from "next/navigation";

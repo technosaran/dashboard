@@ -1,6 +1,5 @@
 import Sidebar from "@/components/sidebar";
 import { UserProvider } from "@/context/user-context";
-import QuickActions from "@/components/quick-actions";
 
 export default function DashboardLayout({
   children,

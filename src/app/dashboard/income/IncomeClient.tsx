@@ -60,13 +60,13 @@ const Area = dynamic(() => import("recharts").then((mod) => mod.Area), { ssr: fa
 import { useRealTimeSync } from "@/hooks/use-realtime-sync";
 
 const INCOME_CATEGORIES = [
-  { label: "Salary", icon: "🏢", color: "var(--accent-primary-light)" },
-  { label: "Work", icon: "💻", color: "var(--accent-secondary)" },
-  { label: "Freelance", icon: "🚀", color: "#fab1a0" },
-  { label: "Gift", icon: "💝", color: "var(--warning)" },
-  { label: "Bonus", icon: "✨", color: "#a29bfe" },
-  { label: "Refund", icon: "↩️", color: "var(--success)" },
-  { label: "Others", icon: "📦", color: "var(--text-muted)" },
+  { label: "Salary", icon: "🏢", color: "#4ECDC4" },
+  { label: "Work", icon: "💻", color: "#45B7D1" },
+  { label: "Freelance", icon: "🚀", color: "#FFA07A" },
+  { label: "Gift", icon: "💝", color: "#F7DC6F" },
+  { label: "Bonus", icon: "✨", color: "#BB8FCE" },
+  { label: "Refund", icon: "↩️", color: "#82E0AA" },
+  { label: "Others", icon: "📦", color: "#F1948A" },
 ];
 
 type Income = Tables<"incomes">;
@@ -138,6 +138,7 @@ export default function IncomeClient({ initialIncomes, initialAccounts }: Income
         return {
           name,
           value,
+          fill: resolvedColor,
           color: resolvedColor,
         };
       })
@@ -225,12 +226,24 @@ export default function IncomeClient({ initialIncomes, initialAccounts }: Income
           <div className="text-[10px] font-bold text-[--text-muted]">Showing {filteredIncomes.length} of {incomes.length} results</div>
         </div>
         <div className="overflow-x-auto w-full">
-          <table className="w-full text-left border-collapse min-w-[650px] md:min-w-0">
-            <thead><tr className="bg-white/[0.02] border-b border-white/5"><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Date</th><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Source</th><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Segment</th><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] hidden sm:table-cell">Destination</th><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] text-right">Credit</th></tr></thead>
-            <tbody className="divide-y divide-white/[0.03]">
-              {filteredIncomes.length === 0 ? (<tr><td colSpan={5} className="px-6 py-20 text-center text-[--text-muted] text-sm italic">Infrastructure query returned no income data.</td></tr>) : (filteredIncomes.map((inc) => { const theme = INCOME_CATEGORIES.find(c => c.label === inc.category) || INCOME_CATEGORIES[6]; const account = accounts.find(a => a.id === inc.account_id); return (<tr key={inc.id} className="hover:bg-white/[0.015] transition-colors group text-[--text-primary]"><td className="px-4 md:px-6 py-5 whitespace-nowrap"><p className="text-[13px] font-bold">{format(parseISO(inc.date), "MMM d, yy")}</p><p className="text-[9px] text-[--success]/60 font-bold uppercase">Credit</p></td><td className="px-4 md:px-6 py-4"><div className="flex items-center gap-3"><div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-lg flex-shrink-0">{theme.icon}</div><p className="text-[13px] font-medium group-hover:text-[--success] transition-colors truncate max-w-[120px] md:max-w-none">{inc.description}</p></div></td><td className="px-4 md:px-6 py-5 whitespace-nowrap"><span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-[0.1em] bg-[--success]/5 border border-[--success]/10 text-[--success]">{inc.category}</span></td><td className="px-4 md:px-6 py-5 whitespace-nowrap hidden sm:table-cell"><div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-[--success] shadow-[0_0_8px_rgba(0,184,148,0.5)]" /><span className="text-[11px] font-medium text-[--text-secondary]">{account?.name || "Direct Log"}</span></div></td><td className="px-4 md:px-6 py-4 whitespace-nowrap text-right"><p className="text-[15px] md:text-base font-black text-[--success]">+₹{Number(inc.amount).toLocaleString()}</p></td></tr>); }))}
-            </tbody>
-          </table>
+          {incomes.length === 0 ? (
+            <div className="py-24 flex flex-col items-center text-center">
+               <div className="relative mb-8">
+                 <div className="absolute inset-0 bg-[--success]/20 blur-3xl rounded-full scale-150" />
+                 <img src="/assets/empty_state.png" alt="Revenue Growth" className="w-48 h-48 md:w-64 md:h-64 object-contain relative z-10 animate-float" />
+               </div>
+               <h3 className="text-2xl font-black text-white mb-2">Track Your Wealth Inflow</h3>
+               <p className="text-sm text-[--text-muted] max-w-sm mb-8">No revenue streams detected. Start by logging your first income to visualize your growth strategy.</p>
+               <button onClick={() => setShowAddModal(true)} className="btn-primary shadow-2xl shadow-[--success]/20 px-10 bg-[--success] hover:bg-[--success]">Log Your First Income</button>
+            </div>
+          ) : (
+            <table className="w-full text-left border-collapse min-w-[650px] md:min-w-0">
+              <thead><tr className="bg-white/[0.02] border-b border-white/5"><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Date</th><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Source</th><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Segment</th><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] hidden sm:table-cell">Destination</th><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] text-right">Credit</th></tr></thead>
+              <tbody className="divide-y divide-white/[0.03]">
+                {filteredIncomes.length === 0 ? (<tr><td colSpan={5} className="px-6 py-20 text-center text-[--text-muted] text-sm italic">Infrastructure query returned no income data.</td></tr>) : (filteredIncomes.map((inc) => { const theme = INCOME_CATEGORIES.find(c => c.label === inc.category) || INCOME_CATEGORIES[6]; const account = accounts.find(a => a.id === inc.account_id); return (<tr key={inc.id} className="hover:bg-white/[0.015] transition-colors group text-[--text-primary]"><td className="px-4 md:px-6 py-5 whitespace-nowrap"><p className="text-[13px] font-bold">{format(parseISO(inc.date), "MMM d, yy")}</p><p className="text-[9px] text-[--success]/60 font-bold uppercase">Credit</p></td><td className="px-4 md:px-6 py-4"><div className="flex items-center gap-3"><div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-lg flex-shrink-0">{theme.icon}</div><p className="text-[13px] font-medium group-hover:text-[--success] transition-colors truncate max-w-[120px] md:max-w-none">{inc.description}</p></div></td><td className="px-4 md:px-6 py-5 whitespace-nowrap"><span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-[0.1em] bg-[--success]/5 border border-[--success]/10 text-[--success]">{inc.category}</span></td><td className="px-4 md:px-6 py-5 whitespace-nowrap hidden sm:table-cell"><div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-[--success] shadow-[0_0_8px_rgba(0,184,148,0.5)]" /><span className="text-[11px] font-medium text-[--text-secondary]">{account?.name || "Direct Log"}</span></div></td><td className="px-4 md:px-6 py-4 whitespace-nowrap text-right"><p className="text-[15px] md:text-base font-black text-[--success]">+₹{Number(inc.amount).toLocaleString()}</p></td></tr>); }))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
 

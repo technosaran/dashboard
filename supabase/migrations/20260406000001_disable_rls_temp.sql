@@ -1,3 +1,4 @@
--- Temporary: disable RLS until auth is implemented
-alter table accounts disable row level security;
-alter table transactions disable row level security;
+-- migration: 20260406000001_disable_rls_temp.sql
+-- Purpose: Placeholder to maintain migration history integrity.
+-- This file was previously applied to the remote database.
+-- Content left empty as the logic has been superseded by newer migrations.

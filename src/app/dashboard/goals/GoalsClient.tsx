@@ -209,7 +209,7 @@ export default function GoalsClient({ initialGoals, initialAccounts }: { initial
         </div>
       </div>
 
-      <div className="flex justify-center px-2">
+      <div className="flex justify-start px-2">
         <div className="flex items-center gap-1 bg-white/5 p-1 rounded-2xl">
           <button 
             onClick={() => setActiveTab('active')}
@@ -230,98 +230,85 @@ export default function GoalsClient({ initialGoals, initialAccounts }: { initial
         <div className="space-y-6">
           {goals.filter(g => Number(g.current_amount) < Number(g.target_amount)).length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mt-2">
-              {goals.filter(g => Number(g.current_amount) < Number(g.target_amount)).map((goal) => {
-                const category = GOAL_CATEGORIES.find(c => c.label === goal.category) || GOAL_CATEGORIES[7];
-                const progress = (Number(goal.current_amount) / Number(goal.target_amount)) * 100;
-                const daysLeft = goal.deadline ? differenceInDays(parseISO(goal.deadline), new Date()) : null;
+            {goals.filter(g => Number(g.current_amount) < Number(g.target_amount)).map((goal, index) => {
+              const category = GOAL_CATEGORIES.find(c => c.label === goal.category) || GOAL_CATEGORIES[7];
+              const progress = (Number(goal.current_amount) / Number(goal.target_amount)) * 100;
+              const daysLeft = goal.deadline ? differenceInDays(parseISO(goal.deadline), new Date()) : null;
+              const monthsLeft = daysLeft ? Math.ceil(daysLeft / 30.41) : null;
+              const monthlyRequired = (monthsLeft && monthsLeft > 0) ? Math.ceil((Number(goal.target_amount) - Number(goal.current_amount)) / monthsLeft) : null;
 
-                return (
-                  <div key={goal.id} className="glass-card p-6 flex flex-col border-white/5 hover:border-[--accent-primary]/30 group">
-                    <div className="flex items-center justify-between mb-8">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-xl">
-                          {category.icon}
-                        </div>
-                        <div>
-                          <h3 className="font-bold text-[15px]">{goal.name}</h3>
-                          <p className="text-[10px] font-semibold text-[--text-muted] uppercase tracking-wide">{goal.category}</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <button 
-                          onClick={() => startEdit(goal)} 
-                          className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-[--text-muted] hover:text-blue-400 hover:bg-white/10 transition-all opacity-0 group-hover:opacity-100"
-                          title="Edit Goal"
-                        >
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                        </button>
-                        <button 
-                          onClick={() => handleDeleteGoal(goal.id)} 
-                          className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-[--text-muted] hover:text-rose-400 hover:bg-rose-500/10 transition-all opacity-0 group-hover:opacity-100"
-                          title="Delete Goal"
-                        >
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                        </button>
-                      </div>
+              return (
+                <div key={goal.id} className="glass-card flex flex-col min-h-[280px] p-6 relative overflow-hidden transition-transform hover:-translate-y-1 group">
+                  <div className="absolute top-0 left-0 right-0 h-[3px]" style={{ background: category.color }} />
+                  
+                  <div className="flex justify-between items-start mb-6">
+                    <div className="flex flex-col gap-4">
+                       <span className="w-fit px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider" style={{ background: `${category.color}20`, color: category.color, border: `1px solid ${category.color}30` }}>
+                         {goal.category}
+                       </span>
+                       <div className="flex items-center gap-3">
+                         <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl font-black text-white shadow-lg" style={{ background: category.color, boxShadow: `0 8px 16px ${category.color}33` }}>
+                           {category.icon}
+                         </div>
+                         <div className="flex flex-col">
+                           <span className="text-base font-bold text-[--text-secondary]">{goal.name}</span>
+                           <span className="text-[9px] font-black uppercase tracking-widest text-[--text-muted]">{progress.toFixed(0)}% Complete {progress >= 50 ? '🚀' : '✨'}</span>
+                         </div>
+                       </div>
                     </div>
+                    <button onClick={() => startEdit(goal)} className="p-2 rounded-xl bg-white/5 border border-white/10 text-[--text-muted] hover:text-white transition-all">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                        <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </button>
+                  </div>
 
-                    <div className="space-y-4">
-                      <div className="flex items-end justify-between">
-                        <div className="flex flex-col flex-1">
-                          <span className="text-[10px] font-bold text-[--text-muted] uppercase tracking-wider mb-1">Saved</span>
-                          <span className="text-xl font-bold">₹{Number(goal.current_amount).toLocaleString()}</span>
-                        </div>
-                        
-                        {Number(goal.current_amount) < Number(goal.target_amount) && daysLeft !== null && daysLeft > 0 && (
-                          <div className="flex flex-col items-center flex-1 border-x border-white/10 px-2 mx-2">
-                            <span className="text-[9px] font-bold text-[--text-muted] uppercase tracking-wider mb-1">Needs</span>
-                            <span className="text-[13px] font-black text-[--accent-primary-light]">₹{Math.ceil((Number(goal.target_amount) - Number(goal.current_amount)) / Math.max(1, Math.ceil(daysLeft / 30.44))).toLocaleString()}/mo</span>
-                          </div>
-                        )}
-                        
-                        <div className="flex flex-col items-end flex-1">
-                          <span className="text-[10px] font-bold text-[--text-muted] uppercase tracking-wider mb-1">Target</span>
-                          <span className="text-[13px] font-semibold opacity-80">₹{Number(goal.target_amount).toLocaleString()}</span>
-                        </div>
-                      </div>
-
-                      <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full transition-all duration-1000"
-                          style={{ 
-                            width: `${Math.min(progress, 100)}%`,
-                            backgroundColor: category.color,
-                            boxShadow: `0 0 4px ${category.color}40`
-                          }}
-                        />
-                      </div>
-
-                      <div className="flex items-center justify-between pt-2">
-                        <span className="text-[10px] font-bold" style={{ color: category.color }}>{progress.toFixed(0)}% Achieved</span>
-                        {daysLeft !== null && (
-                          <span className="text-[10px] font-bold text-[--text-muted] uppercase tracking-wide">
-                            {daysLeft > 0 ? `${daysLeft}d left` : 'Due'}
-                          </span>
-                        )}
-                      </div>
+                  <div className="space-y-3 flex-1 mb-6">
+                    <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                      <div className="h-full transition-all duration-1000 ease-out" style={{ width: `${Math.min(progress, 100)}%`, backgroundColor: category.color }} />
                     </div>
-                    <div className="mt-8">
-                      <button 
-                        onClick={() => { setSelectedGoalId(goal.id); setShowContributeModal(true); }}
-                        className="w-full py-2.5 rounded-xl bg-[--accent-primary]/10 border border-[--accent-primary]/20 text-[10px] font-black uppercase tracking-[0.2em] text-[--accent-primary-light] hover:bg-[--accent-primary] hover:text-white transition-all shadow-lg shadow-transparent hover:shadow-[--accent-primary]/20 active:scale-[0.98]"
-                      >
-                        Inject Capital
-                      </button>
+                    <div className="flex justify-between items-baseline">
+                       <p className="text-2xl font-black tabular-nums" style={{ color: category.color }}>₹{Number(goal.current_amount).toLocaleString()}</p>
+                       <p className="text-[10px] font-bold text-[--text-muted]">of ₹{Number(goal.target_amount).toLocaleString()}</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 pt-2 border-t border-white/5">
+                       <div>
+                         <p className="text-[8px] font-black text-[--text-muted] uppercase tracking-widest">Time Left</p>
+                         <p className="text-[11px] font-bold text-white">{daysLeft !== null ? (daysLeft > 0 ? `${daysLeft}d` : 'Due') : '—'}</p>
+                       </div>
+                       <div className="text-right">
+                         <p className="text-[8px] font-black text-[--text-muted] uppercase tracking-widest">Target Fuel</p>
+                         <p className="text-[11px] font-bold text-[--accent-primary-light]">₹{monthlyRequired?.toLocaleString() || '0'}/mo</p>
+                       </div>
                     </div>
                   </div>
-                );
-              })}
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => { setSelectedGoalId(goal.id); setShowContributeModal(true); }}
+                      className="flex-1 h-12 rounded-xl font-bold text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-2"
+                      style={{ background: `${category.color}15`, color: category.color, border: `1px solid ${category.color}30` }}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
+                      Add Capital
+                    </button>
+                    <button onClick={() => handleDeleteGoal(goal.id)} className="w-12 h-12 rounded-xl bg-[--danger]/10 border border-[--danger]/20 text-[--danger] hover:bg-[--danger]/20 transition-all flex items-center justify-center">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+
             </div>
           ) : (
             <div className="py-24 text-center">
-              <div className="text-4xl mb-4">🎯</div>
-              <h3 className="text-xl font-bold">No Active Goals</h3>
-              <p className="text-sm text-[--text-muted] mt-1">Start by setting a new financial milestone.</p>
+              <div className="relative inline-block mb-8">
+                <div className="absolute inset-0 bg-[--accent-primary]/20 blur-3xl rounded-full" />
+                <img src="/assets/success.png" alt="No Goals" className="w-32 h-32 md:w-40 md:h-40 relative z-10 animate-float" />
+              </div>
+              <h3 className="text-2xl font-black text-white">No Active Objectives</h3>
+              <p className="text-sm text-[--text-muted] mt-2 max-w-xs mx-auto">Initialize a new financial milestone to begin tracking your progress.</p>
             </div>
           )}
         </div>
@@ -330,7 +317,6 @@ export default function GoalsClient({ initialGoals, initialAccounts }: { initial
           {goals.filter(g => Number(g.current_amount) >= Number(g.target_amount)).length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mt-2">
               {goals.filter(g => Number(g.current_amount) >= Number(g.target_amount)).map((goal) => {
-                const category = GOAL_CATEGORIES.find(c => c.label === goal.category) || GOAL_CATEGORIES[7];
                 return (
                   <div key={goal.id} className="glass-card p-6 flex flex-col border-[--success]/20 hover:border-[--success]/50 group">
                     <div className="flex items-center justify-between mb-6">
@@ -357,9 +343,12 @@ export default function GoalsClient({ initialGoals, initialAccounts }: { initial
             </div>
           ) : (
             <div className="py-24 text-center">
-              <div className="text-4xl mb-4">🏆</div>
-              <h3 className="text-xl font-bold">No Completed Goals Yet</h3>
-              <p className="text-sm text-[--text-muted] mt-1">Consistency is key. Keep saving!</p>
+              <div className="relative inline-block mb-8">
+                <div className="absolute inset-0 bg-[--success]/20 blur-3xl rounded-full" />
+                <img src="/assets/success.png" alt="Mission Accomplished" className="w-32 h-32 md:w-40 md:h-40 relative z-10" />
+              </div>
+              <h3 className="text-2xl font-black text-white">Registry Empty</h3>
+              <p className="text-sm text-[--text-muted] mt-2 max-w-xs mx-auto">No archived breakthroughs detected. Your achievements will manifest here.</p>
             </div>
           )}
         </div>

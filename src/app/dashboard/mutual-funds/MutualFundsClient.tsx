@@ -23,7 +23,6 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
   const searchParams = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(searchParams?.get("action") === "new");
   const [submitting, setSubmitting] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<"holdings" | "history">("holdings");
   const [trades, setTrades] = useState<MFTrade[]>([]);
   const refreshingRef = useRef(false);
@@ -195,7 +194,6 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
   const handleRefreshAll = useCallback(async () => {
     if (!isMountedRef.current || refreshingRef.current) return;
     refreshingRef.current = true;
-    setRefreshing(true);
     const toastId = toast.loading("Syncing with Market NAVs...");
     try {
         await refreshNAV(mfsRef.current.map((mf) => ({ id: mf.id, scheme_code: mf.fund_symbol || mf.scheme_code || "" })));
@@ -204,9 +202,6 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
         toast.error("Sync failed", { id: toastId });
     } finally {
       refreshingRef.current = false;
-      if (isMountedRef.current) {
-        setRefreshing(false);
-      }
     }
   }, []);
 

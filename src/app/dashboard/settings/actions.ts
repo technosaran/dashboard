@@ -15,12 +15,8 @@ export async function resetUserData() {
   
   if (!user) return { error: "Unauthorized" };
 
-  const rpc = supabase.rpc as unknown as (
-    fn: "reset_user_data",
-    args: { p_user_id: string }
-  ) => Promise<{ data: ResetUserDataResult | null; error: { message: string } | null }>;
-
-  const { data, error } = await rpc("reset_user_data", { p_user_id: user.id });
+  // Fix: Call rpc on supabase directly to maintain 'this' context
+  const { data, error } = await (supabase.rpc as any)("reset_user_data", { p_user_id: user.id });
 
   if (error) return { error: error.message };
   
