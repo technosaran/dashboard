@@ -11,6 +11,15 @@ import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, subMonths
 import type { Tables } from "@/lib/database.types";
 
 const supabase = createClient();
+const CSS_COLOR_MAP: Record<string, string> = {
+  "var(--accent-primary)": "#6c5ce7",
+  "var(--accent-primary-light)": "#a29bfe",
+  "var(--accent-secondary)": "#00cec9",
+  "var(--success)": "#00b894",
+  "var(--warning)": "#fdcb6e",
+  "var(--danger)": "#d63031",
+  "var(--text-muted)": "#5a6180",
+};
 
 const XAxis = dynamic(() => import("recharts").then((mod) => mod.XAxis), { ssr: false });
 const YAxis = dynamic(() => import("recharts").then((mod) => mod.YAxis), { ssr: false });
@@ -102,11 +111,15 @@ export default function ExpensesClient({ initialExpenses, initialAccounts }: Exp
     expenses.forEach(e => {
       catMap[e.category] = (catMap[e.category] || 0) + Number(e.amount);
     });
-    const pieData = Object.entries(catMap).map(([name, value]) => ({ 
+    const pieData = Object.entries(catMap).map(([name, value]) => {
+      const rawColor = CATEGORIES.find(c => c.label === name)?.color || "#8884d8";
+      const color = CSS_COLOR_MAP[rawColor] || rawColor;
+      return {
       name, 
       value,
-      color: CATEGORIES.find(c => c.label === name)?.color || "#8884d8"
-    })).sort((a, b) => b.value - a.value);
+      color,
+    };
+    }).sort((a, b) => b.value - a.value);
 
     const trendMap: Record<string, number> = {};
     for (let i = 5; i >= 0; i--) {

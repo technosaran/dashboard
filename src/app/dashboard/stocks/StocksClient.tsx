@@ -70,6 +70,7 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
   const [trades, setTrades] = useState<Tables<"stock_trades">[]>([]);
   const refreshAllRef = useRef<(() => Promise<void>) | null>(null);
   const fetchPriceRef = useRef<((symbol: string) => Promise<void>) | null>(null);
+  const submitLockRef = useRef(false);
 
   const loadTrades = useCallback(async () => {
     const res = await getStockTrades();
@@ -305,37 +306,41 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
   }
 
   async function handleSubmit(e: React.FormEvent) {
-    if (submitting) return;
     e.preventDefault();
+    if (submitLockRef.current) return;
+    submitLockRef.current = true;
     setSubmitting(true);
-    
-    const suffix = formData.exchange === "BSE" ? ".BO" : ".NS";
-    const fullSymbol = formData.symbol ? `${formData.symbol.trim().toUpperCase().split(".")[0]}${suffix}` : undefined;
+    try {
+      const suffix = formData.exchange === "BSE" ? ".BO" : ".NS";
+      const fullSymbol = formData.symbol ? `${formData.symbol.trim().toUpperCase().split(".")[0]}${suffix}` : undefined;
 
-    const payload = {
-      name: formData.name, 
-      symbol: fullSymbol,
-      quantity: parseFloat(formData.quantity),
-      buy_price: parseFloat(formData.buy_price),
-      current_price: parseFloat(formData.current_price),
-      currency: formData.currency,
-      notes: formData.notes || undefined,
-      bought_at: formData.bought_at,
-      deduct_account_id: formData.deduct_from_account || undefined,
-      total_cost_with_charges: !editingId ? zerodhaCharges.netAmount : undefined,
-      trade_type: formData.trade_type
-    };
-    const result = editingId
-      ? await updateInvestment(editingId, payload)
-      : await createInvestment(payload);
-    if (!result?.error) {
-      toast.success(editingId ? "Equity position updated successfully" : "New equity position registered in portfolio");
-      resetForm();
-      loadStocks();
-    } else {
-      toast.error(result.error);
+      const payload = {
+        name: formData.name, 
+        symbol: fullSymbol,
+        quantity: parseFloat(formData.quantity),
+        buy_price: parseFloat(formData.buy_price),
+        current_price: parseFloat(formData.current_price),
+        currency: formData.currency,
+        notes: formData.notes || undefined,
+        bought_at: formData.bought_at,
+        deduct_account_id: formData.deduct_from_account || undefined,
+        total_cost_with_charges: !editingId ? zerodhaCharges.netAmount : undefined,
+        trade_type: formData.trade_type
+      };
+      const result = editingId
+        ? await updateInvestment(editingId, payload)
+        : await createInvestment(payload);
+      if (!result?.error) {
+        toast.success(editingId ? "Equity position updated successfully" : "New equity position registered in portfolio");
+        resetForm();
+        loadStocks();
+      } else {
+        toast.error(result.error);
+      }
+    } finally {
+      setSubmitting(false);
+      submitLockRef.current = false;
     }
-    setSubmitting(false);
   }
 
   async function confirmDelete() {

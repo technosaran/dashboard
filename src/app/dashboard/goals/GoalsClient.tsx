@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useMemo, useCallback, useEffect, startTransition } from "react";
+import { useSearchParams } from "next/navigation";
+import { useState, useMemo, useCallback, useEffect, useRef, startTransition } from "react";
 import { differenceInDays, parseISO } from "date-fns";
 import { toast } from "react-hot-toast";
 import { createClient } from "@/lib/supabase-browser";
@@ -24,14 +25,16 @@ const GOAL_CATEGORIES = [
 ];
 
 export default function GoalsClient({ initialGoals, initialAccounts }: { initialGoals: Goal[], initialAccounts: Account[] }) {
+  const searchParams = useSearchParams();
   const [goals, setGoals] = useState<Goal[]>(initialGoals);
   const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(searchParams?.get("action") === "new");
   const [showContributeModal, setShowContributeModal] = useState(false);
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
   const [selectedAccountId, setSelectedAccountId] = useState<string>(initialAccounts[0]?.id || "");
   const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const submitLockRef = useRef(false);
   const [activeTab, setActiveTab] = useState<'active' | 'completed'>('active');
   
   const [formData, setFormData] = useState({
@@ -91,50 +94,63 @@ export default function GoalsClient({ initialGoals, initialAccounts }: { initial
 
   async function handleAddGoal(e: React.FormEvent) {
     e.preventDefault();
+    if (submitLockRef.current) return;
+    submitLockRef.current = true;
     setSubmitting(true);
-    let res;
-    if (editingGoalId) {
-      res = await updateGoal(editingGoalId, {
-        name: formData.name,
-        target_amount: parseFloat(formData.target_amount),
-        deadline: formData.deadline || undefined,
-        category: formData.category
-      });
-    } else {
-      res = await createGoal({
-        ...formData,
-        target_amount: parseFloat(formData.target_amount),
-        current_amount: parseFloat(formData.current_amount),
-        deadline: formData.deadline || undefined,
-      });
+    try {
+      let res;
+      if (editingGoalId) {
+        res = await updateGoal(editingGoalId, {
+          name: formData.name,
+          target_amount: parseFloat(formData.target_amount),
+          deadline: formData.deadline || undefined,
+          category: formData.category
+        });
+      } else {
+        res = await createGoal({
+          ...formData,
+          target_amount: parseFloat(formData.target_amount),
+          current_amount: parseFloat(formData.current_amount),
+          deadline: formData.deadline || undefined,
+        });
+      }
+      if (!res?.error) {
+        toast.success(editingGoalId ? "Target parameters updated successfully" : "New financial milestone established successfully");
+        setShowAddModal(false);
+        setFormData({ name: "", target_amount: "", current_amount: "0", deadline: "", category: "Others", account_id: "" });
+        setEditingGoalId(null);
+      } else {
+        toast.error(res.error);
+      }
+    } finally {
+      setSubmitting(false);
+      submitLockRef.current = false;
     }
-    if (!res?.error) {
-      toast.success(editingGoalId ? "Target parameters updated successfully" : "New financial milestone established successfully");
-      setShowAddModal(false);
-      setFormData({ name: "", target_amount: "", current_amount: "0", deadline: "", category: "Others", account_id: "" });
-      setEditingGoalId(null);
-    } else {
-      toast.error(res.error);
-    }
-    setSubmitting(false);
   }
 
   async function handleContribute(e: React.FormEvent) {
     e.preventDefault();
+    if (submitLockRef.current) return;
+    submitLockRef.current = true;
     if (!selectedGoalId || !selectedAccountId) {
       toast.error("Please select an account.");
+      submitLockRef.current = false;
       return;
     }
     setSubmitting(true);
-    const res = await updateGoalAmount(selectedGoalId, parseFloat(contributeAmount), selectedAccountId);
-    if (!res?.error) {
-      toast.success("Capital injected into savings goal");
-      setShowContributeModal(false);
-      setContributeAmount("");
-    } else {
-      toast.error(res.error);
+    try {
+      const res = await updateGoalAmount(selectedGoalId, parseFloat(contributeAmount), selectedAccountId);
+      if (!res?.error) {
+        toast.success("Capital injected into savings goal");
+        setShowContributeModal(false);
+        setContributeAmount("");
+      } else {
+        toast.error(res.error);
+      }
+    } finally {
+      setSubmitting(false);
+      submitLockRef.current = false;
     }
-    setSubmitting(false);
   }
 
   async function handleDeleteGoal(id: string) {
@@ -168,20 +184,6 @@ export default function GoalsClient({ initialGoals, initialAccounts }: { initial
           </button>
         </div>
 
-        <div className="flex items-center gap-1 bg-white/5 p-1 rounded-2xl w-fit">
-          <button 
-            onClick={() => setActiveTab('active')}
-            className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'active' ? 'bg-[--accent-primary] text-white shadow-lg shadow-[--accent-primary]/20' : 'text-[--text-muted] hover:text-[--text-primary]'}`}
-          >
-            Active
-          </button>
-          <button 
-            onClick={() => setActiveTab('completed')}
-            className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'completed' ? 'bg-[--success] text-white shadow-lg shadow-[--success]/20' : 'text-[--text-muted] hover:text-[--text-primary]'}`}
-          >
-            Completed
-          </button>
-        </div>
       </div>
 
       <div className="hidden md:grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -204,6 +206,23 @@ export default function GoalsClient({ initialGoals, initialAccounts }: { initial
               style={{ width: `${Math.min(stats.overallProgress, 100)}%` }}
             />
           </div>
+        </div>
+      </div>
+
+      <div className="flex justify-center px-2">
+        <div className="flex items-center gap-1 bg-white/5 p-1 rounded-2xl">
+          <button 
+            onClick={() => setActiveTab('active')}
+            className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'active' ? 'bg-[--accent-primary] text-white shadow-lg shadow-[--accent-primary]/20' : 'text-[--text-muted] hover:text-[--text-primary]'}`}
+          >
+            Active
+          </button>
+          <button 
+            onClick={() => setActiveTab('completed')}
+            className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'completed' ? 'bg-[--success] text-white shadow-lg shadow-[--success]/20' : 'text-[--text-muted] hover:text-[--text-primary]'}`}
+          >
+            Completed
+          </button>
         </div>
       </div>
 
