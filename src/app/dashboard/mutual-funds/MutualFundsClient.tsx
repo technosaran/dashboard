@@ -26,7 +26,8 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
   const [refreshing, setRefreshing] = useState(false);
   const [trades, setTrades] = useState<MFTrade[]>([]);
   const refreshingRef = useRef(false);
-  const mfsRef = useRef<MF[]>(initialIncomes);
+  const mfsRef = useRef<MF[]>(mfs);
+  const isMountedRef = useRef(true);
   
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
@@ -96,6 +97,12 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
   useEffect(() => {
     mfsRef.current = mfs;
   }, [mfs]);
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const handleSearch = async (val: string) => {
     setSearchQuery(val);
@@ -177,7 +184,7 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
   }
 
   const handleRefreshAll = useCallback(async () => {
-    if (refreshingRef.current) return;
+    if (!isMountedRef.current || refreshingRef.current) return;
     refreshingRef.current = true;
     setRefreshing(true);
     const toastId = toast.loading("Syncing with Market NAVs...");
@@ -188,7 +195,9 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
         toast.error("Sync failed", { id: toastId });
     } finally {
       refreshingRef.current = false;
-      setRefreshing(false);
+      if (isMountedRef.current) {
+        setRefreshing(false);
+      }
     }
   }, []);
 
