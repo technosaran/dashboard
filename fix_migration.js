@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 const fs = require('fs');
 const path = "d:/dashboard/supabase/migrations/20260414000006_performance_optimization.sql";
 let content = fs.readFileSync(path, 'utf8');
