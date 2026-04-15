@@ -33,7 +33,10 @@ const CSS_COLOR_MAP: Record<string, string> = {
   "var(--text-muted)": "#5a6180",
 };
 function getColorByLabel(label: string) {
-  const hash = Array.from(label).reduce((total, char) => total + char.charCodeAt(0), 0);
+  let hash = 0;
+  for (let i = 0; i < label.length; i += 1) {
+    hash = (hash * 31 + label.charCodeAt(i)) >>> 0;
+  }
   return CHART_COLOR_FALLBACKS[hash % CHART_COLOR_FALLBACKS.length];
 }
 
