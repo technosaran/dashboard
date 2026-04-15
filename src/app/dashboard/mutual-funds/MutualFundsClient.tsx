@@ -170,15 +170,7 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
     setSubmitting(false);
   }
 
-  useEffect(() => {
-    handleRefreshAll();
-    const timer = setInterval(() => {
-      handleRefreshAll();
-    }, 15000);
-    return () => clearInterval(timer);
-  }, []);
-
-  async function handleRefreshAll() {
+  const handleRefreshAll = useCallback(async () => {
     if (refreshing) return;
     setRefreshing(true);
     const toastId = toast.loading("Syncing with Market NAVs...");
@@ -189,7 +181,15 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
         toast.error("Sync failed", { id: toastId });
     }
     setRefreshing(false);
-  }
+  }, [mfs, refreshing]);
+
+  useEffect(() => {
+    handleRefreshAll();
+    const timer = setInterval(() => {
+      handleRefreshAll();
+    }, 15000);
+    return () => clearInterval(timer);
+  }, [handleRefreshAll]);
 
   return (
     <div className="flex flex-col gap-8 animate-fade-in text-[--text-primary] py-6" style={{ maxWidth: "1280px", margin: "0 auto", width: "100%", paddingBottom: "100px" }}>
