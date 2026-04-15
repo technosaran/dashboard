@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo, useCallback, useEffect, startTransition } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef, startTransition } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { createClient } from "@/lib/supabase-browser";
@@ -25,6 +25,9 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
   const [submitting, setSubmitting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [trades, setTrades] = useState<MFTrade[]>([]);
+  const refreshingRef = useRef(false);
+  const mfsRef = useRef<MF[]>(mfs);
+  const isMountedRef = useRef(true);
   
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
@@ -90,6 +93,16 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
     
     return { totalInvested, totalCurrentValue, totalPnL, totalPnLPercent };
   }, [mfs]);
+
+  useEffect(() => {
+    mfsRef.current = mfs;
+  }, [mfs]);
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const handleSearch = async (val: string) => {
     setSearchQuery(val);
@@ -170,26 +183,31 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
     setSubmitting(false);
   }
 
-  useEffect(() => {
-    handleRefreshAll();
-    const timer = setInterval(() => {
-      handleRefreshAll();
-    }, 15000);
-    return () => clearInterval(timer);
-  }, []);
-
-  async function handleRefreshAll() {
-    if (refreshing) return;
+  const handleRefreshAll = useCallback(async () => {
+    if (!isMountedRef.current || refreshingRef.current) return;
+    refreshingRef.current = true;
     setRefreshing(true);
     const toastId = toast.loading("Syncing with Market NAVs...");
     try {
-        await refreshNAV(mfs.map((mf) => ({ id: mf.id, scheme_code: mf.fund_symbol || mf.scheme_code || "" })));
+        await refreshNAV(mfsRef.current.map((mf) => ({ id: mf.id, scheme_code: mf.fund_symbol || mf.scheme_code || "" })));
         toast.success("Portfolio revalued!", { id: toastId });
     } catch {
         toast.error("Sync failed", { id: toastId });
+    } finally {
+      refreshingRef.current = false;
+      if (isMountedRef.current) {
+        setRefreshing(false);
+      }
     }
-    setRefreshing(false);
-  }
+  }, []);
+
+  useEffect(() => {
+    void handleRefreshAll();
+    const timer = setInterval(() => {
+      void handleRefreshAll();
+    }, 15000);
+    return () => clearInterval(timer);
+  }, [handleRefreshAll]);
 
   return (
     <div className="flex flex-col gap-8 animate-fade-in text-[--text-primary] py-6" style={{ maxWidth: "1280px", margin: "0 auto", width: "100%", paddingBottom: "100px" }}>
