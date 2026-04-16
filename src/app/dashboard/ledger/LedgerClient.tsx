@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState, startTransition, useMemo } from "reac
 import { createClient } from "@/lib/supabase-browser";
 import { format, getYear, getMonth, isWithinInterval, startOfDay, endOfDay } from "date-fns";
 import { toast } from "react-hot-toast";
-import { useRealTimeSync } from "@/hooks/use-realtime-sync";
+import { useFinanceData } from "@/hooks/use-finance-data";
 
 const supabase = createClient();
 
@@ -24,13 +24,8 @@ const MONTHS = [
   "July", "August", "September", "October", "November", "December"
 ];
 
-interface LedgerClientProps {
-  initialLogs: LedgerLog[];
-}
-
-export default function LedgerClient({ initialLogs }: LedgerClientProps) {
-  const [logs, setLogs] = useState<LedgerLog[]>(initialLogs);
-  const [loading, setLoading] = useState(false);
+export default function LedgerClient() {
+  const { data: { ledgerLogs: logs }, isValidating, isLoading } = useFinanceData();
   const [yearFilter, setYearFilter] = useState("All Years");
   const [monthFilter, setMonthFilter] = useState("All Months");
   const [startDate, setStartDate] = useState("");
@@ -38,35 +33,7 @@ export default function LedgerClient({ initialLogs }: LedgerClientProps) {
   const [showRevertConfirm, setShowRevertConfirm] = useState(false);
   const [revertingId, setRevertingId] = useState<string | null>(null);
 
-  const fetchLogs = useCallback(async () => {
-    setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      setLoading(false);
-      return;
-    }
 
-    const { data } = await supabase
-      .from("ledger_logs")
-      .select("id, created_at, account_name, action_type, amount, previous_balance, new_balance, details")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
-
-    if (data) {
-      setLogs(data as LedgerLog[]);
-    }
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    const channel = supabase
-      .channel("ledger-updates-v4")
-      .on("postgres_changes", { event: "*", schema: "public", table: "ledger_logs" }, () => startTransition(fetchLogs))
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [fetchLogs]);
-
-  useRealTimeSync(fetchLogs);
 
   const uniqueYears = useMemo(() => {
     const years = new Set<string>();
@@ -125,9 +92,12 @@ export default function LedgerClient({ initialLogs }: LedgerClientProps) {
   return (
     <div className="flex flex-col gap-[var(--section-gap)]">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[--text-primary]">Audit Trail</h1>
-          <p className="text-[11px] md:text-sm mt-1 uppercase tracking-[0.2em] font-black text-[--text-muted]">Financial Registry</p>
+        <div className="flex items-center gap-4">
+          <div>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[--text-primary]">Audit Trail</h1>
+            <p className="text-[11px] md:text-sm mt-1 uppercase tracking-[0.2em] font-black text-[--text-muted]">Financial Registry</p>
+          </div>
+          <div className={`status-dot scale-90 ${isValidating ? 'animate-pulse bg-yellow-400' : 'bg-emerald-400 opacity-50'}`} />
         </div>
       </div>
 
@@ -186,7 +156,7 @@ export default function LedgerClient({ initialLogs }: LedgerClientProps) {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {loading ? (
+              {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i} className="animate-pulse">
                     <td colSpan={6} className="px-8 py-8"><div className="h-4 bg-white/5 rounded w-full" /></td>

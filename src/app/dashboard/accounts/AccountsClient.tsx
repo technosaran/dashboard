@@ -10,7 +10,7 @@ import { searchBanks, type Bank } from "@/lib/banks";
 import { createAccount, updateAccount, deleteAccount, createTransfer, adjustBalance } from "./actions";
 import BankLogo from "@/components/bank-logo";
 
-import { useRealTimeSync } from "@/hooks/use-realtime-sync";
+import { useFinanceData } from "@/hooks/use-finance-data";
 
 // Dynamic imports for chart performance
 const PieChart = dynamic(() => import("recharts").then(mod => mod.PieChart), { ssr: false });
@@ -52,13 +52,9 @@ function getCurrencySymbol(currency: string): string {
   return symbols[currency] || currency;
 }
 
-interface AccountsClientProps {
-  initialAccounts: Account[];
-}
-
-export default function AccountsClient({ initialAccounts }: AccountsClientProps) {
+export default function AccountsClient() {
+  const { data: { accounts }, isValidating } = useFinanceData();
   const searchParams = useSearchParams();
-  const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
   const [showForm, setShowForm] = useState(searchParams.get("action") === "new");
 
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -75,21 +71,7 @@ export default function AccountsClient({ initialAccounts }: AccountsClientProps)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingAccountId, setDeletingAccountId] = useState<string | null>(null);
 
-  const loadAccounts = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const { data } = await supabase.from("accounts").select("*").eq("user_id", user.id).order("created_at", { ascending: false });
-    if (data) setAccounts(data);
-  }, []);
 
-  useEffect(() => {
-    const channel = supabase.channel("accounts-v3")
-      .on("postgres_changes", { event: "*", schema: "public", table: "accounts" }, () => startTransition(loadAccounts))
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [loadAccounts]);
-
-  useRealTimeSync(loadAccounts);
 
   function handleBankSearch(query: string) {
     setBankSearch(query);
@@ -111,7 +93,6 @@ export default function AccountsClient({ initialAccounts }: AccountsClientProps)
     if (!result?.error) {
       toast.success(editingId ? "Financial node updated successfully" : "New account initialized successfully");
       resetForm();
-      loadAccounts();
     } else {
       toast.error(result.error);
     }
@@ -141,7 +122,7 @@ export default function AccountsClient({ initialAccounts }: AccountsClientProps)
   async function confirmDelete() {
     if (!deletingAccountId) return;
     const res = await deleteAccount(deletingAccountId);
-    if (!res?.error) { toast.success("Account permanently removed from portfolio"); loadAccounts(); } else toast.error(res.error);
+    if (!res?.error) { toast.success("Account permanently removed from portfolio"); } else toast.error(res.error);
     setShowDeleteConfirm(false);
     setDeletingAccountId(null);
   }
@@ -152,14 +133,14 @@ export default function AccountsClient({ initialAccounts }: AccountsClientProps)
     const amount = parseFloat(adjustData.amount);
     const finalAmount = adjustData.type === "subtract" ? -amount : amount;
     const res = await adjustBalance(adjustingAccountId, finalAmount, adjustData.note);
-    if (!res?.error) { toast.success("Balance adjustment finalized"); setShowAdjustModal(false); loadAccounts(); } else toast.error(res.error);
+    if (!res?.error) { toast.success("Balance adjustment finalized"); setShowAdjustModal(false); } else toast.error(res.error);
   }
 
   async function handleTransfer(e: React.FormEvent) {
     e.preventDefault();
     if (!transferFromId) return;
     const res = await createTransfer({ from_account_id: transferFromId, to_account_id: transferData.to_account_id, amount: parseFloat(transferData.amount), note: transferData.note || null });
-    if (!res?.error) { toast.success("Inter-account transfer executed successfully"); setShowTransferModal(false); loadAccounts(); } else toast.error(res.error);
+    if (!res?.error) { toast.success("Inter-account transfer executed successfully"); setShowTransferModal(false); } else toast.error(res.error);
   }
 
   const balancesByCurrency = accounts.reduce((acc, a) => { acc[a.currency] = (acc[a.currency] || 0) + a.balance; return acc; }, {} as Record<string, number>);
@@ -175,9 +156,12 @@ export default function AccountsClient({ initialAccounts }: AccountsClientProps)
   return (
     <div className="flex flex-col gap-[var(--section-gap)]">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[--text-primary]">Accounts Portfolio</h1>
-          <p className="text-[13px] md:text-sm mt-1 font-medium text-[--text-muted]">Manage your financial footprint</p>
+        <div className="flex items-center gap-4">
+          <div>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[--text-primary]">Accounts Portfolio</h1>
+            <p className="text-[13px] md:text-sm mt-1 font-medium text-[--text-muted]">Manage your financial footprint</p>
+          </div>
+          <div className={`status-dot scale-90 ${isValidating ? 'animate-pulse bg-yellow-400' : 'bg-emerald-400 opacity-50'}`} />
         </div>
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
           <button onClick={() => { setTransferFromId(null); setShowTransferModal(true); }} className="btn-secondary w-full sm:w-auto flex items-center justify-center gap-2"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>Transfer</button>

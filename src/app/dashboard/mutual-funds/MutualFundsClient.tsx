@@ -7,7 +7,7 @@ import { toast } from "react-hot-toast";
 import { createClient } from "@/lib/supabase-browser";
 import type { Tables } from "@/lib/database.types";
 import { recordMFInvestment, refreshNAV, searchMFSchemes, getLiveNAV } from "./actions";
-import { useRealTimeSync } from "@/hooks/use-realtime-sync";
+import { useFinanceData } from "@/hooks/use-finance-data";
 
 type MF = Tables<"mutual_funds"> & { scheme_code?: string; fund_symbol?: string | null };
 type MFTrade = Tables<"mutual_fund_trades">;
@@ -17,14 +17,12 @@ type MFSchemeSearchResult = {
   schemeName: string;
 };
 
-export default function MutualFundsClient({ initialIncomes, initialAccounts }: { initialIncomes: MF[], initialAccounts: Account[] }) {
-  const [mfs, setMfs] = useState<MF[]>(initialIncomes);
-  const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
+export default function MutualFundsClient() {
+  const { data: { mutualFunds: mfs, accounts, mutualFundTrades: trades }, isValidating } = useFinanceData();
   const searchParams = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(searchParams?.get("action") === "new");
   const [submitting, setSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<"holdings" | "history">("holdings");
-  const [trades, setTrades] = useState<MFTrade[]>([]);
   const refreshingRef = useRef(false);
   const submitLockRef = useRef(false);
   const mfsRef = useRef<MF[]>(mfs);
@@ -61,30 +59,7 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
 
   const supabase = createClient();
 
-  const fetchData = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    
-    const [mfRes, accRes, tradeRes] = await Promise.all([
-        supabase.from("mutual_funds").select("*").eq("user_id", user.id).order("fund_name"),
-        supabase.from("accounts").select("*").eq("user_id", user.id).order("name"),
-        supabase.from("mutual_fund_trades").select("*").eq("user_id", user.id).order("date", { ascending: false }).limit(20)
-    ]);
 
-    if (mfRes.data) setMfs(mfRes.data);
-    if (accRes.data) setAccounts(accRes.data);
-    if (tradeRes.data) setTrades(tradeRes.data);
-  }, [supabase]);
-
-  useEffect(() => {
-    const channel = supabase.channel("mf-live")
-      .on("postgres_changes", { event: "*", schema: "public", table: "mutual_funds" }, () => startTransition(fetchData))
-      .on("postgres_changes", { event: "*", schema: "public", table: "mutual_fund_trades" }, () => startTransition(fetchData))
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [fetchData, supabase]);
-
-  useRealTimeSync(fetchData);
 
   const stats = useMemo(() => {
     const totalInvested = mfs.reduce((s, g) => s + (Number(g.units) * Number(g.avg_nav)), 0);
@@ -218,9 +193,12 @@ export default function MutualFundsClient({ initialIncomes, initialAccounts }: {
       
       {/* Portfolio Overview */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 px-4">
-        <div>
-          <h1 className="text-3xl font-black tracking-tight">Mutual Funds</h1>
-          <p className="text-[10px] text-[--text-muted] font-black uppercase tracking-[0.2em] mt-1">Live NAV Tracking Console</p>
+        <div className="flex items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-black tracking-tight">Mutual Funds</h1>
+            <p className="text-[10px] text-[--text-muted] font-black uppercase tracking-[0.2em] mt-1">Live NAV Tracking Console</p>
+          </div>
+          <div className={`status-dot scale-90 ${isValidating ? 'animate-pulse bg-yellow-400' : 'bg-emerald-400 opacity-50'}`} />
         </div>
         <div className="flex items-center gap-3 w-full md:w-auto">
             {/* Auto refreshing enabled */}

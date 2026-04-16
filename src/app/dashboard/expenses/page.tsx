@@ -20,26 +20,9 @@ export default async function ExpensesPage() {
     redirect("/login");
   }
 
-  const [expRes, accRes] = await Promise.all([
-    supabase
-      .from("expenses")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("date", { ascending: false })
-      .order("created_at", { ascending: false }),
-    supabase
-      .from("accounts")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("name")
-  ]);
-
   return (
     <Suspense fallback={null}>
-      <ExpensesClient 
-      initialExpenses={expRes.data || []}
-      initialAccounts={accRes.data || []}
-    />
+      <ExpensesClient />
     </Suspense>
   );
 }

@@ -8,6 +8,7 @@ import { toast } from "react-hot-toast";
 import { createClient } from "@/lib/supabase-browser";
 import { addIncome } from "./actions";
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, subMonths } from "date-fns";
+import { useFinanceData } from "@/hooks/use-finance-data";
 import type { Tables } from "@/lib/database.types";
 
 const supabase = createClient();
@@ -57,7 +58,7 @@ const Cell = dynamic(() => import("recharts").then((mod) => mod.Cell), { ssr: fa
 const AreaChart = dynamic(() => import("recharts").then((mod) => mod.AreaChart), { ssr: false });
 const Area = dynamic(() => import("recharts").then((mod) => mod.Area), { ssr: false });
 
-import { useRealTimeSync } from "@/hooks/use-realtime-sync";
+
 
 const INCOME_CATEGORIES = [
   { label: "Salary", icon: "🏢", color: "#4ECDC4" },
@@ -72,15 +73,9 @@ const INCOME_CATEGORIES = [
 type Income = Tables<"incomes">;
 type Account = Tables<"accounts">;
 
-interface IncomeClientProps {
-  initialIncomes: Income[];
-  initialAccounts: Account[];
-}
-
-export default function IncomeClient({ initialIncomes, initialAccounts }: IncomeClientProps) {
+export default function IncomeClient() {
+  const { data: { incomes, accounts }, isValidating } = useFinanceData();
   const searchParams = useSearchParams();
-  const [incomes, setIncomes] = useState<Income[]>(initialIncomes);
-  const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
   const [showAddModal, setShowAddModal] = useState(searchParams.get("action") === "new");
   const [submitting, setSubmitting] = useState(false);
   const [search, setSearch] = useState("");
@@ -95,28 +90,7 @@ export default function IncomeClient({ initialIncomes, initialAccounts }: Income
     account_id: "",
   });
 
-  const fetchData = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
 
-    const [incRes, accRes] = await Promise.all([
-      supabase.from("incomes").select("*").eq("user_id", user.id).order("date", { ascending: false }).order("created_at", { ascending: false }),
-      supabase.from("accounts").select("*").eq("user_id", user.id).order("name")
-    ]);
-
-    if (incRes.data) setIncomes(incRes.data as Income[]);
-    if (accRes.data) setAccounts(accRes.data as Account[]);
-  }, []);
-
-  useEffect(() => {
-    const channel = supabase.channel("income-realtime")
-      .on("postgres_changes", { event: "*", schema: "public", table: "incomes" }, () => startTransition(fetchData))
-      .on("postgres_changes", { event: "*", schema: "public", table: "accounts" }, () => startTransition(fetchData))
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [fetchData]);
-
-  useRealTimeSync(fetchData);
 
   const stats = useMemo(() => {
     const now = new Date();
@@ -195,7 +169,10 @@ export default function IncomeClient({ initialIncomes, initialAccounts }: Income
              <Link href="/dashboard" className="block text-center mt-4 text-[10px] text-white/50 uppercase font-black tracking-widest hover:text-white">← System Home</Link>
           </div>
         <div className="hidden md:block">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[--text-primary]">Income Strategy</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[--text-primary]">Income Strategy</h1>
+            <div className={`status-dot scale-90 ${isValidating ? 'animate-pulse bg-yellow-400' : 'bg-emerald-400 opacity-50'}`} />
+          </div>
           <p className="text-[--text-secondary] text-[13px] md:text-sm mt-1">Monitor your revenue streams and track financial growth.</p>
         </div>
         <div className="flex items-center gap-3 w-full md:w-auto">

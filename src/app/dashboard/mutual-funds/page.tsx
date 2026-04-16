@@ -17,17 +17,5 @@ export default async function MutualFundsPage() {
     redirect("/login");
   }
   
-  const { data: mfs } = await supabase
-    .from("mutual_funds")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("fund_name");
-
-  const { data: accounts } = await supabase
-    .from("accounts")
-    .select("*")
-    .eq("user_id", user?.id)
-    .order("name");
-
-  return <MutualFundsClient initialIncomes={mfs || []} initialAccounts={accounts || []} />;
+  return <MutualFundsClient />;
 }

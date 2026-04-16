@@ -15,7 +15,7 @@ import {
   getStockTrades
 } from "./actions";
 import { calculateZerodhaCharges } from "@/lib/investment-utils";
-import { useRealTimeSync } from "@/hooks/use-realtime-sync";
+import { useFinanceData } from "@/hooks/use-finance-data";
 import { getAccounts } from "../accounts/actions";
 
 type Stock = Tables<"investments"> & { total_charges?: number };
@@ -36,13 +36,9 @@ function formatNum(val: number, decimals = 2): string {
   return val.toLocaleString("en-IN", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 }
 
-interface StocksClientProps {
-  initialStocks: Stock[];
-}
-
-export default function StocksClient({ initialStocks }: StocksClientProps) {
-  const [stocks, setStocks] = useState<Stock[]>(initialStocks);
-  const [accounts, setAccounts] = useState<Account[]>([]);
+export default function StocksClient() {
+  const { data: { investments, accounts, stockTrades: trades }, isValidating, isLoading } = useFinanceData();
+  const stocks = useMemo(() => investments.filter(i => i.type === "stock") as Stock[], [investments]);
   const searchParams = useSearchParams();
   const [showForm, setShowForm] = useState(searchParams?.get("action") === "new");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -66,49 +62,11 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
   });
 
   const [activeTab, setActiveTab] = useState<"holdings" | "history">("holdings");
-  const [trades, setTrades] = useState<Tables<"stock_trades">[]>([]);
   const refreshAllRef = useRef<(() => Promise<void>) | null>(null);
   const fetchPriceRef = useRef<((symbol: string) => Promise<void>) | null>(null);
   const submitLockRef = useRef(false);
 
-  const loadTrades = useCallback(async () => {
-    const res = await getStockTrades();
-    if (res.data) setTrades(res.data as Tables<"stock_trades">[]);
-  }, []);
 
-  const loadStocks = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const { data } = await supabase
-      .from("investments")
-      .select("*")
-      .eq("user_id", user.id)
-      .eq("type", "stock")
-      .order("created_at", { ascending: false });
-    if (data) setStocks(data as Stock[]);
-  }, []);
-
-  useEffect(() => {
-    if (activeTab === "history") loadTrades();
-  }, [activeTab, loadTrades]);
-
-  // Automated price refresh on mount (once every 15 mins max to be polite)
-  useEffect(() => {
-    refreshAllRef.current?.();
-    const timer = setInterval(() => {
-      refreshAllRef.current?.();
-    }, 60000); // Increased to 60s for better mobile performance
-    return () => clearInterval(timer);
-  }, []);
-
-  const loadAccounts = useCallback(async () => {
-    const res = await getAccounts();
-    if (res.data) setAccounts(res.data as Account[]);
-  }, []);
-
-  useEffect(() => {
-    if (showForm) loadAccounts();
-  }, [showForm, loadAccounts]);
 
   interface Suggestion {
     symbol: string;
@@ -148,18 +106,7 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
     return calculateZerodhaCharges(qty, price, formData.exchange, formData.trade_type === "buy");
   }, [formData.quantity, formData.buy_price, formData.exchange, formData.trade_type]);
 
-  useEffect(() => {
-    const channel = supabase
-      .channel("stocks-realtime")
-      .on("postgres_changes", { event: "*", schema: "public", table: "investments" }, () =>
-        startTransition(loadStocks)
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [loadStocks]);
 
-  useRealTimeSync(loadStocks);
-  useRealTimeSync(loadTrades);
 
   async function handleFetchPrice(symbol: string) {
     if (symbol.length < 2 || editingId) return;
@@ -195,7 +142,6 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
       const res = await refreshAllPrices();
       if (res.success) {
         toast.success("All prices updated", { id: toastId });
-        loadStocks();
       } else {
         toast.error(res.error || "Failed to refresh prices", { id: toastId });
       }
@@ -332,7 +278,6 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
       if (!result?.error) {
         toast.success(editingId ? "Equity position updated successfully" : "New equity position registered in portfolio");
         resetForm();
-        loadStocks();
       } else {
         toast.error(result.error);
       }
@@ -345,7 +290,7 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
   async function confirmDelete() {
     if (!deletingId) return;
     const res = await deleteInvestment(deletingId);
-    if (!res?.error) { toast.success("Investment record purged from architecture"); loadStocks(); } else toast.error(res.error);
+    if (!res?.error) { toast.success("Investment record purged from architecture"); } else toast.error(res.error);
     setShowDeleteConfirm(false);
     setDeletingId(null);
   }
@@ -361,9 +306,12 @@ export default function StocksClient({ initialStocks }: StocksClientProps) {
       
       {/* ── Portfolio Overview Header ── */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 px-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-black tracking-tight text-[--text-primary]">Stocks Portfolio</h1>
-          <p className="text-[10px] text-[--text-muted] font-black uppercase tracking-[0.2em] mt-1">Live Asset Tracking</p>
+        <div className="flex items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-black tracking-tight text-[--text-primary]">Stocks Portfolio</h1>
+            <p className="text-[10px] text-[--text-muted] font-black uppercase tracking-[0.2em] mt-1">Live Asset Tracking</p>
+          </div>
+          <div className={`status-dot scale-90 ${isValidating ? 'animate-pulse bg-yellow-400' : 'bg-emerald-400 opacity-50'}`} />
         </div>
         <div className="flex items-center gap-3 w-full md:w-auto">
             {/* Auto refresh enabled */}

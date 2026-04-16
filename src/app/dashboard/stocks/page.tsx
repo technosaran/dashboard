@@ -23,18 +23,9 @@ export default async function StocksPage() {
     redirect("/login");
   }
 
-  const { data: stocks } = await supabase
-    .from("investments")
-    .select("*")
-    .eq("user_id", user.id)
-    .eq("type", "stock")
-    .order("created_at", { ascending: false });
-
   return (
     <Suspense fallback={null}>
-      <StocksClient
-      initialStocks={(stocks as Stock[]) || []}
-    />
+      <StocksClient />
     </Suspense>
   );
 }

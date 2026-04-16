@@ -5,9 +5,8 @@ import { useCallback, useEffect, useMemo, useState, startTransition } from "reac
 import { format, endOfMonth, isWithinInterval, startOfMonth , addMonths, startOfDay } from "date-fns";
 import Link from "next/link";
 import Greeting from "@/components/greeting";
-import { useRealTimeSync } from "@/hooks/use-realtime-sync";
+import { useFinanceData } from "@/hooks/use-finance-data";
 import { createClient } from "@/lib/supabase-browser";
-import type { Tables } from "@/lib/database.types";
 
 const ResponsiveContainer = dynamic(
   () => import("recharts").then((mod) => mod.ResponsiveContainer),
@@ -55,81 +54,8 @@ const CSS_COLOR_MAP: Record<string, string> = {
   "var(--text-muted)": "#5a6180",
 };
 
-type Account = Tables<"accounts">;
-type Transaction = Tables<"transactions">;
-type LedgerLog = Tables<"ledger_logs">;
-
-interface DashboardClientProps {
-  initialAccounts: Account[];
-  initialTransactions: Transaction[];
-  initialLogs: LedgerLog[];
-  initialInvestments: Tables<"investments">[];
-  initialMutualFunds: Tables<"mutual_funds">[];
-}
-
-export default function DashboardClient({
-  initialAccounts,
-  initialTransactions,
-  initialLogs,
-  initialInvestments,
-  initialMutualFunds
-}: DashboardClientProps) {
-  const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
-  const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
-  const [recentLogs, setRecentLogs] = useState<LedgerLog[]>(initialLogs);
-  const [investments, setInvestments] = useState<Tables<"investments">[]>(initialInvestments || []);
-  const [mutualFunds, setMutualFunds] = useState<Tables<"mutual_funds">[]>(initialMutualFunds || []);
-
-  const fetchData = useCallback(async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) return;
-
-    const [accRes, transRes, logRes, invRes, mfRes] = await Promise.all([
-      supabase.from("accounts").select("*").eq("user_id", user.id),
-      supabase
-        .from("transactions")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("date", { ascending: false })
-        .limit(100), // Optimization: Only fetch last 100 for dashboard overview
-      supabase
-        .from("ledger_logs")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(10), // Increased slightly for better mobile history view
-      supabase.from("investments").select("*").eq("user_id", user.id),
-      supabase.from("mutual_funds").select("*").eq("user_id", user.id),
-    ]);
-
-    if (accRes.data) setAccounts(accRes.data);
-    if (transRes.data) setTransactions(transRes.data);
-    if (logRes.data) setRecentLogs(logRes.data as LedgerLog[]);
-    if (invRes.data) setInvestments(invRes.data);
-    if (mfRes.data) setMutualFunds(mfRes.data);
-  }, []);
-
-  useRealTimeSync(fetchData);
-
-  useEffect(() => {
-    const channel = supabase
-      .channel("dashboard-realtime-master")
-      .on("postgres_changes", { event: "*", schema: "public", table: "accounts" }, () => startTransition(fetchData))
-      .on("postgres_changes", { event: "*", schema: "public", table: "transactions" }, () => startTransition(fetchData))
-      .on("postgres_changes", { event: "*", schema: "public", table: "incomes" }, () => startTransition(fetchData))
-      .on("postgres_changes", { event: "*", schema: "public", table: "expenses" }, () => startTransition(fetchData))
-      .on("postgres_changes", { event: "*", schema: "public", table: "ledger_logs" }, () => startTransition(fetchData))
-      .on("postgres_changes", { event: "*", schema: "public", table: "investments" }, () => startTransition(fetchData))
-      .on("postgres_changes", { event: "*", schema: "public", table: "mutual_funds" }, () => startTransition(fetchData))
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [fetchData]);
+export default function DashboardClient() {
+  const { data: { accounts, transactions, ledgerLogs: recentLogs, investments, mutualFunds }, isLoading, isValidating } = useFinanceData();
 
   const stats = useMemo(() => {
     const cashBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
@@ -276,7 +202,7 @@ export default function DashboardClient({
         <div className="px-1">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-xs font-black uppercase tracking-widest text-[--text-muted]">Financial Pulse</h3>
-            <span className="status-dot scale-50" title="Real-time Synced" />
+            <span className={`status-dot scale-50 ${isValidating ? 'animate-pulse bg-yellow-400' : 'bg-emerald-400'}`} title={isValidating ? "Syncing..." : "Real-time Synced"} />
           </div>
           <div className="space-y-3">
             {recentLogs.slice(0, 3).map((log) => {
@@ -380,9 +306,9 @@ export default function DashboardClient({
           <div className="flex flex-col lg:flex-row items-center justify-between gap-10">
             <div className="relative z-10">
               <div className="mb-4 flex items-center gap-2 md:mb-6">
-                <div className="status-dot scale-75" />
+                <div className={`status-dot scale-75 ${isValidating ? 'animate-pulse bg-yellow-400' : 'bg-emerald-400'}`} />
                 <span className="text-xs font-bold uppercase tracking-[0.4em] text-[--text-muted] md:text-sm">
-                  Portfolio Net Worth
+                  Portfolio Net Worth {isLoading && <span className="text-[10px] lowercase italic">(loading...)</span>}
                 </span>
               </div>
               <h2 className="bg-gradient-to-r from-white via-white to-[--text-secondary] bg-clip-text text-[clamp(2.5rem,10vw,4rem)] font-[900] leading-none tracking-[-0.05em] text-transparent drop-shadow-[0_10px_30px_rgba(108,92,231,0.2)] [font-family:'Outfit',sans-serif]">

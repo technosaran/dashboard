@@ -16,18 +16,5 @@ export default async function GoalsPage() {
     redirect("/login");
   }
   
-  const [{ data: goals }, { data: accounts }] = await Promise.all([
-    supabase
-      .from("goals")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false }),
-    supabase
-      .from("accounts")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("name")
-  ]);
-
-  return <GoalsClient initialGoals={goals || []} initialAccounts={accounts || []} />;
+  return <GoalsClient />;
 }

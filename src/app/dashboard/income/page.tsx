@@ -20,26 +20,9 @@ export default async function IncomePage() {
     redirect("/login");
   }
 
-  const [incRes, accRes] = await Promise.all([
-    supabase
-      .from("incomes")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("date", { ascending: false })
-      .order("created_at", { ascending: false }),
-    supabase
-      .from("accounts")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("name")
-  ]);
-
   return (
     <Suspense fallback={null}>
-      <IncomeClient 
-      initialIncomes={incRes.data || []}
-      initialAccounts={accRes.data || []}
-    />
+      <IncomeClient />
     </Suspense>
   );
 }

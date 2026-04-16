@@ -19,11 +19,5 @@ export default async function LedgerPage() {
     redirect("/login");
   }
 
-  const { data } = await supabase
-    .from("ledger_logs")
-    .select("id, created_at, account_name, action_type, amount, previous_balance, new_balance, details")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
-
-  return <LedgerClient initialLogs={data || []} />;
+  return <LedgerClient />;
 }

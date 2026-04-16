@@ -8,7 +8,7 @@ import { toast } from "react-hot-toast";
 import { createClient } from "@/lib/supabase-browser";
 import type { Tables } from "@/lib/database.types";
 import { createGoal, updateGoalAmount, deleteGoal, updateGoal } from "./actions";
-import { useRealTimeSync } from "@/hooks/use-realtime-sync";
+import { useFinanceData } from "@/hooks/use-finance-data";
 
 type Goal = Tables<"goals">;
 type Account = Tables<"accounts">;
@@ -24,14 +24,13 @@ const GOAL_CATEGORIES = [
   { label: "Others", icon: "🎯", color: "#64748b" },
 ];
 
-export default function GoalsClient({ initialGoals, initialAccounts }: { initialGoals: Goal[], initialAccounts: Account[] }) {
+export default function GoalsClient() {
+  const { data: { goals, accounts }, isValidating } = useFinanceData();
   const searchParams = useSearchParams();
-  const [goals, setGoals] = useState<Goal[]>(initialGoals);
-  const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
   const [showAddModal, setShowAddModal] = useState(searchParams?.get("action") === "new");
   const [showContributeModal, setShowContributeModal] = useState(false);
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
-  const [selectedAccountId, setSelectedAccountId] = useState<string>(initialAccounts[0]?.id || "");
+  const [selectedAccountId, setSelectedAccountId] = useState<string>(accounts[0]?.id || "");
   const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const submitLockRef = useRef(false);
@@ -49,28 +48,13 @@ export default function GoalsClient({ initialGoals, initialAccounts }: { initial
   const [contributeAmount, setContributeAmount] = useState("");
   const supabase = createClient();
 
-  const fetchData = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    
-    const [goalData, accData] = await Promise.all([
-      supabase.from("goals").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
-      supabase.from("accounts").select("*").eq("user_id", user.id).order("name")
-    ]);
-
-    if (goalData.data) setGoals(goalData.data);
-    if (accData.data) setAccounts(accData.data);
-  }, [supabase]);
-
   useEffect(() => {
-    const channel = supabase.channel("goals-v2")
-      .on("postgres_changes", { event: "*", schema: "public", table: "goals" }, () => startTransition(fetchData))
-      .on("postgres_changes", { event: "*", schema: "public", table: "accounts" }, () => startTransition(fetchData))
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [fetchData, supabase]);
+    if (!selectedAccountId && accounts.length > 0) {
+      setSelectedAccountId(accounts[0].id);
+    }
+  }, [accounts, selectedAccountId]);
 
-  useRealTimeSync(fetchData);
+
 
   const stats = useMemo(() => {
     const totalTarget = goals.reduce((s, g) => s + Number(g.target_amount), 0);
@@ -172,7 +156,10 @@ export default function GoalsClient({ initialGoals, initialAccounts }: { initial
              <Link href="/dashboard" className="block text-center mt-4 text-[10px] text-white/50 uppercase font-black tracking-widest hover:text-white">← System Home</Link>
           </div>
           <div className="hidden md:block">
-            <h1 className="text-2xl font-bold tracking-tight text-[--text-primary]">Financial Milestones</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold tracking-tight text-[--text-primary]">Financial Milestones</h1>
+              <div className={`status-dot scale-90 ${isValidating ? 'animate-pulse bg-yellow-400' : 'bg-emerald-400 opacity-50'}`} />
+            </div>
             <p className="text-[--text-secondary] text-sm mt-1">Track and manage your long-term savings goals.</p>
           </div>
           <button 
