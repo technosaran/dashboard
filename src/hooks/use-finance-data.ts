@@ -3,7 +3,7 @@
 import useSWR from "swr";
 import { createClient } from "@/lib/supabase-browser";
 import type { Tables } from "@/lib/database.types";
-import { useEffect } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { useSWRConfig } from "swr";
 
 const supabase = createClient();
@@ -25,8 +25,6 @@ type FinanceData = {
 export type { FinanceData };
 export const FINANCE_DATA_KEY = "finance_overview_data";
 
-let mutateTimeout: ReturnType<typeof setTimeout> | null = null;
-
 async function fetchFinanceData(): Promise<FinanceData> {
   const { data, error } = await supabase.rpc("get_finance_overview");
   
@@ -40,13 +38,16 @@ async function fetchFinanceData(): Promise<FinanceData> {
 
 export function useFinanceData(initialData?: FinanceData) {
   const { mutate } = useSWRConfig();
+  const updateQueueRef = useRef<Set<string>>(new Set());
+  const rafIdRef = useRef<number | null>(null);
 
   const swr = useSWR<FinanceData>(FINANCE_DATA_KEY, fetchFinanceData, {
     revalidateOnFocus: true,
     revalidateOnReconnect: true,
-    dedupingInterval: 3000, 
-    errorRetryInterval: 5000,
+    dedupingInterval: 100, // Reduced for faster updates
+    errorRetryInterval: 3000,
     errorRetryCount: 3,
+    refreshInterval: 0, // Disable polling, rely on realtime
     fallbackData: initialData || {
       accounts: [],
       transactions: [],
@@ -62,34 +63,159 @@ export function useFinanceData(initialData?: FinanceData) {
     }
   });
 
+  // Instant update using requestAnimationFrame for optimal performance
+  const instantMutate = useCallback(() => {
+    if (rafIdRef.current) {
+      cancelAnimationFrame(rafIdRef.current);
+    }
+    
+    rafIdRef.current = requestAnimationFrame(() => {
+      void mutate(FINANCE_DATA_KEY, undefined, { 
+        revalidate: true,
+        optimisticData: undefined // Let SWR handle the update
+      });
+      updateQueueRef.current.clear();
+      rafIdRef.current = null;
+    });
+  }, [mutate]);
+
   useEffect(() => {
-    // Master Realtime Subscription with Debounced Revalidation
-    const debouncedMutate = () => {
-      if (mutateTimeout) clearTimeout(mutateTimeout);
-      mutateTimeout = setTimeout(() => {
-        void mutate(FINANCE_DATA_KEY);
-      }, 400); 
+    // Zero-latency realtime subscription with instant updates
+    const handleChange = (table: string) => {
+      updateQueueRef.current.add(table);
+      instantMutate();
     };
 
     const channel = supabase
-      .channel("finance-data-master")
-      .on("postgres_changes", { event: "*", schema: "public", table: "accounts" }, debouncedMutate)
-      .on("postgres_changes", { event: "*", schema: "public", table: "transactions" }, debouncedMutate)
-      .on("postgres_changes", { event: "*", schema: "public", table: "ledger_logs" }, debouncedMutate)
-      .on("postgres_changes", { event: "*", schema: "public", table: "investments" }, debouncedMutate)
-      .on("postgres_changes", { event: "*", schema: "public", table: "mutual_funds" }, debouncedMutate)
-      .on("postgres_changes", { event: "*", schema: "public", table: "goals" }, debouncedMutate)
-      .on("postgres_changes", { event: "*", schema: "public", table: "recipients" }, debouncedMutate)
-      .on("postgres_changes", { event: "*", schema: "public", table: "incomes" }, debouncedMutate)
-      .on("postgres_changes", { event: "*", schema: "public", table: "expenses" }, debouncedMutate)
-      .on("postgres_changes", { event: "*", schema: "public", table: "stock_trades" }, debouncedMutate)
-      .on("postgres_changes", { event: "*", schema: "public", table: "mutual_fund_trades" }, debouncedMutate)
-      .subscribe();
+      .channel("finance-realtime-instant", {
+        config: {
+          broadcast: { self: true },
+          presence: { key: "" },
+        },
+      })
+      // Financial accounts
+      .on("postgres_changes", { 
+        event: "*", 
+        schema: "public", 
+        table: "accounts" 
+      }, () => handleChange("accounts"))
+      
+      // Transactions
+      .on("postgres_changes", { 
+        event: "*", 
+        schema: "public", 
+        table: "transactions" 
+      }, () => handleChange("transactions"))
+      
+      // Ledger logs
+      .on("postgres_changes", { 
+        event: "*", 
+        schema: "public", 
+        table: "ledger_logs" 
+      }, () => handleChange("ledger_logs"))
+      
+      // Investments
+      .on("postgres_changes", { 
+        event: "*", 
+        schema: "public", 
+        table: "investments" 
+      }, () => handleChange("investments"))
+      
+      // Mutual funds
+      .on("postgres_changes", { 
+        event: "*", 
+        schema: "public", 
+        table: "mutual_funds" 
+      }, () => handleChange("mutual_funds"))
+      
+      // Goals
+      .on("postgres_changes", { 
+        event: "*", 
+        schema: "public", 
+        table: "goals" 
+      }, () => handleChange("goals"))
+      
+      // Recipients
+      .on("postgres_changes", { 
+        event: "*", 
+        schema: "public", 
+        table: "recipients" 
+      }, () => handleChange("recipients"))
+      
+      // Incomes
+      .on("postgres_changes", { 
+        event: "*", 
+        schema: "public", 
+        table: "incomes" 
+      }, () => handleChange("incomes"))
+      
+      // Expenses
+      .on("postgres_changes", { 
+        event: "*", 
+        schema: "public", 
+        table: "expenses" 
+      }, () => handleChange("expenses"))
+      
+      // Stock trades
+      .on("postgres_changes", { 
+        event: "*", 
+        schema: "public", 
+        table: "stock_trades" 
+      }, () => handleChange("stock_trades"))
+      
+      // Mutual fund trades
+      .on("postgres_changes", { 
+        event: "*", 
+        schema: "public", 
+        table: "mutual_fund_trades" 
+      }, () => handleChange("mutual_fund_trades"))
+      
+      // Transfers
+      .on("postgres_changes", { 
+        event: "*", 
+        schema: "public", 
+        table: "transfers" 
+      }, () => handleChange("transfers"))
+      
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          console.log("✅ Real-time sync active - Zero latency mode");
+        }
+        if (status === "CHANNEL_ERROR") {
+          console.error("❌ Real-time connection error - retrying...");
+        }
+      });
+
+    // Heartbeat to keep connection alive
+    const heartbeat = setInterval(() => {
+      if (channel.state === "joined") {
+        void channel.send({
+          type: "broadcast",
+          event: "heartbeat",
+          payload: { timestamp: Date.now() },
+        });
+      }
+    }, 30000); // Every 30 seconds
 
     return () => {
-      if (mutateTimeout) clearTimeout(mutateTimeout);
+      clearInterval(heartbeat);
+      if (rafIdRef.current) {
+        cancelAnimationFrame(rafIdRef.current);
+      }
       void supabase.removeChannel(channel);
     };
+  }, [instantMutate]);
+
+  // Handle visibility change for instant sync when returning to tab
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void mutate(FINANCE_DATA_KEY);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
   }, [mutate]);
 
   return {

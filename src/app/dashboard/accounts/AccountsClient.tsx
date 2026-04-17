@@ -181,43 +181,44 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
         </div>
       </div>
 
-      {/* Portfolio Balance Card */}
+      {/* Portfolio Balance Card with Integrated Chart */}
       <div className="glass-card-static rich-border relative overflow-hidden p-6 md:p-10">
-        <div className="z-10 w-full text-center lg:text-left">
-          <p className="text-[10px] md:text-xs font-bold uppercase tracking-[0.3em] text-[--text-muted] mb-2 text-center lg:text-left">Portfolio Assets</p>
-          <div className="flex flex-wrap items-baseline justify-center lg:justify-start gap-4 md:gap-6 mb-8">
-            {Object.entries(balancesByCurrency).map(([curr, bal]) => (
-              <h2 key={curr} className="text-3xl md:text-5xl font-black tracking-tight text-[--text-primary]">
-                {getCurrencySymbol(curr)}{bal.toLocaleString()}
-              </h2>
-            ))}
+        <p className="text-[10px] md:text-xs font-bold uppercase tracking-[0.3em] text-[--text-muted] mb-4">Portfolio Assets</p>
+        
+        {/* Desktop: Side-by-side layout */}
+        <div className="hidden lg:grid lg:grid-cols-2 lg:gap-12 lg:items-center mb-8">
+          {/* Left: Balance Info */}
+          <div>
+            <div className="flex flex-wrap items-baseline gap-4 md:gap-6 mb-6">
+              {Object.entries(balancesByCurrency).map(([curr, bal]) => (
+                <h2 key={curr} className="text-3xl md:text-5xl font-black tracking-tight text-[--text-primary]">
+                  {getCurrencySymbol(curr)}{bal.toLocaleString()}
+                </h2>
+              ))}
+            </div>
+            <div className="grid grid-cols-1 gap-3">
+              {chartData.map((item, i) => (
+                <div key={i} className="flex items-center gap-3 rounded-2xl px-4 py-3 bg-[--accent-primary]/5 border border-[--accent-primary]/10 h-[64px] hover:bg-[--accent-primary]/10 transition-all">
+                  <div className="relative flex-shrink-0">
+                    {accounts[i].bank_name ? <BankLogo bankName={accounts[i].bank_name!} size={40} /> : <CategoryIcon type={accounts[i].type} className="w-10 h-10" />}
+                  </div>
+                  <div className="flex flex-col min-w-0 flex-1 text-left">
+                    <p className="font-bold text-[11px] md:text-xs text-[--text-secondary] truncate">{item.name}</p>
+                    <p className="font-black text-[13px] md:text-sm text-[--accent-primary]">{getCurrencySymbol(item.currency)}{item.value.toLocaleString()}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-            {chartData.map((item, i) => (
-              <div key={i} className="flex items-center gap-3 rounded-2xl px-4 py-3 bg-[--accent-primary]/5 border border-[--accent-primary]/10 h-[64px] md:h-[72px] hover:bg-[--accent-primary]/10 transition-all">
-                 <div className="relative flex-shrink-0">
-                   {accounts[i].bank_name ? <BankLogo bankName={accounts[i].bank_name!} size={40} /> : <CategoryIcon type={accounts[i].type} className="w-10 h-10" />}
-                 </div>
-                 <div className="flex flex-col min-w-0 flex-1 text-left">
-                   <p className="font-bold text-[11px] md:text-xs text-[--text-secondary] truncate">{item.name}</p>
-                   <p className="font-black text-[13px] md:text-sm text-[--accent-primary]">{getCurrencySymbol(item.currency)}{item.value.toLocaleString()}</p>
-                 </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
 
-      {/* Full-Width Chart Card */}
-      <div className="glass-card-static rich-border relative overflow-hidden p-8 md:p-12 flex flex-col items-center justify-center min-h-[400px]">
-          <p className="text-[10px] md:text-xs font-bold uppercase tracking-[0.3em] text-[--text-muted] mb-8 text-center w-full">Asset Allocation Distribution</p>
-          <div className="w-full max-w-2xl h-[300px] md:h-[450px] relative mt-4">
+          {/* Right: Chart */}
+          <div className="relative h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie 
                   data={chartData} 
-                  innerRadius="65%" 
-                  outerRadius="90%" 
+                  innerRadius="60%" 
+                  outerRadius="85%" 
                   paddingAngle={5} 
                   dataKey="value" 
                   stroke="none"
@@ -240,13 +241,78 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
               <p className="text-[9px] md:text-[11px] uppercase font-black text-[--text-muted] mb-1 tracking-widest">Net Value</p>
               <div className="flex flex-col gap-0.5">
                 {Object.entries(balancesByCurrency).map(([c,b]) => (
-                  <p key={c} className="text-xl md:text-3xl font-black text-[--text-primary] leading-tight">
+                  <p key={c} className="text-xl md:text-2xl font-black text-[--text-primary] leading-tight">
                     {getCurrencySymbol(c)}{b.toLocaleString()}
                   </p>
                 ))}
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Mobile/Tablet: Stacked layout */}
+        <div className="lg:hidden">
+          <div className="flex flex-wrap items-baseline justify-center gap-4 md:gap-6 mb-6">
+            {Object.entries(balancesByCurrency).map(([curr, bal]) => (
+              <h2 key={curr} className="text-3xl md:text-5xl font-black tracking-tight text-[--text-primary]">
+                {getCurrencySymbol(curr)}{bal.toLocaleString()}
+              </h2>
+            ))}
+          </div>
+
+          {/* Chart below balance on mobile */}
+          <div className="relative h-[280px] md:h-[350px] mb-6">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie 
+                  data={chartData} 
+                  innerRadius="60%" 
+                  outerRadius="85%" 
+                  paddingAngle={5} 
+                  dataKey="value" 
+                  stroke="none"
+                  animationDuration={1000}
+                >
+                  {chartData.map((e, i) => (<Cell key={`cell-${i}`} fill={e.fill} />))}
+                </Pie>
+                <Tooltip 
+                  contentStyle={{ 
+                    background: 'var(--bg-surface)', 
+                    border: '1px solid var(--border-default)', 
+                    borderRadius: '12px',
+                    boxShadow: 'var(--shadow-lg)',
+                    fontWeight: 700
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
+              <p className="text-[9px] md:text-[11px] uppercase font-black text-[--text-muted] mb-1 tracking-widest">Net Value</p>
+              <div className="flex flex-col gap-0.5">
+                {Object.entries(balancesByCurrency).map(([c,b]) => (
+                  <p key={c} className="text-lg md:text-2xl font-black text-[--text-primary] leading-tight">
+                    {getCurrencySymbol(c)}{b.toLocaleString()}
+                  </p>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Account list below chart on mobile */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {chartData.map((item, i) => (
+              <div key={i} className="flex items-center gap-3 rounded-2xl px-4 py-3 bg-[--accent-primary]/5 border border-[--accent-primary]/10 h-[64px] md:h-[72px] hover:bg-[--accent-primary]/10 transition-all">
+                <div className="relative flex-shrink-0">
+                  {accounts[i].bank_name ? <BankLogo bankName={accounts[i].bank_name!} size={40} /> : <CategoryIcon type={accounts[i].type} className="w-10 h-10" />}
+                </div>
+                <div className="flex flex-col min-w-0 flex-1 text-left">
+                  <p className="font-bold text-[11px] md:text-xs text-[--text-secondary] truncate">{item.name}</p>
+                  <p className="font-black text-[13px] md:text-sm text-[--accent-primary]">{getCurrencySymbol(item.currency)}{item.value.toLocaleString()}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

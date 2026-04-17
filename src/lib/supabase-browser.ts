@@ -12,8 +12,9 @@ export function createClient() {
     {
       realtime: {
         params: {
-          eventsPerSecond: 10,
+          eventsPerSecond: 100, // Increased from 10 to 100 for faster updates
         },
+        heartbeatIntervalMs: 15000, // More frequent keepalive for stable connection
       },
       auth: {
         persistSession: true,
