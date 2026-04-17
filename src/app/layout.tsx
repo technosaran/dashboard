@@ -58,8 +58,9 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "32x32" },
+      { url: "/favicon.png", sizes: "32x32", type: "image/png" },
       { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
     ],
     apple: [
       { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
@@ -82,9 +83,17 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${outfit.variable} ${inter.variable} h-full antialiased dark`}
+      className={`${outfit.variable} ${inter.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col overflow-x-hidden bg-[--bg-base] text-[--text-primary] font-sans">
+      <body className="min-h-full flex flex-col overflow-x-hidden bg-[--bg-base] text-[--text-primary] font-sans relative">
+        {/* Background Depth Effects */}
+        <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+          <div className="absolute top-[-5%] left-[-5%] w-[50%] h-[50%] bg-[rgba(14,165,233,0.15)] blur-[140px] rounded-full animate-pulse-glow" />
+          <div className="absolute bottom-[5%] right-[-5%] w-[45%] h-[45%] bg-[rgba(56,189,248,0.12)] blur-[120px] rounded-full animate-pulse-glow delay-2" />
+          <div className="absolute top-[25%] right-[5%] w-[35%] h-[35%] bg-[rgba(186,230,253,0.15)] blur-[100px] rounded-full animate-pulse-glow delay-5" />
+          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] mix-blend-multiply pointer-events-none" />
+        </div>
+
         <Suspense fallback={null}>
           <ProgressBar />
         </Suspense>
@@ -94,13 +103,13 @@ export default function RootLayout({
           toastOptions={{
             duration: 3000,
             style: {
-              background: "#131833",
-              color: "#f0f2ff",
-              border: "1px solid rgba(99, 115, 255, 0.2)",
+              background: "#ffffff",
+              color: "#0f172a",
+              border: "1px solid rgba(14, 165, 233, 0.1)",
               borderRadius: "12px",
               fontSize: "14px",
               fontWeight: "500",
-              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.5)",
+              boxShadow: "0 8px 32px rgba(14, 165, 233, 0.08)",
               maxWidth: "90vw",
             },
           }}

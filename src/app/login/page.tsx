@@ -170,6 +170,7 @@ export default function LoginPage() {
           position: relative;
           overflow: hidden;
           background: var(--bg-base);
+          font-family: var(--font-inter), sans-serif;
         }
 
         /* ── Animated Background ────────────────────────── */
@@ -185,8 +186,8 @@ export default function LoginPage() {
           position: absolute;
           inset: 0;
           background-image:
-            linear-gradient(rgba(108, 92, 231, 0.04) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(108, 92, 231, 0.04) 1px, transparent 1px);
+            linear-gradient(rgba(14, 165, 233, 0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(14, 165, 233, 0.05) 1px, transparent 1px);
           background-size: 60px 60px;
           mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, black 20%, transparent 80%);
           -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, black 20%, transparent 80%);
@@ -204,7 +205,7 @@ export default function LoginPage() {
           height: 500px;
           top: -15%;
           left: -8%;
-          background: radial-gradient(circle, rgba(108, 92, 231, 0.18) 0%, transparent 70%);
+          background: radial-gradient(circle, rgba(14, 165, 233, 0.12) 0%, transparent 70%);
           animation: loginOrbFloat1 12s ease-in-out infinite;
         }
 
@@ -213,7 +214,7 @@ export default function LoginPage() {
           height: 400px;
           bottom: -10%;
           right: -8%;
-          background: radial-gradient(circle, rgba(0, 206, 201, 0.14) 0%, transparent 70%);
+          background: radial-gradient(circle, rgba(56, 189, 248, 0.1) 0%, transparent 70%);
           animation: loginOrbFloat2 15s ease-in-out infinite;
         }
 
@@ -222,14 +223,14 @@ export default function LoginPage() {
           height: 300px;
           top: 50%;
           left: 60%;
-          background: radial-gradient(circle, rgba(253, 121, 168, 0.08) 0%, transparent 70%);
+          background: radial-gradient(circle, rgba(186, 230, 253, 0.08) 0%, transparent 70%);
           animation: loginOrbFloat3 18s ease-in-out infinite;
         }
 
         .login-radial {
           position: absolute;
           inset: 0;
-          background: radial-gradient(ellipse 80% 70% at 50% 40%, rgba(108, 92, 231, 0.06) 0%, transparent 70%);
+          background: radial-gradient(ellipse 80% 70% at 50% 40%, rgba(14, 165, 233, 0.04) 0%, transparent 70%);
         }
 
         @keyframes loginOrbFloat1 {
@@ -262,7 +263,7 @@ export default function LoginPage() {
         @keyframes loginEnter {
           from {
             opacity: 0;
-            transform: translateY(20px) scale(0.97);
+            transform: translateY(20px) scale(0.98);
           }
           to {
             opacity: 1;
@@ -287,17 +288,17 @@ export default function LoginPage() {
           display: flex;
           align-items: center;
           justify-content: center;
-          background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 50%, #00cec9 100%);
+          background: var(--gradient-primary);
           box-shadow:
-            0 6px 30px rgba(108, 92, 231, 0.4),
-            0 0 0 1px rgba(108, 92, 231, 0.3);
+            0 6px 20px rgba(14, 165, 233, 0.2),
+            0 0 0 1px rgba(14, 165, 233, 0.1);
           color: white;
           animation: loginLogoPulse 4s ease-in-out infinite;
         }
 
         @keyframes loginLogoPulse {
-          0%, 100% { box-shadow: 0 6px 30px rgba(108, 92, 231, 0.35), 0 0 0 1px rgba(108, 92, 231, 0.3); }
-          50% { box-shadow: 0 6px 40px rgba(108, 92, 231, 0.55), 0 0 0 1px rgba(108, 92, 231, 0.4); }
+          0%, 100% { box-shadow: 0 6px 20px rgba(14, 165, 233, 0.15), 0 0 0 1px rgba(14, 165, 233, 0.1); }
+          50% { box-shadow: 0 6px 30px rgba(14, 165, 233, 0.3), 0 0 0 1px rgba(14, 165, 233, 0.2); }
         }
 
         .login-logo-text {
@@ -306,18 +307,16 @@ export default function LoginPage() {
         }
 
         .login-logo-name {
-          font-size: 1.2rem;
-          font-weight: 800;
-          letter-spacing: -0.02em;
-          background: var(--gradient-primary);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
+          font-family: var(--font-outfit), sans-serif;
+          font-size: 1.35rem;
+          font-weight: 900;
+          letter-spacing: -0.03em;
+          color: var(--accent-primary);
         }
 
         .login-logo-sub {
           font-size: 0.65rem;
-          font-weight: 600;
+          font-weight: 700;
           text-transform: uppercase;
           letter-spacing: 0.15em;
           color: var(--text-muted);
@@ -329,26 +328,15 @@ export default function LoginPage() {
         .login-card-wrapper {
           position: relative;
           border-radius: 28px;
-          padding: 1.5px;
-          background: linear-gradient(
-            160deg,
-            rgba(108, 92, 231, 0.45) 0%,
-            rgba(0, 206, 201, 0.2) 40%,
-            rgba(108, 92, 231, 0.08) 100%
-          );
-          box-shadow:
-            0 12px 60px rgba(0, 0, 0, 0.45),
-            0 0 80px rgba(108, 92, 231, 0.07);
+          padding: 1px;
+          background: var(--border-strong);
+          box-shadow: var(--shadow-lg);
         }
 
         .login-card {
           position: relative;
-          border-radius: 26.5px;
-          background: linear-gradient(
-            170deg,
-            rgba(14, 18, 42, 0.97) 0%,
-            rgba(10, 14, 32, 0.99) 100%
-          );
+          border-radius: 27px;
+          background: var(--bg-surface);
           overflow: hidden;
         }
 
@@ -360,8 +348,7 @@ export default function LoginPage() {
           height: 140px;
           background: linear-gradient(
             180deg,
-            rgba(108, 92, 231, 0.08) 0%,
-            rgba(0, 206, 201, 0.02) 50%,
+            rgba(14, 165, 233, 0.05) 0%,
             transparent 100%
           );
           pointer-events: none;
@@ -382,17 +369,19 @@ export default function LoginPage() {
         /* ── Typography ─────────────────────────────────── */
 
         .login-title {
-          font-size: 1.65rem;
-          font-weight: 800;
-          letter-spacing: -0.03em;
+          font-family: var(--font-outfit), sans-serif;
+          font-size: 1.75rem;
+          font-weight: 900;
+          letter-spacing: -0.04em;
           color: var(--text-primary);
-          line-height: 1.2;
+          line-height: 1.1;
         }
 
         .login-subtitle {
           font-size: 0.875rem;
+          font-weight: 500;
           color: var(--text-secondary);
-          margin-top: 6px;
+          margin-top: 8px;
           margin-bottom: 32px;
           line-height: 1.5;
         }
@@ -413,17 +402,18 @@ export default function LoginPage() {
 
         .login-label {
           display: block;
-          font-size: 0.7rem;
-          font-weight: 700;
+          font-size: 0.725rem;
+          font-weight: 800;
           text-transform: uppercase;
-          letter-spacing: 0.12em;
+          letter-spacing: 0.1em;
           color: var(--text-muted);
           margin-bottom: 8px;
+          margin-left: 2px;
           transition: color 0.3s ease;
         }
 
         .login-field--focused .login-label {
-          color: var(--accent-primary-light);
+          color: var(--accent-primary);
         }
 
         .login-input-wrap {
@@ -444,7 +434,7 @@ export default function LoginPage() {
         }
 
         .login-field--focused .login-input-icon {
-          color: var(--accent-primary-light);
+          color: var(--accent-primary);
         }
 
         .login-input-wrap input {
@@ -452,29 +442,26 @@ export default function LoginPage() {
           height: 52px;
           padding: 0 18px 0 48px;
           border-radius: 14px;
-          border: 1.5px solid var(--border-default);
-          background: rgba(10, 14, 32, 0.5);
+          border: 1px solid var(--border-default);
+          background: var(--bg-elevated);
           color: var(--text-primary);
+          font-family: var(--font-inter), sans-serif;
           font-size: 0.9375rem !important;
-          font-weight: 500;
+          font-weight: 600;
           outline: none;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.12);
+          transition: all 0.2s ease;
         }
 
         .login-input-wrap input::placeholder {
           color: var(--text-muted);
-          opacity: 0.5;
-          font-weight: 400;
+          opacity: 0.6;
+          font-weight: 500;
         }
 
         .login-input-wrap input:focus {
           border-color: var(--accent-primary);
-          background: rgba(10, 14, 32, 0.8);
-          box-shadow:
-            0 0 0 4px rgba(108, 92, 231, 0.1),
-            0 0 24px rgba(108, 92, 231, 0.06),
-            inset 0 2px 6px rgba(0, 0, 0, 0.15);
+          background: var(--bg-surface);
+          box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.08);
         }
 
         /* ── Error ───────────────────────────────────────── */
@@ -485,11 +472,11 @@ export default function LoginPage() {
           gap: 10px;
           padding: 12px 16px;
           border-radius: 12px;
-          background: rgba(255, 71, 87, 0.07);
-          border: 1px solid rgba(255, 71, 87, 0.18);
-          color: #ff6b81;
+          background: rgba(239, 68, 68, 0.05);
+          border: 1px solid rgba(239, 68, 68, 0.1);
+          color: var(--danger);
           font-size: 0.8125rem;
-          font-weight: 500;
+          font-weight: 600;
           line-height: 1.4;
         }
 
@@ -502,28 +489,25 @@ export default function LoginPage() {
         .login-submit {
           position: relative;
           width: 100%;
-          height: 52px;
+          height: 54px;
           margin-top: 4px;
           border: none;
-          border-radius: 14px;
-          background: linear-gradient(135deg, #6c5ce7 0%, #7f6cf0 50%, #a29bfe 100%);
+          border-radius: 15px;
+          background: var(--gradient-primary);
           color: white;
           font-size: 0.9375rem;
-          font-weight: 700;
+          font-weight: 800;
           letter-spacing: 0.01em;
+          text-transform: uppercase;
           cursor: pointer;
           overflow: hidden;
           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          box-shadow:
-            0 6px 24px rgba(108, 92, 231, 0.35),
-            0 2px 8px rgba(0, 0, 0, 0.2);
+          box-shadow: 0 6px 20px rgba(14, 165, 233, 0.25);
         }
 
         .login-submit:hover:not(:disabled) {
           transform: translateY(-2px);
-          box-shadow:
-            0 10px 36px rgba(108, 92, 231, 0.45),
-            0 4px 12px rgba(0, 0, 0, 0.25);
+          box-shadow: 0 10px 30px rgba(14, 165, 233, 0.4);
         }
 
         .login-submit:active:not(:disabled) {
@@ -534,7 +518,7 @@ export default function LoginPage() {
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 8px;
+          gap: 10px;
           position: relative;
           z-index: 1;
         }
@@ -544,7 +528,7 @@ export default function LoginPage() {
         }
 
         .login-submit:hover:not(:disabled) .login-submit-inner svg {
-          transform: translateX(3px);
+          transform: translateX(4px);
         }
 
         .login-submit-shimmer {
@@ -553,9 +537,9 @@ export default function LoginPage() {
           background: linear-gradient(
             105deg,
             transparent 35%,
-            rgba(255, 255, 255, 0.12) 45%,
-            rgba(255, 255, 255, 0.18) 50%,
-            rgba(255, 255, 255, 0.12) 55%,
+            rgba(255, 255, 255, 0.2) 45%,
+            rgba(255, 255, 255, 0.3) 50%,
+            rgba(255, 255, 255, 0.2) 55%,
             transparent 65%
           );
           background-size: 250% 100%;
@@ -602,9 +586,11 @@ export default function LoginPage() {
         .login-footer {
           text-align: center;
           font-size: 0.75rem;
+          font-weight: 600;
           color: var(--text-muted);
           margin-top: 28px;
-          letter-spacing: 0.02em;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
         }
       `}</style>
     </div>

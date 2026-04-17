@@ -26,11 +26,11 @@ const supabase = createClient();
 
 const CategoryIcon = ({ type, className = "w-6 h-6" }: { type: string; className?: string }) => {
   const styles: Record<string, { bg: string; color: string; path: string }> = {
-    checking: { bg: "rgba(108, 92, 231, 0.1)", color: "var(--accent-primary-light)", path: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" },
-    savings: { bg: "rgba(0, 184, 148, 0.1)", color: "var(--success)", path: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" },
-    credit: { bg: "rgba(214, 48, 49, 0.1)", color: "var(--danger)", path: "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" },
-    investment: { bg: "rgba(9, 132, 227, 0.1)", color: "#74b9ff", path: "M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" },
-    cash: { bg: "rgba(253, 203, 110, 0.1)", color: "var(--warning)", path: "M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" },
+    checking: { bg: "rgba(14, 165, 233, 0.05)", color: "var(--accent-primary)", path: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" },
+    savings: { bg: "rgba(16, 185, 129, 0.05)", color: "var(--success)", path: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" },
+    credit: { bg: "rgba(239, 68, 68, 0.05)", color: "var(--danger)", path: "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" },
+    investment: { bg: "rgba(56, 189, 248, 0.05)", color: "var(--accent-secondary)", path: "M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" },
+    cash: { bg: "rgba(245, 158, 11, 0.05)", color: "var(--warning)", path: "M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" },
   };
   const style = styles[type] || styles.checking;
   return (
@@ -41,11 +41,11 @@ const CategoryIcon = ({ type, className = "w-6 h-6" }: { type: string; className
 };
 
 const TYPE_STYLES: Record<string, { gradient: string; badge: string; badgeBorder: string; color: string; iconBg: string }> = {
-  checking: { gradient: "linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-primary-light) 100%)", badge: "rgba(162,155,254,0.1)", badgeBorder: "rgba(162,155,254,0.2)", color: "var(--accent-primary-light)", iconBg: "rgba(162,155,254,0.1)" },
-  savings: { gradient: "linear-gradient(135deg, var(--success) 0%, #55efc4 100%)", badge: "rgba(0, 184, 148, 0.1)", badgeBorder: "rgba(0, 184, 148, 0.2)", color: "var(--success)", iconBg: "rgba(0, 184, 148, 0.1)" },
-  credit: { gradient: "linear-gradient(135deg, #fd79a8 0%, var(--warning) 100%)", badge: "rgba(214, 48, 49, 0.1)", badgeBorder: "rgba(214, 48, 49, 0.2)", color: "var(--danger)", iconBg: "rgba(214, 48, 49, 0.1)" },
-  investment: { gradient: "linear-gradient(135deg, #0984e3 0%, var(--accent-secondary) 100%)", badge: "rgba(116, 185, 255, 0.1)", badgeBorder: "rgba(116, 185, 255, 0.2)", color: "#74b9ff", iconBg: "rgba(116, 185, 255, 0.1)" },
-  cash: { gradient: "linear-gradient(135deg, var(--warning) 0%, #ffeaa7 100%)", badge: "rgba(253, 203, 110, 0.1)", badgeBorder: "rgba(253, 203, 110, 0.2)", color: "var(--warning)", iconBg: "rgba(253, 203, 110, 0.1)" },
+  checking: { gradient: "linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%)", badge: "rgba(14, 165, 233, 0.05)", badgeBorder: "rgba(14, 165, 233, 0.1)", color: "var(--accent-primary)", iconBg: "rgba(14, 165, 233, 0.05)" },
+  savings: { gradient: "linear-gradient(135deg, #10b981 0%, #34d399 100%)", badge: "rgba(16, 185, 129, 0.05)", badgeBorder: "rgba(16, 185, 129, 0.1)", color: "var(--success)", iconBg: "rgba(16, 185, 129, 0.05)" },
+  credit: { gradient: "linear-gradient(135deg, #f43f5e 0%, #fb923c 100%)", badge: "rgba(239, 68, 68, 0.05)", badgeBorder: "rgba(239, 68, 68, 0.1)", color: "var(--danger)", iconBg: "rgba(239, 68, 68, 0.05)" },
+  investment: { gradient: "linear-gradient(135deg, #0284c7 0%, #38bdf8 100%)", badge: "rgba(56, 189, 248, 0.05)", badgeBorder: "rgba(56, 189, 248, 0.1)", color: "var(--accent-secondary)", iconBg: "rgba(56, 189, 248, 0.05)" },
+  cash: { gradient: "linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)", badge: "rgba(245, 158, 11, 0.05)", badgeBorder: "rgba(245, 158, 11, 0.1)", color: "var(--warning)", iconBg: "rgba(245, 158, 11, 0.05)" },
 };
 
 function getCurrencySymbol(currency: string): string {
@@ -152,7 +152,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
     [accounts]
   );
 
-  const accountColors = ["#6c5ce7", "#00cec9", "#00b894", "#fdcb6e", "#d63031", "#a29bfe", "#fab1a0", "#ff7675"];
+  const accountColors = ["#0ea5e9", "#38bdf8", "#0284c7", "#7dd3fc", "#bae6fd", "#e0f2fe", "#0369a1", "#075985"];
   
   const chartData = useMemo(() => 
     accounts.map((a, i) => ({ 
@@ -181,67 +181,79 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
         </div>
       </div>
 
-      <div className="glass-card-static relative overflow-hidden p-6 md:p-10">
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-8 md:gap-10">
-          <div className="z-10 w-full text-center lg:text-left">
-            <p className="text-[10px] md:text-xs font-bold uppercase tracking-[0.3em] text-[--text-muted] mb-2">Portfolio Assets</p>
-            <div className="flex flex-wrap items-baseline justify-center lg:justify-start gap-4 md:gap-6 mb-8">
-              {Object.entries(balancesByCurrency).map(([curr, bal]) => (
-                <h2 key={curr} className="text-3xl md:text-5xl font-black tracking-tight text-[--text-primary]">
-                  {getCurrencySymbol(curr)}{bal.toLocaleString()}
-                </h2>
-              ))}
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-              {chartData.map((item, i) => (
-                <div key={i} className="flex items-center gap-3 rounded-2xl px-4 py-3 bg-white/[0.03] border border-white/5 h-[64px] md:h-[72px] hover:bg-white/[0.05] transition-all">
-                   <div className="relative flex-shrink-0">
-                     {accounts[i].bank_name ? <BankLogo bankName={accounts[i].bank_name!} size={40} /> : <CategoryIcon type={accounts[i].type} className="w-10 h-10" />}
-                   </div>
-                   <div className="flex flex-col min-w-0 flex-1 text-left">
-                     <p className="font-bold text-[11px] md:text-xs text-[--text-secondary] truncate">{item.name}</p>
-                     <p className="font-black text-[13px] md:text-sm text-[--accent-primary-light]">{getCurrencySymbol(item.currency)}{item.value.toLocaleString()}</p>
-                   </div>
-                </div>
-              ))}
-            </div>
+      {/* Portfolio Balance Card */}
+      <div className="glass-card-static rich-border relative overflow-hidden p-6 md:p-10">
+        <div className="z-10 w-full text-center lg:text-left">
+          <p className="text-[10px] md:text-xs font-bold uppercase tracking-[0.3em] text-[--text-muted] mb-2 text-center lg:text-left">Portfolio Assets</p>
+          <div className="flex flex-wrap items-baseline justify-center lg:justify-start gap-4 md:gap-6 mb-8">
+            {Object.entries(balancesByCurrency).map(([curr, bal]) => (
+              <h2 key={curr} className="text-3xl md:text-5xl font-black tracking-tight text-[--text-primary]">
+                {getCurrencySymbol(curr)}{bal.toLocaleString()}
+              </h2>
+            ))}
           </div>
-          <div className="shrink-0 w-[240px] h-[240px] md:w-[320px] md:h-[320px] relative">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            {chartData.map((item, i) => (
+              <div key={i} className="flex items-center gap-3 rounded-2xl px-4 py-3 bg-[--accent-primary]/5 border border-[--accent-primary]/10 h-[64px] md:h-[72px] hover:bg-[--accent-primary]/10 transition-all">
+                 <div className="relative flex-shrink-0">
+                   {accounts[i].bank_name ? <BankLogo bankName={accounts[i].bank_name!} size={40} /> : <CategoryIcon type={accounts[i].type} className="w-10 h-10" />}
+                 </div>
+                 <div className="flex flex-col min-w-0 flex-1 text-left">
+                   <p className="font-bold text-[11px] md:text-xs text-[--text-secondary] truncate">{item.name}</p>
+                   <p className="font-black text-[13px] md:text-sm text-[--accent-primary]">{getCurrencySymbol(item.currency)}{item.value.toLocaleString()}</p>
+                 </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Full-Width Chart Card */}
+      <div className="glass-card-static rich-border relative overflow-hidden p-8 md:p-12 flex flex-col items-center justify-center min-h-[400px]">
+          <p className="text-[10px] md:text-xs font-bold uppercase tracking-[0.3em] text-[--text-muted] mb-8 text-center w-full">Asset Allocation Distribution</p>
+          <div className="w-full max-w-2xl h-[300px] md:h-[450px] relative mt-4">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie 
                   data={chartData} 
-                  innerRadius={70} 
-                  outerRadius={95} 
-                  paddingAngle={4} 
+                  innerRadius="65%" 
+                  outerRadius="90%" 
+                  paddingAngle={5} 
                   dataKey="value" 
                   stroke="none"
                   animationDuration={1000}
                 >
                   {chartData.map((e, i) => (<Cell key={`cell-${i}`} fill={e.fill} />))}
                 </Pie>
-                <Tooltip />
+                <Tooltip 
+                  contentStyle={{ 
+                    background: 'var(--bg-surface)', 
+                    border: '1px solid var(--border-default)', 
+                    borderRadius: '12px',
+                    boxShadow: 'var(--shadow-lg)',
+                    fontWeight: 700
+                  }}
+                />
               </PieChart>
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
-              <p className="text-[9px] uppercase font-black text-[--text-muted] mb-1 tracking-widest">Net Value</p>
+              <p className="text-[9px] md:text-[11px] uppercase font-black text-[--text-muted] mb-1 tracking-widest">Net Value</p>
               <div className="flex flex-col gap-0.5">
                 {Object.entries(balancesByCurrency).map(([c,b]) => (
-                  <p key={c} className="text-base md:text-lg font-black text-[--text-primary] leading-tight">
+                  <p key={c} className="text-xl md:text-3xl font-black text-[--text-primary] leading-tight">
                     {getCurrencySymbol(c)}{b.toLocaleString()}
                   </p>
                 ))}
               </div>
             </div>
           </div>
-        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {accounts.map((a) => {
           const style = TYPE_STYLES[a.type] || TYPE_STYLES.checking;
           return (
-            <div key={a.id} className="glass-card flex flex-col min-h-[260px] p-6 relative overflow-hidden transition-transform hover:-translate-y-1">
+            <div key={a.id} className="glass-card rich-border flex flex-col min-h-[260px] p-6 relative overflow-hidden transition-transform hover:-translate-y-1">
               <div className="absolute top-0 left-0 right-0 h-[3px]" style={{ background: style.gradient }} />
               <div className="flex justify-between items-start mb-6">
                  <div><span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider" style={{ background: style.badge, color: style.color, border: `1px solid ${style.badgeBorder}` }}>{a.type}</span><div className="flex items-center gap-3 mt-4">{a.bank_name ? <BankLogo bankName={a.bank_name} size={48} /> : <CategoryIcon type={a.type} className="w-12 h-12" />}<span className="text-base font-bold text-[--text-secondary]">{a.bank_name || a.name}</span></div></div>
