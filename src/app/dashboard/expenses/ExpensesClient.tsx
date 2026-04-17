@@ -8,7 +8,7 @@ import { toast } from "react-hot-toast";
 import { createClient } from "@/lib/supabase-browser";
 import { addExpense } from "./actions";
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, subMonths } from "date-fns";
-import { useFinanceData } from "@/hooks/use-finance-data";
+import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import type { Tables } from "@/lib/database.types";
 
 const supabase = createClient();
@@ -57,8 +57,8 @@ export const CATEGORIES = [
 type Expense = Tables<"expenses">;
 type Account = Tables<"accounts">;
 
-export default function ExpensesClient() {
-  const { data: { expenses, accounts }, isValidating } = useFinanceData();
+export default function ExpensesClient({ initialData }: { initialData?: FinanceData }) {
+  const { data: { expenses, accounts }, isValidating } = useFinanceData(initialData);
   const searchParams = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(searchParams.get("action") === "new");
   const [submitting, setSubmitting] = useState(false);

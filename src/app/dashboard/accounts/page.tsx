@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase-server";
 import AccountsClient from "./AccountsClient";
 import { redirect } from "next/navigation";
+import type { FinanceData } from "@/hooks/use-finance-data";
 
 import { Metadata } from "next";
 
@@ -19,7 +20,10 @@ export default async function AccountsPage() {
     redirect("/login");
   }
 
+  // Prefetch data on the server for "0 latency" initial load
+  const { data: initialData } = await supabase.rpc("get_finance_overview");
+
   return (
-    <AccountsClient />
+    <AccountsClient initialData={initialData as unknown as FinanceData} />
   );
 }

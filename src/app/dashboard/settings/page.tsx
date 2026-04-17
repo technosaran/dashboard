@@ -15,17 +15,18 @@ export default function SettingsPage() {
   // Sync internal input state with context once loaded
   useEffect(() => {
     if (!loading && !initializedRef.current) {
-      startTransition(() => setInput(username));
+      setInput(username);
       initializedRef.current = true;
     }
   }, [loading, username]);
 
-  // Sync internal input state if username changes from external broadcast
+  // Sync internal input state if username changes from external sources
   useEffect(() => {
-    if (initializedRef.current && username !== input && !isSyncing) {
-      startTransition(() => setInput(username));
+    // Only update if we are not actively syncing ourselves AND the value actually changed
+    if (initializedRef.current && !isSyncing && username !== input) {
+      setInput(username);
     }
-  }, [username, input, isSyncing]);
+  }, [username]); // Only react to context username changes
 
   // Update lastSaved when sync completes
   useEffect(() => {
@@ -42,9 +43,14 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (!initializedRef.current) return;
+    
+    // Debounce the update to the context/server
     const t = setTimeout(() => {
-      if (input !== username) setUsername(input);
-    }, 500);
+      if (input !== username) {
+        setUsername(input);
+      }
+    }, 400); // reduced from 500ms
+    
     return () => clearTimeout(t);
   }, [input, username, setUsername]);
 
@@ -157,6 +163,7 @@ export default function SettingsPage() {
                 type="text"
                 value={input}
                 onChange={handleChange}
+                maxLength={30}
                 className="input-premium h-14 md:h-12 text-[16px] md:text-sm font-bold"
                 placeholder="Enter your name"
               />

@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase-server";
 import IncomeClient from "./IncomeClient";
 import { redirect } from "next/navigation";
 import { Metadata } from "next";
+import type { FinanceData } from "@/hooks/use-finance-data";
 
 export const metadata: Metadata = {
   title: "Income Tracking",
@@ -20,9 +21,12 @@ export default async function IncomePage() {
     redirect("/login");
   }
 
+  // Prefetch data on server for instant load
+  const { data: initialData } = await supabase.rpc("get_finance_overview");
+
   return (
     <Suspense fallback={null}>
-      <IncomeClient />
+      <IncomeClient initialData={initialData as unknown as FinanceData} />
     </Suspense>
   );
 }

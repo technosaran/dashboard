@@ -7,7 +7,7 @@ import { toast } from "react-hot-toast";
 import { createClient } from "@/lib/supabase-browser";
 import type { Tables } from "@/lib/database.types";
 import { recordMFInvestment, refreshNAV, searchMFSchemes, getLiveNAV } from "./actions";
-import { useFinanceData } from "@/hooks/use-finance-data";
+import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 
 type MF = Tables<"mutual_funds"> & { scheme_code?: string; fund_symbol?: string | null };
 type MFTrade = Tables<"mutual_fund_trades">;
@@ -17,8 +17,8 @@ type MFSchemeSearchResult = {
   schemeName: string;
 };
 
-export default function MutualFundsClient() {
-  const { data: { mutualFunds: mfs, accounts, mutualFundTrades: trades }, isValidating } = useFinanceData();
+export default function MutualFundsClient({ initialData }: { initialData?: FinanceData }) {
+  const { data: { mutualFunds: mfs, accounts, mutualFundTrades: trades }, isValidating } = useFinanceData(initialData);
   const searchParams = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(searchParams?.get("action") === "new");
   const [submitting, setSubmitting] = useState(false);

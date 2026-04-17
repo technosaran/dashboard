@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase-server";
 import GoalsClient from "./GoalsClient";
 import { redirect } from "next/navigation";
+import type { FinanceData } from "@/hooks/use-finance-data";
 
 export const metadata = {
   title: "Goals | FinanceOS",
@@ -15,6 +16,9 @@ export default async function GoalsPage() {
   if (!user) {
     redirect("/login");
   }
+
+  // Prefetch data on server for instant load
+  const { data: initialData } = await supabase.rpc("get_finance_overview");
   
-  return <GoalsClient />;
+  return <GoalsClient initialData={initialData as unknown as FinanceData} />;
 }

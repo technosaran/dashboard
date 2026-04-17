@@ -138,6 +138,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   }, [currentUserId]);
 
   const setUsername = useCallback((name: string) => {
+    // Immediate local update for responsiveness
     setUsernameState(name);
 
     if (channelRef.current) {
@@ -155,28 +156,32 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     }
 
     updateTimeoutRef.current = setTimeout(async () => {
-      const trimmedName = name.trim();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      try {
+        const trimmedName = name.trim();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
 
-      if (!user) {
+        if (!user) {
+          setIsSyncing(false);
+          updateTimeoutRef.current = null;
+          return;
+        }
+
+        const { error } = await supabase.auth.updateUser({
+          data: { username: trimmedName },
+        });
+
+        if (error) {
+          console.error("Failed to update username:", error.message);
+        }
+      } catch (err) {
+        console.error("Context error during username sync:", err);
+      } finally {
         setIsSyncing(false);
         updateTimeoutRef.current = null;
-        return;
       }
-
-      const { error } = await supabase.auth.updateUser({
-        data: { username: trimmedName },
-      });
-
-      if (error) {
-        console.error("Failed to update username:", error.message);
-      }
-
-      setIsSyncing(false);
-      updateTimeoutRef.current = null;
-    }, 600);
+    }, 400); // Reduced to 400ms for better responsiveness
   }, []);
 
   return (

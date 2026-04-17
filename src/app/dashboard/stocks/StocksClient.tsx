@@ -15,7 +15,7 @@ import {
   getStockTrades
 } from "./actions";
 import { calculateZerodhaCharges } from "@/lib/investment-utils";
-import { useFinanceData } from "@/hooks/use-finance-data";
+import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { getAccounts } from "../accounts/actions";
 
 type Stock = Tables<"investments"> & { total_charges?: number };
@@ -36,8 +36,8 @@ function formatNum(val: number, decimals = 2): string {
   return val.toLocaleString("en-IN", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 }
 
-export default function StocksClient() {
-  const { data: { investments, accounts, stockTrades: trades }, isValidating, isLoading } = useFinanceData();
+export default function StocksClient({ initialData }: { initialData?: FinanceData }) {
+  const { data: { investments, accounts, stockTrades: trades }, isValidating, isLoading } = useFinanceData(initialData);
   const stocks = useMemo(() => investments.filter(i => i.type === "stock") as Stock[], [investments]);
   const searchParams = useSearchParams();
   const [showForm, setShowForm] = useState(searchParams?.get("action") === "new");

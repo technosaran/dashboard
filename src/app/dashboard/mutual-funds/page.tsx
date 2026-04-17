@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase-server";
 import MutualFundsClient from "./MutualFundsClient";
 import { redirect } from "next/navigation";
 import { Metadata } from "next";
+import type { FinanceData } from "@/hooks/use-finance-data";
 
 export const metadata: Metadata = {
   title: "Mutual Funds",
@@ -16,6 +17,9 @@ export default async function MutualFundsPage() {
   if (!user) {
     redirect("/login");
   }
+
+  // Prefetch data on server for instant load
+  const { data: initialData } = await supabase.rpc("get_finance_overview");
   
-  return <MutualFundsClient />;
+  return <MutualFundsClient initialData={initialData as unknown as FinanceData} />;
 }

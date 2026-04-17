@@ -22,51 +22,32 @@ type FinanceData = {
   mutualFundTrades: Tables<"mutual_fund_trades">[];
 };
 
+export type { FinanceData };
 export const FINANCE_DATA_KEY = "finance_overview_data";
 
+let mutateTimeout: ReturnType<typeof setTimeout> | null = null;
+
 async function fetchFinanceData(): Promise<FinanceData> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
+  const { data, error } = await supabase.rpc("get_finance_overview");
+  
+  if (error) {
+    console.error("Finance Data Fetch Error:", error);
+    throw error;
+  }
 
-  const [
-    accRes, transRes, logRes, invRes, mfRes, goalRes, famRes, incRes, expRes, stRes, mftRes
-  ] = await Promise.all([
-    supabase.from("accounts").select("*").eq("user_id", user.id).order("name"),
-    supabase.from("transactions").select("*").eq("user_id", user.id).order("date", { ascending: false }),
-    supabase.from("ledger_logs").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(50),
-    supabase.from("investments").select("*").eq("user_id", user.id),
-    supabase.from("mutual_funds").select("*").eq("user_id", user.id),
-    supabase.from("goals").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
-    supabase.from("recipients").select("*").eq("user_id", user.id).order("name"),
-    supabase.from("incomes").select("*").eq("user_id", user.id).order("date", { ascending: false }),
-    supabase.from("expenses").select("*").eq("user_id", user.id).order("date", { ascending: false }),
-    supabase.from("stock_trades").select("*").eq("user_id", user.id).order("trade_date", { ascending: false }).limit(50),
-    supabase.from("mutual_fund_trades").select("*").eq("user_id", user.id).order("date", { ascending: false }).limit(50),
-  ]);
-
-  return {
-    accounts: accRes.data || [],
-    transactions: transRes.data || [],
-    ledgerLogs: logRes.data || [],
-    investments: invRes.data || [],
-    mutualFunds: mfRes.data || [],
-    goals: goalRes.data || [],
-    recipients: famRes.data || [],
-    incomes: incRes.data || [],
-    expenses: expRes.data || [],
-    stockTrades: stRes.data || [],
-    mutualFundTrades: mftRes.data || [],
-  };
+  return data as FinanceData;
 }
 
-export function useFinanceData() {
+export function useFinanceData(initialData?: FinanceData) {
   const { mutate } = useSWRConfig();
-  
+
   const swr = useSWR<FinanceData>(FINANCE_DATA_KEY, fetchFinanceData, {
     revalidateOnFocus: true,
     revalidateOnReconnect: true,
+    dedupingInterval: 3000, 
+    errorRetryInterval: 5000,
     errorRetryCount: 3,
-    fallbackData: {
+    fallbackData: initialData || {
       accounts: [],
       transactions: [],
       ledgerLogs: [],
@@ -82,29 +63,37 @@ export function useFinanceData() {
   });
 
   useEffect(() => {
-    // Master Realtime Subscription
+    // Master Realtime Subscription with Debounced Revalidation
+    const debouncedMutate = () => {
+      if (mutateTimeout) clearTimeout(mutateTimeout);
+      mutateTimeout = setTimeout(() => {
+        void mutate(FINANCE_DATA_KEY);
+      }, 400); 
+    };
+
     const channel = supabase
       .channel("finance-data-master")
-      .on("postgres_changes", { event: "*", schema: "public", table: "accounts" }, () => { mutate(FINANCE_DATA_KEY) })
-      .on("postgres_changes", { event: "*", schema: "public", table: "transactions" }, () => { mutate(FINANCE_DATA_KEY) })
-      .on("postgres_changes", { event: "*", schema: "public", table: "ledger_logs" }, () => { mutate(FINANCE_DATA_KEY) })
-      .on("postgres_changes", { event: "*", schema: "public", table: "investments" }, () => { mutate(FINANCE_DATA_KEY) })
-      .on("postgres_changes", { event: "*", schema: "public", table: "mutual_funds" }, () => { mutate(FINANCE_DATA_KEY) })
-      .on("postgres_changes", { event: "*", schema: "public", table: "goals" }, () => { mutate(FINANCE_DATA_KEY) })
-      .on("postgres_changes", { event: "*", schema: "public", table: "recipients" }, () => { mutate(FINANCE_DATA_KEY) })
-      .on("postgres_changes", { event: "*", schema: "public", table: "incomes" }, () => { mutate(FINANCE_DATA_KEY) })
-      .on("postgres_changes", { event: "*", schema: "public", table: "expenses" }, () => { mutate(FINANCE_DATA_KEY) })
-      .on("postgres_changes", { event: "*", schema: "public", table: "stock_trades" }, () => { mutate(FINANCE_DATA_KEY) })
-      .on("postgres_changes", { event: "*", schema: "public", table: "mutual_fund_trades" }, () => { mutate(FINANCE_DATA_KEY) })
+      .on("postgres_changes", { event: "*", schema: "public", table: "accounts" }, debouncedMutate)
+      .on("postgres_changes", { event: "*", schema: "public", table: "transactions" }, debouncedMutate)
+      .on("postgres_changes", { event: "*", schema: "public", table: "ledger_logs" }, debouncedMutate)
+      .on("postgres_changes", { event: "*", schema: "public", table: "investments" }, debouncedMutate)
+      .on("postgres_changes", { event: "*", schema: "public", table: "mutual_funds" }, debouncedMutate)
+      .on("postgres_changes", { event: "*", schema: "public", table: "goals" }, debouncedMutate)
+      .on("postgres_changes", { event: "*", schema: "public", table: "recipients" }, debouncedMutate)
+      .on("postgres_changes", { event: "*", schema: "public", table: "incomes" }, debouncedMutate)
+      .on("postgres_changes", { event: "*", schema: "public", table: "expenses" }, debouncedMutate)
+      .on("postgres_changes", { event: "*", schema: "public", table: "stock_trades" }, debouncedMutate)
+      .on("postgres_changes", { event: "*", schema: "public", table: "mutual_fund_trades" }, debouncedMutate)
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      if (mutateTimeout) clearTimeout(mutateTimeout);
+      void supabase.removeChannel(channel);
     };
   }, [mutate]);
 
   return {
     ...swr,
-    data: swr.data!, // Using fallbackData guarantees it's non-null
+    data: swr.data!, 
   };
 }

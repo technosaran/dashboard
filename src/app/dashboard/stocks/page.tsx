@@ -5,6 +5,7 @@ import StocksClient from "./StocksClient";
 import { redirect } from "next/navigation";
 import type { Tables } from "@/lib/database.types";
 import { Metadata } from "next";
+import type { FinanceData } from "@/hooks/use-finance-data";
 
 export const metadata: Metadata = {
   title: "Stocks",
@@ -23,9 +24,12 @@ export default async function StocksPage() {
     redirect("/login");
   }
 
+  // Prefetch data on server for instant load
+  const { data: initialData } = await supabase.rpc("get_finance_overview");
+
   return (
     <Suspense fallback={null}>
-      <StocksClient />
+      <StocksClient initialData={initialData as unknown as FinanceData} />
     </Suspense>
   );
 }

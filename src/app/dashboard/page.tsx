@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase-server";
 import type { Tables } from "@/lib/database.types";
 import DashboardClient from "./DashboardClient";
+import type { FinanceData } from "@/hooks/use-finance-data";
 import { redirect } from "next/navigation";
 import { Metadata } from "next";
 
@@ -19,7 +20,10 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
+  // Prefetch data on the server for "0 latency" initial load
+  const { data: initialData } = await supabase.rpc("get_finance_overview");
+
   return (
-    <DashboardClient />
+    <DashboardClient initialData={initialData as unknown as FinanceData} />
   );
 }

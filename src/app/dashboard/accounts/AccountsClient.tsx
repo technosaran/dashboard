@@ -10,7 +10,8 @@ import { searchBanks, type Bank } from "@/lib/banks";
 import { createAccount, updateAccount, deleteAccount, createTransfer, adjustBalance } from "./actions";
 import BankLogo from "@/components/bank-logo";
 
-import { useFinanceData } from "@/hooks/use-finance-data";
+import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
+import { useMemo } from "react";
 
 // Dynamic imports for chart performance
 const PieChart = dynamic(() => import("recharts").then(mod => mod.PieChart), { ssr: false });
@@ -52,8 +53,8 @@ function getCurrencySymbol(currency: string): string {
   return symbols[currency] || currency;
 }
 
-export default function AccountsClient() {
-  const { data: { accounts }, isValidating } = useFinanceData();
+export default function AccountsClient({ initialData }: { initialData?: FinanceData }) {
+  const { data: { accounts }, isValidating } = useFinanceData(initialData);
   const searchParams = useSearchParams();
   const [showForm, setShowForm] = useState(searchParams.get("action") === "new");
 
@@ -143,15 +144,26 @@ export default function AccountsClient() {
     if (!res?.error) { toast.success("Inter-account transfer executed successfully"); setShowTransferModal(false); } else toast.error(res.error);
   }
 
-  const balancesByCurrency = accounts.reduce((acc, a) => { acc[a.currency] = (acc[a.currency] || 0) + a.balance; return acc; }, {} as Record<string, number>);
+  const balancesByCurrency = useMemo(() => 
+    accounts.reduce((acc, a) => { 
+      acc[a.currency] = (acc[a.currency] || 0) + a.balance; 
+      return acc; 
+    }, {} as Record<string, number>),
+    [accounts]
+  );
+
   const accountColors = ["#6c5ce7", "#00cec9", "#00b894", "#fdcb6e", "#d63031", "#a29bfe", "#fab1a0", "#ff7675"];
-  const chartData = accounts.map((a, i) => ({ 
-    name: a.name, 
-    value: a.balance, 
-    fill: accountColors[i % accountColors.length],
-    color: accountColors[i % accountColors.length], 
-    currency: a.currency 
-  }));
+  
+  const chartData = useMemo(() => 
+    accounts.map((a, i) => ({ 
+      name: a.name, 
+      value: a.balance, 
+      fill: accountColors[i % accountColors.length],
+      color: accountColors[i % accountColors.length], 
+      currency: a.currency 
+    })),
+    [accounts]
+  );
 
   return (
     <div className="flex flex-col gap-[var(--section-gap)]">

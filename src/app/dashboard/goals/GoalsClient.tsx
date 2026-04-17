@@ -8,7 +8,7 @@ import { toast } from "react-hot-toast";
 import { createClient } from "@/lib/supabase-browser";
 import type { Tables } from "@/lib/database.types";
 import { createGoal, updateGoalAmount, deleteGoal, updateGoal } from "./actions";
-import { useFinanceData } from "@/hooks/use-finance-data";
+import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 
 type Goal = Tables<"goals">;
 type Account = Tables<"accounts">;
@@ -24,8 +24,8 @@ const GOAL_CATEGORIES = [
   { label: "Others", icon: "🎯", color: "#64748b" },
 ];
 
-export default function GoalsClient() {
-  const { data: { goals, accounts }, isValidating } = useFinanceData();
+export default function GoalsClient({ initialData }: { initialData?: FinanceData }) {
+  const { data: { goals, accounts }, isValidating } = useFinanceData(initialData);
   const searchParams = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(searchParams?.get("action") === "new");
   const [showContributeModal, setShowContributeModal] = useState(false);

@@ -831,6 +831,10 @@ export type Database = {
         }
         Returns: Json
       }
+      get_finance_overview: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
