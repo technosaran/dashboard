@@ -433,6 +433,56 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
               </div>
             </div>
           </div>
+
+          {/* Complete Portfolio Breakdown */}
+          <div className="glass-card-static p-8">
+            <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[--text-muted] mb-6">Complete Portfolio Breakdown</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {mfs.map((mf) => {
+                const investment = Number(mf.units) * Number(mf.avg_nav);
+                const currentVal = Number(mf.units) * Number(mf.current_nav);
+                const pnl = currentVal - investment;
+                const pnlPercent = investment > 0 ? (pnl / investment) * 100 : 0;
+                
+                return (
+                  <div key={mf.id} className="glass-card-static p-5 hover:bg-white/[0.02] transition-all border border-white/5">
+                    <div className="flex items-start gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0" style={{ background: getMFGradient(mf.amc_name || '') }}>
+                        {getMFLogo(mf.amc_name || '', mf.fund_name)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-bold text-[--text-primary] line-clamp-2 leading-tight">{mf.fund_name}</p>
+                        <p className="text-[10px] text-[--text-muted] mt-1">{mf.category}</p>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center mb-3">
+                      <div className="text-right">
+                        <p className={`text-[14px] font-black ${pnl >= 0 ? 'text-[--success]' : 'text-[--danger]'}`}>
+                          {pnl >= 0 ? '+' : ''}₹{Math.abs(pnl).toLocaleString()}
+                        </p>
+                        <p className={`text-[10px] font-bold ${pnl >= 0 ? 'text-[--success]' : 'text-[--danger]'} opacity-70`}>
+                          {pnl >= 0 ? '+' : ''}{pnlPercent.toFixed(2)}%
+                        </p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 text-[11px]">
+                      <div>
+                        <p className="text-[--text-muted] mb-1">Invested</p>
+                        <p className="font-bold text-[--accent-primary]">₹{investment.toLocaleString()}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[--text-muted] mb-1">Current</p>
+                        <p className="font-bold text-[--success]">₹{currentVal.toLocaleString()}</p>
+                      </div>
+                    </div>
+                    <div className="mt-3 pt-3 border-t border-white/5 text-[10px] text-[--text-muted]">
+                      <span className="font-bold">{Number(mf.units).toFixed(3)}</span> units @ NAV ₹{Number(mf.current_nav).toFixed(2)}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
     );

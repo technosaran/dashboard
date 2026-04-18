@@ -64,7 +64,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
     trade_type: "buy" as "buy" | "sell"
   });
 
-  const [activeTab, setActiveTab] = useState<"holdings" | "history" | "growth">("holdings");
+  const [activeTab, setActiveTab] = useState<"holdings" | "history">("holdings");
   const refreshAllRef = useRef<(() => Promise<void>) | null>(null);
   const fetchPriceRef = useRef<((symbol: string) => Promise<void>) | null>(null);
 
@@ -505,6 +505,51 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
               </div>
             </div>
           </div>
+
+          {/* Portfolio Breakdown */}
+          <div className="glass-card-static p-8">
+            <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[--text-muted] mb-6">Complete Portfolio Breakdown</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {stocks.filter(s => Number(s.quantity) > 0).map((stock) => {
+                const invested = Number(stock.buy_price) * Number(stock.quantity);
+                const current = Number(stock.current_price) * Number(stock.quantity);
+                const pnl = current - invested;
+                const pnlPct = invested > 0 ? (pnl / invested) * 100 : 0;
+                
+                return (
+                  <div key={stock.id} className="glass-card-static p-5 hover:bg-white/[0.02] transition-all border border-white/5">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <p className="text-[14px] font-bold text-[--text-primary]">{stock.symbol?.split('.')[0]}</p>
+                        <p className="text-[10px] text-[--text-muted] mt-1 line-clamp-1">{stock.name}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className={`text-[14px] font-black ${pnl >= 0 ? 'text-[--success]' : 'text-[--danger]'}`}>
+                          {pnl >= 0 ? '+' : ''}₹{Math.abs(pnl).toLocaleString()}
+                        </p>
+                        <p className={`text-[10px] font-bold ${pnl >= 0 ? 'text-[--success]' : 'text-[--danger]'} opacity-70`}>
+                          {pnl >= 0 ? '+' : ''}{pnlPct.toFixed(2)}%
+                        </p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 text-[11px]">
+                      <div>
+                        <p className="text-[--text-muted] mb-1">Invested</p>
+                        <p className="font-bold text-[--accent-primary]">₹{invested.toLocaleString()}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[--text-muted] mb-1">Current</p>
+                        <p className="font-bold text-[--success]">₹{current.toLocaleString()}</p>
+                      </div>
+                    </div>
+                    <div className="mt-3 pt-3 border-t border-white/5 text-[10px] text-[--text-muted]">
+                      <span className="font-bold">{stock.quantity}</span> shares @ ₹{Number(stock.current_price).toFixed(2)}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -593,12 +638,6 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
              className={`text-xs font-black uppercase tracking-widest pb-3 px-1 transition-all ${activeTab === 'holdings' ? 'text-[--accent-primary-light] border-b-2 border-[--accent-primary-light]' : 'text-[--text-muted] hover:text-[--text-primary]'}`}
            >
              Holdings ({stocks.filter(s => Number(s.quantity) > 0).length})
-           </button>
-           <button 
-             onClick={() => setActiveTab("growth")}
-             className={`text-xs font-black uppercase tracking-widest pb-3 px-1 transition-all ${activeTab === 'growth' ? 'text-[--accent-primary-light] border-b-2 border-[--accent-primary-light]' : 'text-[--text-muted] hover:text-[--text-primary]'}`}
-           >
-             Portfolio Growth
            </button>
            <button 
              onClick={() => setActiveTab("history")}
@@ -787,104 +826,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
             <p className="text-[#666] text-sm">No transaction history found.</p>
           </div>
         )
-      ) : (
-        /* ── Portfolio Growth Chart ── */
-        <div className="w-full mt-4">
-          <div className="glass-card-static p-8">
-            <div className="mb-8 flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-[--text-muted]">Portfolio Growth Over Time</h3>
-                <p className="text-[11px] text-[--text-muted] mt-2">Invested value vs Current value comparison</p>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-[--accent-primary]" />
-                  <span className="text-[10px] font-bold text-[--text-muted]">Invested</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-[--success]" />
-                  <span className="text-[10px] font-bold text-[--text-muted]">Current</span>
-                </div>
-              </div>
-            </div>
-            
-            {stocks.length === 0 ? (
-              <div className="flex h-[400px] items-center justify-center rounded-2xl border border-white/5 bg-white/[0.02] text-sm italic text-[--text-muted]">
-                No portfolio data available. Add stocks to see growth chart.
-              </div>
-            ) : (
-              <div className="h-[400px] w-full">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                  <div className="glass-card-static p-6">
-                    <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em] mb-2">Total Invested</p>
-                    <p className="text-2xl font-black text-[--accent-primary]">₹{totalInvested.toLocaleString()}</p>
-                  </div>
-                  <div className="glass-card-static p-6">
-                    <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em] mb-2">Current Value</p>
-                    <p className="text-2xl font-black text-[--success]">₹{totalCurrent.toLocaleString()}</p>
-                  </div>
-                  <div className="glass-card-static p-6">
-                    <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em] mb-2">Total Gain/Loss</p>
-                    <div className="flex flex-col">
-                      <p className={`text-2xl font-black ${totalPnL >= 0 ? 'text-[--success]' : 'text-[--danger]'}`}>
-                        {totalPnL >= 0 ? '+' : ''}₹{Math.abs(totalPnL).toLocaleString()}
-                      </p>
-                      <p className={`text-sm font-bold mt-1 ${totalPnL >= 0 ? 'text-[--success]' : 'text-[--danger]'} opacity-70`}>
-                        {totalPnL >= 0 ? '+' : ''}{totalPnLPercent.toFixed(2)}%
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="space-y-4">
-                  <p className="text-[11px] text-[--text-muted] italic">
-                    Note: Growth chart shows cumulative invested vs current value. Individual stock performance may vary.
-                  </p>
-                  
-                  {/* Stock-by-stock breakdown */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                    {stocks.filter(s => Number(s.quantity) > 0).map((stock) => {
-                      const invested = Number(stock.buy_price) * Number(stock.quantity);
-                      const current = Number(stock.current_price) * Number(stock.quantity);
-                      const pnl = current - invested;
-                      const pnlPct = invested > 0 ? (pnl / invested) * 100 : 0;
-                      
-                      return (
-                        <div key={stock.id} className="glass-card-static p-4 hover:bg-white/[0.02] transition-all">
-                          <div className="flex justify-between items-start mb-3">
-                            <div>
-                              <p className="text-[13px] font-bold text-[--text-primary]">{stock.symbol?.split('.')[0]}</p>
-                              <p className="text-[10px] text-[--text-muted] mt-0.5">{stock.name}</p>
-                            </div>
-                            <div className="text-right">
-                              <p className={`text-[13px] font-black ${pnl >= 0 ? 'text-[--success]' : 'text-[--danger]'}`}>
-                                {pnl >= 0 ? '+' : ''}₹{Math.abs(pnl).toLocaleString()}
-                              </p>
-                              <p className={`text-[10px] font-bold ${pnl >= 0 ? 'text-[--success]' : 'text-[--danger]'} opacity-70`}>
-                                {pnl >= 0 ? '+' : ''}{pnlPct.toFixed(2)}%
-                              </p>
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-2 gap-4 text-[11px]">
-                            <div>
-                              <p className="text-[--text-muted]">Invested</p>
-                              <p className="font-bold text-[--accent-primary]">₹{invested.toLocaleString()}</p>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-[--text-muted]">Current</p>
-                              <p className="font-bold text-[--success]">₹{current.toLocaleString()}</p>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      ) : null}
 
       {showForm && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-md animate-fade-in shadow-2xl">
