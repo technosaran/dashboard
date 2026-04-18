@@ -10,8 +10,8 @@ import { addIncome } from "./actions";
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, subMonths } from "date-fns";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import type { Tables } from "@/lib/database.types";
+import { exportToCSV } from "@/lib/export-csv";
 
-const supabase = createClient();
 const CHART_COLOR_FALLBACKS = [
   "#6c5ce7",
   "#00cec9",
@@ -74,6 +74,7 @@ type Income = Tables<"incomes">;
 type Account = Tables<"accounts">;
 
 export default function IncomeClient({ initialData }: { initialData?: FinanceData }) {
+  const supabase = createClient();
   const { data: { incomes, accounts }, isValidating } = useFinanceData(initialData);
   const searchParams = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(searchParams.get("action") === "new");
@@ -96,9 +97,21 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
 
   const stats = useMemo(() => {
     const now = new Date();
-    const currentMonth = incomes.filter(i => isWithinInterval(parseISO(i.date), { start: startOfMonth(now), end: endOfMonth(now) }));
+    const currentMonth = incomes.filter(i => i.date && isWithinInterval(parseISO(i.date), { start: startOfMonth(now), end: endOfMonth(now) }));
     const totalIncome = incomes.reduce((s, i) => s + Number(i.amount), 0);
     const monthlyTotal = currentMonth.reduce((s, i) => s + Number(i.amount), 0);
+    
+    // YoY comparison - same month last year
+    const lastYearSameMonth = new Date(now.getFullYear() - 1, now.getMonth(), 1);
+    const lastYearIncomes = incomes.filter(i => 
+      i.date && isWithinInterval(parseISO(i.date), { 
+        start: startOfMonth(lastYearSameMonth), 
+        end: endOfMonth(lastYearSameMonth) 
+      })
+    );
+    const lastYearTotal = lastYearIncomes.reduce((s, i) => s + Number(i.amount), 0);
+    const yoyChange = lastYearTotal > 0 ? ((monthlyTotal - lastYearTotal) / lastYearTotal) * 100 : 0;
+    const yoyAbsolute = monthlyTotal - lastYearTotal;
     
     const catMap: Record<string, number> = {};
     incomes.forEach(i => {
@@ -127,12 +140,13 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
       trendMap[format(d, "MMM")] = 0;
     }
     incomes.forEach(i => {
+      if (!i.date) return;
       const m = format(parseISO(i.date), "MMM");
       if (trendMap[m] !== undefined) trendMap[m] += Number(i.amount);
     });
     const trendData = Object.entries(trendMap).map(([name, value]) => ({ name, value }));
 
-    return { totalIncome, monthlyTotal, pieData, trendData };
+    return { totalIncome, monthlyTotal, pieData, trendData, yoyChange, yoyAbsolute, lastYearTotal };
   }, [incomes]);
 
   const filteredIncomes = useMemo(() => {
@@ -193,6 +207,37 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
           <p className="text-[--text-secondary] text-[13px] md:text-sm mt-1">Monitor your revenue streams and track financial growth.</p>
         </div>
         <div className="flex items-center gap-3 w-full md:w-auto">
+          <button 
+            onClick={() => {
+              try {
+                exportToCSV(
+                  incomes.map(i => ({
+                    date: i.date ? format(parseISO(i.date), "yyyy-MM-dd") : "",
+                    description: i.description,
+                    category: i.category,
+                    amount: Number(i.amount),
+                    account: accounts.find(a => a.id === i.account_id)?.name || "Direct Log"
+                  })),
+                  "income_data",
+                  [
+                    { key: "date", label: "Date" },
+                    { key: "description", label: "Description" },
+                    { key: "category", label: "Category" },
+                    { key: "amount", label: "Amount" },
+                    { key: "account", label: "Account" }
+                  ]
+                );
+                toast.success("Income data exported successfully");
+              } catch (err) {
+                toast.error("Failed to export data");
+              }
+            }}
+            className="btn-secondary gap-2"
+            title="Export to CSV"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M12 4v12m0 0l-4-4m4 4l4-4M3 16v2a2 2 0 002 2h14a2 2 0 002-2v-2" /></svg>
+            Export
+          </button>
           <button onClick={() => setShowAddModal(true)} className="btn-primary flex-1 md:flex-none gap-2">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
             Log Income
@@ -202,7 +247,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
 
       <div className="hidden md:grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
         <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between group"><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Net Throughput</p><div className="mt-3 flex flex-col sm:flex-row sm:items-end justify-between gap-2"><h3 className="text-xl md:text-2xl font-black truncate">₹{stats.totalIncome.toLocaleString()}</h3><span className="text-[9px] w-fit px-2 py-0.5 rounded-full bg-[--success]/10 text-[--success] border border-[--success]/20 font-bold">Lifetime</span></div></div>
-        <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between"><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Monthly Flow</p><div className="mt-3 flex flex-col sm:flex-row sm:items-end justify-between gap-2"><h3 className="text-xl md:text-2xl font-black truncate">₹{stats.monthlyTotal.toLocaleString()}</h3><span className="text-[9px] w-fit px-2 py-0.5 rounded-full bg-[--accent-primary]/10 text-[--accent-primary] border border-[--accent-primary]/20 font-bold">{format(new Date(), "MMM")}</span></div></div>
+        <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between"><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Monthly Flow</p><div className="mt-3 flex flex-col sm:flex-row sm:items-end justify-between gap-2"><h3 className="text-xl md:text-2xl font-black truncate">₹{stats.monthlyTotal.toLocaleString()}</h3><span className="text-[9px] w-fit px-2 py-0.5 rounded-full bg-[--accent-primary]/10 text-[--accent-primary] border border-[--accent-primary]/20 font-bold">{format(new Date(), "MMM")}</span></div>{stats.lastYearTotal > 0 && (<div className="mt-2 flex items-center gap-2"><span className={`text-xs font-black ${stats.yoyChange >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>{stats.yoyChange >= 0 ? '↑' : '↓'} {Math.abs(stats.yoyChange).toFixed(1)}%</span><span className="text-[9px] text-[--text-muted] font-bold">vs last year</span></div>)}</div>
         <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between"><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Average</p><div className="mt-3 flex flex-col sm:flex-row sm:items-end justify-between gap-2"><h3 className="text-xl md:text-2xl font-black truncate">₹{(incomes.length ? stats.totalIncome / incomes.length : 0).toLocaleString(undefined, {maximumFractionDigits: 0})}</h3><span className="text-[9px] w-fit px-2 py-0.5 rounded-full bg-white/5 text-[--text-muted]">{incomes.length} pts</span></div></div>
         <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between bg-gradient-to-br from-[--accent-primary]/10 to-transparent"><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Primary Source</p><div className="mt-3 flex flex-col sm:flex-row sm:items-end justify-between gap-2"><h3 className="text-xl md:text-2xl font-black truncate">{stats.pieData[0]?.name || "None"}</h3><span className="text-[9px] w-fit px-2 py-0.5 rounded-full bg-white/5 text-[--text-muted]">Top</span></div></div>
       </div>
@@ -233,7 +278,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
             <table className="w-full text-left border-collapse min-w-[650px] md:min-w-0">
               <thead><tr className="bg-white/[0.02] border-b border-white/5"><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Date</th><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Source</th><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Segment</th><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] hidden sm:table-cell">Destination</th><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] text-right">Credit</th></tr></thead>
               <tbody className="divide-y divide-white/[0.03]">
-                {filteredIncomes.length === 0 ? (<tr><td colSpan={5} className="px-6 py-20 text-center text-[--text-muted] text-sm italic">Infrastructure query returned no income data.</td></tr>) : (filteredIncomes.map((inc) => { const theme = INCOME_CATEGORIES.find(c => c.label === inc.category) || INCOME_CATEGORIES[6]; const account = accounts.find(a => a.id === inc.account_id); return (<tr key={inc.id} className="hover:bg-white/[0.015] transition-colors group text-[--text-primary]"><td className="px-4 md:px-6 py-5 whitespace-nowrap"><p className="text-[13px] font-bold">{format(parseISO(inc.date), "MMM d, yy")}</p><p className="text-[9px] text-[--success]/60 font-bold uppercase">Credit</p></td><td className="px-4 md:px-6 py-4"><div className="flex items-center gap-3"><div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-lg flex-shrink-0">{theme.icon}</div><p className="text-[13px] font-medium group-hover:text-[--success] transition-colors truncate max-w-[120px] md:max-w-none">{inc.description}</p></div></td><td className="px-4 md:px-6 py-5 whitespace-nowrap"><span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-[0.1em] bg-[--success]/5 border border-[--success]/10 text-[--success]">{inc.category}</span></td><td className="px-4 md:px-6 py-5 whitespace-nowrap hidden sm:table-cell"><div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-[--success] shadow-[0_0_8px_rgba(0,184,148,0.5)]" /><span className="text-[11px] font-medium text-[--text-secondary]">{account?.name || "Direct Log"}</span></div></td><td className="px-4 md:px-6 py-4 whitespace-nowrap text-right"><p className="text-[15px] md:text-base font-black text-emerald-500">+₹{Number(inc.amount).toLocaleString()}</p></td></tr>); }))}
+                {filteredIncomes.length === 0 ? (<tr><td colSpan={5} className="px-6 py-20 text-center text-[--text-muted] text-sm italic">Infrastructure query returned no income data.</td></tr>) : (filteredIncomes.map((inc) => { const theme = INCOME_CATEGORIES.find(c => c.label === inc.category) || INCOME_CATEGORIES[6]; const account = accounts.find(a => a.id === inc.account_id); return (<tr key={inc.id} className="hover:bg-white/[0.015] transition-colors group text-[--text-primary]"><td className="px-4 md:px-6 py-5 whitespace-nowrap"><p className="text-[13px] font-bold">{inc.date ? format(parseISO(inc.date), "MMM d, yy") : "N/A"}</p><p className="text-[9px] text-[--success]/60 font-bold uppercase">Credit</p></td><td className="px-4 md:px-6 py-4"><div className="flex items-center gap-3"><div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-lg flex-shrink-0">{theme.icon}</div><p className="text-[13px] font-medium group-hover:text-[--success] transition-colors truncate max-w-[120px] md:max-w-none">{inc.description}</p></div></td><td className="px-4 md:px-6 py-5 whitespace-nowrap"><span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-[0.1em] bg-[--success]/5 border border-[--success]/10 text-[--success]">{inc.category}</span></td><td className="px-4 md:px-6 py-5 whitespace-nowrap hidden sm:table-cell"><div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-[--success] shadow-[0_0_8px_rgba(0,184,148,0.5)]" /><span className="text-[11px] font-medium text-[--text-secondary]">{account?.name || "Direct Log"}</span></div></td><td className="px-4 md:px-6 py-4 whitespace-nowrap text-right"><p className="text-[15px] md:text-base font-black text-emerald-500">+₹{Number(inc.amount).toLocaleString()}</p></td></tr>); }))}
               </tbody>
             </table>
           )}

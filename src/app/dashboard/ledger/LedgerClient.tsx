@@ -1,16 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState, startTransition, useMemo } from "react";
+import { useCallback, useEffect, useState, startTransition, useMemo, Fragment } from "react";
 import { createClient } from "@/lib/supabase-browser";
 import { format, getYear, getMonth, isWithinInterval, startOfDay, endOfDay } from "date-fns";
 import { toast } from "react-hot-toast";
 import { useFinanceData } from "@/hooks/use-finance-data";
 
-const supabase = createClient();
-
 type LedgerLog = {
   id: string;
-  created_at: string;
+  created_at: string | null;
   account_name: string | null;
   action_type: string;
   amount: number | null;
@@ -25,6 +23,7 @@ const MONTHS = [
 ];
 
 export default function LedgerClient() {
+  const supabase = createClient();
   const { data: { ledgerLogs: logs }, isValidating, isLoading } = useFinanceData();
   const [yearFilter, setYearFilter] = useState("All Years");
   const [monthFilter, setMonthFilter] = useState("All Months");
@@ -39,12 +38,17 @@ export default function LedgerClient() {
 
   const uniqueYears = useMemo(() => {
     const years = new Set<string>();
-    logs.forEach(l => years.add(getYear(new Date(l.created_at)).toString()));
+    logs.forEach(l => {
+      if (l.created_at) {
+        years.add(getYear(new Date(l.created_at)).toString());
+      }
+    });
     return ["All Years", ...Array.from(years).sort((a, b) => b.localeCompare(a))];
   }, [logs]);
 
   const filteredLogs = useMemo(() => {
     const filtered = logs.filter(log => {
+      if (!log.created_at) return false;
       const date = new Date(log.created_at);
       const logYear = getYear(date).toString();
       const logMonth = MONTHS[getMonth(date) + 1];
@@ -77,8 +81,41 @@ export default function LedgerClient() {
     return filtered.slice(startIndex, endIndex);
   }, [logs, yearFilter, monthFilter, startDate, endDate, currentPage]);
 
+  // Group logs by date for sticky headers
+  const groupedLogs = useMemo(() => {
+    const groups: Record<string, LedgerLog[]> = {};
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    filteredLogs.forEach(log => {
+      if (!log.created_at) return;
+      const logDate = new Date(log.created_at);
+      const logDateStr = format(logDate, 'yyyy-MM-dd');
+      const todayStr = format(today, 'yyyy-MM-dd');
+      const yesterdayStr = format(yesterday, 'yyyy-MM-dd');
+      
+      let dateLabel: string;
+      if (logDateStr === todayStr) {
+        dateLabel = 'Today';
+      } else if (logDateStr === yesterdayStr) {
+        dateLabel = 'Yesterday';
+      } else {
+        dateLabel = format(logDate, 'MMM d, yyyy');
+      }
+      
+      if (!groups[dateLabel]) {
+        groups[dateLabel] = [];
+      }
+      groups[dateLabel].push(log);
+    });
+    
+    return groups;
+  }, [filteredLogs]);
+
   const totalFilteredCount = useMemo(() => {
     return logs.filter(log => {
+      if (!log.created_at) return false;
       const date = new Date(log.created_at);
       const logYear = getYear(date).toString();
       const logMonth = MONTHS[getMonth(date) + 1];
@@ -199,53 +236,70 @@ export default function LedgerClient() {
               ) : filteredLogs.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-8 py-32 text-center">
-
                     <h3 className="text-2xl font-black text-[--text-primary]">No logs found in this range</h3>
                     <p className="text-sm text-[--text-muted] mt-2">Adjust your start/end dates or clear filters to reset.</p>
                   </td>
                 </tr>
               ) : (
-                filteredLogs.map((log) => {
-                  const isDebit = log.new_balance !== null && log.previous_balance !== null 
-                    ? log.new_balance < log.previous_balance 
-                    : ["ADJUST_DOWN", "TRANSFER_OUT", "DELETE", "SEND_MONEY"].includes(log.action_type);
-                  
-                  return (
-                    <tr key={log.id} className="hover:bg-white/[0.02] transition-colors group">
-                      <td className="px-8 py-6 whitespace-nowrap">
-                        <div className="text-sm font-bold text-[--text-primary]">{format(new Date(log.created_at), "MMM d, yyyy")}</div>
-                        <div className="text-[10px] font-medium text-[--text-muted] tracking-tight">{format(new Date(log.created_at), "HH:mm:ss")}</div>
-                      </td>
-                      <td className="px-6 py-6 whitespace-nowrap">{getActionBadge(log.action_type)}</td>
-                      <td className="px-6 py-6 whitespace-nowrap"><span className="text-sm font-bold text-[--text-secondary]">{log.account_name || "—"}</span></td>
-                      <td className="px-6 py-6 whitespace-nowrap">
-                        <div className="flex flex-col">
-                           <span className="text-lg font-black" style={{ color: isDebit ? "var(--danger)" : "var(--success)" }}>
-                             {log.amount !== null ? `${isDebit ? '-' : '+'}₹${log.amount.toLocaleString()}` : "—"}
-                           </span>
-                           <span className="text-[10px] font-black text-[--text-muted]">Net: ₹{log.new_balance?.toLocaleString()}</span>
+                Object.entries(groupedLogs).map(([dateLabel, logsInGroup]) => (
+                  <Fragment key={dateLabel}>
+                    {/* Sticky Date Header */}
+                    <tr className="sticky top-0 z-10 bg-[--bg-surface] border-y border-white/10">
+                      <td colSpan={6} className="px-8 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="h-px flex-1 bg-white/10" />
+                          <span className="text-xs font-black uppercase tracking-[0.2em] text-[--accent-primary-light]">
+                            {dateLabel}
+                          </span>
+                          <div className="h-px flex-1 bg-white/10" />
                         </div>
-                      </td>
-                      <td className="px-6 py-6 min-w-[300px]">
-                        <div className="text-sm font-medium text-[--text-muted] leading-relaxed group-hover:text-[--text-secondary] transition-colors">
-                          {log.details}
-                        </div>
-                      </td>
-                      <td className="px-8 py-6 whitespace-nowrap text-center">
-                        <button
-                          onClick={() => {
-                            setRevertingId(log.id);
-                            setShowRevertConfirm(true);
-                          }}
-                          className="p-3 rounded-2xl bg-white/0 hover:bg-rose-500/10 text-[--text-muted] hover:text-rose-400 transition-all opacity-0 group-hover:opacity-100"
-                          title="Undo"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M3 10h10a8 8 0 018 8v2M3 10l5 5m-5-5l5-5" /></svg>
-                        </button>
                       </td>
                     </tr>
-                  )
-                })
+                    
+                    {/* Logs for this date */}
+                    {logsInGroup.map((log) => {
+                      const isDebit = log.new_balance !== null && log.previous_balance !== null 
+                        ? log.new_balance < log.previous_balance 
+                        : ["ADJUST_DOWN", "TRANSFER_OUT", "DELETE", "SEND_MONEY"].includes(log.action_type);
+                      
+                      return (
+                        <tr key={log.id} className="hover:bg-white/[0.02] transition-colors group">
+                          <td className="px-8 py-6 whitespace-nowrap">
+                            <div className="text-sm font-bold text-[--text-primary]">{log.created_at ? format(new Date(log.created_at), "MMM d, yyyy") : "N/A"}</div>
+                            <div className="text-[10px] font-medium text-[--text-muted] tracking-tight">{log.created_at ? format(new Date(log.created_at), "HH:mm:ss") : "N/A"}</div>
+                          </td>
+                          <td className="px-6 py-6 whitespace-nowrap">{getActionBadge(log.action_type)}</td>
+                          <td className="px-6 py-6 whitespace-nowrap"><span className="text-sm font-bold text-[--text-secondary]">{log.account_name || "—"}</span></td>
+                          <td className="px-6 py-6 whitespace-nowrap">
+                            <div className="flex flex-col">
+                               <span className="text-lg font-black" style={{ color: isDebit ? "var(--danger)" : "var(--success)" }}>
+                                 {log.amount !== null ? `${isDebit ? '-' : '+'}₹${log.amount.toLocaleString()}` : "—"}
+                               </span>
+                               <span className="text-[10px] font-black text-[--text-muted]">Net: ₹{log.new_balance?.toLocaleString()}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-6 min-w-[300px]">
+                            <div className="text-sm font-medium text-[--text-muted] leading-relaxed group-hover:text-[--text-secondary] transition-colors">
+                              {log.details}
+                            </div>
+                          </td>
+                          <td className="px-8 py-6 whitespace-nowrap text-center">
+                            <button
+                              onClick={() => {
+                                setRevertingId(log.id);
+                                setShowRevertConfirm(true);
+                              }}
+                              className="p-3 rounded-2xl bg-white/0 hover:bg-rose-500/10 text-[--text-muted] hover:text-rose-400 transition-all opacity-0 group-hover:opacity-100"
+                              title="Undo"
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M3 10h10a8 8 0 018 8v2M3 10l5 5m-5-5l5-5" /></svg>
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </Fragment>
+                ))
               )}
             </tbody>
           </table>
@@ -286,8 +340,8 @@ export default function LedgerClient() {
                <div key={l.id} className="p-5 active:bg-white/[0.02] transition-colors">
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex flex-col">
-                      <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">{format(new Date(l.created_at), "MMM d, yyyy")}</div>
-                      <div className="text-[10px] font-bold text-[--text-muted]">{format(new Date(l.created_at), "HH:mm:ss")}</div>
+                      <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">{l.created_at ? format(new Date(l.created_at), "MMM d, yyyy") : "N/A"}</div>
+                      <div className="text-[10px] font-bold text-[--text-muted]">{l.created_at ? format(new Date(l.created_at), "HH:mm:ss") : "N/A"}</div>
                     </div>
                     {getActionBadge(l.action_type)}
                   </div>

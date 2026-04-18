@@ -7,13 +7,11 @@ import { getAccounts } from "../accounts/actions";
 import { toast } from "react-hot-toast";
 import { format } from "date-fns";
 
-const supabase = createClient();
-
 type Recipient = {
   id: string;
   name: string;
   relationship: string | null;
-  created_at: string;
+  created_at: string | null;
 };
 
 type Account = {
@@ -25,7 +23,7 @@ type Account = {
 
 type SendHistory = {
   id: string;
-  created_at: string;
+  created_at: string | null;
   details: string | null;
   amount: number | null;
   action_type: string;
@@ -64,6 +62,7 @@ export default function FamilyClient({
   initialAccounts,
   initialHistory,
 }: FamilyClientProps) {
+  const supabase = createClient();
   const [recipients, setRecipients] = useState<Recipient[]>(initialRecipients);
   const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
   const [loading, setLoading] = useState(false);
@@ -403,7 +402,7 @@ export default function FamilyClient({
                     <div>
                       <p className="text-sm font-bold text-white">{send.details}</p>
                       <p className="text-[10px] font-black uppercase tracking-widest text-[--text-muted] mt-0.5">
-                        {format(new Date(send.created_at), "PPP • p")}
+                        {send.created_at ? format(new Date(send.created_at), "PPP • p") : "—"}
                       </p>
                     </div>
                   </div>

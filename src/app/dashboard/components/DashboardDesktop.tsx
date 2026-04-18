@@ -3,33 +3,43 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { format } from "date-fns";
+import { useMemo } from "react";
 import Greeting from "@/components/greeting";
 import type { FinanceData } from "@/hooks/use-finance-data";
+import { ResponsiveContainer, AreaChart, Area, CartesianGrid, Tooltip, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Legend } from "recharts";
 
-const ResponsiveContainer = dynamic(
-  () => import("recharts").then((mod) => mod.ResponsiveContainer),
-  { ssr: false, loading: () => <div className="skeleton h-full w-full rounded-2xl border border-white/5" /> }
-);
-const AreaChart = dynamic(() => import("recharts").then((mod) => mod.AreaChart), { ssr: false });
-const Area = dynamic(() => import("recharts").then((mod) => mod.Area), { ssr: false });
-const CartesianGrid = dynamic(() => import("recharts").then((mod) => mod.CartesianGrid), { ssr: false });
-const XAxis = dynamic(() => import("recharts").then((mod) => mod.XAxis), { ssr: false });
-const YAxis = dynamic(() => import("recharts").then((mod) => mod.YAxis), { ssr: false });
-const Tooltip = dynamic(() => import("recharts").then((mod) => mod.Tooltip), { ssr: false });
-const PieChart = dynamic(() => import("recharts").then((mod) => mod.PieChart), { ssr: false });
-const Pie = dynamic(() => import("recharts").then((mod) => mod.Pie), { ssr: false });
-const Cell = dynamic(() => import("recharts").then((mod) => mod.Cell), { ssr: false });
+type PieEntry = {
+  name: string;
+  value: number;
+  fill: string;
+  color: string;
+  percentage: string;
+};
+
+type TrendEntry = {
+  date: string;
+  amount: number;
+  category: string;
+  type: string;
+};
+
+type TrendDataEntry = {
+  name: string;
+  income: number;
+  expense: number;
+};
 
 type DashboardStats = {
   totalBalance: number;
   monthlySpend: number;
   monthlyIncome: number;
-  expenseTrend: any[];
-  pieData: any[];
+  expenseTrend: TrendEntry[];
+  pieData: PieEntry[];
   stockCount: number;
   mfCount: number;
   stockBalance: number;
   mfBalance: number;
+  trendData: TrendDataEntry[];
 };
 
 type Props = {
@@ -40,6 +50,36 @@ type Props = {
 };
 
 export default function DashboardDesktop({ stats, recentLogs, isLoading, isValidating }: Props) {
+  // Extract portfolio data computation into a single useMemo
+  const portfolioData = useMemo<PieEntry[]>(() => {
+    if (stats.totalBalance === 0) return [];
+    
+    const cashBalance = stats.totalBalance - stats.stockBalance - stats.mfBalance;
+    return [
+      { 
+        name: 'Cash', 
+        value: cashBalance, 
+        fill: '#4ECDC4',
+        color: '#4ECDC4',
+        percentage: ((cashBalance / stats.totalBalance) * 100).toFixed(1)
+      },
+      { 
+        name: 'Stocks', 
+        value: stats.stockBalance, 
+        fill: '#FF6B6B',
+        color: '#FF6B6B',
+        percentage: ((stats.stockBalance / stats.totalBalance) * 100).toFixed(1)
+      },
+      { 
+        name: 'Mutual Funds', 
+        value: stats.mfBalance, 
+        fill: '#45B7D1',
+        color: '#45B7D1',
+        percentage: ((stats.mfBalance / stats.totalBalance) * 100).toFixed(1)
+      }
+    ].filter(item => item.value > 0);
+  }, [stats.totalBalance, stats.stockBalance, stats.mfBalance]);
+
   return (
     <div className="hidden md:flex flex-col gap-[var(--section-gap)] animate-fade-in relative z-20">
       <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
@@ -64,46 +104,30 @@ export default function DashboardDesktop({ stats, recentLogs, isLoading, isValid
             {/* PORTFOLIO ALLOCATION */}
             <div className="flex-1 max-w-md w-full">
               <div className="flex items-center gap-6 h-full">
-                {stats.totalBalance === 0 ? (
+                {portfolioData.length === 0 ? (
                   <div className="w-full flex h-[200px] items-center justify-center italic text-[--text-muted] text-sm bg-white/5 rounded-3xl">No portfolio data available.</div>
                 ) : (
                   <>
                     <div className="w-1/2 space-y-2">
                       <p className="text-[10px] font-bold uppercase tracking-widest text-[--text-muted] mb-3">Portfolio Allocation</p>
-                      {(() => {
-                        const cashBalance = stats.totalBalance - stats.stockBalance - stats.mfBalance;
-                        const portfolioData = [
-                          { name: 'Cash', value: cashBalance, color: '#4ECDC4', percentage: ((cashBalance / stats.totalBalance) * 100).toFixed(1) },
-                          { name: 'Stocks', value: stats.stockBalance, color: '#FF6B6B', percentage: ((stats.stockBalance / stats.totalBalance) * 100).toFixed(1) },
-                          { name: 'Mutual Funds', value: stats.mfBalance, color: '#45B7D1', percentage: ((stats.mfBalance / stats.totalBalance) * 100).toFixed(1) }
-                        ].filter(item => item.value > 0);
-                        
-                        return portfolioData.map((item: any) => (
-                          <div key={item.name} className="flex justify-between items-center group">
-                            <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 rounded-full" style={{ background: item.color }} />
-                              <span className="text-[10px] font-bold text-[--text-secondary] truncate max-w-[80px]">{item.name}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-[9px] font-bold text-[--text-muted]">{item.percentage}%</span>
-                              <span className="text-[10px] font-black tabular-nums">₹{item.value.toLocaleString()}</span>
-                            </div>
+                      {portfolioData.map((item) => (
+                        <div key={item.name} className="flex justify-between items-center group">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full" style={{ background: item.color }} />
+                            <span className="text-[10px] font-bold text-[--text-secondary] truncate max-w-[80px]">{item.name}</span>
                           </div>
-                        ));
-                      })()}
+                          <div className="flex items-center gap-2">
+                            <span className="text-[9px] font-bold text-[--text-muted]">{item.percentage}%</span>
+                            <span className="text-[10px] font-black tabular-nums">₹{item.value.toLocaleString()}</span>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                     <div className="h-[180px] w-1/2">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie 
-                            data={(() => {
-                              const cashBalance = stats.totalBalance - stats.stockBalance - stats.mfBalance;
-                              return [
-                                { name: 'Cash', value: cashBalance, fill: '#4ECDC4' },
-                                { name: 'Stocks', value: stats.stockBalance, fill: '#FF6B6B' },
-                                { name: 'Mutual Funds', value: stats.mfBalance, fill: '#45B7D1' }
-                              ].filter(item => item.value > 0);
-                            })()} 
+                            data={portfolioData} 
                             cx="50%" 
                             cy="50%" 
                             innerRadius={55} 
@@ -111,20 +135,13 @@ export default function DashboardDesktop({ stats, recentLogs, isLoading, isValid
                             paddingAngle={6} 
                             dataKey="value"
                           >
-                            {(() => {
-                              const cashBalance = stats.totalBalance - stats.stockBalance - stats.mfBalance;
-                              return [
-                                { name: 'Cash', value: cashBalance, fill: '#4ECDC4' },
-                                { name: 'Stocks', value: stats.stockBalance, fill: '#FF6B6B' },
-                                { name: 'Mutual Funds', value: stats.mfBalance, fill: '#45B7D1' }
-                              ].filter(item => item.value > 0);
-                            })().map((entry: any, index: number) => (
+                            {portfolioData.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={entry.fill} stroke="none" />
                             ))}
                           </Pie>
                           <Tooltip 
                             contentStyle={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "12px" }}
-                            formatter={(value: any) => `₹${Number(value || 0).toLocaleString()}`}
+                            formatter={(value) => `₹${Number(value || 0).toLocaleString()}`}
                           />
                         </PieChart>
                       </ResponsiveContainer>
@@ -183,7 +200,7 @@ export default function DashboardDesktop({ stats, recentLogs, isLoading, isValid
                       </div>
                       <div>
                         <p className="truncate text-[13px] font-bold text-[--text-primary] group-hover:text-[--accent-primary-light]">{log.details}</p>
-                        <p className="mt-1 text-[9px] font-bold uppercase tracking-widest text-[--text-muted]">{format(new Date(log.created_at), "MMM d, HH:mm")}</p>
+                        <p className="mt-1 text-[9px] font-bold uppercase tracking-widest text-[--text-muted]">{log.created_at ? format(new Date(log.created_at), "MMM d, HH:mm") : "—"}</p>
                       </div>
                     </div>
                     <div className="pl-4 text-right">
@@ -196,6 +213,60 @@ export default function DashboardDesktop({ stats, recentLogs, isLoading, isValid
               })
             )}
           </div>
+        </div>
+      </div>
+
+      {/* 6-Month Income vs Expense Trend */}
+      <div className="glass-card-static p-6 md:p-8">
+        <div className="mb-8 flex items-center justify-between">
+          <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-[--text-muted]">Income vs Expense (6 Months)</h3>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-[--success]" />
+              <span className="text-[10px] font-bold text-[--text-muted]">Income</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-[--danger]" />
+              <span className="text-[10px] font-bold text-[--text-muted]">Expense</span>
+            </div>
+          </div>
+        </div>
+        <div className="h-[300px] w-full">
+          {stats.trendData.length === 0 ? (
+            <div className="flex h-full items-center justify-center rounded-2xl border border-white/5 bg-white/[0.02] text-sm italic text-[--text-muted]">Transaction data will appear here.</div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={stats.trendData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                <XAxis 
+                  dataKey="name" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fill: 'var(--text-muted)', fontSize: 11, fontWeight: 'bold' }} 
+                  dy={10} 
+                />
+                <YAxis 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fill: 'var(--text-muted)', fontSize: 10 }} 
+                  tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}k`}
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    background: 'var(--bg-surface)', 
+                    border: '1px solid var(--border-default)', 
+                    borderRadius: '12px',
+                    fontSize: '12px',
+                    fontWeight: 'bold'
+                  }}
+                  formatter={(value) => `₹${Number(value || 0).toLocaleString()}`}
+                  cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                />
+                <Bar dataKey="income" fill="var(--success)" radius={[8, 8, 0, 0]} />
+                <Bar dataKey="expense" fill="var(--danger)" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </div>
       </div>
     </div>

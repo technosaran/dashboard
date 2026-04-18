@@ -100,6 +100,15 @@ const nav = [
     ),
   },
   {
+    label: "Tax",
+    href: "/dashboard/tax",
+    icon: (
+      <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+        <path d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+      </svg>
+    ),
+  },
+  {
     label: "Settings",
     href: "/dashboard/settings",
     icon: (
@@ -159,7 +168,7 @@ export default function Sidebar() {
 
   const mobileNavLeft = nav.slice(0, 2); // Dashboard, Accounts
   const mobileNavRight = [nav[9]]; // Ledger (now at index 9)
-  const moreNav = nav.slice(2, 9).concat(nav[10]); // Income, Expenses, Stocks, Mutual Funds, Bonds, Goals, Family + Settings
+  const moreNav = nav.slice(2, 9).concat(nav[10], nav[11]); // Income, Expenses, Stocks, Mutual Funds, Bonds, Goals, Family + Tax + Settings
 
   return (
     <>

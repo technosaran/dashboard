@@ -24,7 +24,7 @@ export async function addIncome(formData: {
     p_amount: formData.amount,
     p_category: formData.category,
     p_date: formData.date,
-    p_account_id: formData.account_id || null
+    p_account_id: formData.account_id || undefined
   });
 
   if (error) {

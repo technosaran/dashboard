@@ -8,8 +8,9 @@ import { createClient } from "@/lib/supabase-browser";
 import type { Tables } from "@/lib/database.types";
 import { recordMFInvestment, refreshNAV, searchMFSchemes, getLiveNAV } from "./actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
+import { useSubmitLock } from "@/hooks/use-submit-lock";
 
-type MF = Tables<"mutual_funds"> & { scheme_code?: string; fund_symbol?: string | null; pnlPercent?: number };
+type MF = Tables<"mutual_funds"> & { scheme_code?: string | null; fund_symbol?: string | null; pnlPercent?: number };
 type MFTrade = Tables<"mutual_fund_trades">;
 type Account = Tables<"accounts">;
 type MFSchemeSearchResult = {
@@ -77,10 +78,9 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
   const { data: { mutualFunds: mfs, accounts, mutualFundTrades: trades }, isValidating } = useFinanceData(initialData);
   const searchParams = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(searchParams?.get("action") === "new");
-  const [submitting, setSubmitting] = useState(false);
+  const [submitting, withLock] = useSubmitLock();
   const [activeTab, setActiveTab] = useState<"holdings" | "history">("holdings");
   const refreshingRef = useRef(false);
-  const submitLockRef = useRef(false);
   const mfsRef = useRef<MF[]>(mfs);
   const isMountedRef = useRef(true);
   
@@ -256,15 +256,11 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
 
   async function handleAddMF(e: React.FormEvent) {
     e.preventDefault();
-    if (submitLockRef.current) return;
-    submitLockRef.current = true;
     if (!formData.account_id) {
         toast.error("Please select a channeling account");
-        submitLockRef.current = false;
         return;
     }
-    setSubmitting(true);
-    try {
+    await withLock(async () => {
       const res = await recordMFInvestment({
         ...formData,
         units: parseFloat(formData.units),
@@ -285,10 +281,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
       } else {
         toast.error(res.error);
       }
-    } finally {
-      setSubmitting(false);
-      submitLockRef.current = false;
-    }
+    });
   }
 
   const handleRefreshAll = useCallback(async () => {
@@ -312,6 +305,138 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
     }, 15000);
     return () => clearInterval(timer);
   }, [handleRefreshAll]);
+
+  // If analytics is shown, render only analytics page
+  if (showAnalytics) {
+    return (
+      <div className="fixed inset-0 z-[300] bg-[--bg-base] overflow-y-auto animate-fade-in">
+        <div className="max-w-[1280px] mx-auto px-4 py-6">
+          {/* Header */}
+          <div className="flex justify-between items-center mb-8">
+            <div>
+              <h1 className="text-3xl font-black tracking-tight text-[--text-primary]">Mutual Fund Analytics</h1>
+              <p className="text-[10px] text-[--text-muted] font-black uppercase tracking-[0.2em] mt-1">Portfolio Insights</p>
+            </div>
+            <button 
+              onClick={() => setShowAnalytics(false)} 
+              className="btn-secondary !h-11 !px-6 flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                <path d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Back to Holdings
+            </button>
+          </div>
+
+          {/* Summary Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div className="glass-card-static p-6">
+              <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em] mb-2">Total Funds</p>
+              <p className="text-2xl font-black">{mfs.length}</p>
+            </div>
+            <div className="glass-card-static p-6">
+              <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em] mb-2">Invested</p>
+              <p className="text-2xl font-black">₹{stats.totalInvested.toLocaleString()}</p>
+            </div>
+            <div className="glass-card-static p-6">
+              <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em] mb-2">Current Value</p>
+              <p className="text-2xl font-black">₹{stats.totalCurrentValue.toLocaleString()}</p>
+            </div>
+            <div className="glass-card-static p-6">
+              <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em] mb-2">Overall P&L</p>
+              <div className="flex flex-col">
+                <p className={`text-2xl font-black ${stats.totalPnL >= 0 ? 'text-[--success]' : 'text-[--danger]'}`}>
+                  {stats.totalPnL >= 0 ? '+' : ''}₹{Math.abs(stats.totalPnL).toLocaleString()}
+                </p>
+                <p className={`text-sm font-bold mt-1 ${stats.totalPnL >= 0 ? 'text-[--success]' : 'text-[--danger]'} opacity-70`}>
+                  {stats.totalPnL >= 0 ? '+' : ''}{stats.totalPnLPercent.toFixed(2)}%
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Category Distribution */}
+          {analytics.categories.length > 0 && (
+            <div className="glass-card-static p-8 mb-6">
+              <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[--text-muted] mb-6">Category Distribution</h3>
+              <div className="space-y-4">
+                {analytics.categories.map((cat, idx) => {
+                  const percentage = (cat.value / stats.totalCurrentValue) * 100;
+                  return (
+                    <div key={idx}>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-[13px] font-bold text-[--text-primary]">{cat.name}</span>
+                        <span className="text-[12px] font-black text-[--text-muted]">{percentage.toFixed(1)}%</span>
+                      </div>
+                      <div className="h-3 bg-white/5 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full transition-all duration-500"
+                          style={{ width: `${percentage}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* AMC Distribution & Top Performers */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            {/* AMC Distribution */}
+            <div className="glass-card-static p-8">
+              <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[--text-muted] mb-6">AMC Distribution</h3>
+              <div className="space-y-4">
+                {analytics.amcs.slice(0, 5).map((amc, idx) => {
+                  const percentage = (amc.value / stats.totalCurrentValue) * 100;
+                  return (
+                    <div key={idx} className="flex justify-between items-center py-3 border-b border-white/5 last:border-0">
+                      <span className="text-[14px] font-bold text-[--text-primary]">{amc.name}</span>
+                      <span className="text-[13px] font-black text-[--text-muted]">{percentage.toFixed(1)}%</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Top Performers */}
+            <div className="glass-card-static p-8">
+              <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[--success] mb-6 flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                  <path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+                Top Performers
+              </h3>
+              <div className="space-y-4">
+                {analytics.topPerformers.map((mf, idx) => {
+                  const investment = Number(mf.units) * Number(mf.avg_nav);
+                  const currentVal = Number(mf.units) * Number(mf.current_nav);
+                  const pnl = currentVal - investment;
+                  const pnlPercent = investment > 0 ? (pnl / investment) * 100 : 0;
+                  return (
+                    <div key={idx} className="flex justify-between items-center py-3 border-b border-white/5 last:border-0">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[14px] font-bold text-[--text-primary] truncate">{mf.fund_name}</p>
+                        <p className="text-[11px] text-[--text-muted] mt-0.5">{mf.category}</p>
+                      </div>
+                      <div className="text-right ml-4">
+                        <p className={`text-[14px] font-black ${pnlPercent >= 0 ? 'text-[--success]' : 'text-[--danger]'}`}>
+                          {pnlPercent >= 0 ? '+' : ''}{pnlPercent.toFixed(2)}%
+                        </p>
+                        <p className={`text-[11px] ${pnlPercent >= 0 ? 'text-[--success]' : 'text-[--danger]'} mt-0.5`}>
+                          {pnlPercent >= 0 ? '+' : ''}₹{pnl.toFixed(2)}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-8 text-[--text-primary] py-6" style={{ maxWidth: "1280px", margin: "0 auto", width: "100%", paddingBottom: "100px" }}>
@@ -354,7 +479,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
       </div>
 
       {/* Summary Cards */}
-      <div className="hidden md:grid grid-cols-2 md:grid-cols-4 gap-4 px-4">
+      <div className="hidden md:grid grid-cols-2 md:grid-cols-5 gap-4 px-4">
         <div className="glass-card-static p-6 flex flex-col gap-2">
             <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Invested Capital</span>
             <span className="text-xl md:text-2xl font-black tabular-nums">₹{stats.totalInvested.toLocaleString()}</span>
@@ -365,15 +490,24 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
         </div>
         <div className="glass-card-static p-6 flex flex-col gap-2">
             <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Total P&L</span>
-            <span className={`text-xl md:text-2xl font-black tabular-nums ${stats.totalPnL >= 0 ? "text-[--success]" : "text-[--danger]"}`}>
-                {stats.totalPnL >= 0 ? "+" : ""}₹{Math.abs(stats.totalPnL).toLocaleString()}
-            </span>
+            <div className="flex flex-col">
+              <span className={`text-xl md:text-2xl font-black tabular-nums ${stats.totalPnL >= 0 ? "text-[--success]" : "text-[--danger]"}`}>
+                  {stats.totalPnL >= 0 ? "+" : ""}₹{Math.abs(stats.totalPnL).toLocaleString()}
+              </span>
+              <span className={`text-[10px] font-black ${stats.totalPnL >= 0 ? "text-[--success]" : "text-[--danger]"} opacity-60`}>
+                  ({stats.totalPnL >= 0 ? "+" : ""}{stats.totalPnLPercent.toFixed(2)}%)
+              </span>
+            </div>
         </div>
         <div className="glass-card-static p-6 flex flex-col gap-2">
-            <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Yield</span>
+            <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Avg. Return</span>
             <span className={`text-xl md:text-2xl font-black tabular-nums ${stats.totalPnL >= 0 ? "text-[--success]" : "text-[--danger]"}`}>
                 {stats.totalPnL >= 0 ? "+" : ""}{stats.totalPnLPercent.toFixed(2)}%
             </span>
+        </div>
+        <div className="glass-card-static p-6 flex flex-col gap-2">
+            <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Total Funds</span>
+            <span className="text-xl md:text-2xl font-black tabular-nums">{mfs.length}</span>
         </div>
       </div>
 
@@ -458,7 +592,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                           <td className="px-6 py-5 text-right font-medium tabular-nums text-[#666] text-[13px]">₹{Number(mf.avg_nav).toFixed(3)}</td>
                           <td className="px-6 py-5 text-right font-bold tabular-nums text-[#eee] text-[14px]">₹{Number(mf.current_nav).toFixed(3)}</td>
                           <td className="px-6 py-5 text-right whitespace-nowrap">
-                              <div className={`flex flex-col items-end ${pnl >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                              <div className={`flex flex-col items-end ${pnl >= 0 ? "text-[--success]" : "text-[--danger]"}`}>
                                   <span className="text-[14px] font-bold tabular-nums">{pnl >= 0 ? "+" : "-"}₹{Math.abs(pnl).toLocaleString()}</span>
                                   <span className="text-[11px] font-bold tabular-nums opacity-60">{pnl >= 0 ? "+" : ""}{pnlPercent.toFixed(2)}%</span>
                               </div>
@@ -628,19 +762,24 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
         </div>
       )}
 
-      {/* ── Analytics Modal ── */}
+      {/* ── Analytics Page View ── */}
       {showAnalytics && (
-        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-          <div className="glass-card-static w-full max-w-5xl max-h-[90vh] overflow-y-auto p-8">
+        <div className="fixed inset-0 z-[300] bg-[--bg-base] overflow-y-auto animate-fade-in">
+          <div className="max-w-[1280px] mx-auto px-4 py-6">
+            {/* Header */}
             <div className="flex justify-between items-center mb-8">
               <div>
-                <h2 className="text-3xl font-black">Mutual Fund Analytics</h2>
+                <h1 className="text-3xl font-black tracking-tight text-[--text-primary]">Mutual Fund Analytics</h1>
                 <p className="text-[10px] text-[--text-muted] font-black uppercase tracking-[0.2em] mt-1">Portfolio Insights</p>
               </div>
-              <button onClick={() => setShowAnalytics(false)} className="p-2 hover:bg-white/5 rounded-full transition-colors">
-                <svg className="w-8 h-8 text-[--text-muted]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                  <path d="M6 18L18 6M6 6l12 12" />
+              <button 
+                onClick={() => setShowAnalytics(false)} 
+                className="btn-secondary !h-11 !px-6 flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                  <path d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
+                Back to Holdings
               </button>
             </div>
 
@@ -668,7 +807,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
 
             {/* Category Distribution */}
             {analytics.categories.length > 0 && (
-              <div className="glass-card-static p-6 mb-6">
+              <div className="glass-card-static p-8 mb-6">
                 <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[--text-muted] mb-6">Category Distribution</h3>
                 <div className="space-y-4">
                   {analytics.categories.map((cat, idx) => {
@@ -679,7 +818,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                           <span className="text-[13px] font-bold text-[--text-primary]">{cat.name}</span>
                           <span className="text-[12px] font-black text-[--text-muted]">{percentage.toFixed(1)}%</span>
                         </div>
-                        <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                        <div className="h-3 bg-white/5 rounded-full overflow-hidden">
                           <div 
                             className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full transition-all duration-500"
                             style={{ width: `${percentage}%` }}
@@ -693,17 +832,17 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
             )}
 
             {/* AMC Distribution & Top Performers */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
               {/* AMC Distribution */}
-              <div className="glass-card-static p-6">
-                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[--text-muted] mb-4">AMC Distribution</h3>
-                <div className="space-y-3">
+              <div className="glass-card-static p-8">
+                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[--text-muted] mb-6">AMC Distribution</h3>
+                <div className="space-y-4">
                   {analytics.amcs.slice(0, 5).map((amc, idx) => {
                     const percentage = (amc.value / stats.totalCurrentValue) * 100;
                     return (
-                      <div key={idx} className="flex justify-between items-center py-2 border-b border-white/5 last:border-0">
-                        <span className="text-[13px] font-bold text-[--text-primary]">{amc.name}</span>
-                        <span className="text-[12px] font-black text-[--text-muted]">{percentage.toFixed(1)}%</span>
+                      <div key={idx} className="flex justify-between items-center py-3 border-b border-white/5 last:border-0">
+                        <span className="text-[14px] font-bold text-[--text-primary]">{amc.name}</span>
+                        <span className="text-[13px] font-black text-[--text-muted]">{percentage.toFixed(1)}%</span>
                       </div>
                     );
                   })}
@@ -711,30 +850,30 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
               </div>
 
               {/* Top Performers */}
-              <div className="glass-card-static p-6">
-                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[--success] mb-4 flex items-center gap-2">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+              <div className="glass-card-static p-8">
+                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[--success] mb-6 flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                     <path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                   </svg>
                   Top Performers
                 </h3>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {analytics.topPerformers.map((mf, idx) => {
                     const investment = Number(mf.units) * Number(mf.avg_nav);
                     const currentVal = Number(mf.units) * Number(mf.current_nav);
                     const pnl = currentVal - investment;
                     const pnlPercent = investment > 0 ? (pnl / investment) * 100 : 0;
                     return (
-                      <div key={idx} className="flex justify-between items-center py-2 border-b border-white/5 last:border-0">
+                      <div key={idx} className="flex justify-between items-center py-3 border-b border-white/5 last:border-0">
                         <div className="flex-1 min-w-0">
-                          <p className="text-[13px] font-bold text-[--text-primary] truncate">{mf.fund_name}</p>
-                          <p className="text-[10px] text-[--text-muted]">{mf.category}</p>
+                          <p className="text-[14px] font-bold text-[--text-primary] truncate">{mf.fund_name}</p>
+                          <p className="text-[11px] text-[--text-muted] mt-0.5">{mf.category}</p>
                         </div>
                         <div className="text-right ml-4">
-                          <p className={`text-[13px] font-black ${pnlPercent >= 0 ? 'text-[--success]' : 'text-[--danger]'}`}>
+                          <p className={`text-[14px] font-black ${pnlPercent >= 0 ? 'text-[--success]' : 'text-[--danger]'}`}>
                             {pnlPercent >= 0 ? '+' : ''}{pnlPercent.toFixed(2)}%
                           </p>
-                          <p className={`text-[10px] ${pnlPercent >= 0 ? 'text-[--success]' : 'text-[--danger]'}`}>
+                          <p className={`text-[11px] ${pnlPercent >= 0 ? 'text-[--success]' : 'text-[--danger]'} mt-0.5`}>
                             {pnlPercent >= 0 ? '+' : ''}₹{pnl.toFixed(2)}
                           </p>
                         </div>

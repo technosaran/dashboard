@@ -86,7 +86,7 @@ export default function DashboardMobile({ stats, recentLogs, isLoading, isValida
                     </div>
                     <div className="flex flex-col">
                       <span className="text-[11px] font-bold text-white truncate max-w-[140px]">{log.details}</span>
-                      <span className="text-[8px] font-black uppercase text-[--text-muted]">{format(new Date(log.created_at), "HH:mm")} • {log.account_name}</span>
+                      <span className="text-[8px] font-black uppercase text-[--text-muted]">{log.created_at ? format(new Date(log.created_at), "HH:mm") : "—"} • {log.account_name}</span>
                     </div>
                   </div>
                   <span className={`text-[13px] font-black ${isOut ? "text-[--danger]" : "text-[--success]"}`}>

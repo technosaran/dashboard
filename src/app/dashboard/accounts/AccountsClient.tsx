@@ -22,8 +22,6 @@ const Tooltip = dynamic(() => import("recharts").then(mod => mod.Tooltip), { ssr
 
 type Account = Tables<"accounts">;
 
-const supabase = createClient();
-
 const CategoryIcon = ({ type, className = "w-6 h-6" }: { type: string; className?: string }) => {
   const styles: Record<string, { bg: string; color: string; path: string }> = {
     checking: { bg: "rgba(14, 165, 233, 0.05)", color: "var(--accent-primary)", path: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" },
@@ -54,6 +52,7 @@ function getCurrencySymbol(currency: string): string {
 }
 
 export default function AccountsClient({ initialData }: { initialData?: FinanceData }) {
+  const supabase = createClient();
   const { data: { accounts }, isValidating } = useFinanceData(initialData);
   const searchParams = useSearchParams();
   const [showForm, setShowForm] = useState(searchParams.get("action") === "new");

@@ -2,26 +2,28 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useState, useMemo, useCallback, useEffect, useRef, startTransition } from "react";
-import { differenceInDays, parseISO } from "date-fns";
+import { useState, useMemo, useCallback, useEffect, startTransition } from "react";
+import { differenceInDays, parseISO, format } from "date-fns";
 import { toast } from "react-hot-toast";
 import { createClient } from "@/lib/supabase-browser";
 import type { Tables } from "@/lib/database.types";
 import { createGoal, updateGoalAmount, deleteGoal, updateGoal } from "./actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
+import { useSubmitLock } from "@/hooks/use-submit-lock";
+import { CHART_COLOURS } from "@/lib/chart-colours";
 
 type Goal = Tables<"goals">;
 type Account = Tables<"accounts">;
 
 const GOAL_CATEGORIES = [
-  { label: "Home", icon: "🏠", color: "#6366f1" },
-  { label: "Travel", icon: "✈️", color: "#06b6d4" },
-  { label: "Emergency", icon: "🛡️", color: "#10b981" },
-  { label: "Tech", icon: "💻", color: "#f59e0b" },
-  { label: "Vehicle", icon: "🚗", color: "#f43f5e" },
-  { label: "Investment", icon: "📈", color: "#8b5cf6" },
-  { label: "Education", icon: "🎓", color: "#ec4899" },
-  { label: "Others", icon: "🎯", color: "#64748b" },
+  { label: "Home", icon: "🏠", color: CHART_COLOURS[2] },
+  { label: "Travel", icon: "✈️", color: CHART_COLOURS[1] },
+  { label: "Emergency", icon: "🛡️", color: CHART_COLOURS[7] },
+  { label: "Tech", icon: "💻", color: CHART_COLOURS[3] },
+  { label: "Vehicle", icon: "🚗", color: CHART_COLOURS[0] },
+  { label: "Investment", icon: "📈", color: CHART_COLOURS[5] },
+  { label: "Education", icon: "🎓", color: CHART_COLOURS[6] },
+  { label: "Others", icon: "🎯", color: CHART_COLOURS[8] },
 ];
 
 export default function GoalsClient({ initialData }: { initialData?: FinanceData }) {
@@ -32,8 +34,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
   const [selectedAccountId, setSelectedAccountId] = useState<string>(accounts[0]?.id || "");
   const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-  const submitLockRef = useRef(false);
+  const [submitting, withLock] = useSubmitLock();
   const [activeTab, setActiveTab] = useState<'active' | 'completed'>('active');
   
   const [formData, setFormData] = useState({
@@ -78,10 +79,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
 
   async function handleAddGoal(e: React.FormEvent) {
     e.preventDefault();
-    if (submitLockRef.current) return;
-    submitLockRef.current = true;
-    setSubmitting(true);
-    try {
+    await withLock(async () => {
       let res;
       if (editingGoalId) {
         res = await updateGoal(editingGoalId, {
@@ -106,23 +104,16 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
       } else {
         toast.error(res.error);
       }
-    } finally {
-      setSubmitting(false);
-      submitLockRef.current = false;
-    }
+    });
   }
 
   async function handleContribute(e: React.FormEvent) {
     e.preventDefault();
-    if (submitLockRef.current) return;
-    submitLockRef.current = true;
     if (!selectedGoalId || !selectedAccountId) {
       toast.error("Please select an account.");
-      submitLockRef.current = false;
       return;
     }
-    setSubmitting(true);
-    try {
+    await withLock(async () => {
       const res = await updateGoalAmount(selectedGoalId, parseFloat(contributeAmount), selectedAccountId);
       if (!res?.error) {
         toast.success("Capital injected into savings goal");
@@ -131,10 +122,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
       } else {
         toast.error(res.error);
       }
-    } finally {
-      setSubmitting(false);
-      submitLockRef.current = false;
-    }
+    });
   }
 
   async function handleDeleteGoal(id: string) {
@@ -258,14 +246,40 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
                        <p className="text-2xl font-black tabular-nums" style={{ color: category.color }}>₹{Number(goal.current_amount).toLocaleString()}</p>
                        <p className="text-[10px] font-bold text-[--text-muted]">of ₹{Number(goal.target_amount).toLocaleString()}</p>
                     </div>
+                    
+                    {/* Monthly Requirement Display */}
+                    {goal.deadline && (
+                      <div className="mt-3 p-3 rounded-xl bg-white/5 border border-white/10">
+                        {monthsLeft && monthsLeft > 0 ? (
+                          <div className="flex items-center justify-between">
+                            <div className="flex flex-col">
+                              <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-widest">Monthly Requirement</p>
+                              <p className="text-[13px] font-black mt-1" style={{ color: category.color }}>
+                                ₹{monthlyRequired?.toLocaleString()}/month
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-widest">To Reach By</p>
+                              <p className="text-[11px] font-bold text-white mt-1">{format(parseISO(goal.deadline), 'MMM d, yyyy')}</p>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-center">
+                            <p className="text-[11px] font-black text-[--danger]">⚠️ Deadline Passed</p>
+                            <p className="text-[9px] text-[--text-muted] mt-1">Goal deadline was {format(parseISO(goal.deadline), 'MMM d, yyyy')}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
                     <div className="grid grid-cols-2 gap-4 pt-2 border-t border-white/5">
                        <div>
                          <p className="text-[8px] font-black text-[--text-muted] uppercase tracking-widest">Time Left</p>
                          <p className="text-[11px] font-bold text-white">{daysLeft !== null ? (daysLeft > 0 ? `${daysLeft}d` : 'Due') : '—'}</p>
                        </div>
                        <div className="text-right">
-                         <p className="text-[8px] font-black text-[--text-muted] uppercase tracking-widest">Target Fuel</p>
-                         <p className="text-[11px] font-bold text-[--accent-primary-light]">₹{monthlyRequired?.toLocaleString() || '0'}/mo</p>
+                         <p className="text-[8px] font-black text-[--text-muted] uppercase tracking-widest">Months Remaining</p>
+                         <p className="text-[11px] font-bold text-[--accent-primary-light]">{monthsLeft && monthsLeft > 0 ? `${monthsLeft}mo` : '—'}</p>
                        </div>
                     </div>
                   </div>

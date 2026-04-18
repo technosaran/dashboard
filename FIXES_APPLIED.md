@@ -67,7 +67,7 @@ Successfully identified and fixed **multiple critical security and performance i
 - ✅ `idx_ledger_user_created` (duplicate)
 - ✅ `idx_ledger_logs_user_created` (duplicate)
 - ✅ `idx_transfers_from_account` (duplicate of `idx_transfers_from_account_id`)
-- ✅ `idx_transfers_to_account` (duplicate of `idx_transfers_to_account_id`)
+- ✅ `idx_transfers_to_account` (duplicate of `idx_transfers_to_account
 
 **Migration**: `fix_indexes_and_duplicates`
 

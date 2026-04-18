@@ -122,7 +122,7 @@ export async function createTransfer(data: TransferData) {
     p_from_account_id: data.from_account_id,
     p_to_account_id: data.to_account_id,
     p_amount: data.amount,
-    p_note: data.note || null
+    p_note: data.note || undefined
   });
 
   if (error) return { error: error.message };

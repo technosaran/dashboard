@@ -35,9 +35,8 @@ type Bond = {
 const BOND_TYPES = ["Government", "Corporate", "Tax-Free", "Infrastructure", "PSU"];
 const INTEREST_FREQUENCIES = ["Monthly", "Quarterly", "Semi-Annual", "Annual"];
 
-const supabase = createClient();
-
 export default function BondsClient() {
+  const supabase = createClient();
   const { data: { accounts }, isValidating } = useFinanceData();
   const [bonds, setBonds] = useState<Bond[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -197,9 +196,14 @@ export default function BondsClient() {
         </div>
         <div className="glass-card-static p-6 flex flex-col gap-2">
           <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Total P&L</span>
-          <span className={`text-xl md:text-2xl font-black tabular-nums ${stats.totalPnL >= 0 ? 'text-[--success]' : 'text-[--danger]'}`}>
-            {stats.totalPnL >= 0 ? '+' : ''}₹{Math.abs(stats.totalPnL).toLocaleString()}
-          </span>
+          <div className="flex flex-col">
+            <span className={`text-xl md:text-2xl font-black tabular-nums ${stats.totalPnL >= 0 ? 'text-[--success]' : 'text-[--danger]'}`}>
+              {stats.totalPnL >= 0 ? '+' : ''}₹{Math.abs(stats.totalPnL).toLocaleString()}
+            </span>
+            <span className={`text-[10px] font-black ${stats.totalPnL >= 0 ? 'text-[--success]' : 'text-[--danger]'} opacity-60`}>
+              ({stats.totalPnL >= 0 ? '+' : ''}{((stats.totalPnL / stats.totalInvested) * 100).toFixed(2)}%)
+            </span>
+          </div>
         </div>
         <div className="glass-card-static p-6 flex flex-col gap-2">
           <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Interest Earned</span>

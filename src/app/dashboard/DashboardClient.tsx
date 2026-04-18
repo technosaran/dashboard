@@ -1,22 +1,37 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import { useMemo } from "react";
-import { format, endOfMonth, isWithinInterval, startOfMonth } from "date-fns";
+import { useMemo, useState, useEffect } from "react";
+import { format, endOfMonth, isWithinInterval, startOfMonth, parseISO, subMonths } from "date-fns";
 import { useFinanceData } from "@/hooks/use-finance-data";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import type { FinanceData } from "@/hooks/use-finance-data";
-import { parseISO, subMonths } from "date-fns";
+import { CHART_COLOURS } from "@/lib/chart-colours";
+import DashboardMobile from "./components/DashboardMobile";
+import DashboardDesktop from "./components/DashboardDesktop";
+import OnboardingWizard from "@/components/onboarding-wizard";
 
-// Lazy load the specific views to keep initial bundle size minimal
-const DashboardMobile = dynamic(() => import("./components/DashboardMobile"), {
-  loading: () => <div className="p-8"><div className="skeleton h-40 w-full rounded-3xl" /></div>
-});
-const DashboardDesktop = dynamic(() => import("./components/DashboardDesktop"), {
-  loading: () => <div className="p-10"><div className="skeleton h-96 w-full rounded-3xl" /></div>
-});
+type TrendMapEntry = {
+  name: string;
+  income: number;
+  expense: number;
+};
 
 export default function DashboardClient({ initialData }: { initialData?: FinanceData }) {
-  const { data: { accounts, transactions, ledgerLogs: recentLogs, investments, mutualFunds }, isLoading, isValidating } = useFinanceData(initialData);
+  const { data: { accounts, transactions, ledgerLogs: recentLogs, investments, mutualFunds, incomes, expenses }, isLoading, isValidating } = useFinanceData(initialData);
+  const isMobile = useMediaQuery('(max-width: 767px)');
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // Check if onboarding should be shown
+  useEffect(() => {
+    const completed = localStorage.getItem("onboarding_completed");
+    const hasData = accounts.length > 0 || incomes.length > 0 || expenses.length > 0;
+    
+    if (!completed && !hasData && !isLoading) {
+      // Small delay to let the page load first
+      const timer = setTimeout(() => setShowOnboarding(true), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [accounts.length, incomes.length, expenses.length, isLoading]);
 
   const stats = useMemo(() => {
     const cashBalance = accounts.reduce((sum, acc) => sum + Number(acc.balance), 0);
@@ -47,12 +62,14 @@ export default function DashboardClient({ initialData }: { initialData?: Finance
       .slice(0, 15)
       .reverse()
       .map((transaction) => ({
-        ...transaction,
+        date: transaction.date,
         amount: Number(transaction.amount),
+        category: transaction.category || "Others",
+        type: transaction.type,
       }));
 
     // Income vs Expense past 6 months
-    const trendMap: Record<string, {name: string, income: number, expense: number}> = {};
+    const trendMap: Record<string, TrendMapEntry> = {};
     for (let i = 5; i >= 0; i--) {
       const d = subMonths(now, i);
       const m = format(d, "MMM");
@@ -66,7 +83,9 @@ export default function DashboardClient({ initialData }: { initialData?: Finance
           if (t.type === "income") trendMap[m].income += Number(t.amount);
           if (t.type === "expense") trendMap[m].expense += Number(t.amount);
         }
-      } catch (e) {}
+      } catch (e) {
+        console.warn('Bad transaction date:', t.date, e);
+      }
     });
 
     // Category Pie Chart (Current Month)
@@ -75,17 +94,26 @@ export default function DashboardClient({ initialData }: { initialData?: Finance
       catMap[t.category || "Others"] = (catMap[t.category || "Others"] || 0) + Number(t.amount);
     });
     const pieData = Object.entries(catMap).map(([name, value], index) => {
-      const dashboardColors = ["#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A", "#98D8C8", "#F7DC6F", "#BB8FCE", "#82E0AA", "#F1948A", "#85C1E9"];
-      const resolvedColor = dashboardColors[index % dashboardColors.length];
-      return { name, value, fill: resolvedColor, color: resolvedColor };
+      const resolvedColor = CHART_COLOURS[index % CHART_COLOURS.length];
+      return { name, value, fill: resolvedColor, color: resolvedColor, percentage: "0" };
     }).sort((a,b) => b.value - a.value);
 
-    return { totalBalance, monthlySpend, monthlyIncome, expenseTrend, pieData, stockCount, mfCount, stockBalance, mfBalance };
+    return { totalBalance, monthlySpend, monthlyIncome, expenseTrend, pieData, stockCount, mfCount, stockBalance, mfBalance, trendData: Object.values(trendMap) };
   }, [accounts, transactions, investments, mutualFunds]);
+
+  // Conditionally render only one view based on screen size
+  if (isMobile) {
+    return (
+      <>
+        {showOnboarding && <OnboardingWizard onComplete={() => setShowOnboarding(false)} />}
+        <DashboardMobile stats={stats} recentLogs={recentLogs} isLoading={isLoading} isValidating={isValidating} />
+      </>
+    );
+  }
 
   return (
     <>
-      <DashboardMobile stats={stats} recentLogs={recentLogs} isLoading={isLoading} isValidating={isValidating} />
+      {showOnboarding && <OnboardingWizard onComplete={() => setShowOnboarding(false)} />}
       <DashboardDesktop stats={stats} recentLogs={recentLogs} isLoading={isLoading} isValidating={isValidating} />
     </>
   );

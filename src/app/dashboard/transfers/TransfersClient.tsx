@@ -11,14 +11,13 @@ import { createTransfer } from "./actions";
 type Account = Tables<"accounts">;
 type Transfer = Tables<"transfers">;
 
-const supabase = createClient();
-
 interface TransfersClientProps {
   initialAccounts: Account[];
   initialTransfers: Transfer[];
 }
 
 export default function TransfersClient({ initialAccounts, initialTransfers }: TransfersClientProps) {
+  const supabase = createClient();
   const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
   const [transfers, setTransfers] = useState<Transfer[]>(initialTransfers);
   const searchParams = useSearchParams();
