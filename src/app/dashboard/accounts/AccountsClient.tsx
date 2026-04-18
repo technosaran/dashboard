@@ -1,17 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useState, startTransition } from "react";
+import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { toast } from "react-hot-toast";
-import { createClient } from "@/lib/supabase-browser";
+import { format } from "date-fns";
 import type { Tables } from "@/lib/database.types";
 import { searchBanks, type Bank } from "@/lib/banks";
 import { createAccount, updateAccount, deleteAccount, createTransfer, adjustBalance } from "./actions";
 import BankLogo from "@/components/bank-logo";
 
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
-import { useMemo } from "react";
 
 // Dynamic imports for chart performance
 const PieChart = dynamic(() => import("recharts").then(mod => mod.PieChart), { ssr: false });
@@ -21,6 +20,7 @@ const ResponsiveContainer = dynamic(() => import("recharts").then(mod => mod.Res
 const Tooltip = dynamic(() => import("recharts").then(mod => mod.Tooltip), { ssr: false });
 
 type Account = Tables<"accounts">;
+type LedgerLog = Tables<"ledger_logs">;
 
 const CategoryIcon = ({ type, className = "w-6 h-6" }: { type: string; className?: string }) => {
   const styles: Record<string, { bg: string; color: string; path: string }> = {
@@ -45,6 +45,7 @@ const TYPE_STYLES: Record<string, { gradient: string; badge: string; badgeBorder
   investment: { gradient: "linear-gradient(135deg, #0284c7 0%, #38bdf8 100%)", badge: "rgba(56, 189, 248, 0.05)", badgeBorder: "rgba(56, 189, 248, 0.1)", color: "var(--accent-secondary)", iconBg: "rgba(56, 189, 248, 0.05)" },
   cash: { gradient: "linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)", badge: "rgba(245, 158, 11, 0.05)", badgeBorder: "rgba(245, 158, 11, 0.1)", color: "var(--warning)", iconBg: "rgba(245, 158, 11, 0.05)" },
 };
+const ACCOUNT_COLORS = ["#0ea5e9", "#38bdf8", "#0284c7", "#7dd3fc", "#bae6fd", "#e0f2fe", "#0369a1", "#075985"];
 
 function getCurrencySymbol(currency: string): string {
   const symbols: Record<string, string> = { INR: "₹", USD: "$" };
@@ -52,16 +53,16 @@ function getCurrencySymbol(currency: string): string {
 }
 
 export default function AccountsClient({ initialData }: { initialData?: FinanceData }) {
-  const supabase = createClient();
-  const { data: { accounts }, isValidating } = useFinanceData(initialData);
+  const { data: { accounts, ledgerLogs }, isValidating } = useFinanceData(initialData);
   const searchParams = useSearchParams();
   const [showForm, setShowForm] = useState(searchParams.get("action") === "new");
+  const [activeTab, setActiveTab] = useState<"accounts" | "history">(searchParams.get("tab") === "history" ? "history" : "accounts");
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [bankSearch, setBankSearch] = useState("");
   const [bankResults, setBankResults] = useState<Bank[]>([]);
   const [submitting, setSubmitting] = useState(false);
-  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [showTransferModal, setShowTransferModal] = useState(searchParams.get("action") === "transfer");
   const [transferFromId, setTransferFromId] = useState<string | null>(null);
   const [transferData, setTransferData] = useState({ to_account_id: "", amount: "", note: "" });
   const [showAdjustModal, setShowAdjustModal] = useState(false);
@@ -70,6 +71,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
   const [formData, setFormData] = useState({ name: "", type: "checking", balance: "0", currency: "INR", bank_name: "" });
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingAccountId, setDeletingAccountId] = useState<string | null>(null);
+  const [historyAccountId, setHistoryAccountId] = useState("all");
 
 
 
@@ -151,18 +153,37 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
     [accounts]
   );
 
-  const accountColors = ["#0ea5e9", "#38bdf8", "#0284c7", "#7dd3fc", "#bae6fd", "#e0f2fe", "#0369a1", "#075985"];
-  
   const chartData = useMemo(() => 
     accounts.map((a, i) => ({ 
       name: a.name, 
       value: a.balance, 
-      fill: accountColors[i % accountColors.length],
-      color: accountColors[i % accountColors.length], 
+      fill: ACCOUNT_COLORS[i % ACCOUNT_COLORS.length],
+      color: ACCOUNT_COLORS[i % ACCOUNT_COLORS.length], 
       currency: a.currency 
     })),
     [accounts]
   );
+
+  const accountHistory = useMemo(() => {
+    const accountActionTypes = new Set(["CREATE", "UPDATE", "DELETE", "TRANSFER_IN", "TRANSFER_OUT", "ADJUST_UP", "ADJUST_DOWN"]);
+    return (ledgerLogs as LedgerLog[])
+      .filter((log) => accountActionTypes.has(log.action_type))
+      .filter((log) => historyAccountId === "all" || log.account_id === historyAccountId)
+      .sort((a, b) => (new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()));
+  }, [ledgerLogs, historyAccountId]);
+
+  function getActionLabel(type: string) {
+    const labels: Record<string, string> = {
+      CREATE: "Created",
+      UPDATE: "Updated",
+      DELETE: "Deleted",
+      TRANSFER_IN: "Transfer In",
+      TRANSFER_OUT: "Transfer Out",
+      ADJUST_UP: "Adjusted +",
+      ADJUST_DOWN: "Adjusted -",
+    };
+    return labels[type] || type;
+  }
 
   return (
     <div className="flex flex-col gap-[var(--section-gap)]">
@@ -180,6 +201,13 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
         </div>
       </div>
 
+      <div className="inline-flex items-center gap-1 p-1 rounded-2xl bg-white/5 border border-white/10 w-full md:w-auto">
+        <button onClick={() => setActiveTab("accounts")} className={`h-11 px-5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${activeTab === "accounts" ? "bg-[--accent-primary] text-white shadow-lg shadow-[--accent-primary]/20" : "text-[--text-muted] hover:text-[--text-primary]"}`}>Accounts</button>
+        <button onClick={() => setActiveTab("history")} className={`h-11 px-5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${activeTab === "history" ? "bg-[--accent-primary] text-white shadow-lg shadow-[--accent-primary]/20" : "text-[--text-muted] hover:text-[--text-primary]"}`}>History</button>
+      </div>
+
+      {activeTab === "accounts" ? (
+      <>
       {/* Portfolio Balance Card with Integrated Chart */}
       <div className="glass-card-static rich-border relative overflow-hidden p-6 md:p-10">
         <p className="text-[10px] md:text-xs font-bold uppercase tracking-[0.3em] text-[--text-muted] mb-4">Portfolio Assets</p>
@@ -336,6 +364,62 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
           );
         })}
       </div>
+      </>
+      ) : (
+      <div className="glass-card-static overflow-hidden">
+        <div className="p-6 border-b border-white/5 flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-2xl font-black text-[--text-primary]">Account History</h2>
+            <p className="text-[11px] font-bold text-[--text-muted] uppercase tracking-widest mt-1">Past account activity</p>
+          </div>
+          <span className="text-[10px] font-black px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[--text-muted] uppercase tracking-widest">{accountHistory.length} entries</span>
+        </div>
+
+        <div className="p-4 border-b border-white/5 flex flex-wrap gap-2">
+          <button onClick={() => setHistoryAccountId("all")} className={`px-4 h-10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${historyAccountId === "all" ? "bg-[--accent-primary]/20 text-[--accent-primary-light] border border-[--accent-primary]/30" : "bg-white/5 text-[--text-muted] border border-white/10 hover:text-[--text-primary]"}`}>All Accounts</button>
+          {accounts.map((account) => (
+            <button key={account.id} onClick={() => setHistoryAccountId(account.id)} className={`px-4 h-10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${historyAccountId === account.id ? "bg-[--accent-primary]/20 text-[--accent-primary-light] border border-[--accent-primary]/30" : "bg-white/5 text-[--text-muted] border border-white/10 hover:text-[--text-primary]"}`}>{account.name}</button>
+          ))}
+        </div>
+
+        {accountHistory.length === 0 ? (
+          <div className="py-20 text-center">
+            <p className="text-lg font-bold text-[--text-primary]">No history found</p>
+            <p className="text-sm text-[--text-muted] mt-1">Try another account filter or create activity.</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-white/5">
+            {accountHistory.map((log) => {
+              const account = accounts.find((a) => a.id === log.account_id);
+              const isDebit = log.new_balance !== null && log.previous_balance !== null
+                ? log.new_balance < log.previous_balance
+                : ["ADJUST_DOWN", "TRANSFER_OUT", "DELETE"].includes(log.action_type);
+
+              return (
+                <div key={log.id} className="px-6 py-5 hover:bg-white/[0.02] transition-colors">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-white/5 border border-white/10 text-[--text-secondary]">{getActionLabel(log.action_type)}</span>
+                        <span className="text-sm font-bold text-[--text-primary]">{account?.name || log.account_name || "Account"}</span>
+                      </div>
+                      <p className="text-xs mt-2 text-[--text-secondary]">{log.details}</p>
+                      <p className="text-[10px] mt-1 text-[--text-muted] font-medium">{log.created_at ? format(new Date(log.created_at), "MMM d, yyyy • h:mm a") : "N/A"}</p>
+                    </div>
+                    <div className="text-left sm:text-right">
+                      <p className="text-lg font-black" style={{ color: isDebit ? "var(--danger)" : "var(--success)" }}>
+                        {log.amount === null ? "—" : `${isDebit ? "-" : "+"}${getCurrencySymbol(account?.currency || "INR")}${Math.abs(log.amount).toLocaleString()}`}
+                      </p>
+                      <p className="text-[10px] font-black text-[--text-muted] mt-0.5">Balance: {getCurrencySymbol(account?.currency || "INR")}{(log.new_balance || 0).toLocaleString()}</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+      )}
 
       {showForm && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-xl animate-fade-in">
