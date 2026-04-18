@@ -32,6 +32,8 @@ export default function LedgerClient() {
   const [endDate, setEndDate] = useState("");
   const [showRevertConfirm, setShowRevertConfirm] = useState(false);
   const [revertingId, setRevertingId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 50;
 
 
 
@@ -42,7 +44,7 @@ export default function LedgerClient() {
   }, [logs]);
 
   const filteredLogs = useMemo(() => {
-    return logs.filter(log => {
+    const filtered = logs.filter(log => {
       const date = new Date(log.created_at);
       const logYear = getYear(date).toString();
       const logMonth = MONTHS[getMonth(date) + 1];
@@ -68,7 +70,39 @@ export default function LedgerClient() {
 
       return matchSearch && matchType && matchAccount && matchDate;
     });
+    
+    // Pagination
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filtered.slice(startIndex, endIndex);
+  }, [logs, yearFilter, monthFilter, startDate, endDate, currentPage]);
+
+  const totalFilteredCount = useMemo(() => {
+    return logs.filter(log => {
+      const date = new Date(log.created_at);
+      const logYear = getYear(date).toString();
+      const logMonth = MONTHS[getMonth(date) + 1];
+
+      const matchSearch = true;
+      const matchType = true;
+      const matchAccount = true;
+
+      let matchDate = true;
+      if (startDate || endDate) {
+        const start = startDate ? startOfDay(new Date(startDate)) : new Date(0);
+        const end = endDate ? endOfDay(new Date(endDate)) : new Date();
+        matchDate = isWithinInterval(date, { start, end });
+      } else {
+        const matchYear = yearFilter === "All Years" || logYear === yearFilter;
+        const matchMonth = monthFilter === "All Months" || logMonth === monthFilter;
+        matchDate = matchYear && matchMonth;
+      }
+
+      return matchSearch && matchType && matchAccount && matchDate;
+    }).length;
   }, [logs, yearFilter, monthFilter, startDate, endDate]);
+
+  const totalPages = Math.ceil(totalFilteredCount / itemsPerPage);
 
   const getActionBadge = (type: string) => {
     const styles: Record<string, { bg: string; color: string; text: string }> = {
@@ -215,6 +249,31 @@ export default function LedgerClient() {
               )}
             </tbody>
           </table>
+          
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="p-4 border-t border-white/5 flex items-center justify-between">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed text-sm font-bold transition-all"
+              >
+                Previous
+              </button>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-[--text-muted] font-bold">
+                  Page {currentPage} of {totalPages} ({totalFilteredCount} logs)
+                </span>
+              </div>
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed text-sm font-bold transition-all"
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="md:hidden divide-y divide-white/[0.03]">

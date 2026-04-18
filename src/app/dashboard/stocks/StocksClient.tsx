@@ -18,7 +18,7 @@ import { calculateZerodhaCharges } from "@/lib/investment-utils";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { getAccounts } from "../accounts/actions";
 
-type Stock = Tables<"investments"> & { total_charges?: number };
+type Stock = Tables<"investments"> & { total_charges?: number; pnlPercent?: number };
 
 type Account = {
   id: string;
@@ -44,6 +44,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
   const [editingId, setEditingId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [showAllCharges, setShowAllCharges] = useState(false);
+  const [showChargesInForm, setShowChargesInForm] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [fetchingPrice, setFetchingPrice] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -52,6 +53,8 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [expandedHolding, setExpandedHolding] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     name: "", symbol: "", quantity: "", buy_price: "", current_price: "",
@@ -301,6 +304,77 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
     </span>
   );
 
+  // Export holdings to CSV
+  function exportHoldings() {
+    const csvData = filtered.map(inv => {
+      const invested = inv.buy_price * inv.quantity;
+      const currentVal = inv.current_price * inv.quantity;
+      const pnl = currentVal - invested;
+      const pnlPct = invested > 0 ? (pnl / invested) * 100 : 0;
+      return {
+        Symbol: inv.symbol?.split('.')[0] || '',
+        Name: inv.name,
+        Quantity: inv.quantity,
+        'Avg Cost': inv.buy_price.toFixed(2),
+        LTP: inv.current_price.toFixed(2),
+        'Current Value': currentVal.toFixed(2),
+        'P&L': pnl.toFixed(2),
+        'P&L %': pnlPct.toFixed(2),
+        'Day Change': inv.day_change || 0,
+        'Day Change %': inv.day_change_percent || 0
+      };
+    });
+    
+    const headers = Object.keys(csvData[0] || {});
+    const csv = [
+      headers.join(','),
+      ...csvData.map(row => headers.map(h => row[h as keyof typeof row]).join(','))
+    ].join('\n');
+    
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `holdings_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Holdings exported successfully');
+  }
+
+  // Calculate portfolio analytics
+  const analytics = useMemo(() => {
+    const sectorMap: Record<string, number> = {};
+    const topGainers: Array<Stock & { pnlPct: number }> = [];
+    const topLosers: Array<Stock & { pnlPct: number }> = [];
+    
+    filtered.forEach(inv => {
+      const invested = inv.buy_price * inv.quantity;
+      const currentVal = inv.current_price * inv.quantity;
+      const pnl = currentVal - invested;
+      const pnlPct = invested > 0 ? (pnl / invested) * 100 : 0;
+      
+      // Simple sector classification (you can enhance this)
+      const sector = inv.name.includes('Bank') || inv.name.includes('Financial') ? 'Banking' :
+                     inv.name.includes('IT') || inv.name.includes('Tech') ? 'Technology' :
+                     inv.name.includes('Pharma') || inv.name.includes('Health') ? 'Healthcare' :
+                     inv.name.includes('Auto') ? 'Automotive' : 'Others';
+      
+      sectorMap[sector] = (sectorMap[sector] || 0) + currentVal;
+      
+      if (pnlPct > 0) topGainers.push({ ...inv, pnlPct });
+      else topLosers.push({ ...inv, pnlPct });
+    });
+    
+    topGainers.sort((a, b) => (b.pnlPct || 0) - (a.pnlPct || 0));
+    topLosers.sort((a, b) => (a.pnlPct || 0) - (b.pnlPct || 0));
+    
+    return {
+      sectors: Object.entries(sectorMap).map(([name, value]) => ({ name, value })),
+      topGainers: topGainers.slice(0, 5),
+      topLosers: topLosers.slice(0, 5)
+    };
+  }, [filtered]);
+
   return (
     <div className="flex flex-col gap-0 text-[--text-primary] py-6" style={{ maxWidth: "1250px", margin: "0 auto", width: "100%", paddingBottom: "100px" }}>
       
@@ -315,6 +389,26 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
         </div>
         <div className="flex items-center gap-3 w-full md:w-auto">
             {/* Auto refresh enabled */}
+            <button 
+              onClick={() => setShowAnalytics(true)} 
+              className="btn-secondary !h-11 !px-6 flex items-center gap-2"
+              title="View Analytics"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              Analytics
+            </button>
+            <button 
+              onClick={exportHoldings} 
+              className="btn-secondary !h-11 !px-6 flex items-center gap-2"
+              title="Export Holdings"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Export
+            </button>
             <button onClick={() => setShowForm(true)} className="btn-primary !h-11 !px-8">
                 Add Stock
             </button>
@@ -716,17 +810,24 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                            <span className="text-[13px] font-black text-[#eee]">₹{formatNum(zerodhaCharges.totalCharges)}</span>
                            <button 
                              type="button"
-                             onClick={() => setShowAllCharges(!showAllCharges)}
-                             className="text-[9px] font-black text-[--accent-primary-light] uppercase tracking-widest hover:underline"
+                             onClick={() => setShowChargesInForm(!showChargesInForm)}
+                             className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
+                             title={showChargesInForm ? "Hide charges breakdown" : "Show charges breakdown"}
                            >
-                             {showAllCharges ? "Hide Details" : "See More"}
+                             <svg className="w-4 h-4 text-[--accent-primary-light]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                               {showChargesInForm ? (
+                                 <path d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                               ) : (
+                                 <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                               )}
+                             </svg>
                            </button>
                         </div>
                      </div>
                      <span className="text-[9px] text-[#387ed1] border border-[#387ed1]/20 px-2 py-0.5 rounded font-black uppercase">Zerodha Delivery</span>
                    </div>
                    
-                   {showAllCharges && (
+                   {showChargesInForm && (
                      <div className="grid grid-cols-2 gap-x-8 gap-y-2 mt-4 pt-4 border-t border-white/5 animate-fade-in">
                        <div className="flex justify-between text-[11px]">
                          <span className="text-[#666]">STT (0.1%)</span>
@@ -798,6 +899,136 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                 </button>
               </div>
            </div>
+        </div>
+      )}
+
+      {/* ── Analytics Modal ── */}
+      {showAnalytics && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="glass-card-static w-full max-w-5xl max-h-[90vh] overflow-y-auto p-8">
+            <div className="flex justify-between items-center mb-8">
+              <div>
+                <h2 className="text-3xl font-black">Portfolio Analytics</h2>
+                <p className="text-[10px] text-[--text-muted] font-black uppercase tracking-[0.2em] mt-1">Insights & Performance</p>
+              </div>
+              <button onClick={() => setShowAnalytics(false)} className="p-2 hover:bg-white/5 rounded-full transition-colors">
+                <svg className="w-8 h-8 text-[--text-muted]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                  <path d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Summary Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+              <div className="glass-card-static p-6">
+                <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em] mb-2">Total Holdings</p>
+                <p className="text-2xl font-black">{filtered.length}</p>
+              </div>
+              <div className="glass-card-static p-6">
+                <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em] mb-2">Invested</p>
+                <p className="text-2xl font-black">₹{totalInvested.toLocaleString()}</p>
+              </div>
+              <div className="glass-card-static p-6">
+                <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em] mb-2">Current Value</p>
+                <p className="text-2xl font-black">₹{totalCurrent.toLocaleString()}</p>
+              </div>
+              <div className="glass-card-static p-6">
+                <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em] mb-2">Overall P&L</p>
+                <p className={`text-2xl font-black ${totalPnL >= 0 ? 'text-[--success]' : 'text-[--danger]'}`}>
+                  {totalPnL >= 0 ? '+' : ''}₹{Math.abs(totalPnL).toLocaleString()}
+                </p>
+              </div>
+            </div>
+
+            {/* Sector Exposure */}
+            {analytics.sectors.length > 0 && (
+              <div className="glass-card-static p-6 mb-6">
+                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[--text-muted] mb-6">Sector Exposure</h3>
+                <div className="space-y-4">
+                  {analytics.sectors.map((sector, idx) => {
+                    const percentage = (sector.value / totalCurrent) * 100;
+                    return (
+                      <div key={idx}>
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-[13px] font-bold text-[--text-primary]">{sector.name}</span>
+                          <span className="text-[12px] font-black text-[--text-muted]">{percentage.toFixed(1)}%</span>
+                        </div>
+                        <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-gradient-to-r from-[--accent-primary] to-[--accent-primary-light] rounded-full transition-all duration-500"
+                            style={{ width: `${percentage}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Top Gainers & Losers */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Top Gainers */}
+              <div className="glass-card-static p-6">
+                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[--success] mb-4 flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                    <path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                  Top Gainers
+                </h3>
+                <div className="space-y-3">
+                  {analytics.topGainers.slice(0, 5).map((inv, idx) => {
+                    const invested = inv.buy_price * inv.quantity;
+                    const currentVal = inv.current_price * inv.quantity;
+                    const pnl = currentVal - invested;
+                    const pnlPct = invested > 0 ? (pnl / invested) * 100 : 0;
+                    return (
+                      <div key={idx} className="flex justify-between items-center py-2 border-b border-white/5 last:border-0">
+                        <div>
+                          <p className="text-[13px] font-bold text-[--text-primary]">{inv.symbol?.split('.')[0]}</p>
+                          <p className="text-[10px] text-[--text-muted]">{inv.name}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[13px] font-black text-[--success]">+{pnlPct.toFixed(2)}%</p>
+                          <p className="text-[10px] text-[--success]">+₹{pnl.toFixed(2)}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Top Losers */}
+              <div className="glass-card-static p-6">
+                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[--danger] mb-4 flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                    <path d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+                  </svg>
+                  Top Losers
+                </h3>
+                <div className="space-y-3">
+                  {analytics.topLosers.slice(0, 5).map((inv, idx) => {
+                    const invested = inv.buy_price * inv.quantity;
+                    const currentVal = inv.current_price * inv.quantity;
+                    const pnl = currentVal - invested;
+                    const pnlPct = invested > 0 ? (pnl / invested) * 100 : 0;
+                    return (
+                      <div key={idx} className="flex justify-between items-center py-2 border-b border-white/5 last:border-0">
+                        <div>
+                          <p className="text-[13px] font-bold text-[--text-primary]">{inv.symbol?.split('.')[0]}</p>
+                          <p className="text-[10px] text-[--text-muted]">{inv.name}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[13px] font-black text-[--danger]">{pnlPct.toFixed(2)}%</p>
+                          <p className="text-[10px] text-[--danger]">₹{pnl.toFixed(2)}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

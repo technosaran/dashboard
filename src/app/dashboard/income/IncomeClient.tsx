@@ -81,6 +81,8 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
   const [search, setSearch] = useState("");
   const deferredSearch = useDeferredValue(search);
   const [categoryFilter, setCategoryFilter] = useState("All");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 50;
 
   const [formData, setFormData] = useState({
     description: "",
@@ -134,12 +136,27 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
   }, [incomes]);
 
   const filteredIncomes = useMemo(() => {
-    return incomes.filter(i => {
+    const filtered = incomes.filter(i => {
       const matchSearch = i.description.toLowerCase().includes(deferredSearch.toLowerCase());
       const matchCat = categoryFilter === "All" || i.category === categoryFilter;
       return matchSearch && matchCat;
     });
+    
+    // Pagination
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filtered.slice(startIndex, endIndex);
+  }, [incomes, deferredSearch, categoryFilter, currentPage]);
+
+  const totalFilteredCount = useMemo(() => {
+    return incomes.filter(i => {
+      const matchSearch = i.description.toLowerCase().includes(deferredSearch.toLowerCase());
+      const matchCat = categoryFilter === "All" || i.category === categoryFilter;
+      return matchSearch && matchCat;
+    }).length;
   }, [incomes, deferredSearch, categoryFilter]);
+
+  const totalPages = Math.ceil(totalFilteredCount / itemsPerPage);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -201,7 +218,9 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
       <div className="hidden md:block glass-card-static overflow-hidden border-white/5">
         <div className="p-5 border-b border-white/5 bg-white/[0.01] flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3 w-full md:w-auto"><div className="relative flex-1 md:w-64"><svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[--text-muted]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg><input type="text" placeholder="Search income records..." className="input-premium pl-10 py-2 text-sm w-full" value={search} onChange={(e) => setSearch(e.target.value)} /></div><select className="input-premium py-2 text-sm w-32 md:w-40" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}><option value="All">All Sources</option>{INCOME_CATEGORIES.map(c => <option key={c.label} value={c.label}>{c.label}</option>)}</select></div>
-          <div className="text-[10px] font-bold text-[--text-muted]">Showing {filteredIncomes.length} of {incomes.length} results</div>
+          <div className="text-[10px] font-bold text-[--text-muted]">
+            Showing {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, totalFilteredCount)} of {totalFilteredCount} results
+          </div>
         </div>
         <div className="overflow-x-auto w-full">
           {incomes.length === 0 ? (
@@ -214,11 +233,58 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
             <table className="w-full text-left border-collapse min-w-[650px] md:min-w-0">
               <thead><tr className="bg-white/[0.02] border-b border-white/5"><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Date</th><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Source</th><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Segment</th><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] hidden sm:table-cell">Destination</th><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] text-right">Credit</th></tr></thead>
               <tbody className="divide-y divide-white/[0.03]">
-                {filteredIncomes.length === 0 ? (<tr><td colSpan={5} className="px-6 py-20 text-center text-[--text-muted] text-sm italic">Infrastructure query returned no income data.</td></tr>) : (filteredIncomes.map((inc) => { const theme = INCOME_CATEGORIES.find(c => c.label === inc.category) || INCOME_CATEGORIES[6]; const account = accounts.find(a => a.id === inc.account_id); return (<tr key={inc.id} className="hover:bg-white/[0.015] transition-colors group text-[--text-primary]"><td className="px-4 md:px-6 py-5 whitespace-nowrap"><p className="text-[13px] font-bold">{format(parseISO(inc.date), "MMM d, yy")}</p><p className="text-[9px] text-[--success]/60 font-bold uppercase">Credit</p></td><td className="px-4 md:px-6 py-4"><div className="flex items-center gap-3"><div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-lg flex-shrink-0">{theme.icon}</div><p className="text-[13px] font-medium group-hover:text-[--success] transition-colors truncate max-w-[120px] md:max-w-none">{inc.description}</p></div></td><td className="px-4 md:px-6 py-5 whitespace-nowrap"><span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-[0.1em] bg-[--success]/5 border border-[--success]/10 text-[--success]">{inc.category}</span></td><td className="px-4 md:px-6 py-5 whitespace-nowrap hidden sm:table-cell"><div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-[--success] shadow-[0_0_8px_rgba(0,184,148,0.5)]" /><span className="text-[11px] font-medium text-[--text-secondary]">{account?.name || "Direct Log"}</span></div></td><td className="px-4 md:px-6 py-4 whitespace-nowrap text-right"><p className="text-[15px] md:text-base font-black text-[--success]">+₹{Number(inc.amount).toLocaleString()}</p></td></tr>); }))}
+                {filteredIncomes.length === 0 ? (<tr><td colSpan={5} className="px-6 py-20 text-center text-[--text-muted] text-sm italic">Infrastructure query returned no income data.</td></tr>) : (filteredIncomes.map((inc) => { const theme = INCOME_CATEGORIES.find(c => c.label === inc.category) || INCOME_CATEGORIES[6]; const account = accounts.find(a => a.id === inc.account_id); return (<tr key={inc.id} className="hover:bg-white/[0.015] transition-colors group text-[--text-primary]"><td className="px-4 md:px-6 py-5 whitespace-nowrap"><p className="text-[13px] font-bold">{format(parseISO(inc.date), "MMM d, yy")}</p><p className="text-[9px] text-[--success]/60 font-bold uppercase">Credit</p></td><td className="px-4 md:px-6 py-4"><div className="flex items-center gap-3"><div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-lg flex-shrink-0">{theme.icon}</div><p className="text-[13px] font-medium group-hover:text-[--success] transition-colors truncate max-w-[120px] md:max-w-none">{inc.description}</p></div></td><td className="px-4 md:px-6 py-5 whitespace-nowrap"><span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-[0.1em] bg-[--success]/5 border border-[--success]/10 text-[--success]">{inc.category}</span></td><td className="px-4 md:px-6 py-5 whitespace-nowrap hidden sm:table-cell"><div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-[--success] shadow-[0_0_8px_rgba(0,184,148,0.5)]" /><span className="text-[11px] font-medium text-[--text-secondary]">{account?.name || "Direct Log"}</span></div></td><td className="px-4 md:px-6 py-4 whitespace-nowrap text-right"><p className="text-[15px] md:text-base font-black text-emerald-500">+₹{Number(inc.amount).toLocaleString()}</p></td></tr>); }))}
               </tbody>
             </table>
           )}
         </div>
+        
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="p-4 border-t border-white/5 flex items-center justify-between">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed text-sm font-bold transition-all"
+            >
+              Previous
+            </button>
+            <div className="flex items-center gap-2">
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum;
+                if (totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => setCurrentPage(pageNum)}
+                    className={`w-10 h-10 rounded-xl font-bold text-sm transition-all ${
+                      currentPage === pageNum
+                        ? 'bg-[--success] text-white'
+                        : 'bg-white/5 hover:bg-white/10 text-[--text-muted]'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed text-sm font-bold transition-all"
+            >
+              Next
+            </button>
+          </div>
+        )}
       </div>
 
       {showAddModal && (

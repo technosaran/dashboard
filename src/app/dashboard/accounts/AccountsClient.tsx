@@ -186,33 +186,33 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
         <p className="text-[10px] md:text-xs font-bold uppercase tracking-[0.3em] text-[--text-muted] mb-4">Portfolio Assets</p>
         
         {/* Desktop: Side-by-side layout */}
-        <div className="hidden lg:grid lg:grid-cols-2 lg:gap-12 lg:items-center mb-8">
-          {/* Left: Balance Info */}
+        <div className="hidden lg:grid lg:grid-cols-[2fr_1fr] lg:gap-6 lg:items-center mb-8">
+          {/* Left: Balance Info - Takes 2/3 of space */}
           <div>
-            <div className="flex flex-wrap items-baseline gap-4 md:gap-6 mb-6">
+            <div className="flex flex-wrap items-baseline gap-3 mb-4">
               {Object.entries(balancesByCurrency).map(([curr, bal]) => (
-                <h2 key={curr} className="text-3xl md:text-5xl font-black tracking-tight text-[--text-primary]">
+                <h2 key={curr} className="text-2xl md:text-3xl font-black tracking-tight text-[--text-primary]">
                   {getCurrencySymbol(curr)}{bal.toLocaleString()}
                 </h2>
               ))}
             </div>
-            <div className="grid grid-cols-1 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               {chartData.map((item, i) => (
-                <div key={i} className="flex items-center gap-3 rounded-2xl px-4 py-3 bg-[--accent-primary]/5 border border-[--accent-primary]/10 h-[64px] hover:bg-[--accent-primary]/10 transition-all">
+                <div key={i} className="flex items-center gap-3 rounded-xl px-4 py-3 bg-[--accent-primary]/5 border border-[--accent-primary]/10 hover:bg-[--accent-primary]/10 transition-all">
                   <div className="relative flex-shrink-0">
-                    {accounts[i].bank_name ? <BankLogo bankName={accounts[i].bank_name!} size={40} /> : <CategoryIcon type={accounts[i].type} className="w-10 h-10" />}
+                    {accounts[i].bank_name ? <BankLogo bankName={accounts[i].bank_name!} size={32} /> : <CategoryIcon type={accounts[i].type} className="w-8 h-8" />}
                   </div>
                   <div className="flex flex-col min-w-0 flex-1 text-left">
-                    <p className="font-bold text-[11px] md:text-xs text-[--text-secondary] truncate">{item.name}</p>
-                    <p className="font-black text-[13px] md:text-sm text-[--accent-primary]">{getCurrencySymbol(item.currency)}{item.value.toLocaleString()}</p>
+                    <p className="font-bold text-[10px] text-[--text-secondary] truncate">{item.name}</p>
+                    <p className="font-black text-sm text-[--accent-primary]">{getCurrencySymbol(item.currency)}{item.value.toLocaleString()}</p>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Right: Chart */}
-          <div className="relative h-[400px]">
+          {/* Right: Chart - Takes 1/3 of space */}
+          <div className="relative h-[280px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie 
@@ -238,10 +238,10 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
               </PieChart>
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
-              <p className="text-[9px] md:text-[11px] uppercase font-black text-[--text-muted] mb-1 tracking-widest">Net Value</p>
-              <div className="flex flex-col gap-0.5">
+              <p className="text-[8px] uppercase font-black text-[--text-muted] mb-1 tracking-widest">Net Value</p>
+              <div className="flex flex-col gap-2">
                 {Object.entries(balancesByCurrency).map(([c,b]) => (
-                  <p key={c} className="text-xl md:text-2xl font-black text-[--text-primary] leading-tight">
+                  <p key={c} className="text-base font-black text-[--text-primary] leading-tight">
                     {getCurrencySymbol(c)}{b.toLocaleString()}
                   </p>
                 ))}
@@ -288,7 +288,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
               <p className="text-[9px] md:text-[11px] uppercase font-black text-[--text-muted] mb-1 tracking-widest">Net Value</p>
-              <div className="flex flex-col gap-0.5">
+              <div className="flex flex-col gap-2">
                 {Object.entries(balancesByCurrency).map(([c,b]) => (
                   <p key={c} className="text-lg md:text-2xl font-black text-[--text-primary] leading-tight">
                     {getCurrencySymbol(c)}{b.toLocaleString()}

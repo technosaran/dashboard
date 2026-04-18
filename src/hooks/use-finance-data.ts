@@ -39,12 +39,12 @@ async function fetchFinanceData(): Promise<FinanceData> {
 export function useFinanceData(initialData?: FinanceData) {
   const { mutate } = useSWRConfig();
   const updateQueueRef = useRef<Set<string>>(new Set());
-  const rafIdRef = useRef<number | null>(null);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const swr = useSWR<FinanceData>(FINANCE_DATA_KEY, fetchFinanceData, {
     revalidateOnFocus: true,
     revalidateOnReconnect: true,
-    dedupingInterval: 100, // Reduced for faster updates
+    dedupingInterval: 500, // Increased to reduce rapid updates
     errorRetryInterval: 3000,
     errorRetryCount: 3,
     refreshInterval: 0, // Disable polling, rely on realtime
@@ -63,27 +63,27 @@ export function useFinanceData(initialData?: FinanceData) {
     }
   });
 
-  // Instant update using requestAnimationFrame for optimal performance
-  const instantMutate = useCallback(() => {
-    if (rafIdRef.current) {
-      cancelAnimationFrame(rafIdRef.current);
+  // Debounced update to batch rapid changes together
+  const debouncedMutate = useCallback(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
     }
     
-    rafIdRef.current = requestAnimationFrame(() => {
+    debounceTimerRef.current = setTimeout(() => {
       void mutate(FINANCE_DATA_KEY, undefined, { 
         revalidate: true,
-        optimisticData: undefined // Let SWR handle the update
+        optimisticData: undefined
       });
       updateQueueRef.current.clear();
-      rafIdRef.current = null;
-    });
+      debounceTimerRef.current = null;
+    }, 500); // 500ms debounce to batch updates
   }, [mutate]);
 
   useEffect(() => {
-    // Zero-latency realtime subscription with instant updates
+    // Debounced realtime subscription to prevent excessive re-renders
     const handleChange = (table: string) => {
       updateQueueRef.current.add(table);
-      instantMutate();
+      debouncedMutate();
     };
 
     const channel = supabase
@@ -199,12 +199,12 @@ export function useFinanceData(initialData?: FinanceData) {
 
     return () => {
       clearInterval(heartbeat);
-      if (rafIdRef.current) {
-        cancelAnimationFrame(rafIdRef.current);
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
       }
       void supabase.removeChannel(channel);
     };
-  }, [instantMutate]);
+  }, [debouncedMutate]);
 
   // Handle visibility change for instant sync when returning to tab
   useEffect(() => {

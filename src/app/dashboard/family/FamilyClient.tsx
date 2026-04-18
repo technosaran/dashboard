@@ -39,6 +39,20 @@ const RELATIONSHIP_CONFIG: Record<string, { gradient: string; emoji: string; col
   Other: { gradient: "linear-gradient(135deg, var(--warning), #fab1a0)", emoji: "👤", color: "var(--warning)" },
 };
 
+// Unique color palette for each card
+const CARD_COLORS = [
+  { gradient: "linear-gradient(135deg, #6c5ce7, #a29bfe)", color: "#a29bfe" },  // Purple
+  { gradient: "linear-gradient(135deg, #ff6b6b, #ff8787)", color: "#ff8787" },  // Red
+  { gradient: "linear-gradient(135deg, #4ecdc4, #81ecec)", color: "#81ecec" },  // Teal
+  { gradient: "linear-gradient(135deg, #45b7d1, #74b9ff)", color: "#74b9ff" },  // Blue
+  { gradient: "linear-gradient(135deg, #ffa07a, #fab1a0)", color: "#fab1a0" },  // Orange
+  { gradient: "linear-gradient(135deg, #fdcb6e, #ffeaa7)", color: "#ffeaa7" },  // Yellow
+  { gradient: "linear-gradient(135deg, #00b894, #55efc4)", color: "#55efc4" },  // Green
+  { gradient: "linear-gradient(135deg, #ff7675, #fd79a8)", color: "#fd79a8" },  // Pink
+  { gradient: "linear-gradient(135deg, #a29bfe, #dfe6e9)", color: "#dfe6e9" },  // Light Purple
+  { gradient: "linear-gradient(135deg, #00cec9, #81ecec)", color: "#81ecec" },  // Cyan
+];
+
 interface FamilyClientProps {
   initialRecipients: Recipient[];
   initialAccounts: Account[];
@@ -324,17 +338,18 @@ export default function FamilyClient({
           ) : (
             filteredRecipients.map((person, index) => {
               const config = getConfig(person.relationship);
+              const cardColor = CARD_COLORS[index % CARD_COLORS.length]; // Unique color per card
               return (
                 <div key={person.id} className="glass-card flex flex-col min-h-[260px] p-6 relative overflow-hidden transition-transform hover:-translate-y-1 group">
-                  <div className="absolute top-0 left-0 right-0 h-[3px]" style={{ background: config.gradient }} />
+                  <div className="absolute top-0 left-0 right-0 h-[3px]" style={{ background: cardColor.gradient }} />
                   
                   <div className="flex justify-between items-start mb-6">
                     <div className="flex flex-col gap-4">
-                       <span className="w-fit px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider" style={{ background: `${config.color}20`, color: config.color, border: `1px solid ${config.color}30` }}>
+                       <span className="w-fit px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider" style={{ background: `${cardColor.color}20`, color: cardColor.color, border: `1px solid ${cardColor.color}30` }}>
                          {person.relationship}
                        </span>
                        <div className="flex items-center gap-3">
-                         <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl font-black text-white shadow-lg" style={{ background: config.gradient, boxShadow: `0 8px 16px ${config.color}33` }}>
+                         <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl font-black text-white shadow-lg" style={{ background: cardColor.gradient, boxShadow: `0 8px 16px ${cardColor.color}33` }}>
                            {person.name.charAt(0).toUpperCase()}
                          </div>
                        </div>
@@ -353,7 +368,7 @@ export default function FamilyClient({
                       <button
                         onClick={() => { setSelectedRecipient(person); setSendAmount(""); setSendNote(""); setIsSendingMoney(true); }}
                         className="flex-1 h-12 rounded-xl font-bold text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-2"
-                        style={{ background: `${config.color}15`, color: config.color, border: `1px solid ${config.color}30` }}
+                        style={{ background: `${cardColor.color}15`, color: cardColor.color, border: `1px solid ${cardColor.color}30` }}
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
                         Wealth Transfer
@@ -393,8 +408,8 @@ export default function FamilyClient({
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-black text-red-400">-₹{(send.amount || 0).toLocaleString()}</p>
-                    <p className="text-[9px] font-bold text-emerald-400 uppercase tracking-widest">Execution Confirmed</p>
+                    <p className="text-lg font-black text-[--danger]">-₹{(send.amount || 0).toLocaleString()}</p>
+                    <p className="text-[9px] font-bold text-[--success] uppercase tracking-widest">Execution Confirmed</p>
                   </div>
                 </div>
               ))

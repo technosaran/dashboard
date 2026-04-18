@@ -42,16 +42,16 @@ const Area = dynamic(() => import("recharts").then((mod) => mod.Area), { ssr: fa
 
 
 export const CATEGORIES = [
-  { label: "Rent", icon: "🏠", color: "var(--accent-primary-light)" },
-  { label: "Food", icon: "🍔", color: "#fab1a0" },
-  { label: "Travel", icon: "✈️", color: "#00cec9" },
-  { label: "Investment", icon: "📈", color: "#81ecec" },
-  { label: "Transport", icon: "🚌", color: "var(--accent-secondary)" },
-  { label: "Utilities", icon: "⚡", color: "var(--warning)" },
-  { label: "Entertainment", icon: "🎬", color: "#a29bfe" },
-  { label: "Shopping", icon: "🛍️", color: "#ff7675" },
-  { label: "Subscription", icon: "💳", color: "#6c5ce7" },
-  { label: "Others", icon: "📦", color: "#fdcb6e" },
+  { label: "Rent", icon: "🏠", color: "#6c5ce7" },        // Purple
+  { label: "Food", icon: "🍔", color: "#ff6b6b" },        // Red
+  { label: "Travel", icon: "✈️", color: "#4ecdc4" },      // Teal
+  { label: "Investment", icon: "📈", color: "#45b7d1" },  // Blue
+  { label: "Transport", icon: "🚌", color: "#ffa07a" },   // Orange
+  { label: "Utilities", icon: "⚡", color: "#fdcb6e" },    // Yellow
+  { label: "Entertainment", icon: "🎬", color: "#a29bfe" },// Light Purple
+  { label: "Shopping", icon: "🛍️", color: "#ff7675" },    // Pink
+  { label: "Subscription", icon: "💳", color: "#00b894" },// Green
+  { label: "Others", icon: "📦", color: "#fab1a0" },      // Peach
 ];
 
 type Expense = Tables<"expenses">;
@@ -65,6 +65,8 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
   const [search, setSearch] = useState("");
   const deferredSearch = useDeferredValue(search);
   const [categoryFilter, setCategoryFilter] = useState("All");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 50;
 
   const [formData, setFormData] = useState({
     description: "",
@@ -112,12 +114,27 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
   }, [expenses]);
 
   const filteredExpenses = useMemo(() => {
-    return expenses.filter(e => {
+    const filtered = expenses.filter(e => {
       const matchSearch = e.description.toLowerCase().includes(deferredSearch.toLowerCase());
       const matchCat = categoryFilter === "All" || e.category === categoryFilter;
       return matchSearch && matchCat;
     });
+    
+    // Pagination
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filtered.slice(startIndex, endIndex);
+  }, [expenses, deferredSearch, categoryFilter, currentPage]);
+
+  const totalFilteredCount = useMemo(() => {
+    return expenses.filter(e => {
+      const matchSearch = e.description.toLowerCase().includes(deferredSearch.toLowerCase());
+      const matchCat = categoryFilter === "All" || e.category === categoryFilter;
+      return matchSearch && matchCat;
+    }).length;
   }, [expenses, deferredSearch, categoryFilter]);
+
+  const totalPages = Math.ceil(totalFilteredCount / itemsPerPage);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -214,7 +231,9 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
       <div className="hidden md:block glass-card-static overflow-hidden border-white/5">
         <div className="p-5 border-b border-white/5 bg-white/[0.01] flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3 w-full md:w-auto"><div className="relative flex-1 md:w-64"><svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[--text-muted]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg><input type="text" placeholder="Search transactions..." className="input-premium pl-10 py-2 text-sm w-full" value={search} onChange={(e) => setSearch(e.target.value)} /></div><select className="input-premium py-2 text-sm w-32 md:w-40" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}><option value="All">All Categories</option>{CATEGORIES.map(c => <option key={c.label} value={c.label}>{c.label}</option>)}</select></div>
-          <div className="text-[10px] font-bold text-[--text-muted]">Showing {filteredExpenses.length} of {expenses.length} results</div>
+          <div className="text-[10px] font-bold text-[--text-muted]">
+            Showing {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, totalFilteredCount)} of {totalFilteredCount} results
+          </div>
         </div>
         <div className="overflow-x-auto w-full">
           {expenses.length === 0 ? (
@@ -232,6 +251,53 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
             </table>
           )}
         </div>
+        
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="p-4 border-t border-white/5 flex items-center justify-between">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed text-sm font-bold transition-all"
+            >
+              Previous
+            </button>
+            <div className="flex items-center gap-2">
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum;
+                if (totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => setCurrentPage(pageNum)}
+                    className={`w-10 h-10 rounded-xl font-bold text-sm transition-all ${
+                      currentPage === pageNum
+                        ? 'bg-[--accent-primary] text-white'
+                        : 'bg-white/5 hover:bg-white/10 text-[--text-muted]'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed text-sm font-bold transition-all"
+            >
+              Next
+            </button>
+          </div>
+        )}
       </div>
 
       {showAddModal && (

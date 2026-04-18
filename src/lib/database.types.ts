@@ -59,6 +59,166 @@ export type Database = {
         }
         Relationships: []
       }
+      bonds: {
+        Row: {
+          id: string
+          user_id: string
+          bond_name: string
+          isin: string
+          issuer: string
+          bond_type: string
+          face_value: number
+          quantity: number
+          purchase_price: number
+          current_price: number
+          total_invested: number
+          current_value: number
+          coupon_rate: number
+          ytm: number | null
+          purchase_date: string
+          maturity_date: string
+          next_interest_date: string | null
+          interest_frequency: string
+          credit_rating: string | null
+          platform: string | null
+          demat_account: string | null
+          notes: string | null
+          status: string
+          total_interest_earned: number
+          accrued_interest: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          bond_name: string
+          isin: string
+          issuer: string
+          bond_type: string
+          face_value: number
+          quantity: number
+          purchase_price: number
+          current_price: number
+          total_invested: number
+          current_value: number
+          coupon_rate: number
+          ytm?: number | null
+          purchase_date: string
+          maturity_date: string
+          next_interest_date?: string | null
+          interest_frequency: string
+          credit_rating?: string | null
+          platform?: string | null
+          demat_account?: string | null
+          notes?: string | null
+          status?: string
+          total_interest_earned?: number
+          accrued_interest?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          bond_name?: string
+          isin?: string
+          issuer?: string
+          bond_type?: string
+          face_value?: number
+          quantity?: number
+          purchase_price?: number
+          current_price?: number
+          total_invested?: number
+          current_value?: number
+          coupon_rate?: number
+          ytm?: number | null
+          purchase_date?: string
+          maturity_date?: string
+          next_interest_date?: string | null
+          interest_frequency?: string
+          credit_rating?: string | null
+          platform?: string | null
+          demat_account?: string | null
+          notes?: string | null
+          status?: string
+          total_interest_earned?: number
+          accrued_interest?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      bond_transactions: {
+        Row: {
+          id: string
+          user_id: string
+          bond_id: string | null
+          transaction_type: string
+          transaction_date: string
+          quantity: number | null
+          price_per_bond: number | null
+          amount: number
+          interest_amount: number | null
+          interest_period_start: string | null
+          interest_period_end: string | null
+          account_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          bond_id?: string | null
+          transaction_type: string
+          transaction_date?: string
+          quantity?: number | null
+          price_per_bond?: number | null
+          amount: number
+          interest_amount?: number | null
+          interest_period_start?: string | null
+          interest_period_end?: string | null
+          account_id?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          bond_id?: string | null
+          transaction_type?: string
+          transaction_date?: string
+          quantity?: number | null
+          price_per_bond?: number | null
+          amount?: number
+          interest_amount?: number | null
+          interest_period_start?: string | null
+          interest_period_end?: string | null
+          account_id?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bond_transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bond_transactions_bond_id_fkey"
+            columns: ["bond_id"]
+            isOneToOne: false
+            referencedRelation: "bonds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bond_transactions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       deposits: {
         Row: {
           account_id: string

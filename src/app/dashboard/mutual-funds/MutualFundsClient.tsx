@@ -9,13 +9,69 @@ import type { Tables } from "@/lib/database.types";
 import { recordMFInvestment, refreshNAV, searchMFSchemes, getLiveNAV } from "./actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 
-type MF = Tables<"mutual_funds"> & { scheme_code?: string; fund_symbol?: string | null };
+type MF = Tables<"mutual_funds"> & { scheme_code?: string; fund_symbol?: string | null; pnlPercent?: number };
 type MFTrade = Tables<"mutual_fund_trades">;
 type Account = Tables<"accounts">;
 type MFSchemeSearchResult = {
   schemeCode: number;
   schemeName: string;
 };
+
+// Helper function to get mutual fund logo/icon
+function getMFLogo(amcName: string, fundName: string): string {
+  const amc = amcName.toLowerCase();
+  const fund = fundName.toLowerCase();
+  
+  // Map AMC names to colors for gradient backgrounds
+  const amcColors: Record<string, { from: string; to: string; emoji: string }> = {
+    'hdfc': { from: '#0066cc', to: '#0052a3', emoji: '🏦' },
+    'sbi': { from: '#1e3a8a', to: '#1e40af', emoji: '🏛️' },
+    'icici': { from: '#ff6b35', to: '#f7931e', emoji: '🏢' },
+    'axis': { from: '#97144d', to: '#c41e3a', emoji: '🏦' },
+    'kotak': { from: '#ed1c24', to: '#c8102e', emoji: '🏦' },
+    'aditya birla': { from: '#0066b2', to: '#004c8c', emoji: '🏢' },
+    'nippon': { from: '#e31e24', to: '#b71c1c', emoji: '🗾' },
+    'franklin': { from: '#003da5', to: '#002d7a', emoji: '🦅' },
+    'dsp': { from: '#00a651', to: '#008542', emoji: '💚' },
+    'mirae': { from: '#0052cc', to: '#003d99', emoji: '🌏' },
+    'parag parikh': { from: '#6366f1', to: '#4f46e5', emoji: '📈' },
+    'ppfas': { from: '#6366f1', to: '#4f46e5', emoji: '📊' },
+    'motilal': { from: '#ff6b00', to: '#cc5500', emoji: '🔶' },
+    'tata': { from: '#1e3a8a', to: '#1e40af', emoji: '🏭' },
+    'uti': { from: '#ed1c24', to: '#c8102e', emoji: '🏛️' },
+    'default': { from: '#6366f1', to: '#8b5cf6', emoji: '💼' }
+  };
+  
+  // Find matching AMC
+  const matchedAMC = Object.keys(amcColors).find(key => amc.includes(key)) || 'default';
+  return amcColors[matchedAMC].emoji;
+}
+
+function getMFGradient(amcName: string): string {
+  const amc = amcName.toLowerCase();
+  
+  const amcColors: Record<string, string> = {
+    'hdfc': 'linear-gradient(135deg, #0066cc, #0052a3)',
+    'sbi': 'linear-gradient(135deg, #1e3a8a, #1e40af)',
+    'icici': 'linear-gradient(135deg, #ff6b35, #f7931e)',
+    'axis': 'linear-gradient(135deg, #97144d, #c41e3a)',
+    'kotak': 'linear-gradient(135deg, #ed1c24, #c8102e)',
+    'aditya birla': 'linear-gradient(135deg, #0066b2, #004c8c)',
+    'nippon': 'linear-gradient(135deg, #e31e24, #b71c1c)',
+    'franklin': 'linear-gradient(135deg, #003da5, #002d7a)',
+    'dsp': 'linear-gradient(135deg, #00a651, #008542)',
+    'mirae': 'linear-gradient(135deg, #0052cc, #003d99)',
+    'parag parikh': 'linear-gradient(135deg, #6366f1, #4f46e5)',
+    'ppfas': 'linear-gradient(135deg, #6366f1, #4f46e5)',
+    'motilal': 'linear-gradient(135deg, #ff6b00, #cc5500)',
+    'tata': 'linear-gradient(135deg, #1e3a8a, #1e40af)',
+    'uti': 'linear-gradient(135deg, #ed1c24, #c8102e)',
+    'default': 'linear-gradient(135deg, #6366f1, #8b5cf6)'
+  };
+  
+  const matchedAMC = Object.keys(amcColors).find(key => amc.includes(key)) || 'default';
+  return amcColors[matchedAMC];
+}
 
 export default function MutualFundsClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { mutualFunds: mfs, accounts, mutualFundTrades: trades }, isValidating } = useFinanceData(initialData);
@@ -33,6 +89,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
   const [searchResults, setSearchResults] = useState<MFSchemeSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showAllCharges, setShowAllCharges] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
 
   const [formData, setFormData] = useState({
     fund_name: "",
@@ -79,6 +136,74 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
       isMountedRef.current = false;
     };
   }, []);
+
+  // Export MF holdings to CSV
+  function exportHoldings() {
+    const csvData = mfs.map(mf => {
+      const investment = Number(mf.units) * Number(mf.avg_nav);
+      const currentVal = Number(mf.units) * Number(mf.current_nav);
+      const pnl = currentVal - investment;
+      const pnlPercent = investment > 0 ? (pnl / investment) * 100 : 0;
+      return {
+        'Fund Name': mf.fund_name,
+        'AMC': mf.amc_name || '',
+        'Category': mf.category || '',
+        'Type': mf.investment_type || '',
+        'Units': Number(mf.units).toFixed(3),
+        'Avg NAV': Number(mf.avg_nav).toFixed(4),
+        'Current NAV': Number(mf.current_nav).toFixed(4),
+        'Invested': investment.toFixed(2),
+        'Current Value': currentVal.toFixed(2),
+        'P&L': pnl.toFixed(2),
+        'P&L %': pnlPercent.toFixed(2)
+      };
+    });
+    
+    const headers = Object.keys(csvData[0] || {});
+    const csv = [
+      headers.join(','),
+      ...csvData.map(row => headers.map(h => `"${row[h as keyof typeof row]}"`).join(','))
+    ].join('\n');
+    
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `mutual_funds_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Mutual funds exported successfully');
+  }
+
+  // Calculate MF analytics
+  const analytics = useMemo(() => {
+    const categoryMap: Record<string, number> = {};
+    const amcMap: Record<string, number> = {};
+    const topPerformers: Array<MF & { pnlPercent: number }> = [];
+    
+    mfs.forEach(mf => {
+      const investment = Number(mf.units) * Number(mf.avg_nav);
+      const currentVal = Number(mf.units) * Number(mf.current_nav);
+      const pnl = currentVal - investment;
+      const pnlPercent = investment > 0 ? (pnl / investment) * 100 : 0;
+      
+      const category = mf.category || 'Others';
+      const amc = mf.amc_name || 'Unknown';
+      
+      categoryMap[category] = (categoryMap[category] || 0) + currentVal;
+      amcMap[amc] = (amcMap[amc] || 0) + currentVal;
+      
+      topPerformers.push({ ...mf, pnlPercent });
+    });
+    
+    topPerformers.sort((a, b) => (b.pnlPercent || 0) - (a.pnlPercent || 0));
+    
+    return {
+      categories: Object.entries(categoryMap).map(([name, value]) => ({ name, value })),
+      amcs: Object.entries(amcMap).map(([name, value]) => ({ name, value })),
+      topPerformers: topPerformers.slice(0, 5)
+    };
+  }, [mfs]);
 
   const handleSearch = async (val: string) => {
     setSearchQuery(val);
@@ -202,6 +327,26 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
         </div>
         <div className="flex items-center gap-3 w-full md:w-auto">
             {/* Auto refreshing enabled */}
+            <button 
+              onClick={() => setShowAnalytics(true)} 
+              className="btn-secondary !h-11 !px-6 flex items-center gap-2"
+              title="View Analytics"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              Analytics
+            </button>
+            <button 
+              onClick={exportHoldings} 
+              className="btn-secondary !h-11 !px-6 flex items-center gap-2"
+              title="Export Holdings"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Export
+            </button>
             <button onClick={() => { setFormData(prev => ({ ...prev, trade_type: 'buy' })); setSearchQuery(""); setShowAddModal(true); }} className="btn-primary !h-11 !px-8">
                 Record Investment
             </button>
@@ -271,8 +416,14 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                       <tr key={mf.id} className="hover:bg-white/[0.01] group transition-colors">
                           <td className="px-6 py-5">
                               <div className="flex items-center gap-4">
-                                  <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center font-black text-[9px] text-[--accent-primary-light] shadow-inner">
-                                      {mf.amc_name?.substring(0, 3)}
+                                  <div 
+                                    className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shadow-lg"
+                                    style={{ 
+                                      background: getMFGradient(mf.amc_name || ''),
+                                      boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+                                    }}
+                                  >
+                                      {getMFLogo(mf.amc_name || '', mf.fund_name)}
                                   </div>
                                   <div className="flex flex-col">
                                       <div className="flex items-center gap-2">
@@ -287,6 +438,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                                                       });
                                                   }}
                                                   className="p-1 hover:bg-white/5 rounded text-[10px]"
+                                                  title="View charges"
                                               >
                                                   👁️
                                               </button>
@@ -472,6 +624,126 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                  {submitting ? (formData.trade_type === 'buy' ? "Deploying Capital..." : "Liquidating...") : (formData.trade_type === 'buy' ? "Authorize Investment" : "Authorize Redemption")}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Analytics Modal ── */}
+      {showAnalytics && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="glass-card-static w-full max-w-5xl max-h-[90vh] overflow-y-auto p-8">
+            <div className="flex justify-between items-center mb-8">
+              <div>
+                <h2 className="text-3xl font-black">Mutual Fund Analytics</h2>
+                <p className="text-[10px] text-[--text-muted] font-black uppercase tracking-[0.2em] mt-1">Portfolio Insights</p>
+              </div>
+              <button onClick={() => setShowAnalytics(false)} className="p-2 hover:bg-white/5 rounded-full transition-colors">
+                <svg className="w-8 h-8 text-[--text-muted]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                  <path d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Summary Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+              <div className="glass-card-static p-6">
+                <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em] mb-2">Total Funds</p>
+                <p className="text-2xl font-black">{mfs.length}</p>
+              </div>
+              <div className="glass-card-static p-6">
+                <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em] mb-2">Invested</p>
+                <p className="text-2xl font-black">₹{stats.totalInvested.toLocaleString()}</p>
+              </div>
+              <div className="glass-card-static p-6">
+                <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em] mb-2">Current Value</p>
+                <p className="text-2xl font-black">₹{stats.totalCurrentValue.toLocaleString()}</p>
+              </div>
+              <div className="glass-card-static p-6">
+                <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em] mb-2">Overall P&L</p>
+                <p className={`text-2xl font-black ${stats.totalPnL >= 0 ? 'text-[--success]' : 'text-[--danger]'}`}>
+                  {stats.totalPnL >= 0 ? '+' : ''}₹{Math.abs(stats.totalPnL).toLocaleString()}
+                </p>
+              </div>
+            </div>
+
+            {/* Category Distribution */}
+            {analytics.categories.length > 0 && (
+              <div className="glass-card-static p-6 mb-6">
+                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[--text-muted] mb-6">Category Distribution</h3>
+                <div className="space-y-4">
+                  {analytics.categories.map((cat, idx) => {
+                    const percentage = (cat.value / stats.totalCurrentValue) * 100;
+                    return (
+                      <div key={idx}>
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-[13px] font-bold text-[--text-primary]">{cat.name}</span>
+                          <span className="text-[12px] font-black text-[--text-muted]">{percentage.toFixed(1)}%</span>
+                        </div>
+                        <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full transition-all duration-500"
+                            style={{ width: `${percentage}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* AMC Distribution & Top Performers */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* AMC Distribution */}
+              <div className="glass-card-static p-6">
+                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[--text-muted] mb-4">AMC Distribution</h3>
+                <div className="space-y-3">
+                  {analytics.amcs.slice(0, 5).map((amc, idx) => {
+                    const percentage = (amc.value / stats.totalCurrentValue) * 100;
+                    return (
+                      <div key={idx} className="flex justify-between items-center py-2 border-b border-white/5 last:border-0">
+                        <span className="text-[13px] font-bold text-[--text-primary]">{amc.name}</span>
+                        <span className="text-[12px] font-black text-[--text-muted]">{percentage.toFixed(1)}%</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Top Performers */}
+              <div className="glass-card-static p-6">
+                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[--success] mb-4 flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                    <path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                  Top Performers
+                </h3>
+                <div className="space-y-3">
+                  {analytics.topPerformers.map((mf, idx) => {
+                    const investment = Number(mf.units) * Number(mf.avg_nav);
+                    const currentVal = Number(mf.units) * Number(mf.current_nav);
+                    const pnl = currentVal - investment;
+                    const pnlPercent = investment > 0 ? (pnl / investment) * 100 : 0;
+                    return (
+                      <div key={idx} className="flex justify-between items-center py-2 border-b border-white/5 last:border-0">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[13px] font-bold text-[--text-primary] truncate">{mf.fund_name}</p>
+                          <p className="text-[10px] text-[--text-muted]">{mf.category}</p>
+                        </div>
+                        <div className="text-right ml-4">
+                          <p className={`text-[13px] font-black ${pnlPercent >= 0 ? 'text-[--success]' : 'text-[--danger]'}`}>
+                            {pnlPercent >= 0 ? '+' : ''}{pnlPercent.toFixed(2)}%
+                          </p>
+                          <p className={`text-[10px] ${pnlPercent >= 0 ? 'text-[--success]' : 'text-[--danger]'}`}>
+                            {pnlPercent >= 0 ? '+' : ''}₹{pnl.toFixed(2)}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

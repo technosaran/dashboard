@@ -61,34 +61,71 @@ export default function DashboardDesktop({ stats, recentLogs, isLoading, isValid
               </h2>
             </div>
 
-            {/* SECTOR ALLOCATION */}
+            {/* PORTFOLIO ALLOCATION */}
             <div className="flex-1 max-w-md w-full">
               <div className="flex items-center gap-6 h-full">
-                {stats.pieData.length === 0 ? (
-                  <div className="w-full flex h-[200px] items-center justify-center italic text-[--text-muted] text-sm bg-white/5 rounded-3xl">No expenses recorded.</div>
+                {stats.totalBalance === 0 ? (
+                  <div className="w-full flex h-[200px] items-center justify-center italic text-[--text-muted] text-sm bg-white/5 rounded-3xl">No portfolio data available.</div>
                 ) : (
                   <>
                     <div className="w-1/2 space-y-2">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-[--text-muted] mb-3">Sector Allocation</p>
-                      {stats.pieData.slice(0, 4).map((item: any) => (
-                        <div key={item.name} className="flex justify-between items-center group">
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full" style={{ background: item.color }} />
-                            <span className="text-[10px] font-bold text-[--text-secondary] truncate max-w-[80px]">{item.name}</span>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-[--text-muted] mb-3">Portfolio Allocation</p>
+                      {(() => {
+                        const cashBalance = stats.totalBalance - stats.stockBalance - stats.mfBalance;
+                        const portfolioData = [
+                          { name: 'Cash', value: cashBalance, color: '#4ECDC4', percentage: ((cashBalance / stats.totalBalance) * 100).toFixed(1) },
+                          { name: 'Stocks', value: stats.stockBalance, color: '#FF6B6B', percentage: ((stats.stockBalance / stats.totalBalance) * 100).toFixed(1) },
+                          { name: 'Mutual Funds', value: stats.mfBalance, color: '#45B7D1', percentage: ((stats.mfBalance / stats.totalBalance) * 100).toFixed(1) }
+                        ].filter(item => item.value > 0);
+                        
+                        return portfolioData.map((item: any) => (
+                          <div key={item.name} className="flex justify-between items-center group">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full" style={{ background: item.color }} />
+                              <span className="text-[10px] font-bold text-[--text-secondary] truncate max-w-[80px]">{item.name}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[9px] font-bold text-[--text-muted]">{item.percentage}%</span>
+                              <span className="text-[10px] font-black tabular-nums">₹{item.value.toLocaleString()}</span>
+                            </div>
                           </div>
-                          <span className="text-[10px] font-black tabular-nums">₹{item.value.toLocaleString()}</span>
-                        </div>
-                      ))}
+                        ));
+                      })()}
                     </div>
                     <div className="h-[180px] w-1/2">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
-                          <Pie data={stats.pieData} cx="50%" cy="50%" innerRadius={55} outerRadius={80} paddingAngle={6} dataKey="value">
-                            {stats.pieData.map((entry: any, index: number) => (
+                          <Pie 
+                            data={(() => {
+                              const cashBalance = stats.totalBalance - stats.stockBalance - stats.mfBalance;
+                              return [
+                                { name: 'Cash', value: cashBalance, fill: '#4ECDC4' },
+                                { name: 'Stocks', value: stats.stockBalance, fill: '#FF6B6B' },
+                                { name: 'Mutual Funds', value: stats.mfBalance, fill: '#45B7D1' }
+                              ].filter(item => item.value > 0);
+                            })()} 
+                            cx="50%" 
+                            cy="50%" 
+                            innerRadius={55} 
+                            outerRadius={80} 
+                            paddingAngle={6} 
+                            dataKey="value"
+                          >
+                            {(() => {
+                              const cashBalance = stats.totalBalance - stats.stockBalance - stats.mfBalance;
+                              return [
+                                { name: 'Cash', value: cashBalance, fill: '#4ECDC4' },
+                                { name: 'Stocks', value: stats.stockBalance, fill: '#FF6B6B' },
+                                { name: 'Mutual Funds', value: stats.mfBalance, fill: '#45B7D1' }
+                              ].filter(item => item.value > 0);
+                            })().map((entry: any, index: number) => (
                               <Cell key={`cell-${index}`} fill={entry.fill} stroke="none" />
                             ))}
                           </Pie>
-                          <Tooltip contentStyle={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "12px" }} />
+                          <Tooltip 
+                            contentStyle={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "12px" }}
+                            formatter={(value: any) => `₹${Number(value || 0).toLocaleString()}`}
+                          />
                         </PieChart>
                       </ResponsiveContainer>
                     </div>
@@ -132,7 +169,7 @@ export default function DashboardDesktop({ stats, recentLogs, isLoading, isValid
             <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-[--text-muted]">Recent Activities</h3>
             <Link href="/dashboard/ledger" className="text-[10px] font-black uppercase tracking-widest text-[--accent-primary] underline">View Ledger</Link>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
             {recentLogs.length === 0 ? (
               <div className="py-12 text-center text-sm italic text-[--text-muted]">No recent activities found.</div>
             ) : (

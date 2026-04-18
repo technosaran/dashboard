@@ -89,7 +89,7 @@ export default function DashboardMobile({ stats, recentLogs, isLoading, isValida
                       <span className="text-[8px] font-black uppercase text-[--text-muted]">{format(new Date(log.created_at), "HH:mm")} • {log.account_name}</span>
                     </div>
                   </div>
-                  <span className={`text-[13px] font-black ${isOut ? "text-red-400" : "text-emerald-400"}`}>
+                  <span className={`text-[13px] font-black ${isOut ? "text-[--danger]" : "text-[--success]"}`}>
                     {log.amount ? `${isOut ? "-" : "+"}₹${log.amount.toLocaleString()}` : "—"}
                   </span>
                </div>
@@ -135,27 +135,21 @@ export default function DashboardMobile({ stats, recentLogs, isLoading, isValida
        </div>
 
        <div className="px-1">
-         <h3 className="text-xs font-black uppercase tracking-widest text-[--text-muted] mb-4">Portfolio Snapshot</h3>
-         <div className="grid grid-cols-1 gap-3">
-           <div className="glass-card-static p-4 flex items-center justify-between border-blue-500/20 bg-blue-500/5">
-             <div className="flex items-center gap-3">
-               <div className="w-9 h-9 rounded-lg bg-blue-500/20 flex items-center justify-center">📈</div>
-               <div className="flex flex-col">
-                 <span className="text-xs font-black uppercase tracking-wider text-white">Stocks</span>
-                 <span className="text-[9px] font-black uppercase tracking-widest text-[--text-muted]">{stats.stockCount} holding{stats.stockCount === 1 ? "" : "s"}</span>
-               </div>
+         <h3 className="text-xs font-black uppercase tracking-widest text-[--text-muted] mb-3">Portfolio Snapshot</h3>
+         <div className="grid grid-cols-2 gap-2">
+           <div className="glass-card-static p-2 flex items-center gap-2 border-blue-500/20 bg-blue-500/5">
+             <div className="w-6 h-6 rounded-lg bg-blue-500/20 flex items-center justify-center text-xs flex-shrink-0">📈</div>
+             <div className="flex flex-col min-w-0">
+               <span className="text-[9px] font-black uppercase tracking-wider text-white/70">Stocks</span>
+               <span className="text-[11px] font-black tabular-nums text-white truncate">₹{stats.stockBalance.toLocaleString()}</span>
              </div>
-             <span className="text-sm font-black tabular-nums text-white">₹{stats.stockBalance.toLocaleString()}</span>
            </div>
-           <div className="glass-card-static p-4 flex items-center justify-between border-purple-500/20 bg-purple-500/5">
-             <div className="flex items-center gap-3">
-               <div className="w-9 h-9 rounded-lg bg-purple-500/20 flex items-center justify-center">🏦</div>
-               <div className="flex flex-col">
-                 <span className="text-xs font-black uppercase tracking-wider text-white">Mutual Funds</span>
-                 <span className="text-[9px] font-black uppercase tracking-widest text-[--text-muted]">{stats.mfCount} fund{stats.mfCount === 1 ? "" : "s"}</span>
-               </div>
+           <div className="glass-card-static p-2 flex items-center gap-2 border-purple-500/20 bg-purple-500/5">
+             <div className="w-6 h-6 rounded-lg bg-purple-500/20 flex items-center justify-center text-xs flex-shrink-0">🏦</div>
+             <div className="flex flex-col min-w-0">
+               <span className="text-[9px] font-black uppercase tracking-wider text-white/70">Funds</span>
+               <span className="text-[11px] font-black tabular-nums text-white truncate">₹{stats.mfBalance.toLocaleString()}</span>
              </div>
-             <span className="text-sm font-black tabular-nums text-white">₹{stats.mfBalance.toLocaleString()}</span>
            </div>
          </div>
        </div>
