@@ -46,6 +46,8 @@ const TYPE_STYLES: Record<string, { gradient: string; badge: string; badgeBorder
   cash: { gradient: "linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)", badge: "rgba(245, 158, 11, 0.05)", badgeBorder: "rgba(245, 158, 11, 0.1)", color: "var(--warning)", iconBg: "rgba(245, 158, 11, 0.05)" },
 };
 const ACCOUNT_COLORS = ["#0ea5e9", "#38bdf8", "#0284c7", "#7dd3fc", "#bae6fd", "#e0f2fe", "#0369a1", "#075985"];
+const ACCOUNT_HISTORY_ACTIONS = new Set(["CREATE", "UPDATE", "DELETE", "TRANSFER_IN", "TRANSFER_OUT", "ADJUST_UP", "ADJUST_DOWN"]);
+const DEBIT_ACCOUNT_ACTIONS = new Set(["ADJUST_DOWN", "TRANSFER_OUT", "DELETE"]);
 
 function getCurrencySymbol(currency: string): string {
   const symbols: Record<string, string> = { INR: "₹", USD: "$" };
@@ -165,11 +167,11 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
   );
 
   const accountHistory = useMemo(() => {
-    const accountActionTypes = new Set(["CREATE", "UPDATE", "DELETE", "TRANSFER_IN", "TRANSFER_OUT", "ADJUST_UP", "ADJUST_DOWN"]);
     return (ledgerLogs as LedgerLog[])
-      .filter((log) => accountActionTypes.has(log.action_type))
+      .filter((log) => ACCOUNT_HISTORY_ACTIONS.has(log.action_type))
+      .filter((log) => !!log.created_at)
       .filter((log) => historyAccountId === "all" || log.account_id === historyAccountId)
-      .sort((a, b) => (new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()));
+      .sort((a, b) => new Date(b.created_at as string).getTime() - new Date(a.created_at as string).getTime());
   }, [ledgerLogs, historyAccountId]);
 
   function getActionLabel(type: string) {
@@ -393,7 +395,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
               const account = accounts.find((a) => a.id === log.account_id);
               const isDebit = log.new_balance !== null && log.previous_balance !== null
                 ? log.new_balance < log.previous_balance
-                : ["ADJUST_DOWN", "TRANSFER_OUT", "DELETE"].includes(log.action_type);
+                : DEBIT_ACCOUNT_ACTIONS.has(log.action_type);
 
               return (
                 <div key={log.id} className="px-6 py-5 hover:bg-white/[0.02] transition-colors">
