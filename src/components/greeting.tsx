@@ -6,8 +6,8 @@ export default function Greeting() {
   const { username, loading } = useUser();
   const hour = new Date().getHours();
   const greeting =
-    hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
-  const emoji = hour < 12 ? "☀️" : hour < 18 ? "🌤️" : "🌙";
+    hour < 5 ? "Good night" : hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : hour < 21 ? "Good evening" : "Good night";
+  const emoji = hour < 5 ? "🌙" : hour < 12 ? "☀️" : hour < 17 ? "🌤️" : hour < 21 ? "🌆" : "🌙";
 
   return (
     <div className="animate-fade-in-up">
