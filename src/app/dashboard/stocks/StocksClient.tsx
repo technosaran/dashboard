@@ -706,27 +706,27 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                       <td className="py-4 px-4">
                         <div className="flex flex-col">
                           <div className="flex items-center gap-2">
-                             <span className="text-[13px] font-medium text-[#eee]">{inv.symbol?.split('.')[0] || inv.name}</span>
+                             <span className="text-[13px] font-medium text-[--text-primary]">{inv.symbol?.split('.')[0] || inv.name}</span>
                           </div>
-                          <span className="text-[10px] text-[#666] font-normal">{inv.name}</span>
+                          <span className="text-[10px] text-[--text-muted] font-normal">{inv.name}</span>
                         </div>
-                        <div className="absolute left-0 top-0 bottom-0 flex items-center bg-[#1f1f1f] px-4 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto shadow-xl">
-                          <button onClick={() => startSell(inv)} className="h-7 px-3 bg-[#df514c1a] hover:bg-[#df514c] text-[#df514c] hover:text-white text-[11px] font-bold rounded transition-colors mr-2 uppercase tracking-tight">SELL</button>
-                          <button onClick={() => startEdit(inv)} className="h-7 px-3 bg-[#387ed11a] hover:bg-[#387ed1] text-[#387ed1] hover:text-white text-[11px] font-medium rounded transition-colors">EDIT</button>
+                        <div className="absolute left-0 top-0 bottom-0 flex items-center bg-[--bg-elevated] px-4 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto shadow-xl">
+                          <button onClick={() => startSell(inv)} className="h-7 px-3 bg-[--danger]/10 hover:bg-[--danger] text-[--danger] hover:text-white text-[11px] font-bold rounded transition-colors mr-2 uppercase tracking-tight">SELL</button>
+                          <button onClick={() => startEdit(inv)} className="h-7 px-3 bg-[--accent-primary]/10 hover:bg-[--accent-primary] text-[--accent-primary-light] hover:text-white text-[11px] font-medium rounded transition-colors">EDIT</button>
                         </div>
                       </td>
-                      <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[#9b9b9b]">{inv.quantity}</td>
-                      <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[#9b9b9b]">{formatNum(inv.buy_price)}</td>
-                      <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[#eee] font-normal">{formatNum(inv.current_price)}</td>
-                      <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[#eee]">{formatNum(currentVal)}</td>
-                      <td className={`py-4 px-4 text-right tabular-nums text-[13px] font-medium ${isProfit ? "text-[#4caf50]" : "text-[#df514c]"}`}>{formatNum(pnl)}</td>
+                      <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[--text-secondary]">{inv.quantity}</td>
+                      <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[--text-secondary]">{formatNum(inv.buy_price)}</td>
+                      <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[--text-primary] font-normal">{formatNum(inv.current_price)}</td>
+                      <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[--text-primary]">{formatNum(currentVal)}</td>
+                      <td className={`py-4 px-4 text-right tabular-nums text-[13px] font-medium ${isProfit ? "text-[--success]" : "text-[--danger]"}`}>{formatNum(pnl)}</td>
                       <td className="py-4 px-4 text-right tabular-nums">
                         <div className="flex flex-col items-end">
-                           <span className={`text-[12px] font-medium ${inv.day_change !== null && inv.day_change >= 0 ? "text-[#4caf50]" : "text-[#df514c]"}`}>{inv.day_change !== null ? (inv.day_change > 0 ? "+" : "") + formatNum(inv.day_change) : "—"}</span>
-                           <span className={`text-[10px] font-bold ${inv.day_change_percent !== null && inv.day_change_percent >= 0 ? "text-[#4caf50]" : "text-[#df514c]"}`}>{inv.day_change_percent !== null ? (inv.day_change_percent > 0 ? "+" : "") + Number(inv.day_change_percent).toFixed(2) + "%" : ""}</span>
+                           <span className={`text-[12px] font-medium ${inv.day_change !== null && inv.day_change >= 0 ? "text-[--success]" : "text-[--danger]"}`}>{inv.day_change !== null ? (inv.day_change > 0 ? "+" : "") + formatNum(inv.day_change) : "—"}</span>
+                           <span className={`text-[10px] font-bold ${inv.day_change_percent !== null && inv.day_change_percent >= 0 ? "text-[--success]" : "text-[--danger]"}`}>{inv.day_change_percent !== null ? (inv.day_change_percent > 0 ? "+" : "") + Number(inv.day_change_percent).toFixed(2) + "%" : ""}</span>
                         </div>
                       </td>
-                      <td className={`py-4 px-4 text-right tabular-nums text-[13px] font-medium ${isProfit ? "text-[#4caf50]" : "text-[#df514c]"}`}>{isProfit ? "+" : ""}{pnlPct.toFixed(2)}%</td>
+                      <td className={`py-4 px-4 text-right tabular-nums text-[13px] font-medium ${isProfit ? "text-[--success]" : "text-[--danger]"}`}>{isProfit ? "+" : ""}{pnlPct.toFixed(2)}%</td>
                     </tr>
                   );
                 })}
@@ -778,9 +778,9 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-32 border border-dashed border-[#252525] rounded-sm bg-[#1a1a1a]/50">
-            <p className="text-[#666] text-sm mb-4">You don&apos;t have any holdings yet.</p>
-            <button onClick={() => setShowForm(true)} className="text-[#387ed1] text-xs font-medium hover:underline">Add your first stock</button>
+          <div className="flex flex-col items-center justify-center py-32 border border-dashed border-[--border-default] rounded-sm bg-[--bg-surface]/50">
+            <p className="text-[--text-muted] text-sm mb-4">You don&apos;t have any holdings yet.</p>
+            <button onClick={() => setShowForm(true)} className="text-[--accent-primary-light] text-xs font-medium hover:underline">Add your first stock</button>
           </div>
         )
       ) : activeTab === "history" ? (
@@ -789,7 +789,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
           <div className="w-full mt-4 overflow-hidden">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-[#252525] text-[11px] text-[#9b9b9b] uppercase font-medium">
+                <tr className="border-b border-[--border-default] text-[11px] text-[--text-secondary] uppercase font-medium">
                   <th className="py-3 px-4">Date</th>
                   <th className="py-3 px-4">Type</th>
                   <th className="py-3 px-4">Instrument</th>
@@ -802,28 +802,28 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
               <tbody>
                 {trades.filter(t => 
                   t.symbol?.toLowerCase().includes(search.toLowerCase()) ||
-                  t.symbol?.toLowerCase().includes(search.toLowerCase())
+                  t.trade_type?.toLowerCase().includes(search.toLowerCase())
                 ).map((trade) => (
-                  <tr key={trade.id} className="border-b border-[#252525] hover:bg-[#1f1f1f] transition-all">
-                    <td className="py-4 px-4 text-[12px] text-[#666]">{trade.trade_date ? new Date(trade.trade_date).toLocaleDateString() : "N/A"}</td>
+                  <tr key={trade.id} className="border-b border-[--border-default] hover:bg-[--bg-elevated] transition-all">
+                    <td className="py-4 px-4 text-[12px] text-[--text-muted]">{trade.trade_date ? new Date(trade.trade_date).toLocaleDateString() : "N/A"}</td>
                     <td className="py-4 px-4">
-                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-sm uppercase tracking-tighter ${trade.trade_type === 'buy' ? 'bg-[#4caf501a] text-[#4caf50]' : 'bg-[#df514c1a] text-[#df514c]'}`}>
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-sm uppercase tracking-tighter ${trade.trade_type === 'buy' ? 'bg-[--success]/10 text-[--success]' : 'bg-[--danger]/10 text-[--danger]'}`}>
                         {trade.trade_type}
                       </span>
                     </td>
-                    <td className="py-4 px-4 text-[13px] font-medium text-[#eee]">{trade.symbol.split('.')[0]}</td>
-                    <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[#9b9b9b]">{trade.quantity}</td>
-                    <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[#9b9b9b]">{formatNum(trade.price)}</td>
-                    <td className="py-4 px-4 text-right tabular-nums text-[11px] text-[#df514c]">₹{formatNum(trade.charges ?? 0)}</td>
-                    <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[#eee] font-medium">₹{formatNum(trade.total_amount)}</td>
+                    <td className="py-4 px-4 text-[13px] font-medium text-[--text-primary]">{trade.symbol.split('.')[0]}</td>
+                    <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[--text-secondary]">{trade.quantity}</td>
+                    <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[--text-secondary]">{formatNum(trade.price)}</td>
+                    <td className="py-4 px-4 text-right tabular-nums text-[11px] text-[--danger]">₹{formatNum(trade.charges ?? 0)}</td>
+                    <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[--text-primary] font-medium">₹{formatNum(trade.total_amount)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-32 border border-dashed border-[#252525] rounded-sm bg-[#1a1a1a]/50">
-            <p className="text-[#666] text-sm">No transaction history found.</p>
+          <div className="flex flex-col items-center justify-center py-32 border border-dashed border-[--border-default] rounded-sm bg-[--bg-surface]/50">
+            <p className="text-[--text-muted] text-sm">No transaction history found.</p>
           </div>
         )
       ) : null}
@@ -845,19 +845,19 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="relative">
-                  <label className="absolute -top-2 left-2 px-1 bg-[#1a1a1a] text-[10px] text-[#666] uppercase tracking-widest font-bold z-10">Symbol</label>
+                  <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[10px] text-[--text-muted] uppercase tracking-widest font-bold z-10">Symbol</label>
                   <input
                     required value={formData.symbol}
                     onChange={e => setFormData({ ...formData, symbol: e.target.value.toUpperCase() })}
                     onFocus={() => { if (suggestions.length > 0) setShowSuggestions(true); }}
-                    className="w-full h-12 px-4 bg-transparent border border-[#252525] rounded-md text-[13px] text-[#eee] focus:border-[#387ed1] outline-none font-bold uppercase placeholder:text-[#333]"
+                    className="w-full h-12 px-4 bg-transparent border border-[--border-default] rounded-md text-[13px] text-[--text-primary] focus:border-[--accent-primary] outline-none font-bold uppercase placeholder:text-[--text-disabled]"
                     placeholder="SBIN"
                     autoComplete="off"
                   />
                   
                   {/* Suggestions Dropdown */}
                   {showSuggestions && (
-                    <div className="absolute z-[400] top-full left-0 right-0 mt-1 bg-[#1f1f1f] border border-[#252525] rounded-md shadow-2xl max-h-48 overflow-y-auto overflow-x-hidden animate-fade-in-up">
+                    <div className="absolute z-[400] top-full left-0 right-0 mt-1 bg-[--bg-elevated] border border-[--border-default] rounded-md shadow-2xl max-h-48 overflow-y-auto overflow-x-hidden animate-fade-in-up">
                       {suggestions.map((s, idx) => (
                         <button
                           key={idx}
@@ -867,31 +867,31 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                             setShowSuggestions(false);
                             handleFetchPrice(s.symbol);
                           }}
-                          className="w-full px-4 py-3 flex flex-col items-start border-b border-[#252525] last:border-0 hover:bg-[#387ed122] transition-colors text-left"
+                          className="w-full px-4 py-3 flex flex-col items-start border-b border-[--border-default] last:border-0 hover:bg-[--accent-primary]/10 transition-colors text-left"
                         >
                           <div className="flex justify-between w-full">
-                            <span className="text-[13px] font-bold text-[#eee]">{s.symbol}</span>
-                            <span className="text-[10px] text-[#387ed1] font-bold">{s.exchange}</span>
+                            <span className="text-[13px] font-bold text-[--text-primary]">{s.symbol}</span>
+                            <span className="text-[10px] text-[--accent-primary-light] font-bold">{s.exchange}</span>
                           </div>
-                          <span className="text-[11px] text-[#666] truncate w-full">{s.name}</span>
+                          <span className="text-[11px] text-[--text-muted] truncate w-full">{s.name}</span>
                         </button>
                       ))}
                     </div>
                   )}
                 </div>
 
-                <div className="flex gap-1 p-1 bg-[#151515] rounded-md border border-[#252525]">
+                <div className="flex gap-1 p-1 bg-[--bg-base] rounded-md border border-[--border-default]">
                    <button
                      type="button"
                      onClick={() => setFormData({ ...formData, exchange: "NSE" })}
-                     className={`flex-1 h-10 text-[10px] font-bold rounded-md transition-all ${formData.exchange === "NSE" ? "bg-[#387ed1] text-white shadow-lg" : "text-[#555] hover:text-[#eee]"}`}
+                     className={`flex-1 h-10 text-[10px] font-bold rounded-md transition-all ${formData.exchange === "NSE" ? "bg-[--accent-primary] text-white shadow-lg" : "text-[--text-muted] hover:text-[--text-primary]"}`}
                    >
                      NSE
                    </button>
                    <button
                      type="button"
                      onClick={() => setFormData({ ...formData, exchange: "BSE" })}
-                     className={`flex-1 h-10 text-[10px] font-bold rounded-md transition-all ${formData.exchange === "BSE" ? "bg-[#387ed1] text-white shadow-lg" : "text-[#555] hover:text-[#eee]"}`}
+                     className={`flex-1 h-10 text-[10px] font-bold rounded-md transition-all ${formData.exchange === "BSE" ? "bg-[--accent-primary] text-white shadow-lg" : "text-[--text-muted] hover:text-[--text-primary]"}`}
                    >
                      BSE
                    </button>
@@ -899,33 +899,33 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
               </div>
 
               <div className="relative">
-                <label className="absolute -top-2 left-2 px-1 bg-[#1a1a1a] text-[10px] text-[#666] uppercase tracking-widest font-bold z-10">Company Name</label>
+                <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[10px] text-[--text-muted] uppercase tracking-widest font-bold z-10">Company Name</label>
                 <input
                   required value={formData.name}
                   onChange={e => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full h-12 px-4 bg-transparent border border-[#252525] rounded-md text-[13px] text-[#eee] focus:border-[#387ed1] outline-none font-medium placeholder:text-[#333]"
+                  className="w-full h-12 px-4 bg-transparent border border-[--border-default] rounded-md text-[13px] text-[--text-primary] focus:border-[--accent-primary] outline-none font-medium placeholder:text-[--text-disabled]"
                   placeholder="State Bank of India"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="relative">
-                  <label className="absolute -top-2 left-2 px-1 bg-[#1a1a1a] text-[10px] text-[#666] uppercase tracking-widest font-bold z-10">Qty.</label>
+                  <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[10px] text-[--text-muted] uppercase tracking-widest font-bold z-10">Qty.</label>
                   <input
                     required type="number" step="any"
                     value={formData.quantity}
                     onChange={e => setFormData({ ...formData, quantity: e.target.value })}
-                    className="w-full h-12 px-4 bg-transparent border border-[#252525] rounded-md text-[13px] text-[#eee] tabular-nums outline-none focus:border-[#387ed1] font-bold"
+                    className="w-full h-12 px-4 bg-transparent border border-[--border-default] rounded-md text-[13px] text-[--text-primary] tabular-nums outline-none focus:border-[--accent-primary] font-bold"
                     placeholder="0"
                   />
                 </div>
                 <div className="relative">
-                  <label className="absolute -top-2 left-2 px-1 bg-[#1a1a1a] text-[10px] text-[#666] uppercase tracking-widest font-bold z-10">Avg. Price</label>
+                  <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[10px] text-[--text-muted] uppercase tracking-widest font-bold z-10">Avg. Price</label>
                   <input
                     required type="number" step="0.01"
                     value={formData.buy_price}
                     onChange={e => setFormData({ ...formData, buy_price: e.target.value })}
-                    className="w-full h-12 px-4 bg-transparent border border-[#252525] rounded-md text-[13px] text-[#eee] tabular-nums outline-none focus:border-[#387ed1] font-bold"
+                    className="w-full h-12 px-4 bg-transparent border border-[--border-default] rounded-md text-[13px] text-[--text-primary] tabular-nums outline-none focus:border-[--accent-primary] font-bold"
                     placeholder="0.00"
                   />
                 </div>
@@ -933,18 +933,18 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="relative">
-                  <label className="absolute -top-2 left-2 px-1 bg-[#1a1a1a] text-[10px] text-[#666] uppercase tracking-widest font-bold z-10">Market LTP</label>
+                  <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[10px] text-[--text-muted] uppercase tracking-widest font-bold z-10">Market LTP</label>
                   <div className="relative">
                     <input
                       required type="number" step="0.01"
                       value={formData.current_price}
                       onChange={e => setFormData({ ...formData, current_price: e.target.value })}
-                      className={`w-full h-12 px-4 bg-transparent border border-[#252525] rounded-md text-[13px] text-[#eee] tabular-nums outline-none focus:border-[#387ed1] font-bold transition-all ${fetchingPrice ? "opacity-50" : ""}`}
+                      className={`w-full h-12 px-4 bg-transparent border border-[--border-default] rounded-md text-[13px] text-[--text-primary] tabular-nums outline-none focus:border-[--accent-primary] font-bold transition-all ${fetchingPrice ? "opacity-50" : ""}`}
                       placeholder="0.00"
                     />
                     {fetchingPrice && (
                       <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        <div className="w-4 h-4 border-2 border-[#387ed1] border-t-transparent rounded-full animate-spin" />
+                        <div className="w-4 h-4 border-2 border-[--accent-primary] border-t-transparent rounded-full animate-spin" />
                       </div>
                     )}
                   </div>
@@ -956,23 +956,23 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                 </div>
 
                 <div className="relative">
-                  <label className="absolute -top-2 left-2 px-1 bg-[#1a1a1a] text-[10px] text-[#666] uppercase tracking-widest font-bold z-10">
+                  <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[10px] text-[--text-muted] uppercase tracking-widest font-bold z-10">
                     {formData.trade_type === 'buy' ? 'Deduct From' : 'Deposit To'}
                   </label>
                   <select
                     value={formData.deduct_from_account || ""}
                     onChange={e => setFormData({ ...formData, deduct_from_account: e.target.value })}
-                    className="w-full h-12 px-4 pr-10 bg-transparent border border-[#252525] rounded-md text-[12px] text-[#eee] outline-none focus:border-[#387ed1] appearance-none font-bold"
+                    className="w-full h-12 px-4 pr-10 bg-transparent border border-[--border-default] rounded-md text-[12px] text-[--text-primary] outline-none focus:border-[--accent-primary] appearance-none font-bold"
                     disabled={!!editingId}
                   >
-                    <option value="" className="bg-[#1a1a1a]">N/A (Historical)</option>
+                    <option value="" className="bg-[--bg-surface]">N/A (Historical)</option>
                     {accounts.map(acc => (
-                      <option key={acc.id} value={acc.id} className="bg-[#1a1a1a]">
+                      <option key={acc.id} value={acc.id} className="bg-[--bg-surface]">
                         {acc.name} (₹{formatNum(acc.balance)})
                       </option>
                     ))}
                   </select>
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#666]">
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[--text-muted]">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                       <path d="M19 9l-7 7-7-7" />
                     </svg>
@@ -982,12 +982,12 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
 
               {/* Zerodha Charges Breakdown (Condensed with Toggle) */}
               {parseFloat(formData.quantity) > 0 && parseFloat(formData.buy_price) > 0 && (
-                <div className="bg-[#151515] rounded-xl p-4 border border-[#252525] animate-fade-in">
+                <div className="bg-[--bg-base] rounded-xl p-4 border border-[--border-default] animate-fade-in">
                    <div className="flex justify-between items-center mb-0">
                      <div className="flex flex-col">
-                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[#555]">Levies & Taxes</span>
+                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Levies & Taxes</span>
                         <div className="flex items-center gap-2 mt-1">
-                           <span className="text-[13px] font-black text-[#eee]">₹{formatNum(zerodhaCharges.totalCharges)}</span>
+                           <span className="text-[13px] font-black text-[--text-primary]">₹{formatNum(zerodhaCharges.totalCharges)}</span>
                            <button 
                              type="button"
                              onClick={() => setShowChargesInForm(!showChargesInForm)}
@@ -1004,42 +1004,42 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                            </button>
                         </div>
                      </div>
-                     <span className="text-[9px] text-[#387ed1] border border-[#387ed1]/20 px-2 py-0.5 rounded font-black uppercase">Zerodha Delivery</span>
+                     <span className="text-[9px] text-[--accent-primary-light] border border-[--accent-primary]/20 px-2 py-0.5 rounded font-black uppercase">Zerodha Delivery</span>
                    </div>
                    
                    {showChargesInForm && (
                      <div className="grid grid-cols-2 gap-x-8 gap-y-2 mt-4 pt-4 border-t border-white/5 animate-fade-in">
                        <div className="flex justify-between text-[11px]">
-                         <span className="text-[#666]">STT (0.1%)</span>
-                         <span className="text-[#eee]">₹{formatNum(zerodhaCharges.stt)}</span>
+                         <span className="text-[--text-muted]">STT (0.1%)</span>
+                         <span className="text-[--text-primary]">₹{formatNum(zerodhaCharges.stt)}</span>
                        </div>
                        <div className="flex justify-between text-[11px]">
-                         <span className="text-[#666]">Txn Fee</span>
-                         <span className="text-[#eee]">₹{formatNum(zerodhaCharges.txnCharge)}</span>
+                         <span className="text-[--text-muted]">Txn Fee</span>
+                         <span className="text-[--text-primary]">₹{formatNum(zerodhaCharges.txnCharge)}</span>
                        </div>
                        <div className="flex justify-between text-[11px]">
-                         <span className="text-[#666]">GST (18%)</span>
-                         <span className="text-[#eee]">₹{formatNum(zerodhaCharges.gst)}</span>
+                         <span className="text-[--text-muted]">GST (18%)</span>
+                         <span className="text-[--text-primary]">₹{formatNum(zerodhaCharges.gst)}</span>
                        </div>
                        <div className="flex justify-between text-[11px]">
-                         <span className="text-[#666]">Stamp Duty</span>
-                         <span className="text-[#eee]">₹{formatNum(zerodhaCharges.stampDuty)}</span>
+                         <span className="text-[--text-muted]">Stamp Duty</span>
+                         <span className="text-[--text-primary]">₹{formatNum(zerodhaCharges.stampDuty)}</span>
                        </div>
                        <div className="flex justify-between text-[11px]">
-                         <span className="text-[#666]">SEBI Fee</span>
-                         <span className="text-[#eee]">₹{formatNum(zerodhaCharges.sebiCharge)}</span>
+                         <span className="text-[--text-muted]">SEBI Fee</span>
+                         <span className="text-[--text-primary]">₹{formatNum(zerodhaCharges.sebiCharge)}</span>
                        </div>
                        {zerodhaCharges.dpCharges > 0 && (
                         <div className="flex justify-between text-[11px]">
-                          <span className="text-[#666]">DP Charges</span>
-                          <span className="text-[#eee]">₹{formatNum(zerodhaCharges.dpCharges)}</span>
+                          <span className="text-[--text-muted]">DP Charges</span>
+                          <span className="text-[--text-primary]">₹{formatNum(zerodhaCharges.dpCharges)}</span>
                         </div>
                        )}
                      </div>
                    )}
                    
                    <div className="mt-4 pt-3 border-t border-white/5 flex justify-between items-center">
-                      <span className="text-[10px] font-black text-[#666] uppercase tracking-widest">Net Outflow</span>
+                      <span className="text-[10px] font-black text-[--text-muted] uppercase tracking-widest">Net Outflow</span>
                       <span className={`text-[15px] font-black tabular-nums ${formData.trade_type === 'buy' ? 'text-rose-400' : 'text-emerald-400'}`}>
                         ₹{formatNum(zerodhaCharges.netAmount)}
                       </span>
@@ -1060,19 +1060,19 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
 
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-           <div className="w-full max-w-xs bg-[#1a1a1a] border border-[#252525] rounded-sm p-6 text-center shadow-2xl">
-              <h3 className="text-base font-medium text-[#eee] mb-2">Delete holding?</h3>
-              <p className="text-[12px] text-[#666] mb-6">This action cannot be undone.</p>
+           <div className="w-full max-w-xs bg-[--bg-surface] border border-[--border-default] rounded-sm p-6 text-center shadow-2xl">
+              <h3 className="text-base font-medium text-[--text-primary] mb-2">Delete holding?</h3>
+              <p className="text-[12px] text-[--text-muted] mb-6">This action cannot be undone.</p>
               <div className="flex gap-3">
                 <button 
                   onClick={() => { setShowDeleteConfirm(false); setDeletingId(null); }}
-                  className="flex-1 h-10 border border-[#252525] text-[#eee] text-xs font-medium rounded-sm hover:bg-[#252525] transition-colors"
+                  className="flex-1 h-10 border border-[--border-default] text-[--text-primary] text-xs font-medium rounded-sm hover:bg-[--bg-elevated] transition-colors"
                 >
                   CANCEL
                 </button>
                 <button 
                   onClick={confirmDelete}
-                  className="flex-1 h-10 bg-[#df514c] text-white text-xs font-medium rounded-sm hover:bg-[#c0433f] transition-colors"
+                  className="flex-1 h-10 bg-[--danger] text-white text-xs font-medium rounded-sm hover:bg-[--danger-light] transition-colors"
                 >
                   DELETE
                 </button>

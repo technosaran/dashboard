@@ -17,7 +17,7 @@ type TrendMapEntry = {
 };
 
 export default function DashboardClient({ initialData }: { initialData?: FinanceData }) {
-  const { data: { accounts, transactions, ledgerLogs: recentLogs, investments, mutualFunds, incomes, expenses }, isLoading, isValidating } = useFinanceData(initialData);
+  const { data: { accounts, transactions, ledgerLogs: recentLogs, investments, mutualFunds, incomes, expenses, bonds }, isLoading, isValidating } = useFinanceData(initialData);
   const isMobile = useMediaQuery('(max-width: 767px)');
   const [showOnboarding, setShowOnboarding] = useState(false);
 
@@ -37,9 +37,10 @@ export default function DashboardClient({ initialData }: { initialData?: Finance
     const cashBalance = accounts.reduce((sum, acc) => sum + Number(acc.balance), 0);
     const stockBalance = investments.reduce((sum, inv) => sum + (Number(inv.quantity) * Number(inv.current_price || 0)), 0);
     const mfBalance = mutualFunds.reduce((sum, mf) => sum + (Number(mf.units) * Number(mf.current_nav || 0)), 0);
+    const bondBalance = (bonds || []).filter(b => b.status === 'Active').reduce((sum, b) => sum + Number(b.current_value || 0), 0);
     const stockCount = investments.filter((inv) => Number(inv.quantity) > 0).length;
     const mfCount = mutualFunds.filter((mf) => Number(mf.units) > 0).length;
-    const totalBalance = cashBalance + stockBalance + mfBalance;
+    const totalBalance = cashBalance + stockBalance + mfBalance + bondBalance;
     
     const now = new Date();
     const currentMonthTxns = transactions.filter((transaction) =>
@@ -99,7 +100,7 @@ export default function DashboardClient({ initialData }: { initialData?: Finance
     }).sort((a,b) => b.value - a.value);
 
     return { totalBalance, monthlySpend, monthlyIncome, expenseTrend, pieData, stockCount, mfCount, stockBalance, mfBalance, trendData: Object.values(trendMap) };
-  }, [accounts, transactions, investments, mutualFunds]);
+  }, [accounts, transactions, investments, mutualFunds, bonds]);
 
   // Conditionally render only one view based on screen size
   if (isMobile) {

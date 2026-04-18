@@ -109,6 +109,15 @@ const nav = [
       </svg>
     ),
   },
+  {
+    label: "Transfers",
+    href: "/dashboard/transfers",
+    icon: (
+      <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+        <path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+      </svg>
+    ),
+  },
 ];
 
 export default function Sidebar() {
@@ -129,7 +138,7 @@ export default function Sidebar() {
     window.location.href = "/login";
   }
 
-  const NavItem = ({ label, href, icon }: (typeof nav)[0] & { index: number }) => {
+  const NavItem = ({ label, href, icon }: (typeof nav)[0]) => {
     const active = pathname === href;
     return (
       <Link
@@ -159,7 +168,7 @@ export default function Sidebar() {
 
   const mobileNavLeft = nav.slice(0, 2); // Dashboard, Accounts
   const mobileNavRight = [nav[9]]; // Ledger
-  const moreNav = nav.slice(2, 9).concat(nav[10]); // Income, Expenses, Stocks, Mutual Funds, Bonds, Goals, Family + Settings
+  const moreNav = nav.slice(2, 9).concat(nav.slice(10)); // Income, Expenses, Stocks, Mutual Funds, Bonds, Goals, Family + Settings, Transfers
 
   return (
     <>
@@ -172,7 +181,7 @@ export default function Sidebar() {
               <span className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: action.color }}>{action.label}</span>
             </Link>
           ))}
-          <button onClick={() => setIsQuickActionOpen(false)} className="col-span-2 glass-card-static py-4 flex items-center justify-center bg-white/40 border-white/60 mt-2 backdrop-blur-md">
+          <button onClick={() => setIsQuickActionOpen(false)} className="col-span-2 glass-card-static py-4 flex items-center justify-center bg-white/5 border-white/10 mt-2 backdrop-blur-md">
             <span className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Cancel</span>
           </button>
         </div>
@@ -184,7 +193,7 @@ export default function Sidebar() {
         <div className="divider-glow mx-6" />
         <nav className="flex-1 px-4 pt-2 space-y-0.5 overflow-visible no-scrollbar">
           <p className="px-4 pb-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-[--text-muted] opacity-60">Navigation</p>
-          {nav.map((item, index) => (<NavItem key={item.href} {...item} index={index} />))}
+          {nav.map((item) => (<NavItem key={item.href} {...item} />))}
         </nav>
         <div className="divider-glow mx-4" />
         <div className="px-3 py-2 mt-auto pb-6">
@@ -218,10 +227,10 @@ export default function Sidebar() {
       <nav 
         className="md:hidden fixed bottom-2 left-4 right-4 z-[90] flex items-center justify-between px-1 h-[72px] border border-[--accent-primary]/10 rounded-[32px] transition-transform duration-300"
         style={{
-          background: "rgba(255, 255, 255, 0.7)",
+          background: "rgba(21, 25, 34, 0.85)",
           backdropFilter: "blur(20px)",
           WebkitBackdropFilter: "blur(20px)",
-          boxShadow: "0 10px 40px rgba(13, 165, 233, 0.15)",
+          boxShadow: "0 10px 40px rgba(0, 0, 0, 0.4)",
         }}
       >
         {/* Left Side */}

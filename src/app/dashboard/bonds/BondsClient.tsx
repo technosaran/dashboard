@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { toast } from "react-hot-toast";
 import { createBond, deleteBond, recordInterestPayment } from "./actions";
-import { useFinanceData } from "@/hooks/use-finance-data";
+import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { format, differenceInDays, parseISO } from "date-fns";
-import { createClient } from "@/lib/supabase-browser";
 
 type Bond = {
   id: string;
@@ -35,40 +34,13 @@ type Bond = {
 const BOND_TYPES = ["Government", "Corporate", "Tax-Free", "Infrastructure", "PSU"];
 const INTEREST_FREQUENCIES = ["Monthly", "Quarterly", "Semi-Annual", "Annual"];
 
-export default function BondsClient() {
-  const supabase = createClient();
-  const { data: { accounts }, isValidating } = useFinanceData();
-  const [bonds, setBonds] = useState<Bond[]>([]);
+export default function BondsClient({ initialData }: { initialData?: FinanceData }) {
+  const { data: { accounts, bonds: bondsData, bondTransactions }, isValidating } = useFinanceData(initialData);
+  const bonds = useMemo(() => (bondsData || []).filter(b => b.status === 'Active') as Bond[], [bondsData]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [activeTab, setActiveTab] = useState<"holdings" | "history">("holdings");
   const [submitting, setSubmitting] = useState(false);
   const [search, setSearch] = useState("");
-
-  // Fetch bonds
-  useEffect(() => {
-    async function fetchBonds() {
-      const { data } = await supabase
-        .from("bonds")
-        .select("*")
-        .eq("status", "Active")
-        .order("maturity_date", { ascending: true });
-      
-      if (data) setBonds(data as Bond[]);
-    }
-    fetchBonds();
-
-    // Realtime subscription
-    const channel = supabase
-      .channel("bonds-changes")
-      .on("postgres_changes", { event: "*", schema: "public", table: "bonds" }, () => {
-        fetchBonds();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
 
   const [formData, setFormData] = useState({
     bond_name: "",
@@ -338,6 +310,63 @@ export default function BondsClient() {
                               {daysToMaturity} days
                             </span>
                           </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Transactions History View */}
+      {activeTab === "history" && (
+        <div className="mx-4">
+          {(bondTransactions || []).length === 0 ? (
+            <div className="glass-card-static p-24 text-center">
+              <h3 className="text-xl font-black text-[--text-primary] mb-2">No Transactions Yet</h3>
+              <p className="text-sm text-[--text-muted]">Bond transactions will appear here after your first purchase or interest payment.</p>
+            </div>
+          ) : (
+            <div className="glass-card-static overflow-hidden">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-white/5 bg-white/[0.02]">
+                    <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Date</th>
+                    <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Type</th>
+                    <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em] text-right">Quantity</th>
+                    <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em] text-right">Price</th>
+                    <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em] text-right">Amount</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/[0.03]">
+                  {(bondTransactions || []).map((txn) => {
+                    const typeColors: Record<string, string> = {
+                      BUY: 'text-[--accent-primary]',
+                      SELL: 'text-[--danger]',
+                      INTEREST: 'text-[--success]',
+                      MATURITY: 'text-[--warning]',
+                    };
+                    return (
+                      <tr key={txn.id} className="hover:bg-white/[0.015] transition-colors">
+                        <td className="px-6 py-4 text-[13px] font-medium text-[--text-primary]">
+                          {txn.transaction_date ? format(parseISO(txn.transaction_date), "MMM d, yyyy") : "—"}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-full bg-white/5 ${typeColors[txn.transaction_type] || 'text-[--text-muted]'}`}>
+                            {txn.transaction_type}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right text-[13px] font-bold text-[--text-primary] tabular-nums">
+                          {txn.quantity || "—"}
+                        </td>
+                        <td className="px-6 py-4 text-right text-[13px] font-medium text-[--text-secondary] tabular-nums">
+                          {txn.price_per_bond ? `₹${Number(txn.price_per_bond).toLocaleString()}` : "—"}
+                        </td>
+                        <td className="px-6 py-4 text-right text-[14px] font-black text-[--text-primary] tabular-nums">
+                          ₹{Number(txn.amount).toLocaleString()}
                         </td>
                       </tr>
                     );

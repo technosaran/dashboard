@@ -20,6 +20,8 @@ type FinanceData = {
   expenses: Tables<"expenses">[];
   stockTrades: Tables<"stock_trades">[];
   mutualFundTrades: Tables<"mutual_fund_trades">[];
+  bonds: Tables<"bonds">[];
+  bondTransactions: Tables<"bond_transactions">[];
 };
 
 export type { FinanceData };
@@ -60,6 +62,8 @@ export function useFinanceData(initialData?: FinanceData) {
       expenses: [],
       stockTrades: [],
       mutualFundTrades: [],
+      bonds: [],
+      bondTransactions: [],
     }
   });
 
@@ -176,6 +180,20 @@ export function useFinanceData(initialData?: FinanceData) {
         schema: "public", 
         table: "transfers" 
       }, () => handleChange("transfers"))
+      
+      // Bonds
+      .on("postgres_changes", { 
+        event: "*", 
+        schema: "public", 
+        table: "bonds" 
+      }, () => handleChange("bonds"))
+      
+      // Bond transactions
+      .on("postgres_changes", { 
+        event: "*", 
+        schema: "public", 
+        table: "bond_transactions" 
+      }, () => handleChange("bond_transactions"))
       
       .subscribe((status) => {
         if (status === "SUBSCRIBED") {

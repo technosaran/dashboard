@@ -3,7 +3,7 @@ import type { Tables } from "@/lib/database.types";
 import DashboardClient from "./DashboardClient";
 import type { FinanceData } from "@/hooks/use-finance-data";
 import { redirect } from "next/navigation";
-import { Metadata } from "next";
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Dashboard",
