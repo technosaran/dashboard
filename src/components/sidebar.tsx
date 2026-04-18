@@ -109,15 +109,6 @@ const nav = [
       </svg>
     ),
   },
-  {
-    label: "Transfers",
-    href: "/dashboard/transfers",
-    icon: (
-      <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-        <path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-      </svg>
-    ),
-  },
 ];
 
 export default function Sidebar() {
@@ -161,14 +152,14 @@ export default function Sidebar() {
   const quickActions = [
     { label: "Expense", href: "/dashboard/expenses?action=new", icon: "🔴", color: "var(--danger)" },
     { label: "Income", href: "/dashboard/income?action=new", icon: "🟢", color: "var(--success)" },
-    { label: "Transfer", href: "/dashboard/transfers?action=new", icon: "🔄", color: "var(--accent-primary-light)" },
+    { label: "Transfer", href: "/dashboard/accounts?action=transfer", icon: "🔄", color: "var(--accent-primary-light)" },
     { label: "Trade", href: "/dashboard/stocks?action=new", icon: "📈", color: "#3b82f6" },
     { label: "Funds", href: "/dashboard/mutual-funds?action=new", icon: "🏦", color: "#a855f7" },
   ];
 
   const mobileNavLeft = nav.slice(0, 2); // Dashboard, Accounts
   const mobileNavRight = [nav[9]]; // Ledger
-  const moreNav = nav.slice(2, 9).concat(nav.slice(10)); // Income, Expenses, Stocks, Mutual Funds, Bonds, Goals, Family + Settings, Transfers
+  const moreNav = nav.slice(2, 9).concat(nav.slice(10)); // Income, Expenses, Stocks, Mutual Funds, Bonds, Goals, Family + Settings
 
   return (
     <>
