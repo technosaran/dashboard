@@ -94,12 +94,13 @@ export default function DashboardClient({ initialData }: { initialData?: Finance
     currentMonthTxns.filter(t => t.type === 'expense').forEach(t => {
       catMap[t.category || "Others"] = (catMap[t.category || "Others"] || 0) + Number(t.amount);
     });
+    const totalExpenseCurrentMonth = Object.values(catMap).reduce((s, v) => s + v, 0);
     const pieData = Object.entries(catMap).map(([name, value], index) => {
       const resolvedColor = CHART_COLOURS[index % CHART_COLOURS.length];
-      return { name, value, fill: resolvedColor, color: resolvedColor, percentage: "0" };
+      return { name, value, fill: resolvedColor, color: resolvedColor, percentage: totalExpenseCurrentMonth > 0 ? ((value / totalExpenseCurrentMonth) * 100).toFixed(1) : "0" };
     }).sort((a,b) => b.value - a.value);
 
-    return { totalBalance, monthlySpend, monthlyIncome, expenseTrend, pieData, stockCount, mfCount, stockBalance, mfBalance, trendData: Object.values(trendMap) };
+    return { totalBalance, monthlySpend, monthlyIncome, expenseTrend, pieData, stockCount, mfCount, stockBalance, mfBalance, bondBalance, trendData: Object.values(trendMap) };
   }, [accounts, transactions, investments, mutualFunds, bonds]);
 
   // Conditionally render only one view based on screen size

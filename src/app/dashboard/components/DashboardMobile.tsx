@@ -4,16 +4,39 @@ import Link from "next/link";
 import { format } from "date-fns";
 import type { FinanceData } from "@/hooks/use-finance-data";
 
+type TrendEntry = {
+  date: string;
+  amount: number;
+  category: string;
+  type: string;
+};
+
+type PieEntry = {
+  name: string;
+  value: number;
+  fill: string;
+  color: string;
+  percentage: string;
+};
+
+type TrendDataEntry = {
+  name: string;
+  income: number;
+  expense: number;
+};
+
 type DashboardStats = {
   totalBalance: number;
   monthlySpend: number;
   monthlyIncome: number;
-  expenseTrend: any[];
-  pieData: any[];
+  expenseTrend: TrendEntry[];
+  pieData: PieEntry[];
   stockCount: number;
   mfCount: number;
   stockBalance: number;
   mfBalance: number;
+  bondBalance: number;
+  trendData: TrendDataEntry[];
 };
 
 type Props = {

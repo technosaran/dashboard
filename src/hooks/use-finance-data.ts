@@ -43,6 +43,22 @@ export function useFinanceData(initialData?: FinanceData) {
   const updateQueueRef = useRef<Set<string>>(new Set());
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  const fallbackData: FinanceData = initialData || {
+    accounts: [],
+    transactions: [],
+    ledgerLogs: [],
+    investments: [],
+    mutualFunds: [],
+    goals: [],
+    recipients: [],
+    incomes: [],
+    expenses: [],
+    stockTrades: [],
+    mutualFundTrades: [],
+    bonds: [],
+    bondTransactions: [],
+  };
+
   const swr = useSWR<FinanceData>(FINANCE_DATA_KEY, fetchFinanceData, {
     revalidateOnFocus: true,
     revalidateOnReconnect: true,
@@ -50,21 +66,7 @@ export function useFinanceData(initialData?: FinanceData) {
     errorRetryInterval: 3000,
     errorRetryCount: 3,
     refreshInterval: 0, // Disable polling, rely on realtime
-    fallbackData: initialData || {
-      accounts: [],
-      transactions: [],
-      ledgerLogs: [],
-      investments: [],
-      mutualFunds: [],
-      goals: [],
-      recipients: [],
-      incomes: [],
-      expenses: [],
-      stockTrades: [],
-      mutualFundTrades: [],
-      bonds: [],
-      bondTransactions: [],
-    }
+    fallbackData,
   });
 
   // Debounced update to batch rapid changes together
@@ -238,6 +240,6 @@ export function useFinanceData(initialData?: FinanceData) {
 
   return {
     ...swr,
-    data: swr.data!, 
+    data: swr.data ?? fallbackData,
   };
 }

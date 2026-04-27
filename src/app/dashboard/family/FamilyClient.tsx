@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, startTransition } from "react";
+import { useCallback, useEffect, useMemo, useState, startTransition } from "react";
 import { createClient } from "@/lib/supabase-browser";
 import { createRecipient, deleteRecipient, sendMoneyToFamily } from "./actions";
 import { getAccounts } from "../accounts/actions";
@@ -62,7 +62,7 @@ export default function FamilyClient({
   initialAccounts,
   initialHistory,
 }: FamilyClientProps) {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const [recipients, setRecipients] = useState<Recipient[]>(initialRecipients);
   const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
   const [loading, setLoading] = useState(false);
@@ -110,11 +110,7 @@ export default function FamilyClient({
     if (accRes.data) setAccounts(accRes.data as Account[]);
     if (historyRes.data) setRecentSends(historyRes.data as SendHistory[]);
     setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    const channel = supabase
-      .channel("family-realtime-v1")
+  }, [supabase]);
       .on("postgres_changes", { event: "*", schema: "public", table: "recipients" }, () => startTransition(fetchData))
       .on("postgres_changes", { event: "*", schema: "public", table: "accounts" }, () => startTransition(fetchData))
       .on("postgres_changes", { event: "*", schema: "public", table: "ledger_logs" }, () => startTransition(fetchData))

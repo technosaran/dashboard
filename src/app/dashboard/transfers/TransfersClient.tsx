@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState, startTransition } from "react";
+import { useCallback, useEffect, useMemo, useState, startTransition } from "react";
 import { format } from "date-fns";
 import { toast } from "react-hot-toast";
 import { createClient } from "@/lib/supabase-browser";
@@ -17,7 +17,7 @@ interface TransfersClientProps {
 }
 
 export default function TransfersClient({ initialAccounts, initialTransfers }: TransfersClientProps) {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
   const [transfers, setTransfers] = useState<Transfer[]>(initialTransfers);
   const searchParams = useSearchParams();
@@ -43,14 +43,14 @@ export default function TransfersClient({ initialAccounts, initialTransfers }: T
     if (!user) return;
     const { data } = await supabase.from("accounts").select("*").eq("user_id", user.id).order("name");
     setAccounts(data || []);
-  }, []);
+  }, [supabase]);
 
   const loadTransfers = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     const { data } = await supabase.from("transfers").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(50);
     setTransfers(data || []);
-  }, []);
+  }, [supabase]);
 
   const loadData = useCallback(async () => {
     await Promise.all([loadAccounts(), loadTransfers()]);
@@ -334,7 +334,7 @@ export default function TransfersClient({ initialAccounts, initialTransfers }: T
                           <p className="text-xs mt-0.5 text-[--text-secondary] line-clamp-1">{transfer.note}</p>
                         )}
                         <p className="text-[10px] mt-0.5 text-[--text-muted] font-medium">
-                          {format(new Date(transfer.created_at), "MMM d, h:mm a")}
+                          {transfer.created_at ? format(new Date(transfer.created_at), "MMM d, h:mm a") : "—"}
                         </p>
                       </div>
                     </div>

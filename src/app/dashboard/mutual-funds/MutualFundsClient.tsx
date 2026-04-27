@@ -4,7 +4,6 @@
 import { useState, useMemo, useCallback, useEffect, useRef, startTransition } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
-import { createClient } from "@/lib/supabase-browser";
 import type { Tables } from "@/lib/database.types";
 import { recordMFInvestment, refreshNAV, searchMFSchemes, getLiveNAV } from "./actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
@@ -113,8 +112,6 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
     const amount = parseFloat(formData.units || "0") * parseFloat(formData.nav || "0");
     return formData.trade_type === 'buy' ? amount + stampDuty : amount - stampDuty;
   }, [formData.units, formData.nav, stampDuty, formData.trade_type]);
-
-  const supabase = createClient();
 
 
 

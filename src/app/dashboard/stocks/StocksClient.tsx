@@ -4,7 +4,6 @@ import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, startTransition } from "react";
 import type { Tables } from "@/lib/database.types";
 import { toast } from "react-hot-toast";
-import { createClient } from "@/lib/supabase-browser";
 import { 
   createInvestment, 
   updateInvestment, 
@@ -36,7 +35,6 @@ function formatNum(val: number, decimals = 2): string {
 }
 
 export default function StocksClient({ initialData }: { initialData?: FinanceData }) {
-  const supabase = createClient();
   const { data: { investments, accounts, stockTrades: trades }, isValidating, isLoading } = useFinanceData(initialData);
   const stocks = useMemo(() => investments.filter(i => i.type === "stock") as Stock[], [investments]);
   const searchParams = useSearchParams();

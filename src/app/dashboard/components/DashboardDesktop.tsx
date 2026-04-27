@@ -39,6 +39,7 @@ type DashboardStats = {
   mfCount: number;
   stockBalance: number;
   mfBalance: number;
+  bondBalance: number;
   trendData: TrendDataEntry[];
 };
 
@@ -54,7 +55,7 @@ export default function DashboardDesktop({ stats, recentLogs, isLoading, isValid
   const portfolioData = useMemo<PieEntry[]>(() => {
     if (stats.totalBalance === 0) return [];
     
-    const cashBalance = stats.totalBalance - stats.stockBalance - stats.mfBalance;
+    const cashBalance = stats.totalBalance - stats.stockBalance - stats.mfBalance - stats.bondBalance;
     return [
       { 
         name: 'Cash', 
@@ -76,9 +77,16 @@ export default function DashboardDesktop({ stats, recentLogs, isLoading, isValid
         fill: '#45B7D1',
         color: '#45B7D1',
         percentage: ((stats.mfBalance / stats.totalBalance) * 100).toFixed(1)
+      },
+      {
+        name: 'Bonds',
+        value: stats.bondBalance,
+        fill: '#F9CA24',
+        color: '#F9CA24',
+        percentage: ((stats.bondBalance / stats.totalBalance) * 100).toFixed(1)
       }
     ].filter(item => item.value > 0);
-  }, [stats.totalBalance, stats.stockBalance, stats.mfBalance]);
+  }, [stats.totalBalance, stats.stockBalance, stats.mfBalance, stats.bondBalance]);
 
   return (
     <div className="hidden md:flex flex-col gap-[var(--section-gap)] animate-fade-in relative z-20">

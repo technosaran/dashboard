@@ -5,7 +5,6 @@ import { useSearchParams } from "next/navigation";
 import { useState, useMemo, useCallback, useEffect, startTransition } from "react";
 import { differenceInDays, parseISO, format } from "date-fns";
 import { toast } from "react-hot-toast";
-import { createClient } from "@/lib/supabase-browser";
 import type { Tables } from "@/lib/database.types";
 import { createGoal, updateGoalAmount, deleteGoal, updateGoal } from "./actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
@@ -47,7 +46,6 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
   });
 
   const [contributeAmount, setContributeAmount] = useState("");
-  const supabase = createClient();
 
   useEffect(() => {
     if (!selectedAccountId && accounts.length > 0) {

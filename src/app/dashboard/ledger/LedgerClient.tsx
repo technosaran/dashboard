@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState, startTransition, useMemo, Fragment } from "react";
-import { createClient } from "@/lib/supabase-browser";
 import { format, getYear, getMonth, isWithinInterval, startOfDay, endOfDay } from "date-fns";
 import { toast } from "react-hot-toast";
 import { useFinanceData } from "@/hooks/use-finance-data";
@@ -23,7 +22,6 @@ const MONTHS = [
 ];
 
 export default function LedgerClient() {
-  const supabase = createClient();
   const { data: { ledgerLogs: logs }, isValidating, isLoading } = useFinanceData();
   const [yearFilter, setYearFilter] = useState("All Years");
   const [monthFilter, setMonthFilter] = useState("All Months");

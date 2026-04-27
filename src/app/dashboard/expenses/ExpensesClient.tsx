@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState, startTransition, useDeferredValue } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
-import { createClient } from "@/lib/supabase-browser";
 import { addExpense } from "./actions";
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, subMonths } from "date-fns";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
