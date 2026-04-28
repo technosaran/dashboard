@@ -42,7 +42,27 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
   const [submitting, setSubmitting] = useState(false);
   const [search, setSearch] = useState("");
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    bond_name: string;
+    isin: string;
+    issuer: string;
+    bond_type: "Government" | "Corporate" | "Tax-Free" | "Infrastructure" | "PSU";
+    face_value: string;
+    quantity: string;
+    purchase_price: string;
+    current_price: string;
+    coupon_rate: string;
+    ytm: string;
+    purchase_date: string;
+    maturity_date: string;
+    next_interest_date: string;
+    interest_frequency: "Monthly" | "Quarterly" | "Semi-Annual" | "Annual";
+    credit_rating: string;
+    platform: string;
+    demat_account: string;
+    account_id: string;
+    notes: string;
+  }>({
     bond_name: "",
     isin: "",
     issuer: "",
@@ -99,8 +119,8 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
       current_price: parseFloat(formData.current_price || formData.purchase_price),
       coupon_rate: parseFloat(formData.coupon_rate),
       ytm: formData.ytm ? parseFloat(formData.ytm) : undefined,
-      bond_type: formData.bond_type as any,
-      interest_frequency: formData.interest_frequency as any,
+      bond_type: formData.bond_type,
+      interest_frequency: formData.interest_frequency,
     });
 
     if (!result?.error) {
@@ -410,7 +430,7 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
 
                 <div>
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Bond Type</label>
-                  <select className="input-premium" value={formData.bond_type} onChange={e => setFormData({...formData, bond_type: e.target.value})}>
+                  <select className="input-premium" value={formData.bond_type} onChange={e => setFormData({...formData, bond_type: e.target.value as typeof formData.bond_type})}>
                     {BOND_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
                 </div>
@@ -437,7 +457,7 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
 
                 <div>
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Interest Frequency</label>
-                  <select className="input-premium" value={formData.interest_frequency} onChange={e => setFormData({...formData, interest_frequency: e.target.value})}>
+                  <select className="input-premium" value={formData.interest_frequency} onChange={e => setFormData({...formData, interest_frequency: e.target.value as typeof formData.interest_frequency})}>
                     {INTEREST_FREQUENCIES.map(f => <option key={f} value={f}>{f}</option>)}
                   </select>
                 </div>

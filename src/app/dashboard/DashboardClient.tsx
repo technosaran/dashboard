@@ -70,19 +70,20 @@ export default function DashboardClient({ initialData }: { initialData?: Finance
       }));
 
     // Income vs Expense past 6 months
+    // Use "MMM yy" as the internal key to avoid cross-year collisions (e.g. Jan 2024 ≠ Jan 2025)
     const trendMap: Record<string, TrendMapEntry> = {};
     for (let i = 5; i >= 0; i--) {
       const d = subMonths(now, i);
-      const m = format(d, "MMM");
-      trendMap[m] = { name: m, income: 0, expense: 0 };
+      const key = format(d, "MMM yy");
+      trendMap[key] = { name: format(d, "MMM"), income: 0, expense: 0 };
     }
     transactions.forEach(t => {
       if (!t.date) return;
       try {
-        const m = format(parseISO(t.date), "MMM");
-        if (trendMap[m]) {
-          if (t.type === "income") trendMap[m].income += Number(t.amount);
-          if (t.type === "expense") trendMap[m].expense += Number(t.amount);
+        const key = format(parseISO(t.date), "MMM yy");
+        if (trendMap[key]) {
+          if (t.type === "income") trendMap[key].income += Number(t.amount);
+          if (t.type === "expense") trendMap[key].expense += Number(t.amount);
         }
       } catch (e) {
         console.warn('Bad transaction date:', t.date, e);

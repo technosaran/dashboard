@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState, startTransition, useDeferredValue } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
-import { createClient } from "@/lib/supabase-browser";
 import { addIncome } from "./actions";
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, subMonths } from "date-fns";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
@@ -74,7 +73,6 @@ type Income = Tables<"incomes">;
 type Account = Tables<"accounts">;
 
 export default function IncomeClient({ initialData }: { initialData?: FinanceData }) {
-  const supabase = createClient();
   const { data: { incomes, accounts }, isValidating } = useFinanceData(initialData);
   const searchParams = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(searchParams.get("action") === "new");

@@ -3,6 +3,30 @@
 import { createClient } from "@/lib/supabase-server";
 import { revalidatePath } from "next/cache";
 
+type RpcResult = { success: boolean; error?: string | null } | null;
+
+type RecordBondPurchaseRpc = (
+  fn: "record_bond_purchase",
+  args: {
+    p_user_id: string; p_bond_name: string; p_isin: string; p_issuer: string;
+    p_bond_type: string; p_face_value: number; p_quantity: number;
+    p_purchase_price: number; p_current_price: number; p_coupon_rate: number;
+    p_ytm: number | null; p_purchase_date: string; p_maturity_date: string | null;
+    p_next_interest_date: string | null; p_interest_frequency: string;
+    p_credit_rating: string | null; p_platform: string; p_demat_account: string | null;
+    p_account_id: string | null; p_notes: string | null;
+  }
+) => Promise<{ data: RpcResult; error: { message: string } | null }>;
+
+type RecordBondInterestRpc = (
+  fn: "record_bond_interest",
+  args: {
+    p_user_id: string; p_bond_id: string; p_amount: number;
+    p_payment_date: string; p_period_start: string; p_period_end: string;
+    p_account_id: string | null;
+  }
+) => Promise<{ data: RpcResult; error: { message: string } | null }>;
+
 export type BondFormData = {
   bond_name: string;
   isin: string;
@@ -32,7 +56,8 @@ export async function createBond(data: BondFormData) {
   if (!user) return { error: "Unauthorized" };
 
   // Use atomic RPC to ensure transactional integrity
-  const { data: rpcResult, error } = await supabase.rpc("record_bond_purchase" as any, {
+  const rpc = supabase.rpc as unknown as RecordBondPurchaseRpc;
+  const { data: rpcResult, error } = await rpc("record_bond_purchase", {
     p_user_id: user.id,
     p_bond_name: data.bond_name,
     p_isin: data.isin,
@@ -57,8 +82,7 @@ export async function createBond(data: BondFormData) {
 
   if (error) return { error: error.message };
 
-  const result = rpcResult as { success: boolean; error?: string };
-  if (!result.success) return { error: result.error || "Failed to record bond purchase" };
+  if (!rpcResult?.success) return { error: rpcResult?.error || "Failed to record bond purchase" };
 
   revalidatePath("/dashboard/bonds");
   revalidatePath("/dashboard/accounts");
@@ -126,7 +150,8 @@ export async function recordInterestPayment(bondId: string, data: {
   if (!user) return { error: "Unauthorized" };
 
   // Use atomic RPC for interest payment
-  const { data: rpcResult, error } = await supabase.rpc("record_bond_interest" as any, {
+  const rpc = supabase.rpc as unknown as RecordBondInterestRpc;
+  const { data: rpcResult, error } = await rpc("record_bond_interest", {
     p_user_id: user.id,
     p_bond_id: bondId,
     p_amount: data.amount,
@@ -138,8 +163,7 @@ export async function recordInterestPayment(bondId: string, data: {
 
   if (error) return { error: error.message };
 
-  const result = rpcResult as { success: boolean; error?: string };
-  if (!result.success) return { error: result.error || "Failed to record interest" };
+  if (!rpcResult?.success) return { error: rpcResult?.error || "Failed to record interest" };
 
   revalidatePath("/dashboard/bonds");
   revalidatePath("/dashboard/accounts");

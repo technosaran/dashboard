@@ -111,6 +111,10 @@ export default function FamilyClient({
     if (historyRes.data) setRecentSends(historyRes.data as SendHistory[]);
     setLoading(false);
   }, [supabase]);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("family-realtime-v1")
       .on("postgres_changes", { event: "*", schema: "public", table: "recipients" }, () => startTransition(fetchData))
       .on("postgres_changes", { event: "*", schema: "public", table: "accounts" }, () => startTransition(fetchData))
       .on("postgres_changes", { event: "*", schema: "public", table: "ledger_logs" }, () => startTransition(fetchData))
@@ -119,7 +123,7 @@ export default function FamilyClient({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchData]);
+  }, [fetchData, supabase]);
 
   const handleAddRecipient = async (e: React.FormEvent) => {
     e.preventDefault();

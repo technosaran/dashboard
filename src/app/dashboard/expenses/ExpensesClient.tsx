@@ -114,17 +114,18 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
     };
     }).sort((a, b) => b.value - a.value);
 
-    const trendMap: Record<string, number> = {};
+    // Use "MMM yy" as the internal key to avoid cross-year collisions (e.g. Jan 2024 ≠ Jan 2025)
+    const trendMap: Record<string, { name: string; value: number }> = {};
     for (let i = 5; i >= 0; i--) {
       const d = subMonths(now, i);
-      trendMap[format(d, "MMM")] = 0;
+      trendMap[format(d, "MMM yy")] = { name: format(d, "MMM"), value: 0 };
     }
     expenses.forEach(e => {
       if (!e.date) return;
-      const m = format(parseISO(e.date), "MMM");
-      if (trendMap[m] !== undefined) trendMap[m] += Number(e.amount);
+      const key = format(parseISO(e.date), "MMM yy");
+      if (trendMap[key] !== undefined) trendMap[key].value += Number(e.amount);
     });
-    const trendData = Object.entries(trendMap).map(([name, value]) => ({ name, value }));
+    const trendData = Object.values(trendMap);
 
     return { totalSpent, monthlyTotal, pieData, trendData };
   }, [expenses]);
