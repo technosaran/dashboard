@@ -111,6 +111,26 @@ const nav = [
   },
 ];
 
+function NavItem({ label, href, icon, pathname }: (typeof nav)[0] & { pathname: string }) {
+  const active = pathname === href;
+  return (
+    <Link
+      href={href}
+      prefetch={true}
+      className={`flex items-center gap-3 px-3 py-1 rounded-xl transition-all duration-300 ${active ? "" : "hover:bg-[var(--glass-hover)] group"}`}
+      style={{
+        color: active ? "var(--accent-primary-light)" : "var(--text-secondary)",
+        background: active ? "var(--sidebar-active)" : "transparent",
+        border: active ? "1px solid rgba(108, 92, 231, 0.2)" : "1px solid transparent",
+        textDecoration: "none",
+      }}
+    >
+      <span className={`${active ? "text-[--accent-primary-light]" : "group-hover:text-[--text-primary]"}`}>{icon}</span>
+      <span className="font-semibold text-[13px] tracking-tight">{label}</span>
+    </Link>
+  );
+}
+
 export default function Sidebar() {
   const pathname = usePathname();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
@@ -128,26 +148,6 @@ export default function Sidebar() {
     await supabase.auth.signOut();
     window.location.href = "/login";
   }
-
-  const NavItem = ({ label, href, icon }: (typeof nav)[0]) => {
-    const active = pathname === href;
-    return (
-      <Link
-        href={href}
-        prefetch={true}
-        className={`flex items-center gap-3 px-3 py-1 rounded-xl transition-all duration-300 ${active ? "" : "hover:bg-[var(--glass-hover)] group"}`}
-        style={{
-          color: active ? "var(--accent-primary-light)" : "var(--text-secondary)",
-          background: active ? "var(--sidebar-active)" : "transparent",
-          border: active ? "1px solid rgba(108, 92, 231, 0.2)" : "1px solid transparent",
-          textDecoration: "none",
-        }}
-      >
-        <span className={`${active ? "text-[--accent-primary-light]" : "group-hover:text-[--text-primary]"}`}>{icon}</span>
-        <span className="font-semibold text-[13px] tracking-tight">{label}</span>
-      </Link>
-    );
-  };
 
   const quickActions = [
     { label: "Expense", href: "/dashboard/expenses?action=new", icon: "🔴", color: "var(--danger)" },
@@ -180,11 +180,11 @@ export default function Sidebar() {
 
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex w-[210px] shrink-0 flex-col h-screen sticky top-0" style={{ background: "var(--sidebar-bg)", borderRight: "1px solid var(--sidebar-border)", backdropFilter: "blur(20px) saturate(1.2)", WebkitBackdropFilter: "blur(20px) saturate(1.2)" }}>
-        <div className="px-6 pt-4 pb-2"><div className="flex flex-col"><h2 className="text-xl font-black text-[--text-primary] tracking-tighter">Finance<span className="text-[--accent-primary]">OS</span></h2><p className="text-[10px] font-black text-[--text-muted] uppercase tracking-[0.2em] leading-none mt-1">Institutional Build</p></div></div>
+        <div className="px-6 pt-4 pb-2"><div className="flex flex-col"><h2 className="text-xl font-black text-[--text-primary] tracking-tighter">Finance<span className="text-[--accent-primary]">OS</span></h2></div></div>
         <div className="divider-glow mx-6" />
         <nav className="flex-1 px-4 pt-2 space-y-0.5 overflow-visible no-scrollbar">
           <p className="px-4 pb-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-[--text-muted] opacity-60">Navigation</p>
-          {nav.map((item) => (<NavItem key={item.href} {...item} />))}
+          {nav.map((item) => (<NavItem key={item.href} {...item} pathname={pathname} />))}
         </nav>
         <div className="divider-glow mx-4" />
         <div className="px-3 py-2 mt-auto pb-6">

@@ -13,9 +13,9 @@ interface OnboardingWizardProps {
 export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
   const router = useRouter();
   const [step, setStep] = useState<OnboardingStep>("welcome");
-  const [accountCreated, setAccountCreated] = useState(false);
-  const [incomeLogged, setIncomeLogged] = useState(false);
-  const [expenseLogged, setExpenseLogged] = useState(false);
+  const [accountCreated] = useState(false);
+  const [incomeLogged] = useState(false);
+  const [expenseLogged] = useState(false);
 
   function handleSkip() {
     localStorage.setItem("onboarding_completed", "true");
@@ -59,7 +59,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
               Welcome to Your Finance Dashboard
             </h2>
             <p className="text-[--text-secondary] text-base md:text-lg mb-8 leading-relaxed max-w-xl mx-auto">
-              Let's get you started with a quick 3-step setup. This will only take a minute!
+              Let&apos;s get you started with a quick 3-step setup. This will only take a minute!
             </p>
             
             <div className="grid grid-cols-3 gap-4 mb-10 max-w-md mx-auto">
@@ -94,7 +94,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                 onClick={() => setStep("account")}
                 className="btn-primary px-10 py-3 shadow-2xl shadow-[--accent-primary]/20"
               >
-                Let's Start
+                Let&apos;s Start
               </button>
             </div>
           </div>
@@ -123,7 +123,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                   </svg>
                   <span className="text-lg font-black text-[--success]">Account Created!</span>
                 </div>
-                <p className="text-sm text-[--text-muted]">Great! Let's move to the next step.</p>
+                <p className="text-sm text-[--text-muted]">Great! Let&apos;s move to the next step.</p>
               </div>
             ) : (
               <div className="mb-8 p-6 rounded-2xl bg-white/[0.02] border border-white/5">
@@ -239,7 +239,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                   </svg>
                   <span className="text-lg font-black text-[--success]">Expense Recorded!</span>
                 </div>
-                <p className="text-sm text-[--text-muted]">Perfect! You're all set up.</p>
+                <p className="text-sm text-[--text-muted]">Perfect! You&apos;re all set up.</p>
               </div>
             ) : (
               <div className="mb-8 p-6 rounded-2xl bg-white/[0.02] border border-white/5">

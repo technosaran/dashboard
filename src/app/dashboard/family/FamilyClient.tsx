@@ -110,7 +110,7 @@ export default function FamilyClient({
     if (accRes.data) setAccounts(accRes.data as Account[]);
     if (historyRes.data) setRecentSends(historyRes.data as SendHistory[]);
     setLoading(false);
-  }, []);
+  }, [supabase]);
 
   useEffect(() => {
     const channel = supabase
@@ -123,7 +123,7 @@ export default function FamilyClient({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchData]);
+  }, [fetchData, supabase]);
 
   const handleAddRecipient = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -336,7 +336,7 @@ export default function FamilyClient({
             </div>
           ) : (
             filteredRecipients.map((person, index) => {
-              const config = getConfig(person.relationship);
+
               const cardColor = CARD_COLORS[index % CARD_COLORS.length]; // Unique color per card
               return (
                 <div key={person.id} className="glass-card flex flex-col min-h-[260px] p-6 relative overflow-hidden transition-transform hover:-translate-y-1 group">

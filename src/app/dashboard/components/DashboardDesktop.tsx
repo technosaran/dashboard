@@ -1,12 +1,11 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import Link from "next/link";
 import { format } from "date-fns";
 import { useMemo } from "react";
 import Greeting from "@/components/greeting";
 import type { FinanceData } from "@/hooks/use-finance-data";
-import { ResponsiveContainer, AreaChart, Area, CartesianGrid, Tooltip, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Legend } from "recharts";
+import { ResponsiveContainer, AreaChart, Area, CartesianGrid, Tooltip, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis } from "recharts";
 
 type PieEntry = {
   name: string;

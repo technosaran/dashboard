@@ -43,14 +43,14 @@ export default function TransfersClient({ initialAccounts, initialTransfers }: T
     if (!user) return;
     const { data } = await supabase.from("accounts").select("*").eq("user_id", user.id).order("name");
     setAccounts(data || []);
-  }, []);
+  }, [supabase]);
 
   const loadTransfers = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     const { data } = await supabase.from("transfers").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(50);
     setTransfers(data || []);
-  }, []);
+  }, [supabase]);
 
   const loadData = useCallback(async () => {
     await Promise.all([loadAccounts(), loadTransfers()]);
@@ -62,7 +62,7 @@ export default function TransfersClient({ initialAccounts, initialTransfers }: T
       .on("postgres_changes", { event: "*", schema: "public", table: "accounts" }, () => startTransition(loadAccounts))
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [loadData, loadAccounts]);
+  }, [loadData, loadAccounts, supabase]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -131,7 +131,7 @@ export default function TransfersClient({ initialAccounts, initialTransfers }: T
   return (
     <div className="flex flex-col gap-[var(--section-gap)] animate-fade-in">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="hidden md:block">
+        <div>
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[--text-primary]">Internal Transfers</h1>
           <p className="text-[13px] md:text-sm mt-1 text-[--text-secondary]">Transfer money between your accounts</p>
         </div>
@@ -306,9 +306,8 @@ export default function TransfersClient({ initialAccounts, initialTransfers }: T
           </div>
         ) : (
           <div>
-            {transfers.map((transfer, index) => {
+            {transfers.map((transfer) => {
               const fromAcc = accounts.find(a => a.id === transfer.from_account_id);
-              const toAcc = accounts.find(a => a.id === transfer.to_account_id);
               
               return (
                 <div 

@@ -2,7 +2,7 @@
 import { createClient } from "@/lib/supabase-server";
 import LedgerClient from "./LedgerClient";
 import { redirect } from "next/navigation";
-import { Metadata } from "next";
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Ledger",

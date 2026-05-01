@@ -1,32 +1,31 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState, startTransition } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Tables } from "@/lib/database.types";
 import { toast } from "react-hot-toast";
-import { createClient } from "@/lib/supabase-browser";
+
 import { 
   createInvestment, 
   updateInvestment, 
   deleteInvestment, 
   getStockDetails, 
   refreshAllPrices,
-  searchStocks,
-  getStockTrades
+  searchStocks
 } from "./actions";
 import { calculateZerodhaCharges } from "@/lib/investment-utils";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
-import { getAccounts } from "../accounts/actions";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
 
 type Stock = Tables<"investments"> & { total_charges?: number; pnlPercent?: number };
 
-type Account = {
-  id: string;
-  name: string;
-  balance: number;
-  currency: string;
-};
+interface Suggestion {
+  symbol: string;
+  fullSymbol: string;
+  name?: string;
+  exchange: string;
+}
+
 
 type SortKey = "name" | "pnl" | "pnlPercent" | "current_value" | "quantity";
 type SortDir = "asc" | "desc";
@@ -36,14 +35,13 @@ function formatNum(val: number, decimals = 2): string {
 }
 
 export default function StocksClient({ initialData }: { initialData?: FinanceData }) {
-  const supabase = createClient();
-  const { data: { investments, accounts, stockTrades: trades }, isValidating, isLoading } = useFinanceData(initialData);
+  const { data: { investments, accounts, stockTrades: trades }, isValidating } = useFinanceData(initialData);
   const stocks = useMemo(() => investments.filter(i => i.type === "stock") as Stock[], [investments]);
   const searchParams = useSearchParams();
   const [showForm, setShowForm] = useState(searchParams?.get("action") === "new");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [submitting, withLock] = useSubmitLock();
-  const [showAllCharges, setShowAllCharges] = useState(false);
+
   const [showChargesInForm, setShowChargesInForm] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [fetchingPrice, setFetchingPrice] = useState(false);
@@ -54,7 +52,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [showAnalytics, setShowAnalytics] = useState(false);
-  const [expandedHolding, setExpandedHolding] = useState<string | null>(null);
+
 
   const [formData, setFormData] = useState({
     name: "", symbol: "", quantity: "", buy_price: "", current_price: "",
@@ -67,15 +65,6 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
   const [activeTab, setActiveTab] = useState<"holdings" | "history">("holdings");
   const refreshAllRef = useRef<(() => Promise<void>) | null>(null);
   const fetchPriceRef = useRef<((symbol: string) => Promise<void>) | null>(null);
-
-
-
-  interface Suggestion {
-    symbol: string;
-    fullSymbol: string;
-    name?: string;
-    exchange: string;
-  }
 
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -157,14 +146,16 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
   refreshAllRef.current = handleRefreshAll;
 
   // --- Computed ---
-  const totalInvested = stocks.reduce((s, i) => s + Number(i.buy_price || 0) * Number(i.quantity || 0), 0);
-  const totalCurrent = stocks.reduce((s, i) => s + Number(i.current_price || 0) * Number(i.quantity || 0), 0);
-  const totalPnL = totalCurrent - totalInvested;
-  const totalPnLPercent = totalInvested > 0 ? (totalPnL / totalInvested) * 100 : 0;
-
-  const totalDayPnL = stocks.reduce((s, i) => s + Number(i.day_change || 0) * Number(i.quantity || 0), 0);
-  const prevDayValue = totalCurrent - totalDayPnL;
-  const totalDayPnLPercent = prevDayValue > 0 ? (totalDayPnL / prevDayValue) * 100 : 0;
+  const { totalInvested, totalCurrent, totalPnL, totalPnLPercent, totalDayPnL, totalDayPnLPercent } = useMemo(() => {
+    const invested = stocks.reduce((s, i) => s + Number(i.buy_price || 0) * Number(i.quantity || 0), 0);
+    const current = stocks.reduce((s, i) => s + Number(i.current_price || 0) * Number(i.quantity || 0), 0);
+    const pnl = current - invested;
+    const pnlPercent = invested > 0 ? (pnl / invested) * 100 : 0;
+    const dayPnL = stocks.reduce((s, i) => s + Number(i.day_change || 0) * Number(i.quantity || 0), 0);
+    const prevDay = current - dayPnL;
+    const dayPnLPercent = prevDay > 0 ? (dayPnL / prevDay) * 100 : 0;
+    return { totalInvested: invested, totalCurrent: current, totalPnL: pnl, totalPnLPercent: pnlPercent, totalDayPnL: dayPnL, totalDayPnLPercent: dayPnLPercent };
+  }, [stocks]);
 
   const filtered = useMemo(() => {
     let list = stocks.filter(i => Number(i.quantity) > 0);
@@ -556,7 +547,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
   }
 
   return (
-    <div className="flex flex-col gap-0 text-[--text-primary] py-6" style={{ maxWidth: "1250px", margin: "0 auto", width: "100%", paddingBottom: "100px" }}>
+    <div className="flex flex-col gap-[var(--section-gap)]">
       
       {/* ── Portfolio Overview Header ── */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 px-4 mb-8">
@@ -617,7 +608,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
           </div>
         </div>
         <div className="glass-card-static p-6 flex flex-col gap-2">
-          <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Day&apos;s P&amp;L</span>
+          <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">{"Day's P&L"}</span>
           <div className="flex flex-col">
             <span className={`text-xl md:text-2xl font-black tabular-nums ${totalDayPnL >= 0 ? "text-[--success]" : "text-[--danger]"}`}>
               {totalDayPnL >= 0 ? "+" : ""}{formatNum(totalDayPnL)}

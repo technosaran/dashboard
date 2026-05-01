@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState, startTransition, useDeferredValue } from "react";
+import { useMemo, useState, useDeferredValue, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
-import { createClient } from "@/lib/supabase-browser";
+
 import { addExpense } from "./actions";
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, subMonths } from "date-fns";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
-import type { Tables } from "@/lib/database.types";
+
 import { ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip } from "recharts";
 import { CHART_COLOURS, getCategoryColour } from "@/lib/chart-colours";
 import { exportToCSV } from "@/lib/export-csv";
@@ -26,8 +26,7 @@ export const CATEGORIES = [
   { label: "Others", icon: "📦", color: getCategoryColour("Others") },
 ];
 
-type Expense = Tables<"expenses">;
-type Account = Tables<"accounts">;
+
 
 export default function ExpensesClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { expenses, accounts }, isValidating } = useFinanceData(initialData);
@@ -55,6 +54,7 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
     const stored = localStorage.getItem('expense_budgets');
     if (stored) {
       try {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setBudgets(JSON.parse(stored));
       } catch (e) {
         console.warn('Failed to parse budgets:', e);
@@ -215,7 +215,7 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
                   ]
                 );
                 toast.success("Expense data exported successfully");
-              } catch (err) {
+              } catch {
                 toast.error("Failed to export data");
               }
             }}
@@ -424,7 +424,7 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-xl animate-fade-in shadow-2xl">
           <div className="glass-card-static w-full max-w-2xl p-6 md:p-10 border-[--accent-primary]/20 shadow-[0_0_100px_rgba(108,92,231,0.15)] max-h-[95vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-8 md:mb-10"><div className="flex items-center gap-3"><div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-[--accent-primary]/20 flex items-center justify-center"><svg className="w-5 h-5 md:w-6 md:h-6 text-[--accent-primary]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></div><h2 className="text-xl md:text-3xl font-black">Record Transaction</h2></div><button onClick={() => setShowAddModal(false)} className="text-[--text-muted] hover:text-[--text-primary] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"><svg className="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg></button></div>
-            <form onSubmit={handleSubmit} className="space-y-8"><div className="grid grid-cols-1 md:grid-cols-2 gap-8"><div className="space-y-3"><label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">{["Food", "Shopping", "Entertainment"].includes(formData.category) ? "Merchant / Store" : "Description / Purpose"}</label><input type="text" required className="input-premium" placeholder="e.g. Starbucks" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} /></div><div className="space-y-3"><label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Debit Amount</label><input type="number" required className="input-premium" placeholder="0.00" value={formData.amount} onChange={e => setFormData({ ...formData, amount: e.target.value })} /></div><div className="space-y-3"><label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Expenditure Sector</label><select className="input-premium" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })}>{CATEGORIES.map(c => <option key={c.label} value={c.label}>{c.label}</option>)}</select></div><div className="space-y-3"><label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Deduct from Account</label><select className="input-premium" value={formData.account_id} onChange={e => setFormData({ ...formData, account_id: e.target.value })}><option value="">No Deduction (Track only)</option>{accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}</select></div></div><button type="submit" disabled={submitting} className="btn-primary w-full shadow-xl shadow-[--accent-primary]/20 mt-4">{submitting ? "Processing..." : "Confirm Record"}</button>
+            <form onSubmit={handleSubmit} className="space-y-8"><div className="grid grid-cols-1 md:grid-cols-2 gap-8"><div className="space-y-3"><label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">{["Food", "Shopping", "Entertainment"].includes(formData.category) ? "Merchant / Store" : "Description / Purpose"}</label><input type="text" required className="input-premium" placeholder="e.g. Starbucks" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} /></div><div className="space-y-3"><label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Debit Amount</label><input type="number" required className="input-premium" placeholder="0.00" value={formData.amount} onChange={e => setFormData({ ...formData, amount: e.target.value })} /></div><div className="space-y-3"><label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Expenditure Sector</label><select className="input-premium" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })}>{CATEGORIES.map(c => <option key={c.label} value={c.label}>{c.label}</option>)}</select></div><div className="space-y-3"><label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Transaction Date</label><input type="date" required className="input-premium" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} /></div><div className="space-y-3"><label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Deduct from Account</label><select className="input-premium" value={formData.account_id} onChange={e => setFormData({ ...formData, account_id: e.target.value })}><option value="">No Deduction (Track only)</option>{accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}</select></div></div><button type="submit" disabled={submitting} className="btn-primary w-full shadow-xl shadow-[--accent-primary]/20 mt-4">{submitting ? "Processing..." : "Confirm Record"}</button>
 </form>
           </div>
         </div>
@@ -503,7 +503,7 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
 
             <div className="mt-6 p-4 rounded-xl bg-white/5 border border-white/10">
               <p className="text-[11px] text-[--text-muted]">
-                <strong>Tip:</strong> Set realistic monthly budgets for each category. You'll receive warnings when spending exceeds 80% of your limit.
+                <strong>Tip:</strong> Set realistic monthly budgets for each category. You&apos;ll receive warnings when spending exceeds 80% of your limit.
               </p>
             </div>
           </div>

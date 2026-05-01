@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase-server";
-import type { Tables } from "@/lib/database.types";
+
 import DashboardClient from "./DashboardClient";
 import type { FinanceData } from "@/hooks/use-finance-data";
 import { redirect } from "next/navigation";

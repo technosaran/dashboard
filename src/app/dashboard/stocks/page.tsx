@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase-server";
 import StocksClient from "./StocksClient";
 import { redirect } from "next/navigation";
 import type { Tables } from "@/lib/database.types";
-import { Metadata } from "next";
+import type { Metadata } from "next";
 import type { FinanceData } from "@/hooks/use-finance-data";
 
 export const metadata: Metadata = {

@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { toast } from "react-hot-toast";
-import { createBond, deleteBond, recordInterestPayment } from "./actions";
+import { createBond } from "./actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { format, differenceInDays, parseISO } from "date-fns";
 
@@ -99,8 +99,8 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
       current_price: parseFloat(formData.current_price || formData.purchase_price),
       coupon_rate: parseFloat(formData.coupon_rate),
       ytm: formData.ytm ? parseFloat(formData.ytm) : undefined,
-      bond_type: formData.bond_type as any,
-      interest_frequency: formData.interest_frequency as any,
+      bond_type: formData.bond_type as "Government" | "Corporate" | "Tax-Free" | "Infrastructure" | "PSU",
+      interest_frequency: formData.interest_frequency as "Monthly" | "Quarterly" | "Semi-Annual" | "Annual",
     });
 
     if (!result?.error) {
@@ -139,7 +139,7 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
   };
 
   return (
-    <div className="flex flex-col gap-6 py-6" style={{ maxWidth: "1280px", margin: "0 auto", width: "100%", paddingBottom: "100px" }}>
+    <div className="flex flex-col gap-[var(--section-gap)]">
       
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 px-4">
@@ -173,7 +173,7 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
               {stats.totalPnL >= 0 ? '+' : ''}₹{Math.abs(stats.totalPnL).toLocaleString()}
             </span>
             <span className={`text-[10px] font-black ${stats.totalPnL >= 0 ? 'text-[--success]' : 'text-[--danger]'} opacity-60`}>
-              ({stats.totalPnL >= 0 ? '+' : ''}{((stats.totalPnL / stats.totalInvested) * 100).toFixed(2)}%)
+              ({stats.totalPnL >= 0 ? '+' : ''}{stats.totalInvested > 0 ? ((stats.totalPnL / stats.totalInvested) * 100).toFixed(2) : '0.00'}%)
             </span>
           </div>
         </div>

@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase-server";
 import MutualFundsClient from "./MutualFundsClient";
 import { redirect } from "next/navigation";
-import { Metadata } from "next";
+import type { Metadata } from "next";
 import type { FinanceData } from "@/hooks/use-finance-data";
 
 export const metadata: Metadata = {

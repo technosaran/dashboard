@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useState, useMemo, useCallback, useEffect, startTransition } from "react";
+import { useState, useMemo } from "react";
 import { differenceInDays, parseISO, format } from "date-fns";
 import { toast } from "react-hot-toast";
-import { createClient } from "@/lib/supabase-browser";
+
 import type { Tables } from "@/lib/database.types";
 import { createGoal, updateGoalAmount, deleteGoal, updateGoal } from "./actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
@@ -13,7 +13,6 @@ import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { CHART_COLOURS } from "@/lib/chart-colours";
 
 type Goal = Tables<"goals">;
-type Account = Tables<"accounts">;
 
 const GOAL_CATEGORIES = [
   { label: "Home", icon: "🏠", color: CHART_COLOURS[2] },
@@ -47,13 +46,9 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
   });
 
   const [contributeAmount, setContributeAmount] = useState("");
-  const supabase = createClient();
-
-  useEffect(() => {
-    if (!selectedAccountId && accounts.length > 0) {
-      setSelectedAccountId(accounts[0].id);
-    }
-  }, [accounts, selectedAccountId]);
+  if (!selectedAccountId && accounts.length > 0) {
+    setSelectedAccountId(accounts[0].id);
+  }
 
 
 
@@ -132,8 +127,8 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
   }
 
   return (
-    <div className="flex flex-col gap-10 py-4">
-      <div className="flex flex-col gap-6 px-2">
+    <div className="flex flex-col gap-[var(--section-gap)]">
+      <div className="flex flex-col gap-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="md:hidden w-full p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-center mt-4">
              <h2 className="text-xl font-black text-white">Goals & Savings</h2>
@@ -184,7 +179,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
         </div>
       </div>
 
-      <div className="flex justify-start px-2">
+      <div className="flex justify-start">
         <div className="flex items-center gap-1 bg-white/5 p-1 rounded-2xl">
           <button 
             onClick={() => setActiveTab('active')}
@@ -205,7 +200,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
         <div className="space-y-6">
           {goals.filter(g => Number(g.current_amount) < Number(g.target_amount)).length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mt-2">
-            {goals.filter(g => Number(g.current_amount) < Number(g.target_amount)).map((goal, index) => {
+            {goals.filter(g => Number(g.current_amount) < Number(g.target_amount)).map((goal) => {
               const category = GOAL_CATEGORIES.find(c => c.label === goal.category) || GOAL_CATEGORIES[7];
               const progress = (Number(goal.current_amount) / Number(goal.target_amount)) * 100;
               const daysLeft = goal.deadline ? differenceInDays(parseISO(goal.deadline), new Date()) : null;

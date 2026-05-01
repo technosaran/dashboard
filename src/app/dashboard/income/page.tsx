@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { createClient } from "@/lib/supabase-server";
 import IncomeClient from "./IncomeClient";
 import { redirect } from "next/navigation";
-import { Metadata } from "next";
+import type { Metadata } from "next";
 import type { FinanceData } from "@/hooks/use-finance-data";
 
 export const metadata: Metadata = {

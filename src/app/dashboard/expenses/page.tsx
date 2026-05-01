@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase-server";
 import ExpensesClient from "./ExpensesClient";
 import { redirect } from "next/navigation";
 import type { FinanceData } from "@/hooks/use-finance-data";
-import { Metadata } from "next";
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Expense Management",

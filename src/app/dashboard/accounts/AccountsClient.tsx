@@ -158,7 +158,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
   const chartData = useMemo(() => 
     accounts.map((a, i) => ({ 
       name: a.name, 
-      value: a.balance, 
+      value: Math.abs(a.balance), 
       fill: ACCOUNT_COLORS[i % ACCOUNT_COLORS.length],
       color: ACCOUNT_COLORS[i % ACCOUNT_COLORS.length], 
       currency: a.currency 

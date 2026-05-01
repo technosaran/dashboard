@@ -7,26 +7,25 @@ import { toast } from "react-hot-toast";
 
 export default function SettingsPage() {
   const { username, setUsername, loading, isSyncing } = useUser();
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState(username);
   const [lastSaved, setLastSaved] = useState<string | null>(null);
-  const initializedRef = useRef(false);
+  const [prevUsername, setPrevUsername] = useState(username);
+  const [prevLoading, setPrevLoading] = useState(loading);
   const prevIsSyncingRef = useRef(false);
 
-  // Sync internal input state with context once loaded
-  useEffect(() => {
-    if (!loading && !initializedRef.current) {
+  // Sync internal input state during render to avoid cascading renders in useEffect
+  if (loading !== prevLoading) {
+    setPrevLoading(loading);
+    if (!loading) {
       setInput(username);
-      initializedRef.current = true;
+      setPrevUsername(username);
     }
-  }, [loading, username]);
-
-  // Sync internal input state if username changes from external sources
-  useEffect(() => {
-    // Only update if we are not actively syncing ourselves AND the value actually changed
-    if (initializedRef.current && !isSyncing && username !== input) {
+  } else if (username !== prevUsername) {
+    setPrevUsername(username);
+    if (!isSyncing) {
       setInput(username);
     }
-  }, [username]); // Only react to context username changes
+  }
 
   // Update lastSaved when sync completes
   useEffect(() => {
@@ -42,7 +41,7 @@ export default function SettingsPage() {
   };
 
   useEffect(() => {
-    if (!initializedRef.current) return;
+    if (loading) return;
     
     // Debounce the update to the context/server
     const t = setTimeout(() => {
@@ -52,7 +51,7 @@ export default function SettingsPage() {
     }, 400); // reduced from 500ms
     
     return () => clearTimeout(t);
-  }, [input, username, setUsername]);
+  }, [input, username, setUsername, loading]);
 
   const handleReset = async () => {
     const isConfirmed = confirm("CRITICAL WARNING: This will permanently erase ALL your records (accounts, transactions, stocks, goals). This action is IRREVERSIBLE. Are you absolutely sure?");

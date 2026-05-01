@@ -8,8 +8,8 @@ type DashboardStats = {
   totalBalance: number;
   monthlySpend: number;
   monthlyIncome: number;
-  expenseTrend: any[];
-  pieData: any[];
+  expenseTrend: unknown[];
+  pieData: unknown[];
   stockCount: number;
   mfCount: number;
   stockBalance: number;
@@ -23,7 +23,7 @@ type Props = {
   isValidating: boolean;
 };
 
-export default function DashboardMobile({ stats, recentLogs, isLoading, isValidating }: Props) {
+export default function DashboardMobile({ stats, recentLogs, isValidating }: Props) {
   return (
     <div className="flex flex-col gap-6 md:hidden min-h-screen animate-fade-in relative z-20 pb-24">
       {/* Mobile Header / Balance */}

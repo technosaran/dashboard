@@ -50,7 +50,7 @@ export const metadata: Metadata = {
     description: "Track your global financial footprint from a single premium console.",
     creator: "@technosaran",
   },
-  manifest: "/manifest.json",
+  manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -103,13 +103,13 @@ export default function RootLayout({
           toastOptions={{
             duration: 3000,
             style: {
-              background: "#ffffff",
-              color: "#0f172a",
-              border: "1px solid rgba(14, 165, 233, 0.1)",
+              background: "var(--bg-surface)",
+              color: "var(--text-primary)",
+              border: "1px solid var(--border-default)",
               borderRadius: "12px",
               fontSize: "14px",
               fontWeight: "500",
-              boxShadow: "0 8px 32px rgba(14, 165, 233, 0.08)",
+              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.4)",
               maxWidth: "90vw",
             },
           }}

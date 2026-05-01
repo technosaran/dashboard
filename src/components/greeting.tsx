@@ -15,13 +15,13 @@ export default function Greeting() {
         className="text-2xl sm:text-3xl md:text-5xl font-bold tracking-tight leading-tight [font-family:'Outfit',sans-serif]"
         style={{ color: "var(--text-primary)" }}
       >
+        {!loading && <span className="inline-block animate-float mr-2">{emoji}</span>}
         {greeting},{" "}
         {loading ? (
           <span className="inline-block w-24 h-8 rounded-lg align-middle skeleton" />
         ) : (
           <span className="gradient-text">{username || "User"}</span>
-        )}{" "}
-        {!loading && <span className="inline-block animate-float ml-1">{emoji}</span>}
+        )}
       </h1>
     </div>
   );

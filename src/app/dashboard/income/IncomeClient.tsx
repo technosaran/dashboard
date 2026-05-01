@@ -2,14 +2,14 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState, startTransition, useDeferredValue } from "react";
+import { useMemo, useState, useDeferredValue } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
-import { createClient } from "@/lib/supabase-browser";
+
 import { addIncome } from "./actions";
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, subMonths } from "date-fns";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
-import type { Tables } from "@/lib/database.types";
+
 import { exportToCSV } from "@/lib/export-csv";
 
 const CHART_COLOR_FALLBACKS = [
@@ -70,11 +70,10 @@ const INCOME_CATEGORIES = [
   { label: "Others", icon: "📦", color: "#F1948A" },
 ];
 
-type Income = Tables<"incomes">;
-type Account = Tables<"accounts">;
+
 
 export default function IncomeClient({ initialData }: { initialData?: FinanceData }) {
-  const supabase = createClient();
+
   const { data: { incomes, accounts }, isValidating } = useFinanceData(initialData);
   const searchParams = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(searchParams.get("action") === "new");
@@ -228,7 +227,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
                   ]
                 );
                 toast.success("Income data exported successfully");
-              } catch (err) {
+              } catch {
                 toast.error("Failed to export data");
               }
             }}
