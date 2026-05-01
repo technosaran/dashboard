@@ -17,59 +17,29 @@ type MFSchemeSearchResult = {
   schemeName: string;
 };
 
-// Helper function to get mutual fund logo/icon
-function getMFLogo(amcName: string): string {
-  const amc = amcName.toLowerCase();
+// Helper function to get official AMC logo (Zerodha Coin Style)
+function getAMCLogoUrl(amcName: string): string {
+  const amc = (amcName || "").toLowerCase();
+  if (amc.includes('hdfc')) return 'https://logo.clearbit.com/hdfcfund.com';
+  if (amc.includes('sbi')) return 'https://logo.clearbit.com/sbimf.com';
+  if (amc.includes('icici')) return 'https://logo.clearbit.com/icicipruamc.com';
+  if (amc.includes('axis')) return 'https://logo.clearbit.com/axismf.com';
+  if (amc.includes('kotak')) return 'https://logo.clearbit.com/kotakmf.com';
+  if (amc.includes('aditya birla') || amc.includes('birla')) return 'https://logo.clearbit.com/mutualfund.adityabirlacapital.com';
+  if (amc.includes('nippon')) return 'https://logo.clearbit.com/nipponindiaim.com';
+  if (amc.includes('franklin')) return 'https://logo.clearbit.com/franklintempletonindia.com';
+  if (amc.includes('dsp')) return 'https://logo.clearbit.com/dspim.com';
+  if (amc.includes('mirae')) return 'https://logo.clearbit.com/miraeassetmf.co.in';
+  if (amc.includes('parag parikh') || amc.includes('ppfas')) return 'https://logo.clearbit.com/amc.ppfas.com';
+  if (amc.includes('motilal')) return 'https://logo.clearbit.com/motilaloswalmf.com';
+  if (amc.includes('tata')) return 'https://logo.clearbit.com/tatamutualfund.com';
+  if (amc.includes('uti')) return 'https://logo.clearbit.com/utimf.com';
+  if (amc.includes('bandhan') || amc.includes('idfc')) return 'https://logo.clearbit.com/bandhanmutual.com';
+  if (amc.includes('edelweiss')) return 'https://logo.clearbit.com/edelweissmf.com';
+  if (amc.includes('sundaram')) return 'https://logo.clearbit.com/sundarammutual.com';
+  if (amc.includes('quant')) return 'https://logo.clearbit.com/quantmutual.com';
   
-  // Map AMC names to colors for gradient backgrounds
-  const amcColors: Record<string, { from: string; to: string; emoji: string }> = {
-    'hdfc': { from: '#0066cc', to: '#0052a3', emoji: '🏦' },
-    'sbi': { from: '#1e3a8a', to: '#1e40af', emoji: '🏛️' },
-    'icici': { from: '#ff6b35', to: '#f7931e', emoji: '🏢' },
-    'axis': { from: '#97144d', to: '#c41e3a', emoji: '🏦' },
-    'kotak': { from: '#ed1c24', to: '#c8102e', emoji: '🏦' },
-    'aditya birla': { from: '#0066b2', to: '#004c8c', emoji: '🏢' },
-    'nippon': { from: '#e31e24', to: '#b71c1c', emoji: '🗾' },
-    'franklin': { from: '#003da5', to: '#002d7a', emoji: '🦅' },
-    'dsp': { from: '#00a651', to: '#008542', emoji: '💚' },
-    'mirae': { from: '#0052cc', to: '#003d99', emoji: '🌏' },
-    'parag parikh': { from: '#6366f1', to: '#4f46e5', emoji: '📈' },
-    'ppfas': { from: '#6366f1', to: '#4f46e5', emoji: '📊' },
-    'motilal': { from: '#ff6b00', to: '#cc5500', emoji: '🔶' },
-    'tata': { from: '#1e3a8a', to: '#1e40af', emoji: '🏭' },
-    'uti': { from: '#ed1c24', to: '#c8102e', emoji: '🏛️' },
-    'default': { from: '#6366f1', to: '#8b5cf6', emoji: '💼' }
-  };
-  
-  // Find matching AMC
-  const matchedAMC = Object.keys(amcColors).find(key => amc.includes(key)) || 'default';
-  return amcColors[matchedAMC].emoji;
-}
-
-function getMFGradient(amcName: string): string {
-  const amc = amcName.toLowerCase();
-  
-  const amcColors: Record<string, string> = {
-    'hdfc': 'linear-gradient(135deg, #0066cc, #0052a3)',
-    'sbi': 'linear-gradient(135deg, #1e3a8a, #1e40af)',
-    'icici': 'linear-gradient(135deg, #ff6b35, #f7931e)',
-    'axis': 'linear-gradient(135deg, #97144d, #c41e3a)',
-    'kotak': 'linear-gradient(135deg, #ed1c24, #c8102e)',
-    'aditya birla': 'linear-gradient(135deg, #0066b2, #004c8c)',
-    'nippon': 'linear-gradient(135deg, #e31e24, #b71c1c)',
-    'franklin': 'linear-gradient(135deg, #003da5, #002d7a)',
-    'dsp': 'linear-gradient(135deg, #00a651, #008542)',
-    'mirae': 'linear-gradient(135deg, #0052cc, #003d99)',
-    'parag parikh': 'linear-gradient(135deg, #6366f1, #4f46e5)',
-    'ppfas': 'linear-gradient(135deg, #6366f1, #4f46e5)',
-    'motilal': 'linear-gradient(135deg, #ff6b00, #cc5500)',
-    'tata': 'linear-gradient(135deg, #1e3a8a, #1e40af)',
-    'uti': 'linear-gradient(135deg, #ed1c24, #c8102e)',
-    'default': 'linear-gradient(135deg, #6366f1, #8b5cf6)'
-  };
-  
-  const matchedAMC = Object.keys(amcColors).find(key => amc.includes(key)) || 'default';
-  return amcColors[matchedAMC];
+  return ''; // fallback to initials
 }
 
 export default function MutualFundsClient({ initialData }: { initialData?: FinanceData }) {
@@ -339,10 +309,10 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
             <div className="glass-card-static p-6">
               <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em] mb-2">Overall P&L</p>
               <div className="flex flex-col">
-                <p className={`text-2xl font-black ${stats.totalPnL >= 0 ? 'text-[--success]' : 'text-[--danger]'}`}>
+                <p className={`text-2xl font-black ${stats.totalPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                   {stats.totalPnL >= 0 ? '+' : ''}₹{Math.abs(stats.totalPnL).toLocaleString()}
                 </p>
-                <p className={`text-sm font-bold mt-1 ${stats.totalPnL >= 0 ? 'text-[--success]' : 'text-[--danger]'} opacity-70`}>
+                <p className={`text-sm font-bold mt-1 ${stats.totalPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'} opacity-70`}>
                   {stats.totalPnL >= 0 ? '+' : ''}{stats.totalPnLPercent.toFixed(2)}%
                 </p>
               </div>
@@ -395,7 +365,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
 
             {/* Top Performers */}
             <div className="glass-card-static p-8">
-              <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[--success] mb-6 flex items-center gap-2">
+              <h3 className="text-sm font-black uppercase tracking-[0.2em] text-emerald-400 mb-6 flex items-center gap-2">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                   <path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                 </svg>
@@ -414,10 +384,10 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                         <p className="text-[11px] text-[--text-muted] mt-0.5">{mf.category}</p>
                       </div>
                       <div className="text-right ml-4">
-                        <p className={`text-[14px] font-black ${pnlPercent >= 0 ? 'text-[--success]' : 'text-[--danger]'}`}>
+                        <p className={`text-[14px] font-black ${pnlPercent >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                           {pnlPercent >= 0 ? '+' : ''}{pnlPercent.toFixed(2)}%
                         </p>
-                        <p className={`text-[11px] ${pnlPercent >= 0 ? 'text-[--success]' : 'text-[--danger]'} mt-0.5`}>
+                        <p className={`text-[11px] ${pnlPercent >= 0 ? 'text-emerald-400' : 'text-rose-400'} mt-0.5`}>
                           {pnlPercent >= 0 ? '+' : ''}₹{pnl.toFixed(2)}
                         </p>
                       </div>
@@ -441,8 +411,13 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                 return (
                   <div key={mf.id} className="glass-card-static p-5 hover:bg-white/[0.02] transition-all border border-white/5">
                     <div className="flex items-start gap-3 mb-4">
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0" style={{ background: getMFGradient(mf.amc_name || '') }}>
-                        {getMFLogo(mf.amc_name || '')}
+                      <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center flex-shrink-0 overflow-hidden border border-white/20 p-0.5 shadow-md">
+                        {getAMCLogoUrl(mf.amc_name || '') ? (
+                          <img src={getAMCLogoUrl(mf.amc_name || '')} alt={mf.amc_name || 'AMC'} className="w-full h-full object-contain rounded-full" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
+                        ) : null}
+                        <span className={`text-[15px] font-black text-slate-800 ${getAMCLogoUrl(mf.amc_name || '') ? 'hidden' : ''}`}>
+                          {mf.amc_name ? mf.amc_name.substring(0, 1).toUpperCase() : 'M'}
+                        </span>
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-[13px] font-bold text-[--text-primary] line-clamp-2 leading-tight">{mf.fund_name}</p>
@@ -451,10 +426,10 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                     </div>
                     <div className="flex justify-between items-center mb-3">
                       <div className="text-right">
-                        <p className={`text-[14px] font-black ${pnl >= 0 ? 'text-[--success]' : 'text-[--danger]'}`}>
+                        <p className={`text-[14px] font-black ${pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                           {pnl >= 0 ? '+' : ''}₹{Math.abs(pnl).toLocaleString()}
                         </p>
-                        <p className={`text-[10px] font-bold ${pnl >= 0 ? 'text-[--success]' : 'text-[--danger]'} opacity-70`}>
+                        <p className={`text-[10px] font-bold ${pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'} opacity-70`}>
                           {pnl >= 0 ? '+' : ''}{pnlPercent.toFixed(2)}%
                         </p>
                       </div>
@@ -466,7 +441,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                       </div>
                       <div className="text-right">
                         <p className="text-[--text-muted] mb-1">Current</p>
-                        <p className="font-bold text-[--success]">₹{currentVal.toLocaleString()}</p>
+                        <p className="font-bold text-emerald-400">₹{currentVal.toLocaleString()}</p>
                       </div>
                     </div>
                     <div className="mt-3 pt-3 border-t border-white/5 text-[10px] text-[--text-muted]">
@@ -494,11 +469,11 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
           </div>
           <div className={`status-dot scale-90 ${isValidating ? 'animate-pulse bg-yellow-400' : 'bg-emerald-400 opacity-50'}`} />
         </div>
-        <div className="flex items-center gap-3 w-full md:w-auto">
+        <div className="flex flex-wrap md:flex-nowrap items-center gap-3 w-full md:w-auto">
             {/* Auto refreshing enabled */}
             <button 
               onClick={() => setShowAnalytics(true)} 
-              className="btn-secondary !h-11 !px-6 flex items-center gap-2"
+              className="btn-secondary !h-11 !px-6 flex items-center justify-center gap-2 hidden md:flex"
               title="View Analytics"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -508,7 +483,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
             </button>
             <button 
               onClick={exportHoldings} 
-              className="btn-secondary !h-11 !px-6 flex items-center gap-2"
+              className="btn-secondary !h-11 !px-6 flex items-center justify-center gap-2 hidden md:flex"
               title="Export Holdings"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -516,7 +491,10 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
               </svg>
               Export
             </button>
-            <button onClick={() => { setFormData(prev => ({ ...prev, trade_type: 'buy' })); setSearchQuery(""); setShowAddModal(true); }} className="btn-primary !h-11 !px-8">
+            <button 
+              onClick={() => { setFormData(prev => ({ ...prev, trade_type: 'buy' })); setSearchQuery(""); setShowAddModal(true); }} 
+              className="btn-primary !h-12 md:!h-11 !px-8 w-full md:w-auto text-[13px] md:text-[11px] font-black uppercase tracking-widest shadow-[0_4px_20px_rgba(var(--accent-primary-rgb),0.3)] order-first md:order-last"
+            >
                 Record Investment
             </button>
         </div>
@@ -535,17 +513,17 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
         <div className="glass-card-static p-6 flex flex-col gap-2">
             <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Total P&L</span>
             <div className="flex flex-col">
-              <span className={`text-xl md:text-2xl font-black tabular-nums ${stats.totalPnL >= 0 ? "text-[--success]" : "text-[--danger]"}`}>
+              <span className={`text-xl md:text-2xl font-black tabular-nums ${stats.totalPnL >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
                   {stats.totalPnL >= 0 ? "+" : ""}₹{Math.abs(stats.totalPnL).toLocaleString()}
               </span>
-              <span className={`text-[10px] font-black ${stats.totalPnL >= 0 ? "text-[--success]" : "text-[--danger]"} opacity-60`}>
+              <span className={`text-[10px] font-black ${stats.totalPnL >= 0 ? "text-emerald-400" : "text-rose-400"} opacity-60`}>
                   ({stats.totalPnL >= 0 ? "+" : ""}{stats.totalPnLPercent.toFixed(2)}%)
               </span>
             </div>
         </div>
         <div className="glass-card-static p-6 flex flex-col gap-2">
             <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Avg. Return</span>
-            <span className={`text-xl md:text-2xl font-black tabular-nums ${stats.totalPnL >= 0 ? "text-[--success]" : "text-[--danger]"}`}>
+            <span className={`text-xl md:text-2xl font-black tabular-nums ${stats.totalPnL >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
                 {stats.totalPnL >= 0 ? "+" : ""}{stats.totalPnLPercent.toFixed(2)}%
             </span>
         </div>
@@ -594,14 +572,13 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                       <tr key={mf.id} className="hover:bg-white/[0.01] group transition-colors">
                           <td className="px-6 py-5">
                               <div className="flex items-center gap-4">
-                                  <div 
-                                    className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shadow-lg"
-                                    style={{ 
-                                      background: getMFGradient(mf.amc_name || ''),
-                                      boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
-                                    }}
-                                  >
-                                      {getMFLogo(mf.amc_name || '')}
+                                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center flex-shrink-0 overflow-hidden border border-white/20 p-0.5 shadow-md">
+                                    {getAMCLogoUrl(mf.amc_name || '') ? (
+                                      <img src={getAMCLogoUrl(mf.amc_name || '')} alt={mf.amc_name || 'AMC'} className="w-full h-full object-contain rounded-full" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
+                                    ) : null}
+                                    <span className={`text-[15px] font-black text-slate-800 ${getAMCLogoUrl(mf.amc_name || '') ? 'hidden' : ''}`}>
+                                      {mf.amc_name ? mf.amc_name.substring(0, 1).toUpperCase() : 'M'}
+                                    </span>
                                   </div>
                                   <div className="flex flex-col">
                                       <div className="flex items-center gap-2">
@@ -636,7 +613,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                           <td className="px-6 py-5 text-right font-medium tabular-nums text-[#666] text-[13px]">₹{Number(mf.avg_nav).toFixed(3)}</td>
                           <td className="px-6 py-5 text-right font-bold tabular-nums text-[#eee] text-[14px]">₹{Number(mf.current_nav).toFixed(3)}</td>
                           <td className="px-6 py-5 text-right whitespace-nowrap">
-                              <div className={`flex flex-col items-end ${pnl >= 0 ? "text-[--success]" : "text-[--danger]"}`}>
+                              <div className={`flex flex-col items-end ${pnl >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
                                   <span className="text-[14px] font-bold tabular-nums">{pnl >= 0 ? "+" : "-"}₹{Math.abs(pnl).toLocaleString()}</span>
                                   <span className="text-[11px] font-bold tabular-nums opacity-60">{pnl >= 0 ? "+" : ""}{pnlPercent.toFixed(2)}%</span>
                               </div>

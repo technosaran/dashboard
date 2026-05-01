@@ -36,7 +36,22 @@ function formatNum(val: number, decimals = 2): string {
 
 export default function StocksClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { investments, accounts, stockTrades: trades }, isValidating } = useFinanceData(initialData);
-  const stocks = useMemo(() => investments.filter(i => i.type === "stock") as Stock[], [investments]);
+  const stocks = useMemo(() => {
+    return investments.filter(i => i.type === "stock").map(i => {
+      // Zerodha-style midnight reset: if the last fetch was on a previous calendar day, Day PnL is 0.
+      let day_change = i.day_change;
+      let day_change_percent = i.day_change_percent;
+      if (i.last_fetch_at) {
+        const fetchDateIST = new Date(i.last_fetch_at).toLocaleString("en-US", { timeZone: "Asia/Kolkata", year: "numeric", month: "numeric", day: "numeric" });
+        const currentDateIST = new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata", year: "numeric", month: "numeric", day: "numeric" });
+        if (fetchDateIST !== currentDateIST) {
+          day_change = 0;
+          day_change_percent = 0;
+        }
+      }
+      return { ...i, day_change, day_change_percent } as Stock;
+    });
+  }, [investments]);
   const searchParams = useSearchParams();
   const [showForm, setShowForm] = useState(searchParams?.get("action") === "new");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -398,10 +413,10 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
             <div className="glass-card-static p-6">
               <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em] mb-2">Overall P&L</p>
               <div className="flex flex-col">
-                <p className={`text-2xl font-black ${totalPnL >= 0 ? 'text-[--success]' : 'text-[--danger]'}`}>
+                <p className={`text-2xl font-black ${totalPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                   {totalPnL >= 0 ? '+' : ''}₹{Math.abs(totalPnL).toLocaleString()}
                 </p>
-                <p className={`text-sm font-bold mt-1 ${totalPnL >= 0 ? 'text-[--success]' : 'text-[--danger]'} opacity-70`}>
+                <p className={`text-sm font-bold mt-1 ${totalPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'} opacity-70`}>
                   {totalPnL >= 0 ? '+' : ''}{totalPnLPercent.toFixed(2)}%
                 </p>
               </div>
@@ -438,7 +453,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             {/* Top Gainers */}
             <div className="glass-card-static p-8">
-              <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[--success] mb-6 flex items-center gap-2">
+              <h3 className="text-sm font-black uppercase tracking-[0.2em] text-emerald-400 mb-6 flex items-center gap-2">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                   <path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                 </svg>
@@ -457,8 +472,8 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                         <p className="text-[11px] text-[--text-muted] mt-0.5">{inv.name}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-[14px] font-black text-[--success]">+{pnlPct.toFixed(2)}%</p>
-                        <p className="text-[11px] text-[--success] mt-0.5">+₹{pnl.toFixed(2)}</p>
+                        <p className="text-[14px] font-black text-emerald-400">+{pnlPct.toFixed(2)}%</p>
+                        <p className="text-[11px] text-emerald-400 mt-0.5">+₹{pnl.toFixed(2)}</p>
                       </div>
                     </div>
                   );
@@ -468,7 +483,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
 
             {/* Top Losers */}
             <div className="glass-card-static p-8">
-              <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[--danger] mb-6 flex items-center gap-2">
+              <h3 className="text-sm font-black uppercase tracking-[0.2em] text-rose-400 mb-6 flex items-center gap-2">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                   <path d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
                 </svg>
@@ -487,8 +502,8 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                         <p className="text-[11px] text-[--text-muted] mt-0.5">{inv.name}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-[14px] font-black text-[--danger]">{pnlPct.toFixed(2)}%</p>
-                        <p className="text-[11px] text-[--danger] mt-0.5">₹{pnl.toFixed(2)}</p>
+                        <p className="text-[14px] font-black text-rose-400">{pnlPct.toFixed(2)}%</p>
+                        <p className="text-[11px] text-rose-400 mt-0.5">₹{pnl.toFixed(2)}</p>
                       </div>
                     </div>
                   );
@@ -515,10 +530,10 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                         <p className="text-[10px] text-[--text-muted] mt-1 line-clamp-1">{stock.name}</p>
                       </div>
                       <div className="text-right">
-                        <p className={`text-[14px] font-black ${pnl >= 0 ? 'text-[--success]' : 'text-[--danger]'}`}>
+                        <p className={`text-[14px] font-black ${pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                           {pnl >= 0 ? '+' : ''}₹{Math.abs(pnl).toLocaleString()}
                         </p>
-                        <p className={`text-[10px] font-bold ${pnl >= 0 ? 'text-[--success]' : 'text-[--danger]'} opacity-70`}>
+                        <p className={`text-[10px] font-bold ${pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'} opacity-70`}>
                           {pnl >= 0 ? '+' : ''}{pnlPct.toFixed(2)}%
                         </p>
                       </div>
@@ -530,7 +545,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                       </div>
                       <div className="text-right">
                         <p className="text-[--text-muted] mb-1">Current</p>
-                        <p className="font-bold text-[--success]">₹{current.toLocaleString()}</p>
+                        <p className="font-bold text-emerald-400">₹{current.toLocaleString()}</p>
                       </div>
                     </div>
                     <div className="mt-3 pt-3 border-t border-white/5 text-[10px] text-[--text-muted]">
@@ -558,11 +573,22 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
           </div>
           <div className={`status-dot scale-90 ${isValidating ? 'animate-pulse bg-yellow-400' : 'bg-emerald-400 opacity-50'}`} />
         </div>
-        <div className="flex items-center gap-3 w-full md:w-auto">
+        <div className="flex flex-wrap md:flex-nowrap items-center gap-3 w-full md:w-auto">
             {/* Auto refresh enabled */}
             <button 
+              onClick={handleRefreshAll} 
+              disabled={refreshing}
+              className="btn-secondary !h-11 !px-6 flex items-center justify-center gap-2 flex-1 md:flex-none"
+              title="Refresh Market Prices"
+            >
+              <svg className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              <span className="hidden md:inline">Refresh</span>
+            </button>
+            <button 
               onClick={() => setShowAnalytics(true)} 
-              className="btn-secondary !h-11 !px-6 flex items-center gap-2"
+              className="btn-secondary !h-11 !px-6 flex items-center justify-center gap-2 hidden md:flex"
               title="View Analytics"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -572,7 +598,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
             </button>
             <button 
               onClick={exportHoldings} 
-              className="btn-secondary !h-11 !px-6 flex items-center gap-2"
+              className="btn-secondary !h-11 !px-6 flex items-center justify-center gap-2 hidden md:flex"
               title="Export Holdings"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -580,7 +606,10 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
               </svg>
               Export
             </button>
-            <button onClick={() => setShowForm(true)} className="btn-primary !h-11 !px-8">
+            <button 
+              onClick={() => setShowForm(true)} 
+              className="btn-primary !h-12 md:!h-11 !px-8 w-full md:w-auto text-[13px] md:text-[11px] font-black uppercase tracking-widest shadow-[0_4px_20px_rgba(var(--accent-primary-rgb),0.3)] order-first md:order-last"
+            >
                 Add Stock
             </button>
         </div>
@@ -599,10 +628,10 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
         <div className="glass-card-static p-6 flex flex-col gap-2">
           <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Unrealized P&L</span>
           <div className="flex flex-col">
-            <span className={`text-xl md:text-2xl font-black tabular-nums ${totalPnL >= 0 ? "text-[--success]" : "text-[--danger]"}`}>
+            <span className={`text-xl md:text-2xl font-black tabular-nums ${totalPnL >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
               {totalPnL >= 0 ? "+" : ""}{formatNum(totalPnL)}
             </span>
-            <span className={`text-[10px] font-black ${totalPnL >= 0 ? "text-[--success]" : "text-[--danger]"} opacity-60`}>
+            <span className={`text-[10px] font-black ${totalPnL >= 0 ? "text-emerald-400" : "text-rose-400"} opacity-60`}>
               ({totalPnL >= 0 ? "+" : ""}{totalPnLPercent.toFixed(2)}%)
             </span>
           </div>
@@ -610,10 +639,10 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
         <div className="glass-card-static p-6 flex flex-col gap-2">
           <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">{"Day's P&L"}</span>
           <div className="flex flex-col">
-            <span className={`text-xl md:text-2xl font-black tabular-nums ${totalDayPnL >= 0 ? "text-[--success]" : "text-[--danger]"}`}>
+            <span className={`text-xl md:text-2xl font-black tabular-nums ${totalDayPnL >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
               {totalDayPnL >= 0 ? "+" : ""}{formatNum(totalDayPnL)}
             </span>
-            <span className={`text-[10px] font-black ${totalDayPnL >= 0 ? "text-[--success]" : "text-[--danger]"} opacity-60`}>
+            <span className={`text-[10px] font-black ${totalDayPnL >= 0 ? "text-emerald-400" : "text-rose-400"} opacity-60`}>
               ({totalDayPnL >= 0 ? "+" : ""}{totalDayPnLPercent.toFixed(2)}%)
             </span>
           </div>
@@ -701,23 +730,27 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                           </div>
                           <span className="text-[10px] text-[--text-muted] font-normal">{inv.name}</span>
                         </div>
-                        <div className="absolute left-0 top-0 bottom-0 flex items-center bg-[--bg-elevated] px-4 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto shadow-xl">
-                          <button onClick={() => startSell(inv)} className="h-7 px-3 bg-[--danger]/10 hover:bg-[--danger] text-[--danger] hover:text-white text-[11px] font-bold rounded transition-colors mr-2 uppercase tracking-tight">SELL</button>
-                          <button onClick={() => startEdit(inv)} className="h-7 px-3 bg-[--accent-primary]/10 hover:bg-[--accent-primary] text-[--accent-primary-light] hover:text-white text-[11px] font-medium rounded transition-colors">EDIT</button>
-                        </div>
                       </td>
                       <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[--text-secondary]">{inv.quantity}</td>
                       <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[--text-secondary]">{formatNum(inv.buy_price)}</td>
                       <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[--text-primary] font-normal">{formatNum(inv.current_price)}</td>
                       <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[--text-primary]">{formatNum(currentVal)}</td>
-                      <td className={`py-4 px-4 text-right tabular-nums text-[13px] font-medium ${isProfit ? "text-[--success]" : "text-[--danger]"}`}>{formatNum(pnl)}</td>
+                      <td className={`py-4 px-4 text-right tabular-nums text-[13px] font-medium ${isProfit ? "text-emerald-400" : "text-rose-400"}`}>{formatNum(pnl)}</td>
                       <td className="py-4 px-4 text-right tabular-nums">
                         <div className="flex flex-col items-end">
-                           <span className={`text-[12px] font-medium ${inv.day_change !== null && inv.day_change >= 0 ? "text-[--success]" : "text-[--danger]"}`}>{inv.day_change !== null ? (inv.day_change > 0 ? "+" : "") + formatNum(inv.day_change) : "—"}</span>
-                           <span className={`text-[10px] font-bold ${inv.day_change_percent !== null && inv.day_change_percent >= 0 ? "text-[--success]" : "text-[--danger]"}`}>{inv.day_change_percent !== null ? (inv.day_change_percent > 0 ? "+" : "") + Number(inv.day_change_percent).toFixed(2) + "%" : ""}</span>
+                           <span className={`text-[12px] font-medium ${inv.day_change !== null && inv.day_change >= 0 ? "text-emerald-400" : "text-rose-400"}`}>{inv.day_change !== null ? (inv.day_change > 0 ? "+" : "") + formatNum(inv.day_change) : "—"}</span>
+                           <span className={`text-[10px] font-bold ${inv.day_change_percent !== null && inv.day_change_percent >= 0 ? "text-emerald-400" : "text-rose-400"}`}>{inv.day_change_percent !== null ? (inv.day_change_percent > 0 ? "+" : "") + Number(inv.day_change_percent).toFixed(2) + "%" : ""}</span>
                         </div>
                       </td>
-                      <td className={`py-4 px-4 text-right tabular-nums text-[13px] font-medium ${isProfit ? "text-[--success]" : "text-[--danger]"}`}>{isProfit ? "+" : ""}{pnlPct.toFixed(2)}%</td>
+                      <td className="py-4 px-4 text-right tabular-nums text-[13px] font-medium relative">
+                        <div className={`transition-opacity ${isProfit ? "text-emerald-400" : "text-rose-400"}`}>
+                          {isProfit ? "+" : ""}{pnlPct.toFixed(2)}%
+                        </div>
+                        <div className="absolute inset-0 flex items-center justify-end pr-4 gap-2 opacity-0 group-hover:opacity-100 transition-all pointer-events-none group-hover:pointer-events-auto bg-[--bg-base] backdrop-blur-md">
+                          <button onClick={(e) => { e.stopPropagation(); startSell(inv); }} className="h-7 px-4 bg-rose-500 hover:bg-rose-600 text-white text-[11px] font-black rounded shadow-[0_4px_10px_rgba(244,63,94,0.2)] transition-colors uppercase tracking-tight">SELL</button>
+                          <button onClick={(e) => { e.stopPropagation(); startEdit(inv); }} className="h-7 px-4 bg-sky-500 hover:bg-sky-600 text-white text-[11px] font-black rounded shadow-[0_4px_10px_rgba(14,165,233,0.2)] transition-colors uppercase tracking-tight">EDIT</button>
+                        </div>
+                      </td>
                     </tr>
                   );
                 })}
@@ -740,10 +773,10 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                              <span className="text-[10px] text-[--text-muted] uppercase font-bold">{inv.name}</span>
                           </div>
                           <div className="text-right">
-                             <div className={`text-[15px] font-black ${isProfit ? "text-[--success]" : "text-[--danger]"}`}>
+                             <div className={`text-[15px] font-black ${isProfit ? "text-emerald-400" : "text-rose-400"}`}>
                                 {isProfit ? "+" : ""}₹{formatNum(pnl)}
                              </div>
-                             <div className={`text-[10px] font-bold opacity-60 ${isProfit ? "text-[--success]" : "text-[--danger]"}`}>
+                             <div className={`text-[10px] font-bold opacity-60 ${isProfit ? "text-emerald-400" : "text-rose-400"}`}>
                                 {isProfit ? "+" : ""}{pnlPct.toFixed(2)}%
                              </div>
                           </div>
@@ -754,14 +787,17 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                           <div><p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-1">LTP</p><p className="text-[13px] font-black">₹{formatNum(inv.current_price)}</p></div>
                           <div className="text-right">
                              <p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-1">Day Return</p>
-                             <p className={`text-[13px] font-black ${inv.day_change && inv.day_change >= 0 ? "text-[--success]" : "text-[--danger]"}`}>
+                             <p className={`text-[13px] font-black ${inv.day_change && inv.day_change >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
                                 {inv.day_change ? (inv.day_change > 0 ? "+" : "") + formatNum(inv.day_change) : "—"}
                              </p>
                           </div>
                        </div>
                        <div className="flex gap-2">
-                          <button onClick={() => startSell(inv)} className="flex-1 py-3 bg-[--danger]/10 text-[--danger] text-[10px] font-black uppercase tracking-widest rounded-xl active:bg-[--danger]/20">Exit Position</button>
-                          <button onClick={() => startEdit(inv)} className="flex-1 py-3 bg-white/5 text-[--text-muted] text-[10px] font-black uppercase tracking-widest rounded-xl">View Details</button>
+                          <button onClick={() => { setEditingId(null); setFormData({ symbol: inv.symbol || "", name: inv.name, quantity: "", buy_price: inv.current_price.toString(), current_price: inv.current_price.toString(), exchange: inv.symbol?.endsWith(".BO") ? "BSE" : "NSE", trade_type: "buy", deduct_from_account: "", currency: "INR", notes: "", bought_at: new Date().toISOString().split("T")[0] }); setShowForm(true); }} className="flex-1 py-3 bg-[--success]/20 hover:bg-[--success]/30 text-emerald-400 border border-[--success]/30 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-[--success]/5">Buy</button>
+                          <button onClick={() => startSell(inv)} className="flex-1 py-3 bg-[--danger]/20 hover:bg-[--danger]/30 text-rose-400 border border-[--danger]/30 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-[--danger]/5">Sell</button>
+                          <button onClick={() => startEdit(inv)} className="w-12 py-3 bg-white/10 hover:bg-white/20 text-white border border-white/20 text-[10px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center transition-all shadow-lg">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                          </button>
                        </div>
                     </div>
                   );
@@ -798,14 +834,14 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                   <tr key={trade.id} className="border-b border-[--border-default] hover:bg-[--bg-elevated] transition-all">
                     <td className="py-4 px-4 text-[12px] text-[--text-muted]">{trade.trade_date ? new Date(trade.trade_date).toLocaleDateString() : "N/A"}</td>
                     <td className="py-4 px-4">
-                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-sm uppercase tracking-tighter ${trade.trade_type === 'buy' ? 'bg-[--success]/10 text-[--success]' : 'bg-[--danger]/10 text-[--danger]'}`}>
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-sm uppercase tracking-tighter ${trade.trade_type === 'buy' ? 'bg-[--success]/10 text-emerald-400' : 'bg-[--danger]/10 text-rose-400'}`}>
                         {trade.trade_type}
                       </span>
                     </td>
                     <td className="py-4 px-4 text-[13px] font-medium text-[--text-primary]">{trade.symbol.split('.')[0]}</td>
                     <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[--text-secondary]">{trade.quantity}</td>
                     <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[--text-secondary]">{formatNum(trade.price)}</td>
-                    <td className="py-4 px-4 text-right tabular-nums text-[11px] text-[--danger]">₹{formatNum(trade.charges ?? 0)}</td>
+                    <td className="py-4 px-4 text-right tabular-nums text-[11px] text-rose-400">₹{formatNum(trade.charges ?? 0)}</td>
                     <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[--text-primary] font-medium">₹{formatNum(trade.total_amount)}</td>
                   </tr>
                 ))}
@@ -835,7 +871,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="relative">
+                <div className="relative z-50">
                   <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[10px] text-[--text-muted] uppercase tracking-widest font-bold z-10">Symbol</label>
                   <input
                     required value={formData.symbol}

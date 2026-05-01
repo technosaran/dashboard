@@ -142,14 +142,14 @@ export default function LedgerClient() {
 
   const getActionBadge = (type: string) => {
     const styles: Record<string, { bg: string; color: string; text: string }> = {
-      CREATE: { bg: "rgba(0, 184, 148, 0.12)", color: "var(--success)", text: "Created" },
-      DELETE: { bg: "rgba(214, 48, 49, 0.12)", color: "var(--danger)", text: "Deleted" },
-      UPDATE: { bg: "rgba(116, 185, 255, 0.12)", color: "#74b9ff", text: "Updated" },
-      TRANSFER_IN: { bg: "rgba(0, 184, 148, 0.12)", color: "var(--success)", text: "Transfer In" },
-      TRANSFER_OUT: { bg: "rgba(214, 48, 49, 0.12)", color: "var(--danger)", text: "Transfer Out" },
-      ADJUST_UP: { bg: "rgba(0, 184, 148, 0.12)", color: "var(--success)", text: "Adjust Up" },
-      ADJUST_DOWN: { bg: "rgba(214, 48, 49, 0.12)", color: "var(--danger)", text: "Adjust Down" },
-      SEND_MONEY: { bg: "rgba(214, 48, 49, 0.12)", color: "var(--danger)", text: "Family Transfer" },
+      CREATE: { bg: "rgba(16, 185, 129, 0.12)", color: "#34d399", text: "Created" },
+      DELETE: { bg: "rgba(244, 63, 94, 0.12)", color: "#fb7185", text: "Deleted" },
+      UPDATE: { bg: "rgba(14, 165, 233, 0.12)", color: "#38bdf8", text: "Updated" },
+      TRANSFER_IN: { bg: "rgba(16, 185, 129, 0.12)", color: "#34d399", text: "Transfer In" },
+      TRANSFER_OUT: { bg: "rgba(244, 63, 94, 0.12)", color: "#fb7185", text: "Transfer Out" },
+      ADJUST_UP: { bg: "rgba(16, 185, 129, 0.12)", color: "#34d399", text: "Adjust Up" },
+      ADJUST_DOWN: { bg: "rgba(244, 63, 94, 0.12)", color: "#fb7185", text: "Adjust Down" },
+      SEND_MONEY: { bg: "rgba(244, 63, 94, 0.12)", color: "#fb7185", text: "Family Transfer" },
     };
     const style = styles[type] || { bg: "rgba(255, 255, 255, 0.05)", color: "var(--text-secondary)", text: type };
     return (
@@ -271,7 +271,7 @@ export default function LedgerClient() {
                           <td className="px-6 py-6 whitespace-nowrap"><span className="text-sm font-bold text-[--text-secondary]">{log.account_name || "—"}</span></td>
                           <td className="px-6 py-6 whitespace-nowrap">
                             <div className="flex flex-col">
-                               <span className="text-lg font-black" style={{ color: isDebit ? "var(--danger)" : "var(--success)" }}>
+                               <span className={`text-lg font-black ${isDebit ? "text-rose-400" : "text-emerald-400"}`}>
                                  {log.amount !== null ? `${isDebit ? '-' : '+'}₹${log.amount.toLocaleString()}` : "—"}
                                </span>
                                <span className="text-[10px] font-black text-[--text-muted]">Net: ₹{log.new_balance?.toLocaleString()}</span>
@@ -347,7 +347,7 @@ export default function LedgerClient() {
                   <div className="flex items-end justify-between mb-3">
                     <div className="flex flex-col">
                       <span className="text-[10px] font-black uppercase tracking-tight text-[--text-muted] mb-1">Impact</span>
-                      <div className="text-2xl font-black" style={{ color: isDebit ? "var(--danger)" : "var(--success)" }}>
+                      <div className={`text-2xl font-black ${isDebit ? "text-rose-400" : "text-emerald-400"}`}>
                         {l.amount !== null ? `${isDebit ? '-' : '+'}₹${l.amount.toLocaleString()}` : "—"}
                       </div>
                     </div>
