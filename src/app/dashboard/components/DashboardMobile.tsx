@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { format } from "date-fns";
+import { memo } from "react";
 import type { FinanceData } from "@/hooks/use-finance-data";
 
 type DashboardStats = {
@@ -23,7 +24,7 @@ type Props = {
   isValidating: boolean;
 };
 
-export default function DashboardMobile({ stats, recentLogs, isValidating }: Props) {
+const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, isValidating }: Props) {
   return (
     <div className="flex flex-col gap-6 md:hidden min-h-screen animate-fade-in relative z-20 pb-24">
       {/* Mobile Header / Balance */}
@@ -155,4 +156,6 @@ export default function DashboardMobile({ stats, recentLogs, isValidating }: Pro
        </div>
     </div>
   );
-}
+});
+
+export default DashboardMobile;

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { format } from "date-fns";
-import { useMemo } from "react";
+import { useMemo, memo } from "react";
 import Greeting from "@/components/greeting";
 import type { FinanceData } from "@/hooks/use-finance-data";
 import { ResponsiveContainer, AreaChart, Area, CartesianGrid, Tooltip, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis } from "recharts";
@@ -48,7 +48,7 @@ type Props = {
   isValidating: boolean;
 };
 
-export default function DashboardDesktop({ stats, recentLogs, isLoading, isValidating }: Props) {
+const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, isLoading, isValidating }: Props) {
   // Extract portfolio data computation into a single useMemo
   const portfolioData = useMemo<PieEntry[]>(() => {
     if (stats.totalBalance === 0) return [];
@@ -270,4 +270,6 @@ export default function DashboardDesktop({ stats, recentLogs, isLoading, isValid
       </div>
     </div>
   );
-}
+});
+
+export default DashboardDesktop;

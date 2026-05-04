@@ -38,68 +38,83 @@ export default function DashboardClient({ initialData }: { initialData?: Finance
     const stockBalance = investments.reduce((sum, inv) => sum + (Number(inv.quantity) * Number(inv.current_price || 0)), 0);
     const mfBalance = mutualFunds.reduce((sum, mf) => sum + (Number(mf.units) * Number(mf.current_nav || 0)), 0);
     const bondBalance = (bonds || []).filter(b => b.status === 'Active').reduce((sum, b) => sum + Number(b.current_value || 0), 0);
+    
     const stockCount = investments.filter((inv) => Number(inv.quantity) > 0).length;
     const mfCount = mutualFunds.filter((mf) => Number(mf.units) > 0).length;
     const totalBalance = cashBalance + stockBalance + mfBalance + bondBalance;
     
     const now = new Date();
-    const currentMonthTxns = transactions.filter((transaction) =>
-      isWithinInterval(new Date(transaction.date), {
-        start: startOfMonth(now),
-        end: endOfMonth(now),
-      })
-    );
-
-    const monthlySpend = currentMonthTxns
-      .filter((transaction) => transaction.type === "expense")
-      .reduce((sum, transaction) => sum + Number(transaction.amount), 0);
-
-    const monthlyIncome = currentMonthTxns
-      .filter((transaction) => transaction.type === "income")
-      .reduce((sum, transaction) => sum + Number(transaction.amount), 0);
-
-    const expenseTrend = transactions
-      .filter((transaction) => transaction.type === "expense")
-      .slice(0, 15)
-      .reverse()
-      .map((transaction) => ({
-        date: transaction.date,
-        amount: Number(transaction.amount),
-        category: transaction.category || "Others",
-        type: transaction.type,
-      }));
-
-    // Income vs Expense past 6 months
+    const startOfCurrMonth = startOfMonth(now).getTime();
+    const endOfCurrMonth = endOfMonth(now).getTime();
+    
+    let monthlySpend = 0;
+    let monthlyIncome = 0;
+    const expenseTrend: any[] = [];
+    const catMap: Record<string, number> = {};
+    
+    // Trend Map Initialization
     const trendMap: Record<string, TrendMapEntry> = {};
     for (let i = 5; i >= 0; i--) {
       const d = subMonths(now, i);
       const m = format(d, "MMM");
       trendMap[m] = { name: m, income: 0, expense: 0 };
     }
-    transactions.forEach(t => {
-      if (!t.date) return;
-      try {
-        const m = format(parseISO(t.date), "MMM");
-        if (trendMap[m]) {
-          if (t.type === "income") trendMap[m].income += Number(t.amount);
-          if (t.type === "expense") trendMap[m].expense += Number(t.amount);
-        }
-      } catch (e) {
-        console.warn('Bad transaction date:', t.date, e);
-      }
-    });
 
-    // Category Pie Chart (Current Month)
-    const catMap: Record<string, number> = {};
-    currentMonthTxns.filter(t => t.type === 'expense').forEach(t => {
-      catMap[t.category || "Others"] = (catMap[t.category || "Others"] || 0) + Number(t.amount);
-    });
+    // Single pass over transactions
+    for (let i = 0; i < transactions.length; i++) {
+      const t = transactions[i];
+      if (!t.date) continue;
+      
+      const tDate = parseISO(t.date);
+      const tTime = tDate.getTime();
+      const tAmount = Number(t.amount);
+      const tType = t.type;
+      
+      // Monthly Stats & Category Map
+      if (tTime >= startOfCurrMonth && tTime <= endOfCurrMonth) {
+        if (tType === "income") monthlyIncome += tAmount;
+        if (tType === "expense") {
+          monthlySpend += tAmount;
+          const cat = t.category || "Others";
+          catMap[cat] = (catMap[cat] || 0) + tAmount;
+        }
+      }
+
+      // Expense Trend (Last 15)
+      if (tType === "expense" && expenseTrend.length < 15) {
+        expenseTrend.push({
+          date: t.date,
+          amount: tAmount,
+          category: t.category || "Others",
+          type: tType,
+        });
+      }
+
+      // 6-Month Trend
+      const m = format(tDate, "MMM");
+      if (trendMap[m]) {
+        if (tType === "income") trendMap[m].income += tAmount;
+        if (tType === "expense") trendMap[m].expense += tAmount;
+      }
+    }
+
     const pieData = Object.entries(catMap).map(([name, value], index) => {
       const resolvedColor = CHART_COLOURS[index % CHART_COLOURS.length];
       return { name, value, fill: resolvedColor, color: resolvedColor, percentage: "0" };
     }).sort((a,b) => b.value - a.value);
 
-    return { totalBalance, monthlySpend, monthlyIncome, expenseTrend, pieData, stockCount, mfCount, stockBalance, mfBalance, trendData: Object.values(trendMap) };
+    return { 
+      totalBalance, 
+      monthlySpend, 
+      monthlyIncome, 
+      expenseTrend: expenseTrend.reverse(), 
+      pieData, 
+      stockCount, 
+      mfCount, 
+      stockBalance, 
+      mfBalance, 
+      trendData: Object.values(trendMap) 
+    };
   }, [accounts, transactions, investments, mutualFunds, bonds]);
 
   // Conditionally render only one view based on screen size

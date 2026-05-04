@@ -176,14 +176,8 @@ export async function getStockDetails(symbol: string, exchange: string = "NSE") 
     const price = meta.regularMarketPrice;
     const prevClose = meta.previousClose;
     
-    // Check if the market time is from today in IST
-    const marketTime = (meta.regularMarketTime || 0) * 1000;
-    const marketDateIST = new Date(marketTime).toLocaleString("en-US", { timeZone: "Asia/Kolkata", year: "numeric", month: "numeric", day: "numeric" });
-    const currentDateIST = new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata", year: "numeric", month: "numeric", day: "numeric" });
-    const isSameDay = marketDateIST === currentDateIST;
-    
-    const change = isSameDay ? price - prevClose : 0;
-    const changePercent = (isSameDay && prevClose > 0) ? (change / prevClose) * 100 : 0;
+    const change = price - prevClose;
+    const changePercent = prevClose > 0 ? (change / prevClose) * 100 : 0;
 
     return {
       name: meta.symbol.split(".")[0], // Could fetch name from search if needed

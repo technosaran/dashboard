@@ -265,8 +265,10 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
   useEffect(() => {
     void handleRefreshAll();
     const timer = setInterval(() => {
-      void handleRefreshAll();
-    }, 15000);
+      if (document.visibilityState === "visible") {
+        void handleRefreshAll();
+      }
+    }, 60000);
     return () => clearInterval(timer);
   }, [handleRefreshAll]);
 
