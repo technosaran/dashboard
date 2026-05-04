@@ -29,8 +29,3 @@ export async function login(formData: FormData) {
   redirect("/dashboard");
 }
 
-export async function logout() {
-  const supabase = await createClient();
-  await supabase.auth.signOut();
-  redirect("/login");
-}

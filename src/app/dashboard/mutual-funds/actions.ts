@@ -9,20 +9,6 @@ type MutualFundRpcResult = {
     error?: string | null;
 } | null;
 
-export async function getMutualFunds() {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return [];
-
-    const { data } = await supabase
-        .from("mutual_funds")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
-
-    return data || [];
-}
-
 export async function searchMFSchemes(query: string) {
     if (query.length < 3) return [];
     try {

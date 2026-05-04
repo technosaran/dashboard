@@ -25,7 +25,7 @@ type FinanceData = {
 };
 
 export type { FinanceData };
-export const FINANCE_DATA_KEY = "finance_overview_data";
+const FINANCE_DATA_KEY = "finance_overview_data";
 
 async function fetchFinanceData(): Promise<FinanceData> {
   const { data, error } = await supabase.rpc("get_finance_overview");

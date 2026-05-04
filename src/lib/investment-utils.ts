@@ -3,7 +3,7 @@
  * Based on Zerodha's official brokerage calculator as of 2024-2025
  */
 
-export interface ZerodhaCharges {
+interface ZerodhaCharges {
   brokerage: number;
   stt: number;
   txnCharge: number;

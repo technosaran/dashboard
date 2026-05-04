@@ -2,7 +2,7 @@ export type Bank = { name: string; domain: string };
 
 // Bank registry mapping names to their official domains
 // Used for logo resolution via multiple logo APIs
-export const BANKS: Bank[] = [
+const BANKS: Bank[] = [
   // Major Public Sector Banks
   { name: "State Bank of India (SBI)",  domain: "sbi.co.in" },
   { name: "Punjab National Bank (PNB)", domain: "pnbindia.in" },
@@ -95,44 +95,6 @@ export const BANKS: Bank[] = [
 ];
 
 /**
- * Get the logo URL for a bank using Google favicon service (high-res, no API key needed)
- * Falls back through multiple providers for reliability
- */
-export function getBankLogoUrl(bankNameOrDomain: string, size: number = 128): string {
-  // Try to find the bank in our registry
-  const bank = BANKS.find((b) => {
-    const q = bankNameOrDomain.toLowerCase();
-    return b.name.toLowerCase() === q || b.domain.toLowerCase() === q;
-  });
-
-  const domain = bank?.domain || guessDomainFromName(bankNameOrDomain);
-
-  // Use Google's high-res favicon service (no API key, works reliably)
-  return `https://www.google.com/s2/favicons?domain=${domain}&sz=${size}`;
-}
-
-/**
- * Get multiple logo source URLs for fallback chain
- */
-export function getBankLogoSources(bankNameOrDomain: string): string[] {
-  const bank = BANKS.find((b) => {
-    const q = bankNameOrDomain.toLowerCase();
-    return b.name.toLowerCase() === q || b.domain.toLowerCase() === q;
-  });
-
-  const domain = bank?.domain || guessDomainFromName(bankNameOrDomain);
-
-  return [
-    // Primary: Google favicons (most reliable, no API key)
-    `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
-    // Fallback 1: DuckDuckGo icons
-    `https://icons.duckduckgo.com/ip3/${domain}.ico`,
-    // Fallback 2: Direct favicon from the website
-    `https://${domain}/favicon.ico`,
-  ];
-}
-
-/**
  * Get the domain registered for a bank name
  */
 export function getBankDomain(bankName: string): string | null {
@@ -140,19 +102,7 @@ export function getBankDomain(bankName: string): string | null {
   return bank?.domain || null;
 }
 
-/**
- * Try to guess a domain from a bank name
- */
-function guessDomainFromName(name: string): string {
-  const cleaned = name.toLowerCase()
-    .replace(/\(.*?\)/g, '')
-    .replace(/bank|india|ltd|limited|pvt|private/gi, '')
-    .trim()
-    .replace(/\s+/g, '')
-    .replace(/[^a-z0-9]/g, '');
 
-  return `${cleaned}.com`;
-}
 
 export function searchBanks(query: string): Bank[] {
   if (!query.trim()) return BANKS.slice(0, 15); // Show popular banks by default

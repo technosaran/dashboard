@@ -13,7 +13,7 @@ import { ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area, CartesianGri
 import { CHART_COLOURS, getCategoryColour } from "@/lib/chart-colours";
 import { exportToCSV } from "@/lib/export-csv";
 
-export const CATEGORIES = [
+const CATEGORIES = [
   { label: "Rent", icon: "🏠", color: getCategoryColour("Bills & Utilities") },
   { label: "Food", icon: "🍔", color: getCategoryColour("Food & Dining") },
   { label: "Travel", icon: "✈️", color: getCategoryColour("Travel") },

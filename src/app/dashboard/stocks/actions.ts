@@ -101,21 +101,7 @@ export async function createInvestment(data: {
   return { success: true };
 }
 
-export async function getStockTrades() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Unauthorized" };
 
-  const { data, error } = await supabase
-    .from("stock_trades")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("trade_date", { ascending: false })
-    .order("created_at", { ascending: false });
-
-  if (error) return { error: error.message };
-  return { data };
-}
 
 export async function updateInvestment(id: string, data: {
   name?: string;
@@ -161,22 +147,7 @@ export async function deleteInvestment(id: string) {
   return { success: true };
 }
 
-export async function updateCurrentPrice(id: string, current_price: number) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Unauthorized" };
 
-  const { error } = await supabase
-    .from("investments")
-    .update({ current_price, updated_at: new Date().toISOString() })
-    .eq("id", id)
-    .eq("user_id", user.id);
-
-  if (error) return { error: error.message };
-
-  revalidatePath("/dashboard/stocks");
-  return { success: true };
-}
 
 export async function getStockDetails(symbol: string, exchange: string = "NSE") {
   if (!symbol) return { error: "Symbol is required" };

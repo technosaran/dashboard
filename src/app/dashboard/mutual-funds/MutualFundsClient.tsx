@@ -413,6 +413,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                     <div className="flex items-start gap-3 mb-4">
                       <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center flex-shrink-0 overflow-hidden border border-white/20 p-0.5 shadow-md">
                         {getAMCLogoUrl(mf.amc_name || '') ? (
+                          // eslint-disable-next-line @next/next/no-img-element
                           <img src={getAMCLogoUrl(mf.amc_name || '')} alt={mf.amc_name || 'AMC'} className="w-full h-full object-contain rounded-full" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
                         ) : null}
                         <span className={`text-[15px] font-black text-slate-800 ${getAMCLogoUrl(mf.amc_name || '') ? 'hidden' : ''}`}>
@@ -574,6 +575,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                               <div className="flex items-center gap-4">
                                   <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center flex-shrink-0 overflow-hidden border border-white/20 p-0.5 shadow-md">
                                     {getAMCLogoUrl(mf.amc_name || '') ? (
+                                      // eslint-disable-next-line @next/next/no-img-element
                                       <img src={getAMCLogoUrl(mf.amc_name || '')} alt={mf.amc_name || 'AMC'} className="w-full h-full object-contain rounded-full" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
                                     ) : null}
                                     <span className={`text-[15px] font-black text-slate-800 ${getAMCLogoUrl(mf.amc_name || '') ? 'hidden' : ''}`}>

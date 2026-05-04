@@ -13,7 +13,7 @@ export const CHART_COLOURS = [
 ] as const;
 
 // Category-specific colors for expenses
-export const CATEGORY_COLOURS: Record<string, string> = {
+const CATEGORY_COLOURS: Record<string, string> = {
   "Food & Dining": "#FF6B6B",
   "Transportation": "#4ECDC4",
   "Shopping": "#45B7D1",
@@ -31,6 +31,3 @@ export function getCategoryColour(category: string): string {
   return CATEGORY_COLOURS[category] || CATEGORY_COLOURS["Others"];
 }
 
-export function getChartColour(index: number): string {
-  return CHART_COLOURS[index % CHART_COLOURS.length];
-}
