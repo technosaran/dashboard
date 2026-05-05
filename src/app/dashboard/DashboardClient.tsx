@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import { format, endOfMonth, isWithinInterval, startOfMonth, parseISO, subMonths } from "date-fns";
+import { format, endOfMonth, startOfMonth, parseISO, subMonths } from "date-fns";
 import { useFinanceData } from "@/hooks/use-finance-data";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import type { FinanceData } from "@/hooks/use-finance-data";
