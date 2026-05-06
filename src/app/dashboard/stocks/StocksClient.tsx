@@ -38,16 +38,13 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
   const { data: { investments, accounts, stockTrades: trades }, isValidating } = useFinanceData(initialData);
   const stocks = useMemo(() => {
     return investments.filter(i => i.type === "stock").map(i => {
-      // Zerodha-style midnight reset: if the last fetch was on a previous calendar day, Day PnL is 0.
+      // Compute day change dynamically from previous_close when available.
+      // This ensures values display regardless of when the last refresh happened.
       let day_change = i.day_change;
       let day_change_percent = i.day_change_percent;
-      if (i.last_fetch_at) {
-        const fetchDateIST = new Date(i.last_fetch_at).toLocaleString("en-US", { timeZone: "Asia/Kolkata", year: "numeric", month: "numeric", day: "numeric" });
-        const currentDateIST = new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata", year: "numeric", month: "numeric", day: "numeric" });
-        if (fetchDateIST !== currentDateIST) {
-          day_change = 0;
-          day_change_percent = 0;
-        }
+      if (i.previous_close && i.previous_close > 0) {
+        day_change = i.current_price - i.previous_close;
+        day_change_percent = (day_change / i.previous_close) * 100;
       }
       return { ...i, day_change, day_change_percent } as Stock;
     });

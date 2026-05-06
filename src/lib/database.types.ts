@@ -837,6 +837,162 @@ export type Database = {
           },
         ]
       }
+      forex_accounts: {
+        Row: {
+          id: string
+          user_id: string
+          broker_name: string
+          account_label: string
+          account_number: string | null
+          balance: number
+          total_deposited: number
+          total_withdrawn: number
+          total_pnl: number
+          currency: string
+          status: string | null
+          notes: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          broker_name: string
+          account_label: string
+          account_number?: string | null
+          balance?: number
+          total_deposited?: number
+          total_withdrawn?: number
+          total_pnl?: number
+          currency?: string
+          status?: string | null
+          notes?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          broker_name?: string
+          account_label?: string
+          account_number?: string | null
+          balance?: number
+          total_deposited?: number
+          total_withdrawn?: number
+          total_pnl?: number
+          currency?: string
+          status?: string | null
+          notes?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      forex_trades: {
+        Row: {
+          id: string
+          user_id: string
+          forex_account_id: string
+          pair: string
+          trade_type: string
+          lot_size: number
+          entry_price: number | null
+          exit_price: number | null
+          pnl: number
+          trade_date: string
+          close_date: string | null
+          status: string | null
+          notes: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          forex_account_id: string
+          pair: string
+          trade_type: string
+          lot_size: number
+          entry_price?: number | null
+          exit_price?: number | null
+          pnl?: number
+          trade_date?: string
+          close_date?: string | null
+          status?: string | null
+          notes?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          forex_account_id?: string
+          pair?: string
+          trade_type?: string
+          lot_size?: number
+          entry_price?: number | null
+          exit_price?: number | null
+          pnl?: number
+          trade_date?: string
+          close_date?: string | null
+          status?: string | null
+          notes?: string | null
+          created_at?: string | null
+        }
+        Relationships: [{
+          foreignKeyName: "forex_trades_forex_account_id_fkey"
+          columns: ["forex_account_id"]
+          isOneToOne: false
+          referencedRelation: "forex_accounts"
+          referencedColumns: ["id"]
+        }]
+      }
+      forex_transactions: {
+        Row: {
+          id: string
+          user_id: string
+          forex_account_id: string
+          bank_account_id: string | null
+          transaction_type: string
+          amount: number
+          notes: string | null
+          transaction_date: string
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          forex_account_id: string
+          bank_account_id?: string | null
+          transaction_type: string
+          amount: number
+          notes?: string | null
+          transaction_date?: string
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          forex_account_id?: string
+          bank_account_id?: string | null
+          transaction_type?: string
+          amount?: number
+          notes?: string | null
+          transaction_date?: string
+          created_at?: string | null
+        }
+        Relationships: [{
+          foreignKeyName: "forex_transactions_forex_account_id_fkey"
+          columns: ["forex_account_id"]
+          isOneToOne: false
+          referencedRelation: "forex_accounts"
+          referencedColumns: ["id"]
+        }, {
+          foreignKeyName: "forex_transactions_bank_account_id_fkey"
+          columns: ["bank_account_id"]
+          isOneToOne: false
+          referencedRelation: "accounts"
+          referencedColumns: ["id"]
+        }]
+      }
     }
     Views: {
       dashboard_stats: {

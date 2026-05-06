@@ -22,6 +22,9 @@ type FinanceData = {
   mutualFundTrades: Tables<"mutual_fund_trades">[];
   bonds: Tables<"bonds">[];
   bondTransactions: Tables<"bond_transactions">[];
+  forexAccounts: Tables<"forex_accounts">[];
+  forexTrades: Tables<"forex_trades">[];
+  forexTransactions: Tables<"forex_transactions">[];
 };
 
 export type { FinanceData };
@@ -64,6 +67,9 @@ export function useFinanceData(initialData?: FinanceData) {
       mutualFundTrades: [],
       bonds: [],
       bondTransactions: [],
+      forexAccounts: [],
+      forexTrades: [],
+      forexTransactions: [],
     }
   });
 
@@ -194,6 +200,27 @@ export function useFinanceData(initialData?: FinanceData) {
         schema: "public", 
         table: "bond_transactions" 
       }, () => handleChange("bond_transactions"))
+      
+      // Forex accounts
+      .on("postgres_changes", { 
+        event: "*", 
+        schema: "public", 
+        table: "forex_accounts" 
+      }, () => handleChange("forex_accounts"))
+      
+      // Forex trades
+      .on("postgres_changes", { 
+        event: "*", 
+        schema: "public", 
+        table: "forex_trades" 
+      }, () => handleChange("forex_trades"))
+      
+      // Forex transactions
+      .on("postgres_changes", { 
+        event: "*", 
+        schema: "public", 
+        table: "forex_transactions" 
+      }, () => handleChange("forex_transactions"))
       
       .subscribe((status) => {
         if (status === "SUBSCRIBED") {

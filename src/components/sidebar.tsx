@@ -100,6 +100,16 @@ const nav = [
     ),
   },
   {
+    label: "Forex",
+    href: "/dashboard/forex",
+    icon: (
+      <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 2a14.5 14.5 0 000 20M12 2a14.5 14.5 0 010 20M2 12h20" />
+      </svg>
+    ),
+  },
+  {
     label: "Settings",
     href: "/dashboard/settings",
     icon: (
@@ -155,11 +165,12 @@ export default function Sidebar() {
     { label: "Transfer", href: "/dashboard/accounts?action=transfer", icon: "🔄", color: "var(--accent-primary-light)" },
     { label: "Trade", href: "/dashboard/stocks?action=new", icon: "📈", color: "#3b82f6" },
     { label: "Funds", href: "/dashboard/mutual-funds?action=new", icon: "🏦", color: "#a855f7" },
+    { label: "FX Trade", href: "/dashboard/forex", icon: "💱", color: "#fbbf24" },
   ];
 
   const mobileNavLeft = nav.slice(0, 2); // Dashboard, Accounts
   const mobileNavRight = [nav[9]]; // Ledger
-  const moreNav = nav.slice(2, 9).concat(nav.slice(10)); // Income, Expenses, Stocks, Mutual Funds, Bonds, Goals, Family + Settings
+  const moreNav = nav.slice(2, 9).concat([nav[10]], [nav[11]]); // Income, Expenses, Stocks, Mutual Funds, Bonds, Goals, Forex + Settings
 
   return (
     <>

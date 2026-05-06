@@ -91,13 +91,40 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
     e.preventDefault();
     setSubmitting(true);
     
+    // Client-side validation to prevent NaN/empty values reaching the RPC
+    const purchasePrice = parseFloat(formData.purchase_price);
+    const couponRate = parseFloat(formData.coupon_rate);
+    const faceValue = parseFloat(formData.face_value);
+    const quantity = parseInt(formData.quantity);
+
+    if (!formData.bond_name.trim() || !formData.isin.trim() || !formData.issuer.trim()) {
+      toast.error("Bond name, ISIN, and issuer are required");
+      setSubmitting(false);
+      return;
+    }
+    if (isNaN(purchasePrice) || purchasePrice <= 0) {
+      toast.error("Please enter a valid purchase price");
+      setSubmitting(false);
+      return;
+    }
+    if (isNaN(couponRate) || couponRate < 0) {
+      toast.error("Please enter a valid coupon rate");
+      setSubmitting(false);
+      return;
+    }
+    if (!formData.maturity_date) {
+      toast.error("Maturity date is required");
+      setSubmitting(false);
+      return;
+    }
+
     const result = await createBond({
       ...formData,
-      face_value: parseFloat(formData.face_value),
-      quantity: parseInt(formData.quantity),
-      purchase_price: parseFloat(formData.purchase_price),
-      current_price: parseFloat(formData.current_price || formData.purchase_price),
-      coupon_rate: parseFloat(formData.coupon_rate),
+      face_value: faceValue || 1000,
+      quantity: quantity || 1,
+      purchase_price: purchasePrice,
+      current_price: parseFloat(formData.current_price) || purchasePrice,
+      coupon_rate: couponRate,
       ytm: formData.ytm ? parseFloat(formData.ytm) : undefined,
       bond_type: formData.bond_type as "Government" | "Corporate" | "Tax-Free" | "Infrastructure" | "PSU",
       interest_frequency: formData.interest_frequency as "Monthly" | "Quarterly" | "Semi-Annual" | "Annual",
