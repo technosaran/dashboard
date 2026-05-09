@@ -43,7 +43,24 @@ function getAMCLogoUrl(amcName: string): string {
 }
 
 export default function MutualFundsClient({ initialData }: { initialData?: FinanceData }) {
-  const { data: { mutualFunds: mfs, accounts, mutualFundTrades: trades }, isValidating } = useFinanceData(initialData);
+  const { data: { mutualFunds: rawMfs, accounts, mutualFundTrades: trades }, isValidating } = useFinanceData(initialData);
+  const mutualFunds = useMemo(() => {
+    return rawMfs.map(mf => {
+      const currentNav = Number(mf.current_nav || 0);
+      const prevNav = Number(mf.previous_nav || 0);
+      
+      let day_change = Number(mf.day_change || 0);
+      let day_change_percent = Number(mf.day_change_percent || 0);
+
+      if (prevNav > 0) {
+        day_change = currentNav - prevNav;
+        day_change_percent = (day_change / prevNav) * 100;
+      }
+      return { ...mf, day_change, day_change_percent } as MF;
+    });
+  }, [rawMfs]);
+
+  const mfs = mutualFunds;
   const searchParams = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(searchParams?.get("action") === "new");
   const [submitting, withLock] = useSubmitLock();
@@ -88,7 +105,11 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
     const totalPnL = totalCurrentValue - totalInvested;
     const totalPnLPercent = totalInvested > 0 ? (totalPnL / totalInvested) * 100 : 0;
     
-    return { totalInvested, totalCurrentValue, totalPnL, totalPnLPercent };
+    const dayPnL = mfs.reduce((s, g) => s + (Number(g.day_change || 0) * Number(g.units || 0)), 0);
+    const prevDayValue = totalCurrentValue - dayPnL;
+    const dayPnLPercent = prevDayValue > 0 ? (dayPnL / prevDayValue) * 100 : 0;
+
+    return { totalInvested, totalCurrentValue, totalPnL, totalPnLPercent, dayPnL, dayPnLPercent };
   }, [mfs]);
 
   useEffect(() => {
@@ -316,6 +337,17 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                 </p>
                 <p className={`text-sm font-bold mt-1 ${stats.totalPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'} opacity-70`}>
                   {stats.totalPnL >= 0 ? '+' : ''}{stats.totalPnLPercent.toFixed(2)}%
+                </p>
+              </div>
+            </div>
+            <div className="glass-card-static p-6">
+              <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em] mb-2">{"Day's P&L"}</p>
+              <div className="flex flex-col">
+                <p className={`text-2xl font-black ${stats.dayPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  {stats.dayPnL >= 0 ? '+' : '-'}₹{Math.abs(stats.dayPnL).toLocaleString()}
+                </p>
+                <p className={`text-sm font-bold mt-1 ${stats.dayPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'} opacity-70`}>
+                  {stats.dayPnL >= 0 ? '+' : ''}{stats.dayPnLPercent.toFixed(2)}%
                 </p>
               </div>
             </div>
@@ -560,6 +592,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                 <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">Volume</th>
                 <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">Avg NAV</th>
                 <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">Live NAV</th>
+                <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">Day Change</th>
                 <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">P&L</th>
               </tr>
             </thead>
@@ -615,7 +648,17 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                           </td>
                           <td className="px-6 py-5 text-right font-bold tabular-nums text-[#eee] text-[14px]">{Number(mf.units).toFixed(3)}</td>
                           <td className="px-6 py-5 text-right font-medium tabular-nums text-[#666] text-[13px]">₹{Number(mf.avg_nav).toFixed(3)}</td>
-                          <td className="px-6 py-5 text-right font-bold tabular-nums text-[#eee] text-[14px]">₹{Number(mf.current_nav).toFixed(3)}</td>
+                                                     <td className="px-6 py-5 text-right font-bold tabular-nums text-[#eee] text-[14px]">₹{Number(mf.current_nav).toFixed(3)}</td>
+                           <td className="px-6 py-5 text-right tabular-nums">
+                               <div className="flex flex-col items-end">
+                                   <span className={`text-[13px] font-bold ${mf.day_change && mf.day_change >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                                       {mf.day_change && mf.day_change > 0 ? "+" : ""}{mf.day_change ? Number(mf.day_change).toFixed(4) : "—"}
+                                   </span>
+                                   <span className={`text-[10px] font-bold ${mf.day_change_percent && mf.day_change_percent >= 0 ? "text-emerald-400" : "text-rose-400"} opacity-60`}>
+                                       {mf.day_change_percent && mf.day_change_percent > 0 ? "+" : ""}{mf.day_change_percent ? Number(mf.day_change_percent).toFixed(2) : "0.00"}%
+                                   </span>
+                               </div>
+                           </td>
                           <td className="px-6 py-5 text-right whitespace-nowrap">
                               <div className={`flex flex-col items-end ${pnl >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
                                   <span className="text-[14px] font-bold tabular-nums">{pnl >= 0 ? "+" : "-"}₹{Math.abs(pnl).toLocaleString()}</span>

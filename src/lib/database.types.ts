@@ -553,6 +553,9 @@ export type Database = {
           units: number
           updated_at: string | null
           user_id: string
+          previous_nav: number | null
+          day_change: number | null
+          day_change_percent: number | null
         }
         Insert: {
           amc_name?: string | null
@@ -571,6 +574,9 @@ export type Database = {
           units?: number
           updated_at?: string | null
           user_id: string
+          previous_nav?: number | null
+          day_change?: number | null
+          day_change_percent?: number | null
         }
         Update: {
           amc_name?: string | null
@@ -589,6 +595,9 @@ export type Database = {
           units?: number
           updated_at?: string | null
           user_id?: string
+          previous_nav?: number | null
+          day_change?: number | null
+          day_change_percent?: number | null
         }
         Relationships: []
       }

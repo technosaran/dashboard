@@ -38,13 +38,15 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
   const { data: { investments, accounts, stockTrades: trades }, isValidating } = useFinanceData(initialData);
   const stocks = useMemo(() => {
     return investments.filter(i => i.type === "stock").map(i => {
-      // Compute day change dynamically from previous_close when available.
-      // This ensures values display regardless of when the last refresh happened.
-      let day_change = i.day_change;
-      let day_change_percent = i.day_change_percent;
-      if (i.previous_close && i.previous_close > 0) {
-        day_change = i.current_price - i.previous_close;
-        day_change_percent = (day_change / i.previous_close) * 100;
+      const currentPrice = Number(i.current_price || 0);
+      const prevClose = Number(i.previous_close || 0);
+      
+      let day_change = Number(i.day_change || 0);
+      let day_change_percent = Number(i.day_change_percent || 0);
+
+      if (prevClose > 0) {
+        day_change = currentPrice - prevClose;
+        day_change_percent = (day_change / prevClose) * 100;
       }
       return { ...i, day_change, day_change_percent } as Stock;
     });

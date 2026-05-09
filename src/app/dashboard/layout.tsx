@@ -13,7 +13,7 @@ export default function DashboardLayout({
         style={{ background: "var(--bg-base)" }}
       >
         <Sidebar />
-        <main className="relative w-full flex-1 overflow-y-auto overflow-x-hidden">
+        <main className="relative flex-1 overflow-y-auto overflow-x-hidden">
           <div
             className="pointer-events-none absolute hidden md:block"
             style={{
