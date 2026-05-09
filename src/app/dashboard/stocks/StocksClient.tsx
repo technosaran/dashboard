@@ -14,6 +14,8 @@ import {
   searchStocks
 } from "./actions";
 import { calculateZerodhaCharges } from "@/lib/investment-utils";
+import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
+import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { 
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip,
   BarChart, Bar, XAxis, YAxis, CartesianGrid
@@ -493,13 +495,14 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                         </Pie>
                         <RechartsTooltip 
                           content={({ active, payload }) => {
-                            if (active && payload && payload.length) {
+                            if (active && payload && payload.length && payload[0]) {
+                              const data = payload[0].payload || {};
                               return (
                                 <div className="bg-[--bg-surface] border border-white/10 p-4 rounded-2xl shadow-2xl backdrop-blur-xl">
                                   <p className="text-[10px] font-black uppercase tracking-widest text-[--text-muted] mb-1">{payload[0].name}</p>
-                                  <p className="text-lg font-black text-white">₹{payload[0].value.toLocaleString()}</p>
+                                  <p className="text-lg font-black text-white">₹{Number(payload[0].value || 0).toLocaleString()}</p>
                                   <p className="text-[11px] font-bold text-[--accent-primary-light] mt-1">
-                                    {((Number(payload[0].value) / totalCurrent) * 100).toFixed(1)}% Allocation
+                                    {((Number(payload[0].value || 0) / totalCurrent) * 100).toFixed(1)}% Allocation
                                   </p>
                                 </div>
                               );
@@ -628,44 +631,79 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
               </div>
             </div>
 
-            {/* ── Concentration Breakdown ── */}
+            {/* ── Value Distribution Intelligence ── */}
             <div className="lg:col-span-2 glass-card-static p-8 md:p-10">
                <div className="flex justify-between items-center mb-10">
                   <div>
-                    <h3 className="text-xl font-black text-white">Position Concentration</h3>
-                    <p className="text-[11px] text-[--text-muted] font-bold uppercase tracking-widest mt-1">Weighted Capital Distribution</p>
-                  </div>
-                  <div className="hidden md:flex bg-white/5 p-1 rounded-xl">
-                     <span className="px-4 py-1.5 text-[10px] font-black text-[--accent-primary-light] bg-[--accent-primary]/10 border border-[--accent-primary]/20 rounded-lg uppercase tracking-widest">By Market Value</span>
+                    <h3 className="text-xl font-black text-white">Value Distribution</h3>
+                    <p className="text-[11px] text-[--text-muted] font-bold uppercase tracking-widest mt-1">Top 6 Capital Allocations</p>
                   </div>
                </div>
 
-               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                  {stocks.filter(s => Number(s.quantity) > 0).sort((a,b) => (Number(b.current_price)*Number(b.quantity)) - (Number(a.current_price)*Number(a.quantity))).slice(0, 9).map((stock, i) => {
-                    const current = Number(stock.current_price) * Number(stock.quantity);
-                    const weight = (current / totalCurrent) * 100;
-                    return (
-                      <div key={stock.id} className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] hover:-translate-y-1 transition-all group">
-                         <div className="flex justify-between items-start mb-4">
-                            <span className="w-8 h-8 rounded-xl bg-[--accent-primary]/10 flex items-center justify-center text-[11px] font-black text-[--accent-primary-light]">
-                              #{i+1}
-                            </span>
-                            <span className="text-[11px] font-black tabular-nums text-[--accent-primary-light]">{weight.toFixed(1)}% Weight</span>
-                         </div>
-                         <p className="text-[14px] font-black text-white truncate mb-1">{stock.symbol?.split('.')[0]}</p>
-                         <p className="text-[13px] font-black text-[--text-muted]">₹{current.toLocaleString()}</p>
-                         
-                         <div className="mt-4 h-1 bg-white/5 rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-gradient-to-r from-[--accent-primary] to-[--accent-secondary] transition-all duration-1000"
-                              style={{ width: `${weight * 3}%` }} // multiplier for better visual on small bars
-                            />
-                         </div>
-                      </div>
-                    );
-                  })}
+               <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={stocks.filter(s => Number(s.quantity) > 0).sort((a,b) => (Number(b.current_price)*Number(b.quantity)) - (Number(a.current_price)*Number(a.quantity))).slice(0, 6).map(s => ({
+                      name: s.symbol?.split('.')[0] || s.name,
+                      value: Number(s.current_price) * Number(s.quantity)
+                    }))}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: 'var(--text-muted)', fontSize: 10, fontWeight: 900}} />
+                      <YAxis hide />
+                      <RechartsTooltip 
+                        cursor={{fill: 'rgba(255,255,255,0.02)'}}
+                        contentStyle={{ background: '#111', border: '1px solid #333', borderRadius: '12px' }}
+                        formatter={(value: any) => [`₹${Number(value || 0).toLocaleString()}`, 'Market Value']}
+                      />
+                      <Bar 
+                        dataKey="value" 
+                        fill="var(--accent-primary)" 
+                        radius={[6, 6, 0, 0]}
+                        animationDuration={2000}
+                      >
+                         {stocks.slice(0, 6).map((entry, index) => (
+                           <Cell 
+                             key={`cell-${index}`} 
+                             fillOpacity={1 - (index * 0.15)}
+                             fill="var(--accent-primary)"
+                           />
+                         ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
                </div>
             </div>
+          </div>
+
+          {/* ── Portfolio Matrix grid ── */}
+          <div className="glass-card-static p-8 md:p-10">
+             <h3 className="text-xl font-black text-white mb-10">Portfolio Matrix</h3>
+             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {stocks.filter(s => Number(s.quantity) > 0).sort((a,b) => (Number(b.current_price)*Number(b.quantity)) - (Number(a.current_price)*Number(a.quantity))).map((stock) => {
+                  const current = Number(stock.current_price) * Number(stock.quantity);
+                  const invested = Number(stock.buy_price) * Number(stock.quantity);
+                  const pnl = current - invested;
+                  const weight = (current / totalCurrent) * 100;
+                  return (
+                    <div key={stock.id} className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] transition-all group">
+                       <div className="flex justify-between items-start mb-4">
+                          <span className="text-[14px] font-black text-white truncate">{stock.symbol?.split('.')[0]}</span>
+                          <span className={`text-[11px] font-black ${pnl >= 0 ? 'text-[--success]' : 'text-[--danger]'}`}>
+                            {pnl >= 0 ? '+' : ''}{invested > 0 ? ((pnl / invested) * 100).toFixed(1) : '0.0'}%
+                          </span>
+                       </div>
+                       <div className="flex justify-between items-end">
+                          <div>
+                             <p className="text-[13px] font-black text-white">₹{current.toLocaleString()}</p>
+                             <p className="text-[10px] font-bold text-[--text-muted] mt-1">{stock.quantity} Shares</p>
+                          </div>
+                          <div className="text-right">
+                             <p className="text-[10px] font-black text-[--accent-primary-light]">{weight.toFixed(1)}%</p>
+                          </div>
+                       </div>
+                    </div>
+                  );
+                })}
+             </div>
           </div>
         </div>
       </div>
