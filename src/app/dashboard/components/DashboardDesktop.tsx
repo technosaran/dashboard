@@ -7,6 +7,8 @@ import Greeting from "@/components/greeting";
 import type { FinanceData } from "@/hooks/use-finance-data";
 import { ResponsiveContainer, AreaChart, Area, CartesianGrid, Tooltip, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis } from "recharts";
 
+import { CHART_COLOURS } from "@/lib/chart-colours";
+
 type PieEntry = {
   name: string;
   value: number;
@@ -62,29 +64,29 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, isL
       { 
         name: 'Cash', 
         value: stats.cashBalance, 
-        fill: '#4ECDC4',
-        color: '#4ECDC4',
+        fill: CHART_COLOURS[0],
+        color: CHART_COLOURS[0],
         percentage: ((stats.cashBalance / stats.totalAssets) * 100).toFixed(1)
       },
       { 
         name: 'Stocks', 
         value: stats.stockBalance, 
-        fill: '#FF6B6B',
-        color: '#FF6B6B',
+        fill: CHART_COLOURS[1],
+        color: CHART_COLOURS[1],
         percentage: ((stats.stockBalance / stats.totalAssets) * 100).toFixed(1)
       },
       { 
         name: 'Mutual Funds', 
         value: stats.mfBalance, 
-        fill: '#45B7D1',
-        color: '#45B7D1',
+        fill: CHART_COLOURS[2],
+        color: CHART_COLOURS[2],
         percentage: ((stats.mfBalance / stats.totalAssets) * 100).toFixed(1)
       },
       { 
         name: 'Alt Assets', 
         value: stats.altBalance, 
-        fill: '#A29BFE',
-        color: '#A29BFE',
+        fill: CHART_COLOURS[3],
+        color: CHART_COLOURS[3],
         percentage: ((stats.altBalance / stats.totalAssets) * 100).toFixed(1)
       }
     ].filter(item => item.value > 0);

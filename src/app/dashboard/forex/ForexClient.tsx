@@ -11,6 +11,7 @@ import {
 } from "./actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { format } from "date-fns";
+import PnLValue from "@/components/pnl-value";
 
 export default function ForexClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { accounts, forexAccounts, forexTrades, forexTransactions }, isValidating } = useFinanceData(initialData);
@@ -168,15 +169,11 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                   <div className="grid grid-cols-2 gap-4">
                     <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
                       <p className="text-[8px] font-black text-[--text-muted] uppercase tracking-widest mb-1">Total P&L</p>
-                      <p className={`text-[13px] font-black tabular-nums ${acc.total_pnl >= 0 ? "text-[--success]" : "text-[--danger]"}`}>
-                        {acc.total_pnl >= 0 ? "+" : "-"}${Math.abs(acc.total_pnl).toLocaleString()}
-                      </p>
+                      <PnLValue value={acc.total_pnl} prefix="$" size="sm" className="items-start" />
                     </div>
                     <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 text-right">
                       <p className="text-[8px] font-black text-[--text-muted] uppercase tracking-widest mb-1">Capital Flow</p>
-                      <p className="text-[13px] font-black text-[--accent-primary-light] tabular-nums">
-                        {(acc.total_deposited - acc.total_withdrawn) >= 0 ? "+" : "-"}${Math.abs(acc.total_deposited - acc.total_withdrawn).toLocaleString()}
-                      </p>
+                      <PnLValue value={acc.total_deposited - acc.total_withdrawn} prefix="$" size="sm" className="items-end" />
                     </div>
                   </div>
                 </div>
@@ -208,8 +205,8 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                       </span>
                     </td>
                     <td className="p-4 text-[12px] font-bold text-white tabular-nums">{t.lot_size}</td>
-                    <td className={`p-4 text-right font-black tabular-nums ${t.pnl >= 0 ? 'text-[--success]' : 'text-[--danger]'}`}>
-                      {t.pnl >= 0 ? '+' : '-'}${Math.abs(t.pnl).toLocaleString()}
+                    <td className="p-4 text-right">
+                      <PnLValue value={t.pnl} prefix="$" size="sm" className="items-end" />
                     </td>
                   </tr>
                 ))}

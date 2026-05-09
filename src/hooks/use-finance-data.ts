@@ -106,12 +106,11 @@ export function useFinanceData(initialData?: FinanceData) {
       debouncedMutate();
     };
 
-    const channelId = Math.random().toString(36).substring(7);
+    const channelId = Math.random().toString(36).substring(2, 9);
     const channel = supabase
       .channel(`finance-realtime-${channelId}`, {
         config: {
           broadcast: { self: true },
-          presence: { key: "" },
         },
       })
       // Financial accounts
@@ -253,6 +252,20 @@ export function useFinanceData(initialData?: FinanceData) {
         schema: "public", 
         table: "liabilities" 
       }, () => handleChange("liabilities"))
+
+      // Profiles (Settings)
+      .on("postgres_changes", { 
+        event: "*", 
+        schema: "public", 
+        table: "profiles" 
+      }, () => handleChange("profiles"))
+
+      // Recurring Transactions
+      .on("postgres_changes", { 
+        event: "*", 
+        schema: "public", 
+        table: "recurring_transactions" 
+      }, () => handleChange("recurring_transactions"))
       
       .subscribe((status) => {
         if (status === "SUBSCRIBED") {

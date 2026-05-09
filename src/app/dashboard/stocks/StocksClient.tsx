@@ -16,6 +16,7 @@ import {
 import { calculateZerodhaCharges } from "@/lib/investment-utils";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
+import PnLValue from "@/components/pnl-value";
 
 type Stock = Tables<"investments"> & { total_charges?: number; pnlPercent?: number };
 
@@ -408,25 +409,11 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
         </div>
         <div className="glass-card-static p-6 flex flex-col gap-2">
           <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Unrealized P&L</span>
-          <div className="flex flex-col">
-            <span className={`text-xl md:text-2xl font-black tabular-nums ${totalPnL >= 0 ? "text-[--success]" : "text-[--danger]"}`}>
-              {totalPnL >= 0 ? "+" : ""}{formatNum(totalPnL)}
-            </span>
-            <span className={`text-[10px] font-black ${totalPnL >= 0 ? "text-[--success]" : "text-[--danger]"} opacity-60`}>
-              ({totalPnL >= 0 ? "+" : ""}{totalPnLPercent.toFixed(2)}%)
-            </span>
-          </div>
+          <PnLValue value={totalPnL} percentage={totalPnLPercent} size="lg" className="items-start" />
         </div>
         <div className="glass-card-static p-6 flex flex-col gap-2">
           <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">{"Day's P&L"}</span>
-          <div className="flex flex-col">
-            <span className={`text-xl md:text-2xl font-black tabular-nums ${totalDayPnL >= 0 ? "text-[--success]" : "text-[--danger]"}`}>
-              {totalDayPnL >= 0 ? "+" : ""}{formatNum(totalDayPnL)}
-            </span>
-            <span className={`text-[10px] font-black ${totalDayPnL >= 0 ? "text-[--success]" : "text-[--danger]"} opacity-60`}>
-              ({totalDayPnL >= 0 ? "+" : ""}{totalDayPnLPercent.toFixed(2)}%)
-            </span>
-          </div>
+          <PnLValue value={totalDayPnL} percentage={totalDayPnLPercent} size="lg" className="items-start" />
         </div>
       </div>
 
@@ -497,7 +484,6 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                   const currentVal = inv.current_price * inv.quantity;
                   const pnl = currentVal - invested;
                   const pnlPct = invested > 0 ? (pnl / invested) * 100 : 0;
-                  const isProfit = pnl >= 0;
 
                   return (
                     <tr 
@@ -516,17 +502,14 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                       <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[--text-secondary]">{formatNum(inv.buy_price)}</td>
                       <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[--text-primary] font-normal">{formatNum(inv.current_price)}</td>
                       <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[--text-primary]">{formatNum(currentVal)}</td>
-                      <td className={`py-4 px-4 text-right tabular-nums text-[13px] font-medium ${isProfit ? "text-[--success]" : "text-[--danger]"}`}>{isProfit ? "+" : ""}{formatNum(pnl)}</td>
+                      <td className="py-4 px-4 text-right tabular-nums text-[13px] font-medium">
+                        <PnLValue value={pnl} showSign={true} prefix="₹" size="sm" />
+                      </td>
                       <td className="py-4 px-4 text-right tabular-nums">
-                        <div className="flex flex-col items-end">
-                           <span className={`text-[12px] font-medium ${inv.day_change !== null && inv.day_change >= 0 ? "text-[--success]" : "text-[--danger]"}`}>{inv.day_change !== null ? (inv.day_change > 0 ? "+" : "") + formatNum(inv.day_change) : "—"}</span>
-                           <span className={`text-[10px] font-bold ${inv.day_change_percent !== null && inv.day_change_percent >= 0 ? "text-[--success]" : "text-[--danger]"}`}>{inv.day_change_percent !== null ? (inv.day_change_percent > 0 ? "+" : "") + Number(inv.day_change_percent).toFixed(2) + "%" : ""}</span>
-                        </div>
+                        <PnLValue value={inv.day_change || 0} percentage={inv.day_change_percent || 0} size="sm" />
                       </td>
                       <td className="py-4 px-4 text-right tabular-nums text-[13px] font-medium relative">
-                        <div className={`transition-opacity ${isProfit ? "text-[--success]" : "text-[--danger]"}`}>
-                          {isProfit ? "+" : ""}{pnlPct.toFixed(2)}%
-                        </div>
+                        <PnLValue value={pnlPct} showSign={true} prefix="" size="sm" />
                         <div className="absolute inset-0 flex items-center justify-end pr-4 gap-2 opacity-0 group-hover:opacity-100 transition-all pointer-events-none group-hover:pointer-events-auto bg-[--bg-base] backdrop-blur-md">
                           <button onClick={(e) => { e.stopPropagation(); startSell(inv); }} className="h-7 px-4 bg-rose-500 hover:bg-rose-600 text-white text-[11px] font-black rounded shadow-[0_4px_10px_rgba(244,63,94,0.2)] transition-colors uppercase tracking-tight">SELL</button>
                           <button onClick={(e) => { e.stopPropagation(); startEdit(inv); }} className="h-7 px-4 bg-sky-500 hover:bg-sky-600 text-white text-[11px] font-black rounded shadow-[0_4px_10px_rgba(14,165,233,0.2)] transition-colors uppercase tracking-tight">EDIT</button>

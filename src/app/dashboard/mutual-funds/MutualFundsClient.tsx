@@ -8,6 +8,7 @@ import { toast } from "react-hot-toast";
 import type { Tables } from "@/lib/database.types";
 import { recordMFInvestment, refreshNAV, searchMFSchemes, getLiveNAV } from "./actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
+import PnLValue from "@/components/pnl-value";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
 
 type MF = Tables<"mutual_funds"> & { scheme_code?: string | null; fund_symbol?: string | null; pnlPercent?: number };
@@ -38,6 +39,14 @@ function getAMCLogoUrl(amcName: string): string {
   if (amc.includes('edelweiss')) return 'https://logo.clearbit.com/edelweissmf.com';
   if (amc.includes('sundaram')) return 'https://logo.clearbit.com/sundarammutual.com';
   if (amc.includes('quant')) return 'https://logo.clearbit.com/quantmutual.com';
+  if (amc.includes('canara')) return 'https://logo.clearbit.com/canararobeco.com';
+  if (amc.includes('invesco')) return 'https://logo.clearbit.com/invescomutualfund.com';
+  if (amc.includes('lic')) return 'https://logo.clearbit.com/licmf.com';
+  if (amc.includes('mahindra')) return 'https://logo.clearbit.com/mahindramanulife.com';
+  if (amc.includes('union')) return 'https://logo.clearbit.com/unionmf.com';
+  if (amc.includes('taurus')) return 'https://logo.clearbit.com/taurusmutualfund.com';
+  if (amc.includes('navi')) return 'https://logo.clearbit.com/navi.com';
+  if (amc.includes('groww')) return 'https://logo.clearbit.com/groww.in';
   
   return ''; // fallback to initials
 }
@@ -308,32 +317,16 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
             <span className="text-xl md:text-2xl font-black tabular-nums">₹{stats.totalCurrentValue.toLocaleString()}</span>
         </div>
         <div className="glass-card-static p-6 flex flex-col gap-2">
-            <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Total P&L</span>
-            <div className="flex flex-col">
-              <span className={`text-xl md:text-2xl font-black tabular-nums ${stats.totalPnL >= 0 ? "text-[--success]" : "text-[--danger]"}`}>
-                  {stats.totalPnL >= 0 ? "+" : "-"}₹{Math.abs(stats.totalPnL).toLocaleString()}
-              </span>
-              <span className={`text-[10px] font-black ${stats.totalPnL >= 0 ? "text-[--success]" : "text-[--danger]"} opacity-60`}>
-                  ({stats.totalPnL >= 0 ? "+" : ""}{stats.totalPnLPercent.toFixed(2)}%)
-              </span>
-            </div>
+            <span className="text-[10px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Total P&L</span>
+            <PnLValue value={stats.totalPnL} percentage={stats.totalPnLPercent} size="lg" className="items-start" />
         </div>
         <div className="glass-card-static p-6 flex flex-col gap-2">
-            <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Avg. Return</span>
-            <span className={`text-xl md:text-2xl font-black tabular-nums ${stats.totalPnL >= 0 ? "text-[--success]" : "text-[--danger]"}`}>
-                {stats.totalPnL >= 0 ? "+" : ""}{stats.totalPnLPercent.toFixed(2)}%
-            </span>
+            <span className="text-[10px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Avg. Return</span>
+            <PnLValue value={stats.totalPnLPercent} prefix="" size="lg" className="items-start" />
         </div>
         <div className="glass-card-static p-6 flex flex-col gap-2">
-            <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Day's P&L</span>
-            <div className="flex flex-col">
-              <span className={`text-xl md:text-2xl font-black tabular-nums ${stats.dayPnL >= 0 ? "text-[--success]" : "text-[--danger]"}`}>
-                  {stats.dayPnL >= 0 ? "+" : "-"}₹{Math.abs(stats.dayPnL).toLocaleString()}
-              </span>
-              <span className={`text-[10px] font-black ${stats.dayPnL >= 0 ? "text-[--success]" : "text-[--danger]"} opacity-60`}>
-                  ({stats.dayPnL >= 0 ? "+" : ""}{stats.dayPnLPercent.toFixed(2)}%)
-              </span>
-            </div>
+            <span className="text-[10px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Day's P&L</span>
+            <PnLValue value={stats.dayPnL} percentage={stats.dayPnLPercent} size="lg" className="items-start" />
         </div>
       </div>
 
@@ -398,11 +391,14 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                                                           style: { background: '#1a1a1a', color: '#eee', border: '1px solid #333', fontSize: '11px', fontWeight: 'bold' }
                                                       });
                                                   }}
-                                                  className="p-1 hover:bg-white/5 rounded text-[10px]"
+                                                  className="p-1.5 hover:bg-white/10 rounded-lg text-[--text-muted] hover:text-[--accent-primary-light] transition-all"
                                                   title="View charges"
-                                              >
-                                                  👁️
-                                              </button>
+                                               >
+                                                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                                                       <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.644C3.399 8.32 7.31 5 12 5c4.69 0 8.601 3.32 9.964 6.678a1.012 1.012 0 010 .644C19.601 15.68 15.69 19 12 19c-4.69 0-8.601-3.32-9.964-6.678z" />
+                                                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                   </svg>
+                                               </button>
                                               <button 
                                                   onClick={(e) => { e.stopPropagation(); startSell(mf); }}
                                                   className="px-2 py-0.5 bg-[--danger]/10 hover:bg-[--danger] text-[--danger] hover:text-white text-[9px] font-black uppercase rounded transition-all"
@@ -419,20 +415,10 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                           <td className="px-6 py-5 text-right font-medium tabular-nums text-[#666] text-[13px]">₹{Number(mf.avg_nav).toFixed(3)}</td>
                           <td className="px-6 py-5 text-right font-bold tabular-nums text-[#eee] text-[14px]">₹{Number(mf.current_nav).toFixed(3)}</td>
                            <td className="px-6 py-5 text-right tabular-nums">
-                               <div className="flex flex-col items-end">
-                                   <span className={`text-[13px] font-bold ${mf.day_change && mf.day_change >= 0 ? "text-[--success]" : "text-[--danger]"}`}>
-                                       {mf.day_change && mf.day_change > 0 ? "+" : ""}{mf.day_change ? Number(mf.day_change).toFixed(4) : "—"}
-                                   </span>
-                                   <span className={`text-[10px] font-bold ${mf.day_change_percent && mf.day_change_percent >= 0 ? "text-[--success]" : "text-[--danger]"} opacity-60`}>
-                                       {mf.day_change_percent && mf.day_change_percent > 0 ? "+" : ""}{mf.day_change_percent ? Number(mf.day_change_percent).toFixed(2) : "0.00"}%
-                                   </span>
-                               </div>
+                               <PnLValue value={mf.day_change || 0} percentage={mf.day_change_percent || 0} size="md" />
                            </td>
                           <td className="px-6 py-5 text-right whitespace-nowrap">
-                              <div className={`flex flex-col items-end ${pnl >= 0 ? "text-[--success]" : "text-[--danger]"}`}>
-                                  <span className="text-[14px] font-bold tabular-nums">{pnl >= 0 ? "+" : "-"}₹{Math.abs(pnl).toLocaleString()}</span>
-                                  <span className="text-[11px] font-bold tabular-nums opacity-60">{pnl >= 0 ? "+" : ""}{pnlPercent.toFixed(2)}%</span>
-                              </div>
+                              <PnLValue value={pnl} percentage={pnlPercent} size="md" />
                           </td>
                       </tr>
                   );

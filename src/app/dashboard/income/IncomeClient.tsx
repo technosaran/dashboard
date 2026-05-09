@@ -12,33 +12,13 @@ import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 
 import { exportToCSV } from "@/lib/export-csv";
 
-const CHART_COLOR_FALLBACKS = [
-  "#6c5ce7",
-  "#00cec9",
-  "#00b894",
-  "#fdcb6e",
-  "#d63031",
-  "#a29bfe",
-  "#fab1a0",
-  "#81ecec",
-  "#ff7675",
-  "#74b9ff",
-];
-const CSS_COLOR_MAP: Record<string, string> = {
-  "var(--accent-primary)": "#6c5ce7",
-  "var(--accent-primary-light)": "#a29bfe",
-  "var(--accent-secondary)": "#00cec9",
-  "var(--success)": "#00b894",
-  "var(--warning)": "#fdcb6e",
-  "var(--danger)": "#d63031",
-  "var(--text-muted)": "#5a6180",
-};
+import { CHART_COLOURS } from "@/lib/chart-colours";
 function getColorByLabel(label: string) {
   let hash = 0;
   for (let i = 0; i < label.length; i += 1) {
     hash = (hash * 31 + label.charCodeAt(i)) >>> 0;
   }
-  return CHART_COLOR_FALLBACKS[hash % CHART_COLOR_FALLBACKS.length];
+  return CHART_COLOURS[hash % CHART_COLOURS.length];
 }
 
 const XAxis = dynamic(() => import("recharts").then((mod) => mod.XAxis), { ssr: false });
@@ -61,13 +41,13 @@ const Area = dynamic(() => import("recharts").then((mod) => mod.Area), { ssr: fa
 
 
 const INCOME_CATEGORIES = [
-  { label: "Salary", icon: "🏢", color: "#4ECDC4" },
-  { label: "Work", icon: "💻", color: "#45B7D1" },
-  { label: "Freelance", icon: "🚀", color: "#FFA07A" },
-  { label: "Gift", icon: "💝", color: "#F7DC6F" },
-  { label: "Bonus", icon: "✨", color: "#BB8FCE" },
-  { label: "Refund", icon: "↩️", color: "#82E0AA" },
-  { label: "Others", icon: "📦", color: "#F1948A" },
+  { label: "Salary", icon: "🏢", color: CHART_COLOURS[0] },
+  { label: "Work", icon: "💻", color: CHART_COLOURS[1] },
+  { label: "Freelance", icon: "🚀", color: CHART_COLOURS[2] },
+  { label: "Gift", icon: "💝", color: CHART_COLOURS[3] },
+  { label: "Bonus", icon: "✨", color: CHART_COLOURS[4] },
+  { label: "Refund", icon: "↩️", color: CHART_COLOURS[5] },
+  { label: "Others", icon: "📦", color: CHART_COLOURS[6] },
 ];
 
 
@@ -120,7 +100,6 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
       .map(([name, value]) => {
         const categoryColor = INCOME_CATEGORIES.find((c) => c.label === name)?.color;
         const resolvedColor =
-          (categoryColor && CSS_COLOR_MAP[categoryColor]) ||
           categoryColor ||
           getColorByLabel(name);
 

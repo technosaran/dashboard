@@ -16,6 +16,13 @@ type TrendMapEntry = {
   expense: number;
 };
 
+type TrendEntry = {
+  date: string;
+  amount: number;
+  category: string;
+  type: string;
+};
+
 export default function DashboardClient({ initialData }: { initialData?: FinanceData }) {
   const { data: financeData, isLoading, isValidating } = useFinanceData(initialData);
   
@@ -69,7 +76,7 @@ export default function DashboardClient({ initialData }: { initialData?: Finance
     
     let monthlySpend = 0;
     let monthlyIncome = 0;
-    const expenseTrend: any[] = [];
+    const expenseTrend: TrendEntry[] = [];
     const catMap: Record<string, number> = {};
     
     // Trend Map Initialization
