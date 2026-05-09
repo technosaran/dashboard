@@ -106,8 +106,9 @@ export function useFinanceData(initialData?: FinanceData) {
       debouncedMutate();
     };
 
+    const channelId = Math.random().toString(36).substring(7);
     const channel = supabase
-      .channel("finance-realtime-instant", {
+      .channel(`finance-realtime-${channelId}`, {
         config: {
           broadcast: { self: true },
           presence: { key: "" },
