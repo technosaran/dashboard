@@ -389,7 +389,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
             <p className="text-sm text-[--text-muted] mt-1">Try another account filter or create activity.</p>
           </div>
         ) : (
-          <div className="divide-y divide-white/5">
+          <div className="divide-y divide-white/10">
             {accountHistory.map((log) => {
               const account = accounts.find((a) => a.id === log.account_id);
               const isDebit = log.new_balance !== null && log.previous_balance !== null

@@ -225,7 +225,7 @@ export default function LedgerClient() {
                 <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] text-center">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-white/10">
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i} className="animate-pulse">
@@ -271,7 +271,7 @@ export default function LedgerClient() {
                           <td className="px-6 py-6 whitespace-nowrap"><span className="text-sm font-bold text-[--text-secondary]">{log.account_name || "—"}</span></td>
                           <td className="px-6 py-6 whitespace-nowrap">
                             <div className="flex flex-col">
-                               <span className={`text-lg font-black ${isDebit ? "text-rose-400" : "text-emerald-400"}`}>
+                               <span className={`text-lg font-black ${isDebit ? "text-[--danger]" : "text-[--success]"}`}>
                                  {log.amount !== null ? `${isDebit ? '-' : '+'}₹${log.amount.toLocaleString()}` : "—"}
                                </span>
                                <span className="text-[10px] font-black text-[--text-muted]">Net: ₹{log.new_balance?.toLocaleString()}</span>
@@ -329,7 +329,7 @@ export default function LedgerClient() {
           )}
         </div>
 
-        <div className="md:hidden divide-y divide-white/[0.03]">
+        <div className="md:hidden divide-y divide-white/10 border-t border-white/5">
            {filteredLogs.map(l => {
              const isDebit = l.new_balance !== null && l.previous_balance !== null 
                ? l.new_balance < l.previous_balance 
@@ -347,7 +347,7 @@ export default function LedgerClient() {
                   <div className="flex items-end justify-between mb-3">
                     <div className="flex flex-col">
                       <span className="text-[10px] font-black uppercase tracking-tight text-[--text-muted] mb-1">Impact</span>
-                      <div className={`text-2xl font-black ${isDebit ? "text-rose-400" : "text-emerald-400"}`}>
+                      <div className={`text-2xl font-black ${isDebit ? "text-[--danger]" : "text-[--success]"}`}>
                         {l.amount !== null ? `${isDebit ? '-' : '+'}₹${l.amount.toLocaleString()}` : "—"}
                       </div>
                     </div>

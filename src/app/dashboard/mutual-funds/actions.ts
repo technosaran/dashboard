@@ -27,6 +27,7 @@ export async function getLiveNAV(schemeCode: string) {
         if (data?.data?.length > 0) {
             return {
                 nav: parseFloat(data.data[0].nav),
+                prevNav: data.data.length > 1 ? parseFloat(data.data[1].nav) : parseFloat(data.data[0].nav),
                 date: data.data[0].date,
                 fund_name: data.meta.scheme_name,
                 amc: data.meta.amc
@@ -118,9 +119,10 @@ export async function refreshNAV(mfs: { id: string, scheme_code: string }[]) {
         if (live) {
             await supabase.from("mutual_funds").update({ 
                 current_nav: live.nav, 
+                previous_nav: live.prevNav,
                 last_nav_updated_at: new Date().toISOString() 
             }).eq("id", mf.id);
-            results.push({ id: mf.id, nav: live.nav });
+            results.push({ id: mf.id, nav: live.nav, prevNav: live.prevNav });
         }
     }
     revalidatePath("/dashboard/mutual-funds");

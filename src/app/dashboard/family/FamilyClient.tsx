@@ -74,7 +74,7 @@ export default function FamilyClient({
   const [activeFilter, setActiveFilter] = useState<string>("All");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [activeView, setActiveView] = useState<"directory" | "history">("directory");
+  const [activeView, setActiveView] = useState<"contacts" | "history">("contacts");
   const [isEditingRecipient, setIsEditingRecipient] = useState(false);
   const [editingRecipient, setEditingRecipient] = useState<Recipient | null>(null);
 
@@ -298,24 +298,24 @@ export default function FamilyClient({
           ))}
         </div>
         
-        <div className="flex bg-white/5 p-1 rounded-2xl w-fit">
-          <button 
-            onClick={() => setActiveView("directory")}
-            className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeView === "directory" ? "bg-[--accent-primary] text-white shadow-lg" : "text-[--text-muted]"}`}
-          >
-            Directory
-          </button>
-          <button 
-            onClick={() => setActiveView("history")}
-            className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeView === "history" ? "bg-[--accent-primary] text-white shadow-lg" : "text-[--text-muted]"}`}
-          >
-            History
-          </button>
-        </div>
+      <div className="flex bg-white/5 p-1 rounded-xl w-fit">
+        <button
+          onClick={() => setActiveView("contacts")}
+          className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeView === "contacts" ? "bg-[--accent-primary] text-white shadow-lg shadow-[--accent-primary]/20" : "text-[--text-muted] hover:text-[--text-primary]"}`}
+        >
+          Contacts ({recipients.length})
+        </button>
+        <button
+          onClick={() => setActiveView("history")}
+          className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeView === "history" ? "bg-[--success] text-white shadow-lg shadow-[--success]/20" : "text-[--text-muted] hover:text-[--text-primary]"}`}
+        >
+          History
+        </button>
+      </div>
       </div>
 
       {/* Main View Render */}
-      {activeView === "directory" ? (
+      {activeView === "contacts" ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {loading ? (
             Array.from({ length: 3 }).map((_, i) => (
@@ -387,7 +387,7 @@ export default function FamilyClient({
           <div className="px-6 py-4 border-b border-white/5 bg-white/[0.01]">
             <h3 className="text-sm font-black uppercase tracking-widest">Transaction Repository</h3>
           </div>
-          <div className="divide-y divide-white/5">
+          <div className="divide-y divide-white/10">
             {recentSends.length === 0 ? (
                <div className="py-20 text-center italic text-[--text-muted]">No wealth transfers recorded in current sequence.</div>
             ) : (

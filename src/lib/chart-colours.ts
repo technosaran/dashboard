@@ -1,33 +1,47 @@
-// Standard chart color palette for consistent visualization
+// Standard premium chart color palette for distinct visualization
 export const CHART_COLOURS = [
-  "#FF6B6B", // Red
-  "#4ECDC4", // Teal
-  "#45B7D1", // Blue
-  "#FFA07A", // Light Salmon
-  "#98D8C8", // Mint
-  "#F7DC6F", // Yellow
-  "#BB8FCE", // Purple
-  "#82E0AA", // Green
-  "#F1948A", // Pink
-  "#85C1E9", // Sky Blue
+  "#00D1FF", // Electric Blue
+  "#FF006E", // Neon Pink
+  "#8338EC", // Vivid Violet
+  "#3A86FF", // Royal Blue
+  "#FB5607", // Orange Pulse
+  "#FFBE0B", // Amber Glow
+  "#06D6A0", // Caribbean Green
+  "#EF476F", // Rose Madder
+  "#118AB2", // Blue Munsell
+  "#073B4C", // Midnight Green
+  "#7209B7", // Purple Heart
+  "#4CC9F0", // Sky Blue
+  "#F72585", // Neon Rose
 ] as const;
 
-// Category-specific colors for expenses
+// Category-specific colors for expenses - using a diverse premium palette
 const CATEGORY_COLOURS: Record<string, string> = {
-  "Food & Dining": "#FF6B6B",
-  "Transportation": "#4ECDC4",
-  "Shopping": "#45B7D1",
-  "Entertainment": "#FFA07A",
-  "Bills & Utilities": "#98D8C8",
-  "Healthcare": "#F7DC6F",
-  "Education": "#BB8FCE",
-  "Travel": "#82E0AA",
-  "Groceries": "#F1948A",
-  "Personal Care": "#85C1E9",
-  "Others": "#95A5A6",
+  "Food & Dining": "#FF006E",
+  "Transportation": "#00D1FF",
+  "Shopping": "#8338EC",
+  "Entertainment": "#FFBE0B",
+  "Bills & Utilities": "#3A86FF",
+  "Healthcare": "#06D6A0",
+  "Education": "#FB5607",
+  "Travel": "#EF476F",
+  "Groceries": "#118AB2",
+  "Personal Care": "#4CC9F0",
+  "Investment": "#7209B7",
+  "Others": "#94A3B8",
 } as const;
 
 export function getCategoryColour(category: string): string {
-  return CATEGORY_COLOURS[category] || CATEGORY_COLOURS["Others"];
+  // Try exact match
+  if (CATEGORY_COLOURS[category]) return CATEGORY_COLOURS[category];
+  
+  // Try case-insensitive and partial match for robustness
+  const lowerCat = category.toLowerCase();
+  for (const [key, value] of Object.entries(CATEGORY_COLOURS)) {
+    if (lowerCat.includes(key.toLowerCase()) || key.toLowerCase().includes(lowerCat)) {
+      return value;
+    }
+  }
+  
+  return CATEGORY_COLOURS["Others"];
 }
-

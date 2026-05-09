@@ -28,13 +28,13 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, isVal
   return (
     <div className="flex flex-col gap-6 md:hidden min-h-screen animate-fade-in relative z-20 pb-24">
       {/* Mobile Header / Balance */}
-      <div className="glass-card-static p-8 text-center flex flex-col items-center justify-center relative overflow-hidden">
+      <div className="glass-card-static p-8 text-center flex flex-col items-center justify-center relative overflow-hidden border border-white/10">
         <div className="absolute -right-10 -top-10 w-40 h-40 bg-[--accent-primary]/10 blur-3xl rounded-full" />
         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[--text-muted] mb-2">Net Worth</p>
         <h2 className="text-4xl font-black text-white tracking-tighter">
            ₹{stats.totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0 })}
         </h2>
-        <div className="mt-4 flex gap-4">
+        <div className="mt-4 flex gap-4 pt-4 border-t border-white/5 w-full justify-center">
            <div className="flex flex-col items-center">
              <span className="text-[9px] font-bold uppercase text-[--success] tracking-widest">+₹{stats.monthlyIncome.toLocaleString()}</span>
              <span className="text-[8px] text-[--text-muted] uppercase">In</span>
@@ -76,11 +76,11 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, isVal
           <h3 className="text-xs font-black uppercase tracking-widest text-[--text-muted]">Financial Pulse</h3>
           <span className={`status-dot scale-50 ${isValidating ? 'animate-pulse bg-yellow-400' : 'bg-emerald-400'}`} />
         </div>
-        <div className="space-y-3">
+        <div className="space-y-0 divide-y divide-white/5 border border-white/5 rounded-2xl overflow-hidden">
           {recentLogs.slice(0, 3).map((log) => {
              const isOut = ["DELETE", "TRANSFER_OUT", "SEND_MONEY", "ADJUST_DOWN"].includes(log.action_type);
              return (
-               <div key={log.id} className="glass-card-static p-4 flex items-center justify-between hover:bg-white/[0.04]">
+               <div key={log.id} className="glass-card-static !border-0 !rounded-none p-4 flex items-center justify-between hover:bg-white/[0.04]">
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center text-base">
                       {log.action_type === "CREATE" ? "✨" : isOut ? "📉" : "📈"}

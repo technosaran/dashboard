@@ -9,6 +9,13 @@ import type { Tables } from "@/lib/database.types";
 import { recordMFInvestment, refreshNAV, searchMFSchemes, getLiveNAV } from "./actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
+import { 
+  PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid
+} from "recharts";
+import dynamic from "next/dynamic";
+
+const Chart = dynamic(() => Promise.resolve(ResponsiveContainer), { ssr: false });
 
 type MF = Tables<"mutual_funds"> & { scheme_code?: string | null; fund_symbol?: string | null; pnlPercent?: number };
 
@@ -293,198 +300,240 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
     return () => clearInterval(timer);
   }, [handleRefreshAll]);
 
-  // If analytics is shown, render only analytics page
   if (showAnalytics) {
     return (
-      <div className="fixed inset-0 z-[300] bg-[--bg-base] overflow-y-auto animate-fade-in">
-        <div className="max-w-[1280px] mx-auto px-4 py-6">
-          {/* Header */}
-          <div className="flex justify-between items-center mb-8">
+      <div className="fixed inset-0 z-[300] bg-[--bg-base] overflow-y-auto animate-fade-in custom-scrollbar">
+        <div className="max-w-[1400px] mx-auto px-4 md:px-10 py-10">
+          {/* ── Intelligence Header ── */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 mb-12">
             <div>
-              <h1 className="text-3xl font-black tracking-tight text-[--text-primary]">Mutual Fund Analytics</h1>
-              <p className="text-[10px] text-[--text-muted] font-black uppercase tracking-[0.2em] mt-1">Portfolio Insights</p>
+              <h1 className="text-4xl md:text-5xl font-black tracking-tight text-[--text-primary] bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-white/30">
+                Wealth Intelligence
+              </h1>
+              <p className="text-[11px] text-[--text-muted] font-black uppercase tracking-[0.3em] mt-2 flex items-center gap-2">
+                <span className="w-8 h-[1px] bg-[--text-muted]/30" />
+                Mutual Fund Portfolio Optimization
+              </p>
             </div>
             <button 
               onClick={() => setShowAnalytics(false)} 
-              className="btn-secondary !h-11 !px-6 flex items-center gap-2"
+              className="group flex items-center gap-3 px-8 h-14 rounded-2xl bg-white/5 border border-white/10 text-white font-black uppercase tracking-widest text-[11px] hover:bg-[--accent-primary] hover:border-[--accent-primary] hover:shadow-[0_0_30px_rgba(var(--accent-primary-rgb),0.3)] transition-all duration-500"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+              <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
                 <path d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
-              Back to Holdings
+              Exit Analytics
             </button>
           </div>
 
-          {/* Summary Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div className="glass-card-static p-6">
-              <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em] mb-2">Total Funds</p>
-              <p className="text-2xl font-black">{mfs.length}</p>
-            </div>
-            <div className="glass-card-static p-6">
-              <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em] mb-2">Invested</p>
-              <p className="text-2xl font-black">₹{stats.totalInvested.toLocaleString()}</p>
-            </div>
-            <div className="glass-card-static p-6">
-              <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em] mb-2">Current Value</p>
-              <p className="text-2xl font-black">₹{stats.totalCurrentValue.toLocaleString()}</p>
-            </div>
-            <div className="glass-card-static p-6">
-              <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em] mb-2">Overall P&L</p>
-              <div className="flex flex-col">
-                <p className={`text-2xl font-black ${stats.totalPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                  {stats.totalPnL >= 0 ? '+' : '-'}₹{Math.abs(stats.totalPnL).toLocaleString()}
-                </p>
-                <p className={`text-sm font-bold mt-1 ${stats.totalPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'} opacity-70`}>
-                  {stats.totalPnL >= 0 ? '+' : ''}{stats.totalPnLPercent.toFixed(2)}%
-                </p>
+          {/* ── Pulse Summary ── */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-12">
+            {[
+              { label: "Assets Under Management", val: `₹${stats.totalCurrentValue.toLocaleString()}`, sub: `${mfs.length} Schemes`, color: "var(--text-primary)" },
+              { label: "Total Cost Basis", val: `₹${stats.totalInvested.toLocaleString()}`, sub: "Net Capital Flow", color: "var(--accent-primary-light)" },
+              { 
+                label: "Absolute Yield", 
+                val: `${stats.totalPnL >= 0 ? '+' : '-'}₹${Math.abs(stats.totalPnL).toLocaleString()}`, 
+                sub: `${stats.totalPnL >= 0 ? '+' : ''}${stats.totalPnLPercent.toFixed(2)}% ROI`, 
+                color: stats.totalPnL >= 0 ? "var(--success)" : "var(--danger)",
+                glow: stats.totalPnL >= 0 ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)"
+              },
+              { 
+                label: "Performance Velocity", 
+                val: `${stats.dayPnL >= 0 ? '+' : '-'}₹${Math.abs(stats.dayPnL).toLocaleString()}`, 
+                sub: `${stats.dayPnL >= 0 ? '+' : ''}${stats.dayPnLPercent.toFixed(2)}% Today`, 
+                color: stats.dayPnL >= 0 ? "var(--success)" : "var(--danger)",
+                glow: stats.dayPnL >= 0 ? "rgba(16, 185, 129, 0.1)" : "rgba(239, 68, 68, 0.1)"
+              }
+            ].map((card, i) => (
+              <div key={i} className="glass-card-static relative overflow-hidden p-6 md:p-8 group transition-all duration-500 hover:border-white/20">
+                {card.glow && <div className="absolute -right-10 -top-10 w-32 h-32 blur-[60px] rounded-full pointer-events-none" style={{ background: card.glow }} />}
+                <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3 md:mb-4">{card.label}</p>
+                <p className="text-xl md:text-3xl font-black tabular-nums tracking-tighter mb-1 md:mb-2 transition-transform group-hover:scale-[1.02] origin-left" style={{ color: card.color }}>{card.val}</p>
+                <p className="text-[10px] md:text-[12px] font-bold opacity-60" style={{ color: card.color }}>{card.sub}</p>
               </div>
-            </div>
-            <div className="glass-card-static p-6">
-              <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em] mb-2">{"Day's P&L"}</p>
-              <div className="flex flex-col">
-                <p className={`text-2xl font-black ${stats.dayPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                  {stats.dayPnL >= 0 ? '+' : '-'}₹{Math.abs(stats.dayPnL).toLocaleString()}
-                </p>
-                <p className={`text-sm font-bold mt-1 ${stats.dayPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'} opacity-70`}>
-                  {stats.dayPnL >= 0 ? '+' : ''}{stats.dayPnLPercent.toFixed(2)}%
-                </p>
-              </div>
-            </div>
+            ))}
           </div>
 
-          {/* Category Distribution */}
-          {analytics.categories.length > 0 && (
-            <div className="glass-card-static p-8 mb-6">
-              <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[--text-muted] mb-6">Category Distribution</h3>
-              <div className="space-y-4">
-                {analytics.categories.map((cat, idx) => {
-                  const percentage = (cat.value / stats.totalCurrentValue) * 100;
-                  return (
-                    <div key={idx}>
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-[13px] font-bold text-[--text-primary]">{cat.name}</span>
-                        <span className="text-[12px] font-black text-[--text-muted]">{percentage.toFixed(1)}%</span>
-                      </div>
-                      <div className="h-3 bg-white/5 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full transition-all duration-500"
-                          style={{ width: `${percentage}%` }}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            {/* ── Diversification Blueprint ── */}
+            <div className="glass-card-static p-8 md:p-10 relative overflow-hidden">
+               <div className="flex justify-between items-center mb-10">
+                  <div>
+                    <h3 className="text-xl font-black text-white">Asset Allocation</h3>
+                    <p className="text-[11px] text-[--text-muted] font-bold uppercase tracking-widest mt-1">Category Concentration</p>
+                  </div>
+               </div>
+
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+                  <div className="h-[300px] relative">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={analytics.categories}
+                          innerRadius={80}
+                          outerRadius={110}
+                          paddingAngle={5}
+                          dataKey="value"
+                          stroke="none"
+                          animationDuration={1500}
+                        >
+                          {analytics.categories.map((entry, index) => (
+                            <Cell 
+                              key={`cell-${index}`} 
+                              fill={[
+                                "var(--accent-primary)", 
+                                "var(--accent-secondary)", 
+                                "var(--success)", 
+                                "#a855f7", 
+                                "#ec4899"
+                              ][index % 5]} 
+                            />
+                          ))}
+                        </Pie>
+                        <RechartsTooltip 
+                          contentStyle={{ background: '#111', border: '1px solid #333', borderRadius: '12px' }}
+                          itemStyle={{ color: '#fff', fontSize: '12px', fontWeight: '900' }}
                         />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* AMC Distribution & Top Performers */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            {/* AMC Distribution */}
-            <div className="glass-card-static p-8">
-              <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[--text-muted] mb-6">AMC Distribution</h3>
-              <div className="space-y-4">
-                {analytics.amcs.slice(0, 5).map((amc, idx) => {
-                  const percentage = (amc.value / stats.totalCurrentValue) * 100;
-                  return (
-                    <div key={idx} className="flex justify-between items-center py-3 border-b border-white/5 last:border-0">
-                      <span className="text-[14px] font-bold text-[--text-primary]">{amc.name}</span>
-                      <span className="text-[13px] font-black text-[--text-muted]">{percentage.toFixed(1)}%</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Top Performers */}
-            <div className="glass-card-static p-8">
-              <h3 className="text-sm font-black uppercase tracking-[0.2em] text-emerald-400 mb-6 flex items-center gap-2">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                  <path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                </svg>
-                Top Performers
-              </h3>
-              <div className="space-y-4">
-                {analytics.topPerformers.map((mf, idx) => {
-                  const investment = Number(mf.units) * Number(mf.avg_nav);
-                  const currentVal = Number(mf.units) * Number(mf.current_nav);
-                  const pnl = currentVal - investment;
-                  const pnlPercent = investment > 0 ? (pnl / investment) * 100 : 0;
-                  return (
-                    <div key={idx} className="flex justify-between items-center py-3 border-b border-white/5 last:border-0">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[14px] font-bold text-[--text-primary] truncate">{mf.fund_name}</p>
-                        <p className="text-[11px] text-[--text-muted] mt-0.5">{mf.category}</p>
-                      </div>
-                      <div className="text-right ml-4">
-                        <p className={`text-[14px] font-black ${pnlPercent >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                          {pnlPercent >= 0 ? '+' : ''}{pnlPercent.toFixed(2)}%
-                        </p>
-                        <p className={`text-[11px] ${pnlPercent >= 0 ? 'text-emerald-400' : 'text-rose-400'} mt-0.5`}>
-                          {pnlPercent >= 0 ? '+' : '-'}₹{Math.abs(pnl).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          {/* Complete Portfolio Breakdown */}
-          <div className="glass-card-static p-8">
-            <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[--text-muted] mb-6">Complete Portfolio Breakdown</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {mfs.map((mf) => {
-                const investment = Number(mf.units) * Number(mf.avg_nav);
-                const currentVal = Number(mf.units) * Number(mf.current_nav);
-                const pnl = currentVal - investment;
-                const pnlPercent = investment > 0 ? (pnl / investment) * 100 : 0;
-                
-                return (
-                  <div key={mf.id} className="glass-card-static p-5 hover:bg-white/[0.02] transition-all border border-white/5">
-                    <div className="flex items-start gap-3 mb-4">
-                      <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center flex-shrink-0 overflow-hidden border border-white/20 p-0.5 shadow-md">
-                        {getAMCLogoUrl(mf.amc_name || '') ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={getAMCLogoUrl(mf.amc_name || '')} alt={mf.amc_name || 'AMC'} className="w-full h-full object-contain rounded-full" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
-                        ) : null}
-                        <span className={`text-[15px] font-black text-slate-800 ${getAMCLogoUrl(mf.amc_name || '') ? 'hidden' : ''}`}>
-                          {mf.amc_name ? mf.amc_name.substring(0, 1).toUpperCase() : 'M'}
-                        </span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[13px] font-bold text-[--text-primary] line-clamp-2 leading-tight">{mf.fund_name}</p>
-                        <p className="text-[10px] text-[--text-muted] mt-1">{mf.category}</p>
-                      </div>
-                    </div>
-                    <div className="flex justify-end items-center mb-3">
-                      <div className="text-right">
-                        <p className={`text-[14px] font-black ${pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                          {pnl >= 0 ? '+' : '-'}₹{Math.abs(pnl).toLocaleString()}
-                        </p>
-                        <p className={`text-[10px] font-bold ${pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'} opacity-70`}>
-                          {pnl >= 0 ? '+' : ''}{pnlPercent.toFixed(2)}%
-                        </p>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3 text-[11px]">
-                      <div>
-                        <p className="text-[--text-muted] mb-1">Invested</p>
-                        <p className="font-bold text-[--accent-primary]">₹{investment.toLocaleString()}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-[--text-muted] mb-1">Current</p>
-                        <p className="font-bold text-emerald-400">₹{currentVal.toLocaleString()}</p>
-                      </div>
-                    </div>
-                    <div className="mt-3 pt-3 border-t border-white/5 text-[10px] text-[--text-muted]">
-                      <span className="font-bold">{Number(mf.units).toFixed(3)}</span> units @ NAV ₹{Number(mf.current_nav).toFixed(2)}
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                       <p className="text-[10px] font-black text-[--text-muted] uppercase tracking-[0.2em] mb-1">Exposure</p>
+                       <p className="text-2xl font-black text-white">{analytics.categories.length} Types</p>
                     </div>
                   </div>
-                );
-              })}
+
+                  <div className="space-y-6">
+                    {analytics.categories.map((cat, idx) => {
+                      const percentage = (cat.value / stats.totalCurrentValue) * 100;
+                      const barColors = ["bg-[--accent-primary]", "bg-[--accent-secondary]", "bg-[--success]", "bg-purple-500", "bg-pink-500"];
+                      return (
+                        <div key={idx} className="group">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-[13px] font-black text-[--text-primary] group-hover:text-[--accent-primary-light] transition-colors">{cat.name}</span>
+                            <span className="text-[13px] font-black tabular-nums text-white/80">{percentage.toFixed(1)}%</span>
+                          </div>
+                          <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                            <div className={`h-full ${barColors[idx % 5]} rounded-full transition-all duration-1000`} style={{ width: `${percentage}%` }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+               </div>
+            </div>
+
+            {/* ── Institutional Partners (AMC Distribution) ── */}
+            <div className="glass-card-static p-8 md:p-10">
+               <div className="flex justify-between items-center mb-10">
+                  <div>
+                    <h3 className="text-xl font-black text-white">AMC Concentration</h3>
+                    <p className="text-[11px] text-[--text-muted] font-bold uppercase tracking-widest mt-1">Wealth Manager Distribution</p>
+                  </div>
+               </div>
+
+               <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={analytics.amcs.sort((a,b) => b.value - a.value).slice(0, 6)}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: 'var(--text-muted)', fontSize: 10, fontWeight: 900}} />
+                      <YAxis hide />
+                      <RechartsTooltip 
+                        cursor={{fill: 'rgba(255,255,255,0.02)'}}
+                        contentStyle={{ background: '#111', border: '1px solid #333', borderRadius: '12px' }}
+                      />
+                      <Bar 
+                        dataKey="value" 
+                        fill="var(--accent-primary)" 
+                        radius={[6, 6, 0, 0]}
+                        animationDuration={2000}
+                      >
+                         {analytics.amcs.map((entry, index) => (
+                           <Cell 
+                             key={`cell-${index}`} 
+                             fillOpacity={1 - (index * 0.15)}
+                             fill="var(--accent-primary)"
+                           />
+                         ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+               </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+            {/* ── Elite Growth Performers ── */}
+            <div className="glass-card-static p-8">
+              <div className="flex items-center gap-3 mb-8">
+                 <div className="p-2.5 rounded-xl bg-[--success]/10 border border-[--success]/20">
+                    <svg className="w-5 h-5 text-[--success]" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                      <path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    </svg>
+                 </div>
+                 <h3 className="text-lg font-black text-white">Elite Performers</h3>
+              </div>
+
+              <div className="space-y-4">
+                {analytics.topPerformers.map((mf, idx) => (
+                  <div key={idx} className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.05] transition-all group">
+                    <div className="flex justify-between items-center">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[13px] font-black text-[--text-primary] truncate leading-tight group-hover:text-[--success] transition-colors">{mf.fund_name}</p>
+                        <p className="text-[10px] text-[--text-muted] font-bold mt-1 uppercase tracking-wider">{mf.category}</p>
+                      </div>
+                      <div className="text-right ml-4">
+                        <p className="text-[14px] font-black text-[--success]">+{mf.pnlPercent?.toFixed(2)}%</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* ── Complete Portfolio Breakdown ── */}
+            <div className="lg:col-span-2 glass-card-static p-8 md:p-10">
+               <h3 className="text-xl font-black text-white mb-10">Portfolio Matrix</h3>
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {mfs.map((mf) => {
+                    const investment = Number(mf.units) * Number(mf.avg_nav);
+                    const currentVal = Number(mf.units) * Number(mf.current_nav);
+                    const pnl = currentVal - investment;
+                    const pnlPercent = investment > 0 ? (pnl / investment) * 100 : 0;
+                    
+                    return (
+                      <div key={mf.id} className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] transition-all group">
+                         <div className="flex items-center gap-4 mb-5">
+                            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center flex-shrink-0 overflow-hidden p-1 shadow-2xl">
+                              {getAMCLogoUrl(mf.amc_name || '') ? (
+                                <img src={getAMCLogoUrl(mf.amc_name || '')} alt="" className="w-full h-full object-contain" />
+                              ) : <span className="text-lg font-black text-black">{mf.amc_name?.[0]}</span>}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                               <p className="text-[13px] font-black text-white truncate group-hover:text-[--accent-primary-light] transition-colors">{mf.fund_name}</p>
+                               <div className="flex items-center gap-2 mt-1">
+                                  <span className={`text-[10px] font-black ${pnl >= 0 ? 'text-[--success]' : 'text-[--danger]'}`}>
+                                    {pnl >= 0 ? '+' : ''}{pnlPercent.toFixed(2)}% Yield
+                                  </span>
+                               </div>
+                            </div>
+                         </div>
+                         <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/5">
+                            <div>
+                               <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-widest mb-1">Value</p>
+                               <p className="text-[13px] font-black text-white">₹{currentVal.toLocaleString()}</p>
+                            </div>
+                            <div className="text-right">
+                               <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-widest mb-1">P&L</p>
+                               <p className={`text-[13px] font-black ${pnl >= 0 ? 'text-[--success]' : 'text-[--danger]'}`}>
+                                 {pnl >= 0 ? '+' : '-'}₹{Math.abs(pnl).toLocaleString()}
+                               </p>
+                            </div>
+                         </div>
+                      </div>
+                    );
+                  })}
+               </div>
             </div>
           </div>
         </div>
@@ -548,23 +597,30 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
         <div className="glass-card-static p-6 flex flex-col gap-2">
             <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Total P&L</span>
             <div className="flex flex-col">
-              <span className={`text-xl md:text-2xl font-black tabular-nums ${stats.totalPnL >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+              <span className={`text-xl md:text-2xl font-black tabular-nums ${stats.totalPnL >= 0 ? "text-[--success]" : "text-[--danger]"}`}>
                   {stats.totalPnL >= 0 ? "+" : ""}₹{Math.abs(stats.totalPnL).toLocaleString()}
               </span>
-              <span className={`text-[10px] font-black ${stats.totalPnL >= 0 ? "text-emerald-400" : "text-rose-400"} opacity-60`}>
+              <span className={`text-[10px] font-black ${stats.totalPnL >= 0 ? "text-[--success]" : "text-[--danger]"} opacity-60`}>
                   ({stats.totalPnL >= 0 ? "+" : ""}{stats.totalPnLPercent.toFixed(2)}%)
               </span>
             </div>
         </div>
         <div className="glass-card-static p-6 flex flex-col gap-2">
             <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Avg. Return</span>
-            <span className={`text-xl md:text-2xl font-black tabular-nums ${stats.totalPnL >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+            <span className={`text-xl md:text-2xl font-black tabular-nums ${stats.totalPnL >= 0 ? "text-[--success]" : "text-[--danger]"}`}>
                 {stats.totalPnL >= 0 ? "+" : ""}{stats.totalPnLPercent.toFixed(2)}%
             </span>
         </div>
         <div className="glass-card-static p-6 flex flex-col gap-2">
-            <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Total Funds</span>
-            <span className="text-xl md:text-2xl font-black tabular-nums">{mfs.length}</span>
+            <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Day's P&L</span>
+            <div className="flex flex-col">
+              <span className={`text-xl md:text-2xl font-black tabular-nums ${stats.dayPnL >= 0 ? "text-[--success]" : "text-[--danger]"}`}>
+                  {stats.dayPnL >= 0 ? "+" : ""}₹{Math.abs(stats.dayPnL).toLocaleString()}
+              </span>
+              <span className={`text-[10px] font-black ${stats.dayPnL >= 0 ? "text-[--success]" : "text-[--danger]"} opacity-60`}>
+                  ({stats.dayPnL >= 0 ? "+" : ""}{stats.dayPnLPercent.toFixed(2)}%)
+              </span>
+            </div>
         </div>
       </div>
 
@@ -596,9 +652,9 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                 <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">P&L</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/[0.03]">
+            <tbody className="divide-y divide-white/10">
               {mfs.length === 0 ? (
-                  <tr><td colSpan={5} className="px-6 py-24 text-center text-[#666] italic text-sm">Synchronize with Zerodha Coin or manual entry to view portfolio.</td></tr>
+                  <tr><td colSpan={6} className="px-6 py-24 text-center text-[#666] italic text-sm">Synchronize with Zerodha Coin or manual entry to view portfolio.</td></tr>
               ) : mfs.map((mf) => {
                   const investment = Number(mf.units) * Number(mf.avg_nav);
                   const currentVal = Number(mf.units) * Number(mf.current_nav);
@@ -636,7 +692,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                                               </button>
                                               <button 
                                                   onClick={(e) => { e.stopPropagation(); startSell(mf); }}
-                                                  className="px-2 py-0.5 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white text-[9px] font-black uppercase rounded transition-all"
+                                                  className="px-2 py-0.5 bg-[--danger]/10 hover:bg-[--danger] text-[--danger] hover:text-white text-[9px] font-black uppercase rounded transition-all"
                                               >
                                                   Redeem
                                               </button>
@@ -648,19 +704,19 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                           </td>
                           <td className="px-6 py-5 text-right font-bold tabular-nums text-[#eee] text-[14px]">{Number(mf.units).toFixed(3)}</td>
                           <td className="px-6 py-5 text-right font-medium tabular-nums text-[#666] text-[13px]">₹{Number(mf.avg_nav).toFixed(3)}</td>
-                                                     <td className="px-6 py-5 text-right font-bold tabular-nums text-[#eee] text-[14px]">₹{Number(mf.current_nav).toFixed(3)}</td>
+                          <td className="px-6 py-5 text-right font-bold tabular-nums text-[#eee] text-[14px]">₹{Number(mf.current_nav).toFixed(3)}</td>
                            <td className="px-6 py-5 text-right tabular-nums">
                                <div className="flex flex-col items-end">
-                                   <span className={`text-[13px] font-bold ${mf.day_change && mf.day_change >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                                   <span className={`text-[13px] font-bold ${mf.day_change && mf.day_change >= 0 ? "text-[--success]" : "text-[--danger]"}`}>
                                        {mf.day_change && mf.day_change > 0 ? "+" : ""}{mf.day_change ? Number(mf.day_change).toFixed(4) : "—"}
                                    </span>
-                                   <span className={`text-[10px] font-bold ${mf.day_change_percent && mf.day_change_percent >= 0 ? "text-emerald-400" : "text-rose-400"} opacity-60`}>
+                                   <span className={`text-[10px] font-bold ${mf.day_change_percent && mf.day_change_percent >= 0 ? "text-[--success]" : "text-[--danger]"} opacity-60`}>
                                        {mf.day_change_percent && mf.day_change_percent > 0 ? "+" : ""}{mf.day_change_percent ? Number(mf.day_change_percent).toFixed(2) : "0.00"}%
                                    </span>
                                </div>
                            </td>
                           <td className="px-6 py-5 text-right whitespace-nowrap">
-                              <div className={`flex flex-col items-end ${pnl >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                              <div className={`flex flex-col items-end ${pnl >= 0 ? "text-[--success]" : "text-[--danger]"}`}>
                                   <span className="text-[14px] font-bold tabular-nums">{pnl >= 0 ? "+" : "-"}₹{Math.abs(pnl).toLocaleString()}</span>
                                   <span className="text-[11px] font-bold tabular-nums opacity-60">{pnl >= 0 ? "+" : ""}{pnlPercent.toFixed(2)}%</span>
                               </div>
@@ -684,7 +740,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                 <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">Amount</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/[0.03]">
+            <tbody className="divide-y divide-white/10">
               {trades.length === 0 ? (
                 <tr><td colSpan={6} className="px-6 py-12 text-center text-[#666] italic text-sm">No transaction history recorded yet.</td></tr>
               ) : trades.map((trade) => (
@@ -692,7 +748,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                   <td className="px-6 py-4 text-[12px] font-bold text-[--text-muted] tabular-nums">{trade.date}</td>
                   <td className="px-6 py-4"><span className="text-[13px] font-bold text-[#eee]">{trade.fund_name}</span></td>
                   <td className="px-6 py-4">
-                    <span className={`px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${trade.trade_type === 'BUY' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                    <span className={`px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${trade.trade_type === 'BUY' ? 'bg-[--success]/10 text-[--success]' : 'bg-[--danger]/10 text-[--danger]'}`}>
                       {trade.trade_type}
                     </span>
                   </td>
