@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase-server";
 import MutualFundsClient from "./MutualFundsClient";
 import { redirect } from "next/navigation";
@@ -20,5 +21,9 @@ export default async function MutualFundsPage() {
   if (!user) {
     redirect("/login");
   }
-  return <MutualFundsClient />;
+  return (
+    <Suspense fallback={null}>
+      <MutualFundsClient />
+    </Suspense>
+  );
 }

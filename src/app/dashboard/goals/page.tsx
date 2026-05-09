@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase-server";
 import GoalsClient from "./GoalsClient";
 import { redirect } from "next/navigation";
@@ -19,5 +20,9 @@ export default async function GoalsPage() {
   if (!user) {
     redirect("/login");
   }
-  return <GoalsClient />;
+  return (
+    <Suspense fallback={null}>
+      <GoalsClient />
+    </Suspense>
+  );
 }

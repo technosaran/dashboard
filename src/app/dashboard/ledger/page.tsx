@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase-server";
 import LedgerClient from "./LedgerClient";
 import { redirect } from "next/navigation";
@@ -21,5 +22,9 @@ export default async function LedgerPage() {
     redirect("/login");
   }
 
-  return <LedgerClient />;
+  return (
+    <Suspense fallback={null}>
+      <LedgerClient />
+    </Suspense>
+  );
 }

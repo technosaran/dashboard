@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
 import BondsClient from "./BondsClient";
@@ -23,5 +24,9 @@ export default async function BondsPage() {
   // Prefetch data on server for instant load (matching all other modules)
   const { data: initialData } = await supabase.rpc("get_finance_overview");
 
-  return <BondsClient />;
+  return (
+    <Suspense fallback={null}>
+      <BondsClient />
+    </Suspense>
+  );
 }
