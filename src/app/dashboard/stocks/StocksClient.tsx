@@ -447,7 +447,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                       </div>
                       <div className="h-3 bg-white/5 rounded-full overflow-hidden">
                         <div 
-                          className="h-full bg-gradient-to-r from-[--accent-primary] to-[--accent-primary-light] rounded-full transition-all duration-500"
+                          className="h-full bg-gradient-to-r from-sky-500 to-cyan-400 rounded-full transition-all duration-500"
                           style={{ width: `${percentage}%` }}
                         />
                       </div>
@@ -482,7 +482,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                       </div>
                       <div className="text-right">
                         <p className="text-[14px] font-black text-emerald-400">+{pnlPct.toFixed(2)}%</p>
-                        <p className="text-[11px] text-emerald-400 mt-0.5">+₹{pnl.toFixed(2)}</p>
+                        <p className="text-[11px] text-emerald-400 mt-0.5">+₹{Math.abs(pnl).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                       </div>
                     </div>
                   );
@@ -512,7 +512,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                       </div>
                       <div className="text-right">
                         <p className="text-[14px] font-black text-rose-400">{pnlPct.toFixed(2)}%</p>
-                        <p className="text-[11px] text-rose-400 mt-0.5">₹{pnl.toFixed(2)}</p>
+                        <p className="text-[11px] text-rose-400 mt-0.5">-₹{Math.abs(pnl).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                       </div>
                     </div>
                   );

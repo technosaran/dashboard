@@ -273,7 +273,7 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
             <span className="text-[9px] w-fit px-2 py-0.5 rounded-full bg-white/5 text-[--text-muted]">{expenses.length} txns</span>
           </div>
         </div>
-        <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between bg-gradient-to-br from-[--accent-primary]/10 to-transparent">
+        <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between bg-gradient-to-br from-sky-500/10 to-transparent">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Top Sector</p>
           <div className="mt-3 flex flex-col sm:flex-row sm:items-end justify-between gap-2">
             <h3 className="text-xl md:text-2xl font-black truncate">{stats.pieData[0]?.name || "None"}</h3>

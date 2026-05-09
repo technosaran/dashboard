@@ -250,7 +250,7 @@ export default function Sidebar() {
         <div className="flex-1 flex justify-center h-full items-center relative">
            <button 
              onClick={() => setIsQuickActionOpen(!isQuickActionOpen)}
-             className={`w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all duration-500 active:scale-95 absolute -top-4 z-[110] ${isQuickActionOpen ? "bg-rose-500 rotate-45" : "bg-gradient-to-br from-[--accent-primary] to-[--accent-primary-light]"}`}
+             className={`w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all duration-500 active:scale-95 absolute -top-4 z-[110] ${isQuickActionOpen ? "bg-rose-500 rotate-45" : "bg-gradient-to-br from-sky-500 to-cyan-400"}`}
              style={{ boxShadow: isQuickActionOpen ? "0 8px 32px rgba(244,63,94,0.5)" : "0 8px 24px rgba(108,92,231,0.4)" }}
            >
              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>

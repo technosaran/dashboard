@@ -390,7 +390,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                           {pnlPercent >= 0 ? '+' : ''}{pnlPercent.toFixed(2)}%
                         </p>
                         <p className={`text-[11px] ${pnlPercent >= 0 ? 'text-emerald-400' : 'text-rose-400'} mt-0.5`}>
-                          {pnlPercent >= 0 ? '+' : '-'}₹{Math.abs(pnl).toFixed(2)}
+                          {pnlPercent >= 0 ? '+' : '-'}₹{Math.abs(pnl).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </p>
                       </div>
                     </div>
