@@ -157,6 +157,18 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
 
   refreshAllRef.current = handleRefreshAll;
 
+  useEffect(() => {
+    // Initial fetch
+    void handleRefreshAll();
+    // Auto-refresh interval (every 60 seconds)
+    const timer = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        void handleRefreshAll();
+      }
+    }, 60000);
+    return () => clearInterval(timer);
+  }, []); // Empty dependency array is fine since handleRefreshAll doesn't have reactive dependencies that require re-binding
+
   // --- Computed ---
   const { totalInvested, totalCurrent, totalPnL, totalPnLPercent, totalDayPnL, totalDayPnLPercent } = useMemo(() => {
     const invested = stocks.reduce((s, i) => s + Number(i.buy_price || 0) * Number(i.quantity || 0), 0);
@@ -411,7 +423,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
               <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em] mb-2">Overall P&L</p>
               <div className="flex flex-col">
                 <p className={`text-2xl font-black ${totalPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                  {totalPnL >= 0 ? '+' : ''}₹{Math.abs(totalPnL).toLocaleString()}
+                  {totalPnL >= 0 ? '+' : '-'}₹{Math.abs(totalPnL).toLocaleString()}
                 </p>
                 <p className={`text-sm font-bold mt-1 ${totalPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'} opacity-70`}>
                   {totalPnL >= 0 ? '+' : ''}{totalPnLPercent.toFixed(2)}%
@@ -528,7 +540,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                       </div>
                       <div className="text-right">
                         <p className={`text-[14px] font-black ${pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                          {pnl >= 0 ? '+' : ''}₹{Math.abs(pnl).toLocaleString()}
+                          {pnl >= 0 ? '+' : '-'}₹{Math.abs(pnl).toLocaleString()}
                         </p>
                         <p className={`text-[10px] font-bold ${pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'} opacity-70`}>
                           {pnl >= 0 ? '+' : ''}{pnlPct.toFixed(2)}%

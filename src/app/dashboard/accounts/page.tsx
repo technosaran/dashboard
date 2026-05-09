@@ -7,14 +7,17 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Accounts",
-  description: "Monitor and manage your bank accounts, wallets, and cash reserves in real-time.",
+  description:
+    "Monitor and manage your bank accounts, wallets, and cash reserves in real-time.",
 };
 
 export const dynamic = "force-dynamic";
 
 export default async function AccountsPage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) {
     redirect("/login");
@@ -23,7 +26,5 @@ export default async function AccountsPage() {
   // Prefetch data on the server for "0 latency" initial load
   const { data: initialData } = await supabase.rpc("get_finance_overview");
 
-  return (
-    <AccountsClient initialData={initialData as unknown as FinanceData} />
-  );
+  return <AccountsClient />;
 }

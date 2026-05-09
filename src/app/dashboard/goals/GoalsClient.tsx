@@ -15,14 +15,27 @@ import { CHART_COLOURS } from "@/lib/chart-colours";
 type Goal = Tables<"goals">;
 
 const GOAL_CATEGORIES = [
-  { label: "Home", icon: "🏠", color: CHART_COLOURS[2] },
-  { label: "Travel", icon: "✈️", color: CHART_COLOURS[1] },
-  { label: "Emergency", icon: "🛡️", color: CHART_COLOURS[7] },
-  { label: "Tech", icon: "💻", color: CHART_COLOURS[3] },
-  { label: "Vehicle", icon: "🚗", color: CHART_COLOURS[0] },
-  { label: "Investment", icon: "📈", color: CHART_COLOURS[5] },
-  { label: "Education", icon: "🎓", color: CHART_COLOURS[6] },
-  { label: "Others", icon: "🎯", color: CHART_COLOURS[8] },
+  { label: "Home", icon: "🏠" },
+  { label: "Travel", icon: "✈️" },
+  { label: "Emergency", icon: "🛡️" },
+  { label: "Tech", icon: "💻" },
+  { label: "Vehicle", icon: "🚗" },
+  { label: "Investment", icon: "📈" },
+  { label: "Education", icon: "🎓" },
+  { label: "Others", icon: "🎯" },
+];
+
+const CARD_COLORS = [
+  { gradient: "linear-gradient(135deg, #6c5ce7, #a29bfe)", color: "#a29bfe" },
+  { gradient: "linear-gradient(135deg, #ff6b6b, #ff8787)", color: "#ff8787" },
+  { gradient: "linear-gradient(135deg, #4ecdc4, #81ecec)", color: "#81ecec" },
+  { gradient: "linear-gradient(135deg, #45b7d1, #74b9ff)", color: "#74b9ff" },
+  { gradient: "linear-gradient(135deg, #ffa07a, #fab1a0)", color: "#fab1a0" },
+  { gradient: "linear-gradient(135deg, #fdcb6e, #ffeaa7)", color: "#ffeaa7" },
+  { gradient: "linear-gradient(135deg, #00b894, #55efc4)", color: "#55efc4" },
+  { gradient: "linear-gradient(135deg, #ff7675, #fd79a8)", color: "#fd79a8" },
+  { gradient: "linear-gradient(135deg, #a29bfe, #dfe6e9)", color: "#dfe6e9" },
+  { gradient: "linear-gradient(135deg, #00cec9, #81ecec)", color: "#81ecec" },
 ];
 
 export default function GoalsClient({ initialData }: { initialData?: FinanceData }) {
@@ -200,24 +213,25 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
         <div className="space-y-6">
           {goals.filter(g => Number(g.current_amount) < Number(g.target_amount)).length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mt-2">
-            {goals.filter(g => Number(g.current_amount) < Number(g.target_amount)).map((goal) => {
+            {goals.filter(g => Number(g.current_amount) < Number(g.target_amount)).map((goal, index) => {
               const category = GOAL_CATEGORIES.find(c => c.label === goal.category) || GOAL_CATEGORIES[7];
+              const cardColor = CARD_COLORS[index % CARD_COLORS.length];
               const progress = (Number(goal.current_amount) / Number(goal.target_amount)) * 100;
               const daysLeft = goal.deadline ? differenceInDays(parseISO(goal.deadline), new Date()) : null;
               const monthsLeft = daysLeft ? Math.ceil(daysLeft / 30.41) : null;
               const monthlyRequired = (monthsLeft && monthsLeft > 0) ? Math.ceil((Number(goal.target_amount) - Number(goal.current_amount)) / monthsLeft) : null;
 
               return (
-                <div key={goal.id} className="glass-card flex flex-col min-h-[280px] p-6 relative overflow-hidden transition-transform hover:-translate-y-1 group">
-                  <div className="absolute top-0 left-0 right-0 h-[3px]" style={{ background: category.color }} />
+                <div key={goal.id} className="glass-card flex flex-col min-h-[280px] p-6 relative overflow-hidden transition-transform hover:-translate-y-1 group" style={{ background: `linear-gradient(180deg, ${cardColor.color}05 0%, rgba(255,255,255,0.02) 100%)`, borderColor: `${cardColor.color}20` }}>
+                  <div className="absolute top-0 left-0 right-0 h-[3px]" style={{ background: cardColor.gradient }} />
                   
                   <div className="flex justify-between items-start mb-6">
                     <div className="flex flex-col gap-4">
-                       <span className="w-fit px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider" style={{ background: `${category.color}20`, color: category.color, border: `1px solid ${category.color}30` }}>
+                       <span className="w-fit px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider" style={{ background: `${cardColor.color}20`, color: cardColor.color, border: `1px solid ${cardColor.color}30` }}>
                          {goal.category}
                        </span>
                        <div className="flex items-center gap-3">
-                         <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl font-black text-white shadow-lg" style={{ background: category.color, boxShadow: `0 8px 16px ${category.color}33` }}>
+                         <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl font-black text-white shadow-lg" style={{ background: cardColor.gradient, boxShadow: `0 8px 16px ${cardColor.color}33` }}>
                            {category.icon}
                          </div>
                          <div className="flex flex-col">
@@ -235,10 +249,10 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
 
                   <div className="space-y-3 flex-1 mb-6">
                     <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                      <div className="h-full transition-all duration-1000 ease-out" style={{ width: `${Math.min(progress, 100)}%`, backgroundColor: category.color }} />
+                      <div className="h-full transition-all duration-1000 ease-out" style={{ width: `${Math.min(progress, 100)}%`, background: cardColor.gradient }} />
                     </div>
                     <div className="flex justify-between items-baseline">
-                       <p className="text-2xl font-black tabular-nums" style={{ color: category.color }}>₹{Number(goal.current_amount).toLocaleString()}</p>
+                       <p className="text-2xl font-black tabular-nums" style={{ color: cardColor.color }}>₹{Number(goal.current_amount).toLocaleString()}</p>
                        <p className="text-[10px] font-bold text-[--text-muted]">of ₹{Number(goal.target_amount).toLocaleString()}</p>
                     </div>
                     
@@ -249,7 +263,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
                           <div className="flex items-center justify-between">
                             <div className="flex flex-col">
                               <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-widest">Monthly Requirement</p>
-                              <p className="text-[13px] font-black mt-1" style={{ color: category.color }}>
+                              <p className="text-[13px] font-black mt-1" style={{ color: cardColor.color }}>
                                 ₹{monthlyRequired?.toLocaleString()}/month
                               </p>
                             </div>
@@ -283,7 +297,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
                     <button
                       onClick={() => { setSelectedGoalId(goal.id); setShowContributeModal(true); }}
                       className="flex-1 h-12 rounded-xl font-bold text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-2"
-                      style={{ background: `${category.color}15`, color: category.color, border: `1px solid ${category.color}30` }}
+                      style={{ background: `${cardColor.color}15`, color: cardColor.color, border: `1px solid ${cardColor.color}30` }}
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
                       Add Capital
@@ -309,13 +323,15 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
         <div className="space-y-6">
           {goals.filter(g => Number(g.current_amount) >= Number(g.target_amount)).length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mt-2">
-              {goals.filter(g => Number(g.current_amount) >= Number(g.target_amount)).map((goal) => {
+              {goals.filter(g => Number(g.current_amount) >= Number(g.target_amount)).map((goal, index) => {
+                const cardColor = CARD_COLORS[(index + 3) % CARD_COLORS.length]; // Offset so they look different from active
                 return (
-                  <div key={goal.id} className="glass-card p-6 flex flex-col border-[--success]/20 hover:border-[--success]/50 group">
+                  <div key={goal.id} className="glass-card p-6 flex flex-col group relative overflow-hidden" style={{ background: `linear-gradient(180deg, ${cardColor.color}05 0%, rgba(255,255,255,0.02) 100%)`, borderColor: `${cardColor.color}20` }}>
+                    <div className="absolute top-0 left-0 right-0 h-[3px]" style={{ background: cardColor.gradient }} />
                     <div className="flex items-center justify-between mb-6">
                       <div className="flex flex-col">
                         <h3 className="font-bold text-[15px]">{goal.name}</h3>
-                        <p className="text-[10px] font-semibold text-[--text-muted] uppercase tracking-wide">Achieved</p>
+                        <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: cardColor.color }}>Achieved</p>
                       </div>
                       <div className="flex gap-2">
                         <button onClick={() => startEdit(goal)} className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-[--text-muted] hover:text-blue-400 hover:bg-white/10 transition-all opacity-0 group-hover:opacity-100" title="Edit Goal"><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
@@ -326,7 +342,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
                       <div className="flex items-end justify-between">
                         <div className="flex flex-col">
                           <span className="text-[10px] font-bold text-[--text-muted] uppercase tracking-wider mb-1">Final Amount</span>
-                          <span className="text-xl font-bold text-[--success]">₹{Number(goal.current_amount).toLocaleString()}</span>
+                          <span className="text-xl font-bold tabular-nums" style={{ color: cardColor.color }}>₹{Number(goal.current_amount).toLocaleString()}</span>
                         </div>
                       </div>
                     </div>

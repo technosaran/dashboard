@@ -155,12 +155,12 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                     <div>
                       <p className="text-[9px] font-bold text-[--text-muted] uppercase tracking-widest mb-1">Total P&L</p>
                       <p className={`text-sm font-black ${acc.total_pnl >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
-                        {acc.total_pnl >= 0 ? "+" : ""}${acc.total_pnl.toLocaleString()}
+                        {acc.total_pnl >= 0 ? "+" : "-"}${Math.abs(acc.total_pnl).toLocaleString()}
                       </p>
                     </div>
                     <div className="text-right">
                       <p className="text-[9px] font-bold text-[--text-muted] uppercase tracking-widest mb-1">Net Flow</p>
-                      <p className="text-sm font-black text-blue-400">${(acc.total_deposited - acc.total_withdrawn).toLocaleString()}</p>
+                      <p className="text-sm font-black text-blue-400">{(acc.total_deposited - acc.total_withdrawn) >= 0 ? '' : '-'}${Math.abs(acc.total_deposited - acc.total_withdrawn).toLocaleString()}</p>
                     </div>
                   </div>
                 </div>
@@ -193,7 +193,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                     </td>
                     <td className="p-4 text-[12px] font-bold text-white tabular-nums">{t.lot_size}</td>
                     <td className={`p-4 text-right font-black tabular-nums ${t.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                      {t.pnl >= 0 ? '+' : ''}${t.pnl.toLocaleString()}
+                      {t.pnl >= 0 ? '+' : '-'}${Math.abs(t.pnl).toLocaleString()}
                     </td>
                   </tr>
                 ))}

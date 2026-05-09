@@ -339,7 +339,7 @@ export default function FamilyClient({
 
               const cardColor = CARD_COLORS[index % CARD_COLORS.length]; // Unique color per card
               return (
-                <div key={person.id} className="glass-card flex flex-col min-h-[260px] p-6 relative overflow-hidden transition-transform hover:-translate-y-1 group">
+                <div key={person.id} className="glass-card flex flex-col min-h-[260px] p-6 relative overflow-hidden transition-transform hover:-translate-y-1 group" style={{ background: `linear-gradient(180deg, ${cardColor.color}05 0%, rgba(255,255,255,0.02) 100%)`, borderColor: `${cardColor.color}20` }}>
                   <div className="absolute top-0 left-0 right-0 h-[3px]" style={{ background: cardColor.gradient }} />
                   
                   <div className="flex justify-between items-start mb-6">

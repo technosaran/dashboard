@@ -30,11 +30,18 @@ export default function SettingsPage() {
   // Update lastSaved when sync completes
   useEffect(() => {
     if (prevIsSyncingRef.current && !isSyncing) {
-      startTransition(() => setLastSaved(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })));
+      startTransition(() =>
+        setLastSaved(
+          new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          }),
+        ),
+      );
     }
     prevIsSyncingRef.current = isSyncing;
   }, [isSyncing]);
-
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInput(e.target.value);
@@ -42,26 +49,28 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (loading) return;
-    
+
     // Debounce the update to the context/server
     const t = setTimeout(() => {
       if (input !== username) {
         setUsername(input);
       }
     }, 400); // reduced from 500ms
-    
+
     return () => clearTimeout(t);
   }, [input, username, setUsername, loading]);
 
   const handleReset = async () => {
-    const isConfirmed = confirm("CRITICAL WARNING: This will permanently erase ALL your records (accounts, transactions, stocks, goals). This action is IRREVERSIBLE. Are you absolutely sure?");
-    
+    const isConfirmed = confirm(
+      "CRITICAL WARNING: This will permanently erase ALL your records (accounts, transactions, stocks, goals). This action is IRREVERSIBLE. Are you absolutely sure?",
+    );
+
     if (!isConfirmed) return;
 
     const toastId = toast.loading("Executing full data erasure...");
     try {
       const result = await resetUserData();
-      
+
       if (result.error) {
         toast.error(`Reset failed: ${result.error}`, { id: toastId });
       } else {
@@ -89,12 +98,9 @@ export default function SettingsPage() {
         </p>
       </div>
 
-
       {/* Profile Card */}
       <div className="max-w-2xl animate-fade-in-up delay-1">
-        <div
-          className="glass-card-static p-6 md:p-10 relative overflow-hidden"
-        >
+        <div className="glass-card-static p-6 md:p-10 relative overflow-hidden">
           {/* Top accent */}
           <div
             className="absolute top-0 left-0 right-0"
@@ -118,19 +124,29 @@ export default function SettingsPage() {
                 justifyContent: "center",
               }}
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24" style={{ color: "#a29bfe" }}>
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.8}
+                viewBox="0 0 24 24"
+                style={{ color: "#a29bfe" }}
+              >
                 <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
             </div>
             <div>
-              <h2 className="text-base font-bold" style={{ color: "var(--text-primary)" }}>
+              <h2
+                className="text-base font-bold"
+                style={{ color: "var(--text-primary)" }}
+              >
                 Profile Identity
               </h2>
               <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                 Update your name to change the dashboard greeting
               </p>
             </div>
-            
+
             {/* Status Indicator */}
             <div className="ml-auto">
               {isSyncing ? (
@@ -141,7 +157,13 @@ export default function SettingsPage() {
                 </div>
               ) : lastSaved ? (
                 <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-emerald-400">
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={3.5} viewBox="0 0 24 24">
+                  <svg
+                    className="w-3 h-3"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={3.5}
+                    viewBox="0 0 24 24"
+                  >
                     <path d="M5 13l4 4L19 7" />
                   </svg>
                   <span className="hidden sm:inline">Sync Verified</span>
@@ -166,16 +188,26 @@ export default function SettingsPage() {
                 className="input-premium h-14 md:h-12 text-[16px] md:text-sm font-bold"
                 placeholder="Enter your name"
               />
-              <p className="text-xs mt-3 flex items-center gap-1.5" style={{ color: "var(--text-muted)" }}>
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+              <p
+                className="text-xs mt-3 flex items-center gap-1.5"
+                style={{ color: "var(--text-muted)" }}
+              >
+                <svg
+                  className="w-3 h-3"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                  viewBox="0 0 24 24"
+                >
                   <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                Your profile name is synchronized across all devices in real-time.
+                Your profile name is synchronized across all devices in
+                real-time.
               </p>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
       {/* Danger Zone */}
       <div className="max-w-2xl animate-fade-in-up delay-2">
@@ -193,14 +225,18 @@ export default function SettingsPage() {
                 justifyContent: "center",
               }}
             >
-              <svg className="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <svg
+                className="w-5 h-5 text-rose-500"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                viewBox="0 0 24 24"
+              >
                 <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
               </svg>
             </div>
             <div>
-              <h2 className="text-base font-bold text-rose-500">
-                Danger Zone
-              </h2>
+              <h2 className="text-base font-bold text-rose-500">Danger Zone</h2>
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-rose-500/60 mt-0.5">
                 Destructive Actions
               </p>
@@ -209,10 +245,15 @@ export default function SettingsPage() {
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 p-5 rounded-2xl bg-rose-500/5 border border-rose-500/10">
             <div>
-              <h3 className="text-sm font-bold text-[--text-primary]">Reset Application Data</h3>
-              <p className="text-xs text-[--text-muted] mt-1">Erase all transactions, accounts, and investment history permanently.</p>
+              <h3 className="text-sm font-bold text-[--text-primary]">
+                Reset Application Data
+              </h3>
+              <p className="text-xs text-[--text-muted] mt-1">
+                Erase all transactions, accounts, and investment history
+                permanently.
+              </p>
             </div>
-            <button 
+            <button
               onClick={handleReset}
               className="btn-danger !h-11 !px-6 whitespace-nowrap shadow-xl shadow-rose-500/20"
             >

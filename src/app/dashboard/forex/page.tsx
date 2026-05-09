@@ -14,14 +14,16 @@ export const dynamic = "force-dynamic";
 
 export default async function ForexPage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
   const { data: initialData } = await supabase.rpc("get_finance_overview");
 
   return (
     <Suspense fallback={null}>
-      <ForexClient initialData={initialData as unknown as FinanceData} />
+      <ForexClient />
     </Suspense>
   );
 }

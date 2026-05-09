@@ -197,7 +197,7 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
           <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Total P&L</span>
           <div className="flex flex-col">
             <span className={`text-xl md:text-2xl font-black tabular-nums ${stats.totalPnL >= 0 ? 'text-[--success]' : 'text-[--danger]'}`}>
-              {stats.totalPnL >= 0 ? '+' : ''}₹{Math.abs(stats.totalPnL).toLocaleString()}
+              {stats.totalPnL >= 0 ? '+' : '-'}₹{Math.abs(stats.totalPnL).toLocaleString()}
             </span>
             <span className={`text-[10px] font-black ${stats.totalPnL >= 0 ? 'text-[--success]' : 'text-[--danger]'} opacity-60`}>
               ({stats.totalPnL >= 0 ? '+' : ''}{stats.totalInvested > 0 ? ((stats.totalPnL / stats.totalInvested) * 100).toFixed(2) : '0.00'}%)
@@ -323,7 +323,7 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
                         <td className="px-6 py-5 text-right">
                           <div className="flex flex-col items-end">
                             <span className={`text-[14px] font-black tabular-nums ${pnl >= 0 ? 'text-[--success]' : 'text-[--danger]'}`}>
-                              {pnl >= 0 ? '+' : ''}₹{Math.abs(pnl).toLocaleString()}
+                              {pnl >= 0 ? '+' : '-'}₹{Math.abs(pnl).toLocaleString()}
                             </span>
                             <span className={`text-[10px] font-bold tabular-nums opacity-60 ${pnl >= 0 ? 'text-[--success]' : 'text-[--danger]'}`}>
                               {pnl >= 0 ? '+' : ''}{pnlPercent.toFixed(2)}%

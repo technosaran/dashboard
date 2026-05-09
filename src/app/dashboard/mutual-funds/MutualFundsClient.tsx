@@ -312,7 +312,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
               <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em] mb-2">Overall P&L</p>
               <div className="flex flex-col">
                 <p className={`text-2xl font-black ${stats.totalPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                  {stats.totalPnL >= 0 ? '+' : ''}₹{Math.abs(stats.totalPnL).toLocaleString()}
+                  {stats.totalPnL >= 0 ? '+' : '-'}₹{Math.abs(stats.totalPnL).toLocaleString()}
                 </p>
                 <p className={`text-sm font-bold mt-1 ${stats.totalPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'} opacity-70`}>
                   {stats.totalPnL >= 0 ? '+' : ''}{stats.totalPnLPercent.toFixed(2)}%
@@ -390,7 +390,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                           {pnlPercent >= 0 ? '+' : ''}{pnlPercent.toFixed(2)}%
                         </p>
                         <p className={`text-[11px] ${pnlPercent >= 0 ? 'text-emerald-400' : 'text-rose-400'} mt-0.5`}>
-                          {pnlPercent >= 0 ? '+' : ''}₹{pnl.toFixed(2)}
+                          {pnlPercent >= 0 ? '+' : '-'}₹{Math.abs(pnl).toFixed(2)}
                         </p>
                       </div>
                     </div>
@@ -427,10 +427,10 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                         <p className="text-[10px] text-[--text-muted] mt-1">{mf.category}</p>
                       </div>
                     </div>
-                    <div className="flex justify-between items-center mb-3">
+                    <div className="flex justify-end items-center mb-3">
                       <div className="text-right">
                         <p className={`text-[14px] font-black ${pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                          {pnl >= 0 ? '+' : ''}₹{Math.abs(pnl).toLocaleString()}
+                          {pnl >= 0 ? '+' : '-'}₹{Math.abs(pnl).toLocaleString()}
                         </p>
                         <p className={`text-[10px] font-bold ${pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'} opacity-70`}>
                           {pnl >= 0 ? '+' : ''}{pnlPercent.toFixed(2)}%
