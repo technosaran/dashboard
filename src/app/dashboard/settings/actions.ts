@@ -35,3 +35,20 @@ export async function resetUserData() {
   
   return { success: true };
 }
+
+export async function updateSettings(settings: any) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ settings })
+    .eq("id", user.id);
+
+  if (error) return { error: error.message };
+  
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/settings");
+  return { success: true };
+}

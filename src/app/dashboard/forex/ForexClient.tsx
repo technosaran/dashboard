@@ -101,15 +101,16 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
-          { label: "Total Balance", value: stats.totalBalance, sub: "Available Capital", color: "text-white" },
-          { label: "Total P&L", value: stats.totalPnL, sub: "Trading Performance", color: stats.totalPnL >= 0 ? "text-emerald-400" : "text-rose-400" },
-          { label: "Deposits", value: stats.totalDeposited, sub: "Total Inflow", color: "text-blue-400" },
-          { label: "Withdrawals", value: stats.totalWithdrawn, sub: "Total Outflow", color: "text-orange-400" },
+          { label: "Total Balance", value: stats.totalBalance, sub: "Available Capital", color: "text-white", icon: "💰" },
+          { label: "Total P&L", value: stats.totalPnL, sub: "Trading Performance", color: stats.totalPnL >= 0 ? "text-[--success]" : "text-[--danger]", icon: "📊" },
+          { label: "Deposits", value: stats.totalDeposited, sub: "Total Inflow", color: "text-[--accent-primary-light]", icon: "📥" },
+          { label: "Withdrawals", value: stats.totalWithdrawn, sub: "Total Outflow", color: "text-[--warning]", icon: "📤" },
         ].map((s, i) => (
-          <div key={i} className="glass-card-static p-6 border-white/5 hover:border-white/10 transition-colors">
-            <p className="text-[10px] font-black uppercase tracking-widest text-[--text-muted] mb-2">{s.label}</p>
+          <div key={i} className="glass-card-static p-6 border-white/5 hover:border-white/10 transition-all group relative overflow-hidden">
+            <div className="absolute -right-4 -top-4 text-4xl opacity-[0.03] group-hover:opacity-[0.07] transition-opacity rotate-12">{s.icon}</div>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">{s.label}</p>
             <p className={`text-2xl font-black tabular-nums ${s.color}`}>${s.value.toLocaleString()}</p>
-            <p className="text-[9px] font-bold text-[--text-muted] mt-1 opacity-50 uppercase">{s.sub}</p>
+            <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">{s.sub}</p>
           </div>
         ))}
       </div>
@@ -132,35 +133,50 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
         {activeTab === "accounts" && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {forexAccounts.map((acc) => (
-              <div key={acc.id} className="glass-card-static p-6 relative group overflow-hidden">
-                <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                   <button onClick={() => deleteForexAccount(acc.id)} className="text-rose-500/50 hover:text-rose-500">
+              <div key={acc.id} className="glass-card flex flex-col min-h-[260px] p-6 relative overflow-hidden transition-transform hover:-translate-y-1 group border-white/5">
+                <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[--accent-primary] via-[--accent-secondary] to-[--accent-tertiary]" />
+                
+                <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-all flex gap-2">
+                   <button onClick={() => deleteForexAccount(acc.id)} className="w-8 h-8 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-500 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all">
                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                    </button>
                 </div>
-                <div className="flex justify-between items-start mb-6">
-                  <div>
-                    <h3 className="text-lg font-black text-white">{acc.account_label}</h3>
-                    <p className="text-[10px] font-bold text-[--text-muted] uppercase tracking-wider">{acc.broker_name}</p>
-                  </div>
-                  <span className="text-[10px] font-black px-2 py-1 bg-emerald-500/10 text-emerald-400 rounded-md uppercase tracking-widest border border-emerald-500/20">{acc.currency}</span>
-                </div>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-end">
-                    <span className="text-[10px] font-bold text-[--text-muted] uppercase tracking-widest">Balance</span>
-                    <span className="text-xl font-black text-white">${acc.balance.toLocaleString()}</span>
-                  </div>
-                  <div className="h-px bg-white/5" />
-                  <div className="grid grid-cols-2 gap-4">
+
+                <div className="flex justify-between items-start mb-8">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-[--accent-primary]/10 flex items-center justify-center text-xl shadow-inner border border-white/5">
+                      🌎
+                    </div>
                     <div>
-                      <p className="text-[9px] font-bold text-[--text-muted] uppercase tracking-widest mb-1">Total P&L</p>
-                      <p className={`text-sm font-black ${acc.total_pnl >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                      <h3 className="text-lg font-black text-white group-hover:text-[--accent-primary-light] transition-colors">{acc.account_label}</h3>
+                      <p className="text-[10px] font-bold text-[--text-muted] uppercase tracking-[0.2em] mt-0.5">{acc.broker_name}</p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-black px-3 py-1 bg-[--accent-primary]/10 text-[--accent-primary-light] rounded-full uppercase tracking-widest border border-[--accent-primary]/20">
+                    {acc.currency}
+                  </span>
+                </div>
+
+                <div className="mt-auto space-y-6">
+                  <div className="flex justify-between items-baseline">
+                    <span className="text-[10px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Net Worth</span>
+                    <span className="text-2xl font-black text-white tabular-nums">${acc.balance.toLocaleString()}</span>
+                  </div>
+                  
+                  <div className="h-px bg-gradient-to-r from-transparent via-white/5 to-transparent" />
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                      <p className="text-[8px] font-black text-[--text-muted] uppercase tracking-widest mb-1">Total P&L</p>
+                      <p className={`text-[13px] font-black tabular-nums ${acc.total_pnl >= 0 ? "text-[--success]" : "text-[--danger]"}`}>
                         {acc.total_pnl >= 0 ? "+" : "-"}${Math.abs(acc.total_pnl).toLocaleString()}
                       </p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-[9px] font-bold text-[--text-muted] uppercase tracking-widest mb-1">Net Flow</p>
-                      <p className="text-sm font-black text-blue-400">{(acc.total_deposited - acc.total_withdrawn) >= 0 ? '' : '-'}${Math.abs(acc.total_deposited - acc.total_withdrawn).toLocaleString()}</p>
+                    <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 text-right">
+                      <p className="text-[8px] font-black text-[--text-muted] uppercase tracking-widest mb-1">Capital Flow</p>
+                      <p className="text-[13px] font-black text-[--accent-primary-light] tabular-nums">
+                        {(acc.total_deposited - acc.total_withdrawn) >= 0 ? "+" : "-"}${Math.abs(acc.total_deposited - acc.total_withdrawn).toLocaleString()}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -192,7 +208,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                       </span>
                     </td>
                     <td className="p-4 text-[12px] font-bold text-white tabular-nums">{t.lot_size}</td>
-                    <td className={`p-4 text-right font-black tabular-nums ${t.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    <td className={`p-4 text-right font-black tabular-nums ${t.pnl >= 0 ? 'text-[--success]' : 'text-[--danger]'}`}>
                       {t.pnl >= 0 ? '+' : '-'}${Math.abs(t.pnl).toLocaleString()}
                     </td>
                   </tr>
@@ -223,7 +239,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                       </span>
                     </td>
                     <td className="p-4 text-[12px] text-[--text-muted]">{tx.notes || "—"}</td>
-                    <td className={`p-4 text-right font-black tabular-nums ${tx.transaction_type === 'DEPOSIT' ? 'text-blue-400' : 'text-orange-400'}`}>
+                    <td className={`p-4 text-right font-black tabular-nums ${tx.transaction_type === 'DEPOSIT' ? 'text-[--accent-primary-light]' : 'text-[--warning]'}`}>
                       {tx.transaction_type === 'DEPOSIT' ? '+' : '-'}${tx.amount.toLocaleString()}
                     </td>
                   </tr>

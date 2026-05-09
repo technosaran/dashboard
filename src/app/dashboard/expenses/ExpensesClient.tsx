@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 
 import { addExpense } from "./actions";
+import { upsertBudget } from "@/app/dashboard/budget/actions";
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, subMonths } from "date-fns";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 
@@ -29,17 +30,16 @@ const CATEGORIES = [
 
 
 export default function ExpensesClient({ initialData }: { initialData?: FinanceData }) {
-  const { data: { expenses, accounts }, isValidating } = useFinanceData(initialData);
+  const { data: { expenses, accounts, budgets: dbBudgets }, isValidating } = useFinanceData(initialData);
   const searchParams = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(searchParams.get("action") === "new");
+  const [showBudgetModal, setShowBudgetModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [search, setSearch] = useState("");
   const deferredSearch = useDeferredValue(search);
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 50;
-  const [showBudgetModal, setShowBudgetModal] = useState(false);
-  const [budgets, setBudgets] = useState<Record<string, number>>({});
 
   const [formData, setFormData] = useState({
     description: "",
@@ -49,25 +49,29 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
     account_id: "",
   });
 
-  // Load budgets from localStorage
-  useEffect(() => {
-    const stored = localStorage.getItem('expense_budgets');
-    if (stored) {
-      try {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setBudgets(JSON.parse(stored));
-      } catch (e) {
-        console.warn('Failed to parse budgets:', e);
+  const budgets = useMemo(() => {
+    const now = new Date();
+    const m = now.getMonth() + 1;
+    const y = now.getFullYear();
+    const map: Record<string, number> = {};
+    dbBudgets.forEach(b => {
+      if (b.period_month === m && b.period_year === y) {
+        map[b.category] = Number(b.amount);
       }
-    }
-  }, []);
+    });
+    return map;
+  }, [dbBudgets]);
 
-  // Save budgets to localStorage
-  const saveBudget = (category: string, limit: number) => {
-    const newBudgets = { ...budgets, [category]: limit };
-    setBudgets(newBudgets);
-    localStorage.setItem('expense_budgets', JSON.stringify(newBudgets));
-    toast.success(`Budget set for ${category}`);
+  const saveBudget = async (category: string, limit: number) => {
+    const now = new Date();
+    const res = await upsertBudget({
+      category,
+      amount: limit,
+      period_month: now.getMonth() + 1,
+      period_year: now.getFullYear()
+    });
+    if (res.error) toast.error(res.error);
+    else toast.success(`Budget updated for ${category}`);
   };
 
   // Calculate category spending for current month
@@ -366,7 +370,7 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
             <table className="w-full text-left border-collapse min-w-[650px] md:min-w-0">
               <thead><tr className="bg-white/[0.02] border-b border-white/5"><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Date</th><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Ref / Description</th><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Segment</th><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] hidden sm:table-cell">Channel</th><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] text-right">Amount</th></tr></thead>
               <tbody className="divide-y divide-white/10">
-                {filteredExpenses.length === 0 ? (<tr><td colSpan={5} className="px-6 py-20 text-center text-[--text-muted] text-sm italic">No transactions found matching your criteria.</td></tr>) : (filteredExpenses.map((exp) => { const theme = CATEGORIES.find(c => c.label === exp.category) || CATEGORIES[7]; const account = accounts.find(a => a.id === exp.account_id); return (<tr key={exp.id} className="hover:bg-white/[0.015] transition-colors group"><td className="px-4 md:px-6 py-5 whitespace-nowrap"><p className="text-[13px] font-bold text-[--text-primary]">{exp.date ? format(parseISO(exp.date), "MMM d, yy") : "—"}</p><p className="text-[9px] text-[--text-muted] uppercase font-bold">Verified</p></td><td className="px-4 md:px-6 py-4"><div className="flex items-center gap-3"><div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-lg flex-shrink-0">{theme.icon}</div><p className="text-[13px] font-medium text-[--text-primary] group-hover:text-[--accent-primary] transition-colors truncate max-w-[120px] md:max-w-none">{exp.description}</p></div></td><td className="px-4 md:px-6 py-5 whitespace-nowrap"><span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-[0.1em] bg-white/5 border border-white/10" style={{color: theme.color}}>{exp.category}</span></td><td className="px-4 md:px-6 py-5 whitespace-nowrap hidden sm:table-cell"><div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" /><span className="text-[11px] font-medium text-[--text-secondary]">{account?.name || "Cash"}</span></div></td><td className="px-4 md:px-6 py-4 whitespace-nowrap text-right"><p className="text-[15px] md:text-base font-black text-[--text-primary]">₹{Number(exp.amount).toLocaleString()}</p></td></tr>) }))}
+                {filteredExpenses.length === 0 ? (<tr><td colSpan={5} className="px-6 py-20 text-center text-[--text-muted] text-sm italic">No transactions found matching your criteria.</td></tr>) : (filteredExpenses.map((exp) => { const theme = CATEGORIES.find(c => c.label === exp.category) || CATEGORIES[7]; const account = accounts.find(a => a.id === exp.account_id); return (<tr key={exp.id} className="hover:bg-white/[0.015] transition-colors group"><td className="px-4 md:px-6 py-5 whitespace-nowrap"><p className="text-[13px] font-bold text-[--text-primary]">{exp.date ? format(parseISO(exp.date), "MMM d, yy") : "—"}</p><p className="text-[9px] text-[--text-muted] uppercase font-bold">Verified</p></td><td className="px-4 md:px-6 py-4"><div className="flex items-center gap-3"><div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-lg flex-shrink-0">{theme.icon}</div><p className="text-[13px] font-medium text-[--text-primary] group-hover:text-[--accent-primary] transition-colors truncate max-w-[120px] md:max-w-none">{exp.description}</p></div></td><td className="px-4 md:px-6 py-5 whitespace-nowrap"><span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-[0.1em] bg-white/5 border border-white/10" style={{color: theme.color}}>{exp.category}</span></td><td className="px-4 md:px-6 py-5 whitespace-nowrap hidden sm:table-cell"><div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" /><span className="text-[11px] font-medium text-[--text-secondary]">{account?.name || "Cash"}</span></div></td><td className="px-4 md:px-6 py-4 whitespace-nowrap text-right"><p className="text-[15px] md:text-base font-black text-[--danger]">-₹{Number(exp.amount).toLocaleString()}</p></td></tr>) }))}
               </tbody>
             </table>
           )}
@@ -470,16 +474,11 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
                         <input
                           type="number"
                           placeholder="0"
-                          defaultValue={currentBudget || ''}
+                          defaultValue={currentBudget || ""}
                           onBlur={(e) => {
                             const value = parseFloat(e.target.value);
-                            if (value > 0) {
+                            if (!isNaN(value)) {
                               saveBudget(cat.label, value);
-                            } else if (value === 0 || !e.target.value) {
-                              const newBudgets = { ...budgets };
-                              delete newBudgets[cat.label];
-                              setBudgets(newBudgets);
-                              localStorage.setItem('expense_budgets', JSON.stringify(newBudgets));
                             }
                           }}
                           className="input-premium w-32 h-10 text-sm text-right"

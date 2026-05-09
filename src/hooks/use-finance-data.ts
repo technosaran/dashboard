@@ -9,6 +9,7 @@ import { useSWRConfig } from "swr";
 const supabase = createClient();
 
 type FinanceData = {
+  profile: { username: string; settings: { enabled_modules: string[] } } | null;
   accounts: Tables<"accounts">[];
   transactions: Tables<"transactions">[];
   ledgerLogs: Tables<"ledger_logs">[];
@@ -25,6 +26,9 @@ type FinanceData = {
   forexAccounts: Tables<"forex_accounts">[];
   forexTrades: Tables<"forex_trades">[];
   forexTransactions: Tables<"forex_transactions">[];
+  budgets: Tables<"budgets">[];
+  alternativeAssets: Tables<"alternative_assets">[];
+  liabilities: Tables<"liabilities">[];
 };
 
 export type { FinanceData };
@@ -54,6 +58,7 @@ export function useFinanceData(initialData?: FinanceData) {
     errorRetryCount: 3,
     refreshInterval: 0, // Disable polling, rely on realtime
     fallbackData: initialData || {
+      profile: null,
       accounts: [],
       transactions: [],
       ledgerLogs: [],
@@ -70,6 +75,9 @@ export function useFinanceData(initialData?: FinanceData) {
       forexAccounts: [],
       forexTrades: [],
       forexTransactions: [],
+      budgets: [],
+      alternativeAssets: [],
+      liabilities: [],
     }
   });
 
@@ -221,6 +229,27 @@ export function useFinanceData(initialData?: FinanceData) {
         schema: "public", 
         table: "forex_transactions" 
       }, () => handleChange("forex_transactions"))
+
+      // Budgets
+      .on("postgres_changes", { 
+        event: "*", 
+        schema: "public", 
+        table: "budgets" 
+      }, () => handleChange("budgets"))
+
+      // Alternative Assets
+      .on("postgres_changes", { 
+        event: "*", 
+        schema: "public", 
+        table: "alternative_assets" 
+      }, () => handleChange("alternative_assets"))
+
+      // Liabilities
+      .on("postgres_changes", { 
+        event: "*", 
+        schema: "public", 
+        table: "liabilities" 
+      }, () => handleChange("liabilities"))
       
       .subscribe((status) => {
         if (status === "SUBSCRIBED") {

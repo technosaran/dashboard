@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
+import { useFinanceData } from "@/hooks/use-finance-data";
 
 const nav = [
   {
@@ -46,6 +47,15 @@ const nav = [
     ),
   },
   {
+    label: "Budget",
+    href: "/dashboard/budget",
+    icon: (
+      <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+        <path d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+    ),
+  },
+  {
     label: "Stocks",
     href: "/dashboard/stocks",
     icon: (
@@ -64,11 +74,29 @@ const nav = [
     ),
   },
   {
+    label: "Alt Assets",
+    href: "/dashboard/alternative-assets",
+    icon: (
+      <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+        <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+      </svg>
+    ),
+  },
+  {
     label: "Bonds",
     href: "/dashboard/bonds",
     icon: (
       <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
         <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+    ),
+  },
+  {
+    label: "Liabilities",
+    href: "/dashboard/liabilities",
+    icon: (
+      <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+        <path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     ),
   },
@@ -142,9 +170,23 @@ function NavItem({ label, href, icon, pathname }: (typeof nav)[0] & { pathname: 
 }
 
 export default function Sidebar() {
+  const { data: { profile } } = useFinanceData();
   const pathname = usePathname();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [isQuickActionOpen, setIsQuickActionOpen] = useState(false);
+
+  const enabledModules = useMemo(() => {
+    return profile?.settings?.enabled_modules || [
+      "Income", "Expenses", "Budget", "Stocks", "Mutual Funds", "Alt Assets", "Bonds", "Liabilities", "Goals", "Family", "Forex", "Ledger"
+    ];
+  }, [profile]);
+
+  const filteredNav = useMemo(() => {
+    return nav.filter(item => {
+      if (["Dashboard", "Accounts", "Settings"].includes(item.label)) return true;
+      return enabledModules.includes(item.label);
+    });
+  }, [enabledModules]);
 
   useEffect(() => {
     if (!isMoreOpen && !isQuickActionOpen) return;
@@ -168,9 +210,10 @@ export default function Sidebar() {
     { label: "FX Trade", href: "/dashboard/forex", icon: "💱", color: "#fbbf24" },
   ];
 
-  const mobileNavLeft = nav.slice(0, 2); // Dashboard, Accounts
-  const mobileNavRight = [nav[9]]; // Ledger
-  const moreNav = nav.slice(2, 9).concat([nav[10]], [nav[11]]); // Income, Expenses, Stocks, Mutual Funds, Bonds, Goals, Forex + Settings
+  const mobileNavLeft = filteredNav.slice(0, 2); 
+  const ledgerItem = filteredNav.find(n => n.label === "Ledger");
+  const mobileNavRight = ledgerItem ? [ledgerItem] : [];
+  const moreNav = filteredNav.filter(n => !mobileNavLeft.includes(n) && !mobileNavRight.includes(n));
 
   return (
     <>
@@ -195,7 +238,7 @@ export default function Sidebar() {
         <div className="divider-glow mx-6" />
         <nav className="flex-1 px-4 pt-2 space-y-0.5 overflow-visible no-scrollbar">
           <p className="px-4 pb-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-[--text-muted] opacity-60">Navigation</p>
-          {nav.map((item) => (<NavItem key={item.href} {...item} pathname={pathname} />))}
+          {filteredNav.map((item) => (<NavItem key={item.href} {...item} pathname={pathname} />))}
         </nav>
         <div className="divider-glow mx-4" />
         <div className="px-3 py-2 mt-auto pb-6">

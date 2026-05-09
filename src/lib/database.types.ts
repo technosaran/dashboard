@@ -14,6 +14,123 @@ export type Database = {
   }
   public: {
     Tables: {
+      alternative_assets: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          category: string
+          purchase_price: number
+          current_value: number
+          purchase_date: string | null
+          notes: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name: string
+          category: string
+          purchase_price?: number
+          current_value?: number
+          purchase_date?: string | null
+          notes?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          category?: string
+          purchase_price?: number
+          current_value?: number
+          purchase_date?: string | null
+          notes?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      budgets: {
+        Row: {
+          id: string
+          user_id: string
+          category: string
+          amount: number
+          period_month: number
+          period_year: number
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          category: string
+          amount?: number
+          period_month: number
+          period_year: number
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          category?: string
+          amount?: number
+          period_month?: number
+          period_year?: number
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      liabilities: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          category: string
+          total_amount: number
+          remaining_amount: number
+          interest_rate: number | null
+          monthly_payment: number | null
+          due_date: string | null
+          notes: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name: string
+          category: string
+          total_amount?: number
+          remaining_amount?: number
+          interest_rate?: number | null
+          monthly_payment?: number | null
+          due_date?: string | null
+          notes?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          category?: string
+          total_amount?: number
+          remaining_amount?: number
+          interest_rate?: number | null
+          monthly_payment?: number | null
+          due_date?: string | null
+          notes?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       accounts: {
         Row: {
           account_number: string | null
@@ -643,18 +760,21 @@ export type Database = {
           id: string
           updated_at: string | null
           username: string | null
+          settings: Json | null
         }
         Insert: {
           created_at?: string | null
           id: string
           updated_at?: string | null
           username?: string | null
+          settings?: Json | null
         }
         Update: {
           created_at?: string | null
           id?: string
           updated_at?: string | null
           username?: string | null
+          settings?: Json | null
         }
         Relationships: []
       }

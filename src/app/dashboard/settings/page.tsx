@@ -2,11 +2,13 @@
 
 import { useEffect, useState, useRef, startTransition } from "react";
 import { useUser } from "@/context/user-context";
-import { resetUserData } from "./actions";
+import { resetUserData, updateSettings } from "./actions";
 import { toast } from "react-hot-toast";
+import { useFinanceData } from "@/hooks/use-finance-data";
 
 export default function SettingsPage() {
   const { username, setUsername, loading, isSyncing } = useUser();
+  const { data: { profile } } = useFinanceData();
   const [input, setInput] = useState(username);
   const [lastSaved, setLastSaved] = useState<string | null>(null);
   const [prevUsername, setPrevUsername] = useState(username);
@@ -84,6 +86,22 @@ export default function SettingsPage() {
       const message = error instanceof Error ? error.message : "Unknown error";
       toast.error(`A system error occurred: ${message}`, { id: toastId });
     }
+  };
+
+  const ALL_MODULES = [
+    "Income", "Expenses", "Budget", "Stocks", "Mutual Funds", "Alt Assets", "Bonds", "Liabilities", "Goals", "Family", "Forex", "Ledger"
+  ];
+
+  const enabledModules = profile?.settings?.enabled_modules || ALL_MODULES;
+
+  const toggleModule = async (module: string) => {
+    const newModules = enabledModules.includes(module)
+      ? enabledModules.filter(m => m !== module)
+      : [...enabledModules, module];
+    
+    const res = await updateSettings({ ...profile?.settings, enabled_modules: newModules });
+    if (res.error) toast.error(res.error);
+    else toast.success(`${module} visibility updated`);
   };
 
   return (
@@ -206,6 +224,40 @@ export default function SettingsPage() {
               </p>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Module Management */}
+      <div className="max-w-2xl animate-fade-in-up delay-2">
+        <div className="glass-card-static p-6 md:p-10 relative overflow-hidden">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-500">
+               <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+            </div>
+            <div>
+               <h2 className="text-base font-bold text-white">Module Architecture</h2>
+               <p className="text-xs text-[--text-muted]">Enable or disable dashboard sections based on your workflow.</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+             {ALL_MODULES.map(module => (
+               <div key={module} className={`p-4 rounded-2xl border transition-all flex items-center justify-between ${enabledModules.includes(module) ? 'bg-white/[0.03] border-white/10' : 'bg-black/20 border-white/5 opacity-60'}`}>
+                  <div className="flex items-center gap-3">
+                     <span className={`w-2 h-2 rounded-full ${enabledModules.includes(module) ? 'bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.5)]' : 'bg-white/10'}`} />
+                     <span className="text-[13px] font-bold text-white">{module}</span>
+                  </div>
+                  <button 
+                    onClick={() => toggleModule(module)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${enabledModules.includes(module) ? 'bg-cyan-500' : 'bg-white/10'}`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${enabledModules.includes(module) ? 'translate-x-6' : 'translate-x-1'}`} />
+                  </button>
+               </div>
+             ))}
+          </div>
+          
+          <p className="text-[10px] text-[--text-muted] mt-6 italic font-medium px-2">* Disabling a module hides it from the UI but preserves all existing data and historical records.</p>
         </div>
       </div>
 

@@ -9,13 +9,6 @@ import type { Tables } from "@/lib/database.types";
 import { recordMFInvestment, refreshNAV, searchMFSchemes, getLiveNAV } from "./actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
-import { 
-  PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip,
-  BarChart, Bar, XAxis, YAxis, CartesianGrid
-} from "recharts";
-import dynamic from "next/dynamic";
-
-const Chart = dynamic(() => Promise.resolve(ResponsiveContainer), { ssr: false });
 
 type MF = Tables<"mutual_funds"> & { scheme_code?: string | null; fund_symbol?: string | null; pnlPercent?: number };
 
@@ -81,7 +74,6 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
   const [searchResults, setSearchResults] = useState<MFSchemeSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showAllCharges, setShowAllCharges] = useState(false);
-  const [showAnalytics, setShowAnalytics] = useState(false);
 
   const [formData, setFormData] = useState({
     fund_name: "",
@@ -167,35 +159,6 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
     toast.success('Mutual funds exported successfully');
   }
 
-  // Calculate MF analytics
-  const analytics = useMemo(() => {
-    const categoryMap: Record<string, number> = {};
-    const amcMap: Record<string, number> = {};
-    const topPerformers: Array<MF & { pnlPercent: number }> = [];
-    
-    mfs.forEach(mf => {
-      const investment = Number(mf.units) * Number(mf.avg_nav);
-      const currentVal = Number(mf.units) * Number(mf.current_nav);
-      const pnl = currentVal - investment;
-      const pnlPercent = investment > 0 ? (pnl / investment) * 100 : 0;
-      
-      const category = mf.category || 'Others';
-      const amc = mf.amc_name || 'Unknown';
-      
-      categoryMap[category] = (categoryMap[category] || 0) + currentVal;
-      amcMap[amc] = (amcMap[amc] || 0) + currentVal;
-      
-      topPerformers.push({ ...mf, pnlPercent });
-    });
-    
-    topPerformers.sort((a, b) => (b.pnlPercent || 0) - (a.pnlPercent || 0));
-    
-    return {
-      categories: Object.entries(categoryMap).map(([name, value]) => ({ name, value })),
-      amcs: Object.entries(amcMap).map(([name, value]) => ({ name, value })),
-      topPerformers: topPerformers.slice(0, 5)
-    };
-  }, [mfs]);
 
   const handleSearch = async (val: string) => {
     setSearchQuery(val);
@@ -300,246 +263,6 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
     return () => clearInterval(timer);
   }, [handleRefreshAll]);
 
-  if (showAnalytics) {
-    return (
-      <div className="fixed inset-0 z-[300] bg-[--bg-base] overflow-y-auto animate-fade-in custom-scrollbar">
-        <div className="max-w-[1400px] mx-auto px-4 md:px-10 py-10">
-          {/* ── Intelligence Header ── */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 mb-12">
-            <div>
-              <h1 className="text-4xl md:text-5xl font-black tracking-tight text-[--text-primary] bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-white/30">
-                Wealth Intelligence
-              </h1>
-              <p className="text-[11px] text-[--text-muted] font-black uppercase tracking-[0.3em] mt-2 flex items-center gap-2">
-                <span className="w-8 h-[1px] bg-[--text-muted]/30" />
-                Mutual Fund Portfolio Optimization
-              </p>
-            </div>
-            <button 
-              onClick={() => setShowAnalytics(false)} 
-              className="group flex items-center gap-3 px-8 h-14 rounded-2xl bg-white/5 border border-white/10 text-white font-black uppercase tracking-widest text-[11px] hover:bg-[--accent-primary] hover:border-[--accent-primary] hover:shadow-[0_0_30px_rgba(var(--accent-primary-rgb),0.3)] transition-all duration-500"
-            >
-              <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
-                <path d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              Exit Analytics
-            </button>
-          </div>
-
-          {/* ── Pulse Summary ── */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-12">
-            {[
-              { label: "Assets Under Management", val: `₹${stats.totalCurrentValue.toLocaleString()}`, sub: `${mfs.length} Schemes`, color: "var(--text-primary)" },
-              { label: "Total Cost Basis", val: `₹${stats.totalInvested.toLocaleString()}`, sub: "Net Capital Flow", color: "var(--accent-primary-light)" },
-              { 
-                label: "Absolute Yield", 
-                val: `${stats.totalPnL >= 0 ? '+' : '-'}₹${Math.abs(stats.totalPnL).toLocaleString()}`, 
-                sub: `${stats.totalPnL >= 0 ? '+' : ''}${stats.totalPnLPercent.toFixed(2)}% ROI`, 
-                color: stats.totalPnL >= 0 ? "var(--success)" : "var(--danger)",
-                glow: stats.totalPnL >= 0 ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)"
-              },
-              { 
-                label: "Performance Velocity", 
-                val: `${stats.dayPnL >= 0 ? '+' : '-'}₹${Math.abs(stats.dayPnL).toLocaleString()}`, 
-                sub: `${stats.dayPnL >= 0 ? '+' : ''}${stats.dayPnLPercent.toFixed(2)}% Today`, 
-                color: stats.dayPnL >= 0 ? "var(--success)" : "var(--danger)",
-                glow: stats.dayPnL >= 0 ? "rgba(16, 185, 129, 0.1)" : "rgba(239, 68, 68, 0.1)"
-              }
-            ].map((card, i) => (
-              <div key={i} className="glass-card-static relative overflow-hidden p-6 md:p-8 group transition-all duration-500 hover:border-white/20">
-                {card.glow && <div className="absolute -right-10 -top-10 w-32 h-32 blur-[60px] rounded-full pointer-events-none" style={{ background: card.glow }} />}
-                <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3 md:mb-4">{card.label}</p>
-                <p className="text-xl md:text-3xl font-black tabular-nums tracking-tighter mb-1 md:mb-2 transition-transform group-hover:scale-[1.02] origin-left" style={{ color: card.color }}>{card.val}</p>
-                <p className="text-[10px] md:text-[12px] font-bold opacity-60" style={{ color: card.color }}>{card.sub}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            {/* ── Diversification Blueprint ── */}
-            <div className="glass-card-static p-8 md:p-10 relative overflow-hidden">
-               <div className="flex justify-between items-center mb-10">
-                  <div>
-                    <h3 className="text-xl font-black text-white">Asset Allocation</h3>
-                    <p className="text-[11px] text-[--text-muted] font-bold uppercase tracking-widest mt-1">Category Concentration</p>
-                  </div>
-               </div>
-
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
-                  <div className="h-[300px] relative">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={analytics.categories}
-                          innerRadius={80}
-                          outerRadius={110}
-                          paddingAngle={5}
-                          dataKey="value"
-                          stroke="none"
-                          animationDuration={1500}
-                        >
-                          {analytics.categories.map((entry, index) => (
-                            <Cell 
-                              key={`cell-${index}`} 
-                              fill={[
-                                "var(--accent-primary)", 
-                                "var(--accent-secondary)", 
-                                "var(--success)", 
-                                "#a855f7", 
-                                "#ec4899"
-                              ][index % 5]} 
-                            />
-                          ))}
-                        </Pie>
-                        <RechartsTooltip 
-                          contentStyle={{ background: '#111', border: '1px solid #333', borderRadius: '12px' }}
-                          itemStyle={{ color: '#fff', fontSize: '12px', fontWeight: '900' }}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                       <p className="text-[10px] font-black text-[--text-muted] uppercase tracking-[0.2em] mb-1">Exposure</p>
-                       <p className="text-2xl font-black text-white">{analytics.categories.length} Types</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-6">
-                    {analytics.categories.map((cat, idx) => {
-                      const percentage = (cat.value / stats.totalCurrentValue) * 100;
-                      const barColors = ["bg-[--accent-primary]", "bg-[--accent-secondary]", "bg-[--success]", "bg-purple-500", "bg-pink-500"];
-                      return (
-                        <div key={idx} className="group">
-                          <div className="flex justify-between items-center mb-2">
-                            <span className="text-[13px] font-black text-[--text-primary] group-hover:text-[--accent-primary-light] transition-colors">{cat.name}</span>
-                            <span className="text-[13px] font-black tabular-nums text-white/80">{percentage.toFixed(1)}%</span>
-                          </div>
-                          <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-                            <div className={`h-full ${barColors[idx % 5]} rounded-full transition-all duration-1000`} style={{ width: `${percentage}%` }} />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-               </div>
-            </div>
-
-            {/* ── Institutional Partners (AMC Distribution) ── */}
-            <div className="glass-card-static p-8 md:p-10">
-               <div className="flex justify-between items-center mb-10">
-                  <div>
-                    <h3 className="text-xl font-black text-white">AMC Concentration</h3>
-                    <p className="text-[11px] text-[--text-muted] font-bold uppercase tracking-widest mt-1">Wealth Manager Distribution</p>
-                  </div>
-               </div>
-
-               <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={analytics.amcs.sort((a,b) => b.value - a.value).slice(0, 6)}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
-                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: 'var(--text-muted)', fontSize: 10, fontWeight: 900}} />
-                      <YAxis hide />
-                      <RechartsTooltip 
-                        cursor={{fill: 'rgba(255,255,255,0.02)'}}
-                        contentStyle={{ background: '#111', border: '1px solid #333', borderRadius: '12px' }}
-                      />
-                      <Bar 
-                        dataKey="value" 
-                        fill="var(--accent-primary)" 
-                        radius={[6, 6, 0, 0]}
-                        animationDuration={2000}
-                      >
-                         {analytics.amcs.map((entry, index) => (
-                           <Cell 
-                             key={`cell-${index}`} 
-                             fillOpacity={1 - (index * 0.15)}
-                             fill="var(--accent-primary)"
-                           />
-                         ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-               </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
-            {/* ── Elite Growth Performers ── */}
-            <div className="glass-card-static p-8">
-              <div className="flex items-center gap-3 mb-8">
-                 <div className="p-2.5 rounded-xl bg-[--success]/10 border border-[--success]/20">
-                    <svg className="w-5 h-5 text-[--success]" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
-                      <path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                    </svg>
-                 </div>
-                 <h3 className="text-lg font-black text-white">Elite Performers</h3>
-              </div>
-
-              <div className="space-y-4">
-                {analytics.topPerformers.map((mf, idx) => (
-                  <div key={idx} className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.05] transition-all group">
-                    <div className="flex justify-between items-center">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[13px] font-black text-[--text-primary] truncate leading-tight group-hover:text-[--success] transition-colors">{mf.fund_name}</p>
-                        <p className="text-[10px] text-[--text-muted] font-bold mt-1 uppercase tracking-wider">{mf.category}</p>
-                      </div>
-                      <div className="text-right ml-4">
-                        <p className="text-[14px] font-black text-[--success]">+{mf.pnlPercent?.toFixed(2)}%</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* ── Complete Portfolio Breakdown ── */}
-            <div className="lg:col-span-2 glass-card-static p-8 md:p-10">
-               <h3 className="text-xl font-black text-white mb-10">Portfolio Matrix</h3>
-               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {mfs.map((mf) => {
-                    const investment = Number(mf.units) * Number(mf.avg_nav);
-                    const currentVal = Number(mf.units) * Number(mf.current_nav);
-                    const pnl = currentVal - investment;
-                    const pnlPercent = investment > 0 ? (pnl / investment) * 100 : 0;
-                    
-                    return (
-                      <div key={mf.id} className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] transition-all group">
-                         <div className="flex items-center gap-4 mb-5">
-                            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center flex-shrink-0 overflow-hidden p-1 shadow-2xl">
-                              {getAMCLogoUrl(mf.amc_name || '') ? (
-                                <img src={getAMCLogoUrl(mf.amc_name || '')} alt="" className="w-full h-full object-contain" />
-                              ) : <span className="text-lg font-black text-black">{mf.amc_name?.[0]}</span>}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                               <p className="text-[13px] font-black text-white truncate group-hover:text-[--accent-primary-light] transition-colors">{mf.fund_name}</p>
-                               <div className="flex items-center gap-2 mt-1">
-                                  <span className={`text-[10px] font-black ${pnl >= 0 ? 'text-[--success]' : 'text-[--danger]'}`}>
-                                    {pnl >= 0 ? '+' : ''}{pnlPercent.toFixed(2)}% Yield
-                                  </span>
-                               </div>
-                            </div>
-                         </div>
-                         <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/5">
-                            <div>
-                               <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-widest mb-1">Value</p>
-                               <p className="text-[13px] font-black text-white">₹{currentVal.toLocaleString()}</p>
-                            </div>
-                            <div className="text-right">
-                               <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-widest mb-1">P&L</p>
-                               <p className={`text-[13px] font-black ${pnl >= 0 ? 'text-[--success]' : 'text-[--danger]'}`}>
-                                 {pnl >= 0 ? '+' : '-'}₹{Math.abs(pnl).toLocaleString()}
-                               </p>
-                            </div>
-                         </div>
-                      </div>
-                    );
-                  })}
-               </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="flex flex-col gap-[var(--section-gap)]">
@@ -555,16 +278,6 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
         </div>
         <div className="flex flex-wrap md:flex-nowrap items-center gap-3 w-full md:w-auto">
             {/* Auto refreshing enabled */}
-            <button 
-              onClick={() => setShowAnalytics(true)} 
-              className="btn-secondary !h-11 !px-6 flex items-center justify-center gap-2 hidden md:flex"
-              title="View Analytics"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-              Analytics
-            </button>
             <button 
               onClick={exportHoldings} 
               className="btn-secondary !h-11 !px-6 flex items-center justify-center gap-2 hidden md:flex"
@@ -598,7 +311,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
             <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Total P&L</span>
             <div className="flex flex-col">
               <span className={`text-xl md:text-2xl font-black tabular-nums ${stats.totalPnL >= 0 ? "text-[--success]" : "text-[--danger]"}`}>
-                  {stats.totalPnL >= 0 ? "+" : ""}₹{Math.abs(stats.totalPnL).toLocaleString()}
+                  {stats.totalPnL >= 0 ? "+" : "-"}₹{Math.abs(stats.totalPnL).toLocaleString()}
               </span>
               <span className={`text-[10px] font-black ${stats.totalPnL >= 0 ? "text-[--success]" : "text-[--danger]"} opacity-60`}>
                   ({stats.totalPnL >= 0 ? "+" : ""}{stats.totalPnLPercent.toFixed(2)}%)
@@ -615,7 +328,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
             <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Day's P&L</span>
             <div className="flex flex-col">
               <span className={`text-xl md:text-2xl font-black tabular-nums ${stats.dayPnL >= 0 ? "text-[--success]" : "text-[--danger]"}`}>
-                  {stats.dayPnL >= 0 ? "+" : ""}₹{Math.abs(stats.dayPnL).toLocaleString()}
+                  {stats.dayPnL >= 0 ? "+" : "-"}₹{Math.abs(stats.dayPnL).toLocaleString()}
               </span>
               <span className={`text-[10px] font-black ${stats.dayPnL >= 0 ? "text-[--success]" : "text-[--danger]"} opacity-60`}>
                   ({stats.dayPnL >= 0 ? "+" : ""}{stats.dayPnLPercent.toFixed(2)}%)
