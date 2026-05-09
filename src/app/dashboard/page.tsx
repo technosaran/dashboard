@@ -27,6 +27,6 @@ export default async function DashboardPage() {
   const { data: initialData } = await supabase.rpc("get_finance_overview");
 
   return (
-    <DashboardClient initialData={initialData as unknown as FinanceData} />
+    <DashboardClient initialData={(initialData as any) || {}} />
   );
 }

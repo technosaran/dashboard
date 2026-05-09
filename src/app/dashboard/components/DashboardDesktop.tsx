@@ -39,6 +39,10 @@ type DashboardStats = {
   stockBalance: number;
   mfBalance: number;
   trendData: TrendDataEntry[];
+  liquidBalance: number;
+  altBalance: number;
+  debtBalance: number;
+  totalAssets: number;
 };
 
 type Props = {
@@ -75,9 +79,16 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, isL
         fill: '#45B7D1',
         color: '#45B7D1',
         percentage: ((stats.mfBalance / stats.totalBalance) * 100).toFixed(1)
+      },
+      { 
+        name: 'Alt Assets', 
+        value: stats.altBalance, 
+        fill: '#A29BFE',
+        color: '#A29BFE',
+        percentage: ((stats.altBalance / stats.totalBalance) * 100).toFixed(1)
       }
     ].filter(item => item.value > 0);
-  }, [stats.totalBalance, stats.stockBalance, stats.mfBalance]);
+  }, [stats.totalBalance, stats.stockBalance, stats.mfBalance, stats.altBalance]);
 
   return (
     <div className="hidden md:flex flex-col gap-[var(--section-gap)] animate-fade-in relative z-20">
@@ -98,6 +109,18 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, isL
               <h2 className="bg-gradient-to-r from-white via-white to-[--text-secondary] bg-clip-text text-[clamp(2.5rem,10vw,4rem)] font-[900] leading-none tracking-[-0.05em] text-transparent drop-shadow-[0_10px_30px_rgba(108,92,231,0.2)] [font-family:'Outfit',sans-serif]">
                 ₹{stats.totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0 })}
               </h2>
+
+              <div className="mt-8 flex flex-wrap items-center gap-6">
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-[--text-muted] mb-1">Total Assets</span>
+                  <span className="text-lg font-bold text-emerald-400">₹{stats.totalAssets.toLocaleString()}</span>
+                </div>
+                <div className="w-px h-8 bg-white/10" />
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-[--text-muted] mb-1">Total Debt</span>
+                  <span className="text-lg font-bold text-rose-500">₹{stats.debtBalance.toLocaleString()}</span>
+                </div>
+              </div>
             </div>
 
             {/* PORTFOLIO ALLOCATION */}

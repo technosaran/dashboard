@@ -117,7 +117,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
   }
 
   async function handleDelete(id: string) {
-    const account = accounts.find(a => a.id === id);
+    const account = accounts.find((a: Account) => a.id === id);
     if (account?.name === "Cash") { toast.error("Cannot delete Cash"); return; }
     setDeletingAccountId(id);
     setShowDeleteConfirm(true);

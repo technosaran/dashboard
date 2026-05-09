@@ -17,7 +17,21 @@ type TrendMapEntry = {
 };
 
 export default function DashboardClient({ initialData }: { initialData?: FinanceData }) {
-  const { data: { accounts, transactions, ledgerLogs: recentLogs, investments, mutualFunds, incomes, expenses, bonds }, isLoading, isValidating } = useFinanceData(initialData);
+  const { data: financeData, isLoading, isValidating } = useFinanceData(initialData);
+  
+  const { 
+    accounts = [], 
+    transactions = [], 
+    ledgerLogs: recentLogs = [], 
+    investments = [], 
+    mutualFunds = [], 
+    incomes = [], 
+    expenses = [], 
+    bonds = [], 
+    alternativeAssets = [], 
+    liabilities = [] 
+  } = financeData || {};
+
   const isMobile = useMediaQuery('(max-width: 767px)');
   const [showOnboarding, setShowOnboarding] = useState(false);
 
@@ -39,9 +53,15 @@ export default function DashboardClient({ initialData }: { initialData?: Finance
     const mfBalance = mutualFunds.reduce((sum, mf) => sum + (Number(mf.units) * Number(mf.current_nav || 0)), 0);
     const bondBalance = (bonds || []).filter(b => b.status === 'Active').reduce((sum, b) => sum + Number(b.current_value || 0), 0);
     
+    const altBalance = (alternativeAssets || []).reduce((sum, asset) => sum + Number(asset.current_value || 0), 0);
+    const debtBalance = (liabilities || []).reduce((sum, debt) => sum + Number(debt.remaining_amount || 0), 0);
+    
     const stockCount = investments.filter((inv) => Number(inv.quantity) > 0).length;
     const mfCount = mutualFunds.filter((mf) => Number(mf.units) > 0).length;
-    const totalBalance = cashBalance + stockBalance + mfBalance + bondBalance;
+    
+    const liquidBalance = cashBalance + stockBalance + mfBalance + bondBalance;
+    const totalAssets = liquidBalance + altBalance;
+    const netWorth = totalAssets - debtBalance;
     
     const now = new Date();
     const startOfCurrMonth = startOfMonth(now).getTime();
@@ -104,7 +124,11 @@ export default function DashboardClient({ initialData }: { initialData?: Finance
     }).sort((a,b) => b.value - a.value);
 
     return { 
-      totalBalance, 
+      totalBalance: netWorth,
+      liquidBalance,
+      altBalance,
+      debtBalance,
+      totalAssets,
       monthlySpend, 
       monthlyIncome, 
       expenseTrend: expenseTrend.reverse(), 
@@ -115,7 +139,7 @@ export default function DashboardClient({ initialData }: { initialData?: Finance
       mfBalance, 
       trendData: Object.values(trendMap) 
     };
-  }, [accounts, transactions, investments, mutualFunds, bonds]);
+  }, [accounts, transactions, investments, mutualFunds, bonds, alternativeAssets, liabilities]);
 
   // Conditionally render only one view based on screen size
   if (isMobile) {

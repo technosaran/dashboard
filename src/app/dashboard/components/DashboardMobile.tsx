@@ -15,6 +15,8 @@ type DashboardStats = {
   mfCount: number;
   stockBalance: number;
   mfBalance: number;
+  totalAssets: number;
+  debtBalance: number;
 };
 
 type Props = {
@@ -36,13 +38,24 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, isVal
         </h2>
         <div className="mt-4 flex gap-4 pt-4 border-t border-white/5 w-full justify-center">
            <div className="flex flex-col items-center">
+             <span className="text-[10px] font-black text-emerald-400">₹{stats.totalAssets.toLocaleString()}</span>
+             <span className="text-[8px] text-[--text-muted] uppercase font-bold">Assets</span>
+           </div>
+           <div className="w-px h-8 bg-white/10" />
+           <div className="flex flex-col items-center">
+             <span className="text-[10px] font-black text-rose-500">₹{stats.debtBalance.toLocaleString()}</span>
+             <span className="text-[8px] text-[--text-muted] uppercase font-bold">Debt</span>
+           </div>
+        </div>
+        <div className="mt-3 flex gap-4 pt-3 border-t border-white/5 w-full justify-center">
+           <div className="flex flex-col items-center">
              <span className="text-[9px] font-bold uppercase text-[--success] tracking-widest">+₹{stats.monthlyIncome.toLocaleString()}</span>
-             <span className="text-[8px] text-[--text-muted] uppercase">In</span>
+             <span className="text-[7px] text-[--text-muted] uppercase">Income</span>
            </div>
            <div className="w-px h-6 bg-white/10" />
            <div className="flex flex-col items-center">
              <span className="text-[9px] font-bold uppercase text-[--danger] tracking-widest">-₹{stats.monthlySpend.toLocaleString()}</span>
-             <span className="text-[8px] text-[--text-muted] uppercase">Out</span>
+             <span className="text-[7px] text-[--text-muted] uppercase">Burn</span>
            </div>
         </div>
       </div>
