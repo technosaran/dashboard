@@ -42,6 +42,10 @@ export async function forexDeposit(data: {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
+  if (!data.amount || data.amount <= 0 || !Number.isFinite(data.amount)) {
+    return { error: "Deposit amount must be a positive number" };
+  }
+
   const rpc = supabase.rpc as unknown as (
     fn: "forex_deposit",
     args: {
@@ -84,6 +88,10 @@ export async function forexWithdraw(data: {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
+
+  if (!data.amount || data.amount <= 0 || !Number.isFinite(data.amount)) {
+    return { error: "Withdrawal amount must be a positive number" };
+  }
 
   const rpc = supabase.rpc as unknown as (
     fn: "forex_withdraw",
@@ -131,6 +139,17 @@ export async function logForexTrade(data: {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
+
+  // Input validation
+  if (!data.pair || data.pair.trim().length === 0) {
+    return { error: "Currency pair is required" };
+  }
+  if (!data.lot_size || data.lot_size <= 0 || !Number.isFinite(data.lot_size)) {
+    return { error: "Lot size must be a positive number" };
+  }
+  if (!Number.isFinite(data.pnl)) {
+    return { error: "P&L must be a valid number" };
+  }
 
   const rpc = supabase.rpc as unknown as (
     fn: "forex_log_trade",

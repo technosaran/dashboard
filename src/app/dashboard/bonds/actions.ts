@@ -31,6 +31,26 @@ export async function createBond(data: BondFormData) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
+  // Input validation
+  if (!data.bond_name || data.bond_name.trim().length === 0) {
+    return { error: "Bond name is required" };
+  }
+  if (!data.face_value || data.face_value <= 0) {
+    return { error: "Face value must be positive" };
+  }
+  if (!data.quantity || data.quantity <= 0 || !Number.isInteger(data.quantity)) {
+    return { error: "Quantity must be a positive integer" };
+  }
+  if (!data.purchase_price || data.purchase_price <= 0) {
+    return { error: "Purchase price must be positive" };
+  }
+  if (data.coupon_rate < 0) {
+    return { error: "Coupon rate cannot be negative" };
+  }
+  if (data.maturity_date && data.purchase_date && data.maturity_date < data.purchase_date) {
+    return { error: "Maturity date must be after purchase date" };
+  }
+
   // Use typed RPC to ensure transactional integrity
   const rpc = supabase.rpc as unknown as (
     fn: "record_bond_purchase",

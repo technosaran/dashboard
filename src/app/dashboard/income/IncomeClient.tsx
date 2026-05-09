@@ -205,7 +205,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
           </div>
           <p className="text-[--text-secondary] text-[13px] md:text-sm mt-1">Monitor your revenue streams and track financial growth.</p>
         </div>
-        <div className="flex items-center gap-3 w-full md:w-auto">
+        <div className="hidden md:flex items-center gap-3 w-full md:w-auto">
           <button 
             onClick={() => {
               try {

@@ -23,9 +23,14 @@ export function exportToCSV<T extends Record<string, unknown>>(
         // Handle different data types
         if (value === null || value === undefined) return "";
         if (typeof value === "string") {
-          // Escape quotes and wrap in quotes if contains comma/newline
-          const escaped = value.replace(/"/g, '""');
-          return escaped.includes(",") || escaped.includes("\n") ? `"${escaped}"` : escaped;
+          // CSV injection protection: prefix dangerous characters
+          let safe: string = value;
+          if (/^[=+\-@\t\r]/.test(safe)) {
+            safe = `'${safe}`;
+          }
+          // Escape quotes and wrap in quotes if contains comma/newline/quotes
+          const escaped = safe.replace(/"/g, '""');
+          return escaped.includes(",") || escaped.includes("\n") || escaped.includes('"') ? `"${escaped}"` : escaped;
         }
         return String(value);
       })

@@ -50,6 +50,20 @@ export async function createInvestment(data: {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
+  // Input validation
+  if (!data.name || data.name.trim().length === 0) {
+    return { error: "Stock name is required" };
+  }
+  if (!data.quantity || data.quantity <= 0 || !Number.isFinite(data.quantity)) {
+    return { error: "Quantity must be a positive number" };
+  }
+  if (!data.buy_price || data.buy_price <= 0 || !Number.isFinite(data.buy_price)) {
+    return { error: "Buy price must be a positive number" };
+  }
+  if (!data.current_price || data.current_price <= 0 || !Number.isFinite(data.current_price)) {
+    return { error: "Current price must be a positive number" };
+  }
+
   const tradeDate = data.bought_at || new Date().toISOString().split("T")[0];
   const turnover = data.quantity * data.buy_price;
   const totalCost = data.total_cost_with_charges ?? turnover;
@@ -174,7 +188,7 @@ export async function getStockDetails(symbol: string, exchange: string = "NSE") 
 
     const meta = result.meta;
     const price = meta.regularMarketPrice;
-    const prevClose = meta.previousClose;
+    const prevClose = meta.previousClose || meta.chartPreviousClose || price;
     
     const change = price - prevClose;
     const changePercent = prevClose > 0 ? (change / prevClose) * 100 : 0;

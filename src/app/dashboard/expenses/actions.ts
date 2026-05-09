@@ -17,6 +17,20 @@ export async function addExpense(formData: {
     return { error: "Not authenticated" };
   }
 
+  // Input validation
+  if (!formData.description || formData.description.trim().length === 0) {
+    return { error: "Description is required" };
+  }
+  if (!formData.amount || formData.amount <= 0 || !Number.isFinite(formData.amount)) {
+    return { error: "Amount must be a positive number" };
+  }
+  if (!formData.category || formData.category.trim().length === 0) {
+    return { error: "Category is required" };
+  }
+  if (!formData.date) {
+    return { error: "Date is required" };
+  }
+
   // Call the atomic RPC function
   // This ensures that balance deduction, ledger logging, and expense recording
   // all happen or all fail (transactional integrity).

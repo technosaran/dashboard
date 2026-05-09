@@ -1,10 +1,11 @@
 import { createClient } from "@/lib/supabase-server";
 import GoalsClient from "./GoalsClient";
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
 import type { FinanceData } from "@/hooks/use-finance-data";
 
-export const metadata = {
-  title: "Goals | FinanceOS",
+export const metadata: Metadata = {
+  title: "Goals",
   description: "Track and achieve your financial milestones.",
 };
 

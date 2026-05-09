@@ -56,6 +56,13 @@ export async function sendMoneyToFamily(payload: {
 
   if (!user) return { error: "Unauthorized" };
 
+  // Input validation
+  if (!payload.amount || payload.amount <= 0 || !Number.isFinite(payload.amount)) {
+    return { error: "Amount must be a positive number" };
+  }
+  if (!payload.account_id) return { error: "Account is required" };
+  if (!payload.recipient_id) return { error: "Recipient is required" };
+
   // Fetch account + recipient in parallel
   const [accountRes, recipientRes] = await Promise.all([
     supabase.from("accounts").select("balance, name, currency").eq("id", payload.account_id).eq("user_id", user.id).single(),

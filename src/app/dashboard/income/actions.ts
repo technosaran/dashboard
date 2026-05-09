@@ -17,6 +17,20 @@ export async function addIncome(formData: {
     return { error: "Not authenticated" };
   }
 
+  // Input validation
+  if (!formData.description || formData.description.trim().length === 0) {
+    return { error: "Description is required" };
+  }
+  if (!formData.amount || formData.amount <= 0 || !Number.isFinite(formData.amount)) {
+    return { error: "Amount must be a positive number" };
+  }
+  if (!formData.category || formData.category.trim().length === 0) {
+    return { error: "Category is required" };
+  }
+  if (!formData.date) {
+    return { error: "Date is required" };
+  }
+
   // Call the atomic record_income RPC function
   const { data, error } = await supabase.rpc("record_income", {
     p_user_id: user.id,

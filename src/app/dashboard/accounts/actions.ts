@@ -117,6 +117,17 @@ export async function createTransfer(data: TransferData) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
+  // Input validation
+  if (!data.from_account_id || !data.to_account_id) {
+    return { error: "Both source and destination accounts are required" };
+  }
+  if (data.from_account_id === data.to_account_id) {
+    return { error: "Source and destination accounts must be different" };
+  }
+  if (!data.amount || data.amount <= 0 || !Number.isFinite(data.amount)) {
+    return { error: "Transfer amount must be a positive number" };
+  }
+
   const { data: rpcData, error } = await supabase.rpc("process_transfer", {
     p_user_id: user.id,
     p_from_account_id: data.from_account_id,
@@ -137,6 +148,15 @@ export async function adjustBalance(id: string, amount: number, note: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
+
+  // Input validation
+  if (!id) return { error: "Account ID is required" };
+  if (!Number.isFinite(amount) || amount === 0) {
+    return { error: "Adjustment amount must be a non-zero finite number" };
+  }
+  if (!note || note.trim().length === 0) {
+    return { error: "A note is required for balance adjustments" };
+  }
 
   const { data: rpcData, error } = await supabase.rpc("adjust_account_balance", {
     p_user_id: user.id,

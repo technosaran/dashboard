@@ -56,8 +56,6 @@ export async function proxy(request: NextRequest) {
   response.headers.set("X-Frame-Options", "DENY");
   // Prevent MIME type sniffing
   response.headers.set("X-Content-Type-Options", "nosniff");
-  // Enable XSS protection
-  response.headers.set("X-XSS-Protection", "1; mode=block");
   // Referrer policy
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   // Permissions policy — restrict dangerous APIs
@@ -70,6 +68,8 @@ export async function proxy(request: NextRequest) {
     "Strict-Transport-Security",
     "max-age=63072000; includeSubDomains; preload"
   );
+  // Cross-Origin-Opener-Policy for stronger tab isolation
+  response.headers.set("Cross-Origin-Opener-Policy", "same-origin");
 
   return response;
 }

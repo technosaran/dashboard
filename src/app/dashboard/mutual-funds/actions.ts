@@ -54,6 +54,17 @@ export async function recordMFInvestment(data: {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Unauthorized" };
 
+    // Input validation
+    if (!data.fund_name || data.fund_name.trim().length === 0) {
+        return { error: "Fund name is required" };
+    }
+    if (!data.units || data.units <= 0 || !Number.isFinite(data.units)) {
+        return { error: "Units must be a positive number" };
+    }
+    if (!data.nav || data.nav <= 0 || !Number.isFinite(data.nav)) {
+        return { error: "NAV must be a positive number" };
+    }
+
     const rpc = supabase.rpc as unknown as (
         fn: "record_mf_investment_v4",
         args: {

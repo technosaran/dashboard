@@ -21,6 +21,17 @@ export async function createGoal(data: {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Unauthorized" };
 
+    // Input validation
+    if (!data.name || data.name.trim().length === 0) {
+        return { error: "Goal name is required" };
+    }
+    if (!data.target_amount || data.target_amount <= 0 || !Number.isFinite(data.target_amount)) {
+        return { error: "Target amount must be a positive number" };
+    }
+    if (data.current_amount !== undefined && data.current_amount < 0) {
+        return { error: "Initial amount cannot be negative" };
+    }
+
     const rpc = supabase.rpc as unknown as (
         fn: "initialize_goal",
         args: {
@@ -57,6 +68,13 @@ export async function updateGoalAmount(goalId: string, amount: number, accountId
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Unauthorized" };
+
+    // Input validation
+    if (!goalId) return { error: "Goal ID is required" };
+    if (!amount || amount <= 0 || !Number.isFinite(amount)) {
+        return { error: "Contribution amount must be a positive number" };
+    }
+    if (!accountId) return { error: "Account is required" };
 
     const { error } = await supabase.rpc("contribute_to_goal", {
         p_user_id: user.id,
