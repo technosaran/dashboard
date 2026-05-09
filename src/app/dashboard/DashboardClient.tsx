@@ -129,6 +129,7 @@ export default function DashboardClient({ initialData }: { initialData?: Finance
       altBalance,
       debtBalance,
       totalAssets,
+      cashBalance,
       monthlySpend, 
       monthlyIncome, 
       expenseTrend: expenseTrend.reverse(), 

@@ -43,6 +43,7 @@ type DashboardStats = {
   altBalance: number;
   debtBalance: number;
   totalAssets: number;
+  cashBalance: number;
 };
 
 type Props = {
@@ -55,40 +56,39 @@ type Props = {
 const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, isLoading, isValidating }: Props) {
   // Extract portfolio data computation into a single useMemo
   const portfolioData = useMemo<PieEntry[]>(() => {
-    if (stats.totalBalance === 0) return [];
+    if (stats.totalAssets <= 0) return [];
     
-    const cashBalance = stats.totalBalance - stats.stockBalance - stats.mfBalance;
     return [
       { 
         name: 'Cash', 
-        value: cashBalance, 
+        value: stats.cashBalance, 
         fill: '#4ECDC4',
         color: '#4ECDC4',
-        percentage: ((cashBalance / stats.totalBalance) * 100).toFixed(1)
+        percentage: ((stats.cashBalance / stats.totalAssets) * 100).toFixed(1)
       },
       { 
         name: 'Stocks', 
         value: stats.stockBalance, 
         fill: '#FF6B6B',
         color: '#FF6B6B',
-        percentage: ((stats.stockBalance / stats.totalBalance) * 100).toFixed(1)
+        percentage: ((stats.stockBalance / stats.totalAssets) * 100).toFixed(1)
       },
       { 
         name: 'Mutual Funds', 
         value: stats.mfBalance, 
         fill: '#45B7D1',
         color: '#45B7D1',
-        percentage: ((stats.mfBalance / stats.totalBalance) * 100).toFixed(1)
+        percentage: ((stats.mfBalance / stats.totalAssets) * 100).toFixed(1)
       },
       { 
         name: 'Alt Assets', 
         value: stats.altBalance, 
         fill: '#A29BFE',
         color: '#A29BFE',
-        percentage: ((stats.altBalance / stats.totalBalance) * 100).toFixed(1)
+        percentage: ((stats.altBalance / stats.totalAssets) * 100).toFixed(1)
       }
     ].filter(item => item.value > 0);
-  }, [stats.totalBalance, stats.stockBalance, stats.mfBalance, stats.altBalance]);
+  }, [stats.totalAssets, stats.cashBalance, stats.stockBalance, stats.mfBalance, stats.altBalance]);
 
   return (
     <div className="hidden md:flex flex-col gap-[var(--section-gap)] animate-fade-in relative z-20">
