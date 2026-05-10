@@ -30,32 +30,35 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, isVal
   return (
     <div className="flex flex-col gap-6 md:hidden min-h-screen animate-fade-in relative z-20 pb-24">
       {/* Mobile Header / Balance */}
-      <div className="glass-card-static p-8 text-center flex flex-col items-center justify-center relative overflow-hidden border border-white/10">
+      <div className="glass-card-static p-8 text-center flex flex-col items-center justify-center relative overflow-hidden border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.3)]">
         <div className="absolute -right-10 -top-10 w-40 h-40 bg-[--accent-primary]/10 blur-3xl rounded-full" />
-        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[--text-muted] mb-2">Net Worth</p>
-        <h2 className="text-4xl font-black text-white tracking-tighter">
+        <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-emerald-500/5 blur-3xl rounded-full" />
+        
+        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[--text-muted] mb-3">Portfolio Net Worth</p>
+        <h2 className="text-5xl font-black text-white tracking-tighter mb-6 bg-gradient-to-b from-white to-white/60 bg-clip-text text-transparent">
            ₹{stats.totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0 })}
         </h2>
+
+        <div className="grid grid-cols-2 gap-4 w-full pt-6 border-t border-white/5">
+           <div className="flex flex-col items-center bg-white/5 py-3 rounded-2xl border border-white/5">
+             <span className="text-[11px] font-black text-emerald-400">₹{stats.totalAssets.toLocaleString()}</span>
+             <span className="text-[8px] text-[--text-muted] uppercase font-black tracking-widest mt-1">Total Assets</span>
+           </div>
+           <div className="flex flex-col items-center bg-white/5 py-3 rounded-2xl border border-white/5">
+             <span className="text-[11px] font-black text-rose-500">₹{stats.debtBalance.toLocaleString()}</span>
+             <span className="text-[8px] text-[--text-muted] uppercase font-black tracking-widest mt-1">Total Debt</span>
+           </div>
+        </div>
+
         <div className="mt-4 flex gap-4 pt-4 border-t border-white/5 w-full justify-center">
            <div className="flex flex-col items-center">
-             <span className="text-[10px] font-black text-emerald-400">₹{stats.totalAssets.toLocaleString()}</span>
-             <span className="text-[8px] text-[--text-muted] uppercase font-bold">Assets</span>
+             <span className="text-[10px] font-black text-[--success] tracking-widest">+₹{stats.monthlyIncome.toLocaleString()}</span>
+             <span className="text-[8px] text-[--text-muted] uppercase font-bold tracking-tighter">Income</span>
            </div>
            <div className="w-px h-8 bg-white/10" />
            <div className="flex flex-col items-center">
-             <span className="text-[10px] font-black text-rose-500">₹{stats.debtBalance.toLocaleString()}</span>
-             <span className="text-[8px] text-[--text-muted] uppercase font-bold">Debt</span>
-           </div>
-        </div>
-        <div className="mt-3 flex gap-4 pt-3 border-t border-white/5 w-full justify-center">
-           <div className="flex flex-col items-center">
-             <span className="text-[9px] font-bold uppercase text-[--success] tracking-widest">+₹{stats.monthlyIncome.toLocaleString()}</span>
-             <span className="text-[7px] text-[--text-muted] uppercase">Income</span>
-           </div>
-           <div className="w-px h-6 bg-white/10" />
-           <div className="flex flex-col items-center">
-             <span className="text-[9px] font-bold uppercase text-[--danger] tracking-widest">-₹{stats.monthlySpend.toLocaleString()}</span>
-             <span className="text-[7px] text-[--text-muted] uppercase">Burn</span>
+             <span className="text-[10px] font-black text-[--danger] tracking-widest">-₹{stats.monthlySpend.toLocaleString()}</span>
+             <span className="text-[8px] text-[--text-muted] uppercase font-bold tracking-tighter">Expenses</span>
            </div>
         </div>
       </div>

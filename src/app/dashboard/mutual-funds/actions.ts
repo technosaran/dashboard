@@ -3,6 +3,11 @@
 
 import { createClient } from "@/lib/supabase-server";
 import { revalidatePath } from "next/cache";
+import { revertLedgerLog as revertAction } from "../alternative-assets/actions";
+
+export async function revertLedgerLog(logId: string) {
+    return await revertAction(logId);
+}
 
 type MutualFundRpcResult = {
     success?: boolean;

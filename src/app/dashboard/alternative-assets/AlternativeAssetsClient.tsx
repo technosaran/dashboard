@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { toast } from "react-hot-toast";
-import { addAlternativeAsset, updateAlternativeAsset, deleteAlternativeAsset } from "./actions";
+import { addAlternativeAsset, updateAlternativeAsset, deleteAlternativeAsset, revertLedgerLog } from "./actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { format, parseISO } from "date-fns";
 
@@ -17,10 +17,17 @@ const CATEGORIES = [
 ];
 
 export default function AlternativeAssetsClient({ initialData }: { initialData?: FinanceData }) {
-  const { data: { alternativeAssets }, isValidating } = useFinanceData(initialData);
+  const { data: { alternativeAssets, ledgerLogs, accounts }, isValidating } = useFinanceData(initialData);
   const [showAddModal, setShowAddModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"inventory" | "history">("inventory");
+
+  const assetLogs = useMemo(() => {
+    return ledgerLogs
+      .filter(log => log.details?.toLowerCase().includes("asset") || log.details?.toLowerCase().includes("physical asset"))
+      .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+  }, [ledgerLogs]);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -29,6 +36,7 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
     current_value: "",
     purchase_date: "",
     notes: "",
+    account_id: "",
   });
 
   const stats = useMemo(() => {
@@ -42,8 +50,9 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
+    const { account_id, ...assetData } = formData;
     const payload = {
-      ...formData,
+      ...assetData,
       purchase_price: parseFloat(formData.purchase_price),
       current_value: parseFloat(formData.current_value),
       purchase_date: formData.purchase_date || undefined,
@@ -51,14 +60,26 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
 
     const res = editingId 
       ? await updateAlternativeAsset(editingId, payload)
-      : await addAlternativeAsset(payload);
+      : await addAlternativeAsset({ ...payload, account_id });
 
     if (!res.error) {
       toast.success(editingId ? "Asset updated" : "Asset established");
       setShowAddModal(false);
       setEditingId(null);
-      setFormData({ name: "", category: "Real Estate", purchase_price: "", current_value: "", purchase_date: "", notes: "" });
+      setFormData({ name: "", category: "Real Estate", purchase_price: "", current_value: "", purchase_date: "", notes: "", account_id: "" });
     } else toast.error(res.error);
+    setSubmitting(false);
+  }
+
+  async function handleRevert(logId: string) {
+    if (!confirm("Revert this action? This will undo the ledger entry and any associated balance changes.")) return;
+    setSubmitting(true);
+    const res = await revertLedgerLog(logId);
+    if (!res.error) {
+      toast.success("Action reverted successfully");
+    } else {
+      toast.error(res.error);
+    }
     setSubmitting(false);
   }
 
@@ -66,105 +87,195 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
     <div className="flex flex-col gap-8 animate-in fade-in duration-700">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-          <h1 className="text-4xl font-black tracking-tight text-white">Alternative Assets</h1>
-          <p className="text-xs text-[--text-muted] font-bold uppercase tracking-[0.3em] mt-2">Physical & Private Equity Holdings</p>
+          <h1 className="text-4xl font-black tracking-tight text-white uppercase italic">Physical Assets</h1>
+          <p className="text-[10px] text-[--text-muted] font-black uppercase tracking-[0.4em] mt-2 ml-1">Tangible Wealth & Private Holdings</p>
         </div>
-        <button onClick={() => setShowAddModal(true)} className="btn-primary !h-11 shadow-[0_0_20px_rgba(var(--accent-primary-rgb),0.4)]">Add New Asset</button>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {[
-          { label: "Total Valuation", value: stats.totalValue, sub: "Market Value", color: "text-white", icon: "🏛️" },
-          { label: "Net Growth", value: stats.netGrowth, sub: "Unrealized Gain", color: stats.netGrowth >= 0 ? "text-[--success]" : "text-[--danger]", icon: "📈" },
-          { label: "ROI", value: stats.growthPercent, sub: "Historical Appreciation", color: stats.netGrowth >= 0 ? "text-[--success]" : "text-[--danger]", icon: "💎", isPercent: true },
-        ].map((s, i) => (
-          <div key={i} className="glass-card-static p-6 border-white/5 hover:border-white/10 transition-all group relative overflow-hidden">
-            <div className="absolute -right-4 -top-4 text-4xl opacity-[0.03] group-hover:opacity-[0.07] transition-opacity rotate-12">{s.icon}</div>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">{s.label}</p>
-            <p className={`text-2xl font-black tabular-nums ${s.color}`}>
-              {s.isPercent ? `${s.value.toFixed(1)}%` : `₹${s.value.toLocaleString()}`}
-            </p>
-            <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">{s.sub}</p>
+        <div className="flex items-center gap-3">
+          <div className="flex bg-white/5 p-1 rounded-2xl border border-white/10">
+            <button 
+              disabled={submitting}
+              onClick={() => setActiveTab("inventory")}
+              className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === "inventory" ? "bg-[--accent-primary] text-white shadow-lg" : "text-[--text-muted] hover:text-white"}`}
+            >
+              Inventory
+            </button>
+            <button 
+              disabled={submitting}
+              onClick={() => setActiveTab("history")}
+              className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === "history" ? "bg-[--accent-primary] text-white shadow-lg" : "text-[--text-muted] hover:text-white"}`}
+            >
+              History
+            </button>
           </div>
-        ))}
+          <button onClick={() => setShowAddModal(true)} disabled={submitting} className="btn-primary !h-12 !px-8 shadow-[0_0_30px_rgba(var(--accent-primary-rgb),0.3)] !rounded-2xl text-[11px] font-black tracking-widest uppercase">{submitting ? "Working..." : "Record New Asset"}</button>
+        </div>
       </div>
 
-      {/* Assets Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {alternativeAssets.map((asset) => {
-          const category = CATEGORIES.find(c => c.label === asset.category) || CATEGORIES[6];
-          const gain = Number(asset.current_value) - Number(asset.purchase_price);
-          const gainPercent = (gain / Number(asset.purchase_price)) * 100;
-          
-          return (
-            <div key={asset.id} className="glass-card flex flex-col min-h-[280px] p-6 relative overflow-hidden transition-transform hover:-translate-y-1 group border-white/5">
-              <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[--accent-primary] via-[--accent-secondary] to-[--accent-tertiary]" />
+      {activeTab === "inventory" ? (
+        <>
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              { label: "Asset Valuation", value: stats.totalValue, sub: "Combined Portfolio", color: "text-white", icon: "🏛️" },
+              { label: "Unrealized Gain", value: stats.netGrowth, sub: "Portfolio Growth", color: stats.netGrowth >= 0 ? "text-success" : "text-danger", icon: "📈" },
+              { label: "Yield (ROI)", value: stats.growthPercent, sub: "Total Performance", color: stats.netGrowth >= 0 ? "text-success" : "text-danger", icon: "💎", isPercent: true },
+            ].map((s, i) => (
+              <div key={i} className="glass-card-static p-8 border-white/5 hover:border-white/10 transition-all group relative overflow-hidden rounded-[32px]">
+                <div className="absolute -right-6 -top-6 text-6xl opacity-[0.03] group-hover:opacity-[0.08] transition-opacity rotate-12 grayscale">{s.icon}</div>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-4 opacity-60">{s.label}</p>
+                <p className={`text-3xl font-black tabular-nums ${s.color} tracking-tight`}>
+                  {s.isPercent ? `${s.value.toFixed(2)}%` : `₹${s.value.toLocaleString()}`}
+                </p>
+                <div className="flex items-center gap-2 mt-3">
+                   <div className={`w-1 h-1 rounded-full ${stats.netGrowth >= 0 ? "bg-success shadow-[0_0_8px_var(--success)]" : "bg-danger shadow-[0_0_8px_var(--danger)]"}`} />
+                   <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-widest opacity-40">{s.sub}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Assets Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {alternativeAssets.map((asset) => {
+              const category = CATEGORIES.find(c => c.label === asset.category) || CATEGORIES[6];
+              const gain = Number(asset.current_value) - Number(asset.purchase_price);
+              const gainPercent = (gain / Number(asset.purchase_price)) * 100;
               
-              <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-all flex gap-2">
-                 <button onClick={() => {
-                   setEditingId(asset.id);
-                   setFormData({
-                     name: asset.name,
-                     category: asset.category,
-                     purchase_price: asset.purchase_price.toString(),
-                     current_value: asset.current_value.toString(),
-                     purchase_date: asset.purchase_date || "",
-                     notes: asset.notes || "",
-                   });
-                   setShowAddModal(true);
-                 }} className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 text-[--text-muted] flex items-center justify-center hover:bg-white/10 hover:text-white transition-all">
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                 </button>
-                 <button onClick={() => { if(confirm("Delete this asset record?")) deleteAlternativeAsset(asset.id); }} className="w-8 h-8 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-500 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all">
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                 </button>
-              </div>
+              return (
+                <div key={asset.id} className="glass-card-static flex flex-col min-h-[340px] p-8 relative overflow-hidden transition-all hover:scale-[1.02] group border-white/5 bg-gradient-to-br from-white/[0.03] to-transparent rounded-[40px]">
+                  <div className="absolute top-0 left-0 right-0 h-[4px] bg-gradient-to-r from-[--accent-primary] via-[--accent-secondary] to-[--accent-tertiary] opacity-40 group-hover:opacity-100 transition-opacity" />
+                  
+                  <div className="flex justify-between items-start mb-10">
+                    <div className="flex items-center gap-5">
+                      <div className="w-14 h-14 rounded-3xl bg-white/[0.03] border border-white/10 flex items-center justify-center text-2xl shadow-2xl group-hover:scale-110 transition-transform">
+                        {category.icon}
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <h3 className="text-xl font-black text-white group-hover:text-[--accent-primary-light] transition-colors leading-tight">{asset.name}</h3>
+                        <div className="flex items-center gap-2">
+                           <span className="text-[9px] font-black text-[--accent-primary-light] uppercase tracking-widest bg-[--accent-primary]/10 px-2 py-0.5 rounded-md border border-[--accent-primary]/20">{asset.category}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                       <button onClick={() => {
+                         setEditingId(asset.id);
+                         setFormData({
+                           name: asset.name,
+                           category: asset.category,
+                           purchase_price: asset.purchase_price.toString(),
+                           current_value: asset.current_value.toString(),
+                           purchase_date: asset.purchase_date || "",
+                           notes: asset.notes || "", account_id: "",
+                         });
+                         setShowAddModal(true);
+                       }} className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 text-[--text-muted] flex items-center justify-center hover:bg-[--accent-primary] hover:text-white transition-all shadow-lg">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                       </button>
+                    </div>
+                  </div>
 
-              <div className="flex justify-between items-start mb-8">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-[--accent-primary]/10 flex items-center justify-center text-xl shadow-inner border border-white/5">
-                    {category.icon}
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-black text-white group-hover:text-[--accent-primary-light] transition-colors">{asset.name}</h3>
-                    <p className="text-[10px] font-bold text-[--text-muted] uppercase tracking-[0.2em] mt-0.5">{asset.category}</p>
+                  <div className="space-y-8 mt-auto">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[10px] font-black text-[--text-muted] uppercase tracking-[0.2em] opacity-50">Market Valuation</span>
+                      <span className="text-3xl font-black text-white tabular-nums tracking-tighter">₹{asset.current_value.toLocaleString()}</span>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-4 rounded-3xl bg-white/[0.02] border border-white/5 backdrop-blur-md">
+                        <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-widest mb-1 opacity-50">Acquisition</p>
+                        <p className="text-[15px] font-black text-white tabular-nums">₹{asset.purchase_price.toLocaleString()}</p>
+                      </div>
+                      <div className="p-4 rounded-3xl bg-white/[0.02] border border-white/5 text-right backdrop-blur-md">
+                        <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-widest mb-1 opacity-50">Appreciation</p>
+                        <p className={`text-[15px] font-black tabular-nums ${gain >= 0 ? "text-success" : "text-danger"}`}>
+                          {gain >= 0 ? "+" : ""}{Math.abs(gainPercent).toFixed(2)}%
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between pt-4 border-t border-white/5">
+                       {asset.purchase_date && (
+                        <div className="flex items-center gap-2">
+                          <svg className="w-3.5 h-3.5 text-[--text-muted]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                          <span className="text-[10px] font-black text-[--text-muted] uppercase tracking-widest opacity-60">Owned for {format(parseISO(asset.purchase_date), "MMM yyyy")}</span>
+                        </div>
+                      )}
+                      <button onClick={() => { if(confirm("Permanently purge this asset record?")) deleteAlternativeAsset(asset.id); }} className="text-rose-500 hover:text-rose-400 transition-colors">
+                         <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-
-              <div className="mt-auto space-y-6">
-                <div className="flex justify-between items-baseline">
-                  <span className="text-[10px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Market Valuation</span>
-                  <span className="text-2xl font-black text-white tabular-nums">₹{asset.current_value.toLocaleString()}</span>
-                </div>
-                
-                <div className="h-px bg-gradient-to-r from-transparent via-white/5 to-transparent" />
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
-                    <p className="text-[8px] font-black text-[--text-muted] uppercase tracking-widest mb-1">Buy Price</p>
-                    <p className="text-[13px] font-black text-white tabular-nums">₹{asset.purchase_price.toLocaleString()}</p>
-                  </div>
-                  <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 text-right">
-                    <p className="text-[8px] font-black text-[--text-muted] uppercase tracking-widest mb-1">Appreciation</p>
-                    <p className={`text-[13px] font-black tabular-nums ${gain >= 0 ? "text-[--success]" : "text-[--danger]"}`}>
-                      {gain >= 0 ? "+" : "-"}{Math.abs(gainPercent).toFixed(1)}%
-                    </p>
-                  </div>
-                </div>
-                
-                {asset.purchase_date && (
-                  <div className="flex items-center gap-2 pt-2 border-t border-white/5">
-                    <div className="status-dot scale-75 bg-[--success]" />
-                    <span className="text-[9px] font-bold text-[--text-muted] uppercase tracking-widest">Holding Since {format(parseISO(asset.purchase_date), "MMM yyyy")}</span>
-                  </div>
+              );
+            })}
+          </div>
+        </>
+      ) : (
+        <div className="glass-card-static rounded-[40px] overflow-hidden border-white/5">
+          <div className="p-8 border-b border-white/5 flex items-center justify-between">
+            <h3 className="text-sm font-black uppercase tracking-widest text-white">Asset Audit Trail</h3>
+            <p className="text-[10px] font-black text-[--text-muted] uppercase tracking-widest">{assetLogs.length} Records Found</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-white/5 text-[9px] text-[--text-muted] uppercase font-black tracking-widest bg-white/[0.01]">
+                  <th className="py-4 px-8">Timestamp</th>
+                  <th className="py-4 px-8">Action</th>
+                  <th className="py-4 px-8">Details</th>
+                  <th className="py-4 px-8 text-right">Amount Impact</th>
+                  <th className="py-4 px-8 text-right">Ops</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {assetLogs.map((log) => {
+                  const isPositive = log.action_type === "CREATE" || log.action_type === "ADJUST_UP";
+                  return (
+                    <tr key={log.id} className="hover:bg-white/[0.02] transition-colors group">
+                      <td className="py-5 px-8">
+                        <p className="text-[11px] font-bold text-white/80">{log.created_at ? format(new Date(log.created_at), "MMM d, yyyy") : "N/A"}</p>
+                        <p className="text-[9px] font-bold text-[--text-muted] mt-0.5">{log.created_at ? format(new Date(log.created_at), "HH:mm:ss") : ""}</p>
+                      </td>
+                      <td className="py-5 px-8">
+                        <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest ${
+                          log.action_type === "CREATE" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
+                          log.action_type === "DELETE" ? "bg-rose-500/10 text-rose-400 border border-rose-500/20" :
+                          "bg-blue-500/10 text-blue-400 border border-blue-500/20"
+                        }`}>
+                          {log.action_type}
+                        </span>
+                      </td>
+                      <td className="py-5 px-8">
+                        <p className="text-[12px] font-bold text-white group-hover:text-[--accent-primary-light] transition-colors">{log.details}</p>
+                      </td>
+                      <td className="py-5 px-8 text-right tabular-nums">
+                        <p className={`text-[12px] font-black ${isPositive ? "text-emerald-400" : "text-rose-400"}`}>
+                          {log.amount ? `${isPositive ? "+" : "-"}₹${log.amount.toLocaleString()}` : "—"}
+                        </p>
+                      </td>
+                      <td className="py-5 px-8 text-right">
+                         <button 
+                           onClick={() => handleRevert(log.id)}
+                           disabled={submitting}
+                           className="text-[9px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-all bg-rose-500/5 px-3 py-1 rounded-lg border border-rose-500/10"
+                         >
+                           Revert
+                         </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {assetLogs.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="py-20 text-center text-[11px] font-bold text-[--text-muted] uppercase tracking-[0.3em]">No historical records detected</td>
+                  </tr>
                 )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {showAddModal && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/90 backdrop-blur-xl animate-fade-in shadow-2xl">
@@ -196,6 +307,15 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Acquisition Date</label>
                   <input type="date" className="input-premium" value={formData.purchase_date} onChange={e => setFormData({...formData, purchase_date: e.target.value})} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Source Account (Optional)</label>
+                  <select className="input-premium" value={formData.account_id} onChange={e => setFormData({...formData, account_id: e.target.value})}>
+                    <option value="">No Transaction</option>
+                    {accounts.map(acc => (
+                      <option key={acc.id} value={acc.id}>{acc.name} (₹{acc.balance.toLocaleString()})</option>
+                    ))}
+                  </select>
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Inventory Notes / Location</label>

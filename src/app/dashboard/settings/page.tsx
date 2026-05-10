@@ -8,7 +8,7 @@ import { useFinanceData } from "@/hooks/use-finance-data";
 
 export default function SettingsPage() {
   const { username, setUsername, loading, isSyncing } = useUser();
-  const { data: { profile } } = useFinanceData();
+  const { data: { profile }, mutate } = useFinanceData();
   const [input, setInput] = useState(username);
   const [lastSaved, setLastSaved] = useState<string | null>(null);
   const [prevUsername, setPrevUsername] = useState(username);
@@ -99,9 +99,18 @@ export default function SettingsPage() {
       ? enabledModules.filter(m => m !== module)
       : [...enabledModules, module];
     
+    // Optimistic update
+    const optimisticProfile = { ...profile, settings: { ...profile?.settings, enabled_modules: newModules } };
+    mutate((prev: any) => ({ ...prev, profile: optimisticProfile }), false);
+
     const res = await updateSettings({ ...profile?.settings, enabled_modules: newModules });
-    if (res.error) toast.error(res.error);
-    else toast.success(`${module} visibility updated`);
+    if (res.error) {
+      toast.error(res.error);
+      mutate(); // rollback
+    } else {
+      toast.success(`${module} visibility updated`);
+      mutate(); // full re-fetch to be sure
+    }
   };
 
   return (
@@ -241,20 +250,23 @@ export default function SettingsPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-             {ALL_MODULES.map(module => (
-               <div key={module} className={`p-4 rounded-2xl border transition-all flex items-center justify-between ${enabledModules.includes(module) ? 'bg-white/[0.03] border-white/10' : 'bg-black/20 border-white/5 opacity-60'}`}>
-                  <div className="flex items-center gap-3">
-                     <span className={`w-2 h-2 rounded-full ${enabledModules.includes(module) ? 'bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.5)]' : 'bg-white/10'}`} />
-                     <span className="text-[13px] font-bold text-white">{module}</span>
-                  </div>
-                  <button 
-                    onClick={() => toggleModule(module)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${enabledModules.includes(module) ? 'bg-cyan-500' : 'bg-white/10'}`}
-                  >
-                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${enabledModules.includes(module) ? 'translate-x-6' : 'translate-x-1'}`} />
-                  </button>
-               </div>
-             ))}
+             {ALL_MODULES.map(module => {
+               const displayLabel = module === "Alt Assets" ? "Assets" : module === "Liabilities" ? "Loans" : module;
+               return (
+                <div key={module} className={`p-4 rounded-2xl border transition-all flex items-center justify-between ${enabledModules.includes(module) ? 'bg-white/[0.03] border-white/10' : 'bg-black/20 border-white/5 opacity-60'}`}>
+                   <div className="flex items-center gap-3">
+                      <span className={`w-2 h-2 rounded-full ${enabledModules.includes(module) ? 'bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.5)]' : 'bg-white/10'}`} />
+                      <span className="text-[13px] font-bold text-white">{displayLabel}</span>
+                   </div>
+                   <button 
+                     onClick={() => toggleModule(module)}
+                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${enabledModules.includes(module) ? 'bg-cyan-500' : 'bg-white/10'}`}
+                   >
+                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${enabledModules.includes(module) ? 'translate-x-6' : 'translate-x-1'}`} />
+                   </button>
+                </div>
+               );
+             })}
           </div>
           
           <p className="text-[10px] text-[--text-muted] mt-6 italic font-medium px-2">* Disabling a module hides it from the UI but preserves all existing data and historical records.</p>

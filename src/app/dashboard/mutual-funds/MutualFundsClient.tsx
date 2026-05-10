@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 
 import type { Tables } from "@/lib/database.types";
-import { recordMFInvestment, refreshNAV, searchMFSchemes, getLiveNAV } from "./actions";
+import { recordMFInvestment, refreshNAV, searchMFSchemes, getLiveNAV, revertLedgerLog } from "./actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import PnLValue from "@/components/pnl-value";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
@@ -129,6 +129,14 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
       isMountedRef.current = false;
     };
   }, []);
+
+  async function handleRevert(logId: string | null) {
+    if (!logId) return toast.error("No ledger log found for this trade");
+    if (!confirm("Revert this fund transaction? This will undo the portfolio change and reverse any account transactions.")) return;
+    const res = await revertLedgerLog(logId);
+    if (!res.error) toast.success("Transaction reverted");
+    else toast.error(res.error);
+  }
 
   // Export MF holdings to CSV
   function exportHoldings() {
@@ -401,7 +409,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                                                </button>
                                               <button 
                                                   onClick={(e) => { e.stopPropagation(); startSell(mf); }}
-                                                  className="px-2 py-0.5 bg-[--danger]/10 hover:bg-[--danger] text-[--danger] hover:text-white text-[9px] font-black uppercase rounded transition-all"
+                                                  className="px-2 py-0.5 bg-danger/10 hover:bg-danger text-danger hover:text-white text-[9px] font-black uppercase rounded transition-all"
                                               >
                                                   Redeem
                                               </button>
@@ -430,32 +438,49 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
         <div className="mx-4 border border-white/5 rounded-2xl overflow-hidden bg-white/[0.01]">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-white/5 bg-white/[0.02]">
-                <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest">Date</th>
-                <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest">Scheme</th>
-                <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest">Action</th>
-                <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">Units</th>
-                <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">NAV</th>
-                <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">Amount</th>
+              <tr className="border-b border-white/5 bg-white/[0.02] text-[9px] text-[--text-muted] uppercase font-black tracking-widest">
+                <th className="px-6 py-4">Date</th>
+                <th className="px-6 py-4">Scheme</th>
+                <th className="px-6 py-4">Action</th>
+                <th className="px-6 py-4 text-right">Units</th>
+                <th className="px-6 py-4 text-right">NAV</th>
+                <th className="px-6 py-4 text-right">Amount Delta</th>
+                <th className="px-6 py-4 text-right">Ops</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/10">
               {trades.length === 0 ? (
-                <tr><td colSpan={6} className="px-6 py-12 text-center text-[#666] italic text-sm">No transaction history recorded yet.</td></tr>
-              ) : trades.map((trade) => (
-                <tr key={trade.id} className="hover:bg-white/[0.01] transition-colors">
-                  <td className="px-6 py-4 text-[12px] font-bold text-[--text-muted] tabular-nums">{trade.date}</td>
-                  <td className="px-6 py-4"><span className="text-[13px] font-bold text-[#eee]">{trade.fund_name}</span></td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${trade.trade_type === 'BUY' ? 'bg-[--success]/10 text-[--success]' : 'bg-[--danger]/10 text-[--danger]'}`}>
-                      {trade.trade_type}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right font-medium tabular-nums text-[#eee] text-[13px]">{Number(trade.units).toFixed(3)}</td>
-                  <td className="px-6 py-4 text-right font-medium tabular-nums text-[#666] text-[13px]">₹{Number(trade.nav).toFixed(3)}</td>
-                  <td className="px-6 py-4 text-right font-black tabular-nums text-[#eee] text-[14px]">₹{Number(trade.amount).toLocaleString()}</td>
-                </tr>
-              ))}
+                <tr><td colSpan={7} className="px-6 py-12 text-center text-[#666] italic text-sm">No transaction history recorded yet.</td></tr>
+              ) : trades.map((trade) => {
+                const isBuy = trade.trade_type?.toLowerCase() === 'buy';
+                return (
+                  <tr key={trade.id} className="hover:bg-white/[0.01] transition-colors group">
+                    <td className="px-6 py-4 text-[11px] font-bold text-[--text-muted] tabular-nums">{trade.date}</td>
+                    <td className="px-6 py-4"><span className="text-[13px] font-bold text-[#eee]">{trade.fund_name}</span></td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest ${isBuy ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}`}>
+                        {trade.trade_type}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right font-medium tabular-nums text-[#eee] text-[13px]">{Number(trade.units).toFixed(3)}</td>
+                    <td className="px-6 py-4 text-right font-medium tabular-nums text-[#666] text-[13px]">₹{Number(trade.nav).toFixed(3)}</td>
+                    <td className="px-6 py-4 text-right font-black tabular-nums text-[13px]">
+                       <span className={isBuy ? 'text-rose-400' : 'text-emerald-400'}>
+                         {isBuy ? '-' : '+'}₹{Number(trade.amount).toLocaleString()}
+                       </span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                       <button 
+                         onClick={() => handleRevert(trade.ledger_log_id)}
+                         disabled={submitting}
+                         className="text-[9px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-all bg-rose-500/5 px-3 py-1 rounded-lg border border-rose-500/10"
+                       >
+                         Revert
+                       </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

@@ -10,18 +10,17 @@ export async function resetUserData() {
   
   if (!user) return { error: "Unauthorized" };
 
-  // Use typed RPC call pattern consistent with other action files
-  const rpc = supabase.rpc as unknown as (
-    fn: "reset_user_data",
-    args: { p_user_id: string }
-  ) => Promise<{ data: { success: boolean; error?: string } | null; error: { message: string } | null }>;
+  const { data, error } = await supabase.rpc("reset_user_data", { p_user_id: user.id });
 
-  const { data, error } = await rpc("reset_user_data", { p_user_id: user.id });
-
-  if (error) return { error: error.message };
+  if (error) {
+    console.error("RPC Error:", error);
+    return { error: error.message };
+  }
   
-  if (data && data.success === false) {
-    return { error: data.error || "Database reset failed internally" };
+  const result = data as { success: boolean; error?: string } | null;
+  
+  if (result && result.success === false) {
+    return { error: result.error || "Database reset failed internally" };
   }
   
   // Revalidate all major paths

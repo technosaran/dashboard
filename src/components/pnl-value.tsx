@@ -21,9 +21,9 @@ export default function PnLValue({
   const isNegative = value < 0;
   
   const colorClass = isPositive 
-    ? "text-[--success]" 
+    ? "text-success" 
     : isNegative 
-      ? "text-[--danger]" 
+      ? "text-danger" 
       : "text-[--text-secondary]";
 
   const sizeClasses = {

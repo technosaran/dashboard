@@ -2,6 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { format } from "date-fns";
 import type { Tables } from "@/lib/database.types";
 import { toast } from "react-hot-toast";
 
@@ -11,7 +12,8 @@ import {
   deleteInvestment, 
   getStockDetails, 
   refreshAllPrices,
-  searchStocks
+  searchStocks,
+  revertLedgerLog
 } from "./actions";
 import { calculateZerodhaCharges } from "@/lib/investment-utils";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
@@ -136,6 +138,14 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
   }
 
   fetchPriceRef.current = handleFetchPrice;
+
+  async function handleRevert(logId: string | null) {
+    if (!logId) return toast.error("No ledger log found for this trade");
+    if (!confirm("Revert this trade? This will undo the portfolio change and reverse any account transactions.")) return;
+    const res = await revertLedgerLog(logId);
+    if (!res.error) toast.success("Trade reverted");
+    else toast.error(res.error);
+  }
 
   // Removed redundant auto-fetch useEffect to prevent "asking two times" feel
 
@@ -537,10 +547,10 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                              <span className="text-[10px] text-[--text-muted] uppercase font-bold">{inv.name}</span>
                           </div>
                           <div className="text-right">
-                             <div className={`text-[15px] font-black ${isProfit ? "text-[--success]" : "text-[--danger]"}`}>
+                             <div className={`text-[15px] font-black ${isProfit ? "text-success" : "text-danger"}`}>
                                 {isProfit ? "+" : ""}₹{formatNum(pnl)}
                              </div>
-                             <div className={`text-[10px] font-bold opacity-60 ${isProfit ? "text-[--success]" : "text-[--danger]"}`}>
+                             <div className={`text-[10px] font-bold opacity-60 ${isProfit ? "text-success" : "text-danger"}`}>
                                 {isProfit ? "+" : ""}{pnlPct.toFixed(2)}%
                              </div>
                           </div>
@@ -551,14 +561,14 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                           <div><p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-1">LTP</p><p className="text-[13px] font-black">₹{formatNum(inv.current_price)}</p></div>
                           <div className="text-right">
                              <p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-1">Day Return</p>
-                             <p className={`text-[13px] font-black ${inv.day_change !== null && inv.day_change >= 0 ? "text-[--success]" : "text-[--danger]"}`}>
+                             <p className={`text-[13px] font-black ${inv.day_change !== null && inv.day_change >= 0 ? "text-success" : "text-danger"}`}>
                                 {inv.day_change !== null && inv.day_change > 0 ? "+" : ""}{inv.day_change !== null ? formatNum(inv.day_change) : "—"}
                              </p>
                           </div>
                        </div>
                        <div className="flex gap-2">
-                          <button onClick={() => { setEditingId(null); setFormData({ symbol: inv.symbol || "", name: inv.name, quantity: "", buy_price: inv.current_price.toString(), current_price: inv.current_price.toString(), exchange: inv.symbol?.endsWith(".BO") ? "BSE" : "NSE", trade_type: "buy", deduct_from_account: "", currency: "INR", notes: "", bought_at: new Date().toISOString().split("T")[0] }); setShowForm(true); }} className="flex-1 py-3 bg-[--success]/20 hover:bg-[--success]/30 text-[--success] border border-[--success]/30 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-[--success]/5">Buy</button>
-                          <button onClick={() => startSell(inv)} className="flex-1 py-3 bg-[--danger]/20 hover:bg-[--danger]/30 text-rose-400 border border-[--danger]/30 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-[--danger]/5">Sell</button>
+                          <button onClick={() => { setEditingId(null); setFormData({ symbol: inv.symbol || "", name: inv.name, quantity: "", buy_price: inv.current_price.toString(), current_price: inv.current_price.toString(), exchange: inv.symbol?.endsWith(".BO") ? "BSE" : "NSE", trade_type: "buy", deduct_from_account: "", currency: "INR", notes: "", bought_at: new Date().toISOString().split("T")[0] }); setShowForm(true); }} className="flex-1 py-3 bg-success/20 hover:bg-success/30 text-success border border-success/30 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-success/5">Buy</button>
+                          <button onClick={() => startSell(inv)} className="flex-1 py-3 bg-danger/20 hover:bg-danger/30 text-danger border border-danger/30 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-danger/5">Sell</button>
                           <button onClick={() => startEdit(inv)} className="w-12 py-3 bg-white/10 hover:bg-white/20 text-white border border-white/20 text-[10px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center transition-all shadow-lg">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                           </button>
@@ -590,23 +600,34 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                   <th className="py-3 px-4 text-right">Total</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-white/5">
                 {trades.filter(t => 
                   t.symbol?.toLowerCase().includes(search.toLowerCase()) ||
                   t.trade_type?.toLowerCase().includes(search.toLowerCase())
                 ).map((trade) => (
-                  <tr key={trade.id} className="border-b border-[--border-default] hover:bg-[--bg-elevated] transition-all">
-                    <td className="py-4 px-4 text-[12px] text-[--text-muted]">{trade.trade_date ? new Date(trade.trade_date).toLocaleDateString() : "N/A"}</td>
+                  <tr key={trade.id} className="hover:bg-white/[0.02] transition-colors group">
+                    <td className="py-4 px-4 text-[11px] text-[--text-muted]">{trade.trade_date ? format(new Date(trade.trade_date), "MMM d, yyyy") : "N/A"}</td>
                     <td className="py-4 px-4">
-                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-sm uppercase tracking-tighter ${trade.trade_type === 'buy' ? 'bg-[--success]/10 text-emerald-400' : 'bg-[--danger]/10 text-rose-400'}`}>
+                      <span className={`text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-widest ${trade.trade_type === 'buy' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}`}>
                         {trade.trade_type}
                       </span>
                     </td>
-                    <td className="py-4 px-4 text-[13px] font-medium text-[--text-primary]">{trade.symbol.split('.')[0]}</td>
-                    <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[--text-secondary]">{trade.quantity}</td>
-                    <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[--text-secondary]">{formatNum(trade.price)}</td>
-                    <td className="py-4 px-4 text-right tabular-nums text-[11px] text-rose-400">₹{formatNum(trade.charges ?? 0)}</td>
-                    <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[--text-primary] font-medium">₹{formatNum(trade.total_amount)}</td>
+                    <td className="py-4 px-4 text-[13px] font-bold text-white group-hover:text-[--accent-primary-light] transition-colors">{trade.symbol.split('.')[0]}</td>
+                    <td className="py-4 px-4 text-right tabular-nums text-[13px] text-white/80">{trade.quantity}</td>
+                    <td className="py-4 px-4 text-right tabular-nums text-[13px] text-white/80">₹{formatNum(trade.price)}</td>
+                    <td className="py-4 px-4 text-right tabular-nums text-[11px] text-rose-500/80">₹{formatNum(trade.charges ?? 0)}</td>
+                    <td className="py-4 px-4 text-right tabular-nums text-[13px] font-black flex items-center justify-end gap-4">
+                       <span className={trade.trade_type === 'buy' ? 'text-rose-400' : 'text-emerald-400'}>
+                         {trade.trade_type === 'buy' ? '-' : '+'}₹{formatNum(trade.total_amount)}
+                       </span>
+                       <button 
+                         onClick={() => handleRevert(trade.ledger_log_id)}
+                         disabled={submitting}
+                         className="text-[9px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-all bg-rose-500/5 px-2 py-1 rounded-lg border border-rose-500/10"
+                       >
+                         Revert
+                       </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -831,7 +852,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                    
                    <div className="mt-4 pt-3 border-t border-white/5 flex justify-between items-center">
                       <span className="text-[10px] font-black text-[--text-muted] uppercase tracking-widest">Net Outflow</span>
-                      <span className={`text-[15px] font-black tabular-nums ${formData.trade_type === 'buy' ? 'text-[--danger]' : 'text-[--success]'}`}>
+                      <span className={`text-[15px] font-black tabular-nums ${formData.trade_type === 'buy' ? 'text-danger' : 'text-success'}`}>
                         ₹{formatNum(zerodhaCharges.netAmount)}
                       </span>
                    </div>
@@ -863,7 +884,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                 </button>
                 <button 
                   onClick={confirmDelete}
-                  className="flex-1 h-10 bg-[--danger] text-white text-xs font-medium rounded-sm hover:bg-[--danger-light] transition-colors"
+                  className="flex-1 h-10 bg-danger text-white text-xs font-medium rounded-sm hover:opacity-90 transition-colors"
                 >
                   DELETE
                 </button>

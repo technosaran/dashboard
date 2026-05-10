@@ -74,7 +74,7 @@ const nav = [
     ),
   },
   {
-    label: "Alt Assets",
+    label: "Assets",
     href: "/dashboard/alternative-assets",
     icon: (
       <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
@@ -92,7 +92,7 @@ const nav = [
     ),
   },
   {
-    label: "Liabilities",
+    label: "Loans",
     href: "/dashboard/liabilities",
     icon: (
       <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
@@ -184,7 +184,8 @@ export default function Sidebar() {
   const filteredNav = useMemo(() => {
     return nav.filter(item => {
       if (["Dashboard", "Accounts", "Settings"].includes(item.label)) return true;
-      return enabledModules.includes(item.label);
+      const dbLabel = item.label === "Assets" ? "Alt Assets" : item.label === "Loans" ? "Liabilities" : item.label;
+      return enabledModules.includes(dbLabel);
     });
   }, [enabledModules]);
 

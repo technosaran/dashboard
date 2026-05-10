@@ -43,6 +43,7 @@ type DashboardStats = {
   trendData: TrendDataEntry[];
   liquidBalance: number;
   altBalance: number;
+  bondBalance: number;
   debtBalance: number;
   totalAssets: number;
   cashBalance: number;
@@ -83,14 +84,21 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, isL
         percentage: ((stats.mfBalance / stats.totalAssets) * 100).toFixed(1)
       },
       { 
-        name: 'Alt Assets', 
+        name: 'Assets', 
         value: stats.altBalance, 
         fill: CHART_COLOURS[3],
         color: CHART_COLOURS[3],
         percentage: ((stats.altBalance / stats.totalAssets) * 100).toFixed(1)
+      },
+      { 
+        name: 'Bonds', 
+        value: stats.bondBalance, 
+        fill: CHART_COLOURS[4],
+        color: CHART_COLOURS[4],
+        percentage: ((stats.bondBalance / stats.totalAssets) * 100).toFixed(1)
       }
     ].filter(item => item.value > 0);
-  }, [stats.totalAssets, stats.cashBalance, stats.stockBalance, stats.mfBalance, stats.altBalance]);
+  }, [stats.totalAssets, stats.cashBalance, stats.stockBalance, stats.mfBalance, stats.altBalance, stats.bondBalance]);
 
   return (
     <div className="hidden md:flex flex-col gap-[var(--section-gap)] animate-fade-in relative z-20">
@@ -205,39 +213,53 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, isL
           </div>
         </div>
 
-        <div className="glass-card-static p-6 md:p-8">
-          <div className="mb-8 flex items-center justify-between">
-            <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-[--text-muted]">Recent Activities</h3>
-            <Link href="/dashboard/ledger" className="text-[10px] font-black uppercase tracking-widest text-[--accent-primary] underline">View Ledger</Link>
-          </div>
-          <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-            {recentLogs.length === 0 ? (
-              <div className="py-12 text-center text-sm italic text-[--text-muted]">No recent activities found.</div>
-            ) : (
-              recentLogs.map((log) => {
-                const isOutflow = ["DELETE", "TRANSFER_OUT", "SEND_MONEY", "ADJUST_DOWN"].includes(log.action_type);
-                return (
-                  <div key={log.id} className="group flex items-center justify-between rounded-2xl border border-white/5 bg-white/[0.02] p-4 hover:bg-white/[0.04]">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[--accent-primary]/10 text-lg shadow-inner">
-                        {log.action_type === "CREATE" ? "✨" : log.action_type === "DELETE" ? "🗑️" : "💰"}
-                      </div>
-                      <div>
-                        <p className="truncate text-[13px] font-bold text-[--text-primary] group-hover:text-[--accent-primary-light]">{log.details}</p>
-                        <p className="mt-1 text-[9px] font-bold uppercase tracking-widest text-[--text-muted]">{log.created_at ? format(new Date(log.created_at), "MMM d, HH:mm") : "—"}</p>
-                      </div>
-                    </div>
-                    <div className="pl-4 text-right">
-                      <p className={`text-[13px] font-black ${isOutflow ? "text-[--danger]" : "text-[--success]"}`}>
-                        {log.amount ? `${isOutflow ? "-" : "+"}₹${log.amount.toLocaleString()}` : "—"}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
+      <div className="glass-card-static rounded-[32px] overflow-hidden border-white/5 lg:col-span-2">
+        <div className="p-8 border-b border-white/5 flex items-center justify-between bg-white/[0.01]">
+          <h3 className="text-xs font-black uppercase tracking-[0.3em] text-white">Institutional Ledger Pulse</h3>
+          <Link href="/dashboard/ledger" className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] hover:text-white transition-colors">View Complete History →</Link>
         </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-white/5 text-[9px] text-[--text-muted] uppercase font-black tracking-widest bg-white/[0.01]">
+                <th className="py-4 px-8">Timestamp</th>
+                <th className="py-4 px-8">Classification</th>
+                <th className="py-4 px-8">Activity Detail</th>
+                <th className="py-4 px-8 text-right">Value Delta</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {recentLogs.slice(0, 10).map((log) => {
+                const isOut = ["DELETE", "TRANSFER_OUT", "SEND_MONEY", "ADJUST_DOWN"].includes(log.action_type);
+                return (
+                  <tr key={log.id} className="hover:bg-white/[0.02] transition-colors group">
+                    <td className="py-5 px-8">
+                      <p className="text-[11px] font-bold text-white/80">{log.created_at ? format(new Date(log.created_at), "MMM d, HH:mm") : "N/A"}</p>
+                    </td>
+                    <td className="py-5 px-8">
+                      <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest ${
+                        log.action_type === "CREATE" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
+                        isOut ? "bg-rose-500/10 text-rose-400 border border-rose-500/20" :
+                        "bg-blue-500/10 text-blue-400 border border-blue-500/20"
+                      }`}>
+                        {log.action_type}
+                      </span>
+                    </td>
+                    <td className="py-5 px-8">
+                      <p className="text-[12px] font-bold text-white group-hover:text-[--accent-primary-light] transition-colors">{log.details}</p>
+                    </td>
+                    <td className="py-5 px-8 text-right tabular-nums">
+                      <p className={`text-[12px] font-black ${isOut ? "text-rose-400" : "text-emerald-400"}`}>
+                        {log.amount ? `${isOut ? "-" : "+"}₹${log.amount.toLocaleString()}` : "—"}
+                      </p>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
       </div>
 
       {/* 6-Month Income vs Expense Trend */}
@@ -291,6 +313,26 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, isL
               </BarChart>
             </ResponsiveContainer>
           )}
+        </div>
+      </div>
+
+      {/* QUICK ACTIONS / COMMAND CENTER */}
+      <div className="flex flex-col gap-4">
+        <div className="glass-card-static p-6 h-full flex flex-col justify-center">
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[--text-muted] mb-6">Command Center</p>
+          <div className="grid grid-cols-2 gap-4">
+            {[
+              { label: "Record Expense", href: "/dashboard/expenses?action=new", icon: "🔴", color: "bg-rose-500/10 text-rose-500 border-rose-500/20" },
+              { label: "Log Income", href: "/dashboard/income?action=new", icon: "🟢", color: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" },
+              { label: "Internal Transfer", href: "/dashboard/transfers?action=new", icon: "🔄", color: "bg-blue-500/10 text-blue-400 border-blue-500/20" },
+              { label: "Asset Entry", href: "/dashboard/alternative-assets?action=new", icon: "🏛️", color: "bg-amber-500/10 text-amber-400 border-amber-500/20" },
+            ].map((action, i) => (
+              <Link key={i} href={action.href} className={`flex flex-col items-center justify-center p-4 rounded-3xl border transition-all hover:scale-105 active:scale-95 ${action.color}`}>
+                 <span className="text-2xl mb-2">{action.icon}</span>
+                 <span className="text-[9px] font-black uppercase tracking-widest text-center">{action.label}</span>
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
     </div>

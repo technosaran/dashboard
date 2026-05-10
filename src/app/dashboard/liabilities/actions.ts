@@ -12,17 +12,36 @@ export async function addLiability(formData: {
   monthly_payment?: number;
   due_date?: string;
   notes?: string;
+  account_id?: string;
 }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated" };
 
-  const { error } = await supabase
-    .from("liabilities")
-    .insert([{ ...formData, user_id: user.id }]);
+  const { account_id, ...liabilityData } = formData;
 
-  if (error) return { error: error.message };
+  const { data: liability, error: libErr } = await supabase
+    .from("liabilities")
+    .insert([{ ...liabilityData, user_id: user.id }])
+    .select()
+    .single();
+
+  if (libErr) return { error: libErr.message };
+
+  // Handle fund receipt if account provided
+  if (account_id && formData.total_amount > 0) {
+    const { error: accErr } = await supabase.rpc("adjust_account_balance", {
+      p_account_id: account_id,
+      p_amount: formData.total_amount, // Positive because it's a loan received
+      p_note: `Loan Disbursement: ${formData.name}`,
+      p_user_id: user.id
+    });
+    if (accErr) console.error("Balance adjustment failed:", accErr);
+  }
+
   revalidatePath("/dashboard/liabilities");
+  revalidatePath("/dashboard/ledger");
+  revalidatePath("/dashboard/accounts");
   return { success: true };
 }
 

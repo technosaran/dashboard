@@ -134,6 +134,7 @@ export default function DashboardClient({ initialData }: { initialData?: Finance
       totalBalance: netWorth,
       liquidBalance,
       altBalance,
+      bondBalance,
       debtBalance,
       totalAssets,
       cashBalance,
