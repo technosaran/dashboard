@@ -330,7 +330,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
         </div>
         <div className="glass-card-static p-6 flex flex-col gap-2">
             <span className="text-[10px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Avg. Return</span>
-            <PnLValue value={stats.totalPnLPercent} prefix="" size="lg" className="items-start" />
+            <PnLValue value={stats.totalPnLPercent} prefix="" suffix="%" size="lg" className="items-start" />
         </div>
         <div className="glass-card-static p-6 flex flex-col gap-2">
             <span className="text-[10px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Day's P&L</span>

@@ -4,6 +4,7 @@ interface PnLValueProps {
   value: number;
   percentage?: number;
   prefix?: string;
+  suffix?: string;
   className?: string;
   showSign?: boolean;
   size?: "sm" | "md" | "lg";
@@ -13,6 +14,7 @@ export default function PnLValue({
   value, 
   percentage, 
   prefix = "₹", 
+  suffix = "",
   className = "", 
   showSign = true,
   size = "md"
@@ -35,7 +37,7 @@ export default function PnLValue({
   return (
     <div className={`flex flex-col items-end ${className}`}>
       <span className={`${sizeClasses[size]} tabular-nums ${colorClass}`}>
-        {showSign && isPositive ? "+" : ""}{isNegative ? "-" : ""}{prefix}{Math.abs(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        {showSign && isPositive ? "+" : ""}{isNegative ? "-" : ""}{prefix}{Math.abs(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{suffix}
       </span>
       {percentage !== undefined && (
         <span className={`text-[10px] font-black opacity-60 tabular-nums ${colorClass}`}>
@@ -45,3 +47,4 @@ export default function PnLValue({
     </div>
   );
 }
+

@@ -519,7 +519,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                         <PnLValue value={inv.day_change || 0} percentage={inv.day_change_percent || 0} size="sm" />
                       </td>
                       <td className="py-4 px-4 text-right tabular-nums text-[13px] font-medium relative">
-                        <PnLValue value={pnlPct} showSign={true} prefix="" size="sm" />
+                        <PnLValue value={pnlPct} showSign={true} prefix="" suffix="%" size="sm" />
                         <div className="absolute inset-0 flex items-center justify-end pr-4 gap-2 opacity-0 group-hover:opacity-100 transition-all pointer-events-none group-hover:pointer-events-auto bg-[--bg-base] backdrop-blur-md">
                           <button onClick={(e) => { e.stopPropagation(); startSell(inv); }} className="h-7 px-4 bg-rose-500 hover:bg-rose-600 text-white text-[11px] font-black rounded shadow-[0_4px_10px_rgba(244,63,94,0.2)] transition-colors uppercase tracking-tight">SELL</button>
                           <button onClick={(e) => { e.stopPropagation(); startEdit(inv); }} className="h-7 px-4 bg-sky-500 hover:bg-sky-600 text-white text-[11px] font-black rounded shadow-[0_4px_10px_rgba(14,165,233,0.2)] transition-colors uppercase tracking-tight">EDIT</button>

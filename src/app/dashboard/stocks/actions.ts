@@ -168,6 +168,41 @@ export async function deleteInvestment(id: string) {
 
 
 
+
+const YAHOO_DOMAINS = [
+  "query2.finance.yahoo.com",
+  "query1.finance.yahoo.com"
+];
+
+const USER_AGENTS = [
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+];
+
+async function fetchWithRetry(url: string, retries = 3): Promise<Response> {
+  let lastError: Error | null = null;
+  for (let i = 0; i < retries; i++) {
+    try {
+      const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+      const res = await fetch(url, {
+        headers: { "User-Agent": userAgent },
+        cache: "no-store",
+        next: { revalidate: 0 }
+      });
+      if (res.ok) return res;
+      if (res.status === 429) {
+        // Rate limited, wait longer
+        await new Promise(r => setTimeout(r, 1000 * (i + 1)));
+      }
+    } catch (e) {
+      lastError = e as Error;
+    }
+    await new Promise(r => setTimeout(r, 500 * i));
+  }
+  throw lastError || new Error(`Failed to fetch ${url}`);
+}
+
 export async function getStockDetails(symbol: string, exchange: string = "NSE") {
   if (!symbol) return { error: "Symbol is required" };
 
@@ -179,36 +214,41 @@ export async function getStockDetails(symbol: string, exchange: string = "NSE") 
     const suffix = exchange === "BSE" ? ".BO" : ".NS";
     const ticker = cleanQuery.includes(".") ? cleanQuery : `${cleanQuery}${suffix}`;
     
-    // Use the v8 chart API which is quite stable
-    const url = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1d&range=1d`;
-    const res = await fetch(url, { 
-      headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" }, 
-      cache: "no-store" 
-    });
+    let lastErr: string | null = null;
     
-    if (!res.ok) throw new Error(`Market data unavailable for ${ticker}`);
-    const data = await res.json();
-    const result = data.chart.result?.[0];
-    if (!result || !result.meta) throw new Error("No market data in response");
+    // Try multiple domains
+    for (const domain of YAHOO_DOMAINS) {
+      try {
+        const url = `https://${domain}/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1d&range=1d`;
+        const res = await fetchWithRetry(url);
+        const data = await res.json();
+        const result = data.chart.result?.[0];
+        if (!result || !result.meta) continue;
 
-    const meta = result.meta;
-    const price = meta.regularMarketPrice;
-    const prevClose = meta.previousClose || meta.chartPreviousClose || price;
+        const meta = result.meta;
+        const price = meta.regularMarketPrice;
+        const prevClose = meta.previousClose || meta.chartPreviousClose || price;
+        
+        const change = price - prevClose;
+        const changePercent = prevClose > 0 ? (change / prevClose) * 100 : 0;
+
+        return {
+          name: meta.symbol.split(".")[0],
+          price: price,
+          previousClose: prevClose,
+          dayChange: change,
+          dayChangePercent: changePercent,
+          currency: meta.currency || "INR",
+          symbol: meta.symbol,
+          exchange: meta.exchangeName || (meta.symbol.endsWith(".NS") ? "NSE" : "BSE"),
+          marketState: meta.marketState || 'REGULAR'
+        };
+      } catch (e) {
+        lastErr = e instanceof Error ? e.message : "Fetch failed";
+      }
+    }
     
-    const change = price - prevClose;
-    const changePercent = prevClose > 0 ? (change / prevClose) * 100 : 0;
-
-    return {
-      name: meta.symbol.split(".")[0], // Could fetch name from search if needed
-      price: price,
-      previousClose: prevClose,
-      dayChange: change,
-      dayChangePercent: changePercent,
-      currency: meta.currency || "INR",
-      symbol: meta.symbol,
-      exchange: meta.exchangeName || (meta.symbol.endsWith(".NS") ? "NSE" : "BSE"),
-      marketState: meta.marketState || 'REGULAR'
-    };
+    throw new Error(lastErr || `Market data unavailable for ${ticker}`);
   } catch (error) {
     console.error("Stock fetch error:", error instanceof Error ? error.message : "Internal Error");
     return { error: `Market data sync failed. Check symbol or try later.` };
@@ -228,35 +268,48 @@ export async function refreshAllPrices() {
 
   if (fetchError || !stocks) return { error: fetchError?.message || "No stocks found" };
 
-  const results = await Promise.all(stocks.map(async (stock) => {
-    if (!stock.symbol) return { id: stock.id, error: "No symbol" };
-    try {
-      const exchange = stock.symbol.endsWith(".BO") ? "BSE" : "NSE";
-      const res = await getStockDetails(stock.symbol, exchange);
-      
-      if ("error" in res || !res.price) return { id: stock.id, error: res.error || "Price not found" };
-      
-      const { error: updateError } = await supabase
-        .from("investments")
-        .update({ 
-          current_price: res.price, 
-          previous_close: res.previousClose,
-          day_change: res.dayChange,
-          day_change_percent: res.dayChangePercent,
-          market_state: res.marketState,
-          last_fetch_at: new Date().toISOString(),
-          updated_at: new Date().toISOString() 
-        })
-        .eq("id", stock.id);
+  // Use smaller batches and delays to avoid rate limits
+  const BATCH_SIZE = 3;
+  const DELAY_BETWEEN_BATCHES = 1000;
+  
+  const results = [];
+  for (let i = 0; i < stocks.length; i += BATCH_SIZE) {
+    const batch = stocks.slice(i, i + BATCH_SIZE);
+    const batchResults = await Promise.all(batch.map(async (stock) => {
+      if (!stock.symbol) return { id: stock.id, error: "No symbol" };
+      try {
+        const exchange = stock.symbol.endsWith(".BO") ? "BSE" : "NSE";
+        const res = await getStockDetails(stock.symbol, exchange);
+        
+        if ("error" in res || !res.price) return { id: stock.id, error: res.error || "Price not found" };
+        
+        const { error: updateError } = await supabase
+          .from("investments")
+          .update({ 
+            current_price: res.price, 
+            previous_close: res.previousClose,
+            day_change: res.dayChange,
+            day_change_percent: res.dayChangePercent,
+            market_state: res.marketState,
+            last_fetch_at: new Date().toISOString(),
+            updated_at: new Date().toISOString() 
+          })
+          .eq("id", stock.id);
 
-      if (updateError) throw updateError;
-      return { id: stock.id, success: true };
-    } catch (e) {
-      console.error(`Refresh error for ${stock.symbol}:`, e instanceof Error ? e.message : "Internal Error");
-      return { id: stock.id, error: e instanceof Error ? e.message : "Fetch failed" };
+        if (updateError) throw updateError;
+        return { id: stock.id, success: true };
+      } catch (e) {
+        return { id: stock.id, error: e instanceof Error ? e.message : "Fetch failed" };
+      }
+    }));
+    results.push(...batchResults);
+    if (i + BATCH_SIZE < stocks.length) {
+      await new Promise(r => setTimeout(r, DELAY_BETWEEN_BATCHES));
     }
-  }));
+  }
 
   revalidatePath("/dashboard/stocks");
+  revalidatePath("/dashboard");
   return { success: true, results };
 }
+

@@ -25,22 +25,46 @@ export async function searchMFSchemes(query: string) {
     }
 }
 
+async function fetchWithRetry(url: string, retries = 3): Promise<Response> {
+    for (let i = 0; i < retries; i++) {
+        try {
+            const res = await fetch(url, { cache: "no-store", next: { revalidate: 0 } });
+            if (res.ok) return res;
+            if (res.status === 429) await new Promise(r => setTimeout(r, 1000 * (i + 1)));
+        } catch (e) {
+            if (i === retries - 1) throw e;
+        }
+        await new Promise(r => setTimeout(r, 500 * i));
+    }
+    throw new Error(`Failed to fetch ${url}`);
+}
+
 export async function getLiveNAV(schemeCode: string) {
+    if (!schemeCode) return null;
     try {
-        const res = await fetch(`https://api.mfapi.in/mf/${schemeCode}`);
+        const res = await fetchWithRetry(`https://api.mfapi.in/mf/${schemeCode}`);
         const data = await res.json();
         if (data?.data?.length > 0) {
+            const nav = parseFloat(data.data[0].nav);
+            const prevNav = data.data.length > 1 ? parseFloat(data.data[1].nav) : nav;
+            const change = nav - prevNav;
+            const changePercent = prevNav > 0 ? (change / prevNav) * 100 : 0;
+
             return {
-                nav: parseFloat(data.data[0].nav),
-                prevNav: data.data.length > 1 ? parseFloat(data.data[1].nav) : parseFloat(data.data[0].nav),
+                nav,
+                prevNav,
+                dayChange: change,
+                dayChangePercent: changePercent,
                 date: data.data[0].date,
                 fund_name: data.meta.scheme_name,
                 amc: data.meta.amc
             };
         }
-    } catch {
+    } catch (error) {
+        console.error(`NAV Fetch Error for ${schemeCode}:`, error);
         return null;
     }
+    return null;
 }
 
 export async function recordMFInvestment(data: {
@@ -116,20 +140,35 @@ export async function refreshNAV(mfs: { id: string, scheme_code: string }[]) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return [];
 
+    const BATCH_SIZE = 5;
+    const DELAY = 500;
     const results = [];
 
-    for (const mf of mfs) {
-        if (!mf.scheme_code) continue;
-        const live = await getLiveNAV(mf.scheme_code);
-        if (live) {
-            await supabase.from("mutual_funds").update({ 
-                current_nav: live.nav, 
-                previous_nav: live.prevNav,
-                last_nav_updated_at: new Date().toISOString() 
-            }).eq("id", mf.id);
-            results.push({ id: mf.id, nav: live.nav, prevNav: live.prevNav });
-        }
+    for (let i = 0; i < mfs.length; i += BATCH_SIZE) {
+        const batch = mfs.slice(i, i + BATCH_SIZE);
+        const batchResults = await Promise.all(batch.map(async (mf) => {
+            if (!mf.scheme_code) return null;
+            const live = await getLiveNAV(mf.scheme_code);
+            if (live) {
+                const { error } = await supabase.from("mutual_funds").update({ 
+                    current_nav: live.nav, 
+                    previous_nav: live.prevNav,
+                    day_change: live.dayChange,
+                    day_change_percent: live.dayChangePercent,
+                    last_nav_updated_at: new Date().toISOString() 
+                }).eq("id", mf.id);
+                
+                if (error) console.error(`DB Update Error for MF ${mf.id}:`, error);
+                return { id: mf.id, nav: live.nav, prevNav: live.prevNav };
+            }
+            return null;
+        }));
+        
+        results.push(...batchResults.filter(Boolean));
+        if (i + BATCH_SIZE < mfs.length) await new Promise(r => setTimeout(r, DELAY));
     }
+
     revalidatePath("/dashboard/mutual-funds");
+    revalidatePath("/dashboard");
     return results;
 }
