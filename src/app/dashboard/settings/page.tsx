@@ -88,6 +88,34 @@ export default function SettingsPage() {
     }
   };
 
+  const handleSeed = async () => {
+    const isConfirmed = confirm(
+      "This will populate your account with comprehensive demo data for all sections. Existing data will be preserved. Proceed?",
+    );
+
+    if (!isConfirmed) return;
+
+    const toastId = toast.loading("Seeding institutional demo ecosystem...");
+    try {
+      const { createClient } = await import("@/lib/supabase-browser");
+      const supabase = createClient();
+      const { data, error } = await (supabase.rpc as any)("seed_demo_data");
+
+      if (error) {
+        toast.error(`Seeding failed: ${error.message}`, { id: toastId });
+      } else {
+        toast.success("Demo ecosystem deployed successfully", { id: toastId });
+        mutate();
+        setTimeout(() => {
+          window.location.href = "/dashboard?seed=success";
+        }, 1500);
+      }
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      toast.error(`System error: ${message}`, { id: toastId });
+    }
+  };
+
   const ALL_MODULES = [
     "Income", "Expenses", "Budget", "Stocks", "Mutual Funds", "Alt Assets", "Bonds", "Liabilities", "Goals", "Family", "Forex", "Ledger"
   ];
@@ -317,12 +345,20 @@ export default function SettingsPage() {
                 permanently.
               </p>
             </div>
-            <button
-              onClick={handleReset}
-              className="btn-danger !h-11 !px-6 whitespace-nowrap shadow-xl shadow-rose-500/20"
-            >
-              Reset All Data
-            </button>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={handleSeed}
+                className="btn-secondary !h-11 !px-6 whitespace-nowrap !border-cyan-500/20 !bg-cyan-500/5 text-cyan-400 hover:!bg-cyan-500/10"
+              >
+                Seed Demo Data
+              </button>
+              <button
+                onClick={handleReset}
+                className="btn-danger !h-11 !px-6 whitespace-nowrap shadow-xl shadow-rose-500/20"
+              >
+                Reset All Data
+              </button>
+            </div>
           </div>
         </div>
       </div>

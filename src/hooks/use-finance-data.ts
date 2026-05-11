@@ -259,13 +259,6 @@ export function useFinanceData(initialData?: FinanceData) {
         schema: "public", 
         table: "profiles" 
       }, () => handleChange("profiles"))
-
-      // Recurring Transactions
-      .on("postgres_changes", { 
-        event: "*", 
-        schema: "public", 
-        table: "recurring_transactions" 
-      }, () => handleChange("recurring_transactions"))
       
       .subscribe((status) => {
         if (status === "SUBSCRIBED") {

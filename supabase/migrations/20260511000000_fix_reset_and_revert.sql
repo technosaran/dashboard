@@ -18,7 +18,6 @@ BEGIN
     DELETE FROM public.alternative_assets WHERE user_id = p_user_id;
     DELETE FROM public.liabilities WHERE user_id = p_user_id;
     DELETE FROM public.budgets WHERE user_id = p_user_id;
-    DELETE FROM public.recurring_transactions WHERE user_id = p_user_id;
     DELETE FROM public.net_worth_snapshots WHERE user_id = p_user_id;
     
     DELETE FROM public.stock_trades WHERE user_id = p_user_id;
