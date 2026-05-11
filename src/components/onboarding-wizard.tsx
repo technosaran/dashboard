@@ -38,25 +38,9 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
     router.push("/dashboard/income?action=new");
   }
 
-  async function handleSeed() {
-    const toastId = toast.loading("Seeding institutional demo ecosystem...");
-    try {
-      const { createClient } = await import("@/lib/supabase-browser");
-      const supabase = createClient();
-      const { error } = await (supabase.rpc as any)("seed_demo_data");
-
-      if (error) {
-        toast.error(`Seeding failed: ${error.message}`, { id: toastId });
-      } else {
-        localStorage.setItem("onboarding_completed", "true");
-        toast.success("Demo ecosystem deployed successfully", { id: toastId });
-        onComplete();
-        window.location.reload();
-      }
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "Unknown error";
-      toast.error(`System error: ${message}`, { id: toastId });
-    }
+  function goToExpenses() {
+    localStorage.setItem("onboarding_step", "expense");
+    router.push("/dashboard/expenses?action=new");
   }
 
   return (
@@ -75,8 +59,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
               Welcome to Your Finance Dashboard
             </h2>
             <p className="text-[--text-secondary] text-base md:text-lg mb-8 leading-relaxed max-w-xl mx-auto">
-              Let&apos;s get you started. You can either set up your accounts manually or instantly populate the dashboard with 
-              <span className="text-cyan-400 font-bold"> institutional-grade demo data</span>.
+              Let&apos;s get you started with a quick 3-step setup. This will only take a minute!
             </p>
             
             <div className="grid grid-cols-3 gap-4 mb-10 max-w-md mx-auto">
@@ -100,26 +83,20 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex gap-4 justify-center">
               <button
-                onClick={handleSeed}
-                className="px-8 py-4 rounded-2xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 font-black text-sm border border-cyan-500/20 transition-all shadow-lg shadow-cyan-500/10"
+                onClick={handleSkip}
+                className="px-8 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-[--text-primary] font-bold text-sm border border-white/10 transition-all"
               >
-                Seed Full Demo Data
+                Skip for Now
               </button>
               <button
                 onClick={() => setStep("account")}
-                className="btn-primary px-10 py-4 shadow-2xl shadow-[--accent-primary]/20"
+                className="btn-primary px-10 py-3 shadow-2xl shadow-[--accent-primary]/20"
               >
-                Manual Setup
+                Let&apos;s Start
               </button>
             </div>
-            <button
-              onClick={handleSkip}
-              className="mt-6 text-[10px] font-black uppercase tracking-widest text-[--text-muted] hover:text-[--text-primary] transition-all"
-            >
-              Skip Onboarding
-            </button>
           </div>
         )}
 
