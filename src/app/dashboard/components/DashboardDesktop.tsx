@@ -135,12 +135,12 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, isL
               <div className="mt-8 flex flex-wrap items-center gap-6">
                 <div className="flex flex-col">
                   <span className="text-[10px] font-black uppercase tracking-widest text-[--text-muted] mb-1">Total Assets</span>
-                  <span className="text-lg font-bold text-emerald-400">₹{stats.totalAssets.toLocaleString()}</span>
+                  <span className="text-lg font-bold text-emerald-400">+₹{stats.totalAssets.toLocaleString()}</span>
                 </div>
                 <div className="w-px h-8 bg-white/10" />
                 <div className="flex flex-col">
                   <span className="text-[10px] font-black uppercase tracking-widest text-[--text-muted] mb-1">Total Debt</span>
-                  <span className="text-lg font-bold text-rose-500">₹{stats.debtBalance.toLocaleString()}</span>
+                  <span className="text-lg font-bold text-rose-500">-₹{stats.debtBalance.toLocaleString()}</span>
                 </div>
               </div>
             </div>

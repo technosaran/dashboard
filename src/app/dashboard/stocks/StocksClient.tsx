@@ -65,7 +65,6 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
 
@@ -195,13 +194,6 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
 
   const filtered = useMemo(() => {
     let list = stocks.filter(i => Number(i.quantity) > 0);
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      list = list.filter(i =>
-        i.name.toLowerCase().includes(q) ||
-        (i.symbol && i.symbol.toLowerCase().includes(q))
-      );
-    }
     return [...list].sort((a, b) => {
       let cmp = 0;
       const aq = Number(a.quantity);
@@ -221,7 +213,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
       else if (sortKey === "quantity") cmp = aq - bq;
       return sortDir === "asc" ? cmp : -cmp;
     });
-  }, [stocks, search, sortKey, sortDir]);
+  }, [stocks, sortKey, sortDir]);
 
   function handleSort(key: SortKey) {
     if (sortKey === key) setSortDir(d => d === "asc" ? "desc" : "asc");
@@ -386,7 +378,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
               <svg className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
-              <span className="hidden md:inline">Refresh</span>
+              <span className="hidden md:inline">Sync Portfolio</span>
             </button>
             <button 
               onClick={exportHoldings} 
@@ -411,11 +403,11 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
       <div className="hidden md:grid grid-cols-2 md:grid-cols-4 gap-4 px-4 mb-4">
         <div className="glass-card-static p-6 flex flex-col gap-2">
           <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Total Invested</span>
-          <span className="text-xl md:text-2xl font-black tabular-nums">₹{totalInvested.toLocaleString()}</span>
+          <span className="text-xl md:text-2xl font-black tabular-nums">+₹{totalInvested.toLocaleString()}</span>
         </div>
         <div className="glass-card-static p-6 flex flex-col gap-2">
           <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Current Value</span>
-          <span className="text-xl md:text-2xl font-black tabular-nums">₹{totalCurrent.toLocaleString()}</span>
+          <span className="text-xl md:text-2xl font-black tabular-nums">+₹{totalCurrent.toLocaleString()}</span>
         </div>
         <div className="glass-card-static p-6 flex flex-col gap-2">
           <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Unrealized P&L</span>
@@ -427,8 +419,6 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
         </div>
       </div>
 
-
-      {/* ── Tabs & Search ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 border-b border-white/5 gap-4 px-4">
         <div className="flex items-center gap-8">
            <button 
@@ -443,18 +433,6 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
            >
              History
            </button>
-        </div>
-
-        <div className="relative w-full sm:w-64 md:w-80 group pb-3">
-           <svg className="absolute left-0 top-[40%] -translate-y-1/2 w-4 h-4 text-[--text-muted] group-focus-within:text-[--accent-primary-light] transition-colors" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-            <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.3-4.3" />
-          </svg>
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder={`Search ${activeTab}...`}
-            className="w-full h-8 pl-7 pr-3 bg-transparent text-[13px] text-[--text-primary] placeholder:text-white/10 outline-none transition-colors border-none font-medium"
-          />
         </div>
       </div>
 
@@ -606,10 +584,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {trades.filter(t => 
-                  t.symbol?.toLowerCase().includes(search.toLowerCase()) ||
-                  t.trade_type?.toLowerCase().includes(search.toLowerCase())
-                ).map((trade) => (
+                {trades.map((trade) => (
                   <tr key={trade.id} className="hover:bg-white/[0.02] transition-colors group">
                     <td className="py-4 px-4 text-[11px] text-[--text-muted]">{trade.trade_date ? format(new Date(trade.trade_date), "MMM d, yyyy") : "N/A"}</td>
                     <td className="py-4 px-4">

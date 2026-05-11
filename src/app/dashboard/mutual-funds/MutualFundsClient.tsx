@@ -294,7 +294,15 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
           <div className={`status-dot scale-90 ${isValidating ? 'animate-pulse bg-yellow-400' : 'bg-emerald-400 opacity-50'}`} />
         </div>
         <div className="flex flex-wrap md:flex-nowrap items-center gap-3 w-full md:w-auto">
-            {/* Auto refreshing enabled */}
+            <button 
+              onClick={() => handleRefreshAll()} 
+              className="btn-secondary !h-11 !px-6 flex items-center justify-center gap-2 group"
+            >
+              <svg className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m0 0H15" />
+              </svg>
+              Sync Portfolio
+            </button>
             <button 
               onClick={exportHoldings} 
               className="btn-secondary !h-11 !px-6 flex items-center justify-center gap-2 hidden md:flex"
@@ -318,11 +326,11 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
       <div className="hidden md:grid grid-cols-2 md:grid-cols-5 gap-4 px-4">
         <div className="glass-card-static p-6 flex flex-col gap-2">
             <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Invested Capital</span>
-            <span className="text-xl md:text-2xl font-black tabular-nums">₹{stats.totalInvested.toLocaleString()}</span>
+            <span className="text-xl md:text-2xl font-black tabular-nums">+₹{stats.totalInvested.toLocaleString()}</span>
         </div>
         <div className="glass-card-static p-6 flex flex-col gap-2">
             <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Current Value</span>
-            <span className="text-xl md:text-2xl font-black tabular-nums">₹{stats.totalCurrentValue.toLocaleString()}</span>
+            <span className="text-xl md:text-2xl font-black tabular-nums text-[--success]">+₹{stats.totalCurrentValue.toLocaleString()}</span>
         </div>
         <div className="glass-card-static p-6 flex flex-col gap-2">
             <span className="text-[10px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Total P&L</span>

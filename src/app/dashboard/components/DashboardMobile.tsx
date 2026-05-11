@@ -51,11 +51,11 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, isVal
 
         <div className="grid grid-cols-2 gap-4 w-full pt-6 border-t border-white/5">
            <div className="flex flex-col items-center bg-white/5 py-3 rounded-2xl border border-white/5">
-             <span className="text-[11px] font-black text-emerald-400">₹{stats.totalAssets.toLocaleString()}</span>
+             <span className="text-[11px] font-black text-emerald-400">+₹{stats.totalAssets.toLocaleString()}</span>
              <span className="text-[8px] text-[--text-muted] uppercase font-black tracking-widest mt-1">Total Assets</span>
            </div>
            <div className="flex flex-col items-center bg-white/5 py-3 rounded-2xl border border-white/5">
-             <span className="text-[11px] font-black text-rose-500">₹{stats.debtBalance.toLocaleString()}</span>
+             <span className="text-[11px] font-black text-rose-500">-₹{stats.debtBalance.toLocaleString()}</span>
              <span className="text-[8px] text-[--text-muted] uppercase font-black tracking-widest mt-1">Total Debt</span>
            </div>
         </div>

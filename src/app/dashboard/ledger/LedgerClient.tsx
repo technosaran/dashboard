@@ -142,14 +142,14 @@ export default function LedgerClient() {
 
   const getActionBadge = (type: string) => {
     const styles: Record<string, { bg: string; color: string; text: string }> = {
-      CREATE: { bg: "rgba(16, 185, 129, 0.12)", color: "#34d399", text: "Created" },
-      DELETE: { bg: "rgba(244, 63, 94, 0.12)", color: "#fb7185", text: "Deleted" },
+      CREATE: { bg: "var(--success-bg)", color: "var(--success)", text: "Created" },
+      DELETE: { bg: "var(--danger-bg)", color: "var(--danger)", text: "Deleted" },
       UPDATE: { bg: "rgba(14, 165, 233, 0.12)", color: "#38bdf8", text: "Updated" },
-      TRANSFER_IN: { bg: "rgba(16, 185, 129, 0.12)", color: "#34d399", text: "Transfer In" },
-      TRANSFER_OUT: { bg: "rgba(244, 63, 94, 0.12)", color: "#fb7185", text: "Transfer Out" },
-      ADJUST_UP: { bg: "rgba(16, 185, 129, 0.12)", color: "#34d399", text: "Adjust Up" },
-      ADJUST_DOWN: { bg: "rgba(244, 63, 94, 0.12)", color: "#fb7185", text: "Adjust Down" },
-      SEND_MONEY: { bg: "rgba(244, 63, 94, 0.12)", color: "#fb7185", text: "Family Transfer" },
+      TRANSFER_IN: { bg: "var(--success-bg)", color: "var(--success)", text: "Transfer In" },
+      TRANSFER_OUT: { bg: "var(--danger-bg)", color: "var(--danger)", text: "Transfer Out" },
+      ADJUST_UP: { bg: "var(--success-bg)", color: "var(--success)", text: "Adjust Up" },
+      ADJUST_DOWN: { bg: "var(--danger-bg)", color: "var(--danger)", text: "Adjust Down" },
+      SEND_MONEY: { bg: "var(--danger-bg)", color: "var(--danger)", text: "Family Transfer" },
     };
     const style = styles[type] || { bg: "rgba(255, 255, 255, 0.05)", color: "var(--text-secondary)", text: type };
     return (
@@ -161,13 +161,49 @@ export default function LedgerClient() {
 
   return (
     <div className="flex flex-col gap-[var(--section-gap)]">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-4">
         <div className="flex items-center gap-4">
           <div>
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[--text-primary]">Audit Trail</h1>
-            <p className="text-[11px] md:text-sm mt-1 uppercase tracking-[0.2em] font-black text-[--text-muted]">Financial Registry</p>
+            <p className="text-[10px] text-[--text-muted] font-black uppercase tracking-[0.4em] mt-1">Financial Registry & Account Logs</p>
           </div>
           <div className={`status-dot scale-90 ${isValidating ? 'animate-pulse bg-yellow-400' : 'bg-emerald-400 opacity-50'}`} />
+        </div>
+      </div>
+
+      {/* Summary Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 px-4">
+        <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between group">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Total Inflow</p>
+          <div className="mt-3 flex items-end justify-between">
+            <h3 className="text-xl md:text-2xl font-black truncate text-[--success]">
+              +₹{(logs.filter(l => l.new_balance !== null && l.previous_balance !== null ? l.new_balance > l.previous_balance : ["ADJUST_UP", "TRANSFER_IN", "CREATE"].includes(l.action_type)).reduce((s, l) => s + (l.amount || 0), 0)).toLocaleString()}
+            </h3>
+          </div>
+        </div>
+        <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between group">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Total Outflow</p>
+          <div className="mt-3 flex items-end justify-between">
+            <h3 className="text-xl md:text-2xl font-black truncate text-[--danger]">
+              -₹{(logs.filter(l => l.new_balance !== null && l.previous_balance !== null ? l.new_balance < l.previous_balance : ["ADJUST_DOWN", "TRANSFER_OUT", "DELETE", "SEND_MONEY"].includes(l.action_type)).reduce((s, l) => s + (l.amount || 0), 0)).toLocaleString()}
+            </h3>
+          </div>
+        </div>
+        <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between group">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Activity Count</p>
+          <div className="mt-3 flex items-end justify-between">
+            <h3 className="text-xl md:text-2xl font-black truncate text-white">
+              {logs.length}
+            </h3>
+          </div>
+        </div>
+        <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between group bg-gradient-to-br from-[--accent-primary]/10 to-transparent">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Registry Status</p>
+          <div className="mt-3 flex items-end justify-between">
+            <h3 className="text-xl md:text-2xl font-black truncate text-[--accent-primary-light]">
+              Verified
+            </h3>
+          </div>
         </div>
       </div>
 

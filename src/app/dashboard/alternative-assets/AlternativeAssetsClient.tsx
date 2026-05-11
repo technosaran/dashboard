@@ -84,126 +84,142 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
   }
 
   return (
-    <div className="flex flex-col gap-8 animate-in fade-in duration-700">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+    <div className="flex flex-col gap-[var(--section-gap)] animate-in fade-in duration-700">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 px-4">
         <div>
-          <h1 className="text-4xl font-black tracking-tight text-white uppercase italic">Physical Assets</h1>
-          <p className="text-[10px] text-[--text-muted] font-black uppercase tracking-[0.4em] mt-2 ml-1">Tangible Wealth & Private Holdings</p>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[--text-primary]">Alternative Assets</h1>
+          <p className="text-[10px] text-[--text-muted] font-black uppercase tracking-[0.4em] mt-1">Tangible Wealth & Private Holdings</p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex bg-white/5 p-1 rounded-2xl border border-white/10">
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="flex bg-white/5 p-1 rounded-2xl border border-white/10 flex-1 md:flex-none">
             <button 
               disabled={submitting}
               onClick={() => setActiveTab("inventory")}
-              className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === "inventory" ? "bg-[--accent-primary] text-white shadow-lg" : "text-[--text-muted] hover:text-white"}`}
+              className={`flex-1 md:px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === "inventory" ? "bg-[--accent-primary] text-white shadow-lg" : "text-[--text-muted] hover:text-white"}`}
             >
               Inventory
             </button>
             <button 
               disabled={submitting}
               onClick={() => setActiveTab("history")}
-              className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === "history" ? "bg-[--accent-primary] text-white shadow-lg" : "text-[--text-muted] hover:text-white"}`}
+              className={`flex-1 md:px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === "history" ? "bg-[--accent-primary] text-white shadow-lg" : "text-[--text-muted] hover:text-white"}`}
             >
               History
             </button>
           </div>
-          <button onClick={() => setShowAddModal(true)} disabled={submitting} className="btn-primary !h-12 !px-8 shadow-[0_0_30px_rgba(var(--accent-primary-rgb),0.3)] !rounded-2xl text-[11px] font-black tracking-widest uppercase">{submitting ? "Working..." : "Record New Asset"}</button>
+          <button onClick={() => setShowAddModal(true)} disabled={submitting} className="btn-primary !h-12 !px-8 shadow-[0_0_30px_rgba(var(--accent-primary-rgb),0.3)] !rounded-2xl text-[11px] font-black tracking-widest uppercase hidden md:block">{submitting ? "Working..." : "Record New Asset"}</button>
         </div>
       </div>
 
       {activeTab === "inventory" ? (
         <>
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              { label: "Asset Valuation", value: stats.totalValue, sub: "Combined Portfolio", color: "text-white", icon: "🏛️" },
-              { label: "Unrealized Gain", value: stats.netGrowth, sub: "Portfolio Growth", color: stats.netGrowth >= 0 ? "text-success" : "text-danger", icon: "📈" },
-              { label: "Yield (ROI)", value: stats.growthPercent, sub: "Total Performance", color: stats.netGrowth >= 0 ? "text-success" : "text-danger", icon: "💎", isPercent: true },
-            ].map((s, i) => (
-              <div key={i} className="glass-card-static p-8 border-white/5 hover:border-white/10 transition-all group relative overflow-hidden rounded-[32px]">
-                <div className="absolute -right-6 -top-6 text-6xl opacity-[0.03] group-hover:opacity-[0.08] transition-opacity rotate-12 grayscale">{s.icon}</div>
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-4 opacity-60">{s.label}</p>
-                <p className={`text-3xl font-black tabular-nums ${s.color} tracking-tight`}>
-                  {s.isPercent ? `${s.value.toFixed(2)}%` : `₹${s.value.toLocaleString()}`}
-                </p>
-                <div className="flex items-center gap-2 mt-3">
-                   <div className={`w-1 h-1 rounded-full ${stats.netGrowth >= 0 ? "bg-success shadow-[0_0_8px_var(--success)]" : "bg-danger shadow-[0_0_8px_var(--danger)]"}`} />
-                   <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-widest opacity-40">{s.sub}</p>
-                </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 px-4">
+            <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between group">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Asset Valuation</p>
+              <div className="mt-3 flex flex-col sm:flex-row sm:items-end justify-between gap-2">
+                <h3 className="text-xl md:text-2xl font-black truncate text-[--success]">
+                  +₹{stats.totalValue.toLocaleString()}
+                </h3>
+                <span className="text-[9px] w-fit px-2 py-0.5 rounded-full bg-[--success]/10 text-[--success] border border-[--success]/20 font-bold">Total</span>
               </div>
-            ))}
+            </div>
+            <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between group">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Portfolio Growth</p>
+              <div className="mt-3 flex flex-col sm:flex-row sm:items-end justify-between gap-2">
+                <h3 className={`text-xl md:text-2xl font-black truncate ${stats.netGrowth >= 0 ? "text-[--success]" : "text-[--danger]"}`}>
+                  {stats.netGrowth >= 0 ? "+" : "-"}₹{Math.abs(stats.netGrowth).toLocaleString()}
+                </h3>
+                <span className={`text-[9px] w-fit px-2 py-0.5 rounded-full ${stats.netGrowth >= 0 ? "bg-[--success]/10 text-[--success] border border-[--success]/20" : "bg-[--danger]/10 text-[--danger] border border-[--danger]/20"} font-bold`}>Absolute</span>
+              </div>
+            </div>
+            <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between group">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Yield (ROI)</p>
+              <div className="mt-3 flex flex-col sm:flex-row sm:items-end justify-between gap-2">
+                <h3 className={`text-xl md:text-2xl font-black truncate ${stats.netGrowth >= 0 ? "text-[--success]" : "text-[--danger]"}`}>
+                  {stats.netGrowth >= 0 ? "+" : ""}{stats.growthPercent.toFixed(2)}%
+                </h3>
+                <span className={`text-[9px] w-fit px-2 py-0.5 rounded-full ${stats.netGrowth >= 0 ? "bg-[--success]/10 text-[--success] border border-[--success]/20" : "bg-[--danger]/10 text-[--danger] border border-[--danger]/20"} font-bold`}>Relative</span>
+              </div>
+            </div>
+            <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between group bg-gradient-to-br from-[--accent-primary]/10 to-transparent">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Asset Count</p>
+              <div className="mt-3 flex flex-col sm:flex-row sm:items-end justify-between gap-2">
+                <h3 className="text-xl md:text-2xl font-black truncate text-white">
+                  {alternativeAssets.length}
+                </h3>
+                <span className="text-[9px] w-fit px-2 py-0.5 rounded-full bg-white/5 text-[--text-muted] font-bold border border-white/10">Active</span>
+              </div>
+            </div>
           </div>
 
           {/* Assets Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 px-4 pb-10">
             {alternativeAssets.map((asset) => {
               const category = CATEGORIES.find(c => c.label === asset.category) || CATEGORIES[6];
               const gain = Number(asset.current_value) - Number(asset.purchase_price);
               const gainPercent = (gain / Number(asset.purchase_price)) * 100;
               
               return (
-                <div key={asset.id} className="glass-card-static flex flex-col min-h-[340px] p-8 relative overflow-hidden transition-all hover:scale-[1.02] group border-white/5 bg-gradient-to-br from-white/[0.03] to-transparent rounded-[40px]">
-                  <div className="absolute top-0 left-0 right-0 h-[4px] bg-gradient-to-r from-[--accent-primary] via-[--accent-secondary] to-[--accent-tertiary] opacity-40 group-hover:opacity-100 transition-opacity" />
+                <div key={asset.id} className="glass-card-static flex flex-col min-h-[360px] p-8 relative overflow-hidden transition-all hover:translate-y-[-4px] group border-white/5 bg-gradient-to-br from-white/[0.03] to-transparent rounded-[32px]">
+                  <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[--accent-primary] via-[--accent-secondary] to-[--accent-tertiary] opacity-30 group-hover:opacity-100 transition-opacity" />
                   
-                  <div className="flex justify-between items-start mb-10">
+                  <div className="flex justify-between items-start mb-8">
                     <div className="flex items-center gap-5">
-                      <div className="w-14 h-14 rounded-3xl bg-white/[0.03] border border-white/10 flex items-center justify-center text-2xl shadow-2xl group-hover:scale-110 transition-transform">
+                      <div className="w-14 h-14 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-center text-2xl shadow-xl group-hover:scale-105 transition-transform">
                         {category.icon}
                       </div>
-                      <div className="flex flex-col gap-1">
+                      <div className="flex flex-col">
                         <h3 className="text-xl font-black text-white group-hover:text-[--accent-primary-light] transition-colors leading-tight">{asset.name}</h3>
-                        <div className="flex items-center gap-2">
-                           <span className="text-[9px] font-black text-[--accent-primary-light] uppercase tracking-widest bg-[--accent-primary]/10 px-2 py-0.5 rounded-md border border-[--accent-primary]/20">{asset.category}</span>
-                        </div>
+                        <p className="text-[9px] font-black text-[--accent-primary-light] uppercase tracking-widest mt-1 opacity-70">{asset.category}</p>
                       </div>
                     </div>
                     <div className="flex gap-2">
-                       <button onClick={() => {
-                         setEditingId(asset.id);
-                         setFormData({
-                           name: asset.name,
-                           category: asset.category,
-                           purchase_price: asset.purchase_price.toString(),
-                           current_value: asset.current_value.toString(),
-                           purchase_date: asset.purchase_date || "",
-                           notes: asset.notes || "", account_id: "",
-                         });
-                         setShowAddModal(true);
-                       }} className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 text-[--text-muted] flex items-center justify-center hover:bg-[--accent-primary] hover:text-white transition-all shadow-lg">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                       </button>
+                      <button onClick={() => {
+                        setEditingId(asset.id);
+                        setFormData({
+                          name: asset.name,
+                          category: asset.category,
+                          purchase_price: asset.purchase_price.toString(),
+                          current_value: asset.current_value.toString(),
+                          purchase_date: asset.purchase_date || "",
+                          notes: asset.notes || "", account_id: "",
+                        });
+                        setShowAddModal(true);
+                      }} className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 text-[--text-muted] flex items-center justify-center hover:bg-[--accent-primary] hover:text-white transition-all">
+                         <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                      </button>
+                      <button onClick={() => { if(confirm("Permanently purge this asset record?")) deleteAlternativeAsset(asset.id); }} className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 text-rose-500 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all">
+                         <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                      </button>
                     </div>
                   </div>
 
-                  <div className="space-y-8 mt-auto">
+                  <div className="space-y-6 mt-auto">
                     <div className="flex flex-col gap-1">
-                      <span className="text-[10px] font-black text-[--text-muted] uppercase tracking-[0.2em] opacity-50">Market Valuation</span>
-                      <span className="text-3xl font-black text-white tabular-nums tracking-tighter">₹{asset.current_value.toLocaleString()}</span>
+                      <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Market Valuation</span>
+                      <span className="text-3xl font-black text-white tabular-nums tracking-tighter">+₹{asset.current_value.toLocaleString()}</span>
                     </div>
                     
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="p-4 rounded-3xl bg-white/[0.02] border border-white/5 backdrop-blur-md">
-                        <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-widest mb-1 opacity-50">Acquisition</p>
-                        <p className="text-[15px] font-black text-white tabular-nums">₹{asset.purchase_price.toLocaleString()}</p>
+                      <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+                        <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-widest mb-1 opacity-60">Acquisition</p>
+                        <p className="text-[14px] font-black text-white tabular-nums">₹{asset.purchase_price.toLocaleString()}</p>
                       </div>
-                      <div className="p-4 rounded-3xl bg-white/[0.02] border border-white/5 text-right backdrop-blur-md">
-                        <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-widest mb-1 opacity-50">Appreciation</p>
-                        <p className={`text-[15px] font-black tabular-nums ${gain >= 0 ? "text-success" : "text-danger"}`}>
-                          {gain >= 0 ? "+" : ""}{Math.abs(gainPercent).toFixed(2)}%
+                      <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 text-right">
+                        <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-widest mb-1 opacity-60">Appreciation</p>
+                        <p className={`text-[14px] font-black tabular-nums ${gain >= 0 ? "text-[--success]" : "text-[--danger]"}`}>
+                          {gain >= 0 ? "+" : ""}{gainPercent.toFixed(2)}%
                         </p>
                       </div>
                     </div>
                     
-                    <div className="flex items-center justify-between pt-4 border-t border-white/5">
-                       {asset.purchase_date && (
-                        <div className="flex items-center gap-2">
-                          <svg className="w-3.5 h-3.5 text-[--text-muted]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                          <span className="text-[10px] font-black text-[--text-muted] uppercase tracking-widest opacity-60">Owned for {format(parseISO(asset.purchase_date), "MMM yyyy")}</span>
-                        </div>
-                      )}
-                      <button onClick={() => { if(confirm("Permanently purge this asset record?")) deleteAlternativeAsset(asset.id); }} className="text-rose-500 hover:text-rose-400 transition-colors">
-                         <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                      </button>
+                    <div className="flex items-center justify-between pt-5 border-t border-white/5">
+                       <div className="flex items-center gap-2">
+                         <div className={`w-1.5 h-1.5 rounded-full ${gain >= 0 ? "bg-[--success] shadow-[0_0_8px_var(--success)]" : "bg-[--danger] shadow-[0_0_8px_var(--danger)]"}`} />
+                         <span className="text-[10px] font-bold text-[--text-secondary]">{asset.purchase_date ? format(parseISO(asset.purchase_date), "MMM yyyy") : "Date Unknown"}</span>
+                       </div>
+                       <div className="text-[9px] font-black text-[--text-muted] uppercase tracking-widest bg-white/5 px-2 py-0.5 rounded-md border border-white/10 group-hover:border-[--accent-primary]/30 transition-colors">Verified</div>
                     </div>
                   </div>
                 </div>

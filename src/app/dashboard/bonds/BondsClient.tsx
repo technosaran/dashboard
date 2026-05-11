@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { toast } from "react-hot-toast";
-import { createBond } from "./actions";
+import { createBond, revalueBonds } from "./actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { format, differenceInDays, parseISO } from "date-fns";
 
@@ -40,7 +40,7 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
   const [showAddModal, setShowAddModal] = useState(false);
   const [activeTab, setActiveTab] = useState<"holdings" | "history">("holdings");
   const [submitting, setSubmitting] = useState(false);
-  const [search, setSearch] = useState("");
+  const [syncing, setSyncing] = useState(false);
 
   const [formData, setFormData] = useState({
     bond_name: "",
@@ -77,15 +77,6 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
     return { totalInvested, currentValue, totalInterest, accruedInterest, totalPnL, avgYTM };
   }, [bonds]);
 
-  const filteredBonds = useMemo(() => {
-    if (!search.trim()) return bonds;
-    const q = search.toLowerCase();
-    return bonds.filter(b => 
-      b.bond_name.toLowerCase().includes(q) ||
-      b.isin.toLowerCase().includes(q) ||
-      b.issuer.toLowerCase().includes(q)
-    );
-  }, [bonds, search]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -165,6 +156,17 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
     return { bg: "rgba(239, 68, 68, 0.1)", text: "#ef4444" };
   };
 
+  const handleSync = async () => {
+    setSyncing(true);
+    const result = await revalueBonds();
+    if (result.success) {
+      toast.success("Bonds portfolio revalued with latest accrued interest!");
+    } else {
+      toast.error(result.error || "Failed to sync bonds");
+    }
+    setSyncing(false);
+  };
+
   return (
     <div className="flex flex-col gap-[var(--section-gap)]">
       
@@ -186,12 +188,12 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
       {/* Summary Cards */}
       <div className="hidden md:grid grid-cols-2 md:grid-cols-5 gap-4 px-4">
         <div className="glass-card-static p-6 flex flex-col gap-2">
-          <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Total Invested</span>
-          <span className="text-xl md:text-2xl font-black tabular-nums">₹{stats.totalInvested.toLocaleString()}</span>
+          <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Invested Capital</span>
+          <span className="text-xl md:text-2xl font-black tabular-nums">+₹{stats.totalInvested.toLocaleString()}</span>
         </div>
         <div className="glass-card-static p-6 flex flex-col gap-2">
-          <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Current Value</span>
-          <span className="text-xl md:text-2xl font-black tabular-nums">₹{stats.currentValue.toLocaleString()}</span>
+          <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Market Valuation</span>
+          <span className="text-xl md:text-2xl font-black tabular-nums text-[--success]">+₹{stats.currentValue.toLocaleString()}</span>
         </div>
         <div className="glass-card-static p-6 flex flex-col gap-2">
           <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Total P&L</span>
@@ -214,9 +216,9 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
         </div>
       </div>
 
-      {/* Search & Tabs */}
+      {/* Tabs & Sync */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 border-b border-white/5 pb-4">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-8">
           <button
             onClick={() => setActiveTab("holdings")}
             className={`text-xs font-black uppercase tracking-widest pb-3 px-1 transition-all ${activeTab === "holdings" ? "text-[--accent-primary-light] border-b-2 border-[--accent-primary-light]" : "text-[--text-muted] hover:text-[--text-primary]"}`}
@@ -231,24 +233,22 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
           </button>
         </div>
         
-        <div className="relative w-full sm:w-64">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[--text-muted]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.3-4.3" />
+        <button 
+          onClick={handleSync}
+          disabled={syncing}
+          className="btn-secondary !h-10 !px-6 flex items-center justify-center gap-2 group"
+        >
+          <svg className={`w-4 h-4 ${syncing ? 'animate-spin' : 'group-hover:rotate-180'} transition-transform duration-500`} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+            <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m0 0H15" />
           </svg>
-          <input
-            type="text"
-            placeholder="Search bonds..."
-            className="input-premium pl-10 py-2 text-sm w-full"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
+          <span className="text-[10px] font-black uppercase tracking-widest">{syncing ? "Syncing..." : "Sync Portfolio"}</span>
+        </button>
       </div>
 
       {/* Holdings View */}
       {activeTab === "holdings" && (
         <div className="mx-4">
-          {filteredBonds.length === 0 ? (
+          {bonds.length === 0 ? (
             <div className="glass-card-static p-24 text-center">
               <div className="text-6xl mb-4">📜</div>
               <h3 className="text-2xl font-black text-[--text-primary] mb-2">No Bonds in Portfolio</h3>
@@ -271,7 +271,7 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/[0.03]">
-                  {filteredBonds.map((bond) => {
+                  {bonds.map((bond) => {
                     const daysToMaturity = differenceInDays(parseISO(bond.maturity_date), new Date());
                     const pnl = Number(bond.current_value) - Number(bond.total_invested);
                     const pnlPercent = (pnl / Number(bond.total_invested)) * 100;
@@ -318,7 +318,7 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
                           <span className="text-[13px] font-medium text-[--text-secondary] tabular-nums">₹{Number(bond.total_invested).toLocaleString()}</span>
                         </td>
                         <td className="px-6 py-5 text-right">
-                          <span className="text-[14px] font-bold text-[--text-primary] tabular-nums">₹{Number(bond.current_value).toLocaleString()}</span>
+                          <span className="text-[14px] font-bold text-[--text-primary] tabular-nums">+₹{Number(bond.current_value).toLocaleString()}</span>
                         </td>
                         <td className="px-6 py-5 text-right">
                           <div className="flex flex-col items-end">

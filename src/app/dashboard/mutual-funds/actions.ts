@@ -164,26 +164,31 @@ export async function refreshNAV(mfs: { id: string, scheme_code: string }[]) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return [];
 
-    const BATCH_SIZE = 5;
-    const DELAY = 500;
+    const BATCH_SIZE = 10;
+    const DELAY = 200;
     const results = [];
 
     for (let i = 0; i < mfs.length; i += BATCH_SIZE) {
         const batch = mfs.slice(i, i + BATCH_SIZE);
         const batchResults = await Promise.all(batch.map(async (mf) => {
             if (!mf.scheme_code) return null;
-            const live = await getLiveNAV(mf.scheme_code);
-            if (live) {
-                const { error } = await supabase.from("mutual_funds").update({ 
-                    current_nav: live.nav, 
-                    previous_nav: live.prevNav,
-                    day_change: live.dayChange,
-                    day_change_percent: live.dayChangePercent,
-                    last_nav_updated_at: new Date().toISOString() 
-                }).eq("id", mf.id);
-                
-                if (error) console.error(`DB Update Error for MF ${mf.id}:`, error);
-                return { id: mf.id, nav: live.nav, prevNav: live.prevNav };
+            try {
+                const live = await getLiveNAV(mf.scheme_code);
+                if (live) {
+                    const { error } = await supabase.from("mutual_funds").update({ 
+                        current_nav: live.nav, 
+                        previous_nav: live.prevNav,
+                        day_change: live.dayChange,
+                        day_change_percent: live.dayChangePercent,
+                        last_nav_updated_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                    }).eq("id", mf.id);
+                    
+                    if (error) console.error(`DB Update Error for MF ${mf.id}:`, error);
+                    return { id: mf.id, nav: live.nav, prevNav: live.prevNav };
+                }
+            } catch (e) {
+                console.error(`Refresh error for MF ${mf.id}:`, e);
             }
             return null;
         }));

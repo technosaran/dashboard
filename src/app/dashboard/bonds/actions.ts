@@ -113,3 +113,42 @@ export async function createBond(data: BondFormData) {
   return { success: true };
 }
 
+export async function revalueBonds() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  const { data: bonds, error: fetchError } = await supabase
+    .from("bonds")
+    .select("*")
+    .eq("user_id", user.id)
+    .eq("status", "Active");
+
+  if (fetchError) return { error: fetchError.message };
+  if (!bonds || bonds.length === 0) return { success: true };
+
+  const today = new Date();
+  
+  for (const bond of bonds) {
+    const purchaseDate = new Date(bond.purchase_date);
+    const daysHeld = Math.max(0, Math.floor((today.getTime() - purchaseDate.getTime()) / (1000 * 60 * 60 * 24)));
+    
+    // Simple Interest Accrual (Face Value * Coupon * Days / 365)
+    const accruedInterest = (bond.face_value * bond.quantity * (bond.coupon_rate / 100) * daysHeld) / 365;
+    const totalInterestEarned = accruedInterest; // Assuming no payouts tracked separately in this simple model
+    const currentValue = Number(bond.total_invested) + accruedInterest;
+
+    await supabase
+      .from("bonds")
+      .update({
+        accrued_interest: accruedInterest,
+        total_interest_earned: totalInterestEarned,
+        current_value: currentValue,
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", bond.id);
+  }
+
+  revalidatePath("/dashboard/bonds");
+  return { success: true };
+}

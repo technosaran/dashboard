@@ -284,48 +284,76 @@ export async function refreshAllPrices() {
 
   if (fetchError || !stocks) return { error: fetchError?.message || "No stocks found" };
 
-  // Use smaller batches and delays to avoid rate limits
-  const BATCH_SIZE = 3;
-  const DELAY_BETWEEN_BATCHES = 1000;
-  
-  const results = [];
-  for (let i = 0; i < stocks.length; i += BATCH_SIZE) {
-    const batch = stocks.slice(i, i + BATCH_SIZE);
-    const batchResults = await Promise.all(batch.map(async (stock) => {
-      if (!stock.symbol) return { id: stock.id, error: "No symbol" };
+  if (stocks.length === 0) return { success: true, results: [] };
+
+  try {
+    const symbols = stocks.map(s => {
+      if (!s.symbol) return null;
+      const suffix = s.symbol.endsWith(".BO") ? ".BO" : ".NS";
+      return s.symbol.includes(".") ? s.symbol : `${s.symbol}${suffix}`;
+    }).filter(Boolean).join(",");
+
+    if (!symbols) return { success: true, results: [] };
+
+    // Try multiple domains for the batch quote endpoint
+    let data = null;
+    let lastErr = null;
+
+    for (const domain of YAHOO_DOMAINS) {
       try {
-        const exchange = stock.symbol.endsWith(".BO") ? "BSE" : "NSE";
-        const res = await getStockDetails(stock.symbol, exchange);
-        
-        if ("error" in res || !res.price) return { id: stock.id, error: res.error || "Price not found" };
-        
+        const url = `https://${domain}/v7/finance/quote?symbols=${encodeURIComponent(symbols)}`;
+        const res = await fetchWithRetry(url);
+        data = await res.json();
+        if (data?.quoteResponse?.result) break;
+      } catch (e) {
+        lastErr = e instanceof Error ? e.message : "Batch fetch failed";
+      }
+    }
+
+    if (!data?.quoteResponse?.result) {
+      throw new Error(lastErr || "Failed to fetch batch quotes from all available domains");
+    }
+
+    const quotes = data.quoteResponse.result;
+    const results: { id: string; success?: boolean; error?: string }[] = [];
+
+    // Atomic update for each stock
+    await Promise.all(quotes.map(async (quote: any) => {
+      const symbolBase = quote.symbol.split(".")[0];
+      const matchingStock = stocks.find(s => s.symbol === symbolBase || s.symbol === quote.symbol);
+      
+      if (matchingStock) {
+        const price = quote.regularMarketPrice;
+        const prevClose = quote.regularMarketPreviousClose || price;
+        const change = price - prevClose;
+        const changePercent = prevClose > 0 ? (change / prevClose) * 100 : 0;
+
         const { error: updateError } = await supabase
           .from("investments")
           .update({ 
-            current_price: res.price, 
-            previous_close: res.previousClose,
-            day_change: res.dayChange,
-            day_change_percent: res.dayChangePercent,
-            market_state: res.marketState,
+            current_price: price, 
+            previous_close: prevClose,
+            day_change: change,
+            day_change_percent: changePercent,
+            market_state: quote.marketState,
             last_fetch_at: new Date().toISOString(),
             updated_at: new Date().toISOString() 
           })
-          .eq("id", stock.id);
+          .eq("id", matchingStock.id);
 
-        if (updateError) throw updateError;
-        return { id: stock.id, success: true };
-      } catch (e) {
-        return { id: stock.id, error: e instanceof Error ? e.message : "Fetch failed" };
+        if (updateError) {
+          results.push({ id: matchingStock.id, error: updateError.message });
+        } else {
+          results.push({ id: matchingStock.id, success: true });
+        }
       }
     }));
-    results.push(...batchResults);
-    if (i + BATCH_SIZE < stocks.length) {
-      await new Promise(r => setTimeout(r, DELAY_BETWEEN_BATCHES));
-    }
+
+    revalidatePath("/dashboard/stocks");
+    revalidatePath("/dashboard");
+    return { success: true, results };
+  } catch (error) {
+    console.error("Batch refresh error:", error);
+    return { error: error instanceof Error ? error.message : "Mass synchronization failed" };
   }
-
-  revalidatePath("/dashboard/stocks");
-  revalidatePath("/dashboard");
-  return { success: true, results };
 }
-
