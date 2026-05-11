@@ -176,10 +176,10 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
   return (
     <div className="flex flex-col gap-[var(--section-gap)]">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="md:hidden p-4 rounded-xl border border-[--danger]/20 bg-[--danger]/5 text-center mt-4">
+          <div className="md:hidden p-4 rounded-xl border border-danger/20 bg-danger/5 text-center mt-4">
              <h2 className="text-xl font-black text-white">Record Expense</h2>
              <p className="text-[10px] text-[--text-muted] uppercase tracking-widest mt-1">Mobile Data Node</p>
-             <button onClick={() => setShowAddModal(true)} className="btn-primary w-full mt-4 shadow-xl shadow-[--danger]/20 bg-[--danger] hover:bg-[--danger]">Log Now</button>
+             <button onClick={() => setShowAddModal(true)} className="btn-primary w-full mt-4 shadow-xl shadow-[--danger]/20 bg-danger hover:bg-danger">Log Now</button>
              <Link href="/dashboard" className="block text-center mt-4 text-[10px] text-white/50 uppercase font-black tracking-widest hover:text-white">← System Home</Link>
           </div>
         <div className="hidden md:block">
@@ -233,13 +233,13 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
 
       {/* Budget Warning Banner */}
       {hasWarning && (
-        <div className="hidden md:block glass-card-static p-4 border-[--warning]/30 bg-[--warning]/10 animate-fade-in">
+        <div className="hidden md:block glass-card-static p-4 border-warning/30 bg-warning/10 animate-fade-in">
           <div className="flex items-center gap-3">
-            <svg className="w-5 h-5 text-[--warning] flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-warning flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
             <div className="flex-1">
-              <p className="text-sm font-bold text-[--warning]">Budget Alert</p>
+              <p className="text-sm font-bold text-warning">Budget Alert</p>
               <p className="text-xs text-[--text-muted] mt-0.5">
                 One or more categories have exceeded 80% of their budget limit. Review your spending.
               </p>
@@ -255,16 +255,16 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
         <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between group">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Net Consumption</p>
           <div className="mt-3 flex flex-col sm:flex-row sm:items-end justify-between gap-2">
-            <h3 className="text-xl md:text-2xl font-black truncate text-[--danger]">
+            <h3 className="text-xl md:text-2xl font-black truncate text-danger">
               -₹{stats.totalSpent.toLocaleString()}
             </h3>
-            <span className="text-[9px] w-fit px-2 py-0.5 rounded-full bg-[--success]/10 text-[--success] border border-[--success]/20 font-bold">All Time</span>
+            <span className="text-[9px] w-fit px-2 py-0.5 rounded-full bg-success/10 text-success border border-success/20 font-bold">All Time</span>
           </div>
         </div>
         <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Monthly Flow</p>
           <div className="mt-3 flex flex-col sm:flex-row sm:items-end justify-between gap-2">
-            <h3 className="text-xl md:text-2xl font-black truncate text-[--danger]">
+            <h3 className="text-xl md:text-2xl font-black truncate text-danger">
               -₹{stats.monthlyTotal.toLocaleString()}
             </h3>
             <span className="text-[9px] w-fit px-2 py-0.5 rounded-full bg-[--accent-primary]/10 text-[--accent-primary] border border-[--accent-primary]/20 font-bold">{format(new Date(), "MMM")}</span>
@@ -273,7 +273,7 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
         <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Average</p>
           <div className="mt-3 flex flex-col sm:flex-row sm:items-end justify-between gap-2">
-            <h3 className="text-xl md:text-2xl font-black truncate text-[--danger]">
+            <h3 className="text-xl md:text-2xl font-black truncate text-danger">
               -₹{(expenses.length ? stats.totalSpent / expenses.length : 0).toLocaleString(undefined, {maximumFractionDigits: 0})}
             </h3>
             <span className="text-[9px] w-fit px-2 py-0.5 rounded-full bg-white/5 text-[--text-muted]">{expenses.length} txns</span>
@@ -320,8 +320,8 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
             {Object.entries(budgets).map(([category, limit]) => {
               const spent = categorySpending[category] || 0;
               const percentage = (spent / limit) * 100;
-              const color = percentage >= 80 ? 'text-[--danger]' : percentage >= 60 ? 'text-[--warning]' : 'text-[--success]';
-              const bgColor = percentage >= 80 ? 'bg-[--danger]' : percentage >= 60 ? 'bg-[--warning]' : 'bg-[--success]';
+              const color = percentage >= 80 ? 'text-danger' : percentage >= 60 ? 'text-warning' : 'text-success';
+              const bgColor = percentage >= 80 ? 'bg-danger' : percentage >= 60 ? 'bg-warning' : 'bg-success';
               
               return (
                 <div key={category}>
@@ -372,7 +372,7 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
             <table className="w-full text-left border-collapse min-w-[650px] md:min-w-0">
               <thead><tr className="bg-white/[0.02] border-b border-white/5"><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Date</th><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Ref / Description</th><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Segment</th><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] hidden sm:table-cell">Channel</th><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] text-right">Amount</th></tr></thead>
               <tbody className="divide-y divide-white/10">
-                {filteredExpenses.length === 0 ? (<tr><td colSpan={5} className="px-6 py-20 text-center text-[--text-muted] text-sm italic">No transactions found matching your criteria.</td></tr>) : (filteredExpenses.map((exp) => { const theme = CATEGORIES.find(c => c.label === exp.category) || CATEGORIES[7]; const account = accounts.find(a => a.id === exp.account_id); return (<tr key={exp.id} className="hover:bg-white/[0.015] transition-colors group"><td className="px-4 md:px-6 py-5 whitespace-nowrap"><p className="text-[13px] font-bold text-[--text-primary]">{exp.date ? format(parseISO(exp.date), "MMM d, yy") : "—"}</p><p className="text-[9px] text-[--text-muted] uppercase font-bold">Verified</p></td><td className="px-4 md:px-6 py-4"><div className="flex items-center gap-3"><div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-lg flex-shrink-0">{theme.icon}</div><p className="text-[13px] font-medium text-[--text-primary] group-hover:text-[--accent-primary] transition-colors truncate max-w-[120px] md:max-w-none">{exp.description}</p></div></td><td className="px-4 md:px-6 py-5 whitespace-nowrap"><span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-[0.1em] bg-white/5 border border-white/10" style={{color: theme.color}}>{exp.category}</span></td><td className="px-4 md:px-6 py-5 whitespace-nowrap hidden sm:table-cell"><div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" /><span className="text-[11px] font-medium text-[--text-secondary]">{account?.name || "Cash"}</span></div></td><td className="px-4 md:px-6 py-4 whitespace-nowrap text-right"><p className="text-[15px] md:text-base font-black text-[--danger]">-₹{Number(exp.amount).toLocaleString()}</p></td></tr>) }))}
+                {filteredExpenses.length === 0 ? (<tr><td colSpan={5} className="px-6 py-20 text-center text-[--text-muted] text-sm italic">No transactions found matching your criteria.</td></tr>) : (filteredExpenses.map((exp) => { const theme = CATEGORIES.find(c => c.label === exp.category) || CATEGORIES[7]; const account = accounts.find(a => a.id === exp.account_id); return (<tr key={exp.id} className="hover:bg-white/[0.015] transition-colors group"><td className="px-4 md:px-6 py-5 whitespace-nowrap"><p className="text-[13px] font-bold text-[--text-primary]">{exp.date ? format(parseISO(exp.date), "MMM d, yy") : "—"}</p><p className="text-[9px] text-[--text-muted] uppercase font-bold">Verified</p></td><td className="px-4 md:px-6 py-4"><div className="flex items-center gap-3"><div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-lg flex-shrink-0">{theme.icon}</div><p className="text-[13px] font-medium text-[--text-primary] group-hover:text-[--accent-primary] transition-colors truncate max-w-[120px] md:max-w-none">{exp.description}</p></div></td><td className="px-4 md:px-6 py-5 whitespace-nowrap"><span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-[0.1em] bg-white/5 border border-white/10" style={{color: theme.color}}>{exp.category}</span></td><td className="px-4 md:px-6 py-5 whitespace-nowrap hidden sm:table-cell"><div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" /><span className="text-[11px] font-medium text-[--text-secondary]">{account?.name || "Cash"}</span></div></td><td className="px-4 md:px-6 py-4 whitespace-nowrap text-right"><p className="text-[15px] md:text-base font-black text-danger">-₹{Number(exp.amount).toLocaleString()}</p></td></tr>) }))}
               </tbody>
             </table>
           )}
@@ -491,7 +491,7 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
                       <div className="h-2 bg-white/5 rounded-full overflow-hidden">
                         <div
                           className={`h-full transition-all duration-500 ${
-                            percentage >= 80 ? 'bg-[--danger]' : percentage >= 60 ? 'bg-[--warning]' : 'bg-[--success]'
+                            percentage >= 80 ? 'bg-danger' : percentage >= 60 ? 'bg-warning' : 'bg-success'
                           }`}
                           style={{ width: `${Math.min(percentage, 100)}%` }}
                         />

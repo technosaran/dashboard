@@ -330,7 +330,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
         </div>
         <div className="glass-card-static p-6 flex flex-col gap-2">
             <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Current Value</span>
-            <span className="text-xl md:text-2xl font-black tabular-nums text-[--success]">+₹{stats.totalCurrentValue.toLocaleString()}</span>
+            <span className="text-xl md:text-2xl font-black tabular-nums text-success">+₹{stats.totalCurrentValue.toLocaleString()}</span>
         </div>
         <div className="glass-card-static p-6 flex flex-col gap-2">
             <span className="text-[10px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Total P&L</span>
@@ -355,7 +355,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
         </button>
         <button
           onClick={() => setActiveTab("history")}
-          className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === "history" ? "bg-[--success] text-white shadow-lg shadow-[--success]/20" : "text-[--text-muted] hover:text-[--text-primary]"}`}
+          className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === "history" ? "bg-success text-white shadow-lg shadow-[--success]/20" : "text-[--text-muted] hover:text-[--text-primary]"}`}
         >
           History ({trades.length})
         </button>

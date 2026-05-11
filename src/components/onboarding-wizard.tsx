@@ -70,14 +70,14 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                 <span className="text-[10px] font-bold text-[--text-muted] uppercase tracking-wider">Account</span>
               </div>
               <div className="flex flex-col items-center gap-2">
-                <div className="w-12 h-12 rounded-xl bg-[--success]/10 border border-[--success]/20 flex items-center justify-center">
-                  <span className="text-xl font-black text-[--success]">2</span>
+                <div className="w-12 h-12 rounded-xl bg-success/10 border border-success/20 flex items-center justify-center">
+                  <span className="text-xl font-black text-success">2</span>
                 </div>
                 <span className="text-[10px] font-bold text-[--text-muted] uppercase tracking-wider">Income</span>
               </div>
               <div className="flex flex-col items-center gap-2">
-                <div className="w-12 h-12 rounded-xl bg-[--danger]/10 border border-[--danger]/20 flex items-center justify-center">
-                  <span className="text-xl font-black text-[--danger]">3</span>
+                <div className="w-12 h-12 rounded-xl bg-danger/10 border border-danger/20 flex items-center justify-center">
+                  <span className="text-xl font-black text-danger">3</span>
                 </div>
                 <span className="text-[10px] font-bold text-[--text-muted] uppercase tracking-wider">Expense</span>
               </div>
@@ -116,12 +116,12 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
             </p>
 
             {accountCreated ? (
-              <div className="mb-8 p-6 rounded-2xl bg-[--success]/10 border border-[--success]/20">
+              <div className="mb-8 p-6 rounded-2xl bg-success/10 border border-success/20">
                 <div className="flex items-center justify-center gap-3 mb-2">
-                  <svg className="w-6 h-6 text-[--success]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                  <svg className="w-6 h-6 text-success" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                     <path d="M5 13l4 4L19 7" />
                   </svg>
-                  <span className="text-lg font-black text-[--success]">Account Created!</span>
+                  <span className="text-lg font-black text-success">Account Created!</span>
                 </div>
                 <p className="text-sm text-[--text-muted]">Great! Let&apos;s move to the next step.</p>
               </div>
@@ -158,8 +158,8 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
         {/* Income Step */}
         {step === "income" && (
           <div className="text-center">
-            <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-[--success]/10 border border-[--success]/20 flex items-center justify-center">
-              <svg className="w-8 h-8 text-[--success]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-success/10 border border-success/20 flex items-center justify-center">
+              <svg className="w-8 h-8 text-success" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path d="M12 4v16m8-8H4" />
               </svg>
             </div>
@@ -171,12 +171,12 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
             </p>
 
             {incomeLogged ? (
-              <div className="mb-8 p-6 rounded-2xl bg-[--success]/10 border border-[--success]/20">
+              <div className="mb-8 p-6 rounded-2xl bg-success/10 border border-success/20">
                 <div className="flex items-center justify-center gap-3 mb-2">
-                  <svg className="w-6 h-6 text-[--success]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                  <svg className="w-6 h-6 text-success" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                     <path d="M5 13l4 4L19 7" />
                   </svg>
-                  <span className="text-lg font-black text-[--success]">Income Logged!</span>
+                  <span className="text-lg font-black text-success">Income Logged!</span>
                 </div>
                 <p className="text-sm text-[--text-muted]">Excellent! One more step to go.</p>
               </div>
@@ -185,7 +185,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                 <p className="text-sm text-[--text-muted] mb-4">Click below to log your first income</p>
                 <button
                   onClick={goToIncome}
-                  className="btn-primary px-8 py-3 bg-[--success] hover:bg-[--success]"
+                  className="btn-primary px-8 py-3 bg-success hover:bg-success"
                 >
                   Log Income
                 </button>
@@ -219,8 +219,8 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
         {/* Expense Step */}
         {step === "expense" && (
           <div className="text-center">
-            <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-[--danger]/10 border border-[--danger]/20 flex items-center justify-center">
-              <svg className="w-8 h-8 text-[--danger]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-danger/10 border border-danger/20 flex items-center justify-center">
+              <svg className="w-8 h-8 text-danger" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path d="M20 12H4" />
               </svg>
             </div>
@@ -232,12 +232,12 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
             </p>
 
             {expenseLogged ? (
-              <div className="mb-8 p-6 rounded-2xl bg-[--success]/10 border border-[--success]/20">
+              <div className="mb-8 p-6 rounded-2xl bg-success/10 border border-success/20">
                 <div className="flex items-center justify-center gap-3 mb-2">
-                  <svg className="w-6 h-6 text-[--success]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                  <svg className="w-6 h-6 text-success" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                     <path d="M5 13l4 4L19 7" />
                   </svg>
-                  <span className="text-lg font-black text-[--success]">Expense Recorded!</span>
+                  <span className="text-lg font-black text-success">Expense Recorded!</span>
                 </div>
                 <p className="text-sm text-[--text-muted]">Perfect! You&apos;re all set up.</p>
               </div>
@@ -246,7 +246,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                 <p className="text-sm text-[--text-muted] mb-4">Click below to record your first expense</p>
                 <button
                   onClick={goToExpenses}
-                  className="btn-primary px-8 py-3 bg-[--danger] hover:bg-[--danger]"
+                  className="btn-primary px-8 py-3 bg-danger hover:bg-danger"
                 >
                   Record Expense
                 </button>

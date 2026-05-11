@@ -103,9 +103,9 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
           { label: "Total Balance", value: stats.totalBalance, sub: "Available Capital", color: "text-white", icon: "💰" },
-          { label: "Total P&L", value: stats.totalPnL, sub: "Trading Performance", color: stats.totalPnL >= 0 ? "text-[--success]" : "text-[--danger]", icon: "📊" },
+          { label: "Total P&L", value: stats.totalPnL, sub: "Trading Performance", color: stats.totalPnL >= 0 ? "text-success" : "text-danger", icon: "📊" },
           { label: "Deposits", value: stats.totalDeposited, sub: "Total Inflow", color: "text-[--accent-primary-light]", icon: "📥" },
-          { label: "Withdrawals", value: stats.totalWithdrawn, sub: "Total Outflow", color: "text-[--warning]", icon: "📤" },
+          { label: "Withdrawals", value: stats.totalWithdrawn, sub: "Total Outflow", color: "text-warning", icon: "📤" },
         ].map((s, i) => (
           <div key={i} className="glass-card-static p-6 border-white/5 hover:border-white/10 transition-all group relative overflow-hidden">
             <div className="absolute -right-4 -top-4 text-4xl opacity-[0.03] group-hover:opacity-[0.07] transition-opacity rotate-12">{s.icon}</div>
@@ -236,7 +236,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                       </span>
                     </td>
                     <td className="p-4 text-[12px] text-[--text-muted]">{tx.notes || "—"}</td>
-                    <td className={`p-4 text-right font-black tabular-nums ${tx.transaction_type === 'DEPOSIT' ? 'text-[--accent-primary-light]' : 'text-[--warning]'}`}>
+                    <td className={`p-4 text-right font-black tabular-nums ${tx.transaction_type === 'DEPOSIT' ? 'text-[--accent-primary-light]' : 'text-warning'}`}>
                       {tx.transaction_type === 'DEPOSIT' ? '+' : '-'}${tx.amount.toLocaleString()}
                     </td>
                   </tr>

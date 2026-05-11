@@ -202,7 +202,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
           </button>
           <button 
             onClick={() => setActiveTab('completed')}
-            className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'completed' ? 'bg-[--success] text-white shadow-lg shadow-[--success]/20' : 'text-[--text-muted] hover:text-[--text-primary]'}`}
+            className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'completed' ? 'bg-success text-white shadow-lg shadow-[--success]/20' : 'text-[--text-muted] hover:text-[--text-primary]'}`}
           >
             Completed
           </button>
@@ -274,7 +274,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
                           </div>
                         ) : (
                           <div className="text-center">
-                            <p className="text-[11px] font-black text-[--danger]">⚠️ Deadline Passed</p>
+                            <p className="text-[11px] font-black text-danger">⚠️ Deadline Passed</p>
                             <p className="text-[9px] text-[--text-muted] mt-1">Goal deadline was {format(parseISO(goal.deadline), 'MMM d, yyyy')}</p>
                           </div>
                         )}
@@ -302,7 +302,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
                       Add Capital
                     </button>
-                    <button onClick={() => handleDeleteGoal(goal.id)} className="w-12 h-12 rounded-xl bg-[--danger]/10 border border-[--danger]/20 text-[--danger] hover:bg-[--danger]/20 transition-all flex items-center justify-center">
+                    <button onClick={() => handleDeleteGoal(goal.id)} className="w-12 h-12 rounded-xl bg-danger/10 border border-danger/20 text-danger hover:bg-danger/20 transition-all flex items-center justify-center">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                     </button>
                   </div>

@@ -167,10 +167,10 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
   return (
     <div className="flex flex-col gap-[var(--section-gap)]">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="md:hidden p-4 rounded-xl border border-[--success]/20 bg-[--success]/5 text-center mt-4">
+          <div className="md:hidden p-4 rounded-xl border border-success/20 bg-success/5 text-center mt-4">
              <h2 className="text-xl font-black text-white">Record Income</h2>
              <p className="text-[10px] text-[--text-muted] uppercase tracking-widest mt-1">Mobile Data Node</p>
-             <button onClick={() => setShowAddModal(true)} className="btn-primary w-full mt-4 shadow-xl shadow-[--success]/20 bg-[--success] hover:bg-[--success]">Log Now</button>
+             <button onClick={() => setShowAddModal(true)} className="btn-primary w-full mt-4 shadow-xl shadow-[--success]/20 bg-success hover:bg-success">Log Now</button>
              <Link href="/dashboard" className="block text-center mt-4 text-[10px] text-white/50 uppercase font-black tracking-widest hover:text-white">← System Home</Link>
           </div>
         <div className="hidden md:block">
@@ -223,16 +223,16 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
         <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between group">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Net Throughput</p>
           <div className="mt-3 flex flex-col sm:flex-row sm:items-end justify-between gap-2">
-            <h3 className="text-xl md:text-2xl font-black truncate text-[--success]">
+            <h3 className="text-xl md:text-2xl font-black truncate text-success">
               +₹{stats.totalIncome.toLocaleString()}
             </h3>
-            <span className="text-[9px] w-fit px-2 py-0.5 rounded-full bg-[--success]/10 text-[--success] border border-[--success]/20 font-bold">Lifetime</span>
+            <span className="text-[9px] w-fit px-2 py-0.5 rounded-full bg-success/10 text-success border border-success/20 font-bold">Lifetime</span>
           </div>
         </div>
         <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Monthly Flow</p>
           <div className="mt-3 flex flex-col sm:flex-row sm:items-end justify-between gap-2">
-            <h3 className="text-xl md:text-2xl font-black truncate text-[--success]">
+            <h3 className="text-xl md:text-2xl font-black truncate text-success">
               +₹{stats.monthlyTotal.toLocaleString()}
             </h3>
             <span className="text-[9px] w-fit px-2 py-0.5 rounded-full bg-[--accent-primary]/10 text-[--accent-primary] border border-[--accent-primary]/20 font-bold">{format(new Date(), "MMM")}</span>
@@ -249,7 +249,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
         <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Average</p>
           <div className="mt-3 flex flex-col sm:flex-row sm:items-end justify-between gap-2">
-            <h3 className="text-xl md:text-2xl font-black truncate text-[--success]">
+            <h3 className="text-xl md:text-2xl font-black truncate text-success">
               +₹{(incomes.length ? stats.totalIncome / incomes.length : 0).toLocaleString(undefined, {maximumFractionDigits: 0})}
             </h3>
             <span className="text-[9px] w-fit px-2 py-0.5 rounded-full bg-white/5 text-[--text-muted]">{incomes.length} pts</span>
@@ -284,13 +284,13 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
             <div className="py-24 flex flex-col items-center text-center">
                <h3 className="text-2xl font-black text-white mb-2">Track Your Wealth Inflow</h3>
                <p className="text-sm text-[--text-muted] max-w-sm mb-8">No revenue streams detected. Start by logging your first income to visualize your growth strategy.</p>
-               <button onClick={() => setShowAddModal(true)} className="btn-primary shadow-2xl shadow-[--success]/20 px-10 bg-[--success] hover:bg-[--success]">Log Your First Income</button>
+               <button onClick={() => setShowAddModal(true)} className="btn-primary shadow-2xl shadow-[--success]/20 px-10 bg-success hover:bg-success">Log Your First Income</button>
             </div>
           ) : (
             <table className="w-full text-left border-collapse min-w-[650px] md:min-w-0">
               <thead><tr className="bg-white/[0.02] border-b border-white/5"><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Date</th><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Source</th><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Segment</th><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] hidden sm:table-cell">Destination</th><th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] text-right">Credit</th></tr></thead>
               <tbody className="divide-y divide-white/10">
-                {filteredIncomes.length === 0 ? (<tr><td colSpan={5} className="px-6 py-20 text-center text-[--text-muted] text-sm italic">Infrastructure query returned no income data.</td></tr>) : (filteredIncomes.map((inc) => { const theme = INCOME_CATEGORIES.find(c => c.label === inc.category) || INCOME_CATEGORIES[6]; const account = accounts.find(a => a.id === inc.account_id); return (<tr key={inc.id} className="hover:bg-white/[0.015] transition-colors group text-[--text-primary]"><td className="px-4 md:px-6 py-5 whitespace-nowrap"><p className="text-[13px] font-bold">{inc.date ? format(parseISO(inc.date), "MMM d, yy") : "N/A"}</p><p className="text-[9px] text-[--success]/60 font-bold uppercase">Credit</p></td><td className="px-4 md:px-6 py-4"><div className="flex items-center gap-3"><div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-lg flex-shrink-0">{theme.icon}</div><p className="text-[13px] font-medium group-hover:text-[--success] transition-colors truncate max-w-[120px] md:max-w-none">{inc.description}</p></div></td><td className="px-4 md:px-6 py-5 whitespace-nowrap"><span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-[0.1em] bg-[--success]/5 border border-[--success]/10 text-[--success]">{inc.category}</span></td><td className="px-4 md:px-6 py-5 whitespace-nowrap hidden sm:table-cell"><div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-[--success] shadow-[0_0_8px_rgba(0,184,148,0.5)]" /><span className="text-[11px] font-medium text-[--text-secondary]">{account?.name || "Direct Log"}</span></div></td><td className="px-4 md:px-6 py-4 whitespace-nowrap text-right"><p className="text-[15px] md:text-base font-black text-[--success]">+₹{Number(inc.amount).toLocaleString()}</p></td></tr>); }))}
+                {filteredIncomes.length === 0 ? (<tr><td colSpan={5} className="px-6 py-20 text-center text-[--text-muted] text-sm italic">Infrastructure query returned no income data.</td></tr>) : (filteredIncomes.map((inc) => { const theme = INCOME_CATEGORIES.find(c => c.label === inc.category) || INCOME_CATEGORIES[6]; const account = accounts.find(a => a.id === inc.account_id); return (<tr key={inc.id} className="hover:bg-white/[0.015] transition-colors group text-[--text-primary]"><td className="px-4 md:px-6 py-5 whitespace-nowrap"><p className="text-[13px] font-bold">{inc.date ? format(parseISO(inc.date), "MMM d, yy") : "N/A"}</p><p className="text-[9px] text-success/60 font-bold uppercase">Credit</p></td><td className="px-4 md:px-6 py-4"><div className="flex items-center gap-3"><div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-lg flex-shrink-0">{theme.icon}</div><p className="text-[13px] font-medium group-hover:text-success transition-colors truncate max-w-[120px] md:max-w-none">{inc.description}</p></div></td><td className="px-4 md:px-6 py-5 whitespace-nowrap"><span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-[0.1em] bg-success/5 border border-success/10 text-success">{inc.category}</span></td><td className="px-4 md:px-6 py-5 whitespace-nowrap hidden sm:table-cell"><div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-success shadow-[0_0_8px_rgba(0,184,148,0.5)]" /><span className="text-[11px] font-medium text-[--text-secondary]">{account?.name || "Direct Log"}</span></div></td><td className="px-4 md:px-6 py-4 whitespace-nowrap text-right"><p className="text-[15px] md:text-base font-black text-success">+₹{Number(inc.amount).toLocaleString()}</p></td></tr>); }))}
               </tbody>
             </table>
           )}
@@ -324,7 +324,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
                     onClick={() => setCurrentPage(pageNum)}
                     className={`w-10 h-10 rounded-xl font-bold text-sm transition-all ${
                       currentPage === pageNum
-                        ? 'bg-[--success] text-white'
+                        ? 'bg-success text-white'
                         : 'bg-white/5 hover:bg-white/10 text-[--text-muted]'
                     }`}
                   >

@@ -273,7 +273,7 @@ export default function FamilyClient({
         </div>
         <div className="glass-card-static p-5 md:p-8 col-span-2 md:col-span-1">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted] mb-1">Recently Sent</p>
-          <p className="text-2xl md:text-3xl font-black text-[--success]">
+          <p className="text-2xl md:text-3xl font-black text-success">
             ₹{totalSent.toLocaleString()}
           </p>
         </div>
@@ -307,7 +307,7 @@ export default function FamilyClient({
         </button>
         <button
           onClick={() => setActiveView("history")}
-          className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeView === "history" ? "bg-[--success] text-white shadow-lg shadow-[--success]/20" : "text-[--text-muted] hover:text-[--text-primary]"}`}
+          className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeView === "history" ? "bg-success text-white shadow-lg shadow-[--success]/20" : "text-[--text-muted] hover:text-[--text-primary]"}`}
         >
           History
         </button>
@@ -372,7 +372,7 @@ export default function FamilyClient({
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
                         Wealth Transfer
                       </button>
-                      <button onClick={() => handleDeleteRecipient(person.id)} className="w-12 h-12 rounded-xl bg-[--danger]/10 border border-[--danger]/20 text-[--danger] hover:bg-[--danger]/20 transition-all flex items-center justify-center">
+                      <button onClick={() => handleDeleteRecipient(person.id)} className="w-12 h-12 rounded-xl bg-danger/10 border border-danger/20 text-danger hover:bg-danger/20 transition-all flex items-center justify-center">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                       </button>
                     </div>
@@ -407,8 +407,8 @@ export default function FamilyClient({
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-black text-[--danger]">-₹{(send.amount || 0).toLocaleString()}</p>
-                    <p className="text-[9px] font-bold text-[--success] uppercase tracking-widest">Execution Confirmed</p>
+                    <p className="text-lg font-black text-danger">-₹{(send.amount || 0).toLocaleString()}</p>
+                    <p className="text-[9px] font-bold text-success uppercase tracking-widest">Execution Confirmed</p>
                   </div>
                 </div>
               ))

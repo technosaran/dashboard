@@ -346,7 +346,7 @@ export default function LiabilitiesClient({ initialData }: { initialData?: Finan
                   <textarea className="input-premium min-h-[100px] py-4" value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} />
                 </div>
               </div>
-              <button type="submit" disabled={submitting} className="btn-primary w-full shadow-xl shadow-[--danger]/20 !bg-[--danger] hover:!bg-rose-600 mt-4">
+              <button type="submit" disabled={submitting} className="btn-primary w-full shadow-xl shadow-[--danger]/20 !bg-danger hover:!bg-rose-600 mt-4">
                 {submitting ? "Processing..." : editingId ? "Update Record" : "Establish Liability"}
               </button>
             </form>

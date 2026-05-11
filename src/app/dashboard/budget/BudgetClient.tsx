@@ -98,12 +98,12 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
         </div>
         <div className="glass-card-static p-6 border-white/5">
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Actual Burn</p>
-          <p className={`text-2xl font-black ${totalSpent > totalBudgeted && totalBudgeted > 0 ? "text-[--danger]" : "text-white"}`}>₹{totalSpent.toLocaleString()}</p>
+          <p className={`text-2xl font-black ${totalSpent > totalBudgeted && totalBudgeted > 0 ? "text-danger" : "text-white"}`}>₹{totalSpent.toLocaleString()}</p>
           <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Real-time Outflow</p>
         </div>
         <div className="glass-card-static p-6 border-white/5">
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Margin</p>
-          <p className={`text-2xl font-black ${totalBudgeted - totalSpent >= 0 ? "text-[--success]" : "text-[--danger]"}`}>
+          <p className={`text-2xl font-black ${totalBudgeted - totalSpent >= 0 ? "text-success" : "text-danger"}`}>
             ₹{(totalBudgeted - totalSpent).toLocaleString()}
           </p>
           <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Remaining Budget</p>
@@ -151,7 +151,7 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
                   {limit > 0 && (
                     <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
                       <div 
-                        className={`h-full transition-all duration-1000 ${percent > 100 ? "bg-[--danger]" : percent > 80 ? "bg-[--warning]" : "bg-[--success]"}`} 
+                        className={`h-full transition-all duration-1000 ${percent > 100 ? "bg-danger" : percent > 80 ? "bg-warning" : "bg-success"}`} 
                         style={{ width: `${Math.min(percent, 100)}%` }} 
                       />
                     </div>
@@ -171,13 +171,13 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[--accent-primary-light]">Theoretical Surplus</p>
                <div className="mt-8 grid grid-cols-2 gap-8 w-full border-t border-white/5 pt-8">
                   <div>
-                    <p className="text-[20px] font-black text-[--success]">
+                    <p className="text-[20px] font-black text-success">
                       {totalIncome > 0 ? ((totalIncome - totalSpent) / totalIncome * 100).toFixed(1) : 0}%
                     </p>
                     <p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mt-1">Savings Rate</p>
                   </div>
                   <div>
-                    <p className="text-[20px] font-black text-[--warning]">
+                    <p className="text-[20px] font-black text-warning">
                       {totalIncome > 0 ? (totalSpent / totalIncome * 100).toFixed(1) : 0}%
                     </p>
                     <p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mt-1">Expense Ratio</p>

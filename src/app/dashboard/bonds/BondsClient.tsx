@@ -193,22 +193,22 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
         </div>
         <div className="glass-card-static p-6 flex flex-col gap-2">
           <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Market Valuation</span>
-          <span className="text-xl md:text-2xl font-black tabular-nums text-[--success]">+₹{stats.currentValue.toLocaleString()}</span>
+          <span className="text-xl md:text-2xl font-black tabular-nums text-success">+₹{stats.currentValue.toLocaleString()}</span>
         </div>
         <div className="glass-card-static p-6 flex flex-col gap-2">
           <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Total P&L</span>
           <div className="flex flex-col">
-            <span className={`text-xl md:text-2xl font-black tabular-nums ${stats.totalPnL >= 0 ? 'text-[--success]' : 'text-[--danger]'}`}>
+            <span className={`text-xl md:text-2xl font-black tabular-nums ${stats.totalPnL >= 0 ? 'text-success' : 'text-danger'}`}>
               {stats.totalPnL >= 0 ? '+' : '-'}₹{Math.abs(stats.totalPnL).toLocaleString()}
             </span>
-            <span className={`text-[10px] font-black ${stats.totalPnL >= 0 ? 'text-[--success]' : 'text-[--danger]'} opacity-60`}>
+            <span className={`text-[10px] font-black ${stats.totalPnL >= 0 ? 'text-success' : 'text-danger'} opacity-60`}>
               ({stats.totalPnL >= 0 ? '+' : ''}{stats.totalInvested > 0 ? ((stats.totalPnL / stats.totalInvested) * 100).toFixed(2) : '0.00'}%)
             </span>
           </div>
         </div>
         <div className="glass-card-static p-6 flex flex-col gap-2">
           <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Interest Earned</span>
-          <span className="text-xl md:text-2xl font-black tabular-nums text-[--success]">₹{stats.totalInterest.toLocaleString()}</span>
+          <span className="text-xl md:text-2xl font-black tabular-nums text-success">₹{stats.totalInterest.toLocaleString()}</span>
         </div>
         <div className="glass-card-static p-6 flex flex-col gap-2">
           <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Avg. YTM</span>
@@ -309,7 +309,7 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
                           <span className="text-[13px] font-bold text-[--text-primary] tabular-nums">{bond.quantity}</span>
                         </td>
                         <td className="px-6 py-5 text-right">
-                          <span className="text-[14px] font-black text-[--success] tabular-nums">{Number(bond.coupon_rate).toFixed(2)}%</span>
+                          <span className="text-[14px] font-black text-success tabular-nums">{Number(bond.coupon_rate).toFixed(2)}%</span>
                         </td>
                         <td className="px-6 py-5 text-right">
                           <span className="text-[13px] font-bold text-[--text-primary] tabular-nums">{bond.ytm ? Number(bond.ytm).toFixed(2) : "—"}%</span>
@@ -322,10 +322,10 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
                         </td>
                         <td className="px-6 py-5 text-right">
                           <div className="flex flex-col items-end">
-                            <span className={`text-[14px] font-black tabular-nums ${pnl >= 0 ? 'text-[--success]' : 'text-[--danger]'}`}>
+                            <span className={`text-[14px] font-black tabular-nums ${pnl >= 0 ? 'text-success' : 'text-danger'}`}>
                               {pnl >= 0 ? '+' : '-'}₹{Math.abs(pnl).toLocaleString()}
                             </span>
-                            <span className={`text-[10px] font-bold tabular-nums opacity-60 ${pnl >= 0 ? 'text-[--success]' : 'text-[--danger]'}`}>
+                            <span className={`text-[10px] font-bold tabular-nums opacity-60 ${pnl >= 0 ? 'text-success' : 'text-danger'}`}>
                               {pnl >= 0 ? '+' : ''}{pnlPercent.toFixed(2)}%
                             </span>
                           </div>
@@ -333,7 +333,7 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
                         <td className="px-6 py-5">
                           <div className="flex flex-col">
                             <span className="text-[12px] font-bold text-[--text-primary]">{format(parseISO(bond.maturity_date), "MMM d, yyyy")}</span>
-                            <span className={`text-[10px] font-bold ${daysToMaturity < 90 ? 'text-[--warning]' : 'text-[--text-muted]'}`}>
+                            <span className={`text-[10px] font-bold ${daysToMaturity < 90 ? 'text-warning' : 'text-[--text-muted]'}`}>
                               {daysToMaturity} days
                             </span>
                           </div>
@@ -372,9 +372,9 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
                   {(bondTransactions || []).map((txn) => {
                     const typeColors: Record<string, string> = {
                       BUY: 'text-[--accent-primary]',
-                      SELL: 'text-[--danger]',
-                      INTEREST: 'text-[--success]',
-                      MATURITY: 'text-[--warning]',
+                      SELL: 'text-danger',
+                      INTEREST: 'text-success',
+                      MATURITY: 'text-warning',
                     };
                     return (
                       <tr key={txn.id} className="hover:bg-white/[0.015] transition-colors">

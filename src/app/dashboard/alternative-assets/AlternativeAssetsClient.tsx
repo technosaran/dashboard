@@ -118,28 +118,28 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
             <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between group">
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Asset Valuation</p>
               <div className="mt-3 flex flex-col sm:flex-row sm:items-end justify-between gap-2">
-                <h3 className="text-xl md:text-2xl font-black truncate text-[--success]">
+                <h3 className="text-xl md:text-2xl font-black truncate text-success">
                   +₹{stats.totalValue.toLocaleString()}
                 </h3>
-                <span className="text-[9px] w-fit px-2 py-0.5 rounded-full bg-[--success]/10 text-[--success] border border-[--success]/20 font-bold">Total</span>
+                <span className="text-[9px] w-fit px-2 py-0.5 rounded-full bg-success/10 text-success border border-success/20 font-bold">Total</span>
               </div>
             </div>
             <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between group">
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Portfolio Growth</p>
               <div className="mt-3 flex flex-col sm:flex-row sm:items-end justify-between gap-2">
-                <h3 className={`text-xl md:text-2xl font-black truncate ${stats.netGrowth >= 0 ? "text-[--success]" : "text-[--danger]"}`}>
+                <h3 className={`text-xl md:text-2xl font-black truncate ${stats.netGrowth >= 0 ? "text-success" : "text-danger"}`}>
                   {stats.netGrowth >= 0 ? "+" : "-"}₹{Math.abs(stats.netGrowth).toLocaleString()}
                 </h3>
-                <span className={`text-[9px] w-fit px-2 py-0.5 rounded-full ${stats.netGrowth >= 0 ? "bg-[--success]/10 text-[--success] border border-[--success]/20" : "bg-[--danger]/10 text-[--danger] border border-[--danger]/20"} font-bold`}>Absolute</span>
+                <span className={`text-[9px] w-fit px-2 py-0.5 rounded-full ${stats.netGrowth >= 0 ? "bg-success/10 text-success border border-success/20" : "bg-danger/10 text-danger border border-danger/20"} font-bold`}>Absolute</span>
               </div>
             </div>
             <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between group">
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Yield (ROI)</p>
               <div className="mt-3 flex flex-col sm:flex-row sm:items-end justify-between gap-2">
-                <h3 className={`text-xl md:text-2xl font-black truncate ${stats.netGrowth >= 0 ? "text-[--success]" : "text-[--danger]"}`}>
+                <h3 className={`text-xl md:text-2xl font-black truncate ${stats.netGrowth >= 0 ? "text-success" : "text-danger"}`}>
                   {stats.netGrowth >= 0 ? "+" : ""}{stats.growthPercent.toFixed(2)}%
                 </h3>
-                <span className={`text-[9px] w-fit px-2 py-0.5 rounded-full ${stats.netGrowth >= 0 ? "bg-[--success]/10 text-[--success] border border-[--success]/20" : "bg-[--danger]/10 text-[--danger] border border-[--danger]/20"} font-bold`}>Relative</span>
+                <span className={`text-[9px] w-fit px-2 py-0.5 rounded-full ${stats.netGrowth >= 0 ? "bg-success/10 text-success border border-success/20" : "bg-danger/10 text-danger border border-danger/20"} font-bold`}>Relative</span>
               </div>
             </div>
             <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between group bg-gradient-to-br from-[--accent-primary]/10 to-transparent">
@@ -208,7 +208,7 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
                       </div>
                       <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 text-right">
                         <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-widest mb-1 opacity-60">Appreciation</p>
-                        <p className={`text-[14px] font-black tabular-nums ${gain >= 0 ? "text-[--success]" : "text-[--danger]"}`}>
+                        <p className={`text-[14px] font-black tabular-nums ${gain >= 0 ? "text-success" : "text-danger"}`}>
                           {gain >= 0 ? "+" : ""}{gainPercent.toFixed(2)}%
                         </p>
                       </div>
@@ -216,7 +216,7 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
                     
                     <div className="flex items-center justify-between pt-5 border-t border-white/5">
                        <div className="flex items-center gap-2">
-                         <div className={`w-1.5 h-1.5 rounded-full ${gain >= 0 ? "bg-[--success] shadow-[0_0_8px_var(--success)]" : "bg-[--danger] shadow-[0_0_8px_var(--danger)]"}`} />
+                         <div className={`w-1.5 h-1.5 rounded-full ${gain >= 0 ? "bg-success shadow-[0_0_8px_var(--success)]" : "bg-danger shadow-[0_0_8px_var(--danger)]"}`} />
                          <span className="text-[10px] font-bold text-[--text-secondary]">{asset.purchase_date ? format(parseISO(asset.purchase_date), "MMM yyyy") : "Date Unknown"}</span>
                        </div>
                        <div className="text-[9px] font-black text-[--text-muted] uppercase tracking-widest bg-white/5 px-2 py-0.5 rounded-md border border-white/10 group-hover:border-[--accent-primary]/30 transition-colors">Verified</div>

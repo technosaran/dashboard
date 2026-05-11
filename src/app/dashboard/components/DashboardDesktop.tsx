@@ -280,11 +280,11 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, isL
           <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-[--text-muted]">Income vs Expense (6 Months)</h3>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-[--success]" />
+              <div className="w-3 h-3 rounded-full bg-success" />
               <span className="text-[10px] font-bold text-[--text-muted]">Income</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-[--danger]" />
+              <div className="w-3 h-3 rounded-full bg-danger" />
               <span className="text-[10px] font-bold text-[--text-muted]">Expense</span>
             </div>
           </div>

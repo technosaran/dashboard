@@ -62,12 +62,12 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, isVal
 
         <div className="mt-4 flex gap-4 pt-4 border-t border-white/5 w-full justify-center">
            <div className="flex flex-col items-center">
-             <span className="text-[10px] font-black text-[--success] tracking-widest">+₹{stats.monthlyIncome.toLocaleString()}</span>
+             <span className="text-[10px] font-black text-success tracking-widest">+₹{stats.monthlyIncome.toLocaleString()}</span>
              <span className="text-[8px] text-[--text-muted] uppercase font-bold tracking-tighter">Income</span>
            </div>
            <div className="w-px h-8 bg-white/10" />
            <div className="flex flex-col items-center">
-             <span className="text-[10px] font-black text-[--danger] tracking-widest">-₹{stats.monthlySpend.toLocaleString()}</span>
+             <span className="text-[10px] font-black text-danger tracking-widest">-₹{stats.monthlySpend.toLocaleString()}</span>
              <span className="text-[8px] text-[--text-muted] uppercase font-bold tracking-tighter">Expenses</span>
            </div>
         </div>
@@ -95,7 +95,7 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, isVal
                       <span className="text-[8px] font-black uppercase text-[--text-muted]">{log.created_at ? format(new Date(log.created_at), "HH:mm") : "—"} • {log.account_name}</span>
                     </div>
                   </div>
-                  <span className={`text-[13px] font-black ${isOut ? "text-[--danger]" : "text-[--success]"}`}>
+                  <span className={`text-[13px] font-black ${isOut ? "text-danger" : "text-success"}`}>
                     {log.amount ? `${isOut ? "-" : "+"}₹${log.amount.toLocaleString()}` : "—"}
                   </span>
                </div>

@@ -130,6 +130,14 @@ html, body {
   color-scheme: dark;
 }
 
+/* Force Financial Status Colors */
+.text-success { color: #10b981 !important; }
+.text-danger { color: #ef4444 !important; }
+.bg-success { background-color: #10b981 !important; }
+.bg-danger { background-color: #ef4444 !important; }
+.border-success { border-color: #10b981 !important; }
+.border-danger { border-color: #ef4444 !important; }
+
 input, textarea, [contenteditable="true"] {
   user-select: text;
 }
