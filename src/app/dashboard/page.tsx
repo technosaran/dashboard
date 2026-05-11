@@ -8,7 +8,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Dashboard",
   description:
-    "Your financial command center. Track net worth, cash flow, and portfolio performance at a glance.",
+    "Your private wealth dashboard. Track net worth, cash flow, and portfolio performance at a glance.",
 };
 
 export const dynamic = "force-dynamic";

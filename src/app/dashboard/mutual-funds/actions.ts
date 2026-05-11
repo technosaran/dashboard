@@ -14,29 +14,53 @@ type MutualFundRpcResult = {
     error?: string | null;
 } | null;
 
+const USER_AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0"
+];
+
 export async function searchMFSchemes(query: string) {
     if (query.length < 3) return [];
     try {
-        const res = await fetch(`https://api.mfapi.in/mf/search?q=${encodeURIComponent(query)}`);
+        const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+        const res = await fetch(`https://api.mfapi.in/mf/search?q=${encodeURIComponent(query)}`, {
+            headers: { "User-Agent": userAgent }
+        });
         const data = await res.json();
-        return data.slice(0, 10); // Return top 10 matches
+        return data.slice(0, 10);
     } catch {
         return [];
     }
 }
 
-async function fetchWithRetry(url: string, retries = 3): Promise<Response> {
+async function fetchWithRetry(url: string, retries = 5): Promise<Response> {
+    let lastError: Error | null = null;
     for (let i = 0; i < retries; i++) {
         try {
-            const res = await fetch(url, { cache: "no-store", next: { revalidate: 0 } });
+            const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+            const res = await fetch(url, { 
+                headers: { 
+                    "User-Agent": userAgent,
+                    "Accept": "application/json",
+                    "Cache-Control": "no-cache"
+                },
+                cache: "no-store", 
+                next: { revalidate: 0 } 
+            });
             if (res.ok) return res;
-            if (res.status === 429) await new Promise(r => setTimeout(r, 1000 * (i + 1)));
+            if (res.status === 429) {
+                const wait = 1000 * (i + 1) + Math.random() * 500;
+                await new Promise(r => setTimeout(r, wait));
+            }
         } catch (e) {
-            if (i === retries - 1) throw e;
+            lastError = e as Error;
+            await new Promise(r => setTimeout(r, 500 * (i + 1)));
         }
-        await new Promise(r => setTimeout(r, 500 * i));
     }
-    throw new Error(`Failed to fetch ${url}`);
+    throw lastError || new Error(`Failed to fetch ${url} after ${retries} attempts`);
 }
 
 export async function getLiveNAV(schemeCode: string) {

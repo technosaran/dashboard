@@ -7,6 +7,8 @@ import type { FinanceData } from "@/hooks/use-finance-data";
 
 type DashboardStats = {
   totalBalance: number;
+  totalDayPnL: number;
+  totalDayPnLPercent: number;
   monthlySpend: number;
   monthlyIncome: number;
   expenseTrend: unknown[];
@@ -35,9 +37,17 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, isVal
         <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-emerald-500/5 blur-3xl rounded-full" />
         
         <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[--text-muted] mb-3">Portfolio Net Worth</p>
-        <h2 className="text-5xl font-black text-white tracking-tighter mb-6 bg-gradient-to-b from-white to-white/60 bg-clip-text text-transparent">
+        <h2 className="text-5xl font-black text-white tracking-tighter mb-2 bg-gradient-to-b from-white to-white/60 bg-clip-text text-transparent">
            ₹{stats.totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0 })}
         </h2>
+        <div className={`flex items-center gap-2 mb-6 ${stats.totalDayPnL >= 0 ? 'text-emerald-400' : 'text-rose-500'}`}>
+          <span className="text-[12px] font-black tabular-nums">
+            {stats.totalDayPnL >= 0 ? '+' : '-'}₹{Math.abs(stats.totalDayPnL).toLocaleString()}
+          </span>
+          <span className="text-[10px] font-black opacity-60 tabular-nums">
+            ({stats.totalDayPnL >= 0 ? '+' : ''}{stats.totalDayPnLPercent.toFixed(2)}%)
+          </span>
+        </div>
 
         <div className="grid grid-cols-2 gap-4 w-full pt-6 border-t border-white/5">
            <div className="flex flex-col items-center bg-white/5 py-3 rounded-2xl border border-white/5">
@@ -63,28 +73,7 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, isVal
         </div>
       </div>
 
-      {/* Quick Action Grid */}
-      <div className="px-1">
-        <h3 className="text-xs font-black uppercase tracking-widest text-[--text-muted] mb-4">Command Center</h3>
-        <div className="grid grid-cols-2 gap-3">
-          <Link href="/dashboard/expenses?action=new" className="glass-card-static p-4 flex flex-col items-center justify-center gap-3 active:scale-95 transition-transform border-[--danger]/20 bg-[--danger]/5 hover:bg-[--danger]/10">
-             <div className="w-12 h-12 rounded-full bg-[--danger]/20 flex items-center justify-center text-xl shadow-[0_0_15px_rgba(255,118,117,0.3)]">🔴</div>
-             <span className="text-xs font-bold uppercase tracking-wider text-[--danger]">Expense</span>
-          </Link>
-          <Link href="/dashboard/income?action=new" className="glass-card-static p-4 flex flex-col items-center justify-center gap-3 active:scale-95 transition-transform border-[--success]/20 bg-[--success]/5 hover:bg-[--success]/10">
-             <div className="w-12 h-12 rounded-full bg-[--success]/20 flex items-center justify-center text-xl shadow-[0_0_15px_rgba(0,184,148,0.3)]">🟢</div>
-             <span className="text-xs font-bold uppercase tracking-wider text-[--success]">Income</span>
-          </Link>
-          <Link href="/dashboard/transfers?action=new" className="glass-card-static p-4 flex flex-col items-center justify-center gap-3 active:scale-95 transition-transform border-[--accent-primary]/20 bg-[--accent-primary]/5 hover:bg-[--accent-primary]/10">
-             <div className="w-12 h-12 rounded-full bg-[--accent-primary]/20 flex items-center justify-center text-xl shadow-[0_0_15px_rgba(108,92,231,0.3)]">🔄</div>
-             <span className="text-xs font-bold uppercase tracking-wider text-[--accent-primary-light]">Transfer</span>
-          </Link>
-          <Link href="/dashboard/family" className="glass-card-static p-4 flex flex-col items-center justify-center gap-3 active:scale-95 transition-transform border-[--warning]/20 bg-[--warning]/5 hover:bg-[--warning]/10">
-             <div className="w-12 h-12 rounded-full bg-[--warning]/20 flex items-center justify-center text-xl shadow-[0_0_15px_rgba(253,203,110,0.3)]">👥</div>
-             <span className="text-xs font-bold uppercase tracking-wider text-[--warning]">Send Money</span>
-          </Link>
-        </div>
-      </div>
+
 
       {/* RECENT PULSE */}
       <div className="px-1">

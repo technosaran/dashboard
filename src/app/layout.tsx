@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     default: "FinanceOS — Premium Financial Control",
     template: "%s | FinanceOS"
   },
-  description: "Next-gen personal wealth management console. Securely track accounts, stocks, mutual funds, and net worth with institutional-grade precision.",
+  description: "Your private wealth dashboard. Track net worth, cash flow, and portfolio performance at a glance.",
   keywords: ["personal finance", "stock tracker", "wealth management", "budgeting", "net worth", "investment dashboard"],
   authors: [{ name: "FinanceOS Team" }],
   creator: "FinanceOS",
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     url: "https://finance-os.app",
-    title: "FinanceOS — Your Financial Command Center",
+    title: "FinanceOS — Private Wealth Dashboard",
     description: "Institutional-grade wealth management for elite traders and investors.",
     siteName: "FinanceOS",
   },

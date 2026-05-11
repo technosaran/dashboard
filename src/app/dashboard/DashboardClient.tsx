@@ -130,8 +130,15 @@ export default function DashboardClient({ initialData }: { initialData?: Finance
       return { name, value, fill: resolvedColor, color: resolvedColor, percentage: "0" };
     }).sort((a,b) => b.value - a.value);
 
+    const totalDayPnL = (investments.reduce((sum, inv) => sum + (Number(inv.day_change || 0) * Number(inv.quantity || 0)), 0)) +
+                        (mutualFunds.reduce((sum, mf) => sum + (Number(mf.day_change || 0) * Number(mf.units || 0)), 0));
+    const prevDayNetWorth = netWorth - totalDayPnL;
+    const totalDayPnLPercent = prevDayNetWorth > 0 ? (totalDayPnL / prevDayNetWorth) * 100 : 0;
+
     return { 
       totalBalance: netWorth,
+      totalDayPnL,
+      totalDayPnLPercent,
       liquidBalance,
       altBalance,
       bondBalance,

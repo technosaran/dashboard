@@ -27,6 +27,13 @@ export async function revertLog(logId: string) {
 
   revalidatePath("/dashboard/ledger");
   revalidatePath("/dashboard/accounts");
+  revalidatePath("/dashboard/stocks");
+  revalidatePath("/dashboard/mutual-funds");
+  revalidatePath("/dashboard/goals");
+  revalidatePath("/dashboard/bonds");
+  revalidatePath("/dashboard/alternative-assets");
+  revalidatePath("/dashboard/liabilities");
+  revalidatePath("/dashboard/forex");
   revalidatePath("/dashboard");
   
   return { success: true };

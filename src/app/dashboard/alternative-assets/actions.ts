@@ -33,7 +33,9 @@ export async function addAlternativeAsset(formData: {
       p_account_id: account_id,
       p_amount: -formData.purchase_price,
       p_note: `Asset Purchase: ${formData.name}`,
-      p_user_id: user.id
+      p_user_id: user.id,
+      p_source_id: asset.id,
+      p_source_type: "alternative_asset"
     });
     if (accErr) console.error("Balance adjustment failed:", accErr);
   }

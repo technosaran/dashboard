@@ -516,7 +516,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                         <PnLValue value={pnl} showSign={true} prefix="₹" size="sm" />
                       </td>
                       <td className="py-4 px-4 text-right tabular-nums">
-                        <PnLValue value={inv.day_change || 0} percentage={inv.day_change_percent || 0} size="sm" />
+                        <PnLValue value={(inv.day_change || 0) * inv.quantity} percentage={inv.day_change_percent || 0} size="sm" />
                       </td>
                       <td className="py-4 px-4 text-right tabular-nums text-[13px] font-medium relative">
                         <PnLValue value={pnlPct} showSign={true} prefix="" suffix="%" size="sm" />
@@ -561,9 +561,14 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                           <div><p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-1">LTP</p><p className="text-[13px] font-black">₹{formatNum(inv.current_price)}</p></div>
                           <div className="text-right">
                              <p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-1">Day Return</p>
-                             <p className={`text-[13px] font-black ${inv.day_change !== null && inv.day_change >= 0 ? "text-success" : "text-danger"}`}>
-                                {inv.day_change !== null && inv.day_change > 0 ? "+" : ""}{inv.day_change !== null ? formatNum(inv.day_change) : "—"}
-                             </p>
+                             <div className="flex flex-col items-end">
+                                <p className={`text-[13px] font-black ${inv.day_change !== null && inv.day_change >= 0 ? "text-success" : "text-danger"}`}>
+                                   {inv.day_change !== null && inv.day_change > 0 ? "+" : ""}{inv.day_change !== null ? formatNum(inv.day_change * inv.quantity) : "—"}
+                                </p>
+                                <p className={`text-[9px] font-bold opacity-60 ${inv.day_change !== null && inv.day_change >= 0 ? "text-success" : "text-danger"}`}>
+                                   ({inv.day_change !== null && inv.day_change > 0 ? "+" : ""}{inv.day_change_percent?.toFixed(2)}%)
+                                </p>
+                             </div>
                           </div>
                        </div>
                        <div className="flex gap-2">

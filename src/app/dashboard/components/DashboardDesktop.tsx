@@ -32,6 +32,8 @@ type TrendDataEntry = {
 
 type DashboardStats = {
   totalBalance: number;
+  totalDayPnL: number;
+  totalDayPnLPercent: number;
   monthlySpend: number;
   monthlyIncome: number;
   expenseTrend: TrendEntry[];
@@ -116,9 +118,19 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, isL
                   Portfolio Net Worth {isLoading && <span className="text-[10px] lowercase italic">(loading...)</span>}
                 </span>
               </div>
-              <h2 className="bg-gradient-to-r from-white via-white to-[--text-secondary] bg-clip-text text-[clamp(2.5rem,10vw,4rem)] font-[900] leading-none tracking-[-0.05em] text-transparent drop-shadow-[0_10px_30px_rgba(108,92,231,0.2)] [font-family:'Outfit',sans-serif]">
-                ₹{stats.totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0 })}
-              </h2>
+              <div className="flex items-baseline gap-4">
+                <h2 className="bg-gradient-to-r from-white via-white to-[--text-secondary] bg-clip-text text-[clamp(2.5rem,10vw,4rem)] font-[900] leading-none tracking-[-0.05em] text-transparent drop-shadow-[0_10px_30px_rgba(108,92,231,0.2)] [font-family:'Outfit',sans-serif]">
+                  ₹{stats.totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0 })}
+                </h2>
+                <div className={`flex flex-col mb-2 ${stats.totalDayPnL >= 0 ? 'text-emerald-400' : 'text-rose-500'}`}>
+                  <span className="text-[14px] font-black tabular-nums">
+                    {stats.totalDayPnL >= 0 ? '+' : '-'}₹{Math.abs(stats.totalDayPnL).toLocaleString()}
+                  </span>
+                  <span className="text-[10px] font-black opacity-60 tabular-nums">
+                    ({stats.totalDayPnL >= 0 ? '+' : ''}{stats.totalDayPnLPercent.toFixed(2)}%)
+                  </span>
+                </div>
+              </div>
 
               <div className="mt-8 flex flex-wrap items-center gap-6">
                 <div className="flex flex-col">
@@ -316,25 +328,7 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, isL
         </div>
       </div>
 
-      {/* QUICK ACTIONS / COMMAND CENTER */}
-      <div className="flex flex-col gap-4">
-        <div className="glass-card-static p-6 h-full flex flex-col justify-center">
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[--text-muted] mb-6">Command Center</p>
-          <div className="grid grid-cols-2 gap-4">
-            {[
-              { label: "Record Expense", href: "/dashboard/expenses?action=new", icon: "🔴", color: "bg-rose-500/10 text-rose-500 border-rose-500/20" },
-              { label: "Log Income", href: "/dashboard/income?action=new", icon: "🟢", color: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" },
-              { label: "Internal Transfer", href: "/dashboard/transfers?action=new", icon: "🔄", color: "bg-blue-500/10 text-blue-400 border-blue-500/20" },
-              { label: "Asset Entry", href: "/dashboard/alternative-assets?action=new", icon: "🏛️", color: "bg-amber-500/10 text-amber-400 border-amber-500/20" },
-            ].map((action, i) => (
-              <Link key={i} href={action.href} className={`flex flex-col items-center justify-center p-4 rounded-3xl border transition-all hover:scale-105 active:scale-95 ${action.color}`}>
-                 <span className="text-2xl mb-2">{action.icon}</span>
-                 <span className="text-[9px] font-black uppercase tracking-widest text-center">{action.label}</span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </div>
+
     </div>
   );
 });

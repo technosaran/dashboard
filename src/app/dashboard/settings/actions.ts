@@ -31,6 +31,11 @@ export async function resetUserData() {
   revalidatePath("/dashboard/mutual-funds");
   revalidatePath("/dashboard/goals");
   revalidatePath("/dashboard/family");
+  revalidatePath("/dashboard/bonds");
+  revalidatePath("/dashboard/alternative-assets");
+  revalidatePath("/dashboard/liabilities");
+  revalidatePath("/dashboard/forex");
+  revalidatePath("/dashboard/budget");
   
   return { success: true };
 }

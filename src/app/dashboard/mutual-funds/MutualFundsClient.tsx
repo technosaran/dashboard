@@ -423,15 +423,15 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                           <td className="px-6 py-5 text-right font-medium tabular-nums text-[#666] text-[13px]">₹{Number(mf.avg_nav).toFixed(3)}</td>
                           <td className="px-6 py-5 text-right font-bold tabular-nums text-[#eee] text-[14px]">₹{Number(mf.current_nav).toFixed(3)}</td>
                            <td className="px-6 py-5 text-right tabular-nums">
-                               <PnLValue value={mf.day_change || 0} percentage={mf.day_change_percent || 0} size="md" />
+                               <PnLValue value={(mf.day_change || 0) * Number(mf.units || 0)} percentage={mf.day_change_percent || 0} size="md" />
                            </td>
                           <td className="px-6 py-5 text-right whitespace-nowrap">
                               <PnLValue value={pnl} percentage={pnlPercent} size="md" />
                           </td>
-                      </tr>
-                  );
-              })}
-            </tbody>
+                       </tr>
+                   );
+               })}
+             </tbody>
           </table>
         </div>
       ) : (

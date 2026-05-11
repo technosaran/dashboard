@@ -34,7 +34,9 @@ export async function addLiability(formData: {
       p_account_id: account_id,
       p_amount: formData.total_amount, // Positive because it's a loan received
       p_note: `Loan Disbursement: ${formData.name}`,
-      p_user_id: user.id
+      p_user_id: user.id,
+      p_source_id: liability.id,
+      p_source_type: "liability"
     });
     if (accErr) console.error("Balance adjustment failed:", accErr);
   }

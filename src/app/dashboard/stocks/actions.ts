@@ -171,36 +171,52 @@ export async function deleteInvestment(id: string) {
 
 const YAHOO_DOMAINS = [
   "query2.finance.yahoo.com",
-  "query1.finance.yahoo.com"
+  "query1.finance.yahoo.com",
+  "query.yahooapis.com"
 ];
 
 const USER_AGENTS = [
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-  "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+  "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1",
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0"
 ];
 
-async function fetchWithRetry(url: string, retries = 3): Promise<Response> {
+async function fetchWithRetry(url: string, retries = 5): Promise<Response> {
   let lastError: Error | null = null;
   for (let i = 0; i < retries; i++) {
     try {
       const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
       const res = await fetch(url, {
-        headers: { "User-Agent": userAgent },
+        headers: { 
+          "User-Agent": userAgent,
+          "Accept": "application/json",
+          "Accept-Language": "en-US,en;q=0.9",
+          "Cache-Control": "no-cache",
+          "Pragma": "no-cache"
+        },
         cache: "no-store",
         next: { revalidate: 0 }
       });
+      
       if (res.ok) return res;
+      
       if (res.status === 429) {
-        // Rate limited, wait longer
-        await new Promise(r => setTimeout(r, 1000 * (i + 1)));
+        // Linear backoff with jitter
+        const wait = 1000 * (i + 1) + Math.random() * 500;
+        await new Promise(r => setTimeout(r, wait));
+      } else if (res.status >= 500) {
+        await new Promise(r => setTimeout(r, 500));
+      } else {
+        throw new Error(`HTTP Error ${res.status}`);
       }
     } catch (e) {
       lastError = e as Error;
+      await new Promise(r => setTimeout(r, 500 * (i + 1)));
     }
-    await new Promise(r => setTimeout(r, 500 * i));
   }
-  throw lastError || new Error(`Failed to fetch ${url}`);
+  throw lastError || new Error(`Failed to fetch ${url} after ${retries} attempts`);
 }
 
 export async function getStockDetails(symbol: string, exchange: string = "NSE") {
