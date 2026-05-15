@@ -14,6 +14,7 @@ import type { RealtimeChannel, User } from "@supabase/supabase-js";
 
 type UserContextType = {
   username: string;
+  user_id: string | null;
   loading: boolean;
   isSyncing: boolean;
   setUsername: (name: string) => void;
@@ -21,6 +22,7 @@ type UserContextType = {
 
 const UserContext = createContext<UserContextType>({
   username: "",
+  user_id: null,
   loading: true,
   isSyncing: false,
   setUsername: () => {},
@@ -185,7 +187,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <UserContext.Provider value={{ username, loading, isSyncing, setUsername }}>
+    <UserContext.Provider value={{ username, user_id: currentUserId, loading, isSyncing, setUsername }}>
       {children}
     </UserContext.Provider>
   );

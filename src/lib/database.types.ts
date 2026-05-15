@@ -1377,6 +1377,12 @@ export type Database = {
         }
         Returns: Json
       }
+      get_summary_v1: { Args: Record<string, never>; Returns: Json }
+      get_investments_v1: { Args: Record<string, never>; Returns: Json }
+      get_cashflow_v1: { Args: Record<string, never>; Returns: Json }
+      get_forex_v1: { Args: Record<string, never>; Returns: Json }
+      get_family_v1: { Args: Record<string, never>; Returns: Json }
+      get_finance_overview_v2: { Args: Record<string, never>; Returns: Json }
       reset_user_data: { Args: { p_user_id: string }; Returns: Json }
       revert_ledger_log: {
         Args: { p_log_id: string; p_user_id: string }
@@ -1400,6 +1406,14 @@ export type Database = {
         | "ADJUST_DOWN"
         | "LOG_ONLY"
         | "SEND_MONEY"
+        | "SEND_MONEY_IN"
+        | "INVESTMENT_MF"
+        | "INVESTMENT_STOCK"
+        | "INVESTMENT_GOLD"
+        | "GOAL_INIT"
+        | "GOAL_CONTRIBUTION"
+        | "GOAL_WITHDRAWAL"
+        | "REVERSAL"
     }
     CompositeTypes: {
       [_ in never]: never

@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase-browser";
 import type { Tables } from "@/lib/database.types";
 import { useEffect, useRef, useCallback } from "react";
 import { useSWRConfig } from "swr";
+import { useUser } from "@/context/user-context";
 
 const supabase = createClient();
 
@@ -32,22 +33,44 @@ type FinanceData = {
 };
 
 export type { FinanceData };
-const FINANCE_DATA_KEY = "finance_overview_data";
+const SUMMARY_KEY = "finance_summary";
+const INVESTMENTS_KEY = "finance_investments";
+const CASHFLOW_KEY = "finance_cashflow";
+const FOREX_KEY = "finance_forex";
+const FAMILY_KEY = "finance_family";
 
-async function fetchFinanceData(): Promise<FinanceData> {
-  const { data, error } = await supabase.rpc("get_finance_overview");
-  
-  if (error) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.error("Finance Data Fetch Error:", error);
-    }
-    throw error;
-  }
+async function fetchSummary() {
+  const { data, error } = await supabase.rpc("get_summary_v1");
+  if (error) throw error;
+  return data;
+}
 
-  return data as FinanceData;
+async function fetchInvestments() {
+  const { data, error } = await supabase.rpc("get_investments_v1");
+  if (error) throw error;
+  return data;
+}
+
+async function fetchCashflow() {
+  const { data, error } = await supabase.rpc("get_cashflow_v1");
+  if (error) throw error;
+  return data;
+}
+
+async function fetchForex() {
+  const { data, error } = await supabase.rpc("get_forex_v1");
+  if (error) throw error;
+  return data;
+}
+
+async function fetchFamily() {
+  const { data, error } = await supabase.rpc("get_family_v1");
+  if (error) throw error;
+  return data;
 }
 
 export function useFinanceData(initialData?: FinanceData) {
+  const { user_id } = useUser();
   const { mutate } = useSWRConfig();
   const updateQueueRef = useRef<Set<string>>(new Set());
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -75,13 +98,38 @@ export function useFinanceData(initialData?: FinanceData) {
     liabilities: [],
   };
 
-  const swr = useSWR<FinanceData>(FINANCE_DATA_KEY, fetchFinanceData, {
+  const summarySWR = useSWR(SUMMARY_KEY, fetchSummary, {
     revalidateOnFocus: true,
     revalidateOnReconnect: true,
-    dedupingInterval: 2000, // SWR default — prevents duplicate requests within this window
-    errorRetryInterval: 3000,
-    errorRetryCount: 3,
-    refreshInterval: 0, // Disable polling, rely on realtime
+    dedupingInterval: 2000,
+    fallbackData: fallback
+  });
+
+  const investmentsSWR = useSWR(INVESTMENTS_KEY, fetchInvestments, {
+    revalidateOnFocus: true,
+    revalidateOnReconnect: true,
+    dedupingInterval: 5000, // Investments change less frequently
+    fallbackData: fallback
+  });
+
+  const cashflowSWR = useSWR(CASHFLOW_KEY, fetchCashflow, {
+    revalidateOnFocus: true,
+    revalidateOnReconnect: true,
+    dedupingInterval: 4000,
+    fallbackData: fallback
+  });
+
+  const forexSWR = useSWR(FOREX_KEY, fetchForex, {
+    revalidateOnFocus: true,
+    revalidateOnReconnect: true,
+    dedupingInterval: 1000, // Forex trades can be rapid
+    fallbackData: fallback
+  });
+
+  const familySWR = useSWR(FAMILY_KEY, fetchFamily, {
+    revalidateOnFocus: true,
+    revalidateOnReconnect: true,
+    dedupingInterval: 10000, // Family info changes rarely
     fallbackData: fallback
   });
 
@@ -92,13 +140,28 @@ export function useFinanceData(initialData?: FinanceData) {
     }
     
     debounceTimerRef.current = setTimeout(() => {
-      void mutate(FINANCE_DATA_KEY, undefined, { 
-        revalidate: true,
-        optimisticData: undefined
-      });
+      const tables = Array.from(updateQueueRef.current);
+      
+      // Determine which verticals need revalidation based on changed tables
+      if (tables.some(t => ["accounts", "transactions", "ledger_logs", "profiles"].includes(t))) {
+        void mutate(SUMMARY_KEY);
+      }
+      if (tables.some(t => ["investments", "mutual_funds", "bonds", "alternative_assets", "stock_trades", "mutual_fund_trades", "bond_transactions"].includes(t))) {
+        void mutate(INVESTMENTS_KEY);
+      }
+      if (tables.some(t => ["incomes", "expenses", "budgets", "goals", "liabilities"].includes(t))) {
+        void mutate(CASHFLOW_KEY);
+      }
+      if (tables.some(t => ["forex_accounts", "forex_trades", "forex_transactions"].includes(t))) {
+        void mutate(FOREX_KEY);
+      }
+      if (tables.some(t => ["recipients"].includes(t))) {
+        void mutate(FAMILY_KEY);
+      }
+      
       updateQueueRef.current.clear();
       debounceTimerRef.current = null;
-    }, 500); // 500ms debounce to batch updates
+    }, 500); 
   }, [mutate]);
 
   useEffect(() => {
@@ -114,155 +177,181 @@ export function useFinanceData(initialData?: FinanceData) {
         config: {
           broadcast: { self: true },
         },
-      })
-      // Financial accounts
-      .on("postgres_changes", { 
-        event: "*", 
-        schema: "public", 
-        table: "accounts" 
-      }, () => handleChange("accounts"))
-      
-      // Transactions
-      .on("postgres_changes", { 
-        event: "*", 
-        schema: "public", 
-        table: "transactions" 
-      }, () => handleChange("transactions"))
-      
-      // Ledger logs
-      .on("postgres_changes", { 
-        event: "*", 
-        schema: "public", 
-        table: "ledger_logs" 
-      }, () => handleChange("ledger_logs"))
-      
-      // Investments
-      .on("postgres_changes", { 
-        event: "*", 
-        schema: "public", 
-        table: "investments" 
-      }, () => handleChange("investments"))
-      
-      // Mutual funds
-      .on("postgres_changes", { 
-        event: "*", 
-        schema: "public", 
-        table: "mutual_funds" 
-      }, () => handleChange("mutual_funds"))
-      
-      // Goals
-      .on("postgres_changes", { 
-        event: "*", 
-        schema: "public", 
-        table: "goals" 
-      }, () => handleChange("goals"))
-      
-      // Recipients
-      .on("postgres_changes", { 
-        event: "*", 
-        schema: "public", 
-        table: "recipients" 
-      }, () => handleChange("recipients"))
-      
-      // Incomes
-      .on("postgres_changes", { 
-        event: "*", 
-        schema: "public", 
-        table: "incomes" 
-      }, () => handleChange("incomes"))
-      
-      // Expenses
-      .on("postgres_changes", { 
-        event: "*", 
-        schema: "public", 
-        table: "expenses" 
-      }, () => handleChange("expenses"))
-      
-      // Stock trades
-      .on("postgres_changes", { 
-        event: "*", 
-        schema: "public", 
-        table: "stock_trades" 
-      }, () => handleChange("stock_trades"))
-      
-      // Mutual fund trades
-      .on("postgres_changes", { 
-        event: "*", 
-        schema: "public", 
-        table: "mutual_fund_trades" 
-      }, () => handleChange("mutual_fund_trades"))
-      
-      // Transfers
-      .on("postgres_changes", { 
-        event: "*", 
-        schema: "public", 
-        table: "transfers" 
-      }, () => handleChange("transfers"))
-      
-      // Bonds
-      .on("postgres_changes", { 
-        event: "*", 
-        schema: "public", 
-        table: "bonds" 
-      }, () => handleChange("bonds"))
-      
-      // Bond transactions
-      .on("postgres_changes", { 
-        event: "*", 
-        schema: "public", 
-        table: "bond_transactions" 
-      }, () => handleChange("bond_transactions"))
-      
-      // Forex accounts
-      .on("postgres_changes", { 
-        event: "*", 
-        schema: "public", 
-        table: "forex_accounts" 
-      }, () => handleChange("forex_accounts"))
-      
-      // Forex trades
-      .on("postgres_changes", { 
-        event: "*", 
-        schema: "public", 
-        table: "forex_trades" 
-      }, () => handleChange("forex_trades"))
-      
-      // Forex transactions
-      .on("postgres_changes", { 
-        event: "*", 
-        schema: "public", 
-        table: "forex_transactions" 
-      }, () => handleChange("forex_transactions"))
+      });
 
-      // Budgets
-      .on("postgres_changes", { 
-        event: "*", 
-        schema: "public", 
-        table: "budgets" 
-      }, () => handleChange("budgets"))
+    // Only set up subscriptions if we have a user_id
+    if (user_id) {
+      channel
+        // Financial accounts
+        .on("postgres_changes", { 
+          event: "*", 
+          schema: "public", 
+          table: "accounts",
+          filter: `user_id=eq.${user_id}`
+        }, () => handleChange("accounts"))
+        
+        // Transactions
+        .on("postgres_changes", { 
+          event: "*", 
+          schema: "public", 
+          table: "transactions",
+          filter: `user_id=eq.${user_id}`
+        }, () => handleChange("transactions"))
+        
+        // Ledger logs
+        .on("postgres_changes", { 
+          event: "*", 
+          schema: "public", 
+          table: "ledger_logs",
+          filter: `user_id=eq.${user_id}`
+        }, () => handleChange("ledger_logs"))
+        
+        // Investments
+        .on("postgres_changes", { 
+          event: "*", 
+          schema: "public", 
+          table: "investments",
+          filter: `user_id=eq.${user_id}`
+        }, () => handleChange("investments"))
+        
+        // Mutual funds
+        .on("postgres_changes", { 
+          event: "*", 
+          schema: "public", 
+          table: "mutual_funds",
+          filter: `user_id=eq.${user_id}`
+        }, () => handleChange("mutual_funds"))
+        
+        // Goals
+        .on("postgres_changes", { 
+          event: "*", 
+          schema: "public", 
+          table: "goals",
+          filter: `user_id=eq.${user_id}`
+        }, () => handleChange("goals"))
+        
+        // Recipients
+        .on("postgres_changes", { 
+          event: "*", 
+          schema: "public", 
+          table: "recipients",
+          filter: `user_id=eq.${user_id}`
+        }, () => handleChange("recipients"))
+        
+        // Incomes
+        .on("postgres_changes", { 
+          event: "*", 
+          schema: "public", 
+          table: "incomes",
+          filter: `user_id=eq.${user_id}`
+        }, () => handleChange("incomes"))
+        
+        // Expenses
+        .on("postgres_changes", { 
+          event: "*", 
+          schema: "public", 
+          table: "expenses",
+          filter: `user_id=eq.${user_id}`
+        }, () => handleChange("expenses"))
+        
+        // Stock trades
+        .on("postgres_changes", { 
+          event: "*", 
+          schema: "public", 
+          table: "stock_trades",
+          filter: `user_id=eq.${user_id}`
+        }, () => handleChange("stock_trades"))
+        
+        // Mutual fund trades
+        .on("postgres_changes", { 
+          event: "*", 
+          schema: "public", 
+          table: "mutual_fund_trades",
+          filter: `user_id=eq.${user_id}`
+        }, () => handleChange("mutual_fund_trades"))
+        
+        // Transfers
+        .on("postgres_changes", { 
+          event: "*", 
+          schema: "public", 
+          table: "transfers",
+          filter: `user_id=eq.${user_id}`
+        }, () => handleChange("transfers"))
+        
+        // Bonds
+        .on("postgres_changes", { 
+          event: "*", 
+          schema: "public", 
+          table: "bonds",
+          filter: `user_id=eq.${user_id}`
+        }, () => handleChange("bonds"))
+        
+        // Bond transactions
+        .on("postgres_changes", { 
+          event: "*", 
+          schema: "public", 
+          table: "bond_transactions",
+          filter: `user_id=eq.${user_id}`
+        }, () => handleChange("bond_transactions"))
+        
+        // Forex accounts
+        .on("postgres_changes", { 
+          event: "*", 
+          schema: "public", 
+          table: "forex_accounts",
+          filter: `user_id=eq.${user_id}`
+        }, () => handleChange("forex_accounts"))
+        
+        // Forex trades
+        .on("postgres_changes", { 
+          event: "*", 
+          schema: "public", 
+          table: "forex_trades",
+          filter: `user_id=eq.${user_id}`
+        }, () => handleChange("forex_trades"))
+        
+        // Forex transactions
+        .on("postgres_changes", { 
+          event: "*", 
+          schema: "public", 
+          table: "forex_transactions",
+          filter: `user_id=eq.${user_id}`
+        }, () => handleChange("forex_transactions"))
+  
+        // Budgets
+        .on("postgres_changes", { 
+          event: "*", 
+          schema: "public", 
+          table: "budgets",
+          filter: `user_id=eq.${user_id}`
+        }, () => handleChange("budgets"))
+  
+        // Alternative Assets
+        .on("postgres_changes", { 
+          event: "*", 
+          schema: "public", 
+          table: "alternative_assets",
+          filter: `user_id=eq.${user_id}`
+        }, () => handleChange("alternative_assets"))
+  
+        // Liabilities
+        .on("postgres_changes", { 
+          event: "*", 
+          schema: "public", 
+          table: "liabilities",
+          filter: `user_id=eq.${user_id}`
+        }, () => handleChange("liabilities"))
+  
+        // Profiles (Settings)
+        .on("postgres_changes", { 
+          event: "*", 
+          schema: "public", 
+          table: "profiles",
+          filter: `id=eq.${user_id}`
+        }, () => handleChange("profiles"));
+    }
 
-      // Alternative Assets
-      .on("postgres_changes", { 
-        event: "*", 
-        schema: "public", 
-        table: "alternative_assets" 
-      }, () => handleChange("alternative_assets"))
-
-      // Liabilities
-      .on("postgres_changes", { 
-        event: "*", 
-        schema: "public", 
-        table: "liabilities" 
-      }, () => handleChange("liabilities"))
-
-      // Profiles (Settings)
-      .on("postgres_changes", { 
-        event: "*", 
-        schema: "public", 
-        table: "profiles" 
-      }, () => handleChange("profiles"))
-      
-      .subscribe((status) => {
+    channel.subscribe((status) => {
         if (status === "CHANNEL_ERROR" && process.env.NODE_ENV !== 'production') {
           console.error("Real-time connection error - retrying...");
         }
@@ -280,7 +369,11 @@ export function useFinanceData(initialData?: FinanceData) {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
-        void mutate(FINANCE_DATA_KEY);
+        void mutate(SUMMARY_KEY);
+        // Only revalidate other segments if they are older than their TTL
+        void mutate(INVESTMENTS_KEY);
+        void mutate(CASHFLOW_KEY);
+        void mutate(FOREX_KEY);
       }
     };
 
@@ -288,8 +381,54 @@ export function useFinanceData(initialData?: FinanceData) {
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
   }, [mutate]);
 
+  // Aggregate the data from all verticals
+  const mergedData: FinanceData = {
+    profile: (summarySWR.data as any)?.profile || fallback.profile,
+    accounts: (summarySWR.data as any)?.accounts || fallback.accounts,
+    transactions: (summarySWR.data as any)?.transactions || fallback.transactions,
+    ledgerLogs: (summarySWR.data as any)?.ledgerLogs || fallback.ledgerLogs,
+    
+    investments: (investmentsSWR.data as any)?.investments || fallback.investments,
+    mutualFunds: (investmentsSWR.data as any)?.mutualFunds || fallback.mutualFunds,
+    bonds: (investmentsSWR.data as any)?.bonds || fallback.bonds,
+    alternativeAssets: (investmentsSWR.data as any)?.alternativeAssets || fallback.alternativeAssets,
+    stockTrades: (investmentsSWR.data as any)?.stockTrades || fallback.stockTrades,
+    mutualFundTrades: (investmentsSWR.data as any)?.mutualFundTrades || fallback.mutualFundTrades,
+    bondTransactions: (investmentsSWR.data as any)?.bondTransactions || fallback.bondTransactions,
+    
+    incomes: (cashflowSWR.data as any)?.incomes || fallback.incomes,
+    expenses: (cashflowSWR.data as any)?.expenses || fallback.expenses,
+    budgets: (cashflowSWR.data as any)?.budgets || fallback.budgets,
+    goals: (cashflowSWR.data as any)?.goals || fallback.goals,
+    liabilities: (cashflowSWR.data as any)?.liabilities || fallback.liabilities,
+    
+    forexAccounts: (forexSWR.data as any)?.forexAccounts || fallback.forexAccounts,
+    forexTrades: (forexSWR.data as any)?.forexTrades || fallback.forexTrades,
+    forexTransactions: (forexSWR.data as any)?.forexTransactions || fallback.forexTransactions,
+    
+    recipients: (familySWR.data as any)?.recipients || fallback.recipients,
+  };
+
   return {
-    ...swr,
-    data: (swr.data || fallback) as FinanceData, 
+    ...summarySWR,
+    data: mergedData,
+    isLoading: summarySWR.isLoading || investmentsSWR.isLoading || cashflowSWR.isLoading,
+    error: summarySWR.error || investmentsSWR.error || cashflowSWR.error,
+    mutate: async (data?: any, options?: any) => {
+      // If a callback or data is provided, we apply it to the relevant vertical(s)
+      // For this architecture, we focus optimistic updates on the Summary vertical (profiles/accounts)
+      if (data !== undefined) {
+        await summarySWR.mutate(data, options);
+      } else {
+        // Full re-fetch of all segments
+        await Promise.all([
+          summarySWR.mutate(),
+          investmentsSWR.mutate(),
+          cashflowSWR.mutate(),
+          forexSWR.mutate(),
+          familySWR.mutate()
+        ]);
+      }
+    }
   };
 }

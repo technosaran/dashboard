@@ -24,7 +24,7 @@ export default async function DashboardPage() {
   }
 
   // Prefetch data on the server for "0 latency" initial load
-  const { data: initialData } = await supabase.rpc("get_finance_overview");
+  const { data: initialData } = await supabase.rpc("get_finance_overview_v2");
 
   return (
     <DashboardClient initialData={(initialData as unknown as FinanceData) || undefined} />
