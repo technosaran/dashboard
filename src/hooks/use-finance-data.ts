@@ -38,7 +38,9 @@ async function fetchFinanceData(): Promise<FinanceData> {
   const { data, error } = await supabase.rpc("get_finance_overview");
   
   if (error) {
-    console.error("Finance Data Fetch Error:", error);
+    if (process.env.NODE_ENV !== 'production') {
+      console.error("Finance Data Fetch Error:", error);
+    }
     throw error;
   }
 
@@ -76,7 +78,7 @@ export function useFinanceData(initialData?: FinanceData) {
   const swr = useSWR<FinanceData>(FINANCE_DATA_KEY, fetchFinanceData, {
     revalidateOnFocus: true,
     revalidateOnReconnect: true,
-    dedupingInterval: 500, // Increased to reduce rapid updates
+    dedupingInterval: 2000, // SWR default — prevents duplicate requests within this window
     errorRetryInterval: 3000,
     errorRetryCount: 3,
     refreshInterval: 0, // Disable polling, rely on realtime
@@ -261,27 +263,12 @@ export function useFinanceData(initialData?: FinanceData) {
       }, () => handleChange("profiles"))
       
       .subscribe((status) => {
-        if (status === "SUBSCRIBED") {
-          console.log("✅ Real-time sync active - Zero latency mode");
-        }
-        if (status === "CHANNEL_ERROR") {
-          console.error("❌ Real-time connection error - retrying...");
+        if (status === "CHANNEL_ERROR" && process.env.NODE_ENV !== 'production') {
+          console.error("Real-time connection error - retrying...");
         }
       });
 
-    // Heartbeat to keep connection alive
-    const heartbeat = setInterval(() => {
-      if (channel.state === "joined") {
-        void channel.send({
-          type: "broadcast",
-          event: "heartbeat",
-          payload: { timestamp: Date.now() },
-        });
-      }
-    }, 30000); // Every 30 seconds
-
     return () => {
-      clearInterval(heartbeat);
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }

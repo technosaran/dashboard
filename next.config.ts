@@ -16,6 +16,15 @@ const nextConfig: NextConfig = {
   // Build optimizations
   productionBrowserSourceMaps: false,
 
+  // Static redirect: root → dashboard (no force-dynamic needed)
+  redirects: async () => [
+    {
+      source: "/",
+      destination: "/dashboard",
+      permanent: false,
+    },
+  ],
+
   // Security headers
   headers: async () => [
     {
@@ -25,6 +34,24 @@ const nextConfig: NextConfig = {
         { key: "X-Frame-Options", value: "DENY" },
         { key: "X-Content-Type-Options", value: "nosniff" },
         { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+        {
+          key: "Permissions-Policy",
+          value: "camera=(), microphone=(), geolocation=(), payment=(self)",
+        },
+        {
+          key: "Content-Security-Policy",
+          value: [
+            "default-src 'self'",
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+            "font-src 'self' https://fonts.gstatic.com",
+            "img-src 'self' data: blob: https://logos.hunter.io https://companyenrich.com https://www.google.com https://icons.duckduckgo.com",
+            `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://query1.finance.yahoo.com https://query2.finance.yahoo.com https://query.yahooapis.com`,
+            "frame-ancestors 'none'",
+            "base-uri 'self'",
+            "form-action 'self'",
+          ].join("; "),
+        },
       ],
     },
     {

@@ -40,7 +40,12 @@ export async function resetUserData() {
   return { success: true };
 }
 
-export async function updateSettings(settings: any) {
+type ProfileSettings = {
+  enabled_modules?: string[];
+  [key: string]: string | number | boolean | null | string[] | undefined;
+};
+
+export async function updateSettings(settings: ProfileSettings) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };

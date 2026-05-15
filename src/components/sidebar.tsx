@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
 import { useEffect, useState, useMemo } from "react";
 import { useFinanceData } from "@/hooks/use-finance-data";
+import { MODULE_KEYS, MODULE_DISPLAY_LABELS } from "@/lib/modules";
+import type { ModuleKey } from "@/lib/modules";
 
 const nav = [
   {
@@ -176,15 +178,13 @@ export default function Sidebar() {
   const [isQuickActionOpen, setIsQuickActionOpen] = useState(false);
 
   const enabledModules = useMemo(() => {
-    return profile?.settings?.enabled_modules || [
-      "Income", "Expenses", "Budget", "Stocks", "Mutual Funds", "Alt Assets", "Bonds", "Liabilities", "Goals", "Family", "Forex", "Ledger"
-    ];
+    return profile?.settings?.enabled_modules || [...MODULE_KEYS];
   }, [profile]);
 
   const filteredNav = useMemo(() => {
     return nav.filter(item => {
       if (["Dashboard", "Accounts", "Settings"].includes(item.label)) return true;
-      const dbLabel = item.label === "Assets" ? "Alt Assets" : item.label === "Loans" ? "Liabilities" : item.label;
+      const dbLabel: ModuleKey | string = item.label === "Assets" ? "Alt Assets" : item.label === "Loans" ? "Liabilities" : item.label;
       return enabledModules.includes(dbLabel);
     });
   }, [enabledModules]);

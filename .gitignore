@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# audit/debug artifacts
+AUDIT_*.md
+FIXES_*.md
+FINAL_COMPLETION_SUMMARY.md
+eslint-output.txt
+eslint-check.txt
+knip-output.txt

@@ -12,7 +12,7 @@ export function createClient() {
     {
       realtime: {
         params: {
-          eventsPerSecond: 100, // Increased from 10 to 100 for faster updates
+          eventsPerSecond: 10, // Supabase default — matches free/pro tier server-side limit
         },
         heartbeatIntervalMs: 15000, // More frequent keepalive for stable connection
       },
@@ -28,6 +28,13 @@ export function createClient() {
       },
     }
   );
+
+  // Clear singleton on sign-out to prevent stale session leaks
+  client.auth.onAuthStateChange((event) => {
+    if (event === 'SIGNED_OUT') {
+      client = null;
+    }
+  });
   
   return client;
 }

@@ -5,6 +5,8 @@ import { useUser } from "@/context/user-context";
 import { resetUserData, updateSettings } from "./actions";
 import { toast } from "react-hot-toast";
 import { useFinanceData } from "@/hooks/use-finance-data";
+import type { FinanceData } from "@/hooks/use-finance-data";
+import { MODULE_KEYS, MODULE_DISPLAY_LABELS } from "@/lib/modules";
 
 export default function SettingsPage() {
   const { username, setUsername, loading, isSyncing } = useUser();
@@ -14,6 +16,12 @@ export default function SettingsPage() {
   const [prevUsername, setPrevUsername] = useState(username);
   const [prevLoading, setPrevLoading] = useState(loading);
   const prevIsSyncingRef = useRef(false);
+
+  // Reset confirmation state
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [resetConfirmText, setResetConfirmText] = useState("");
+  const [resetCountdown, setResetCountdown] = useState(0);
+  const [isResetting, setIsResetting] = useState(false);
 
   // Sync internal input state during render to avoid cascading renders in useEffect
   if (loading !== prevLoading) {
@@ -62,13 +70,31 @@ export default function SettingsPage() {
     return () => clearTimeout(t);
   }, [input, username, setUsername, loading]);
 
-  const handleReset = async () => {
-    const isConfirmed = confirm(
-      "WARNING: This will permanently delete ALL your financial data, accounts, and history. This action cannot be undone. Proceed?",
-    );
+  // 3-second countdown after typing RESET
+  useEffect(() => {
+    if (resetConfirmText === "RESET" && resetCountdown === 0) {
+      setResetCountdown(3);
+    }
+  }, [resetConfirmText, resetCountdown]);
 
-    if (!isConfirmed) return;
+  useEffect(() => {
+    if (resetCountdown <= 0) return;
+    const timer = setTimeout(() => {
+      setResetCountdown((prev) => prev - 1);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [resetCountdown]);
 
+  const handleResetClick = () => {
+    setShowResetModal(true);
+    setResetConfirmText("");
+    setResetCountdown(0);
+  };
+
+  const handleResetConfirm = async () => {
+    if (resetConfirmText !== "RESET" || resetCountdown > 0) return;
+
+    setIsResetting(true);
     const toastId = toast.loading("Executing full data erasure...");
     try {
       const result = await resetUserData();
@@ -85,23 +111,25 @@ export default function SettingsPage() {
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Unknown error";
       toast.error(`A system error occurred: ${message}`, { id: toastId });
+    } finally {
+      setIsResetting(false);
+      setShowResetModal(false);
     }
   };
 
-  const ALL_MODULES = [
-    "Income", "Expenses", "Budget", "Stocks", "Mutual Funds", "Alt Assets", "Bonds", "Liabilities", "Goals", "Family", "Forex", "Ledger"
-  ];
-
-  const enabledModules = profile?.settings?.enabled_modules || ALL_MODULES;
+  const enabledModules = profile?.settings?.enabled_modules || [...MODULE_KEYS];
 
   const toggleModule = async (module: string) => {
     const newModules = enabledModules.includes(module)
-      ? enabledModules.filter(m => m !== module)
+      ? enabledModules.filter((m: string) => m !== module)
       : [...enabledModules, module];
     
     // Optimistic update
-    const optimisticProfile = { ...profile, settings: { ...profile?.settings, enabled_modules: newModules } };
-    mutate((prev: any) => ({ ...prev, profile: optimisticProfile }), false);
+    const optimisticProfile = { 
+      username: profile?.username || "", 
+      settings: { ...profile?.settings, enabled_modules: newModules } 
+    };
+    mutate((prev: FinanceData | undefined) => prev ? { ...prev, profile: optimisticProfile } : prev, false);
 
     const res = await updateSettings({ ...profile?.settings, enabled_modules: newModules });
     if (res.error) {
@@ -112,6 +140,8 @@ export default function SettingsPage() {
       mutate(); // full re-fetch to be sure
     }
   };
+
+  const canExecuteReset = resetConfirmText === "RESET" && resetCountdown <= 0 && !isResetting;
 
   return (
     <div className="flex flex-col gap-[var(--section-gap)] animate-fade-in">
@@ -250,8 +280,8 @@ export default function SettingsPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-             {ALL_MODULES.map(module => {
-               const displayLabel = module === "Alt Assets" ? "Assets" : module === "Liabilities" ? "Loans" : module;
+             {MODULE_KEYS.map(module => {
+               const displayLabel = MODULE_DISPLAY_LABELS[module];
                return (
                 <div key={module} className={`p-4 rounded-2xl border transition-all flex items-center justify-between ${enabledModules.includes(module) ? 'bg-white/[0.03] border-white/10' : 'bg-black/20 border-white/5 opacity-60'}`}>
                    <div className="flex items-center gap-3">
@@ -318,7 +348,7 @@ export default function SettingsPage() {
               </p>
             </div>
             <button
-              onClick={handleReset}
+              onClick={handleResetClick}
               className="btn-danger !h-11 !px-6 whitespace-nowrap shadow-xl shadow-rose-500/20"
             >
               Reset All Data
@@ -326,6 +356,75 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
+
+      {/* Reset Confirmation Modal */}
+      {showResetModal && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.8)", backdropFilter: "blur(8px)" }}
+          onClick={() => setShowResetModal(false)}
+        >
+          <div
+            className="glass-card-static p-8 max-w-md w-full animate-fade-in-up"
+            style={{ background: "var(--bg-surface)", border: "1px solid rgba(239, 68, 68, 0.2)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center">
+                <svg className="w-6 h-6 text-rose-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-rose-500">Confirm Data Reset</h3>
+                <p className="text-xs text-[--text-muted]">This action is irreversible</p>
+              </div>
+            </div>
+
+            <p className="text-sm text-[--text-secondary] mb-6 leading-relaxed">
+              This will permanently delete <strong className="text-white">all</strong> your financial data,
+              accounts, transactions, and investment history. This action <strong className="text-rose-400">cannot be undone</strong>.
+            </p>
+
+            <div className="mb-6">
+              <label className="block text-xs font-black uppercase tracking-widest text-[--text-muted] mb-2">
+                Type <span className="text-rose-400">RESET</span> to confirm
+              </label>
+              <input
+                type="text"
+                value={resetConfirmText}
+                onChange={(e) => setResetConfirmText(e.target.value)}
+                className="input-premium h-12 text-sm font-bold"
+                placeholder='Type "RESET" here'
+                autoFocus
+                autoComplete="off"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowResetModal(false)}
+                className="flex-1 h-12 rounded-xl border border-white/10 bg-white/5 text-sm font-bold text-[--text-primary] hover:bg-white/10 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleResetConfirm}
+                disabled={!canExecuteReset}
+                className="flex-1 h-12 rounded-xl bg-rose-500 text-white text-sm font-black uppercase tracking-wider transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:bg-rose-600 shadow-lg shadow-rose-500/20"
+              >
+                {isResetting
+                  ? "Erasing..."
+                  : resetCountdown > 0
+                  ? `Wait ${resetCountdown}s...`
+                  : resetConfirmText !== "RESET"
+                  ? "Type RESET"
+                  : "Erase All Data"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

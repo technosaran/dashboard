@@ -26,7 +26,7 @@ export async function proxy(request: NextRequest) {
   );
 
   // ── Optimized & Secure User Check ────────────────────────
-  // getUser() is the secure way to verify user auth in Proxy
+  // getUser() is the secure way to verify user auth in middleware
   const { data: { user } } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;

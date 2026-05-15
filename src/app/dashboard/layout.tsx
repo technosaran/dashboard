@@ -42,7 +42,6 @@ export default function DashboardLayout({
             {children}
           </div>
         </main>
-        {/* QuickActions disabled in favor of Mobile Hub */}
       </div>
     </UserProvider>
   );

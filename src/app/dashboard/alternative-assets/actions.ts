@@ -46,7 +46,16 @@ export async function addAlternativeAsset(formData: {
   return { success: true };
 }
 
-export async function updateAlternativeAsset(id: string, formData: any) {
+type AlternativeAssetUpdate = {
+  name?: string;
+  category?: string;
+  purchase_price?: number;
+  current_value?: number;
+  purchase_date?: string | null;
+  notes?: string | null;
+};
+
+export async function updateAlternativeAsset(id: string, formData: AlternativeAssetUpdate) {
   const supabase = await createClient();
   const { error } = await supabase
     .from("alternative_assets")

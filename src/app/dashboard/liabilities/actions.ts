@@ -47,7 +47,18 @@ export async function addLiability(formData: {
   return { success: true };
 }
 
-export async function updateLiability(id: string, formData: any) {
+type LiabilityUpdate = {
+  name?: string;
+  category?: string;
+  total_amount?: number;
+  remaining_amount?: number;
+  interest_rate?: number | null;
+  monthly_payment?: number | null;
+  due_date?: string | null;
+  notes?: string | null;
+};
+
+export async function updateLiability(id: string, formData: LiabilityUpdate) {
   const supabase = await createClient();
   const { error } = await supabase
     .from("liabilities")

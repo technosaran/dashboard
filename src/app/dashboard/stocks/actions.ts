@@ -317,8 +317,15 @@ export async function refreshAllPrices() {
     const quotes = data.quoteResponse.result;
     const results: { id: string; success?: boolean; error?: string }[] = [];
 
+    interface YahooQuoteResult {
+      symbol: string;
+      regularMarketPrice: number;
+      regularMarketPreviousClose?: number;
+      marketState?: string;
+    }
+
     // Atomic update for each stock
-    await Promise.all(quotes.map(async (quote: any) => {
+    await Promise.all(quotes.map(async (quote: YahooQuoteResult) => {
       const symbolBase = quote.symbol.split(".")[0];
       const matchingStock = stocks.find(s => s.symbol === symbolBase || s.symbol === quote.symbol);
       
