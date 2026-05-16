@@ -37,10 +37,10 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, isVal
         <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-emerald-500/5 blur-3xl rounded-full" />
         
         <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[--text-muted] mb-3">Portfolio Net Worth</p>
-        <h2 className="text-5xl font-black text-white tracking-tighter mb-2 bg-gradient-to-b from-white to-white/60 bg-clip-text text-transparent">
+        <h2 className="text-[clamp(2.5rem,12vw,3.5rem)] font-[900] text-white tracking-tighter mb-2 bg-gradient-to-b from-white to-white/60 bg-clip-text text-transparent break-all leading-tight">
            ₹{stats.totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0 })}
         </h2>
-        <div className={`flex items-center gap-2 mb-6 ${stats.totalDayPnL >= 0 ? 'text-emerald-400' : 'text-rose-500'}`}>
+        <div className={`flex items-center gap-2 mb-6 flex-wrap justify-center ${stats.totalDayPnL >= 0 ? 'text-emerald-400' : 'text-rose-500'}`}>
           <span className="text-[12px] font-black tabular-nums">
             {stats.totalDayPnL >= 0 ? '+' : '-'}₹{Math.abs(stats.totalDayPnL).toLocaleString()}
           </span>
@@ -50,12 +50,12 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, isVal
         </div>
 
         <div className="grid grid-cols-2 gap-4 w-full pt-6 border-t border-white/5">
-           <div className="flex flex-col items-center bg-white/5 py-3 rounded-2xl border border-white/5">
-             <span className="text-[11px] font-black text-emerald-400">+₹{stats.totalAssets.toLocaleString()}</span>
+           <div className="flex flex-col items-center bg-white/5 py-3 rounded-2xl border border-white/5 overflow-hidden">
+             <span className="text-[clamp(9px,3vw,11px)] font-black text-emerald-400 truncate w-full px-1">+₹{stats.totalAssets.toLocaleString()}</span>
              <span className="text-[8px] text-[--text-muted] uppercase font-black tracking-widest mt-1">Total Assets</span>
            </div>
-           <div className="flex flex-col items-center bg-white/5 py-3 rounded-2xl border border-white/5">
-             <span className="text-[11px] font-black text-rose-500">-₹{stats.debtBalance.toLocaleString()}</span>
+           <div className="flex flex-col items-center bg-white/5 py-3 rounded-2xl border border-white/5 overflow-hidden">
+             <span className="text-[clamp(9px,3vw,11px)] font-black text-rose-500 truncate w-full px-1">-₹{stats.debtBalance.toLocaleString()}</span>
              <span className="text-[8px] text-[--text-muted] uppercase font-black tracking-widest mt-1">Total Debt</span>
            </div>
         </div>

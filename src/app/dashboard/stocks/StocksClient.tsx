@@ -439,9 +439,9 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
       {/* ── Content View ── */}
       {activeTab === "holdings" ? (
         filtered.length > 0 ? (
-          <div className="w-full mt-4 overflow-hidden">
+          <div className="w-full mt-4 overflow-x-auto custom-scrollbar">
             {/* Desktop Table */}
-            <table className="hidden md:table w-full text-left border-collapse">
+            <table className="hidden md:table w-full text-left border-collapse min-w-[1000px]">
               <thead>
                 <tr className="border-b border-white/5 bg-white/[0.01] text-[9px] text-[--text-muted] uppercase font-black tracking-widest">
                   <th className="py-4 px-6 font-black transition-colors cursor-pointer hover:text-[--text-primary] group" onClick={() => handleSort("name")}>
@@ -533,11 +533,11 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                              </div>
                           </div>
                        </div>
-                       <div className="grid grid-cols-2 gap-y-4 border-t border-white/5 pt-4 mb-4">
-                          <div><p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-1">Holding</p><p className="text-[13px] font-black">{inv.quantity} <span className="opacity-40 font-bold ml-1">@ ₹{formatNum(inv.buy_price)}</span></p></div>
-                          <div className="text-right"><p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-1">Current Value</p><p className="text-[13px] font-black">₹{formatNum(currentVal)}</p></div>
-                          <div><p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-1">LTP</p><p className="text-[13px] font-black">₹{formatNum(inv.current_price)}</p></div>
-                          <div className="text-right">
+                       <div className="grid grid-cols-2 gap-y-4 border-t border-white/5 pt-4 mb-4 overflow-hidden">
+                          <div className="overflow-hidden"><p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-1">Holding</p><p className="text-[13px] font-black truncate">{inv.quantity} <span className="opacity-40 font-bold ml-1">@ ₹{formatNum(inv.buy_price)}</span></p></div>
+                          <div className="text-right overflow-hidden"><p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-1">Current Value</p><p className="text-[13px] font-black truncate">₹{formatNum(currentVal)}</p></div>
+                          <div className="overflow-hidden"><p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-1">LTP</p><p className="text-[13px] font-black truncate">₹{formatNum(inv.current_price)}</p></div>
+                          <div className="text-right overflow-hidden">
                              <p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-1">Day Return</p>
                              <div className="flex flex-col items-end">
                                 <p className={`text-[13px] font-black ${inv.day_change !== null && inv.day_change >= 0 ? "text-success" : "text-danger"}`}>

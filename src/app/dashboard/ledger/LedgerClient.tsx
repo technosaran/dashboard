@@ -249,8 +249,8 @@ export default function LedgerClient() {
       </div>
 
       <div className="glass-card-static overflow-hidden">
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+        <div className="hidden md:block overflow-x-auto custom-scrollbar">
+          <table className="w-full text-left border-collapse min-w-[1100px]">
             <thead>
               <tr className="bg-white/[0.02] border-b border-white/5">
                 <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Timestamp</th>

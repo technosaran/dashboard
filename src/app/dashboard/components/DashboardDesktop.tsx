@@ -118,7 +118,7 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, isL
                   Portfolio Net Worth {isLoading && <span className="text-[10px] lowercase italic">(loading...)</span>}
                 </span>
               </div>
-              <div className="flex items-baseline gap-4">
+              <div className="flex items-baseline gap-4 flex-wrap">
                 <h2 className="bg-gradient-to-r from-white via-white to-[--text-secondary] bg-clip-text text-[clamp(2.5rem,10vw,4rem)] font-[900] leading-none tracking-[-0.05em] text-transparent drop-shadow-[0_10px_30px_rgba(108,92,231,0.2)] [font-family:'Outfit',sans-serif]">
                   ₹{stats.totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0 })}
                 </h2>
@@ -155,14 +155,14 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, isL
                     <div className="w-1/2 space-y-2">
                       <p className="text-[10px] font-bold uppercase tracking-widest text-[--text-muted] mb-3">Portfolio Allocation</p>
                       {portfolioData.map((item) => (
-                        <div key={item.name} className="flex justify-between items-center group">
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full" style={{ background: item.color }} />
-                            <span className="text-[10px] font-bold text-[--text-secondary] truncate max-w-[80px]">{item.name}</span>
+                        <div key={item.name} className="flex justify-between items-center group gap-2 min-w-0">
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: item.color }} />
+                            <span className="text-[10px] font-bold text-[--text-secondary] truncate">{item.name}</span>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-shrink-0">
                             <span className="text-[9px] font-bold text-[--text-muted]">{item.percentage}%</span>
-                            <span className="text-[10px] font-black tabular-nums">₹{item.value.toLocaleString()}</span>
+                            <span className="text-[10px] font-black tabular-nums whitespace-nowrap">₹{item.value.toLocaleString()}</span>
                           </div>
                         </div>
                       ))}
@@ -230,8 +230,8 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, isL
           <h3 className="text-xs font-black uppercase tracking-[0.3em] text-white">Institutional Ledger Pulse</h3>
           <Link href="/dashboard/ledger" className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] hover:text-white transition-colors">View Complete History →</Link>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+        <div className="table-responsive-wrapper overflow-x-auto custom-scrollbar">
+          <table className="w-full text-left border-collapse min-w-[800px]">
             <thead>
               <tr className="border-b border-white/5 text-[9px] text-[--text-muted] uppercase font-black tracking-widest bg-white/[0.01]">
                 <th className="py-4 px-8">Timestamp</th>

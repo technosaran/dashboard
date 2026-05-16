@@ -39,34 +39,34 @@ const CASHFLOW_KEY = "finance_cashflow";
 const FOREX_KEY = "finance_forex";
 const FAMILY_KEY = "finance_family";
 
-async function fetchSummary() {
+async function fetchSummary(): Promise<Partial<FinanceData>> {
   const { data, error } = await supabase.rpc("get_summary_v1");
   if (error) throw error;
-  return data;
+  return data as unknown as Partial<FinanceData>;
 }
 
-async function fetchInvestments() {
+async function fetchInvestments(): Promise<Partial<FinanceData>> {
   const { data, error } = await supabase.rpc("get_investments_v1");
   if (error) throw error;
-  return data;
+  return data as unknown as Partial<FinanceData>;
 }
 
-async function fetchCashflow() {
+async function fetchCashflow(): Promise<Partial<FinanceData>> {
   const { data, error } = await supabase.rpc("get_cashflow_v1");
   if (error) throw error;
-  return data;
+  return data as unknown as Partial<FinanceData>;
 }
 
-async function fetchForex() {
+async function fetchForex(): Promise<Partial<FinanceData>> {
   const { data, error } = await supabase.rpc("get_forex_v1");
   if (error) throw error;
-  return data;
+  return data as unknown as Partial<FinanceData>;
 }
 
-async function fetchFamily() {
+async function fetchFamily(): Promise<Partial<FinanceData>> {
   const { data, error } = await supabase.rpc("get_family_v1");
   if (error) throw error;
-  return data;
+  return data as unknown as Partial<FinanceData>;
 }
 
 export function useFinanceData(initialData?: FinanceData) {

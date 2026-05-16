@@ -183,8 +183,8 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
         )}
 
         {activeTab === "trades" && (
-          <div className="glass-card-static overflow-hidden border-white/5">
-            <table className="w-full text-left border-collapse">
+          <div className="glass-card-static overflow-x-auto custom-scrollbar border-white/5">
+            <table className="w-full text-left border-collapse min-w-[700px]">
               <thead>
                 <tr className="bg-white/5 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">
                   <th className="p-4">Date</th>
@@ -216,8 +216,8 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
         )}
 
         {activeTab === "transactions" && (
-          <div className="glass-card-static overflow-hidden border-white/5">
-            <table className="w-full text-left border-collapse">
+          <div className="glass-card-static overflow-x-auto custom-scrollbar border-white/5">
+            <table className="w-full text-left border-collapse min-w-[700px]">
               <thead>
                 <tr className="bg-white/5 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">
                   <th className="p-4">Date</th>

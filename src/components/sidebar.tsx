@@ -307,6 +307,7 @@ export default function Sidebar() {
         {mobileNavRight.map((item) => {
           const active = pathname === item.href;
           return (
+            <Link key={item.label} href={item.href} prefetch={true} className={`flex-1 flex flex-col items-center justify-center h-full relative transition-all active:scale-90 ${active ? "text-[--accent-primary-light]" : "text-[--text-muted]"}`}>
               <div className={`${active ? "scale-110 -translate-y-1" : "opacity-40"} transition-all duration-300`}>{item.icon}</div>
               <span className={`text-[8px] font-black uppercase tracking-widest absolute bottom-2 transition-all duration-300 ${active ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"}`}>{item.label}</span>
             </Link>

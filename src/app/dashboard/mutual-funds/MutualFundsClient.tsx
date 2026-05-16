@@ -363,8 +363,8 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
       </div>
 
       {activeTab === "holdings" ? (
-        <div className="mx-4 border border-white/5 rounded-2xl overflow-hidden bg-white/[0.01]">
-          <table className="w-full text-left border-collapse">
+        <div className="mx-4 border border-white/5 rounded-2xl overflow-x-auto custom-scrollbar bg-white/[0.01]">
+          <table className="w-full text-left border-collapse min-w-[900px]">
             <thead>
               <tr className="border-b border-white/5 bg-white/[0.02]">
                 <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest">Growth Scheme</th>
