@@ -157,6 +157,7 @@ function NavItem({ label, href, icon, pathname }: (typeof nav)[0] & { pathname: 
     <Link
       href={href}
       prefetch={true}
+      aria-label={label}
       className={`flex items-center gap-3 px-3 py-1 rounded-xl transition-all duration-300 ${active ? "" : "hover:bg-[var(--glass-hover)] group"}`}
       style={{
         color: active ? "var(--accent-primary-light)" : "var(--text-secondary)",
@@ -165,7 +166,7 @@ function NavItem({ label, href, icon, pathname }: (typeof nav)[0] & { pathname: 
         textDecoration: "none",
       }}
     >
-      <span className={`${active ? "text-[--accent-primary-light]" : "group-hover:text-[--text-primary]"}`}>{icon}</span>
+      <span className={`${active ? "text-[--accent-primary-light]" : "group-hover:text-[--text-primary]"}`} aria-hidden="true">{icon}</span>
       <span className="font-semibold text-[13px] tracking-tight">{label}</span>
     </Link>
   );
@@ -222,12 +223,12 @@ export default function Sidebar() {
       <div className={`md:hidden fixed inset-0 z-[100] bg-black/80 backdrop-blur-md transition-all duration-500 ${isQuickActionOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`} onClick={() => setIsQuickActionOpen(false)}>
         <div className={`absolute bottom-32 left-8 right-8 grid grid-cols-2 gap-4 transition-all duration-500 ${isQuickActionOpen ? "translate-y-0 scale-100" : "translate-y-16 scale-90"}`} onClick={e => e.stopPropagation()}>
           {quickActions.map((action) => (
-            <Link key={action.label} href={action.href} prefetch={true} onClick={() => setIsQuickActionOpen(false)} className="glass-card-static p-6 flex flex-col items-center justify-center gap-3 no-underline transition-all active:scale-95 shadow-lg" style={{ background: "var(--bg-surface)", border: `1px solid ${action.color}30` }}>
-              <div className="text-3xl filter drop-shadow-[0_4px_10px_rgba(0,0,0,0.1)]">{action.icon}</div>
+            <Link key={action.label} href={action.href} prefetch={true} onClick={() => setIsQuickActionOpen(false)} aria-label={`Add new ${action.label}`} className="glass-card-static p-6 flex flex-col items-center justify-center gap-3 no-underline transition-all active:scale-95 shadow-lg" style={{ background: "var(--bg-surface)", border: `1px solid ${action.color}30` }}>
+              <div className="text-3xl filter drop-shadow-[0_4px_10px_rgba(0,0,0,0.1)]" aria-hidden="true">{action.icon}</div>
               <span className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: action.color }}>{action.label}</span>
             </Link>
           ))}
-          <button onClick={() => setIsQuickActionOpen(false)} className="col-span-2 glass-card-static py-4 flex items-center justify-center bg-white/5 border-white/10 mt-2 backdrop-blur-md">
+          <button onClick={() => setIsQuickActionOpen(false)} aria-label="Cancel quick actions" className="col-span-2 glass-card-static py-4 flex items-center justify-center bg-white/5 border-white/10 mt-2 backdrop-blur-md">
             <span className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Cancel</span>
           </button>
         </div>
@@ -294,10 +295,11 @@ export default function Sidebar() {
         <div className="flex-1 flex justify-center h-full items-center relative">
            <button 
              onClick={() => setIsQuickActionOpen(!isQuickActionOpen)}
+             aria-label={isQuickActionOpen ? "Close quick actions" : "Open quick actions"}
              className={`w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all duration-500 active:scale-95 absolute -top-4 z-[110] ${isQuickActionOpen ? "bg-rose-500 rotate-45" : "bg-gradient-to-br from-sky-500 to-cyan-400"}`}
              style={{ boxShadow: isQuickActionOpen ? "0 8px 32px rgba(244,63,94,0.5)" : "0 8px 24px rgba(108,92,231,0.4)" }}
            >
-             <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
+             <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16m8-8H4" /></svg>
            </button>
         </div>
 
@@ -305,7 +307,6 @@ export default function Sidebar() {
         {mobileNavRight.map((item) => {
           const active = pathname === item.href;
           return (
-            <Link key={item.label} href={item.href} prefetch={true} className={`flex-1 flex flex-col items-center justify-center h-full relative transition-all active:scale-90 ${active ? "text-[--accent-primary-light]" : "text-[--text-muted]"}`}>
               <div className={`${active ? "scale-110 -translate-y-1" : "opacity-40"} transition-all duration-300`}>{item.icon}</div>
               <span className={`text-[8px] font-black uppercase tracking-widest absolute bottom-2 transition-all duration-300 ${active ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"}`}>{item.label}</span>
             </Link>

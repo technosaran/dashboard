@@ -266,7 +266,9 @@ export async function getStockDetails(symbol: string, exchange: string = "NSE") 
     
     throw new Error(lastErr || `Market data unavailable for ${ticker}`);
   } catch (error) {
-    console.error("Stock fetch error:", error instanceof Error ? error.message : "Internal Error");
+    if (process.env.NODE_ENV !== 'production') {
+      console.error("Stock fetch error:", error instanceof Error ? error.message : "Internal Error");
+    }
     return { error: `Market data sync failed. Check symbol or try later.` };
   }
 }
@@ -360,7 +362,9 @@ export async function refreshAllPrices() {
     revalidatePath("/dashboard");
     return { success: true, results };
   } catch (error) {
-    console.error("Batch refresh error:", error);
+    if (process.env.NODE_ENV !== 'production') {
+      console.error("Batch refresh error:", error);
+    }
     return { error: error instanceof Error ? error.message : "Mass synchronization failed" };
   }
 }

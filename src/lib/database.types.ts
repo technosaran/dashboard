@@ -1415,6 +1415,78 @@ export type Database = {
         | "GOAL_WITHDRAWAL"
         | "REVERSAL"
     }
+    Functions: {
+      get_summary_v1: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          profile: { username: string; settings: { enabled_modules: string[] } } | null
+          accounts: Database["public"]["Tables"]["accounts"]["Row"][]
+          transactions: Database["public"]["Tables"]["transactions"]["Row"][]
+          ledgerLogs: Database["public"]["Tables"]["ledger_logs"]["Row"][]
+        }
+      }
+      get_investments_v1: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          investments: Database["public"]["Tables"]["investments"]["Row"][]
+          mutualFunds: Database["public"]["Tables"]["mutual_funds"]["Row"][]
+          bonds: Database["public"]["Tables"]["bonds"]["Row"][]
+          alternativeAssets: Database["public"]["Tables"]["alternative_assets"]["Row"][]
+          stockTrades: Database["public"]["Tables"]["stock_trades"]["Row"][]
+          mutualFundTrades: Database["public"]["Tables"]["mutual_fund_trades"]["Row"][]
+          bondTransactions: Database["public"]["Tables"]["bond_transactions"]["Row"][]
+        }
+      }
+      get_cashflow_v1: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          incomes: Database["public"]["Tables"]["incomes"]["Row"][]
+          expenses: Database["public"]["Tables"]["expenses"]["Row"][]
+          budgets: Database["public"]["Tables"]["budgets"]["Row"][]
+          goals: Database["public"]["Tables"]["goals"]["Row"][]
+          liabilities: Database["public"]["Tables"]["liabilities"]["Row"][]
+        }
+      }
+      get_forex_v1: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          forexAccounts: Database["public"]["Tables"]["forex_accounts"]["Row"][]
+          forexTrades: Database["public"]["Tables"]["forex_trades"]["Row"][]
+          forexTransactions: Database["public"]["Tables"]["forex_transactions"]["Row"][]
+        }
+      }
+      get_family_v1: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          recipients: Database["public"]["Tables"]["recipients"]["Row"][]
+        }
+      }
+      get_finance_overview_v2: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          profile: { username: string; settings: { enabled_modules: string[] } } | null
+          accounts: Database["public"]["Tables"]["accounts"]["Row"][]
+          transactions: Database["public"]["Tables"]["transactions"]["Row"][]
+          ledgerLogs: Database["public"]["Tables"]["ledger_logs"]["Row"][]
+          investments: Database["public"]["Tables"]["investments"]["Row"][]
+          mutualFunds: Database["public"]["Tables"]["mutual_funds"]["Row"][]
+          bonds: Database["public"]["Tables"]["bonds"]["Row"][]
+          alternativeAssets: Database["public"]["Tables"]["alternative_assets"]["Row"][]
+          stockTrades: Database["public"]["Tables"]["stock_trades"]["Row"][]
+          mutualFundTrades: Database["public"]["Tables"]["mutual_fund_trades"]["Row"][]
+          bondTransactions: Database["public"]["Tables"]["bond_transactions"]["Row"][]
+          incomes: Database["public"]["Tables"]["incomes"]["Row"][]
+          expenses: Database["public"]["Tables"]["expenses"]["Row"][]
+          budgets: Database["public"]["Tables"]["budgets"]["Row"][]
+          goals: Database["public"]["Tables"]["goals"]["Row"][]
+          liabilities: Database["public"]["Tables"]["liabilities"]["Row"][]
+          forexAccounts: Database["public"]["Tables"]["forex_accounts"]["Row"][]
+          forexTrades: Database["public"]["Tables"]["forex_trades"]["Row"][]
+          forexTransactions: Database["public"]["Tables"]["forex_transactions"]["Row"][]
+          recipients: Database["public"]["Tables"]["recipients"]["Row"][]
+        }
+      }
+    }
     CompositeTypes: {
       [_ in never]: never
     }

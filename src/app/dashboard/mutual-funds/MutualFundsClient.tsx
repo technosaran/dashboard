@@ -4,6 +4,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
+import Image from "next/image";
 
 import type { Tables } from "@/lib/database.types";
 import { recordMFInvestment, refreshNAV, searchMFSchemes, getLiveNAV, revertLedgerLog } from "./actions";
@@ -386,14 +387,20 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                       <tr key={mf.id} className="hover:bg-white/[0.01] group transition-colors">
                           <td className="px-6 py-5">
                               <div className="flex items-center gap-4">
-                                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center flex-shrink-0 overflow-hidden border border-white/20 p-0.5 shadow-md">
+                                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center flex-shrink-0 overflow-hidden border border-white/20 p-0.5 shadow-md relative">
                                     {getAMCLogoUrl(mf.amc_name || '') ? (
-                                      // eslint-disable-next-line @next/next/no-img-element
-                                      <img src={getAMCLogoUrl(mf.amc_name || '')} alt={mf.amc_name || 'AMC'} className="w-full h-full object-contain rounded-full" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
-                                    ) : null}
-                                    <span className={`text-[15px] font-black text-slate-800 ${getAMCLogoUrl(mf.amc_name || '') ? 'hidden' : ''}`}>
-                                      {mf.amc_name ? mf.amc_name.substring(0, 1).toUpperCase() : 'M'}
-                                    </span>
+                                      <Image 
+                                        src={getAMCLogoUrl(mf.amc_name || '')} 
+                                        alt={`${mf.amc_name || 'AMC'} logo`} 
+                                        fill
+                                        className="object-contain rounded-full p-1"
+                                        sizes="40px"
+                                      />
+                                    ) : (
+                                      <span className="text-[15px] font-black text-slate-800">
+                                        {mf.amc_name ? mf.amc_name.substring(0, 1).toUpperCase() : 'M'}
+                                      </span>
+                                    )}
                                   </div>
                                   <div className="flex flex-col">
                                       <div className="flex items-center gap-2">

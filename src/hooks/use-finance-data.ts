@@ -363,7 +363,7 @@ export function useFinanceData(initialData?: FinanceData) {
       }
       void supabase.removeChannel(channel);
     };
-  }, [debouncedMutate]);
+  }, [debouncedMutate, user_id]);
 
   // Handle visibility change for instant sync when returning to tab
   useEffect(() => {
@@ -383,30 +383,30 @@ export function useFinanceData(initialData?: FinanceData) {
 
   // Aggregate the data from all verticals
   const mergedData: FinanceData = {
-    profile: (summarySWR.data as any)?.profile || fallback.profile,
-    accounts: (summarySWR.data as any)?.accounts || fallback.accounts,
-    transactions: (summarySWR.data as any)?.transactions || fallback.transactions,
-    ledgerLogs: (summarySWR.data as any)?.ledgerLogs || fallback.ledgerLogs,
+    profile: summarySWR.data?.profile || fallback.profile,
+    accounts: summarySWR.data?.accounts || fallback.accounts,
+    transactions: summarySWR.data?.transactions || fallback.transactions,
+    ledgerLogs: summarySWR.data?.ledgerLogs || fallback.ledgerLogs,
     
-    investments: (investmentsSWR.data as any)?.investments || fallback.investments,
-    mutualFunds: (investmentsSWR.data as any)?.mutualFunds || fallback.mutualFunds,
-    bonds: (investmentsSWR.data as any)?.bonds || fallback.bonds,
-    alternativeAssets: (investmentsSWR.data as any)?.alternativeAssets || fallback.alternativeAssets,
-    stockTrades: (investmentsSWR.data as any)?.stockTrades || fallback.stockTrades,
-    mutualFundTrades: (investmentsSWR.data as any)?.mutualFundTrades || fallback.mutualFundTrades,
-    bondTransactions: (investmentsSWR.data as any)?.bondTransactions || fallback.bondTransactions,
+    investments: investmentsSWR.data?.investments || fallback.investments,
+    mutualFunds: investmentsSWR.data?.mutualFunds || fallback.mutualFunds,
+    bonds: investmentsSWR.data?.bonds || fallback.bonds,
+    alternativeAssets: investmentsSWR.data?.alternativeAssets || fallback.alternativeAssets,
+    stockTrades: investmentsSWR.data?.stockTrades || fallback.stockTrades,
+    mutualFundTrades: investmentsSWR.data?.mutualFundTrades || fallback.mutualFundTrades,
+    bondTransactions: investmentsSWR.data?.bondTransactions || fallback.bondTransactions,
     
-    incomes: (cashflowSWR.data as any)?.incomes || fallback.incomes,
-    expenses: (cashflowSWR.data as any)?.expenses || fallback.expenses,
-    budgets: (cashflowSWR.data as any)?.budgets || fallback.budgets,
-    goals: (cashflowSWR.data as any)?.goals || fallback.goals,
-    liabilities: (cashflowSWR.data as any)?.liabilities || fallback.liabilities,
+    incomes: cashflowSWR.data?.incomes || fallback.incomes,
+    expenses: cashflowSWR.data?.expenses || fallback.expenses,
+    budgets: cashflowSWR.data?.budgets || fallback.budgets,
+    goals: cashflowSWR.data?.goals || fallback.goals,
+    liabilities: cashflowSWR.data?.liabilities || fallback.liabilities,
     
-    forexAccounts: (forexSWR.data as any)?.forexAccounts || fallback.forexAccounts,
-    forexTrades: (forexSWR.data as any)?.forexTrades || fallback.forexTrades,
-    forexTransactions: (forexSWR.data as any)?.forexTransactions || fallback.forexTransactions,
+    forexAccounts: forexSWR.data?.forexAccounts || fallback.forexAccounts,
+    forexTrades: forexSWR.data?.forexTrades || fallback.forexTrades,
+    forexTransactions: forexSWR.data?.forexTransactions || fallback.forexTransactions,
     
-    recipients: (familySWR.data as any)?.recipients || fallback.recipients,
+    recipients: familySWR.data?.recipients || fallback.recipients,
   };
 
   return {

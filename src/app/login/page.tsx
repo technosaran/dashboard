@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from "react";
 import { login } from "./actions";
+import Link from "next/link";
 import "./login.css";
 
 const MAX_ATTEMPTS = 3;
@@ -150,6 +151,11 @@ export default function LoginPage() {
                       onBlur={() => setFocused(null)}
                     />
                   </div>
+                  <div style={{ textAlign: 'right', marginTop: '0.5rem' }}>
+                    <Link href="/reset-password" style={{ fontSize: '12px', color: 'var(--text-muted)', textDecoration: 'none' }}>
+                      Forgot password?
+                    </Link>
+                  </div>
                 </div>
 
                 {/* Error message */}
@@ -202,6 +208,12 @@ export default function LoginPage() {
                   )}
                   <div className="login-submit-shimmer" />
                 </button>
+
+                <div className="divider-glow" style={{ margin: '1.5rem 0' }} />
+                
+                <p className="login-subtitle" style={{ fontSize: '13px', textAlign: 'center' }}>
+                  New to FinanceOS? <Link href="/signup" style={{ color: 'var(--accent-primary)', textDecoration: 'none', fontWeight: 600 }}>Create an account</Link>
+                </p>
               </form>
             </div>
           </div>

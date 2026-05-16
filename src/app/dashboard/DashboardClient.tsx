@@ -9,6 +9,7 @@ import { CHART_COLOURS } from "@/lib/chart-colours";
 import DashboardMobile from "./components/DashboardMobile";
 import DashboardDesktop from "./components/DashboardDesktop";
 import OnboardingWizard from "@/components/onboarding-wizard";
+import { useUser } from "@/context/user-context";
 
 type TrendMapEntry = {
   name: string;
@@ -24,6 +25,7 @@ type TrendEntry = {
 };
 
 export default function DashboardClient({ initialData }: { initialData?: FinanceData }) {
+  const { user_id } = useUser();
   const { data: financeData, isLoading, isValidating } = useFinanceData(initialData);
   
   const { 
@@ -44,7 +46,10 @@ export default function DashboardClient({ initialData }: { initialData?: Finance
 
   // Check if onboarding should be shown
   useEffect(() => {
-    const completed = localStorage.getItem("onboarding_completed");
+    if (!user_id) return;
+    
+    const storageKey = `onboarding_completed_${user_id}`;
+    const completed = localStorage.getItem(storageKey);
     const hasData = accounts.length > 0 || incomes.length > 0 || expenses.length > 0;
     
     if (!completed && !hasData && !isLoading) {
@@ -52,7 +57,14 @@ export default function DashboardClient({ initialData }: { initialData?: Finance
       const timer = setTimeout(() => setShowOnboarding(true), 1000);
       return () => clearTimeout(timer);
     }
-  }, [accounts.length, incomes.length, expenses.length, isLoading]);
+  }, [accounts.length, incomes.length, expenses.length, isLoading, user_id]);
+
+  const handleOnboardingComplete = () => {
+    if (user_id) {
+      localStorage.setItem(`onboarding_completed_${user_id}`, "true");
+    }
+    setShowOnboarding(false);
+  };
 
   const stats = useMemo(() => {
     const cashBalance = accounts.reduce((sum, acc) => sum + Number(acc.balance), 0);
@@ -161,7 +173,7 @@ export default function DashboardClient({ initialData }: { initialData?: Finance
   if (isMobile) {
     return (
       <>
-        {showOnboarding && <OnboardingWizard onComplete={() => setShowOnboarding(false)} />}
+        {showOnboarding && <OnboardingWizard onComplete={handleOnboardingComplete} />}
         <DashboardMobile stats={stats} recentLogs={recentLogs} isLoading={isLoading} isValidating={isValidating} />
       </>
     );
@@ -169,7 +181,7 @@ export default function DashboardClient({ initialData }: { initialData?: Finance
 
   return (
     <>
-      {showOnboarding && <OnboardingWizard onComplete={() => setShowOnboarding(false)} />}
+      {showOnboarding && <OnboardingWizard onComplete={handleOnboardingComplete} />}
       <DashboardDesktop stats={stats} recentLogs={recentLogs} isLoading={isLoading} isValidating={isValidating} />
     </>
   );
