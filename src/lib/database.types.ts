@@ -1144,6 +1144,14 @@ export type Database = {
       }
     }
     Functions: {
+      atomic_delete_entity: {
+        Args: {
+          p_user_id: string
+          p_entity_type: string
+          p_entity_id: string
+        }
+        Returns: Json
+      }
       adjust_account_balance: {
         Args: {
           p_account_id: string

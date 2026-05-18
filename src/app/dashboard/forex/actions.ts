@@ -194,13 +194,18 @@ export async function deleteForexAccount(id: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
-  const { error } = await supabase
-    .from("forex_accounts")
-    .delete()
-    .eq("id", id)
-    .eq("user_id", user.id);
+  const { data, error } = await supabase.rpc("atomic_delete_entity", {
+    p_user_id: user.id,
+    p_entity_type: "forex_account",
+    p_entity_id: id
+  });
 
   if (error) return { error: error.message };
+  const res = data as { success: boolean; error?: string };
+  if (!res?.success) return { error: res?.error || "Failed to delete forex account atomically" };
+
   revalidatePath("/dashboard/forex");
+  revalidatePath("/dashboard/ledger");
+  revalidatePath("/dashboard/accounts");
   return { success: true };
 }

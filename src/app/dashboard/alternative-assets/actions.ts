@@ -49,18 +49,25 @@ export async function addAlternativeAsset(formData: {
 type AlternativeAssetUpdate = {
   name?: string;
   category?: string;
-  purchase_price?: number;
   current_value?: number;
-  purchase_date?: string | null;
   notes?: string | null;
 };
 
 export async function updateAlternativeAsset(id: string, formData: AlternativeAssetUpdate) {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
   const { error } = await supabase
     .from("alternative_assets")
-    .update(formData)
-    .eq("id", id);
+    .update({
+      name: formData.name,
+      category: formData.category,
+      current_value: formData.current_value,
+      notes: formData.notes
+    })
+    .eq("id", id)
+    .eq("user_id", user.id);
 
   if (error) return { error: error.message };
   revalidatePath("/dashboard/alternative-assets");
@@ -69,13 +76,22 @@ export async function updateAlternativeAsset(id: string, formData: AlternativeAs
 
 export async function deleteAlternativeAsset(id: string) {
   const supabase = await createClient();
-  const { error } = await supabase
-    .from("alternative_assets")
-    .delete()
-    .eq("id", id);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  const { data, error } = await supabase.rpc("atomic_delete_entity", {
+    p_user_id: user.id,
+    p_entity_type: "alternative_asset",
+    p_entity_id: id
+  });
 
   if (error) return { error: error.message };
+  const res = data as { success: boolean; error?: string };
+  if (!res?.success) return { error: res?.error || "Failed to delete asset atomically" };
+
   revalidatePath("/dashboard/alternative-assets");
+  revalidatePath("/dashboard/ledger");
+  revalidatePath("/dashboard/accounts");
   revalidatePath("/dashboard");
   return { success: true };
 }

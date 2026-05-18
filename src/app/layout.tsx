@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Outfit, Inter } from "next/font/google";
+import { Outfit, Inter, Geist } from "next/font/google";
 import "./globals.css";
 
 const outfit = Outfit({ 
@@ -74,6 +74,10 @@ export const metadata: Metadata = {
 import { Toaster } from "react-hot-toast";
 import { Suspense } from "react";
 import ProgressBar from "@/components/progress-bar";
+import { cn } from "@/lib/utils";
+
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+
 
 export default function RootLayout({
   children,
@@ -83,7 +87,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${outfit.variable} ${inter.variable} h-full antialiased`}
+      className={cn("h-full", "antialiased", outfit.variable, inter.variable, "font-sans", geist.variable)}
     >
       <body className="min-h-full flex flex-col overflow-x-hidden bg-[--bg-base] text-[--text-primary] font-sans relative">
         {/* Background Depth Effects */}

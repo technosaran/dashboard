@@ -26,12 +26,19 @@ export async function upsertBudget(formData: {
 
 export async function deleteBudget(id: string) {
   const supabase = await createClient();
-  const { error } = await supabase
-    .from("budgets")
-    .delete()
-    .eq("id", id);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  const { data, error } = await supabase.rpc("atomic_delete_entity", {
+    p_user_id: user.id,
+    p_entity_type: "budget",
+    p_entity_id: id
+  });
 
   if (error) return { error: error.message };
+  const res = data as { success: boolean; error?: string };
+  if (!res?.success) return { error: res?.error || "Failed to delete budget atomically" };
+
   revalidatePath("/dashboard/budget");
   return { success: true };
 }

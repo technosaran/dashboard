@@ -7,9 +7,11 @@ A premium, institutional-grade personal finance dashboard built with Next.js 16,
 - **Framework**: [Next.js 16](https://nextjs.org/) (App Router, React 19, Turbopack)
 - **Database & Auth**: [Supabase](https://supabase.com/) (PostgreSQL, RPC functions, Row Level Security, Real-time)
 - **State Management**: [SWR](https://swr.vercel.app/) with real-time Supabase subscriptions
-- **Styling**: [Tailwind CSS 4](https://tailwindcss.com/) + custom CSS variables design system
+- **Styling**: [Tailwind CSS 4](https://tailwindcss.com/) + [shadcn/ui](https://ui.shadcn.com/)
+- **Forms**: [React Hook Form](https://react-hook-form.com/) + [Zod](https://zod.dev/)
 - **Charts**: [Recharts](https://recharts.org/)
-- **Notifications**: [react-hot-toast](https://react-hot-toast.com/)
+- **Tables**: [TanStack Table](https://tanstack.com/table/latest)
+- **Testing**: [Vitest](https://vitest.dev/) + React Testing Library
 - **Language**: TypeScript (strict mode)
 
 ## Modules

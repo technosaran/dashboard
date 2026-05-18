@@ -33,15 +33,19 @@ export async function deleteRecipient(id: string) {
   
   if (!user) return { error: "Unauthorized" };
 
-  const { error } = await supabase
-    .from("recipients")
-    .delete()
-    .eq("id", id)
-    .eq("user_id", user.id);
+  const { data, error } = await supabase.rpc("atomic_delete_entity", {
+    p_user_id: user.id,
+    p_entity_type: "recipient",
+    p_entity_id: id
+  });
 
   if (error) return { error: error.message };
+  const res = data as { success: boolean; error?: string };
+  if (!res?.success) return { error: res?.error || "Failed to delete recipient atomically" };
 
   revalidatePath("/dashboard/family");
+  revalidatePath("/dashboard/ledger");
+  revalidatePath("/dashboard/accounts");
   return { success: true };
 }
 

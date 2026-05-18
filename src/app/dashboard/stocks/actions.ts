@@ -125,20 +125,27 @@ export async function createInvestment(data: {
 export async function updateInvestment(id: string, data: {
   name?: string;
   symbol?: string;
-  quantity?: number;
-  buy_price?: number;
   current_price?: number;
   currency?: string;
   notes?: string;
-  bought_at?: string;
 }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
+  // Note: quantity, buy_price, and bought_at cannot be updated directly as they are tied to ledger logs.
+  // To change those, the user must revert the ledger log and re-enter the investment.
   const { error } = await supabase
     .from("investments")
-    .update({ ...data, type: "stock", updated_at: new Date().toISOString() })
+    .update({ 
+      name: data.name,
+      symbol: data.symbol,
+      current_price: data.current_price,
+      currency: data.currency,
+      notes: data.notes,
+      type: "stock", 
+      updated_at: new Date().toISOString() 
+    })
     .eq("id", id)
     .eq("user_id", user.id);
 
@@ -153,15 +160,19 @@ export async function deleteInvestment(id: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
-  const { error } = await supabase
-    .from("investments")
-    .delete()
-    .eq("id", id)
-    .eq("user_id", user.id);
+  const { data, error } = await supabase.rpc("atomic_delete_entity", {
+    p_user_id: user.id,
+    p_entity_type: "investment",
+    p_entity_id: id
+  });
 
   if (error) return { error: error.message };
+  const res = data as { success: boolean; error?: string };
+  if (!res?.success) return { error: res?.error || "Failed to delete investment atomically" };
 
   revalidatePath("/dashboard/stocks");
+  revalidatePath("/dashboard/ledger");
+  revalidatePath("/dashboard/accounts");
   revalidatePath("/dashboard");
   return { success: true };
 }

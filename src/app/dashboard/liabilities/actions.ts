@@ -50,7 +50,6 @@ export async function addLiability(formData: {
 type LiabilityUpdate = {
   name?: string;
   category?: string;
-  total_amount?: number;
   remaining_amount?: number;
   interest_rate?: number | null;
   monthly_payment?: number | null;
@@ -60,10 +59,22 @@ type LiabilityUpdate = {
 
 export async function updateLiability(id: string, formData: LiabilityUpdate) {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
   const { error } = await supabase
     .from("liabilities")
-    .update(formData)
-    .eq("id", id);
+    .update({
+      name: formData.name,
+      category: formData.category,
+      remaining_amount: formData.remaining_amount,
+      interest_rate: formData.interest_rate,
+      monthly_payment: formData.monthly_payment,
+      due_date: formData.due_date,
+      notes: formData.notes
+    })
+    .eq("id", id)
+    .eq("user_id", user.id);
 
   if (error) return { error: error.message };
   revalidatePath("/dashboard/liabilities");
@@ -72,12 +83,21 @@ export async function updateLiability(id: string, formData: LiabilityUpdate) {
 
 export async function deleteLiability(id: string) {
   const supabase = await createClient();
-  const { error } = await supabase
-    .from("liabilities")
-    .delete()
-    .eq("id", id);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  const { data, error } = await supabase.rpc("atomic_delete_entity", {
+    p_user_id: user.id,
+    p_entity_type: "liability",
+    p_entity_id: id
+  });
 
   if (error) return { error: error.message };
+  const res = data as { success: boolean; error?: string };
+  if (!res?.success) return { error: res?.error || "Failed to delete liability atomically" };
+
   revalidatePath("/dashboard/liabilities");
+  revalidatePath("/dashboard/ledger");
+  revalidatePath("/dashboard/accounts");
   return { success: true };
 }
