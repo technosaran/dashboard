@@ -66,7 +66,7 @@ const CATEGORY_ALIASES: Record<string, CategoryName> = {
 };
 
 export function getChartColour(index: number): string {
-  return CHART_COLOURS[((index % CHART_COLOURS.length) + CHART_COLOURS.length) % CHART_COLOURS.length];
+  return CHART_COLOURS[index % CHART_COLOURS.length];
 }
 
 export function getCategoryColour(category: string): string {
