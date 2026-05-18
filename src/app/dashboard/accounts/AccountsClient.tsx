@@ -56,6 +56,10 @@ function getCurrencySymbol(currency: string): string {
 
 function hexToRgba(hex: string, alpha: number): string {
   const normalized = hex.replace("#", "");
+  if (!/^[\da-f]{3}$|^[\da-f]{6}$/i.test(normalized)) {
+    return `rgba(148, 163, 184, ${alpha})`;
+  }
+
   const safeHex = normalized.length === 3
     ? normalized.split("").map((char) => `${char}${char}`).join("")
     : normalized;
