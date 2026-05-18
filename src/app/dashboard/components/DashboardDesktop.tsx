@@ -7,7 +7,7 @@ import Greeting from "@/components/greeting";
 import type { FinanceData } from "@/hooks/use-finance-data";
 import { ResponsiveContainer, AreaChart, Area, CartesianGrid, Tooltip, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis } from "recharts";
 
-import { CHART_COLOURS } from "@/lib/chart-colours";
+import { CHART_SERIES_COLOURS, getChartColour } from "@/lib/chart-colours";
 
 type PieEntry = {
   name: string;
@@ -64,41 +64,41 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, isL
     if (stats.totalAssets <= 0) return [];
     
     return [
-      { 
-        name: 'Cash', 
-        value: stats.cashBalance, 
-        fill: CHART_COLOURS[0],
-        color: CHART_COLOURS[0],
-        percentage: ((stats.cashBalance / stats.totalAssets) * 100).toFixed(1)
-      },
-      { 
-        name: 'Stocks', 
-        value: stats.stockBalance, 
-        fill: CHART_COLOURS[1],
-        color: CHART_COLOURS[1],
-        percentage: ((stats.stockBalance / stats.totalAssets) * 100).toFixed(1)
-      },
-      { 
-        name: 'Mutual Funds', 
-        value: stats.mfBalance, 
-        fill: CHART_COLOURS[2],
-        color: CHART_COLOURS[2],
-        percentage: ((stats.mfBalance / stats.totalAssets) * 100).toFixed(1)
-      },
-      { 
-        name: 'Assets', 
-        value: stats.altBalance, 
-        fill: CHART_COLOURS[3],
-        color: CHART_COLOURS[3],
-        percentage: ((stats.altBalance / stats.totalAssets) * 100).toFixed(1)
-      },
-      { 
-        name: 'Bonds', 
-        value: stats.bondBalance, 
-        fill: CHART_COLOURS[4],
-        color: CHART_COLOURS[4],
-        percentage: ((stats.bondBalance / stats.totalAssets) * 100).toFixed(1)
-      }
+        { 
+          name: 'Cash', 
+          value: stats.cashBalance, 
+          fill: getChartColour(0),
+          color: getChartColour(0),
+          percentage: ((stats.cashBalance / stats.totalAssets) * 100).toFixed(1)
+        },
+        { 
+          name: 'Stocks', 
+          value: stats.stockBalance, 
+          fill: getChartColour(1),
+          color: getChartColour(1),
+          percentage: ((stats.stockBalance / stats.totalAssets) * 100).toFixed(1)
+        },
+        { 
+          name: 'Mutual Funds', 
+          value: stats.mfBalance, 
+          fill: getChartColour(2),
+          color: getChartColour(2),
+          percentage: ((stats.mfBalance / stats.totalAssets) * 100).toFixed(1)
+        },
+        { 
+          name: 'Assets', 
+          value: stats.altBalance, 
+          fill: getChartColour(3),
+          color: getChartColour(3),
+          percentage: ((stats.altBalance / stats.totalAssets) * 100).toFixed(1)
+        },
+        { 
+          name: 'Bonds', 
+          value: stats.bondBalance, 
+          fill: getChartColour(4),
+          color: getChartColour(4),
+          percentage: ((stats.bondBalance / stats.totalAssets) * 100).toFixed(1)
+        }
     ].filter(item => item.value > 0);
   }, [stats.totalAssets, stats.cashBalance, stats.stockBalance, stats.mfBalance, stats.altBalance, stats.bondBalance]);
 
@@ -212,13 +212,13 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, isL
                 <AreaChart data={stats.expenseTrend}>
                   <defs>
                     <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="var(--accent-primary)" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="var(--accent-primary)" stopOpacity={0} />
+                      <stop offset="5%" stopColor={CHART_SERIES_COLOURS.expense} stopOpacity={0.35} />
+                      <stop offset="95%" stopColor={CHART_SERIES_COLOURS.expense} stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                   <Tooltip contentStyle={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "12px" }} />
-                  <Area type="monotone" dataKey="amount" stroke="var(--accent-primary)" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" />
+                  <Area type="monotone" dataKey="amount" stroke={CHART_SERIES_COLOURS.expense} strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" />
                 </AreaChart>
               </ResponsiveContainer>
             )}

@@ -11,6 +11,7 @@ import { createAccount, updateAccount, deleteAccount, createTransfer, adjustBala
 import BankLogo from "@/components/bank-logo";
 
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
+import { getChartColour } from "@/lib/chart-colours";
 
 // Dynamic imports for chart performance
 const PieChart = dynamic(() => import("recharts").then(mod => mod.PieChart), { ssr: false });
@@ -45,7 +46,6 @@ const TYPE_STYLES: Record<string, { gradient: string; badge: string; badgeBorder
   investment: { gradient: "linear-gradient(135deg, #0284c7 0%, #38bdf8 100%)", badge: "rgba(56, 189, 248, 0.05)", badgeBorder: "rgba(56, 189, 248, 0.1)", color: "var(--accent-secondary)", iconBg: "rgba(56, 189, 248, 0.05)" },
   cash: { gradient: "linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)", badge: "rgba(245, 158, 11, 0.05)", badgeBorder: "rgba(245, 158, 11, 0.1)", color: "var(--warning)", iconBg: "rgba(245, 158, 11, 0.05)" },
 };
-const ACCOUNT_COLORS = ["#0ea5e9", "#38bdf8", "#0284c7", "#7dd3fc", "#bae6fd", "#e0f2fe", "#0369a1", "#075985"];
 const ACCOUNT_HISTORY_ACTIONS = new Set(["CREATE", "UPDATE", "DELETE", "TRANSFER_IN", "TRANSFER_OUT", "ADJUST_UP", "ADJUST_DOWN"]);
 const DEBIT_ACCOUNT_ACTIONS = new Set(["ADJUST_DOWN", "TRANSFER_OUT", "DELETE"]);
 
@@ -159,8 +159,8 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
     accounts.map((a, i) => ({ 
       name: a.name, 
       value: Math.abs(a.balance), 
-      fill: ACCOUNT_COLORS[i % ACCOUNT_COLORS.length],
-      color: ACCOUNT_COLORS[i % ACCOUNT_COLORS.length], 
+      fill: getChartColour(i),
+      color: getChartColour(i), 
       currency: a.currency 
     })),
     [accounts]
@@ -226,13 +226,13 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
             </div>
             <div className="grid grid-cols-3 gap-3">
               {chartData.map((item, i) => (
-                <div key={i} className="flex items-center gap-3 rounded-xl px-4 py-3 bg-[--accent-primary]/5 border border-[--accent-primary]/10 hover:bg-[--accent-primary]/10 transition-all">
+                <div key={i} className="flex items-center gap-3 rounded-xl px-4 py-3 transition-all" style={{ background: `${item.color}12`, border: `1px solid ${item.color}33` }}>
                   <div className="relative flex-shrink-0">
                     {accounts[i].bank_name ? <BankLogo bankName={accounts[i].bank_name!} size={32} /> : <CategoryIcon type={accounts[i].type} className="w-8 h-8" />}
                   </div>
                   <div className="flex flex-col min-w-0 flex-1 text-left">
                     <p className="font-bold text-[10px] text-[--text-secondary] truncate">{item.name}</p>
-                    <p className="font-black text-sm text-[--accent-primary]">{getCurrencySymbol(item.currency)}{item.value.toLocaleString()}</p>
+                    <p className="font-black text-sm" style={{ color: item.color }}>{getCurrencySymbol(item.currency)}{item.value.toLocaleString()}</p>
                   </div>
                 </div>
               ))}
@@ -329,13 +329,13 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
           {/* Account list below chart on mobile */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {chartData.map((item, i) => (
-              <div key={i} className="flex items-center gap-3 rounded-2xl px-4 py-3 bg-[--accent-primary]/5 border border-[--accent-primary]/10 h-[64px] md:h-[72px] hover:bg-[--accent-primary]/10 transition-all">
+              <div key={i} className="flex items-center gap-3 rounded-2xl px-4 py-3 h-[64px] md:h-[72px] transition-all" style={{ background: `${item.color}12`, border: `1px solid ${item.color}33` }}>
                 <div className="relative flex-shrink-0">
                   {accounts[i].bank_name ? <BankLogo bankName={accounts[i].bank_name!} size={40} /> : <CategoryIcon type={accounts[i].type} className="w-10 h-10" />}
                 </div>
                 <div className="flex flex-col min-w-0 flex-1 text-left">
                   <p className="font-bold text-[11px] md:text-xs text-[--text-secondary] truncate">{item.name}</p>
-                  <p className="font-black text-[13px] md:text-sm text-[--accent-primary]">{getCurrencySymbol(item.currency)}{item.value.toLocaleString()}</p>
+                  <p className="font-black text-[13px] md:text-sm" style={{ color: item.color }}>{getCurrencySymbol(item.currency)}{item.value.toLocaleString()}</p>
                 </div>
               </div>
             ))}

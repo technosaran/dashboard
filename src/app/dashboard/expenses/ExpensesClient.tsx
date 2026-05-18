@@ -11,19 +11,19 @@ import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, subMonths
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 
 import { ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip } from "recharts";
-import { CHART_COLOURS, getCategoryColour } from "@/lib/chart-colours";
+import { CHART_SERIES_COLOURS, getCategoryColour } from "@/lib/chart-colours";
 import { exportToCSV } from "@/lib/export-csv";
 
 const CATEGORIES = [
-  { label: "Rent", icon: "🏠", color: getCategoryColour("Bills & Utilities") },
+  { label: "Rent", icon: "🏠", color: getCategoryColour("Rent") },
   { label: "Food", icon: "🍔", color: getCategoryColour("Food & Dining") },
   { label: "Travel", icon: "✈️", color: getCategoryColour("Travel") },
-  { label: "Investment", icon: "📈", color: CHART_COLOURS[3] },
+  { label: "Investment", icon: "📈", color: getCategoryColour("Investment") },
   { label: "Transport", icon: "🚌", color: getCategoryColour("Transportation") },
-  { label: "Utilities", icon: "⚡", color: getCategoryColour("Bills & Utilities") },
-  { label: "Entertainment", icon: "🎬", color: CHART_COLOURS[6] },
-  { label: "Shopping", icon: "🛍️", color: CHART_COLOURS[0] },
-  { label: "Subscription", icon: "💳", color: CHART_COLOURS[7] },
+  { label: "Utilities", icon: "⚡", color: getCategoryColour("Utilities") },
+  { label: "Entertainment", icon: "🎬", color: getCategoryColour("Entertainment") },
+  { label: "Shopping", icon: "🛍️", color: getCategoryColour("Shopping") },
+  { label: "Subscription", icon: "💳", color: getCategoryColour("Subscription") },
   { label: "Others", icon: "📦", color: getCategoryColour("Others") },
 ];
 
@@ -292,11 +292,11 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
         <div className="lg:col-span-2 glass-card-static p-5 md:p-8">
           <div className="flex items-center justify-between mb-8">
             <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-[--text-muted]">Expenditure Velocity</h3>
-            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-[--accent-primary]" /><span className="text-[10px] font-bold text-[--text-muted]">Monthly Trend</span></div>
+            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full" style={{ backgroundColor: CHART_SERIES_COLOURS.expense }} /><span className="text-[10px] font-bold text-[--text-muted]">Monthly Trend</span></div>
           </div>
           <div className="h-[280px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={stats.trendData}><defs><linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--accent-primary)" stopOpacity={0.3}/><stop offset="95%" stopColor="var(--accent-primary)" stopOpacity={0}/></linearGradient></defs><CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} /><XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: 'var(--text-muted)', fontSize: 10}} dy={10} /><YAxis hide /><Tooltip contentStyle={{background: 'var(--bg-surface)', border: '1px solid var(--border-default)', borderRadius: '12px'}} cursor={{stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1}} /><Area type="monotone" dataKey="value" stroke="var(--accent-primary)" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" /></AreaChart>
+              <AreaChart data={stats.trendData}><defs><linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={CHART_SERIES_COLOURS.expense} stopOpacity={0.35}/><stop offset="95%" stopColor={CHART_SERIES_COLOURS.expense} stopOpacity={0}/></linearGradient></defs><CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} /><XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: 'var(--text-muted)', fontSize: 10}} dy={10} /><YAxis hide /><Tooltip contentStyle={{background: 'var(--bg-surface)', border: '1px solid var(--border-default)', borderRadius: '12px'}} cursor={{stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1}} /><Area type="monotone" dataKey="value" stroke={CHART_SERIES_COLOURS.expense} strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" /></AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
