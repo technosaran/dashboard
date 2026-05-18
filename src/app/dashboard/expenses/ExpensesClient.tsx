@@ -296,7 +296,22 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
           </div>
           <div className="h-[280px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={stats.trendData}><defs><linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={CHART_SERIES_COLOURS.expense} stopOpacity={0.35}/><stop offset="95%" stopColor={CHART_SERIES_COLOURS.expense} stopOpacity={0}/></linearGradient></defs><CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} /><XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: 'var(--text-muted)', fontSize: 10}} dy={10} /><YAxis hide /><Tooltip contentStyle={{background: 'var(--bg-surface)', border: '1px solid var(--border-default)', borderRadius: '12px'}} cursor={{stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1}} /><Area type="monotone" dataKey="value" stroke={CHART_SERIES_COLOURS.expense} strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" /></AreaChart>
+              <AreaChart data={stats.trendData}>
+                <defs>
+                  <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={CHART_SERIES_COLOURS.expense} stopOpacity={0.35} />
+                    <stop offset="95%" stopColor={CHART_SERIES_COLOURS.expense} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 10 }} dy={10} />
+                <YAxis hide />
+                <Tooltip
+                  contentStyle={{ background: 'var(--bg-surface)', border: '1px solid var(--border-default)', borderRadius: '12px' }}
+                  cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1 }}
+                />
+                <Area type="monotone" dataKey="value" stroke={CHART_SERIES_COLOURS.expense} strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" />
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
