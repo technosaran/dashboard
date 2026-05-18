@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, useDeferredValue, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 

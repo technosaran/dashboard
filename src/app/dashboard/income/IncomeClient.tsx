@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useMemo, useState, useDeferredValue } from "react";
+import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 
