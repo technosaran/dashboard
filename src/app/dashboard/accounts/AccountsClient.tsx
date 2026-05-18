@@ -54,6 +54,20 @@ function getCurrencySymbol(currency: string): string {
   return symbols[currency] || currency;
 }
 
+function hexToRgba(hex: string, alpha: number): string {
+  const normalized = hex.replace("#", "");
+  const safeHex = normalized.length === 3
+    ? normalized.split("").map((char) => `${char}${char}`).join("")
+    : normalized;
+
+  const value = Number.parseInt(safeHex, 16);
+  const red = (value >> 16) & 255;
+  const green = (value >> 8) & 255;
+  const blue = value & 255;
+
+  return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
+}
+
 export default function AccountsClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { accounts, ledgerLogs }, isValidating } = useFinanceData(initialData);
   const searchParams = useSearchParams();
@@ -226,7 +240,11 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
             </div>
             <div className="grid grid-cols-3 gap-3">
               {chartData.map((item, i) => (
-                <div key={i} className="flex items-center gap-3 rounded-xl px-4 py-3 transition-all" style={{ background: `${item.color}12`, border: `1px solid ${item.color}33` }}>
+                <div
+                  key={i}
+                  className="flex items-center gap-3 rounded-xl px-4 py-3 transition-all"
+                  style={{ background: hexToRgba(item.color, 0.12), border: `1px solid ${hexToRgba(item.color, 0.28)}` }}
+                >
                   <div className="relative flex-shrink-0">
                     {accounts[i].bank_name ? <BankLogo bankName={accounts[i].bank_name!} size={32} /> : <CategoryIcon type={accounts[i].type} className="w-8 h-8" />}
                   </div>
@@ -329,7 +347,11 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
           {/* Account list below chart on mobile */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {chartData.map((item, i) => (
-              <div key={i} className="flex items-center gap-3 rounded-2xl px-4 py-3 h-[64px] md:h-[72px] transition-all" style={{ background: `${item.color}12`, border: `1px solid ${item.color}33` }}>
+              <div
+                key={i}
+                className="flex items-center gap-3 rounded-2xl px-4 py-3 h-[64px] md:h-[72px] transition-all"
+                style={{ background: hexToRgba(item.color, 0.12), border: `1px solid ${hexToRgba(item.color, 0.28)}` }}
+              >
                 <div className="relative flex-shrink-0">
                   {accounts[i].bank_name ? <BankLogo bankName={accounts[i].bank_name!} size={40} /> : <CategoryIcon type={accounts[i].type} className="w-10 h-10" />}
                 </div>
