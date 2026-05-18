@@ -3,7 +3,6 @@ import { createClient } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
 import BondsClient from "./BondsClient";
 import type { Metadata } from "next";
-import type { FinanceData } from "@/hooks/use-finance-data";
 
 export const metadata: Metadata = {
   title: "Bonds",
@@ -20,9 +19,6 @@ export default async function BondsPage() {
   } = await supabase.auth.getUser();
 
   if (!user) redirect("/login");
-
-  // Prefetch data on server for instant load (matching all other modules)
-  const { data: initialData } = await supabase.rpc("get_finance_overview");
 
   return (
     <Suspense fallback={null}>

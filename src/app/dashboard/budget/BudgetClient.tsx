@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { toast } from "react-hot-toast";
 import { upsertBudget } from "./actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
-import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO } from "date-fns";
+import { format, parseISO } from "date-fns";
 
 const CATEGORIES = [
   { label: "Food", icon: "🍔" },
@@ -18,10 +18,9 @@ const CATEGORIES = [
 ];
 
 export default function BudgetClient({ initialData }: { initialData?: FinanceData }) {
-  const { data: { budgets, expenses, incomes }, isValidating } = useFinanceData(initialData);
+  const { data: { budgets, expenses, incomes } } = useFinanceData(initialData);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [submitting, setSubmitting] = useState(false);
 
   // Calculate actual spending for selected period
   const actualSpending = useMemo(() => {
@@ -59,7 +58,6 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
     const val = parseFloat(amount);
     if (isNaN(val)) return;
     
-    setSubmitting(true);
     const res = await upsertBudget({
       category,
       amount: val,
@@ -67,7 +65,6 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
       period_year: selectedYear
     });
     if (res.error) toast.error(res.error);
-    setSubmitting(false);
   }
 
   return (

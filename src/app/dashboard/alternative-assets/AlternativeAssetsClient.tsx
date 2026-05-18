@@ -17,7 +17,7 @@ const CATEGORIES = [
 ];
 
 export default function AlternativeAssetsClient({ initialData }: { initialData?: FinanceData }) {
-  const { data: { alternativeAssets, ledgerLogs, accounts }, isValidating } = useFinanceData(initialData);
+  const { data: { alternativeAssets, ledgerLogs, accounts } } = useFinanceData(initialData);
   const [showAddModal, setShowAddModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);

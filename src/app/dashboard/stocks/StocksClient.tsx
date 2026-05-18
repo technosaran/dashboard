@@ -193,7 +193,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
   }, [stocks]);
 
   const filtered = useMemo(() => {
-    let list = stocks.filter(i => Number(i.quantity) > 0);
+    const list = stocks.filter(i => Number(i.quantity) > 0);
     return [...list].sort((a, b) => {
       let cmp = 0;
       const aq = Number(a.quantity);

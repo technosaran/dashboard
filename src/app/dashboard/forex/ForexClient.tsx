@@ -14,7 +14,7 @@ import { format } from "date-fns";
 import PnLValue from "@/components/pnl-value";
 
 export default function ForexClient({ initialData }: { initialData?: FinanceData }) {
-  const { data: { accounts, forexAccounts, forexTrades, forexTransactions }, isValidating } = useFinanceData(initialData);
+  const { data: { accounts, forexAccounts, forexTrades, forexTransactions } } = useFinanceData(initialData);
   
   const [activeTab, setActiveTab] = useState<"accounts" | "trades" | "transactions">("accounts");
   const [showAccountModal, setShowAccountModal] = useState(false);
@@ -121,7 +121,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
         {["accounts", "trades", "transactions"].map((tab) => (
           <button
             key={tab}
-            onClick={() => setActiveTab(tab as any)}
+            onClick={() => setActiveTab(tab as "accounts" | "trades" | "transactions")}
             className={`pb-4 text-xs font-black uppercase tracking-widest transition-all ${activeTab === tab ? "text-[--accent-primary-light] border-b-2 border-[--accent-primary-light]" : "text-[--text-muted] hover:text-white"}`}
           >
             {tab}
@@ -279,7 +279,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
               </select>
               <div className="grid grid-cols-2 gap-4">
                 <input required className="input-premium" placeholder="Pair (EUR/USD)" value={tradeForm.pair} onChange={e => setTradeForm({...tradeForm, pair: e.target.value})} />
-                <select className="input-premium" value={tradeForm.trade_type} onChange={e => setTradeForm({...tradeForm, trade_type: e.target.value as any})}>
+                <select className="input-premium" value={tradeForm.trade_type} onChange={e => setTradeForm({...tradeForm, trade_type: e.target.value as "BUY" | "SELL"})}>
                   <option value="BUY">BUY</option><option value="SELL">SELL</option>
                 </select>
               </div>

@@ -414,7 +414,7 @@ export function useFinanceData(initialData?: FinanceData) {
     data: mergedData,
     isLoading: summarySWR.isLoading || investmentsSWR.isLoading || cashflowSWR.isLoading,
     error: summarySWR.error || investmentsSWR.error || cashflowSWR.error,
-    mutate: async (data?: any, options?: any) => {
+    mutate: async (data?: Partial<FinanceData> | ((current: Partial<FinanceData> | undefined) => Partial<FinanceData>), options?: Record<string, unknown>) => {
       // If a callback or data is provided, we apply it to the relevant vertical(s)
       // For this architecture, we focus optimistic updates on the Summary vertical (profiles/accounts)
       if (data !== undefined) {

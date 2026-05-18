@@ -4,7 +4,6 @@ import { createClient } from "@/lib/supabase-server";
 import IncomeClient from "./IncomeClient";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import type { FinanceData } from "@/hooks/use-finance-data";
 
 export const metadata: Metadata = {
   title: "Income Tracking",

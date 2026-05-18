@@ -18,7 +18,7 @@ const CATEGORIES = [
 ];
 
 export default function LiabilitiesClient({ initialData }: { initialData?: FinanceData }) {
-  const { data: { liabilities, ledgerLogs, accounts }, isValidating } = useFinanceData(initialData);
+  const { data: { liabilities, ledgerLogs, accounts } } = useFinanceData(initialData);
   const [showAddModal, setShowAddModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);

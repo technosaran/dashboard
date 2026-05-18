@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
 import { useEffect, useState, useMemo } from "react";
 import { useFinanceData } from "@/hooks/use-finance-data";
-import { MODULE_KEYS, MODULE_DISPLAY_LABELS } from "@/lib/modules";
+import { MODULE_KEYS } from "@/lib/modules";
 import type { ModuleKey } from "@/lib/modules";
 
 const nav = [

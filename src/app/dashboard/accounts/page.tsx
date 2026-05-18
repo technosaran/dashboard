@@ -2,7 +2,6 @@ import { Suspense } from "react";
 import { createClient } from "@/lib/supabase-server";
 import AccountsClient from "./AccountsClient";
 import { redirect } from "next/navigation";
-import type { FinanceData } from "@/hooks/use-finance-data";
 
 import type { Metadata } from "next";
 
@@ -23,9 +22,6 @@ export default async function AccountsPage() {
   if (!user) {
     redirect("/login");
   }
-
-  // Prefetch data on the server for "0 latency" initial load
-  const { data: initialData } = await supabase.rpc("get_finance_overview");
 
   return (
     <Suspense fallback={null}>

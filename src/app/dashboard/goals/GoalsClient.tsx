@@ -10,7 +10,6 @@ import type { Tables } from "@/lib/database.types";
 import { createGoal, updateGoalAmount, deleteGoal, updateGoal } from "./actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
-import { CHART_COLOURS } from "@/lib/chart-colours";
 
 type Goal = Tables<"goals">;
 
