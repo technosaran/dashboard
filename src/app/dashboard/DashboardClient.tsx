@@ -5,7 +5,7 @@ import { format, endOfMonth, startOfMonth, parseISO, subMonths } from "date-fns"
 import { useFinanceData } from "@/hooks/use-finance-data";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import type { FinanceData } from "@/hooks/use-finance-data";
-import { CHART_COLOURS } from "@/lib/chart-colours";
+import { getChartColour } from "@/lib/chart-colours";
 import DashboardMobile from "./components/DashboardMobile";
 import DashboardDesktop from "./components/DashboardDesktop";
 import OnboardingWizard from "@/components/onboarding-wizard";
@@ -138,7 +138,7 @@ export default function DashboardClient({ initialData }: { initialData?: Finance
     }
 
     const pieData = Object.entries(catMap).map(([name, value], index) => {
-      const resolvedColor = CHART_COLOURS[index % CHART_COLOURS.length];
+      const resolvedColor = getChartColour(index);
       return { name, value, fill: resolvedColor, color: resolvedColor, percentage: "0" };
     }).sort((a,b) => b.value - a.value);
 
