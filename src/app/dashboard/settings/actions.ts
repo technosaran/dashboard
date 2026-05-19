@@ -5,39 +5,63 @@ import { createClient } from "@/lib/supabase-server";
 import { revalidatePath } from "next/cache";
 
 export async function resetUserData() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  
-  if (!user) return { error: "Unauthorized" };
+  try {
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError) {
+      console.error("Auth retrieval error during reset:", authError);
+      return { error: `Authentication failed: ${authError.message}` };
+    }
+    
+    if (!user) {
+      console.error("No active user session found for data reset.");
+      return { error: "Unauthorized: No active session found. Please log in again." };
+    }
 
-  const { data, error } = await supabase.rpc("reset_user_data", { p_user_id: user.id });
+    console.log(`Executing reset_user_data RPC for user: ${user.id}`);
+    const { data, error } = await supabase.rpc("reset_user_data", { p_user_id: user.id });
 
-  if (error) {
-    console.error("RPC Error:", error);
-    return { error: error.message };
+    if (error) {
+      console.error("reset_user_data RPC failed with error:", error);
+      return { error: `Database error: ${error.message} (${error.code})` };
+    }
+    
+    let result = data as any;
+    if (typeof result === "string") {
+      try {
+        result = JSON.parse(result);
+      } catch (e) {
+        console.error("Failed to parse JSON result string:", result);
+      }
+    }
+    
+    if (result && result.success === false) {
+      console.error("reset_user_data returned internal failure:", result.error);
+      return { error: result.error || "Database reset failed internally." };
+    }
+    
+    console.log("Database reset completed successfully. Revalidating Next.js cache paths...");
+    
+    // Revalidate all major paths
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/accounts");
+    revalidatePath("/dashboard/ledger");
+    revalidatePath("/dashboard/stocks");
+    revalidatePath("/dashboard/mutual-funds");
+    revalidatePath("/dashboard/goals");
+    revalidatePath("/dashboard/family");
+    revalidatePath("/dashboard/bonds");
+    revalidatePath("/dashboard/alternative-assets");
+    revalidatePath("/dashboard/liabilities");
+    revalidatePath("/dashboard/forex");
+    revalidatePath("/dashboard/budget");
+    
+    return { success: true };
+  } catch (error: any) {
+    console.error("Unhandled exception during resetUserData server action:", error);
+    return { error: `System exception: ${error.message || "Unknown error"}` };
   }
-  
-  const result = data as { success: boolean; error?: string } | null;
-  
-  if (result && result.success === false) {
-    return { error: result.error || "Database reset failed internally" };
-  }
-  
-  // Revalidate all major paths
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/accounts");
-  revalidatePath("/dashboard/ledger");
-  revalidatePath("/dashboard/stocks");
-  revalidatePath("/dashboard/mutual-funds");
-  revalidatePath("/dashboard/goals");
-  revalidatePath("/dashboard/family");
-  revalidatePath("/dashboard/bonds");
-  revalidatePath("/dashboard/alternative-assets");
-  revalidatePath("/dashboard/liabilities");
-  revalidatePath("/dashboard/forex");
-  revalidatePath("/dashboard/budget");
-  
-  return { success: true };
 }
 
 type ProfileSettings = {
