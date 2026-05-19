@@ -27,6 +27,27 @@ export async function createRecipient(data: Omit<TablesInsert<"recipients">, "us
   return { success: true };
 }
 
+export async function updateRecipient(id: string, data: { name: string; relationship: string }) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) return { error: "Unauthorized" };
+
+  if (!data.name || data.name.trim().length < 2) {
+    return { error: "Name must be at least 2 characters long." };
+  }
+
+  const { error } = await supabase.from("recipients").update({
+    name: data.name.trim(),
+    relationship: data.relationship,
+  }).eq("id", id).eq("user_id", user.id);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/dashboard/family");
+  return { success: true };
+}
+
 export async function deleteRecipient(id: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();

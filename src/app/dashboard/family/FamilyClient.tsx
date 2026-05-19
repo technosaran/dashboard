@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, startTransition } from "react";
 import { createClient } from "@/lib/supabase-browser";
-import { createRecipient, deleteRecipient, sendMoneyToFamily } from "./actions";
+import { createRecipient, deleteRecipient, sendMoneyToFamily, updateRecipient } from "./actions";
 import { getAccounts } from "../accounts/actions";
 import { toast } from "react-hot-toast";
 import { format } from "date-fns";
@@ -115,22 +115,19 @@ export default function FamilyClient({
     e.preventDefault();
     let res;
     if (isEditingRecipient && editingRecipient) {
-      res = await supabase
-        .from("recipients")
-        .update({
-          name: newName,
-          relationship: newRelationship,
-        })
-        .eq("id", editingRecipient.id);
+      res = await updateRecipient(editingRecipient.id, {
+        name: newName,
+        relationship: newRelationship,
+      });
       
-      if (!res.error) {
+      if (res.success) {
         toast.success(`${newName} updated`);
         setIsAddingRecipient(false);
         setIsEditingRecipient(false);
         setEditingRecipient(null);
         fetchData();
       } else {
-        toast.error(res.error.message || "Failed to update contact");
+        toast.error(res.error || "Failed to update contact");
       }
       return;
     }
@@ -225,11 +222,11 @@ export default function FamilyClient({
   const totalSent = recentSends.reduce((sum, s) => sum + (s.amount || 0), 0);
 
   return (
-    <div className="flex flex-col gap-[var(--section-gap)]">
+    <div className="flex flex-col gap-8 max-w-[1400px] mx-auto w-full">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-5">
         <div>
-          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[--text-primary]">
+          <h1 className="text-3xl font-bold tracking-tight text-[--text-primary]">
             Family & Friends
           </h1>
           <p className="text-sm mt-1.5 text-[--text-muted]">
@@ -238,30 +235,30 @@ export default function FamilyClient({
         </div>
         <button
           onClick={() => setIsAddingRecipient(true)}
-          className="btn-primary flex-1 md:flex-none gap-2 h-11"
+          className="bg-[--accent-primary] hover:bg-opacity-90 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2 shadow-sm"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-            <path d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
           </svg>
-          Add contact
+          Add Contact
         </button>
       </div>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        <div className="glass-card-static p-5 md:p-6">
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[--text-muted] mb-1.5">Contacts</p>
-          <p className="text-3xl font-black text-[--text-primary]">{recipients.length}</p>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white/[0.02] border border-white/[0.05] rounded-2xl p-6 flex flex-col gap-2">
+          <p className="text-xs font-medium text-[--text-muted]">Total Contacts</p>
+          <p className="text-3xl font-light text-[--text-primary]">{recipients.length}</p>
         </div>
-        <div className="glass-card-static p-5 md:p-6">
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[--text-muted] mb-1.5">Family</p>
-          <p className="text-3xl font-black text-[--accent-primary-light]">
+        <div className="bg-white/[0.02] border border-white/[0.05] rounded-2xl p-6 flex flex-col gap-2">
+          <p className="text-xs font-medium text-[--text-muted]">Family Members</p>
+          <p className="text-3xl font-light text-[--text-primary]">
             {recipients.filter(r => r.relationship === "Family").length}
           </p>
         </div>
-        <div className="glass-card-static p-5 md:p-6">
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[--text-muted] mb-1.5">Recently Sent</p>
-          <p className="text-3xl font-black text-success">
+        <div className="bg-white/[0.02] border border-white/[0.05] rounded-2xl p-6 flex flex-col gap-2">
+          <p className="text-xs font-medium text-[--text-muted]">Recently Sent</p>
+          <p className="text-3xl font-light text-success">
             ₹{totalSent.toLocaleString()}
           </p>
         </div>
@@ -274,51 +271,51 @@ export default function FamilyClient({
             <button
               key={tab}
               onClick={() => setActiveFilter(tab)}
-              className="px-4 py-2.5 rounded-lg text-[10px] md:text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap min-h-[38px] flex items-center justify-center"
-              style={{
-                background: activeFilter === tab ? "rgba(108, 92, 231, 0.18)" : "rgba(255,255,255,0.02)",
-                color: activeFilter === tab ? "var(--text-primary)" : "var(--text-muted)",
-                border: `1px solid ${activeFilter === tab ? "rgba(108, 92, 231, 0.45)" : "rgba(255,255,255,0.07)"}`,
-              }}
+              className={`px-4 py-2 rounded-xl text-xs font-medium transition-all whitespace-nowrap min-h-[38px] flex items-center justify-center ${
+                activeFilter === tab 
+                  ? "bg-[--accent-primary] text-white shadow-sm" 
+                  : "bg-white/[0.02] text-[--text-muted] hover:bg-white/[0.05] border border-white/[0.05]"
+              }`}
             >
               {tab}
             </button>
           ))}
         </div>
         
-      <div className="flex bg-white/5 p-1 rounded-lg w-fit">
-        <button
-          onClick={() => setActiveView("contacts")}
-          className={`px-4 py-2 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${activeView === "contacts" ? "bg-white text-[--bg-base]" : "text-[--text-muted] hover:text-[--text-primary]"}`}
-        >
-          Contacts ({recipients.length})
-        </button>
-        <button
-          onClick={() => setActiveView("history")}
-          className={`px-4 py-2 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${activeView === "history" ? "bg-white text-[--bg-base]" : "text-[--text-muted] hover:text-[--text-primary]"}`}
-        >
-          History
-        </button>
-      </div>
+        <div className="flex bg-white/[0.02] border border-white/[0.05] p-1 rounded-xl w-fit">
+          <button
+            onClick={() => setActiveView("contacts")}
+            className={`px-4 py-2 rounded-lg text-xs font-medium transition-all ${activeView === "contacts" ? "bg-white/[0.1] text-[--text-primary]" : "text-[--text-muted] hover:text-[--text-primary]"}`}
+          >
+            Contacts
+          </button>
+          <button
+            onClick={() => setActiveView("history")}
+            className={`px-4 py-2 rounded-lg text-xs font-medium transition-all ${activeView === "history" ? "bg-white/[0.1] text-[--text-primary]" : "text-[--text-muted] hover:text-[--text-primary]"}`}
+          >
+            History
+          </button>
+        </div>
       </div>
 
       {/* Main View Render */}
       {activeView === "contacts" ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {loading ? (
             Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="h-64 skeleton" style={{ borderRadius: "var(--radius-xl)" }} />
+              <div key={i} className="h-[180px] bg-white/[0.02] border border-white/[0.05] rounded-2xl animate-pulse" />
             ))
           ) : filteredRecipients.length === 0 ? (
             <div
-              className="col-span-full py-20 text-center glass-card-static"
-              style={{ borderStyle: "dashed" }}
+              className="col-span-full py-20 text-center bg-white/[0.01] border border-dashed border-white/10 rounded-3xl flex flex-col items-center justify-center gap-3"
             >
-
-              <p className="text-2xl font-black text-[--text-primary]">
+              <div className="w-16 h-16 rounded-full bg-white/[0.03] flex items-center justify-center mb-2">
+                 <svg className="w-8 h-8 text-white/20" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+              </div>
+              <p className="text-xl font-medium text-[--text-primary]">
                 {activeFilter === "All" ? "No contacts yet" : `No ${activeFilter.toLowerCase()} contacts`}
               </p>
-              <p className="text-sm text-[--text-muted] mt-2.5 max-w-sm mx-auto">
+              <p className="text-sm text-[--text-muted] max-w-sm mx-auto">
                 Add a contact to start sending money from this section.
               </p>
             </div>
@@ -326,42 +323,39 @@ export default function FamilyClient({
             filteredRecipients.map((person) => {
               const config = getConfig(person.relationship);
               return (
-                <div key={person.id} className="glass-card-static flex flex-col min-h-[235px] p-5 border border-white/10 hover:border-white/20 transition-colors">
-                  
-                  <div className="flex justify-between items-start mb-5">
-                    <div className="flex flex-col gap-4">
-                       <span className="w-fit px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider" style={{ background: config.soft, color: config.color, border: `1px solid ${config.color}40` }}>
-                         {person.relationship || "Other"}
-                       </span>
-                       <div className="flex items-center gap-3">
-                          <div className="w-11 h-11 rounded-xl flex items-center justify-center text-lg font-black text-white" style={{ background: config.color }}>
-                            {person.name.charAt(0).toUpperCase()}
-                          </div>
-                        </div>
-                     </div>
-                    <button onClick={() => startEdit(person)} className="p-2 rounded-lg bg-white/5 border border-white/10 text-[--text-muted] hover:text-white transition-all">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                        <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                    </button>
-                  </div>
-
-                  <div className="mt-auto">
-                    <h3 className="text-xl font-black truncate text-[--text-primary]">{person.name}</h3>
-                    
-                    <div className="flex gap-2 mt-5">
-                      <button
-                        onClick={() => { setSelectedRecipient(person); setSendAmount(""); setSendNote(""); setIsSendingMoney(true); }}
-                        className="flex-1 h-11 rounded-lg font-bold text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-2"
-                        style={{ background: config.soft, color: config.color, border: `1px solid ${config.color}50` }}
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
-                        Send money
+                <div key={person.id} className="group bg-white/[0.02] border border-white/[0.05] hover:border-white/[0.1] rounded-2xl p-5 transition-all flex flex-col gap-4">
+                  <div className="flex justify-between items-start">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-medium" style={{ backgroundColor: config.soft, color: config.color }}>
+                        {person.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <h3 className="text-base font-medium text-[--text-primary]">{person.name}</h3>
+                        <p className="text-xs text-[--text-muted] mt-1">{person.relationship || "Other"}</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => startEdit(person)} className="p-2 text-[--text-muted] hover:text-white transition-colors rounded-full hover:bg-white/[0.05]">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
                       </button>
-                      <button onClick={() => handleDeleteRecipient(person.id)} className="w-11 h-11 rounded-lg bg-danger/10 border border-danger/20 text-danger hover:bg-danger/20 transition-all flex items-center justify-center">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                      <button onClick={() => handleDeleteRecipient(person.id)} className="p-2 text-[--text-muted] hover:text-danger transition-colors rounded-full hover:bg-white/[0.05]">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
                       </button>
                     </div>
+                  </div>
+                  
+                  <div className="mt-2 pt-4 border-t border-white/[0.05]">
+                    <button
+                      onClick={() => { setSelectedRecipient(person); setSendAmount(""); setSendNote(""); setIsSendingMoney(true); }}
+                      className="w-full py-2.5 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 bg-white/[0.03] hover:bg-white/[0.08] text-[--text-primary]"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+                      Send Money
+                    </button>
                   </div>
                 </div>
               );
@@ -369,32 +363,32 @@ export default function FamilyClient({
           )}
         </div>
       ) : (
-        <div className="glass-card-static overflow-hidden animate-fade-in">
-          <div className="px-6 py-4 border-b border-white/5 bg-white/[0.01]">
-            <h3 className="text-sm font-black uppercase tracking-widest">Recent transfers</h3>
+        <div className="bg-white/[0.02] border border-white/[0.05] rounded-2xl overflow-hidden animate-fade-in">
+          <div className="px-6 py-4 border-b border-white/[0.05] bg-white/[0.01]">
+            <h3 className="text-sm font-medium text-[--text-primary]">Recent Transfers</h3>
           </div>
-          <div className="divide-y divide-white/10">
+          <div className="divide-y divide-white/[0.05]">
             {recentSends.length === 0 ? (
-               <div className="py-16 text-center text-[--text-muted]">No recent transfers yet.</div>
+               <div className="py-16 text-center text-sm text-[--text-muted]">No recent transfers yet.</div>
             ) : (
               recentSends.map((send) => (
-                <div key={send.id} className="px-6 py-5 flex items-center justify-between hover:bg-white/[0.02] transition-colors">
+                <div key={send.id} className="px-6 py-4 flex items-center justify-between hover:bg-white/[0.01] transition-colors">
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-red-400/10 flex items-center justify-center">
-                      <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                        <path d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    <div className="w-10 h-10 rounded-full bg-red-400/10 flex items-center justify-center">
+                      <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
                       </svg>
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-white">{send.details || "Transfer"}</p>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-[--text-muted] mt-0.5">
-                        {send.created_at ? format(new Date(send.created_at), "PPP • p") : "—"}
+                      <p className="text-sm font-medium text-[--text-primary]">{send.details || "Transfer"}</p>
+                      <p className="text-xs text-[--text-muted] mt-1">
+                        {send.created_at ? format(new Date(send.created_at), "MMM d, yyyy • h:mm a") : "—"}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-black text-danger">-₹{(send.amount || 0).toLocaleString()}</p>
-                    <p className="text-[9px] font-bold text-success uppercase tracking-widest">Completed</p>
+                    <p className="text-base font-medium text-danger">-₹{(send.amount || 0).toLocaleString()}</p>
+                    <p className="text-xs text-success mt-1">Completed</p>
                   </div>
                 </div>
               ))
@@ -403,49 +397,45 @@ export default function FamilyClient({
         </div>
       )}
 
-
-
       {isAddingRecipient && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-xl animate-fade-in shadow-2xl">
-          <div className="glass-card-static w-full max-w-md animate-scale-in overflow-y-auto max-h-[95vh] border-white/10">
-            <div className="px-6 md:px-8 pt-8 pb-6">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-[#0a0a0a] border border-white/[0.08] rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-scale-in">
+            <div className="p-6 md:p-8">
               <div className="flex items-center justify-between mb-8">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center"
-                    style={{ background: RELATIONSHIP_CONFIG[newRelationship]?.color || RELATIONSHIP_CONFIG.Other.color }}
-                  >
-                    <span className="text-xl">{RELATIONSHIP_CONFIG[newRelationship]?.emoji || "👤"}</span>
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-black text-[--text-primary]">{isEditingRecipient ? "Edit Contact" : "Add Contact"}</h2>
-                    <p className="text-[10px] uppercase tracking-widest text-[--text-muted] font-bold">{isEditingRecipient ? "Update details" : "New contact"}</p>
-                  </div>
+                <div>
+                  <h2 className="text-xl font-medium text-[--text-primary]">{isEditingRecipient ? "Edit Contact" : "Add Contact"}</h2>
+                  <p className="text-sm text-[--text-muted] mt-1">{isEditingRecipient ? "Update details for this contact." : "Enter contact details below."}</p>
                 </div>
-                <button onClick={() => { setIsAddingRecipient(false); setIsEditingRecipient(false); setEditingRecipient(null); setNewName(""); }} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 text-[--text-muted] hover:text-[--text-primary] transition-colors">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg>
+                <button onClick={() => { setIsAddingRecipient(false); setIsEditingRecipient(false); setEditingRecipient(null); setNewName(""); }} className="p-2 text-[--text-muted] hover:text-[--text-primary] transition-colors rounded-full hover:bg-white/5">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
               </div>
 
-              <form onSubmit={handleAddRecipient} className="space-y-8">
+              <form onSubmit={handleAddRecipient} className="space-y-6">
                 <div>
-                  <label className="block text-xs font-bold text-[--text-muted] uppercase tracking-[0.2em] mb-1.5 ml-1">Full Name *</label>
-                  <input required value={newName} onChange={(e) => setNewName(e.target.value)} className="input-premium" placeholder="e.g. Priya Sharma" />
+                  <label className="block text-sm font-medium text-[--text-secondary] mb-2">Full Name</label>
+                  <input required value={newName} onChange={(e) => setNewName(e.target.value)} className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-3 text-[--text-primary] focus:border-[--accent-primary] focus:ring-1 focus:ring-[--accent-primary] outline-none transition-all placeholder-white/20" placeholder="e.g. Priya Sharma" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-[--text-muted] uppercase tracking-[0.2em] mb-1.5 ml-1">Relationship</label>
-                  <div className="grid grid-cols-3 gap-2">
+                  <label className="block text-sm font-medium text-[--text-secondary] mb-2">Relationship</label>
+                  <div className="grid grid-cols-3 gap-3">
                     {(["Family", "Friend", "Other"] as const).map((rel) => {
-                      const cfg = RELATIONSHIP_CONFIG[rel];
                       const isActive = newRelationship === rel;
                       return (
-                        <button key={rel} type="button" onClick={() => setNewRelationship(rel)} className="py-3 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2" style={{ background: isActive ? cfg.soft : "rgba(255,255,255,0.03)", color: isActive ? "var(--text-primary)" : cfg.color, border: `1px solid ${isActive ? `${cfg.color}70` : `${cfg.color}25`}` }}>{cfg.emoji} {rel}</button>
+                        <button key={rel} type="button" onClick={() => setNewRelationship(rel)} className={`py-2.5 rounded-xl text-sm font-medium transition-all ${isActive ? 'bg-[--accent-primary] text-white' : 'bg-white/[0.03] text-[--text-muted] hover:bg-white/[0.06] border border-white/[0.05]'}`}>
+                          {rel}
+                        </button>
                       );
                     })}
                   </div>
                 </div>
-                <div className="flex gap-3 pt-4">
-                  <button type="button" onClick={() => { setIsAddingRecipient(false); setIsEditingRecipient(false); setEditingRecipient(null); setNewName(""); }} className="btn-secondary flex-1">Cancel</button>
-                  <button type="submit" className="btn-primary flex-1">{isEditingRecipient ? "Save Changes" : "Save Contact"}</button>
+                <div className="pt-4 flex gap-3">
+                  <button type="button" onClick={() => { setIsAddingRecipient(false); setIsEditingRecipient(false); setEditingRecipient(null); setNewName(""); }} className="flex-1 py-3.5 bg-white/[0.03] hover:bg-white/[0.08] rounded-xl text-sm font-medium transition-all text-[--text-primary]">
+                    Cancel
+                  </button>
+                  <button type="submit" className="flex-1 py-3.5 bg-[--accent-primary] hover:bg-opacity-90 text-white rounded-xl text-sm font-medium transition-all">
+                    {isEditingRecipient ? "Save Changes" : "Save Contact"}
+                  </button>
                 </div>
               </form>
             </div>
@@ -454,48 +444,82 @@ export default function FamilyClient({
       )}
 
       {isSendingMoney && selectedRecipient && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 modal-overlay animate-fade-in">
-          <div className="glass-card-static w-full max-w-md animate-scale-in overflow-hidden" style={{ border: "1px solid var(--border-strong)" }}>
-            <div className="px-8 pt-8 pb-6">
-              <div className="flex items-center gap-4 mb-8">
-                <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-black text-white shadow-lg" style={{ background: getConfig(selectedRecipient.relationship).color }}>{selectedRecipient.name.charAt(0)}</div>
-                <div><h2 className="text-xl font-bold text-[--text-primary]">Send to {selectedRecipient.name}</h2><p className="text-xs text-[--text-muted] uppercase tracking-[0.2em] font-bold mt-0.5">{getConfig(selectedRecipient.relationship).emoji} {selectedRecipient.relationship}</p></div>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-[#0a0a0a] border border-white/[0.08] rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-scale-in">
+            <div className="p-6 md:p-8">
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-medium" style={{ backgroundColor: getConfig(selectedRecipient.relationship).soft, color: getConfig(selectedRecipient.relationship).color }}>
+                    {selectedRecipient.name.charAt(0)}
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-medium text-[--text-primary]">Send Money</h2>
+                    <p className="text-sm text-[--text-muted] mt-1">To {selectedRecipient.name}</p>
+                  </div>
+                </div>
+                <button onClick={() => { setIsSendingMoney(false); setSelectedRecipient(null); }} className="p-2 text-[--text-muted] hover:text-[--text-primary] transition-colors rounded-full hover:bg-white/5">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
               </div>
-              <form onSubmit={handleSendMoney} className="space-y-5">
-                <div><label className="block text-xs font-bold text-[--text-muted] uppercase tracking-[0.2em] mb-1.5 ml-1">From Account</label><select required value={sendAccountId} onChange={(e) => setSendAccountId(e.target.value)} className="input-premium h-14">{accounts.map((acc) => (<option key={acc.id} value={acc.id} style={{ background: "var(--bg-surface)" }}>{acc.name} — {acc.currency} {acc.balance.toLocaleString()}</option>))}</select></div>
-                <div><label className="block text-xs font-bold text-[--text-muted] uppercase tracking-[0.2em] mb-1.5 ml-1">Amount</label><div className="relative"><span className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-black text-[--text-muted]">{accounts.find(a => a.id === sendAccountId)?.currency === 'USD' ? '$' : '₹'}</span><input required type="number" step="0.01" min="1" value={sendAmount} onChange={(e) => setSendAmount(e.target.value)} className="input-premium pl-10 h-16 text-2xl font-black" style={{ color: "var(--accent-primary-light)" }} placeholder="0" /></div><div className="flex gap-2 mt-3 flex-wrap">{QUICK_AMOUNTS.map((amt) => (<button key={amt} type="button" onClick={() => setSendAmount(amt.toString())} className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all" style={{ background: sendAmount === amt.toString() ? "var(--accent-primary)" : "rgba(255,255,255,0.03)", color: sendAmount === amt.toString() ? "white" : "var(--text-muted)", border: `1px solid ${sendAmount === amt.toString() ? "var(--accent-primary)" : "rgba(255,255,255,0.05)"}` }}>₹{amt.toLocaleString()}</button>))}</div></div>
-                <div><label className="block text-xs font-bold text-[--text-muted] uppercase tracking-[0.2em] mb-1.5 ml-1">Note (Optional)</label><input value={sendNote} onChange={(e) => setSendNote(e.target.value)} className="input-premium h-12" placeholder="What's this for?" /></div>
-                <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                  <button type="submit" disabled={sending} className="btn-primary flex-1 shadow-xl shadow-[--accent-primary]/20 order-1 sm:order-2">
+              <form onSubmit={handleSendMoney} className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-[--text-secondary] mb-2">From Account</label>
+                  <select required value={sendAccountId} onChange={(e) => setSendAccountId(e.target.value)} className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-3.5 text-[--text-primary] focus:border-[--accent-primary] outline-none transition-all appearance-none cursor-pointer">
+                    {accounts.map((acc) => (<option key={acc.id} value={acc.id} className="bg-[#0a0a0a] text-[--text-primary]">{acc.name} ({acc.currency} {acc.balance.toLocaleString()})</option>))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[--text-secondary] mb-2">Amount</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl text-[--text-muted]">
+                      {accounts.find(a => a.id === sendAccountId)?.currency === 'USD' ? '$' : '₹'}
+                    </span>
+                    <input required type="number" step="0.01" min="1" value={sendAmount} onChange={(e) => setSendAmount(e.target.value)} className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl pl-10 pr-4 py-4 text-2xl font-medium text-[--text-primary] focus:border-[--accent-primary] outline-none transition-all placeholder-white/10" placeholder="0.00" />
+                  </div>
+                  <div className="flex gap-2 mt-3 flex-wrap">
+                    {QUICK_AMOUNTS.map((amt) => (
+                      <button key={amt} type="button" onClick={() => setSendAmount(amt.toString())} className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${sendAmount === amt.toString() ? 'bg-[--accent-primary] text-white' : 'bg-white/[0.03] border border-white/[0.08] text-[--text-muted] hover:bg-white/[0.06]'}`}>
+                        ₹{amt.toLocaleString()}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[--text-secondary] mb-2">Note (Optional)</label>
+                  <input value={sendNote} onChange={(e) => setSendNote(e.target.value)} className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-3 text-[--text-primary] focus:border-[--accent-primary] outline-none transition-all placeholder-white/20" placeholder="What's this for?" />
+                </div>
+                <div className="pt-4 flex gap-3">
+                  <button type="button" onClick={() => { setIsSendingMoney(false); setSelectedRecipient(null); }} className="flex-1 py-4 bg-white/[0.03] hover:bg-white/[0.08] rounded-xl text-sm font-medium transition-all text-[--text-primary]">
+                    Cancel
+                  </button>
+                  <button type="submit" disabled={sending} className="flex-[2] py-4 bg-[--accent-primary] hover:bg-opacity-90 text-white rounded-xl text-sm font-medium transition-all flex items-center justify-center disabled:opacity-50">
                     {sending ? (
-                      <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                      <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                       </svg>
                     ) : (
-                      <>
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                          <path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                        </svg>
-                        Send {accounts.find(a => a.id === sendAccountId)?.currency === 'USD' ? '$' : '₹'}{sendAmount ? parseFloat(sendAmount).toLocaleString() : "0"}
-                      </>
+                      `Send Money`
                     )}
                   </button>
-                  <button type="button" onClick={() => { setIsSendingMoney(false); setSelectedRecipient(null); }} className="btn-secondary flex-1">Close</button>
                 </div>
               </form>
             </div>
           </div>
         </div>
       )}
+
       {showDeleteConfirm && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-md animate-fade-in">
-          <div className="glass-card-static w-full max-w-sm p-8 animate-scale-in border-red-500/20 shadow-[0_0_50px_rgba(239,68,68,0.1)]">
-            <div className="flex flex-col items-center text-center">
-              <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mb-6"><svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></div>
-              <h3 className="text-xl font-black text-[--text-primary] mb-2">Remove Contact?</h3>
-              <p className="text-sm text-[--text-muted] mb-8 leading-relaxed">Are you sure you want to remove <span className="text-[--text-primary] font-bold">{recipients.find(r => r.id === deletingId)?.name}</span>? You can add them again anytime.</p>
-              <div className="flex gap-3 w-full"><button onClick={confirmDelete} className="btn-danger flex-1 shadow-lg shadow-[--danger]/20">Remove</button><button onClick={() => { setShowDeleteConfirm(false); setDeletingId(null); }} className="btn-secondary flex-1">Cancel</button></div>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-[#0a0a0a] border border-white/[0.08] rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl p-6 md:p-8 text-center animate-scale-in">
+            <div className="w-16 h-16 rounded-full bg-danger/10 text-danger mx-auto flex items-center justify-center mb-6">
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+            </div>
+            <h3 className="text-xl font-medium text-[--text-primary] mb-2">Remove Contact?</h3>
+            <p className="text-sm text-[--text-muted] mb-8 leading-relaxed">This will permanently remove <span className="text-[--text-primary] font-medium">{recipients.find(r => r.id === deletingId)?.name}</span> from your contacts.</p>
+            <div className="flex gap-3 w-full">
+              <button onClick={() => { setShowDeleteConfirm(false); setDeletingId(null); }} className="flex-1 py-3.5 bg-white/[0.03] hover:bg-white/[0.08] rounded-xl text-sm font-medium transition-all text-[--text-primary]">Cancel</button>
+              <button onClick={confirmDelete} className="flex-1 py-3.5 bg-danger hover:bg-red-600 text-white rounded-xl text-sm font-medium transition-all">Remove</button>
             </div>
           </div>
         </div>
