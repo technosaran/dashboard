@@ -112,6 +112,8 @@ export async function revertLedgerLog(logId: string) {
   revalidatePath("/dashboard/liabilities");
   revalidatePath("/dashboard/ledger");
   revalidatePath("/dashboard/accounts");
+  revalidatePath("/dashboard/stocks");
+  revalidatePath("/dashboard/mutual-funds");
   revalidatePath("/dashboard");
   
   return { success: true };

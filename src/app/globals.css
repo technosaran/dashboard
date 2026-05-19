@@ -98,8 +98,8 @@
   --sidebar-hover: rgba(255, 255, 255, 0.04);
 
   /* Typography - Financial Data Optimized */
-  --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-display: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-primary: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-display: var(--font-outfit), var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -676,4 +676,14 @@ body {
   html {
     @apply font-sans;
   }
+}
+
+/* Force dark theme styling for native select elements and their options globally */
+select, select option {
+  background-color: #151922 !important;
+  color: #ffffff !important;
+}
+select:focus {
+  border-color: var(--accent-primary) !important;
+  outline: none !important;
 }

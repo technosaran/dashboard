@@ -256,8 +256,8 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
               <button onClick={() => setShowAddModal(true)} className="btn-primary shadow-2xl shadow-[--accent-primary]/20">Add Your First Bond</button>
             </div>
           ) : (
-            <div className="glass-card-static overflow-hidden">
-              <table className="w-full text-left border-collapse">
+            <div className="glass-card-static overflow-x-auto custom-scrollbar">
+              <table className="w-full text-left border-collapse min-w-[900px]">
                 <thead>
                   <tr className="border-b border-white/5 bg-white/[0.02]">
                     <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Bond Details</th>
@@ -357,8 +357,8 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
               <p className="text-sm text-[--text-muted]">Bond transactions will appear here after your first purchase or interest payment.</p>
             </div>
           ) : (
-            <div className="glass-card-static overflow-hidden">
-              <table className="w-full text-left border-collapse">
+            <div className="glass-card-static overflow-x-auto custom-scrollbar">
+              <table className="w-full text-left border-collapse min-w-[600px]">
                 <thead>
                   <tr className="border-b border-white/5 bg-white/[0.02]">
                     <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Date</th>

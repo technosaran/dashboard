@@ -55,7 +55,7 @@ function getAMCLogoUrl(amcName: string): string {
 export default function MutualFundsClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { mutualFunds: rawMfs, accounts, mutualFundTrades: trades }, isValidating } = useFinanceData(initialData);
   const mutualFunds = useMemo(() => {
-    return rawMfs.map(mf => {
+    return rawMfs.filter(mf => Number(mf.units) > 0).map(mf => {
       const currentNav = Number(mf.current_nav || 0);
       const prevNav = Number(mf.previous_nav || 0);
       
@@ -450,8 +450,8 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
           </table>
         </div>
       ) : (
-        <div className="mx-4 border border-white/5 rounded-2xl overflow-hidden bg-white/[0.01]">
-          <table className="w-full text-left border-collapse">
+        <div className="mx-4 border border-white/5 rounded-2xl overflow-x-auto custom-scrollbar bg-white/[0.01]">
+          <table className="w-full text-left border-collapse min-w-[700px]">
             <thead>
               <tr className="border-b border-white/5 bg-white/[0.02] text-[9px] text-[--text-muted] uppercase font-black tracking-widest">
                 <th className="px-6 py-4">Date</th>

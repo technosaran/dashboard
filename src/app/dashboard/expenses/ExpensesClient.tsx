@@ -6,7 +6,6 @@ import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 
 import { addExpense } from "./actions";
-import { upsertBudget } from "@/app/dashboard/budget/actions";
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, subMonths } from "date-fns";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 
@@ -30,10 +29,9 @@ const CATEGORIES = [
 
 
 export default function ExpensesClient({ initialData }: { initialData?: FinanceData }) {
-  const { data: { expenses, accounts, budgets: dbBudgets }, isValidating } = useFinanceData(initialData);
+  const { data: { expenses, accounts }, isValidating } = useFinanceData(initialData);
   const searchParams = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(searchParams.get("action") === "new");
-  const [showBudgetModal, setShowBudgetModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
@@ -47,53 +45,6 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
     account_id: "",
   });
 
-  const budgets = useMemo(() => {
-    const now = new Date();
-    const m = now.getMonth() + 1;
-    const y = now.getFullYear();
-    const map: Record<string, number> = {};
-    dbBudgets.forEach(b => {
-      if (b.period_month === m && b.period_year === y) {
-        map[b.category] = Number(b.amount);
-      }
-    });
-    return map;
-  }, [dbBudgets]);
-
-  const saveBudget = async (category: string, limit: number) => {
-    const now = new Date();
-    const res = await upsertBudget({
-      category,
-      amount: limit,
-      period_month: now.getMonth() + 1,
-      period_year: now.getFullYear()
-    });
-    if (res.error) toast.error(res.error);
-    else toast.success(`Budget updated for ${category}`);
-  };
-
-  // Calculate category spending for current month
-  const categorySpending = useMemo(() => {
-    const now = new Date();
-    const currentMonth = expenses.filter(e => 
-      e.date && isWithinInterval(parseISO(e.date), { start: startOfMonth(now), end: endOfMonth(now) })
-    );
-    
-    const spending: Record<string, number> = {};
-    currentMonth.forEach(e => {
-      spending[e.category] = (spending[e.category] || 0) + Number(e.amount);
-    });
-    
-    return spending;
-  }, [expenses]);
-
-  // Check if any category exceeds 80%
-  const hasWarning = useMemo(() => {
-    return Object.entries(budgets).some(([category, limit]) => {
-      const spent = categorySpending[category] || 0;
-      return (spent / limit) >= 0.8;
-    });
-  }, [budgets, categorySpending]);
 
 
 
@@ -190,10 +141,6 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
           <p className="text-[--text-secondary] text-[13px] md:text-sm mt-1">Monitor your spending and analyze your monthly expenditure.</p>
         </div>
         <div className="hidden md:flex flex-wrap items-center gap-3 w-full md:w-auto">
-          <button onClick={() => setShowBudgetModal(true)} className="btn-secondary flex-1 md:flex-none gap-2">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
-            Budgets
-          </button>
           <button 
             onClick={() => {
               try {
@@ -231,25 +178,6 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
         </div>
       </div>
 
-      {/* Budget Warning Banner */}
-      {hasWarning && (
-        <div className="hidden md:block glass-card-static p-4 border-warning/30 bg-warning/10 animate-fade-in">
-          <div className="flex items-center gap-3">
-            <svg className="w-5 h-5 text-warning flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-            <div className="flex-1">
-              <p className="text-sm font-bold text-warning">Budget Alert</p>
-              <p className="text-xs text-[--text-muted] mt-0.5">
-                One or more categories have exceeded 80% of their budget limit. Review your spending.
-              </p>
-            </div>
-            <button onClick={() => setShowBudgetModal(true)} className="btn-secondary !h-9 !px-4 text-xs">
-              Manage Budgets
-            </button>
-          </div>
-        </div>
-      )}
 
       <div className="hidden md:grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
         <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between group">
@@ -322,52 +250,6 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
         </div>
       </div>
 
-      {/* Budget Progress by Category */}
-      {Object.keys(budgets).length > 0 && (
-        <div className="hidden md:block glass-card-static p-6 md:p-8">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-[--text-muted]">Budget Tracking (This Month)</h3>
-            <button onClick={() => setShowBudgetModal(true)} className="text-[10px] font-black uppercase tracking-widest text-[--accent-primary] underline">
-              Manage
-            </button>
-          </div>
-          <div className="space-y-4">
-            {Object.entries(budgets).map(([category, limit]) => {
-              const spent = categorySpending[category] || 0;
-              const percentage = (spent / limit) * 100;
-              const color = percentage >= 80 ? 'text-danger' : percentage >= 60 ? 'text-warning' : 'text-success';
-              const bgColor = percentage >= 80 ? 'bg-danger' : percentage >= 60 ? 'bg-warning' : 'bg-success';
-              
-              return (
-                <div key={category}>
-                  <div className="flex justify-between items-center mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[13px] font-bold text-[--text-primary]">{category}</span>
-                      <span className={`text-[10px] font-black ${color}`}>
-                        {percentage.toFixed(0)}%
-                      </span>
-                    </div>
-                    <div className="text-right">
-                      <span className={`text-[13px] font-black ${color}`}>
-                        ₹{spent.toLocaleString()}
-                      </span>
-                      <span className="text-[11px] text-[--text-muted] ml-2">
-                        / ₹{limit.toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full ${bgColor} transition-all duration-500 rounded-full`}
-                      style={{ width: `${Math.min(percentage, 100)}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       <div className="hidden md:block glass-card-static overflow-hidden border-white/5">
         <div className="p-5 border-b border-white/5 bg-white/[0.01] flex flex-col md:flex-row items-center justify-between gap-4">
@@ -446,82 +328,7 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
           <div className="glass-card-static w-full max-w-2xl p-6 md:p-10 border-[--accent-primary]/20 shadow-[0_0_100px_rgba(108,92,231,0.15)] max-h-[95vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-8 md:mb-10"><div className="flex items-center gap-3"><div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-[--accent-primary]/20 flex items-center justify-center"><svg className="w-5 h-5 md:w-6 md:h-6 text-[--accent-primary]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></div><h2 className="text-xl md:text-3xl font-black">Record Transaction</h2></div><button onClick={() => setShowAddModal(false)} className="text-[--text-muted] hover:text-[--text-primary] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"><svg className="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg></button></div>
             <form onSubmit={handleSubmit} className="space-y-8"><div className="grid grid-cols-1 md:grid-cols-2 gap-8"><div className="space-y-3"><label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">{["Food", "Shopping", "Entertainment"].includes(formData.category) ? "Merchant / Store" : "Description / Purpose"}</label><input type="text" required className="input-premium" placeholder="e.g. Starbucks" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} /></div><div className="space-y-3"><label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Debit Amount</label><input type="number" required className="input-premium" placeholder="0.00" value={formData.amount} onChange={e => setFormData({ ...formData, amount: e.target.value })} /></div><div className="space-y-3"><label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Expenditure Sector</label><select className="input-premium" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })}>{CATEGORIES.map(c => <option key={c.label} value={c.label}>{c.label}</option>)}</select></div><div className="space-y-3"><label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Transaction Date</label><input type="date" required className="input-premium" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} /></div><div className="space-y-3"><label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Deduct from Account</label><select className="input-premium" value={formData.account_id} onChange={e => setFormData({ ...formData, account_id: e.target.value })}><option value="">No Deduction (Track only)</option>{accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}</select></div></div><button type="submit" disabled={submitting} className="btn-primary w-full shadow-xl shadow-[--accent-primary]/20 mt-4">{submitting ? "Processing..." : "Confirm Record"}</button>
-</form>
-          </div>
-        </div>
-      )}
-
-      {/* Budget Management Modal */}
-      {showBudgetModal && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-xl animate-fade-in">
-          <div className="glass-card-static w-full max-w-2xl p-6 md:p-10 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <h2 className="text-2xl font-black">Budget Management</h2>
-                <p className="text-[11px] text-[--text-muted] mt-1">Set monthly spending limits for each category</p>
-              </div>
-              <button onClick={() => setShowBudgetModal(false)} className="text-[--text-muted] hover:text-[--text-primary] transition-colors p-2">
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                  <path d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              {CATEGORIES.map((cat) => {
-                const currentBudget = budgets[cat.label] || 0;
-                const spent = categorySpending[cat.label] || 0;
-                const percentage = currentBudget > 0 ? (spent / currentBudget) * 100 : 0;
-
-                return (
-                  <div key={cat.label} className="glass-card-static p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl">{cat.icon}</span>
-                        <div>
-                          <p className="text-[14px] font-bold text-[--text-primary]">{cat.label}</p>
-                          {currentBudget > 0 && (
-                            <p className="text-[10px] text-[--text-muted]">
-                              Spent: ₹{spent.toLocaleString()} / ₹{currentBudget.toLocaleString()}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="number"
-                          placeholder="0"
-                          defaultValue={currentBudget || ""}
-                          onBlur={(e) => {
-                            const value = parseFloat(e.target.value);
-                            if (!isNaN(value)) {
-                              saveBudget(cat.label, value);
-                            }
-                          }}
-                          className="input-premium w-32 h-10 text-sm text-right"
-                        />
-                      </div>
-                    </div>
-                    {currentBudget > 0 && (
-                      <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full transition-all duration-500 ${
-                            percentage >= 80 ? 'bg-danger' : percentage >= 60 ? 'bg-warning' : 'bg-success'
-                          }`}
-                          style={{ width: `${Math.min(percentage, 100)}%` }}
-                        />
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="mt-6 p-4 rounded-xl bg-white/5 border border-white/10">
-              <p className="text-[11px] text-[--text-muted]">
-                <strong>Tip:</strong> Set realistic monthly budgets for each category. You&apos;ll receive warnings when spending exceeds 80% of your limit.
-              </p>
-            </div>
+            </form>
           </div>
         </div>
       )}

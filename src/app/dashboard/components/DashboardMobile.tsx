@@ -32,35 +32,43 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, isVal
   return (
     <div className="flex flex-col gap-6 md:hidden min-h-screen animate-fade-in relative z-20 pb-24">
       {/* Mobile Header / Balance */}
-      <div className="glass-card-static p-8 text-center flex flex-col items-center justify-center relative overflow-hidden border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.3)]">
+      <div className="glass-card-static rich-border p-6 text-center flex flex-col items-center justify-center relative overflow-hidden border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.3)]">
+        <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[--accent-primary] via-purple-500 to-emerald-500" />
         <div className="absolute -right-10 -top-10 w-40 h-40 bg-[--accent-primary]/10 blur-3xl rounded-full" />
         <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-emerald-500/5 blur-3xl rounded-full" />
         
-        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[--text-muted] mb-3">Portfolio Net Worth</p>
-        <h2 className="text-[clamp(2.5rem,12vw,3.5rem)] font-[900] text-white tracking-tighter mb-2 bg-gradient-to-b from-white to-white/60 bg-clip-text text-transparent break-all leading-tight">
-           ₹{stats.totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0 })}
-        </h2>
-        <div className={`flex items-center gap-2 mb-6 flex-wrap justify-center ${stats.totalDayPnL >= 0 ? 'text-emerald-400' : 'text-rose-500'}`}>
-          <span className="text-[12px] font-black tabular-nums">
-            {stats.totalDayPnL >= 0 ? '+' : '-'}₹{Math.abs(stats.totalDayPnL).toLocaleString()}
+        <p className="text-[9px] font-black uppercase tracking-[0.4em] text-[--text-muted] mb-2">Portfolio Net Worth</p>
+        <div className="flex flex-col items-center w-full max-w-full px-2">
+          <h2 className="text-[clamp(1.8rem,9vw,2.8rem)] font-[900] text-white tracking-tighter mb-1 bg-gradient-to-b from-white to-white/60 bg-clip-text text-transparent whitespace-nowrap overflow-x-auto overflow-y-hidden w-full no-scrollbar leading-none">
+             ₹{stats.totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0 })}
+          </h2>
+          <p className="text-sm font-bold text-white/50 mb-2 tracking-tight whitespace-nowrap">
+             ${(stats.totalBalance / 83.5).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} USD
+          </p>
+        </div>
+        <div className={`flex items-center gap-2 mb-4 flex-wrap justify-center ${stats.totalDayPnL >= 0 ? 'text-emerald-400' : 'text-rose-500'}`}>
+          <span className="text-[12px] font-black tabular-nums whitespace-nowrap">
+            {stats.totalDayPnL >= 0 ? '+' : '-'}₹{Math.abs(stats.totalDayPnL).toLocaleString()} ({stats.totalDayPnL >= 0 ? '+' : '-'}${Math.abs(stats.totalDayPnL / 83.5).toLocaleString(undefined, { maximumFractionDigits: 0 })})
           </span>
-          <span className="text-[10px] font-black opacity-60 tabular-nums">
+          <span className="text-[9px] font-black opacity-60 tabular-nums">
             ({stats.totalDayPnL >= 0 ? '+' : ''}{stats.totalDayPnLPercent.toFixed(2)}%)
           </span>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 w-full pt-6 border-t border-white/5">
-           <div className="flex flex-col items-center bg-white/5 py-3 rounded-2xl border border-white/5 overflow-hidden">
-             <span className="text-[clamp(9px,3vw,11px)] font-black text-emerald-400 truncate w-full px-1">+₹{stats.totalAssets.toLocaleString()}</span>
-             <span className="text-[8px] text-[--text-muted] uppercase font-black tracking-widest mt-1">Total Assets</span>
+        <div className="grid grid-cols-2 gap-3 w-full pt-4 border-t border-white/5">
+           <div className="flex flex-col items-center bg-emerald-500/5 py-2.5 rounded-xl border border-emerald-500/10 overflow-hidden">
+             <span className="text-[clamp(8px,2.2vw,10px)] font-black text-emerald-400 truncate w-full px-1">+₹{stats.totalAssets.toLocaleString()}</span>
+             <span className="text-[8px] text-emerald-400/60 font-bold">+${Math.round(stats.totalAssets / 83.5).toLocaleString()}</span>
+             <span className="text-[8px] text-[--text-muted] uppercase font-black tracking-widest mt-0.5">Total Assets</span>
            </div>
-           <div className="flex flex-col items-center bg-white/5 py-3 rounded-2xl border border-white/5 overflow-hidden">
-             <span className="text-[clamp(9px,3vw,11px)] font-black text-rose-500 truncate w-full px-1">-₹{stats.debtBalance.toLocaleString()}</span>
-             <span className="text-[8px] text-[--text-muted] uppercase font-black tracking-widest mt-1">Total Debt</span>
+           <div className="flex flex-col items-center bg-rose-500/5 py-2.5 rounded-xl border border-rose-500/10 overflow-hidden">
+             <span className="text-[clamp(8px,2.2vw,10px)] font-black text-rose-500 truncate w-full px-1">-₹{stats.debtBalance.toLocaleString()}</span>
+             <span className="text-[8px] text-rose-500/60 font-bold">-${Math.round(stats.debtBalance / 83.5).toLocaleString()}</span>
+             <span className="text-[8px] text-[--text-muted] uppercase font-black tracking-widest mt-0.5">Total Debt</span>
            </div>
         </div>
 
-        <div className="mt-4 flex gap-4 pt-4 border-t border-white/5 w-full justify-center">
+        <div className="mt-3 flex gap-4 pt-3 border-t border-white/5 w-full justify-center">
            <div className="flex flex-col items-center">
              <span className="text-[10px] font-black text-success tracking-widest">+₹{stats.monthlyIncome.toLocaleString()}</span>
              <span className="text-[8px] text-[--text-muted] uppercase font-bold tracking-tighter">Income</span>

@@ -109,7 +109,8 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, isL
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="glass-card-static group relative overflow-hidden p-6 md:p-10 lg:col-span-3">
+        <div className="glass-card-static rich-border group relative overflow-hidden p-6 md:p-10 lg:col-span-3">
+          <div className="absolute top-0 left-0 right-0 h-[4px] bg-gradient-to-r from-[--accent-primary] via-purple-500 to-emerald-500" />
           <div className="flex flex-col lg:flex-row items-center justify-between gap-10">
             <div className="relative z-10">
               <div className="mb-4 flex items-center gap-2 md:mb-6">
@@ -118,29 +119,37 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, isL
                   Portfolio Net Worth {isLoading && <span className="text-[10px] lowercase italic">(loading...)</span>}
                 </span>
               </div>
-              <div className="flex items-baseline gap-4 flex-wrap">
-                <h2 className="bg-gradient-to-r from-white via-white to-[--text-secondary] bg-clip-text text-[clamp(2.5rem,10vw,4rem)] font-[900] leading-none tracking-[-0.05em] text-transparent drop-shadow-[0_10px_30px_rgba(108,92,231,0.2)] [font-family:'Outfit',sans-serif]">
+              <div className="flex items-baseline gap-x-4 gap-y-2 flex-wrap max-w-full">
+                <h2 className="bg-gradient-to-r from-white via-white to-[--text-secondary] bg-clip-text text-[clamp(2.0rem,6vw,3.5rem)] font-[900] leading-none tracking-[-0.05em] text-transparent drop-shadow-[0_10px_30px_rgba(108,92,231,0.2)] [font-family:'Outfit',sans-serif] whitespace-nowrap overflow-x-auto no-scrollbar">
                   ₹{stats.totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0 })}
                 </h2>
-                <div className={`flex flex-col mb-2 ${stats.totalDayPnL >= 0 ? 'text-emerald-400' : 'text-rose-500'}`}>
-                  <span className="text-[14px] font-black tabular-nums">
-                    {stats.totalDayPnL >= 0 ? '+' : '-'}₹{Math.abs(stats.totalDayPnL).toLocaleString()}
+                <div className="text-lg md:text-xl font-bold text-white/50 tracking-tight [font-family:'Outfit',sans-serif] whitespace-nowrap">
+                  / ${(stats.totalBalance / 83.5).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} USD
+                </div>
+                <div className={`flex flex-col mb-1 ml-2 ${stats.totalDayPnL >= 0 ? 'text-emerald-400' : 'text-rose-500'}`}>
+                  <span className="text-[13px] font-black tabular-nums whitespace-nowrap">
+                    {stats.totalDayPnL >= 0 ? '+' : '-'}₹{Math.abs(stats.totalDayPnL).toLocaleString()} ({stats.totalDayPnL >= 0 ? '+' : '-'}${Math.abs(stats.totalDayPnL / 83.5).toLocaleString(undefined, { maximumFractionDigits: 0 })})
                   </span>
-                  <span className="text-[10px] font-black opacity-60 tabular-nums">
+                  <span className="text-[9px] font-black opacity-60 tabular-nums">
                     ({stats.totalDayPnL >= 0 ? '+' : ''}{stats.totalDayPnLPercent.toFixed(2)}%)
                   </span>
                 </div>
               </div>
 
-              <div className="mt-8 flex flex-wrap items-center gap-6">
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-[--text-muted] mb-1">Total Assets</span>
-                  <span className="text-lg font-bold text-emerald-400">+₹{stats.totalAssets.toLocaleString()}</span>
+              <div className="mt-8 flex flex-wrap items-center gap-4 sm:gap-6">
+                <div className="flex items-center gap-3 bg-emerald-500/5 border border-emerald-500/10 px-4 py-3 rounded-2xl">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 text-sm">📈</div>
+                  <div className="flex flex-col">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-[--text-muted]">Total Assets</span>
+                    <span className="text-sm sm:text-base font-black text-emerald-400">+₹{stats.totalAssets.toLocaleString()} <span className="text-[11px] opacity-60 font-bold">(+${Math.round(stats.totalAssets / 83.5).toLocaleString()})</span></span>
+                  </div>
                 </div>
-                <div className="w-px h-8 bg-white/10" />
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-[--text-muted] mb-1">Total Debt</span>
-                  <span className="text-lg font-bold text-rose-500">-₹{stats.debtBalance.toLocaleString()}</span>
+                <div className="flex items-center gap-3 bg-rose-500/5 border border-rose-500/10 px-4 py-3 rounded-2xl">
+                  <div className="w-8 h-8 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-400 text-sm">📉</div>
+                  <div className="flex flex-col">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-[--text-muted]">Total Debt</span>
+                    <span className="text-sm sm:text-base font-black text-rose-500">-₹{stats.debtBalance.toLocaleString()} <span className="text-[11px] opacity-60 font-bold">(-${Math.round(stats.debtBalance / 83.5).toLocaleString()})</span></span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -155,14 +164,14 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, isL
                     <div className="w-1/2 space-y-2">
                       <p className="text-[10px] font-bold uppercase tracking-widest text-[--text-muted] mb-3">Portfolio Allocation</p>
                       {portfolioData.map((item) => (
-                        <div key={item.name} className="flex justify-between items-center group gap-2 min-w-0">
+                        <div key={item.name} className="flex justify-between items-center group gap-2 min-w-0 py-1 hover:bg-white/[0.02] px-2 rounded-lg transition-colors">
                           <div className="flex items-center gap-2 min-w-0 flex-1">
                             <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: item.color }} />
-                            <span className="text-[10px] font-bold text-[--text-secondary] truncate">{item.name}</span>
+                            <span className="text-[10px] font-bold text-[--text-secondary] truncate group-hover:text-white transition-colors">{item.name}</span>
                           </div>
                           <div className="flex items-center gap-2 flex-shrink-0">
                             <span className="text-[9px] font-bold text-[--text-muted]">{item.percentage}%</span>
-                            <span className="text-[10px] font-black tabular-nums whitespace-nowrap">₹{item.value.toLocaleString()}</span>
+                            <span className="text-[10px] font-black tabular-nums whitespace-nowrap" style={{ color: item.color }}>₹{item.value.toLocaleString()}</span>
                           </div>
                         </div>
                       ))}

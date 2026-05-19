@@ -21,6 +21,7 @@ export default function SettingsPage() {
   const [showResetModal, setShowResetModal] = useState(false);
   const [resetConfirmText, setResetConfirmText] = useState("");
   const [resetCountdown, setResetCountdown] = useState(0);
+  const [hasCountdownStarted, setHasCountdownStarted] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
 
   // Sync internal input state during render to avoid cascading renders in useEffect
@@ -72,10 +73,16 @@ export default function SettingsPage() {
 
   // 3-second countdown after typing RESET
   useEffect(() => {
-    if (resetConfirmText === "RESET" && resetCountdown === 0) {
-      setResetCountdown(3);
+    if (resetConfirmText === "RESET") {
+      if (!hasCountdownStarted) {
+        setResetCountdown(3);
+        setHasCountdownStarted(true);
+      }
+    } else {
+      setHasCountdownStarted(false);
+      setResetCountdown(0);
     }
-  }, [resetConfirmText, resetCountdown]);
+  }, [resetConfirmText, hasCountdownStarted]);
 
   useEffect(() => {
     if (resetCountdown <= 0) return;
@@ -89,6 +96,7 @@ export default function SettingsPage() {
     setShowResetModal(true);
     setResetConfirmText("");
     setResetCountdown(0);
+    setHasCountdownStarted(false);
   };
 
   const handleResetConfirm = async () => {

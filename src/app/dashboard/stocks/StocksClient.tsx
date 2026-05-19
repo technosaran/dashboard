@@ -570,8 +570,8 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
       ) : activeTab === "history" ? (
         /* ── History Table ── */
         trades.length > 0 ? (
-          <div className="w-full mt-4 overflow-hidden">
-            <table className="w-full text-left border-collapse">
+          <div className="w-full mt-4 overflow-x-auto custom-scrollbar bg-white/[0.01] border border-white/5 rounded-2xl">
+            <table className="w-full text-left border-collapse min-w-[700px]">
               <thead>
                 <tr className="border-b border-[--border-default] text-[11px] text-[--text-secondary] uppercase font-medium">
                   <th className="py-3 px-4">Date</th>
