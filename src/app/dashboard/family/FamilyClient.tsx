@@ -260,7 +260,7 @@ export default function FamilyClient({
           </p>
         </div>
         <div className="glass-card-static p-5 md:p-6">
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[--text-muted] mb-1.5">Recent Sent</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[--text-muted] mb-1.5">Recently Sent</p>
           <p className="text-3xl font-black text-success">
             ₹{totalSent.toLocaleString()}
           </p>
@@ -329,7 +329,7 @@ export default function FamilyClient({
                 <div key={person.id} className="glass-card-static flex flex-col min-h-[235px] p-5 border border-white/10 hover:border-white/20 transition-colors">
                   
                   <div className="flex justify-between items-start mb-5">
-                    <div className="flex flex-col gap-4 min-w-0">
+                    <div className="flex flex-col gap-4">
                        <span className="w-fit px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider" style={{ background: config.soft, color: config.color, border: `1px solid ${config.color}40` }}>
                          {person.relationship || "Other"}
                        </span>
