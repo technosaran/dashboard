@@ -114,40 +114,48 @@ export async function createBond(data: BondFormData) {
 }
 
 export async function revalueBonds() {
+  return { success: true };
+}
+
+export async function updateBond(id: string, data: {
+  bond_name?: string;
+  isin?: string;
+  issuer?: string;
+  bond_type?: "Government" | "Corporate" | "Tax-Free" | "Infrastructure" | "PSU";
+  current_price?: number;
+  accrued_interest?: number;
+  total_interest_earned?: number;
+  current_value?: number;
+  ytm?: number;
+  notes?: string;
+  credit_rating?: string;
+  next_interest_date?: string;
+}) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
-  const { data: bonds, error: fetchError } = await supabase
+  const { error } = await supabase
     .from("bonds")
-    .select("*")
-    .eq("user_id", user.id)
-    .eq("status", "Active");
+    .update({ 
+      bond_name: data.bond_name,
+      isin: data.isin,
+      issuer: data.issuer,
+      bond_type: data.bond_type,
+      current_price: data.current_price,
+      accrued_interest: data.accrued_interest,
+      total_interest_earned: data.total_interest_earned,
+      current_value: data.current_value,
+      ytm: data.ytm,
+      notes: data.notes,
+      credit_rating: data.credit_rating,
+      next_interest_date: data.next_interest_date || null,
+      updated_at: new Date().toISOString() 
+    })
+    .eq("id", id)
+    .eq("user_id", user.id);
 
-  if (fetchError) return { error: fetchError.message };
-  if (!bonds || bonds.length === 0) return { success: true };
-
-  const today = new Date();
-  
-  for (const bond of bonds) {
-    const purchaseDate = new Date(bond.purchase_date);
-    const daysHeld = Math.max(0, Math.floor((today.getTime() - purchaseDate.getTime()) / (1000 * 60 * 60 * 24)));
-    
-    // Simple Interest Accrual (Face Value * Coupon * Days / 365)
-    const accruedInterest = (bond.face_value * bond.quantity * (bond.coupon_rate / 100) * daysHeld) / 365;
-    const totalInterestEarned = accruedInterest; // Assuming no payouts tracked separately in this simple model
-    const currentValue = Number(bond.total_invested) + accruedInterest;
-
-    await supabase
-      .from("bonds")
-      .update({
-        accrued_interest: accruedInterest,
-        total_interest_earned: totalInterestEarned,
-        current_value: currentValue,
-        updated_at: new Date().toISOString()
-      })
-      .eq("id", bond.id);
-  }
+  if (error) return { error: error.message };
 
   revalidatePath("/dashboard/bonds");
   return { success: true };

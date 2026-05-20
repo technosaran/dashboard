@@ -92,12 +92,6 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
         const results = await searchStocks(formData.symbol, formData.exchange);
         setSuggestions(results);
         setShowSuggestions(results.length > 0);
-        
-        // If there's an exact match in suggestions, we can preemptively fetch price
-        const exactMatch = results.find(r => r.symbol === formData.symbol.toUpperCase());
-        if (exactMatch) {
-            void fetchPriceRef.current?.(exactMatch.symbol);
-        }
       } else {
         setSuggestions([]);
         setShowSuggestions(false);
@@ -168,17 +162,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
 
   refreshAllRef.current = handleRefreshAll;
 
-  useEffect(() => {
-    // Initial fetch
-    void handleRefreshAll();
-    // Auto-refresh interval (every 60 seconds)
-    const timer = setInterval(() => {
-      if (document.visibilityState === "visible") {
-        void handleRefreshAll();
-      }
-    }, 60000);
-    return () => clearInterval(timer);
-  }, []); // Empty dependency array is fine since handleRefreshAll doesn't have reactive dependencies that require re-binding
+
 
   // --- Computed ---
   const { totalInvested, totalCurrent, totalPnL, totalPnLPercent, totalDayPnL, totalDayPnLPercent } = useMemo(() => {
@@ -363,23 +347,11 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
         <div className="flex items-center gap-4">
           <div>
             <h1 className="text-3xl font-black tracking-tight text-[--text-primary]">Stocks Portfolio</h1>
-            <p className="text-[10px] text-[--text-muted] font-black uppercase tracking-[0.2em] mt-1">Live Asset Tracking</p>
+            <p className="text-[10px] text-[--text-muted] font-black uppercase tracking-[0.2em] mt-1">Manual Asset Tracking</p>
           </div>
           <div className={`status-dot scale-90 ${isValidating ? 'animate-pulse bg-yellow-400' : 'bg-emerald-400 opacity-50'}`} />
         </div>
         <div className="flex flex-wrap md:flex-nowrap items-center gap-3 w-full md:w-auto">
-            {/* Auto refresh enabled */}
-            <button 
-              onClick={handleRefreshAll} 
-              disabled={refreshing}
-              className="btn-secondary !h-11 !px-6 flex items-center justify-center gap-2 flex-1 md:flex-none"
-              title="Refresh Market Prices"
-            >
-              <svg className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              <span className="hidden md:inline">Sync Portfolio</span>
-            </button>
             <button 
               onClick={exportHoldings} 
               className="btn-secondary !h-11 !px-6 flex items-center justify-center gap-2 hidden md:flex"
@@ -657,7 +629,6 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                           onClick={() => {
                             setFormData({ ...formData, symbol: s.symbol, name: s.name || "" });
                             setShowSuggestions(false);
-                            handleFetchPrice(s.symbol);
                           }}
                           className="w-full px-4 py-3 flex flex-col items-start border-b border-[--border-default] last:border-0 hover:bg-[--accent-primary]/10 transition-colors text-left"
                         >

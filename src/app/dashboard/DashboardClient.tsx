@@ -67,8 +67,16 @@ export default function DashboardClient({ initialData }: { initialData?: Finance
   };
 
   const stats = useMemo(() => {
-    const cashBalance = accounts.reduce((sum, acc) => sum + Number(acc.balance), 0);
-    const stockBalance = investments.reduce((sum, inv) => sum + (Number(inv.quantity) * Number(inv.current_price || 0)), 0);
+    const cashBalance = accounts.reduce((sum, acc) => {
+      const balance = Number(acc.balance || 0);
+      const isUSD = acc.currency === 'USD';
+      return sum + (isUSD ? balance * 83.5 : balance);
+    }, 0);
+    const stockBalance = investments.reduce((sum, inv) => {
+      const value = Number(inv.quantity || 0) * Number(inv.current_price || 0);
+      const isUSD = inv.currency === 'USD';
+      return sum + (isUSD ? value * 83.5 : value);
+    }, 0);
     const mfBalance = mutualFunds.reduce((sum, mf) => sum + (Number(mf.units) * Number(mf.current_nav || 0)), 0);
     const bondBalance = (bonds || []).filter(b => b.status === 'Active').reduce((sum, b) => sum + Number(b.current_value || 0), 0);
     
@@ -142,8 +150,12 @@ export default function DashboardClient({ initialData }: { initialData?: Finance
       return { name, value, fill: resolvedColor, color: resolvedColor, percentage: "0" };
     }).sort((a,b) => b.value - a.value);
 
-    const totalDayPnL = (investments.reduce((sum, inv) => sum + (Number(inv.day_change || 0) * Number(inv.quantity || 0)), 0)) +
-                        (mutualFunds.reduce((sum, mf) => sum + (Number(mf.day_change || 0) * Number(mf.units || 0)), 0));
+    const totalDayPnL = (investments.reduce((sum, inv) => {
+      const dayChange = Number(inv.day_change || 0) * Number(inv.quantity || 0);
+      const isUSD = inv.currency === 'USD';
+      return sum + (isUSD ? dayChange * 83.5 : dayChange);
+    }, 0)) +
+    (mutualFunds.reduce((sum, mf) => sum + (Number(mf.day_change || 0) * Number(mf.units || 0)), 0));
     const prevDayNetWorth = netWorth - totalDayPnL;
     const totalDayPnLPercent = prevDayNetWorth > 0 ? (totalDayPnL / prevDayNetWorth) * 100 : 0;
 

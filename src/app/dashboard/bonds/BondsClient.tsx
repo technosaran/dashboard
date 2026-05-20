@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { toast } from "react-hot-toast";
-import { createBond, revalueBonds } from "./actions";
+import { createBond, revalueBonds, updateBond } from "./actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { format, differenceInDays, parseISO } from "date-fns";
 
@@ -38,9 +38,9 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
   const { data: { accounts, bonds: bondsData, bondTransactions }, isValidating } = useFinanceData(initialData);
   const bonds = useMemo(() => (bondsData || []).filter(b => b.status === 'Active') as Bond[], [bondsData]);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"holdings" | "history">("holdings");
   const [submitting, setSubmitting] = useState(false);
-  const [syncing, setSyncing] = useState(false);
 
   const [formData, setFormData] = useState({
     bond_name: "",
@@ -62,6 +62,9 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
     demat_account: "",
     account_id: "",
     notes: "",
+    accrued_interest: "0",
+    total_interest_earned: "0",
+    current_value: ""
   });
 
   const stats = useMemo(() => {
@@ -78,10 +81,73 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
   }, [bonds]);
 
 
+  const startEdit = (bond: Bond) => {
+    setEditingId(bond.id);
+    setFormData({
+      bond_name: bond.bond_name,
+      isin: bond.isin,
+      issuer: bond.issuer,
+      bond_type: bond.bond_type,
+      face_value: bond.face_value.toString(),
+      quantity: bond.quantity.toString(),
+      purchase_price: bond.purchase_price.toString(),
+      current_price: bond.current_price.toString(),
+      coupon_rate: bond.coupon_rate.toString(),
+      ytm: bond.ytm ? bond.ytm.toString() : "",
+      purchase_date: bond.purchase_date,
+      maturity_date: bond.maturity_date,
+      next_interest_date: bond.next_interest_date || "",
+      interest_frequency: bond.interest_frequency,
+      credit_rating: bond.credit_rating || "",
+      platform: bond.platform || "Wint",
+      demat_account: "",
+      account_id: "",
+      notes: "",
+      accrued_interest: bond.accrued_interest ? bond.accrued_interest.toString() : "0",
+      total_interest_earned: bond.total_interest_earned ? bond.total_interest_earned.toString() : "0",
+      current_value: bond.current_value ? bond.current_value.toString() : ""
+    });
+    setShowAddModal(true);
+  };
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
     
+    if (editingId) {
+      const result = await updateBond(editingId, {
+        bond_name: formData.bond_name,
+        isin: formData.isin,
+        issuer: formData.issuer,
+        bond_type: formData.bond_type as any,
+        current_price: parseFloat(formData.current_price) || 0,
+        accrued_interest: parseFloat(formData.accrued_interest) || 0,
+        total_interest_earned: parseFloat(formData.total_interest_earned) || 0,
+        current_value: parseFloat(formData.current_value) || (parseFloat(formData.current_price) || 0) * parseInt(formData.quantity),
+        ytm: formData.ytm ? parseFloat(formData.ytm) : undefined,
+        notes: formData.notes,
+        credit_rating: formData.credit_rating,
+        next_interest_date: formData.next_interest_date || undefined
+      });
+      if (!result?.error) {
+        toast.success("Bond holding details updated");
+        setShowAddModal(false);
+        setEditingId(null);
+        setFormData({
+          bond_name: "", isin: "", issuer: "", bond_type: "Government",
+          face_value: "1000", quantity: "1", purchase_price: "", current_price: "",
+          coupon_rate: "", ytm: "", purchase_date: new Date().toISOString().split("T")[0],
+          maturity_date: "", next_interest_date: "", interest_frequency: "Semi-Annual",
+          credit_rating: "", platform: "Wint", demat_account: "", account_id: "", notes: "",
+          accrued_interest: "0", total_interest_earned: "0", current_value: ""
+        });
+      } else {
+        toast.error(result.error);
+      }
+      setSubmitting(false);
+      return;
+    }
+
     // Client-side validation to prevent NaN/empty values reaching the RPC
     const purchasePrice = parseFloat(formData.purchase_price);
     const couponRate = parseFloat(formData.coupon_rate);
@@ -130,6 +196,7 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
         coupon_rate: "", ytm: "", purchase_date: new Date().toISOString().split("T")[0],
         maturity_date: "", next_interest_date: "", interest_frequency: "Semi-Annual",
         credit_rating: "", platform: "Wint", demat_account: "", account_id: "", notes: "",
+        accrued_interest: "0", total_interest_earned: "0", current_value: ""
       });
     } else {
       toast.error(result.error);
@@ -154,17 +221,6 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
     if (rating.startsWith("AA")) return { bg: "rgba(59, 130, 246, 0.1)", text: "#3b82f6" };
     if (rating.startsWith("A")) return { bg: "rgba(245, 158, 11, 0.1)", text: "#f59e0b" };
     return { bg: "rgba(239, 68, 68, 0.1)", text: "#ef4444" };
-  };
-
-  const handleSync = async () => {
-    setSyncing(true);
-    const result = await revalueBonds();
-    if (result.success) {
-      toast.success("Bonds portfolio revalued with latest accrued interest!");
-    } else {
-      toast.error(result.error || "Failed to sync bonds");
-    }
-    setSyncing(false);
   };
 
   return (
@@ -232,17 +288,6 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
             Transactions
           </button>
         </div>
-        
-        <button 
-          onClick={handleSync}
-          disabled={syncing}
-          className="btn-secondary !h-10 !px-6 flex items-center justify-center gap-2 group"
-        >
-          <svg className={`w-4 h-4 ${syncing ? 'animate-spin' : 'group-hover:rotate-180'} transition-transform duration-500`} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-            <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m0 0H15" />
-          </svg>
-          <span className="text-[10px] font-black uppercase tracking-widest">{syncing ? "Syncing..." : "Sync Portfolio"}</span>
-        </button>
       </div>
 
       {/* Holdings View */}
@@ -331,11 +376,19 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
                           </div>
                         </td>
                         <td className="px-6 py-5">
-                          <div className="flex flex-col">
-                            <span className="text-[12px] font-bold text-[--text-primary]">{format(parseISO(bond.maturity_date), "MMM d, yyyy")}</span>
-                            <span className={`text-[10px] font-bold ${daysToMaturity < 90 ? 'text-warning' : 'text-[--text-muted]'}`}>
-                              {daysToMaturity} days
-                            </span>
+                          <div className="flex justify-between items-center">
+                            <div className="flex flex-col">
+                              <span className="text-[12px] font-bold text-[--text-primary]">{format(parseISO(bond.maturity_date), "MMM d, yyyy")}</span>
+                              <span className={`text-[10px] font-bold ${daysToMaturity < 90 ? 'text-warning' : 'text-[--text-muted]'}`}>
+                                {daysToMaturity} days
+                              </span>
+                            </div>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); startEdit(bond); }}
+                              className="px-2.5 py-1 bg-sky-500/10 hover:bg-sky-500 text-sky-400 hover:text-white text-[9px] font-black uppercase rounded transition-all ml-4 opacity-0 group-hover:opacity-100"
+                            >
+                              Edit
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -410,8 +463,8 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-xl">
           <div className="glass-card-static w-full max-w-3xl p-8 max-h-[95vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-8">
-              <h2 className="text-2xl font-black">Add Bond Investment</h2>
-              <button onClick={() => setShowAddModal(false)} className="text-[--text-muted] hover:text-white">
+              <h2 className="text-2xl font-black">{editingId ? 'Edit Bond Holding' : 'Add Bond Investment'}</h2>
+              <button onClick={() => { setShowAddModal(false); setEditingId(null); }} className="text-[--text-muted] hover:text-white">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -443,58 +496,99 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Face Value</label>
-                  <input required type="number" className="input-premium" value={formData.face_value} onChange={e => setFormData({...formData, face_value: e.target.value})} />
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Credit Rating</label>
+                  <input className="input-premium" value={formData.credit_rating} onChange={e => setFormData({...formData, credit_rating: e.target.value})} placeholder="e.g. CRISIL AAA" />
                 </div>
 
-                <div>
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Quantity</label>
-                  <input required type="number" className="input-premium" value={formData.quantity} onChange={e => setFormData({...formData, quantity: e.target.value})} />
-                </div>
+                {editingId ? (
+                  <>
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Current Price (Market LTP)</label>
+                      <input required type="number" step="0.01" className="input-premium" value={formData.current_price} onChange={e => setFormData({...formData, current_price: e.target.value})} />
+                    </div>
 
-                <div>
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Purchase Price</label>
-                  <input required type="number" step="0.01" className="input-premium" value={formData.purchase_price} onChange={e => setFormData({...formData, purchase_price: e.target.value})} />
-                </div>
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Current Total Value</label>
+                      <input required type="number" step="0.01" className="input-premium" value={formData.current_value} onChange={e => setFormData({...formData, current_value: e.target.value})} />
+                    </div>
 
-                <div>
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Coupon Rate (%)</label>
-                  <input required type="number" step="0.01" className="input-premium" value={formData.coupon_rate} onChange={e => setFormData({...formData, coupon_rate: e.target.value})} />
-                </div>
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Accrued Interest</label>
+                      <input required type="number" step="0.01" className="input-premium" value={formData.accrued_interest} onChange={e => setFormData({...formData, accrued_interest: e.target.value})} />
+                    </div>
 
-                <div>
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Interest Frequency</label>
-                  <select className="input-premium" value={formData.interest_frequency} onChange={e => setFormData({...formData, interest_frequency: e.target.value})}>
-                    {INTEREST_FREQUENCIES.map(f => <option key={f} value={f}>{f}</option>)}
-                  </select>
-                </div>
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Total Interest Earned</label>
+                      <input required type="number" step="0.01" className="input-premium" value={formData.total_interest_earned} onChange={e => setFormData({...formData, total_interest_earned: e.target.value})} />
+                    </div>
 
-                <div>
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Purchase Date</label>
-                  <input required type="date" className="input-premium" value={formData.purchase_date} onChange={e => setFormData({...formData, purchase_date: e.target.value})} />
-                </div>
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Yield to Maturity (YTM %)</label>
+                      <input type="number" step="0.01" className="input-premium" value={formData.ytm} onChange={e => setFormData({...formData, ytm: e.target.value})} placeholder="7.25" />
+                    </div>
 
-                <div>
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Maturity Date</label>
-                  <input required type="date" className="input-premium" value={formData.maturity_date} onChange={e => setFormData({...formData, maturity_date: e.target.value})} />
-                </div>
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Next Interest Payment Date</label>
+                      <input type="date" className="input-premium" value={formData.next_interest_date} onChange={e => setFormData({...formData, next_interest_date: e.target.value})} />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Face Value</label>
+                      <input required type="number" className="input-premium" value={formData.face_value} onChange={e => setFormData({...formData, face_value: e.target.value})} />
+                    </div>
 
-                <div>
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Platform</label>
-                  <input className="input-premium" value={formData.platform} onChange={e => setFormData({...formData, platform: e.target.value})} placeholder="Wint" />
-                </div>
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Quantity</label>
+                      <input required type="number" className="input-premium" value={formData.quantity} onChange={e => setFormData({...formData, quantity: e.target.value})} />
+                    </div>
 
-                <div>
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Deduct from Account</label>
-                  <select className="input-premium" value={formData.account_id} onChange={e => setFormData({...formData, account_id: e.target.value})}>
-                    <option value="">No Deduction</option>
-                    {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
-                  </select>
-                </div>
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Purchase Price</label>
+                      <input required type="number" step="0.01" className="input-premium" value={formData.purchase_price} onChange={e => setFormData({...formData, purchase_price: e.target.value})} />
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Coupon Rate (%)</label>
+                      <input required type="number" step="0.01" className="input-premium" value={formData.coupon_rate} onChange={e => setFormData({...formData, coupon_rate: e.target.value})} />
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Interest Frequency</label>
+                      <select className="input-premium" value={formData.interest_frequency} onChange={e => setFormData({...formData, interest_frequency: e.target.value})}>
+                        {INTEREST_FREQUENCIES.map(f => <option key={f} value={f}>{f}</option>)}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Purchase Date</label>
+                      <input required type="date" className="input-premium" value={formData.purchase_date} onChange={e => setFormData({...formData, purchase_date: e.target.value})} />
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Maturity Date</label>
+                      <input required type="date" className="input-premium" value={formData.maturity_date} onChange={e => setFormData({...formData, maturity_date: e.target.value})} />
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Platform</label>
+                      <input className="input-premium" value={formData.platform} onChange={e => setFormData({...formData, platform: e.target.value})} placeholder="Wint" />
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Deduct from Account</label>
+                      <select className="input-premium" value={formData.account_id} onChange={e => setFormData({...formData, account_id: e.target.value})}>
+                        <option value="">No Deduction</option>
+                        {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
+                      </select>
+                    </div>
+                  </>
+                )}
               </div>
 
               <button type="submit" disabled={submitting} className="btn-primary w-full">
-                {submitting ? "Adding..." : "Add Bond"}
+                {editingId ? "Update Bond Details" : submitting ? "Adding..." : "Add Bond"}
               </button>
             </form>
           </div>

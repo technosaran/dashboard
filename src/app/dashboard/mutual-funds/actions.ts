@@ -64,30 +64,6 @@ async function fetchWithRetry(url: string, retries = 5): Promise<Response> {
 }
 
 export async function getLiveNAV(schemeCode: string) {
-    if (!schemeCode) return null;
-    try {
-        const res = await fetchWithRetry(`https://api.mfapi.in/mf/${schemeCode}`);
-        const data = await res.json();
-        if (data?.data?.length > 0) {
-            const nav = parseFloat(data.data[0].nav);
-            const prevNav = data.data.length > 1 ? parseFloat(data.data[1].nav) : nav;
-            const change = nav - prevNav;
-            const changePercent = prevNav > 0 ? (change / prevNav) * 100 : 0;
-
-            return {
-                nav,
-                prevNav,
-                dayChange: change,
-                dayChangePercent: changePercent,
-                date: data.data[0].date,
-                fund_name: data.meta.scheme_name,
-                amc: data.meta.amc
-            };
-        }
-    } catch (error) {
-        console.error(`NAV Fetch Error for ${schemeCode}:`, error);
-        return null;
-    }
     return null;
 }
 
@@ -160,44 +136,33 @@ export async function recordMFInvestment(data: {
 }
 
 export async function refreshNAV(mfs: { id: string, scheme_code: string }[]) {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return [];
+    return [];
+}
 
-    const BATCH_SIZE = 10;
-    const DELAY = 200;
-    const results = [];
+export async function updateMFHolding(id: string, data: {
+  fund_name?: string;
+  current_nav?: number;
+  category?: string;
+  investment_type?: string;
+}) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
 
-    for (let i = 0; i < mfs.length; i += BATCH_SIZE) {
-        const batch = mfs.slice(i, i + BATCH_SIZE);
-        const batchResults = await Promise.all(batch.map(async (mf) => {
-            if (!mf.scheme_code) return null;
-            try {
-                const live = await getLiveNAV(mf.scheme_code);
-                if (live) {
-                    const { error } = await supabase.from("mutual_funds").update({ 
-                        current_nav: live.nav, 
-                        previous_nav: live.prevNav,
-                        day_change: live.dayChange,
-                        day_change_percent: live.dayChangePercent,
-                        last_nav_updated_at: new Date().toISOString(),
-                        updated_at: new Date().toISOString()
-                    }).eq("id", mf.id);
-                    
-                    if (error) console.error(`DB Update Error for MF ${mf.id}:`, error);
-                    return { id: mf.id, nav: live.nav, prevNav: live.prevNav };
-                }
-            } catch (e) {
-                console.error(`Refresh error for MF ${mf.id}:`, e);
-            }
-            return null;
-        }));
-        
-        results.push(...batchResults.filter(Boolean));
-        if (i + BATCH_SIZE < mfs.length) await new Promise(r => setTimeout(r, DELAY));
-    }
+  const { error } = await supabase
+    .from("mutual_funds")
+    .update({ 
+      fund_name: data.fund_name,
+      current_nav: data.current_nav,
+      category: data.category,
+      investment_type: data.investment_type,
+      updated_at: new Date().toISOString() 
+    })
+    .eq("id", id)
+    .eq("user_id", user.id);
 
-    revalidatePath("/dashboard/mutual-funds");
-    revalidatePath("/dashboard");
-    return results;
+  if (error) return { error: error.message };
+
+  revalidatePath("/dashboard/mutual-funds");
+  return { success: true };
 }
