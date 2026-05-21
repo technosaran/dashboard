@@ -60,7 +60,7 @@ export default function LoginPage() {
     }
   }
 
-  const isLockedOut = lockoutUntil !== null && Date.now() < lockoutUntil;
+  const isLockedOut = lockoutSeconds > 0;
 
   return (
     <div className="login-page">
