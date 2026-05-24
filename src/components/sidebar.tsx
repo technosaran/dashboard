@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
 import { useEffect, useState, useMemo } from "react";
 import { useFinanceData } from "@/hooks/use-finance-data";
-import { MODULE_KEYS, MODULE_DISPLAY_LABELS } from "@/lib/modules";
+import { MODULE_KEYS } from "@/lib/modules";
 import type { ModuleKey } from "@/lib/modules";
 
 const nav = [
@@ -221,7 +221,7 @@ export default function Sidebar() {
     <>
       {/* Universal Quick Action Hub */}
       <div className={`md:hidden fixed inset-0 z-[100] bg-black/80 backdrop-blur-md transition-all duration-500 ${isQuickActionOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`} onClick={() => setIsQuickActionOpen(false)}>
-        <div className={`absolute bottom-32 left-8 right-8 grid grid-cols-2 gap-4 transition-all duration-500 ${isQuickActionOpen ? "translate-y-0 scale-100" : "translate-y-16 scale-90"}`} onClick={e => e.stopPropagation()}>
+        <div className={`absolute bottom-[calc(var(--mobile-bottom-nav-height)+0.75rem)] left-4 right-4 grid grid-cols-2 gap-3 sm:left-8 sm:right-8 sm:gap-4 transition-all duration-500 ${isQuickActionOpen ? "translate-y-0 scale-100" : "translate-y-16 scale-90"}`} onClick={e => e.stopPropagation()}>
           {quickActions.map((action) => (
             <Link key={action.label} href={action.href} prefetch={true} onClick={() => setIsQuickActionOpen(false)} aria-label={`Add new ${action.label}`} className="glass-card-static p-6 flex flex-col items-center justify-center gap-3 no-underline transition-all active:scale-95 shadow-lg" style={{ background: "var(--bg-surface)", border: `1px solid ${action.color}30` }}>
               <div className="text-3xl filter drop-shadow-[0_4px_10px_rgba(0,0,0,0.1)]" aria-hidden="true">{action.icon}</div>
@@ -272,8 +272,9 @@ export default function Sidebar() {
 
       {/* Mobile Bottom Navigation (FAB Optimized) */}
       <nav 
-        className="md:hidden fixed bottom-2 left-4 right-4 z-[90] flex items-center justify-between px-1 h-[72px] border border-[--accent-primary]/10 rounded-[32px] transition-transform duration-300"
+        className="md:hidden fixed left-3 right-3 z-[90] flex h-[68px] items-center justify-between rounded-[28px] border border-[--accent-primary]/10 px-1 transition-transform duration-300 sm:left-4 sm:right-4 sm:h-[72px] sm:rounded-[32px]"
         style={{
+          bottom: "max(0.5rem, env(safe-area-inset-bottom, 0px))",
           background: "rgba(21, 25, 34, 0.85)",
           backdropFilter: "blur(20px)",
           WebkitBackdropFilter: "blur(20px)",

@@ -361,8 +361,8 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
       )}
 
       {showAddModal && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-xl animate-fade-in">
-          <div className="glass-card-static w-full max-w-xl p-8 md:p-12">
+        <div className="mobile-dialog-shell fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-xl animate-fade-in">
+          <div className="mobile-dialog-panel glass-card-static w-full max-w-xl p-8 md:p-12">
              <div className="flex justify-between items-center mb-10">
                <h2 className="text-3xl font-black tracking-tight">{editingGoalId ? "Update Milestone" : "Set Milestone"}</h2>
                <button onClick={() => { setShowAddModal(false); setEditingGoalId(null); setFormData({ name: "", target_amount: "", current_amount: "0", deadline: "", category: "Others", account_id: "" }); }} className="text-[--text-muted] hover:text-[--text-primary] transition-colors p-2">
@@ -425,8 +425,8 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
       )}
 
       {showContributeModal && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-xl animate-fade-in">
-          <div className="glass-card-static w-full max-sm p-8 animate-scale-in text-center border-white/10 shadow-2xl">
+        <div className="mobile-dialog-shell fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-xl animate-fade-in">
+          <div className="mobile-dialog-panel glass-card-static w-full max-w-sm p-8 animate-scale-in text-center border-white/10 shadow-2xl">
              <div className="w-14 h-14 rounded-2xl bg-[--accent-primary]/10 flex items-center justify-center text-2xl mx-auto mb-4">💰</div>
              <h3 className="text-xl font-black mb-1">Inject Savings</h3>
              <p className="text-[10px] text-[--text-muted] font-black uppercase tracking-[0.2em] mb-6">Asset Allocation</p>

@@ -294,8 +294,8 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
       )}
 
       {showAddModal && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/90 backdrop-blur-xl animate-fade-in shadow-2xl">
-          <div className="glass-card-static w-full max-w-2xl p-6 md:p-10 border-[--accent-primary]/20 shadow-[0_0_100px_rgba(14,165,233,0.1)] max-h-[95vh] overflow-y-auto">
+        <div className="mobile-dialog-shell fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/90 backdrop-blur-xl animate-fade-in shadow-2xl">
+          <div className="mobile-dialog-panel glass-card-static w-full max-w-2xl p-6 md:p-10 border-[--accent-primary]/20 shadow-[0_0_100px_rgba(14,165,233,0.1)] max-h-[95vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-10">
               <h2 className="text-3xl font-black">{editingId ? "Update Asset" : "Establish Asset"}</h2>
               <button onClick={() => { setShowAddModal(false); setEditingId(null); }} className="text-[--text-muted] hover:text-white transition-colors"><svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg></button>

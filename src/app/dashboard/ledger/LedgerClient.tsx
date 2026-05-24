@@ -482,8 +482,8 @@ export default function LedgerClient() {
       </section>
 
       {showRevertConfirm && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-[--bg-base]/80 p-4 backdrop-blur-sm">
-          <div className="glass-card-static w-full max-w-md p-6">
+        <div className="mobile-dialog-shell fixed inset-0 z-[200] flex items-center justify-center bg-[--bg-base]/80 p-4 backdrop-blur-sm">
+          <div className="mobile-dialog-panel glass-card-static w-full max-w-md p-6">
             <h3 className="text-lg font-semibold text-[--text-primary]">Undo this ledger entry?</h3>
             <p className="mt-2 text-sm text-[--text-muted]">This will restore the prior balance and remove this action from history.</p>
 
