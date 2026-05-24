@@ -38,7 +38,7 @@ export default function DashboardLayout({
               zIndex: 0,
             }}
           />
-          <div className="relative z-10 mx-auto w-full max-w-[var(--page-max-width)] overflow-x-hidden px-[var(--page-padding-x)] pt-[var(--page-padding-y)] pb-[calc(var(--page-padding-y)*2+6.5rem)] md:pb-[calc(var(--page-padding-y)*2)]">
+          <div className="relative z-10 mx-auto w-full max-w-[var(--page-max-width)] overflow-x-hidden px-[var(--page-padding-x)] pt-[var(--page-padding-y)] pb-[calc(var(--mobile-bottom-nav-height)+var(--page-padding-y))] md:pb-[calc(var(--page-padding-y)*2)]">
             {children}
           </div>
         </main>

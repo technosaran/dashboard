@@ -593,8 +593,8 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
       ) : null}
 
       {showForm && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-md animate-fade-in shadow-2xl">
-          <div className="glass-card-static w-full max-w-xl p-6 md:p-10 max-h-[95vh] overflow-y-auto">
+        <div className="mobile-dialog-shell fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-md animate-fade-in shadow-2xl">
+          <div className="mobile-dialog-panel glass-card-static w-full max-w-xl p-6 md:p-10 max-h-[95vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-10 pb-2">
               <h2 className="text-2xl font-black">
                 {editingId ? "Modify Portfolio" : (formData.trade_type === 'buy' ? 'Asset Acquisition' : 'Asset Disposal')}

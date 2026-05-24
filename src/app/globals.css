@@ -90,6 +90,7 @@
   --page-padding-x: 2rem;
   --page-padding-y: 2rem;
   --page-max-width: 1600px;
+  --mobile-bottom-nav-height: calc(env(safe-area-inset-bottom, 0px) + 6.5rem);
 
   /* Sidebar - Professional Navigation */
   --sidebar-bg: rgba(21, 25, 34, 0.98);
@@ -146,6 +147,14 @@
     --section-gap: 1.5rem;
     --page-padding-x: 1rem;
     --page-padding-y: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --section-gap: 1rem;
+    --page-padding-x: 0.875rem;
+    --page-padding-y: 0.875rem;
   }
 }
 
@@ -236,6 +245,26 @@ input, textarea, [contenteditable="true"] {
   .glass-card,
   .glass-card-static {
     padding: 1.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .glass-card,
+  .glass-card-static {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .mobile-dialog-shell {
+    padding: 0.75rem;
+  }
+
+  .mobile-dialog-panel {
+    width: min(100%, calc(100vw - 1rem));
+    max-height: calc(100dvh - env(safe-area-inset-bottom, 0px) - 1rem);
+    padding: 1rem !important;
+    border-radius: calc(var(--radius-lg) + 2px);
   }
 }
 

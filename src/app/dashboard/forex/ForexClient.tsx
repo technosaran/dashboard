@@ -249,8 +249,8 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
 
       {/* Modals - Simplified for brevity */}
       {showAccountModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="glass-card-static w-full max-w-md p-8 animate-in zoom-in duration-300">
+        <div className="mobile-dialog-shell fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="mobile-dialog-panel glass-card-static w-full max-w-md p-8 animate-in zoom-in duration-300">
             <h2 className="text-2xl font-black mb-6">Connect Broker</h2>
             <form onSubmit={handleCreateAccount} className="space-y-4">
               <input required className="input-premium" placeholder="Broker Name (e.g. Exness)" value={accountForm.broker_name} onChange={e => setAccountForm({...accountForm, broker_name: e.target.value})} />
@@ -269,8 +269,8 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
       )}
 
       {showTradeModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="glass-card-static w-full max-w-md p-8 animate-in zoom-in duration-300">
+        <div className="mobile-dialog-shell fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="mobile-dialog-panel glass-card-static w-full max-w-md p-8 animate-in zoom-in duration-300">
             <h2 className="text-2xl font-black mb-6">Log Completed Trade</h2>
             <form onSubmit={handleLogTrade} className="space-y-4">
               <select required className="input-premium" value={tradeForm.forex_account_id} onChange={e => setTradeForm({...tradeForm, forex_account_id: e.target.value})}>
@@ -297,8 +297,8 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
       )}
 
       {showFundsModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="glass-card-static w-full max-w-md p-8 animate-in zoom-in duration-300">
+        <div className="mobile-dialog-shell fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="mobile-dialog-panel glass-card-static w-full max-w-md p-8 animate-in zoom-in duration-300">
             <h2 className="text-2xl font-black mb-6">{fundsType === 'DEPOSIT' ? 'Add Funds' : 'Withdraw Funds'}</h2>
             <form onSubmit={handleFunds} className="space-y-4">
               <select required className="input-premium" value={fundsForm.forex_account_id} onChange={e => setFundsForm({...fundsForm, forex_account_id: e.target.value})}>

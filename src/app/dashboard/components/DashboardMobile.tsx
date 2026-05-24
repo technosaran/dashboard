@@ -30,24 +30,24 @@ type Props = {
 
 const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, isValidating }: Props) {
   return (
-    <div className="flex flex-col gap-6 md:hidden min-h-screen animate-fade-in relative z-20 pb-24">
+    <div className="relative z-20 flex min-h-screen flex-col gap-6 pb-[calc(var(--mobile-bottom-nav-height)+1rem)] md:hidden animate-fade-in">
       {/* Mobile Header / Balance */}
-      <div className="glass-card-static rich-border p-6 text-center flex flex-col items-center justify-center relative overflow-hidden border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.3)]">
+      <div className="glass-card-static rich-border relative flex flex-col items-center justify-center overflow-hidden border border-white/10 p-5 text-center shadow-[0_20px_50px_rgba(0,0,0,0.3)] sm:p-6">
         <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[--accent-primary] via-purple-500 to-emerald-500" />
         <div className="absolute -right-10 -top-10 w-40 h-40 bg-[--accent-primary]/10 blur-3xl rounded-full" />
         <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-emerald-500/5 blur-3xl rounded-full" />
         
-        <p className="text-[9px] font-black uppercase tracking-[0.4em] text-[--text-muted] mb-2">Portfolio Net Worth</p>
-        <div className="flex flex-col items-center w-full max-w-full px-2">
-          <h2 className="text-[clamp(1.8rem,9vw,2.8rem)] font-[900] text-white tracking-tighter mb-1 bg-gradient-to-b from-white to-white/60 bg-clip-text text-transparent whitespace-nowrap overflow-x-auto overflow-y-hidden w-full no-scrollbar leading-none">
+        <p className="mb-2 text-[10px] font-black uppercase tracking-[0.28em] text-[--text-muted]">Portfolio Net Worth</p>
+        <div className="flex w-full max-w-full flex-col items-center px-1 sm:px-2">
+          <h2 className="no-scrollbar mb-1 w-full overflow-x-auto overflow-y-hidden bg-gradient-to-b from-white to-white/60 bg-clip-text text-center text-[clamp(1.8rem,10vw,2.8rem)] font-[900] leading-none tracking-tighter text-transparent whitespace-nowrap">
              ₹{stats.totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0 })}
           </h2>
-          <p className="text-sm font-bold text-white/50 mb-2 tracking-tight whitespace-nowrap">
+          <p className="mb-2 text-xs font-bold tracking-tight text-white/50 sm:text-sm whitespace-nowrap">
              ${(stats.totalBalance / 83.5).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} USD
           </p>
         </div>
-        <div className={`flex items-center gap-2 mb-4 flex-wrap justify-center ${stats.totalDayPnL >= 0 ? 'text-emerald-400' : 'text-rose-500'}`}>
-          <span className="text-[12px] font-black tabular-nums whitespace-nowrap">
+        <div className={`mb-4 flex flex-wrap items-center justify-center gap-2 ${stats.totalDayPnL >= 0 ? 'text-emerald-400' : 'text-rose-500'}`}>
+          <span className="text-[11px] font-black tabular-nums sm:text-[12px] whitespace-nowrap">
             {stats.totalDayPnL >= 0 ? '+' : '-'}₹{Math.abs(stats.totalDayPnL).toLocaleString()} ({stats.totalDayPnL >= 0 ? '+' : '-'}${Math.abs(stats.totalDayPnL / 83.5).toLocaleString(undefined, { maximumFractionDigits: 0 })})
           </span>
           <span className="text-[9px] font-black opacity-60 tabular-nums">
@@ -55,27 +55,27 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, isVal
           </span>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 w-full pt-4 border-t border-white/5">
-           <div className="flex flex-col items-center bg-emerald-500/5 py-2.5 rounded-xl border border-emerald-500/10 overflow-hidden">
-             <span className="text-[clamp(8px,2.2vw,10px)] font-black text-emerald-400 truncate w-full px-1">+₹{stats.totalAssets.toLocaleString()}</span>
+        <div className="grid w-full grid-cols-2 gap-2 border-t border-white/5 pt-4 sm:gap-3">
+           <div className="flex min-w-0 flex-col items-center overflow-hidden rounded-xl border border-emerald-500/10 bg-emerald-500/5 py-2.5">
+            <span className="w-full truncate px-1 text-[clamp(8px,2.6vw,10px)] font-black text-emerald-400">+₹{stats.totalAssets.toLocaleString()}</span>
              <span className="text-[8px] text-emerald-400/60 font-bold">+${Math.round(stats.totalAssets / 83.5).toLocaleString()}</span>
              <span className="text-[8px] text-[--text-muted] uppercase font-black tracking-widest mt-0.5">Total Assets</span>
            </div>
-           <div className="flex flex-col items-center bg-rose-500/5 py-2.5 rounded-xl border border-rose-500/10 overflow-hidden">
-             <span className="text-[clamp(8px,2.2vw,10px)] font-black text-rose-500 truncate w-full px-1">-₹{stats.debtBalance.toLocaleString()}</span>
+           <div className="flex min-w-0 flex-col items-center overflow-hidden rounded-xl border border-rose-500/10 bg-rose-500/5 py-2.5">
+            <span className="w-full truncate px-1 text-[clamp(8px,2.6vw,10px)] font-black text-rose-500">-₹{stats.debtBalance.toLocaleString()}</span>
              <span className="text-[8px] text-rose-500/60 font-bold">-${Math.round(stats.debtBalance / 83.5).toLocaleString()}</span>
              <span className="text-[8px] text-[--text-muted] uppercase font-black tracking-widest mt-0.5">Total Debt</span>
            </div>
         </div>
 
-        <div className="mt-3 flex gap-4 pt-3 border-t border-white/5 w-full justify-center">
-           <div className="flex flex-col items-center">
-             <span className="text-[10px] font-black text-success tracking-widest">+₹{stats.monthlyIncome.toLocaleString()}</span>
+        <div className="mt-3 flex w-full justify-center gap-4 border-t border-white/5 pt-3">
+           <div className="flex min-w-0 flex-col items-center">
+            <span className="text-[10px] font-black text-success tracking-[0.12em]">+₹{stats.monthlyIncome.toLocaleString()}</span>
              <span className="text-[8px] text-[--text-muted] uppercase font-bold tracking-tighter">Income</span>
            </div>
            <div className="w-px h-8 bg-white/10" />
-           <div className="flex flex-col items-center">
-             <span className="text-[10px] font-black text-danger tracking-widest">-₹{stats.monthlySpend.toLocaleString()}</span>
+           <div className="flex min-w-0 flex-col items-center">
+            <span className="text-[10px] font-black text-danger tracking-[0.12em]">-₹{stats.monthlySpend.toLocaleString()}</span>
              <span className="text-[8px] text-[--text-muted] uppercase font-bold tracking-tighter">Expenses</span>
            </div>
         </div>
@@ -93,17 +93,17 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, isVal
           {recentLogs.slice(0, 3).map((log) => {
              const isOut = ["DELETE", "TRANSFER_OUT", "SEND_MONEY", "ADJUST_DOWN"].includes(log.action_type);
              return (
-               <div key={log.id} className="glass-card-static !border-0 !rounded-none p-4 flex items-center justify-between hover:bg-white/[0.04]">
-                  <div className="flex items-center gap-3">
+               <div key={log.id} className="glass-card-static !border-0 !rounded-none flex items-center justify-between gap-3 p-4 hover:bg-white/[0.04]">
+                 <div className="flex min-w-0 items-center gap-3">
                     <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center text-base">
                       {log.action_type === "CREATE" ? "✨" : isOut ? "📉" : "📈"}
                     </div>
-                    <div className="flex flex-col">
-                      <span className="text-[11px] font-bold text-white truncate max-w-[140px]">{log.details}</span>
-                      <span className="text-[8px] font-black uppercase text-[--text-muted]">{log.created_at ? format(new Date(log.created_at), "HH:mm") : "—"} • {log.account_name}</span>
+                   <div className="flex min-w-0 flex-col">
+                     <span className="truncate text-[11px] font-bold text-white">{log.details}</span>
+                     <span className="truncate text-[8px] font-black uppercase text-[--text-muted]">{log.created_at ? format(new Date(log.created_at), "HH:mm") : "—"} • {log.account_name}</span>
                     </div>
                   </div>
-                  <span className={`text-[13px] font-black ${isOut ? "text-danger" : "text-success"}`}>
+                 <span className={`shrink-0 text-[12px] font-black sm:text-[13px] ${isOut ? "text-danger" : "text-success"}`}>
                     {log.amount ? `${isOut ? "-" : "+"}₹${log.amount.toLocaleString()}` : "—"}
                   </span>
                </div>
@@ -121,29 +121,29 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, isVal
       <div className="px-1 mt-2">
         <h3 className="text-xs font-black uppercase tracking-widest text-[--text-muted] mb-4">Invest & Capital</h3>
         <div className="flex flex-col gap-3">
-           <Link href="/dashboard/stocks?action=new" className="glass-card-static p-4 flex items-center gap-4 active:scale-95 transition-transform">
+           <Link href="/dashboard/stocks?action=new" className="glass-card-static flex min-w-0 items-center gap-3 p-4 transition-transform active:scale-95">
              <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center text-lg shadow-[0_0_15px_rgba(59,130,246,0.3)]">📈</div>
-             <div className="flex flex-col">
+             <div className="flex min-w-0 flex-col">
                <span className="text-sm font-bold text-white">Record Stock Trade</span>
                <span className="text-[9px] font-black uppercase tracking-widest text-[--text-muted]">Equities & Market</span>
              </div>
-             <svg className="w-5 h-5 ml-auto text-[--text-muted]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+             <svg className="ml-auto h-5 w-5 shrink-0 text-[--text-muted]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
            </Link>
-           <Link href="/dashboard/mutual-funds?action=new" className="glass-card-static p-4 flex items-center gap-4 active:scale-95 transition-transform">
+           <Link href="/dashboard/mutual-funds?action=new" className="glass-card-static flex min-w-0 items-center gap-3 p-4 transition-transform active:scale-95">
              <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center text-lg shadow-[0_0_15px_rgba(168,85,247,0.3)]">🏦</div>
-             <div className="flex flex-col">
+             <div className="flex min-w-0 flex-col">
                <span className="text-sm font-bold text-white">Log Mutual Fund</span>
                <span className="text-[9px] font-black uppercase tracking-widest text-[--text-muted]">SIP & Lumpsum</span>
              </div>
-             <svg className="w-5 h-5 ml-auto text-[--text-muted]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+             <svg className="ml-auto h-5 w-5 shrink-0 text-[--text-muted]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
            </Link>
-           <Link href="/dashboard/goals?action=new" className="glass-card-static p-4 flex items-center gap-4 active:scale-95 transition-transform">
+           <Link href="/dashboard/goals?action=new" className="glass-card-static flex min-w-0 items-center gap-3 p-4 transition-transform active:scale-95">
              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center text-lg shadow-[0_0_15px_rgba(16,185,129,0.3)]">🎯</div>
-             <div className="flex flex-col">
+             <div className="flex min-w-0 flex-col">
                <span className="text-sm font-bold text-white">Contribute To Goal</span>
                <span className="text-[9px] font-black uppercase tracking-widest text-[--text-muted]">Milestone Tracking</span>
              </div>
-             <svg className="w-5 h-5 ml-auto text-[--text-muted]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+             <svg className="ml-auto h-5 w-5 shrink-0 text-[--text-muted]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
            </Link>
          </div>
        </div>
