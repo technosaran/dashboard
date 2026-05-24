@@ -125,24 +125,28 @@ export async function createInvestment(data: {
 export async function updateInvestment(id: string, data: {
   name?: string;
   symbol?: string;
+  quantity?: number;
+  buy_price?: number;
   current_price?: number;
   currency?: string;
   notes?: string;
+  bought_at?: string;
 }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
-  // Note: quantity, buy_price, and bought_at cannot be updated directly as they are tied to ledger logs.
-  // To change those, the user must revert the ledger log and re-enter the investment.
   const { error } = await supabase
     .from("investments")
     .update({ 
       name: data.name,
       symbol: data.symbol,
+      quantity: data.quantity,
+      buy_price: data.buy_price,
       current_price: data.current_price,
       currency: data.currency,
       notes: data.notes,
+      bought_at: data.bought_at,
       type: "stock", 
       updated_at: new Date().toISOString() 
     })

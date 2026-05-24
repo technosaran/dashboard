@@ -10,9 +10,6 @@ import {
   createInvestment, 
   updateInvestment, 
   deleteInvestment, 
-  getStockDetails, 
-  refreshAllPrices,
-  searchStocks,
   revertLedgerLog
 } from "./actions";
 import { calculateZerodhaCharges } from "@/lib/investment-utils";
@@ -21,13 +18,6 @@ import { useSubmitLock } from "@/hooks/use-submit-lock";
 import PnLValue from "@/components/pnl-value";
 
 type Stock = Tables<"investments"> & { total_charges?: number; pnlPercent?: number };
-
-interface Suggestion {
-  symbol: string;
-  fullSymbol: string;
-  name?: string;
-  exchange: string;
-}
 
 
 type SortKey = "name" | "pnl" | "pnlPercent" | "current_value" | "quantity";
@@ -60,9 +50,6 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
   const [submitting, withLock] = useSubmitLock();
 
   const [showChargesInForm, setShowChargesInForm] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const [fetchingPrice, setFetchingPrice] = useState(false);
-  const [fetchError, setFetchError] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("name");
@@ -78,27 +65,6 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
   });
 
   const [activeTab, setActiveTab] = useState<"holdings" | "history">("holdings");
-  const refreshAllRef = useRef<(() => Promise<void>) | null>(null);
-  const fetchPriceRef = useRef<((symbol: string) => Promise<void>) | null>(null);
-
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-
-  // Debounced search for suggestions
-  useEffect(() => {
-    if (editingId) return;
-    const timer = setTimeout(async () => {
-      if (formData.symbol.length >= 2) {
-        const results = await searchStocks(formData.symbol, formData.exchange);
-        setSuggestions(results);
-        setShowSuggestions(results.length > 0);
-      } else {
-        setSuggestions([]);
-        setShowSuggestions(false);
-      }
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [formData.symbol, formData.exchange, editingId]);
 
   const zerodhaCharges = useMemo(() => {
     const qty = parseFloat(formData.quantity) || 0;
@@ -108,30 +74,6 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
 
 
 
-  async function handleFetchPrice(symbol: string) {
-    if (symbol.length < 2 || editingId) return;
-    setFetchingPrice(true);
-    setFetchError(null);
-    try {
-      const res = await getStockDetails(symbol, formData.exchange);
-      if ("error" in res) {
-        setFetchError(res.error || "Stock not found");
-      } else {
-        setFormData(prev => ({
-          ...prev,
-          name: res.name || prev.name,
-          current_price: res.price?.toString() || prev.current_price,
-          currency: res.currency || prev.currency
-        }));
-      }
-    } catch {
-      setFetchError("Fetch failed");
-    }
-    setFetchingPrice(false);
-  }
-
-  fetchPriceRef.current = handleFetchPrice;
-
   async function handleRevert(logId: string | null) {
     if (!logId) return toast.error("No ledger log found for this trade");
     if (!confirm("Revert this trade? This will undo the portfolio change and reverse any account transactions.")) return;
@@ -139,28 +81,6 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
     if (!res.error) toast.success("Trade reverted");
     else toast.error(res.error);
   }
-
-  // Removed redundant auto-fetch useEffect to prevent "asking two times" feel
-
-  async function handleRefreshAll() {
-    if (refreshing) return;
-    setRefreshing(true);
-    const toastId = toast.loading("Refreshing market prices...");
-    try {
-      const res = await refreshAllPrices();
-      if (res.success) {
-        toast.success("All prices updated", { id: toastId });
-      } else {
-        toast.error(res.error || "Failed to refresh prices", { id: toastId });
-      }
-    } catch {
-      toast.error("Network error during refresh", { id: toastId });
-    } finally {
-      setRefreshing(false);
-    }
-  }
-
-  refreshAllRef.current = handleRefreshAll;
 
 
 
@@ -214,7 +134,6 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
     });
     setShowForm(false);
     setEditingId(null);
-    setFetchError(null);
   }
 
   function startEdit(inv: Stock) {
@@ -608,39 +527,15 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="relative z-50">
+                <div className="relative">
                   <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[10px] text-[--text-muted] uppercase tracking-widest font-bold z-10">Symbol</label>
                   <input
                     required value={formData.symbol}
                     onChange={e => setFormData({ ...formData, symbol: e.target.value.toUpperCase() })}
-                    onFocus={() => { if (suggestions.length > 0) setShowSuggestions(true); }}
                     className="w-full h-12 px-4 bg-transparent border border-[--border-default] rounded-md text-[13px] text-[--text-primary] focus:border-[--accent-primary] outline-none font-bold uppercase placeholder:text-[--text-disabled]"
                     placeholder="SBIN"
                     autoComplete="off"
                   />
-                  
-                  {/* Suggestions Dropdown */}
-                  {showSuggestions && (
-                    <div className="absolute z-[400] top-full left-0 right-0 mt-1 bg-[--bg-elevated] border border-[--border-default] rounded-md shadow-2xl max-h-48 overflow-y-auto overflow-x-hidden animate-fade-in-up">
-                      {suggestions.map((s, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => {
-                            setFormData({ ...formData, symbol: s.symbol, name: s.name || "" });
-                            setShowSuggestions(false);
-                          }}
-                          className="w-full px-4 py-3 flex flex-col items-start border-b border-[--border-default] last:border-0 hover:bg-[--accent-primary]/10 transition-colors text-left"
-                        >
-                          <div className="flex justify-between w-full">
-                            <span className="text-[13px] font-bold text-[--text-primary]">{s.symbol}</span>
-                            <span className="text-[10px] text-[--accent-primary-light] font-bold">{s.exchange}</span>
-                          </div>
-                          <span className="text-[11px] text-[--text-muted] truncate w-full">{s.name}</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
                 </div>
 
                 <div className="flex gap-1 p-1 bg-[--bg-base] rounded-md border border-[--border-default]">
@@ -697,25 +592,13 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="relative">
                   <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[10px] text-[--text-muted] uppercase tracking-widest font-bold z-10">Market LTP</label>
-                  <div className="relative">
-                    <input
-                      required type="number" step="0.01"
-                      value={formData.current_price}
-                      onChange={e => setFormData({ ...formData, current_price: e.target.value })}
-                      className={`w-full h-12 px-4 bg-transparent border border-[--border-default] rounded-md text-[13px] text-[--text-primary] tabular-nums outline-none focus:border-[--accent-primary] font-bold transition-all ${fetchingPrice ? "opacity-50" : ""}`}
-                      placeholder="0.00"
-                    />
-                    {fetchingPrice && (
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        <div className="w-4 h-4 border-2 border-[--accent-primary] border-t-transparent rounded-full animate-spin" />
-                      </div>
-                    )}
-                  </div>
-                  {fetchError && (
-                    <p className="mt-2 text-[11px] font-medium text-rose-400">
-                      {fetchError}
-                    </p>
-                  )}
+                  <input
+                    required type="number" step="0.01"
+                    value={formData.current_price}
+                    onChange={e => setFormData({ ...formData, current_price: e.target.value })}
+                    className="w-full h-12 px-4 bg-transparent border border-[--border-default] rounded-md text-[13px] text-[--text-primary] tabular-nums outline-none focus:border-[--accent-primary] font-bold"
+                    placeholder="0.00"
+                  />
                 </div>
 
                 <div className="relative">
@@ -740,6 +623,28 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                       <path d="M19 9l-7 7-7-7" />
                     </svg>
                   </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="relative">
+                  <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[10px] text-[--text-muted] uppercase tracking-widest font-bold z-10">Transaction Date</label>
+                  <input
+                    required type="date"
+                    value={formData.bought_at}
+                    onChange={e => setFormData({ ...formData, bought_at: e.target.value })}
+                    className="w-full h-12 px-4 bg-transparent border border-[--border-default] rounded-md text-[13px] text-[--text-primary] outline-none focus:border-[--accent-primary] font-bold"
+                  />
+                </div>
+
+                <div className="relative">
+                  <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[10px] text-[--text-muted] uppercase tracking-widest font-bold z-10">Notes</label>
+                  <input
+                    value={formData.notes}
+                    onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                    className="w-full h-12 px-4 bg-transparent border border-[--border-default] rounded-md text-[13px] text-[--text-primary] outline-none focus:border-[--accent-primary] font-medium"
+                    placeholder="Optional notes"
+                  />
                 </div>
               </div>
 

@@ -141,6 +141,11 @@ export async function refreshNAV(mfs: { id: string, scheme_code: string }[]) {
 
 export async function updateMFHolding(id: string, data: {
   fund_name?: string;
+  amc_name?: string;
+  scheme_code?: string;
+  fund_symbol?: string;
+  units?: number;
+  avg_nav?: number;
   current_nav?: number;
   category?: string;
   investment_type?: string;
@@ -153,6 +158,11 @@ export async function updateMFHolding(id: string, data: {
     .from("mutual_funds")
     .update({ 
       fund_name: data.fund_name,
+      amc_name: data.amc_name,
+      scheme_code: data.scheme_code,
+      fund_symbol: data.fund_symbol,
+      units: data.units,
+      avg_nav: data.avg_nav,
       current_nav: data.current_nav,
       category: data.category,
       investment_type: data.investment_type,

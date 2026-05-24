@@ -209,3 +209,76 @@ export async function deleteForexAccount(id: string) {
   revalidatePath("/dashboard/accounts");
   return { success: true };
 }
+
+export async function updateForexAccount(id: string, data: {
+  broker_name?: string;
+  account_label?: string;
+  account_number?: string;
+  currency?: string;
+  balance?: number;
+  total_deposited?: number;
+  total_withdrawn?: number;
+  total_pnl?: number;
+  notes?: string;
+}) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  const { error } = await supabase
+    .from("forex_accounts")
+    .update({ 
+      broker_name: data.broker_name,
+      account_label: data.account_label,
+      account_number: data.account_number || null,
+      currency: data.currency,
+      balance: data.balance,
+      total_deposited: data.total_deposited,
+      total_withdrawn: data.total_withdrawn,
+      total_pnl: data.total_pnl,
+      notes: data.notes || null,
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) return { error: error.message };
+  revalidatePath("/dashboard/forex");
+  return { success: true };
+}
+
+export async function updateForexTrade(id: string, data: {
+  forex_account_id?: string;
+  pair?: string;
+  trade_type?: "BUY" | "SELL";
+  lot_size?: number;
+  pnl?: number;
+  trade_date?: string;
+  entry_price?: number;
+  exit_price?: number;
+  notes?: string;
+}) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  const { error } = await supabase
+    .from("forex_trades")
+    .update({ 
+      forex_account_id: data.forex_account_id,
+      pair: data.pair,
+      trade_type: data.trade_type,
+      lot_size: data.lot_size,
+      pnl: data.pnl,
+      trade_date: data.trade_date,
+      entry_price: data.entry_price || null,
+      exit_price: data.exit_price || null,
+      notes: data.notes || null
+    })
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) return { error: error.message };
+  revalidatePath("/dashboard/forex");
+  return { success: true };
+}

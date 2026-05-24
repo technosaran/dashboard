@@ -52,6 +52,10 @@ function getAMCLogoUrl(amcName: string): string {
   return ''; // fallback to initials
 }
 
+const formatNum = (num: number | string) => {
+  return Number(num || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
 export default function MutualFundsClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { mutualFunds: rawMfs, accounts, mutualFundTrades: trades }, isValidating } = useFinanceData(initialData);
   const mutualFunds = useMemo(() => {
@@ -91,6 +95,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
     scheme_code: "",
     units: "",
     nav: "",
+    current_nav: "",
     investment_type: "SIP",
     category: "Equity",
     amc_name: "HDFC",
@@ -179,30 +184,13 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
   }
 
 
-  const handleSearch = async (val: string) => {
-    setSearchQuery(val);
-    if (val.length < 3) {
-      setSearchResults([]);
-      return;
-    }
-    setIsSearching(true);
-    const results = await searchMFSchemes(val);
-    setSearchResults(results);
-    setIsSearching(false);
-  };
-
-  const selectScheme = async (scheme: MFSchemeSearchResult) => {
-    setFormData({ ...formData, fund_name: scheme.schemeName, scheme_code: scheme.schemeCode.toString() });
-    setSearchResults([]);
-    setSearchQuery(scheme.schemeName);
-  };
-
   const startSell = (mf: MF) => {
     setFormData({
         fund_name: mf.fund_name,
         scheme_code: mf.fund_symbol || mf.scheme_code || "",
         units: mf.units.toString(),
         nav: mf.current_nav.toString(),
+        current_nav: mf.current_nav.toString(),
         investment_type: mf.investment_type || "LUMPSUM",
         category: mf.category || "Equity",
         amc_name: mf.amc_name || "",
@@ -220,7 +208,8 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
       fund_name: mf.fund_name,
       scheme_code: mf.fund_symbol || mf.scheme_code || "",
       units: mf.units.toString(),
-      nav: mf.current_nav.toString(),
+      nav: mf.avg_nav.toString(),
+      current_nav: mf.current_nav.toString(),
       investment_type: mf.investment_type || "SIP",
       category: mf.category || "Equity",
       amc_name: mf.amc_name || "",
@@ -238,7 +227,12 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
       if (editingId) {
         const res = await updateMFHolding(editingId, {
           fund_name: formData.fund_name,
-          current_nav: parseFloat(formData.nav),
+          amc_name: formData.amc_name,
+          scheme_code: formData.scheme_code,
+          fund_symbol: formData.scheme_code,
+          units: parseFloat(formData.units),
+          avg_nav: parseFloat(formData.nav),
+          current_nav: parseFloat(formData.current_nav || formData.nav),
           category: formData.category,
           investment_type: formData.investment_type
         });
@@ -247,7 +241,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
           setShowAddModal(false);
           setEditingId(null);
           setFormData({ 
-            fund_name: "", scheme_code: "", units: "", nav: "", 
+            fund_name: "", scheme_code: "", units: "", nav: "", current_nav: "",
             investment_type: "SIP", category: "Equity", amc_name: "HDFC",
             date: new Date().toISOString().split("T")[0], account_id: "",
             trade_type: "buy"
@@ -272,7 +266,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
           toast.success(formData.trade_type === 'buy' ? "Wealth deployed into mutual fund" : "Mutual fund units liquidated successfully");
           setShowAddModal(false);
           setFormData({ 
-            fund_name: "", scheme_code: "", units: "", nav: "", 
+            fund_name: "", scheme_code: "", units: "", nav: "", current_nav: "",
             investment_type: "SIP", category: "Equity", amc_name: "HDFC",
             date: new Date().toISOString().split("T")[0], account_id: "",
             trade_type: "buy"
@@ -368,151 +362,316 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
         >
           History ({trades.length})
         </button>
-      </div>
+      </div>      {activeTab === "holdings" ? (
+        <>
+          {/* Desktop Table View */}
+          <div className="hidden md:block mx-4 border border-white/5 rounded-2xl overflow-x-auto custom-scrollbar bg-white/[0.01]">
+            <table className="w-full text-left border-collapse min-w-[900px]">
+              <thead>
+                <tr className="border-b border-white/5 bg-white/[0.02]">
+                  <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest">Growth Scheme</th>
+                  <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">Volume</th>
+                  <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">Avg NAV</th>
+                  <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">Live NAV</th>
+                  <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">Day Change</th>
+                  <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">P&L</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/10">
+                {mfs.length === 0 ? (
+                    <tr><td colSpan={6} className="px-6 py-24 text-center text-[#666] italic text-sm">Synchronize with Zerodha Coin or manual entry to view portfolio.</td></tr>
+                ) : mfs.map((mf) => {
+                    const investment = Number(mf.units) * Number(mf.avg_nav);
+                    const currentVal = Number(mf.units) * Number(mf.current_nav);
+                    const pnl = currentVal - investment;
+                    const pnlPercent = investment > 0 ? (pnl / investment) * 100 : 0;
+                    return (
+                        <tr key={mf.id} className="hover:bg-white/[0.01] group transition-colors">
+                            <td className="px-6 py-5">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center flex-shrink-0 overflow-hidden border border-white/20 p-0.5 shadow-md relative">
+                                      {getAMCLogoUrl(mf.amc_name || '') ? (
+                                        <Image 
+                                          src={getAMCLogoUrl(mf.amc_name || '')} 
+                                          alt={`${mf.amc_name || 'AMC'} logo`} 
+                                          fill
+                                          className="object-contain rounded-full p-1"
+                                          sizes="40px"
+                                        />
+                                      ) : (
+                                        <span className="text-[15px] font-black text-slate-800">
+                                          {mf.amc_name ? mf.amc_name.substring(0, 1).toUpperCase() : 'M'}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-bold text-[14px] text-[#eee] group-hover:text-[--accent-primary-light] transition-colors">{mf.fund_name}</span>
+                                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button 
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        toast(`Total Charges: ₹${(Number(mf.units) * Number(mf.avg_nav) * 0.00005).toFixed(4)} (Stamp Duty)`, {
+                                                            icon: '👁️',
+                                                            style: { background: '#1a1a1a', color: '#eee', border: '1px solid #333', fontSize: '11px', fontWeight: 'bold' }
+                                                        });
+                                                    }}
+                                                    className="p-1.5 hover:bg-white/10 rounded-lg text-[--text-muted] hover:text-[--accent-primary-light] transition-all"
+                                                    title="View charges"
+                                                 >
+                                                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                                                         <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.644C3.399 8.32 7.31 5 12 5c4.69 0 8.601 3.32 9.964 6.678a1.012 1.012 0 010 .644C19.601 15.68 15.69 19 12 19c-4.69 0-8.601-3.32-9.964-6.678z" />
+                                                         <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                     </svg>
+                                                 </button>
+                                                <button 
+                                                    onClick={(e) => { e.stopPropagation(); startEdit(mf); }}
+                                                    className="px-2 py-0.5 bg-sky-500/10 hover:bg-sky-500 text-sky-400 hover:text-white text-[9px] font-black uppercase rounded transition-all"
+                                                >
+                                                    Edit
+                                                </button>
+                                                <button 
+                                                    onClick={(e) => { e.stopPropagation(); startSell(mf); }}
+                                                    className="px-2 py-0.5 bg-danger/10 hover:bg-danger text-danger hover:text-white text-[9px] font-black uppercase rounded transition-all"
+                                                >
+                                                    Redeem
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <span className="text-[10px] text-[#666] font-bold uppercase tracking-wide mt-0.5">{mf.category} • {mf.investment_type}</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td className="px-6 py-5 text-right font-bold tabular-nums text-[#eee] text-[14px]">{Number(mf.units).toFixed(3)}</td>
+                            <td className="px-6 py-5 text-right font-medium tabular-nums text-[#666] text-[13px]">₹{Number(mf.avg_nav).toFixed(3)}</td>
+                            <td className="px-6 py-5 text-right font-bold tabular-nums text-[#eee] text-[14px]">₹{Number(mf.current_nav).toFixed(3)}</td>
+                             <td className="px-6 py-5 text-right tabular-nums">
+                                 <PnLValue value={(mf.day_change || 0) * Number(mf.units || 0)} percentage={mf.day_change_percent || 0} size="md" />
+                             </td>
+                            <td className="px-6 py-5 text-right whitespace-nowrap">
+                                <PnLValue value={pnl} percentage={pnlPercent} size="md" />
+                            </td>
+                         </tr>
+                     );
+                 })}
+               </tbody>
+            </table>
+          </div>
 
-      {activeTab === "holdings" ? (
-        <div className="mx-4 border border-white/5 rounded-2xl overflow-x-auto custom-scrollbar bg-white/[0.01]">
-          <table className="w-full text-left border-collapse min-w-[900px]">
-            <thead>
-              <tr className="border-b border-white/5 bg-white/[0.02]">
-                <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest">Growth Scheme</th>
-                <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">Volume</th>
-                <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">Avg NAV</th>
-                <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">Live NAV</th>
-                <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">Day Change</th>
-                <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">P&L</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/10">
-              {mfs.length === 0 ? (
-                  <tr><td colSpan={6} className="px-6 py-24 text-center text-[#666] italic text-sm">Synchronize with Zerodha Coin or manual entry to view portfolio.</td></tr>
-              ) : mfs.map((mf) => {
-                  const investment = Number(mf.units) * Number(mf.avg_nav);
-                  const currentVal = Number(mf.units) * Number(mf.current_nav);
-                  const pnl = currentVal - investment;
-                  const pnlPercent = investment > 0 ? (pnl / investment) * 100 : 0;
-                  return (
-                      <tr key={mf.id} className="hover:bg-white/[0.01] group transition-colors">
-                          <td className="px-6 py-5">
-                              <div className="flex items-center gap-4">
-                                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center flex-shrink-0 overflow-hidden border border-white/20 p-0.5 shadow-md relative">
-                                    {getAMCLogoUrl(mf.amc_name || '') ? (
-                                      <Image 
-                                        src={getAMCLogoUrl(mf.amc_name || '')} 
-                                        alt={`${mf.amc_name || 'AMC'} logo`} 
-                                        fill
-                                        className="object-contain rounded-full p-1"
-                                        sizes="40px"
-                                      />
-                                    ) : (
-                                      <span className="text-[15px] font-black text-slate-800">
-                                        {mf.amc_name ? mf.amc_name.substring(0, 1).toUpperCase() : 'M'}
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div className="flex flex-col">
-                                      <div className="flex items-center gap-2">
-                                          <span className="font-bold text-[14px] text-[#eee] group-hover:text-[--accent-primary-light] transition-colors">{mf.fund_name}</span>
-                                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                              <button 
-                                                  onClick={(e) => {
-                                                      e.stopPropagation();
-                                                      toast(`Total Charges: ₹${(Number(mf.units) * Number(mf.avg_nav) * 0.00005).toFixed(4)} (Stamp Duty)`, {
-                                                          icon: '👁️',
-                                                          style: { background: '#1a1a1a', color: '#eee', border: '1px solid #333', fontSize: '11px', fontWeight: 'bold' }
-                                                      });
-                                                  }}
-                                                  className="p-1.5 hover:bg-white/10 rounded-lg text-[--text-muted] hover:text-[--accent-primary-light] transition-all"
-                                                  title="View charges"
-                                               >
-                                                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                                                       <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.644C3.399 8.32 7.31 5 12 5c4.69 0 8.601 3.32 9.964 6.678a1.012 1.012 0 010 .644C19.601 15.68 15.69 19 12 19c-4.69 0-8.601-3.32-9.964-6.678z" />
-                                                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                   </svg>
-                                               </button>
-                                              <button 
-                                                  onClick={(e) => { e.stopPropagation(); startEdit(mf); }}
-                                                  className="px-2 py-0.5 bg-sky-500/10 hover:bg-sky-500 text-sky-400 hover:text-white text-[9px] font-black uppercase rounded transition-all"
-                                              >
-                                                  Edit
-                                              </button>
-                                              <button 
-                                                  onClick={(e) => { e.stopPropagation(); startSell(mf); }}
-                                                  className="px-2 py-0.5 bg-danger/10 hover:bg-danger text-danger hover:text-white text-[9px] font-black uppercase rounded transition-all"
-                                              >
-                                                  Redeem
-                                              </button>
-                                          </div>
-                                      </div>
-                                      <span className="text-[10px] text-[#666] font-bold uppercase tracking-wide mt-0.5">{mf.category} • {mf.investment_type}</span>
-                                  </div>
-                              </div>
-                          </td>
-                          <td className="px-6 py-5 text-right font-bold tabular-nums text-[#eee] text-[14px]">{Number(mf.units).toFixed(3)}</td>
-                          <td className="px-6 py-5 text-right font-medium tabular-nums text-[#666] text-[13px]">₹{Number(mf.avg_nav).toFixed(3)}</td>
-                          <td className="px-6 py-5 text-right font-bold tabular-nums text-[#eee] text-[14px]">₹{Number(mf.current_nav).toFixed(3)}</td>
-                           <td className="px-6 py-5 text-right tabular-nums">
-                               <PnLValue value={(mf.day_change || 0) * Number(mf.units || 0)} percentage={mf.day_change_percent || 0} size="md" />
-                           </td>
-                          <td className="px-6 py-5 text-right whitespace-nowrap">
-                              <PnLValue value={pnl} percentage={pnlPercent} size="md" />
-                          </td>
-                       </tr>
-                   );
-               })}
-             </tbody>
-          </table>
-        </div>
-      ) : (
-        <div className="mx-4 border border-white/5 rounded-2xl overflow-x-auto custom-scrollbar bg-white/[0.01]">
-          <table className="w-full text-left border-collapse min-w-[700px]">
-            <thead>
-              <tr className="border-b border-white/5 bg-white/[0.02] text-[9px] text-[--text-muted] uppercase font-black tracking-widest">
-                <th className="px-6 py-4">Date</th>
-                <th className="px-6 py-4">Scheme</th>
-                <th className="px-6 py-4">Action</th>
-                <th className="px-6 py-4 text-right">Units</th>
-                <th className="px-6 py-4 text-right">NAV</th>
-                <th className="px-6 py-4 text-right">Amount Delta</th>
-                <th className="px-6 py-4 text-right">Ops</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/10">
-              {trades.length === 0 ? (
-                <tr><td colSpan={7} className="px-6 py-12 text-center text-[#666] italic text-sm">No transaction history recorded yet.</td></tr>
-              ) : trades.map((trade) => {
-                const isBuy = trade.trade_type?.toLowerCase() === 'buy';
-                return (
-                  <tr key={trade.id} className="hover:bg-white/[0.01] transition-colors group">
-                    <td className="px-6 py-4 text-[11px] font-bold text-[--text-muted] tabular-nums">{trade.date}</td>
-                    <td className="px-6 py-4"><span className="text-[13px] font-bold text-[#eee]">{trade.fund_name}</span></td>
-                    <td className="px-6 py-4">
-                      <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest ${isBuy ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}`}>
-                        {trade.trade_type}
+          {/* Mobile Cards View */}
+          <div className="md:hidden space-y-4 px-4">
+            {mfs.length === 0 ? (
+              <div className="p-8 text-center text-[#666] italic text-sm">No holdings recorded yet.</div>
+            ) : mfs.map((mf) => {
+              const investment = Number(mf.units) * Number(mf.avg_nav);
+              const currentVal = Number(mf.units) * Number(mf.current_nav);
+              const pnl = currentVal - investment;
+              const pnlPercent = investment > 0 ? (pnl / investment) * 100 : 0;
+              const isProfit = pnl >= 0;
+              
+              return (
+                <div key={mf.id} className="glass-card-static p-5 active:bg-white/[0.04] transition-all relative overflow-hidden">
+                  <div className="flex justify-between items-start gap-2 mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center flex-shrink-0 overflow-hidden border border-white/20 p-0.5 relative">
+                        {getAMCLogoUrl(mf.amc_name || '') ? (
+                          <Image 
+                            src={getAMCLogoUrl(mf.amc_name || '')} 
+                            alt="logo" 
+                            fill
+                            className="object-contain rounded-full p-1"
+                            sizes="40px"
+                          />
+                        ) : (
+                          <span className="text-[15px] font-black text-slate-800">
+                            {mf.amc_name ? mf.amc_name.substring(0, 1).toUpperCase() : 'M'}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-white leading-tight">{mf.fund_name}</span>
+                        <span className="text-[9px] text-[--text-muted] font-bold uppercase tracking-wider mt-1">
+                          {mf.category} • {mf.investment_type}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-right flex flex-col items-end">
+                      <span className={`text-[15px] font-black ${isProfit ? 'text-success' : 'text-danger'}`}>
+                        {isProfit ? '+' : ''}₹{formatNum(pnl)}
                       </span>
-                    </td>
-                    <td className="px-6 py-4 text-right font-medium tabular-nums text-[#eee] text-[13px]">{Number(trade.units).toFixed(3)}</td>
-                    <td className="px-6 py-4 text-right font-medium tabular-nums text-[#666] text-[13px]">₹{Number(trade.nav).toFixed(3)}</td>
-                    <td className="px-6 py-4 text-right font-black tabular-nums text-[13px]">
-                       <span className={isBuy ? 'text-rose-400' : 'text-emerald-400'}>
-                         {isBuy ? '-' : '+'}₹{Number(trade.amount).toLocaleString()}
-                       </span>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                       <button 
-                         onClick={() => handleRevert(trade.ledger_log_id)}
-                         disabled={submitting}
-                         className="text-[9px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-all bg-rose-500/5 px-3 py-1 rounded-lg border border-rose-500/10"
-                       >
-                         Revert
-                       </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                      <span className={`text-[10px] font-bold opacity-60 ${isProfit ? 'text-success' : 'text-danger'}`}>
+                        {isProfit ? '+' : ''}{pnlPercent.toFixed(2)}%
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-y-3 border-t border-white/5 pt-3 mb-4 text-[12px]">
+                    <div>
+                      <p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-0.5">Holding Units</p>
+                      <p className="font-bold text-white">{Number(mf.units).toFixed(3)}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-0.5">Avg NAV</p>
+                      <p className="font-bold text-[#eee]">₹{Number(mf.avg_nav).toFixed(3)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-0.5">Current Live NAV</p>
+                      <p className="font-bold text-white">₹{Number(mf.current_nav).toFixed(3)}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-0.5">Current Value</p>
+                      <p className="font-bold text-[--accent-primary-light]">₹{formatNum(currentVal)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-0.5">Invested Capital</p>
+                      <p className="font-medium text-[--text-secondary]">₹{formatNum(investment)}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-0.5">Day Change</p>
+                      <PnLValue value={(mf.day_change || 0) * Number(mf.units || 0)} percentage={mf.day_change_percent || 0} size="sm" className="items-end" />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => { 
+                        setEditingId(null); 
+                        setFormData({ 
+                          fund_name: mf.fund_name, 
+                          scheme_code: mf.fund_symbol || mf.scheme_code || "", 
+                          units: "", 
+                          nav: mf.current_nav.toString(), 
+                          current_nav: mf.current_nav.toString(), 
+                          investment_type: mf.investment_type || "SIP", 
+                          category: mf.category || "Equity", 
+                          amc_name: mf.amc_name || "", 
+                          date: new Date().toISOString().split("T")[0], 
+                          account_id: "", 
+                          trade_type: "buy" 
+                        }); 
+                        setSearchQuery(mf.fund_name); 
+                        setShowAddModal(true); 
+                      }} 
+                      className="flex-1 py-2.5 bg-success/15 hover:bg-success/25 text-success border border-success/20 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all"
+                    >
+                      Buy More
+                    </button>
+                    <button 
+                      onClick={() => startSell(mf)} 
+                      className="flex-1 py-2.5 bg-danger/15 hover:bg-danger/25 text-danger border border-danger/20 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all"
+                    >
+                      Redeem
+                    </button>
+                    <button 
+                      onClick={() => startEdit(mf)} 
+                      className="w-12 py-2.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 text-[10px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center transition-all"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Desktop History Table View */}
+          <div className="hidden md:block mx-4 border border-white/5 rounded-2xl overflow-x-auto custom-scrollbar bg-white/[0.01]">
+            <table className="w-full text-left border-collapse min-w-[700px]">
+              <thead>
+                <tr className="border-b border-white/5 bg-white/[0.02] text-[9px] text-[--text-muted] uppercase font-black tracking-widest">
+                  <th className="px-6 py-4">Date</th>
+                  <th className="px-6 py-4">Scheme</th>
+                  <th className="px-6 py-4">Action</th>
+                  <th className="px-6 py-4 text-right">Units</th>
+                  <th className="px-6 py-4 text-right">NAV</th>
+                  <th className="px-6 py-4 text-right">Amount Delta</th>
+                  <th className="px-6 py-4 text-right">Ops</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/10">
+                {trades.length === 0 ? (
+                  <tr><td colSpan={7} className="px-6 py-12 text-center text-[#666] italic text-sm">No transaction history recorded yet.</td></tr>
+                ) : trades.map((trade) => {
+                  const isBuy = trade.trade_type?.toLowerCase() === 'buy';
+                  return (
+                    <tr key={trade.id} className="hover:bg-white/[0.01] transition-colors group">
+                      <td className="px-6 py-4 text-[11px] font-bold text-[--text-muted] tabular-nums">{trade.date}</td>
+                      <td className="px-6 py-4"><span className="text-[13px] font-bold text-[#eee]">{trade.fund_name}</span></td>
+                      <td className="px-6 py-4">
+                        <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest ${isBuy ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}`}>
+                          {trade.trade_type}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right font-medium tabular-nums text-[#eee] text-[13px]">{Number(trade.units).toFixed(3)}</td>
+                      <td className="px-6 py-4 text-right font-medium tabular-nums text-[#666] text-[13px]">₹{Number(trade.nav).toFixed(3)}</td>
+                      <td className="px-6 py-4 text-right font-black tabular-nums text-[13px]">
+                         <span className={isBuy ? 'text-rose-400' : 'text-emerald-400'}>
+                           {isBuy ? '-' : '+'}₹{Number(trade.amount).toLocaleString()}
+                         </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                         <button 
+                           onClick={() => handleRevert(trade.ledger_log_id)}
+                           disabled={submitting}
+                           className="text-[9px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-all bg-rose-500/5 px-3 py-1 rounded-lg border border-rose-500/10"
+                         >
+                           Revert
+                         </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile History Cards View */}
+          <div className="md:hidden space-y-4 px-4">
+            {trades.length === 0 ? (
+              <div className="p-8 text-center text-[#666] italic text-sm">No transaction history recorded yet.</div>
+            ) : trades.map((trade) => {
+              const isBuy = trade.trade_type?.toLowerCase() === 'buy';
+              return (
+                <div key={trade.id} className="glass-card-static p-4 border-white/5">
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-[11px] font-bold text-[--text-muted]">{trade.date}</span>
+                    <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest ${isBuy ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}`}>
+                      {trade.trade_type}
+                    </span>
+                  </div>
+                  <p className="text-sm font-bold text-white mb-3">{trade.fund_name}</p>
+                  <div className="grid grid-cols-2 gap-y-2 text-[12px] border-t border-white/5 pt-3 mb-3">
+                    <div>
+                      <p className="text-[9px] uppercase tracking-wider text-[--text-muted]">Units</p>
+                      <p className="font-bold text-white">{Number(trade.units).toFixed(3)}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[9px] uppercase tracking-wider text-[--text-muted]">NAV</p>
+                      <p className="font-bold text-white">₹{Number(trade.nav).toFixed(3)}</p>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center pt-2 border-t border-white/5">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-[#666]">Amount Delta</span>
+                    <span className={`font-black text-sm ${isBuy ? 'text-rose-400' : 'text-emerald-400'}`}>
+                      {isBuy ? '-' : '+'}₹{Number(trade.amount).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="mt-3 flex justify-end">
+                    <button 
+                      onClick={() => handleRevert(trade.ledger_log_id)}
+                      disabled={submitting}
+                      className="w-full py-2.5 text-[10px] font-black uppercase tracking-widest text-rose-500 bg-rose-500/5 hover:bg-rose-500/10 rounded-xl border border-rose-500/10 transition-all"
+                    >
+                      Revert Order
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
       )}
 
       {/* Record Investment Modal */}
@@ -527,81 +686,85 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
             </div>
             <form onSubmit={handleAddMF} className="space-y-6">
               
-              {/* Scheme Search */}
-              <div className="relative space-y-2">
-                <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">{editingId ? 'Fund Name' : 'Search Growth Scheme'}</label>
-                <div className="relative">
-                    <input 
-                        required 
-                        className="input-premium h-14 pl-12" 
-                        placeholder={editingId ? "e.g., Axis Bluechip Fund" : "Search for Axis, HDFC, SBI Mutual Funds..."} 
-                        value={searchQuery}
-                        onChange={(e) => {
-                          setSearchQuery(e.target.value);
-                          if (editingId) {
-                            setFormData(prev => ({ ...prev, fund_name: e.target.value }));
-                          } else {
-                            handleSearch(e.target.value);
-                          }
-                        }}
-                        disabled={!editingId && formData.trade_type === 'sell'}
-                    />
-                    <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#666]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.3-4.3" /></svg>
-                    {!editingId && isSearching && <div className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-[--accent-primary] border-t-transparent rounded-full animate-spin" />}
+              {/* Scheme Details */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">Fund Name</label>
+                  <input
+                    required
+                    className="input-premium h-12"
+                    placeholder="e.g. Axis Bluechip Fund"
+                    value={formData.fund_name}
+                    onChange={e => setFormData({ ...formData, fund_name: e.target.value })}
+                  />
                 </div>
-
-                {!editingId && searchResults.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 z-[210] mt-2 bg-[#131833] border border-[#252525] rounded-2xl overflow-hidden shadow-2xl max-h-60 overflow-y-auto">
-                        {searchResults.map((s) => (
-                            <button key={s.schemeCode} type="button" onClick={() => selectScheme(s)} className="w-full p-4 text-left hover:bg-[#1a2045] border-b border-[#252525] transition-colors flex flex-col gap-1">
-                                <span className="text-sm font-bold text-[#eee]">{s.schemeName}</span>
-                                <span className="text-[10px] font-bold text-[#666] uppercase tracking-wide">Scheme Code: {s.schemeCode}</span>
-                            </button>
-                        ))}
-                    </div>
-                )}
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">AMC Name</label>
+                  <input
+                    required
+                    className="input-premium h-12"
+                    placeholder="e.g. Axis Mutual Fund"
+                    value={formData.amc_name}
+                    onChange={e => setFormData({ ...formData, amc_name: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">Scheme Code / Symbol</label>
+                  <input
+                    required
+                    className="input-premium h-12"
+                    placeholder="e.g. INF846K01DP8"
+                    value={formData.scheme_code}
+                    onChange={e => setFormData({ ...formData, scheme_code: e.target.value })}
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-3 gap-6 pt-2">
                 <div className="space-y-2">
                   <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">Allocated Units</label>
-                  <input required={!editingId} disabled={!!editingId} type="number" step="0.001" className={`input-premium h-12 ${editingId ? 'opacity-60 cursor-not-allowed' : ''}`} placeholder="0.000" value={formData.units} onChange={e => setFormData({...formData, units: e.target.value})} />
+                  <input required type="number" step="0.001" className="input-premium h-12" placeholder="0.000" value={formData.units} onChange={e => setFormData({...formData, units: e.target.value})} />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">{editingId ? 'Current NAV (Manual)' : formData.trade_type === 'buy' ? 'Avg. Buy Price (NAV)' : 'Redemption NAV'}</label>
+                  <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">Avg. Buy Price (NAV)</label>
                   <input required type="number" step="0.0001" className="input-premium h-12" placeholder="0.0000" value={formData.nav} onChange={e => setFormData({...formData, nav: e.target.value})} />
                 </div>
-                <div className="space-y-2 col-span-2 md:col-span-1">
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">Current NAV (Live)</label>
+                  <input required type="number" step="0.0001" className="input-premium h-12" placeholder="0.0000" value={formData.current_nav} onChange={e => setFormData({...formData, current_nav: e.target.value})} />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
+                <div className="space-y-2">
                   <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">Investment Model</label>
                   <select className="input-premium h-12" value={formData.investment_type} onChange={e => setFormData({...formData, investment_type: e.target.value})}>
                     <option value="SIP" style={{background: '#131833'}}>SIP Engine</option>
                     <option value="LUMPSUM" style={{background: '#131833'}}>One-Time Capital</option>
                   </select>
                 </div>
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">Asset Sector</label>
+                  <select className="input-premium h-12" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
+                    {["Equity", "Debt", "Hybrid", "Index", "Liquid", "ELSS"].map(c => <option key={c} value={c} style={{background: '#131833'}}>{c}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">Trade Date</label>
+                  <input type="date" className="input-premium h-12" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} />
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 gap-6 pt-2">
                 {!editingId ? (
-                  <>
-                    <div className="space-y-2">
-                        <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">{formData.trade_type === 'buy' ? 'Capital Source' : 'Deposit To'}</label>
-                        <select required={!editingId} className="input-premium h-12" value={formData.account_id} onChange={e => setFormData({...formData, account_id: e.target.value})}>
-                            <option value="">{formData.trade_type === 'buy' ? 'Fund Account' : 'Dest. Account'}</option>
-                            {accounts.map(acc => <option key={acc.id} value={acc.id} style={{background: '#131833'}}>{acc.name} (₹{acc.balance.toLocaleString()})</option>)}
-                        </select>
-                    </div>
-                    <div className="space-y-2">
-                        <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">Trade Date</label>
-                        <input type="date" className="input-premium h-12" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} />
-                    </div>
-                  </>
-                ) : null}
-                <div className={`space-y-2 ${editingId ? 'col-span-3' : ''}`}>
-                    <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">Asset Sector</label>
-                    <select className="input-premium h-12" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
-                        {["Equity", "Debt", "Hybrid", "Index", "Liquid", "ELSS"].map(c => <option key={c} value={c} style={{background: '#131833'}}>{c}</option>)}
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">{formData.trade_type === 'buy' ? 'Capital Source' : 'Deposit To'}</label>
+                    <select required={!editingId} className="input-premium h-12" value={formData.account_id} onChange={e => setFormData({...formData, account_id: e.target.value})}>
+                        <option value="">{formData.trade_type === 'buy' ? 'Fund Account' : 'Dest. Account'}</option>
+                        {accounts.map(acc => <option key={acc.id} value={acc.id} style={{background: '#131833'}}>{acc.name} (₹{acc.balance.toLocaleString()})</option>)}
                     </select>
-                </div>
+                  </div>
+                ) : null}
               </div>
 
               {/* Charge Summary Box (With Toggle) */}

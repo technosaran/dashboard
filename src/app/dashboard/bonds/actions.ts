@@ -122,14 +122,24 @@ export async function updateBond(id: string, data: {
   isin?: string;
   issuer?: string;
   bond_type?: "Government" | "Corporate" | "Tax-Free" | "Infrastructure" | "PSU";
+  face_value?: number;
+  quantity?: number;
+  purchase_price?: number;
   current_price?: number;
+  coupon_rate?: number;
+  ytm?: number;
+  purchase_date?: string;
+  maturity_date?: string;
+  next_interest_date?: string;
+  interest_frequency?: "Monthly" | "Quarterly" | "Semi-Annual" | "Annual";
+  credit_rating?: string;
+  platform?: string;
+  notes?: string;
   accrued_interest?: number;
   total_interest_earned?: number;
   current_value?: number;
-  ytm?: number;
-  notes?: string;
-  credit_rating?: string;
-  next_interest_date?: string;
+  total_invested?: number;
+  status?: string;
 }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -142,14 +152,24 @@ export async function updateBond(id: string, data: {
       isin: data.isin,
       issuer: data.issuer,
       bond_type: data.bond_type,
+      face_value: data.face_value,
+      quantity: data.quantity,
+      purchase_price: data.purchase_price,
       current_price: data.current_price,
+      coupon_rate: data.coupon_rate,
+      ytm: data.ytm,
+      purchase_date: data.purchase_date,
+      maturity_date: data.maturity_date,
+      next_interest_date: data.next_interest_date || null,
+      interest_frequency: data.interest_frequency,
+      credit_rating: data.credit_rating,
+      platform: data.platform,
+      notes: data.notes,
       accrued_interest: data.accrued_interest,
       total_interest_earned: data.total_interest_earned,
       current_value: data.current_value,
-      ytm: data.ytm,
-      notes: data.notes,
-      credit_rating: data.credit_rating,
-      next_interest_date: data.next_interest_date || null,
+      total_invested: data.total_invested,
+      status: data.status,
       updated_at: new Date().toISOString() 
     })
     .eq("id", id)
