@@ -5,9 +5,21 @@ import { format } from "date-fns";
 import { useMemo, memo } from "react";
 import Greeting from "@/components/greeting";
 import type { FinanceData } from "@/hooks/use-finance-data";
-import { ResponsiveContainer, Tooltip, PieChart, Pie, Cell } from "recharts";
+import { 
+  ResponsiveContainer, 
+  Tooltip, 
+  PieChart, 
+  Pie, 
+  Cell, 
+  AreaChart, 
+  Area, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid 
+} from "recharts";
+import type { Tables } from "@/lib/database.types";
 
-import { CHART_SERIES_COLOURS, getChartColour } from "@/lib/chart-colours";
+import { getChartColour } from "@/lib/chart-colours";
 
 type PieEntry = {
   name: string;
@@ -54,11 +66,12 @@ type DashboardStats = {
 type Props = {
   stats: DashboardStats;
   recentLogs: FinanceData["ledgerLogs"];
+  goals: Tables<"goals">[];
   isLoading: boolean;
   isValidating: boolean;
 };
 
-const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, isLoading, isValidating }: Props) {
+const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goals, isLoading, isValidating }: Props) {
   // Extract portfolio data computation into a single useMemo
   const portfolioData = useMemo<PieEntry[]>(() => {
     if (stats.totalAssets <= 0) return [];
@@ -103,24 +116,38 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, isL
   }, [stats.totalAssets, stats.cashBalance, stats.stockBalance, stats.mfBalance, stats.altBalance, stats.bondBalance]);
 
   return (
-    <div className="hidden md:flex flex-col gap-[var(--section-gap)] animate-fade-in relative z-20">
-      <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+    <div className="hidden md:flex flex-col gap-8 animate-fade-in relative z-20 pb-10">
+      
+      {/* HEADER SECTION */}
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between px-2">
         <Greeting />
+        
+        <div className="flex items-center gap-4 bg-white/[0.02] border border-white/5 rounded-2xl px-5 py-3.5 backdrop-blur-md">
+          <div className="flex flex-col">
+            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Private Node System</span>
+            <span className="text-[12px] font-bold text-white mt-0.5">{format(new Date(), "EEEE, d MMMM yyyy")}</span>
+          </div>
+          <div className="w-px h-8 bg-white/10" />
+          <div className="flex items-center gap-2">
+            <div className={`status-dot ${isValidating ? 'animate-pulse bg-yellow-400 shadow-yellow-400/40' : 'bg-emerald-400 shadow-emerald-400/40'}`} />
+            <span className="text-[10px] font-black uppercase tracking-wider text-[--text-muted]">Synced</span>
+          </div>
+        </div>
       </div>
 
+      {/* NET WORTH PROFESSIONAL OVERVIEW CARD */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="glass-card-static rich-border group relative overflow-hidden p-6 md:p-10 lg:col-span-3">
-          <div className="absolute top-0 left-0 right-0 h-[4px] bg-gradient-to-r from-[--accent-primary] via-purple-500 to-emerald-500" />
+        <div className="glass-card-static rich-border group relative overflow-hidden p-8 md:p-10 lg:col-span-3">
+          <div className="absolute top-0 left-0 right-0 h-[4px] bg-gradient-to-r from-[--accent-primary] via-purple-500 to-emerald-500 animate-pulse-glow" />
           <div className="flex flex-col lg:flex-row items-center justify-between gap-10">
-            <div className="relative z-10">
+            <div className="relative z-10 w-full lg:w-auto">
               <div className="mb-4 flex items-center gap-2 md:mb-6">
-                <div className={`status-dot scale-75 ${isValidating ? 'animate-pulse bg-yellow-400' : 'bg-emerald-400'}`} />
-                <span className="text-xs font-bold uppercase tracking-[0.4em] text-[--text-muted] md:text-sm">
+                <span className="text-xs font-black uppercase tracking-[0.4em] text-[--text-muted]">
                   Portfolio Net Worth {isLoading && <span className="text-[10px] lowercase italic">(loading...)</span>}
                 </span>
               </div>
               <div className="flex items-baseline gap-x-4 gap-y-2 flex-wrap max-w-full">
-                <h2 className="bg-gradient-to-r from-white via-white to-[--text-secondary] bg-clip-text text-[clamp(2.0rem,6vw,3.5rem)] font-[900] leading-none tracking-[-0.05em] text-transparent drop-shadow-[0_10px_30px_rgba(108,92,231,0.2)] [font-family:'Outfit',sans-serif] whitespace-nowrap overflow-x-auto no-scrollbar">
+                <h2 className="bg-gradient-to-r from-white via-white to-slate-400 bg-clip-text text-[clamp(2.5rem,6vw,4rem)] font-[950] leading-none tracking-[-0.05em] text-transparent drop-shadow-[0_10px_35px_rgba(14,165,233,0.3)] [font-family:'Outfit',sans-serif] whitespace-nowrap overflow-x-auto no-scrollbar">
                   ₹{stats.totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0 })}
                 </h2>
                 <div className="text-lg md:text-xl font-bold text-white/50 tracking-tight [font-family:'Outfit',sans-serif] whitespace-nowrap">
@@ -128,64 +155,64 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, isL
                 </div>
                 <div className={`flex flex-col mb-1 ml-2 ${stats.totalDayPnL >= 0 ? 'text-emerald-400' : 'text-rose-500'}`}>
                   <span className="text-[13px] font-black tabular-nums whitespace-nowrap">
-                    {stats.totalDayPnL >= 0 ? '+' : '-'}₹{Math.abs(stats.totalDayPnL).toLocaleString()} ({stats.totalDayPnL >= 0 ? '+' : '-'}${Math.abs(stats.totalDayPnL / 83.5).toLocaleString(undefined, { maximumFractionDigits: 0 })})
+                    {stats.totalDayPnL >= 0 ? '+' : '-'}₹{Math.abs(stats.totalDayPnL).toLocaleString()}
                   </span>
                   <span className="text-[9px] font-black opacity-60 tabular-nums">
-                    ({stats.totalDayPnL >= 0 ? '+' : ''}{stats.totalDayPnLPercent.toFixed(2)}%)
+                    ({stats.totalDayPnL >= 0 ? '+' : ''}{stats.totalDayPnLPercent.toFixed(2)}% today)
                   </span>
                 </div>
               </div>
 
               <div className="mt-8 flex flex-wrap items-center gap-4 sm:gap-6">
-                <div className="flex items-center gap-3 bg-emerald-500/5 border border-emerald-500/10 px-4 py-3 rounded-2xl">
-                  <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 text-sm">📈</div>
+                <div className="flex items-center gap-3 bg-emerald-500/5 border border-emerald-500/10 px-5 py-3.5 rounded-2xl transition-all hover:bg-emerald-500/10">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 text-base shadow-inner">📈</div>
                   <div className="flex flex-col">
-                    <span className="text-[9px] font-black uppercase tracking-widest text-[--text-muted]">Total Assets</span>
-                    <span className="text-sm sm:text-base font-black text-emerald-400">+₹{stats.totalAssets.toLocaleString()} <span className="text-[11px] opacity-60 font-bold">(+${Math.round(stats.totalAssets / 83.5).toLocaleString()})</span></span>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-[--text-muted]">Liquid Assets</span>
+                    <span className="text-sm sm:text-base font-black text-emerald-400">+₹{stats.totalAssets.toLocaleString()}</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 bg-rose-500/5 border border-rose-500/10 px-4 py-3 rounded-2xl">
-                  <div className="w-8 h-8 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-400 text-sm">📉</div>
+                <div className="flex items-center gap-3 bg-rose-500/5 border border-rose-500/10 px-5 py-3.5 rounded-2xl transition-all hover:bg-rose-500/10">
+                  <div className="w-9 h-9 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-400 text-base shadow-inner">📉</div>
                   <div className="flex flex-col">
-                    <span className="text-[9px] font-black uppercase tracking-widest text-[--text-muted]">Total Debt</span>
-                    <span className="text-sm sm:text-base font-black text-rose-500">-₹{stats.debtBalance.toLocaleString()} <span className="text-[11px] opacity-60 font-bold">(-${Math.round(stats.debtBalance / 83.5).toLocaleString()})</span></span>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-[--text-muted]">Outstanding Debt</span>
+                    <span className="text-sm sm:text-base font-black text-rose-500">-₹{stats.debtBalance.toLocaleString()}</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* PORTFOLIO ALLOCATION */}
-            <div className="flex-1 max-w-md w-full">
+            {/* PORTFOLIO ALLOCATION PIE CHART */}
+            <div className="flex-1 max-w-md w-full bg-white/[0.01] border border-white/5 rounded-3xl p-6 relative overflow-hidden">
               <div className="flex items-center gap-6 h-full">
                 {portfolioData.length === 0 ? (
-                  <div className="w-full flex h-[200px] items-center justify-center italic text-[--text-muted] text-sm bg-white/5 rounded-3xl">No portfolio data available.</div>
+                  <div className="w-full flex h-[200px] items-center justify-center italic text-[--text-muted] text-sm rounded-3xl">No portfolio data available.</div>
                 ) : (
                   <>
-                    <div className="w-1/2 space-y-2">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-[--text-muted] mb-3">Portfolio Allocation</p>
+                    <div className="w-1/2 space-y-2.5">
+                      <p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-3">Portfolio Allocation</p>
                       {portfolioData.map((item) => (
-                        <div key={item.name} className="flex justify-between items-center group gap-2 min-w-0 py-1 hover:bg-white/[0.02] px-2 rounded-lg transition-colors">
-                          <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: item.color }} />
-                            <span className="text-[10px] font-bold text-[--text-secondary] truncate group-hover:text-white transition-colors">{item.name}</span>
+                        <div key={item.name} className="flex justify-between items-center group gap-2 min-w-0 py-1.5 hover:bg-white/[0.02] px-2 rounded-lg transition-colors">
+                          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                            <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: item.color }} />
+                            <span className="text-[11px] font-bold text-[--text-secondary] truncate group-hover:text-white transition-colors">{item.name}</span>
                           </div>
                           <div className="flex items-center gap-2 flex-shrink-0">
                             <span className="text-[9px] font-bold text-[--text-muted]">{item.percentage}%</span>
-                            <span className="text-[10px] font-black tabular-nums whitespace-nowrap" style={{ color: item.color }}>₹{item.value.toLocaleString()}</span>
+                            <span className="text-[11px] font-black tabular-nums whitespace-nowrap" style={{ color: item.color }}>₹{item.value.toLocaleString()}</span>
                           </div>
                         </div>
                       ))}
                     </div>
-                    <div className="h-[180px] w-1/2">
+                    <div className="h-[185px] w-1/2 relative">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie 
                             data={portfolioData} 
                             cx="50%" 
                             cy="50%" 
-                            innerRadius={55} 
-                            outerRadius={80} 
-                            paddingAngle={6} 
+                            innerRadius={50} 
+                            outerRadius={70} 
+                            paddingAngle={5} 
                             dataKey="value"
                           >
                             {portfolioData.map((entry, index) => (
@@ -198,6 +225,10 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, isL
                           />
                         </PieChart>
                       </ResponsiveContainer>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
+                        <span className="text-[7px] uppercase font-black tracking-widest text-[--text-muted]">Assets</span>
+                        <span className="text-[12px] font-black text-white mt-0.5">₹{stats.totalAssets.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                      </div>
                     </div>
                   </>
                 )}
@@ -207,8 +238,183 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, isL
         </div>
       </div>
 
+      {/* THREE-COLUMN BENTO GRID */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        
+        {/* LEFT COLUMN: CASH FLOW TRENDS & LEDGER PULSE (Span 2) */}
+        <div className="lg:col-span-2 flex flex-col gap-6">
+          
+          {/* CASH FLOW VELOCITY AREA CHART */}
+          <div className="glass-card-static rich-border p-6 md:p-8">
+            <div className="flex justify-between items-center mb-8">
+              <div className="flex flex-col">
+                <h3 className="text-xs font-black uppercase tracking-widest text-[--text-muted]">Cash Flow Velocity</h3>
+                <span className="text-[10px] text-[--text-secondary] mt-1">Income streams vs Expense consumption trends</span>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-[--accent-primary]" />
+                  <span className="text-[10px] font-bold text-white/70">Income</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-rose-500" />
+                  <span className="text-[10px] font-bold text-white/70">Expenses</span>
+                </div>
+              </div>
+            </div>
 
+            <div className="h-[280px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={stats.trendData} margin={{ left: -10, right: 10, top: 10, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="incomeGlow" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="var(--accent-primary)" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="var(--accent-primary)" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="expenseGlow" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 10, fontWeight: 700 }} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 10 }} dx={-10} />
+                  <Tooltip 
+                    contentStyle={{ 
+                      background: 'var(--bg-surface)', 
+                      border: '1px solid var(--border-default)', 
+                      borderRadius: '16px',
+                      boxShadow: 'var(--shadow-lg)',
+                      fontWeight: 700
+                    }} 
+                  />
+                  <Area type="monotone" dataKey="income" stroke="var(--accent-primary)" strokeWidth={3} fillOpacity={1} fill="url(#incomeGlow)" />
+                  <Area type="monotone" dataKey="expense" stroke="#ef4444" strokeWidth={3} fillOpacity={1} fill="url(#expenseGlow)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
 
+          {/* FINANCIAL PULSE - LEDGER ACTIVITY */}
+          <div className="glass-card-static rich-border p-6 md:p-8">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h3 className="text-xs font-black uppercase tracking-widest text-[--text-muted]">Financial Ledger Pulse</h3>
+                <p className="text-[10px] text-[--text-secondary] mt-1">Real-time cryptographic logging audit trail</p>
+              </div>
+              <Link href="/dashboard/ledger" className="btn-secondary !h-9 !px-4 text-[10px]">Audit Trail</Link>
+            </div>
+
+            <div className="divide-y divide-white/5 border border-white/5 rounded-2xl overflow-hidden">
+              {recentLogs.slice(0, 4).map((log) => {
+                const isOut = ["DELETE", "TRANSFER_OUT", "SEND_MONEY", "ADJUST_DOWN"].includes(log.action_type);
+                return (
+                  <div key={log.id} className="flex items-center justify-between gap-4 p-5 hover:bg-white/[0.015] transition-all group">
+                    <div className="flex min-w-0 items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-center text-lg flex-shrink-0 group-hover:scale-105 transition-transform">
+                        {log.action_type === "CREATE" ? "✨" : isOut ? "📉" : "📈"}
+                      </div>
+                      <div className="flex min-w-0 flex-col">
+                        <span className="text-[13px] font-bold text-white group-hover:text-[--accent-primary-light] transition-colors truncate">{log.details}</span>
+                        <span className="text-[9px] font-black uppercase text-[--text-muted] tracking-wider mt-1">
+                          {log.created_at ? format(new Date(log.created_at), "MMM d, h:mm a") : "N/A"} • {log.account_name}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className={`text-[14px] font-black tabular-nums ${isOut ? "text-danger" : "text-success"}`}>
+                        {log.amount ? `${isOut ? "-" : "+"}₹${log.amount.toLocaleString()}` : "—"}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+              {recentLogs.length === 0 && (
+                <div className="py-16 text-center text-[11px] font-bold uppercase text-[--text-muted] tracking-widest italic bg-white/[0.01]">
+                  System initialized. Waiting for transaction input logs...
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN: ACTIONS, STATS & ACTIVE GOALS (Span 1) */}
+        <div className="flex flex-col gap-6">
+          
+          {/* QUICK ACTIONS PANEL */}
+          <div className="glass-card-static rich-border p-6 md:p-8">
+            <h3 className="text-xs font-black uppercase tracking-widest text-[--text-muted] mb-6">Operations Hub</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <Link href="/dashboard/expenses?action=new" className="flex flex-col items-center justify-center p-4 bg-rose-500/5 hover:bg-rose-500/10 border border-rose-500/10 rounded-2xl text-center transition-all group hover:-translate-y-1">
+                <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">💸</span>
+                <span className="text-[11px] font-black uppercase tracking-widest text-rose-400">Log Expense</span>
+              </Link>
+              <Link href="/dashboard/income?action=new" className="flex flex-col items-center justify-center p-4 bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/10 rounded-2xl text-center transition-all group hover:-translate-y-1">
+                <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">💼</span>
+                <span className="text-[11px] font-black uppercase tracking-widest text-emerald-400">Log Income</span>
+              </Link>
+              <Link href="/dashboard/stocks?action=new" className="flex flex-col items-center justify-center p-4 bg-blue-500/5 hover:bg-blue-500/10 border border-blue-500/10 rounded-2xl text-center transition-all group hover:-translate-y-1">
+                <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">📈</span>
+                <span className="text-[11px] font-black uppercase tracking-widest text-blue-400">Add Stock</span>
+              </Link>
+              <Link href="/dashboard/accounts?action=new" className="flex flex-col items-center justify-center p-4 bg-sky-500/5 hover:bg-sky-500/10 border border-sky-500/10 rounded-2xl text-center transition-all group hover:-translate-y-1">
+                <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">💳</span>
+                <span className="text-[11px] font-black uppercase tracking-widest text-sky-400">Add Account</span>
+              </Link>
+            </div>
+          </div>
+
+          {/* ACTIVE FINANCIAL GOALS MILestones */}
+          <div className="glass-card-static rich-border p-6 md:p-8 flex-1">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xs font-black uppercase tracking-widest text-[--text-muted]">Wealth Milestones</h3>
+              <Link href="/dashboard/goals" className="text-[10px] font-black uppercase text-[--accent-primary-light] hover:underline">Track</Link>
+            </div>
+
+            <div className="space-y-6">
+              {goals.slice(0, 3).map((goal) => {
+                const saved = Number(goal.current_amount || 0);
+                const target = Number(goal.target_amount || 1);
+                const pct = Math.min((saved / target) * 100, 100);
+                
+                return (
+                  <div key={goal.id} className="p-4 rounded-2xl bg-white/[0.01] border border-white/5 hover:bg-white/[0.03] transition-all">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex flex-col">
+                        <span className="text-[13px] font-black text-white">{goal.name}</span>
+                        <span className="text-[9px] font-bold text-[--text-muted] tracking-tight uppercase mt-0.5">Target: ₹{target.toLocaleString()}</span>
+                      </div>
+                      <span className="text-[11px] font-black text-[--accent-primary-light] tabular-nums">{pct.toFixed(0)}%</span>
+                    </div>
+
+                    <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden mb-3">
+                      <div 
+                        className="h-full bg-gradient-to-r from-[--accent-primary] to-[--accent-secondary] rounded-full transition-all duration-1000"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    
+                    <div className="flex justify-between items-center text-[10px] font-bold text-[--text-secondary]">
+                      <span>Saved: ₹{saved.toLocaleString()}</span>
+                      <span className="text-[9px] font-black uppercase tracking-wider text-[--text-muted]">
+                        {goal.target_date ? format(new Date(goal.target_date), "MMM yyyy") : "No limit"}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+              {goals.length === 0 && (
+                <div className="py-12 text-center border border-dashed border-white/5 rounded-2xl">
+                  <p className="text-xs text-[--text-secondary] mb-4">No active milestones registered</p>
+                  <Link href="/dashboard/goals?action=new" className="btn-secondary !h-9 text-[10px]">Establish Goal</Link>
+                </div>
+              )}
+            </div>
+          </div>
+
+        </div>
+
+      </div>
 
     </div>
   );

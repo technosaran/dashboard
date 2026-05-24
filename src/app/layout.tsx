@@ -87,7 +87,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn("h-full", "antialiased", outfit.variable, inter.variable, "font-sans", geist.variable)}
+      className={cn("h-full", "antialiased", "dark", outfit.variable, inter.variable, "font-sans", geist.variable)}
     >
       <body className="min-h-full flex flex-col overflow-x-hidden bg-[--bg-base] text-[--text-primary] font-sans relative">
         {/* Background Depth Effects */}

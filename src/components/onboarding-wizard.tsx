@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { toast } from "react-hot-toast";
 import { useRouter } from "next/navigation";
+import { useFinanceData } from "@/hooks/use-finance-data";
 
 type OnboardingStep = "welcome" | "account" | "income" | "expense" | "complete";
 
@@ -13,9 +14,13 @@ interface OnboardingWizardProps {
 export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
   const router = useRouter();
   const [step, setStep] = useState<OnboardingStep>("welcome");
-  const [accountCreated] = useState(false);
-  const [incomeLogged] = useState(false);
-  const [expenseLogged] = useState(false);
+  
+  const { data: financeData } = useFinanceData();
+  const { accounts = [], incomes = [], expenses = [] } = financeData || {};
+
+  const accountCreated = accounts.length > 0;
+  const incomeLogged = incomes.length > 0;
+  const expenseLogged = expenses.length > 0;
 
   function handleSkip() {
     localStorage.setItem("onboarding_completed", "true");

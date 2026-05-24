@@ -27,18 +27,11 @@ export async function resetUserData() {
       return { error: `Database error: ${error.message} (${error.code})` };
     }
     
-    let result = data as any;
-    if (typeof result === "string") {
-      try {
-        result = JSON.parse(result);
-      } catch (e) {
-        console.error("Failed to parse JSON result string:", result);
-      }
-    }
+    const result = data as Record<string, unknown> | null;
     
     if (result && result.success === false) {
       console.error("reset_user_data returned internal failure:", result.error);
-      return { error: result.error || "Database reset failed internally." };
+      return { error: (result.error as string) || "Database reset failed internally." };
     }
     
     console.log("Database reset completed successfully. Revalidating Next.js cache paths...");
@@ -58,9 +51,10 @@ export async function resetUserData() {
     revalidatePath("/dashboard/budget");
     
     return { success: true };
-  } catch (error: any) {
-    console.error("Unhandled exception during resetUserData server action:", error);
-    return { error: `System exception: ${error.message || "Unknown error"}` };
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error("Unhandled exception during resetUserData server action:", err);
+    return { error: `System exception: ${err.message || "Unknown error"}` };
   }
 }
 

@@ -38,7 +38,8 @@ export default function DashboardClient({ initialData }: { initialData?: Finance
     expenses = [], 
     bonds = [], 
     alternativeAssets = [], 
-    liabilities = [] 
+    liabilities = [],
+    goals = []
   } = financeData || {};
 
   const isMobile = useMediaQuery('(max-width: 767px)');
@@ -194,7 +195,7 @@ export default function DashboardClient({ initialData }: { initialData?: Finance
   return (
     <>
       {showOnboarding && <OnboardingWizard onComplete={handleOnboardingComplete} />}
-      <DashboardDesktop stats={stats} recentLogs={recentLogs} isLoading={isLoading} isValidating={isValidating} />
+      <DashboardDesktop stats={stats} recentLogs={recentLogs} goals={goals} isLoading={isLoading} isValidating={isValidating} />
     </>
   );
 }

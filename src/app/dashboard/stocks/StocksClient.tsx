@@ -27,6 +27,12 @@ function formatNum(val: number, decimals = 2): string {
   return val.toLocaleString("en-IN", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 }
 
+const SortIcon = ({ col, sortKey, sortDir }: { col: SortKey; sortKey: SortKey; sortDir: SortDir }) => (
+  <span className="inline-flex ml-1 opacity-40 text-[9px] group-hover:opacity-100 transition-opacity">
+    {sortKey === col ? (sortDir === "asc" ? "▲" : "▼") : "⇅"}
+  </span>
+);
+
 export default function StocksClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { investments, accounts, stockTrades: trades }, isValidating } = useFinanceData(initialData);
   const stocks = useMemo(() => {
@@ -97,7 +103,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
   }, [stocks]);
 
   const filtered = useMemo(() => {
-    let list = stocks.filter(i => Number(i.quantity) > 0);
+    const list = stocks.filter(i => Number(i.quantity) > 0);
     return [...list].sort((a, b) => {
       let cmp = 0;
       const aq = Number(a.quantity);
@@ -213,11 +219,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
     setDeletingId(null);
   }
 
-  const SortIcon = ({ col }: { col: SortKey }) => (
-    <span className="inline-flex ml-1 opacity-40 text-[9px] group-hover:opacity-100 transition-opacity">
-      {sortKey === col ? (sortDir === "asc" ? "▲" : "▼") : "⇅"}
-    </span>
-  );
+
 
   // Export holdings to CSV
   function exportHoldings() {
@@ -336,24 +338,24 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
               <thead>
                 <tr className="border-b border-white/5 bg-white/[0.01] text-[9px] text-[--text-muted] uppercase font-black tracking-widest">
                   <th className="py-4 px-6 font-black transition-colors cursor-pointer hover:text-[--text-primary] group" onClick={() => handleSort("name")}>
-                    Instrument <SortIcon col="name" />
+                    Instrument <SortIcon col="name" sortKey={sortKey} sortDir={sortDir} />
                   </th>
                   <th className="py-4 px-4 font-black text-right cursor-pointer hover:text-[--text-primary] group" onClick={() => handleSort("quantity")}>
-                    Qty. <SortIcon col="quantity" />
+                    Qty. <SortIcon col="quantity" sortKey={sortKey} sortDir={sortDir} />
                   </th>
                   <th className="py-4 px-4 font-black text-right">Avg. cost</th>
                   <th className="py-4 px-4 font-black text-right">LTP</th>
                   <th className="py-4 px-4 font-black text-right cursor-pointer hover:text-[--text-primary] group" onClick={() => handleSort("current_value")}>
-                    Cur. val <SortIcon col="current_value" />
+                    Cur. val <SortIcon col="current_value" sortKey={sortKey} sortDir={sortDir} />
                   </th>
                   <th className="py-4 px-4 font-black text-right cursor-pointer hover:text-[--text-primary] group" onClick={() => handleSort("pnl")}>
-                    P&L <SortIcon col="pnl" />
+                    P&L <SortIcon col="pnl" sortKey={sortKey} sortDir={sortDir} />
                   </th>
                   <th className="py-4 px-4 font-black text-right">
                     Day Chg.
                   </th>
                   <th className="py-4 px-4 font-black text-right cursor-pointer hover:text-[--text-primary] group" onClick={() => handleSort("pnlPercent")}>
-                    Net chg. <SortIcon col="pnlPercent" />
+                    Net chg. <SortIcon col="pnlPercent" sortKey={sortKey} sortDir={sortDir} />
                   </th>
                 </tr>
               </thead>

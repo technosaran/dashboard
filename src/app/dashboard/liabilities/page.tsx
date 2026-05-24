@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import LiabilitiesClient from "./LiabilitiesClient";
 import { createClient } from "@/lib/supabase-server";
+import type { FinanceData } from "@/hooks/use-finance-data";
 
 export const metadata = {
   title: "Liabilities & Debt | FinanceOS",
@@ -13,7 +14,7 @@ export default async function LiabilitiesPage() {
 
   return (
     <Suspense fallback={<div className="animate-pulse bg-white/5 h-screen rounded-2xl" />}>
-      <LiabilitiesClient initialData={data as any} />
+      <LiabilitiesClient initialData={data as FinanceData} />
     </Suspense>
   );
 }

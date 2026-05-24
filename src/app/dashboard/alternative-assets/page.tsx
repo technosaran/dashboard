@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import AlternativeAssetsClient from "./AlternativeAssetsClient";
 import { createClient } from "@/lib/supabase-server";
+import type { FinanceData } from "@/hooks/use-finance-data";
 
 export const metadata = {
   title: "Alternative Assets | FinanceOS",
@@ -13,7 +14,7 @@ export default async function AlternativeAssetsPage() {
 
   return (
     <Suspense fallback={<div className="animate-pulse bg-white/5 h-screen rounded-2xl" />}>
-      <AlternativeAssetsClient initialData={data as any} />
+      <AlternativeAssetsClient initialData={data as FinanceData} />
     </Suspense>
   );
 }

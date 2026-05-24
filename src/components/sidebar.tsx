@@ -158,15 +158,21 @@ function NavItem({ label, href, icon, pathname }: (typeof nav)[0] & { pathname: 
       href={href}
       prefetch={true}
       aria-label={label}
-      className={`flex items-center gap-3 px-3 py-1 rounded-xl transition-all duration-300 ${active ? "" : "hover:bg-[var(--glass-hover)] group"}`}
-      style={{
-        color: active ? "var(--accent-primary-light)" : "var(--text-secondary)",
-        background: active ? "var(--sidebar-active)" : "transparent",
-        border: active ? "1px solid rgba(108, 92, 231, 0.2)" : "1px solid transparent",
-        textDecoration: "none",
-      }}
+      className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-300 no-underline border ${
+        active 
+          ? "text-[--accent-primary-light] bg-[--sidebar-active] border-[rgba(14,165,233,0.15)] shadow-[0_0_15px_rgba(14,165,233,0.08)] font-bold" 
+          : "text-[--text-secondary] border-transparent hover:bg-[var(--glass-hover)] hover:text-[--text-primary] hover:pl-4 group"
+      }`}
     >
-      <span className={`${active ? "text-[--accent-primary-light]" : "group-hover:text-[--text-primary]"}`} aria-hidden="true">{icon}</span>
+      {active && (
+        <span 
+          className="absolute left-0 top-1/4 bottom-1/4 w-0.5 rounded-r-md bg-[--accent-primary]"
+          aria-hidden="true"
+        />
+      )}
+      <span className={`transition-transform duration-300 ${active ? "text-[--accent-primary-light] scale-110" : "text-[--text-muted] group-hover:text-[--text-primary] group-hover:scale-105"}`} aria-hidden="true">
+        {icon}
+      </span>
       <span className="font-semibold text-[13px] tracking-tight">{label}</span>
     </Link>
   );

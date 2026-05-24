@@ -739,14 +739,14 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                 <div className="space-y-2">
                   <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">Investment Model</label>
                   <select className="input-premium h-12" value={formData.investment_type} onChange={e => setFormData({...formData, investment_type: e.target.value})}>
-                    <option value="SIP" style={{background: '#131833'}}>SIP Engine</option>
-                    <option value="LUMPSUM" style={{background: '#131833'}}>One-Time Capital</option>
+                    <option value="SIP">SIP Engine</option>
+                    <option value="LUMPSUM">One-Time Capital</option>
                   </select>
                 </div>
                 <div className="space-y-2">
                   <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">Asset Sector</label>
                   <select className="input-premium h-12" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
-                    {["Equity", "Debt", "Hybrid", "Index", "Liquid", "ELSS"].map(c => <option key={c} value={c} style={{background: '#131833'}}>{c}</option>)}
+                    {["Equity", "Debt", "Hybrid", "Index", "Liquid", "ELSS"].map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
                 <div className="space-y-2">
@@ -761,7 +761,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                     <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">{formData.trade_type === 'buy' ? 'Capital Source' : 'Deposit To'}</label>
                     <select required={!editingId} className="input-premium h-12" value={formData.account_id} onChange={e => setFormData({...formData, account_id: e.target.value})}>
                         <option value="">{formData.trade_type === 'buy' ? 'Fund Account' : 'Dest. Account'}</option>
-                        {accounts.map(acc => <option key={acc.id} value={acc.id} style={{background: '#131833'}}>{acc.name} (₹{acc.balance.toLocaleString()})</option>)}
+                        {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name} (₹{acc.balance.toLocaleString()})</option>)}
                     </select>
                   </div>
                 ) : null}
@@ -769,10 +769,10 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
 
               {/* Charge Summary Box (With Toggle) */}
               {!editingId ? (
-                <div className="bg-[#131833] border border-[#252525] rounded-2xl p-5 space-y-4">
+                <div className="bg-[--bg-surface] border border-[--border-strong] rounded-2xl p-5 space-y-4 shadow-lg">
                   <div className="flex justify-between items-center">
                       <div className="flex flex-col">
-                          <span className="text-[9px] font-black text-[#555] uppercase tracking-widest">Transaction Levies</span>
+                          <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-widest">Transaction Levies</span>
                           <div className="flex items-center gap-2 mt-1">
                               <span className="text-[14px] font-black text-rose-400">₹{stampDuty.toFixed(4)}</span>
                               <button 
@@ -784,24 +784,24 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                               </button>
                           </div>
                       </div>
-                      <span className="text-[9px] text-[#387ed1] border border-[#387ed1]/20 px-2 py-0.5 rounded font-black uppercase">SEBI Regulatory</span>
+                      <span className="text-[9px] text-sky-400 border border-sky-400/20 px-2 py-0.5 rounded font-black uppercase">SEBI Regulatory</span>
                   </div>
 
                   {showAllCharges && (
                       <div className="space-y-2 pt-2 border-t border-white/5 animate-fade-in">
                           <div className="flex justify-between items-center text-[11px]">
-                              <span className="text-[#666] font-bold uppercase tracking-wide">Investment Value</span>
+                              <span className="text-[--text-muted] font-bold uppercase tracking-wide">Investment Value</span>
                               <span className="text-[#eee] font-bold">₹{(parseFloat(formData.units || "0") * parseFloat(formData.nav || "0")).toLocaleString()}</span>
                           </div>
                           <div className="flex justify-between items-center text-[11px]">
-                              <span className="text-[#666] font-bold uppercase tracking-wide">Stamp Duty (0.005%)</span>
+                              <span className="text-[--text-muted] font-bold uppercase tracking-wide">Stamp Duty (0.005%)</span>
                               <span className="text-rose-400 font-bold">{formData.trade_type === 'buy' ? '+' : '-'}₹{stampDuty.toFixed(4)}</span>
                           </div>
                       </div>
                   )}
 
-                  <div className="pt-3 border-t border-[#252525] flex justify-between items-center">
-                      <span className="text-[11px] font-black text-[#666] uppercase tracking-widest">{formData.trade_type === 'buy' ? 'Net Payable' : 'Net Receivable'}</span>
+                  <div className="pt-3 border-t border-[--border-strong] flex justify-between items-center">
+                      <span className="text-[11px] font-black text-[--text-muted] uppercase tracking-widest">{formData.trade_type === 'buy' ? 'Net Payable' : 'Net Receivable'}</span>
                       <span className="text-base font-black text-[--accent-primary-light]">₹{totalDeduction.toLocaleString()}</span>
                   </div>
                 </div>

@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import BudgetClient from "./BudgetClient";
 import { createClient } from "@/lib/supabase-server";
+import type { FinanceData } from "@/hooks/use-finance-data";
 
 export const metadata = {
   title: "Budget Planner | FinanceOS",
@@ -13,7 +14,7 @@ export default async function BudgetPage() {
 
   return (
     <Suspense fallback={<div className="animate-pulse bg-white/5 h-screen rounded-2xl" />}>
-      <BudgetClient initialData={data as any} />
+      <BudgetClient initialData={data as FinanceData} />
     </Suspense>
   );
 }

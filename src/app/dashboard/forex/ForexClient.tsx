@@ -14,6 +14,7 @@ import {
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { format } from "date-fns";
 import PnLValue from "@/components/pnl-value";
+import type { Tables } from "@/lib/database.types";
 
 export default function ForexClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { accounts, forexAccounts, forexTrades, forexTransactions }, isValidating } = useFinanceData(initialData);
@@ -27,9 +28,9 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
 
   // Edit States
   const [showEditAccountModal, setShowEditAccountModal] = useState(false);
-  const [editingAccount, setEditingAccount] = useState<any>(null);
+  const [editingAccount, setEditingAccount] = useState<Tables<"forex_accounts"> | null>(null);
   const [showEditTradeModal, setShowEditTradeModal] = useState(false);
-  const [editingTrade, setEditingTrade] = useState<any>(null);
+  const [editingTrade, setEditingTrade] = useState<Tables<"forex_trades"> | null>(null);
 
   // Form States
   const [accountForm, setAccountForm] = useState({ broker_name: "", account_label: "", account_number: "", currency: "USD" });
@@ -93,7 +94,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
     setSubmitting(false);
   }
 
-  const startEditAccount = (acc: any) => {
+  const startEditAccount = (acc: Tables<"forex_accounts">) => {
     setEditingAccount(acc);
     setEditAccountForm({
       broker_name: acc.broker_name || "",
@@ -164,7 +165,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
     setSubmitting(false);
   }
 
-  const startEditTrade = (trade: any) => {
+  const startEditTrade = (trade: Tables<"forex_trades">) => {
     setEditingTrade(trade);
     setEditTradeForm({
       forex_account_id: trade.forex_account_id || "",
@@ -259,7 +260,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
         {["accounts", "trades", "transactions"].map((tab) => (
           <button
             key={tab}
-            onClick={() => setActiveTab(tab as any)}
+            onClick={() => setActiveTab(tab as "accounts" | "trades" | "transactions")}
             className={`pb-4 text-xs font-black uppercase tracking-widest whitespace-nowrap transition-all ${activeTab === tab ? "text-[--accent-primary-light] border-b-2 border-[--accent-primary-light]" : "text-[--text-muted] hover:text-white"}`}
           >
             {tab}
@@ -617,7 +618,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                 </div>
                 <div>
                   <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Trade Direction</label>
-                  <select className="input-premium" value={tradeForm.trade_type} onChange={e => setTradeForm({...tradeForm, trade_type: e.target.value as any})}>
+                  <select className="input-premium" value={tradeForm.trade_type} onChange={e => setTradeForm({...tradeForm, trade_type: e.target.value as "BUY" | "SELL"})}>
                     <option value="BUY">BUY</option>
                     <option value="SELL">SELL</option>
                   </select>
@@ -680,7 +681,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                 </div>
                 <div>
                   <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Trade Direction</label>
-                  <select className="input-premium" value={editTradeForm.trade_type} onChange={e => setEditTradeForm({...editTradeForm, trade_type: e.target.value as any})}>
+                  <select className="input-premium" value={editTradeForm.trade_type} onChange={e => setEditTradeForm({...editTradeForm, trade_type: e.target.value as "BUY" | "SELL"})}>
                     <option value="BUY">BUY</option>
                     <option value="SELL">SELL</option>
                   </select>

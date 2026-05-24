@@ -414,11 +414,14 @@ export function useFinanceData(initialData?: FinanceData) {
     data: mergedData,
     isLoading: summarySWR.isLoading || investmentsSWR.isLoading || cashflowSWR.isLoading,
     error: summarySWR.error || investmentsSWR.error || cashflowSWR.error,
-    mutate: async (data?: any, options?: any) => {
+    mutate: async (data?: unknown, options?: unknown) => {
       // If a callback or data is provided, we apply it to the relevant vertical(s)
       // For this architecture, we focus optimistic updates on the Summary vertical (profiles/accounts)
       if (data !== undefined) {
-        await summarySWR.mutate(data, options);
+        await summarySWR.mutate(
+          data as Parameters<typeof summarySWR.mutate>[0],
+          options as Parameters<typeof summarySWR.mutate>[1]
+        );
       } else {
         // Full re-fetch of all segments
         await Promise.all([
