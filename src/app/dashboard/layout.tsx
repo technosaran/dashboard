@@ -1,6 +1,8 @@
 import Sidebar from "@/components/sidebar";
 import { UserProvider } from "@/context/user-context";
 
+export const dynamic = "force-dynamic";
+
 export default function DashboardLayout({
   children,
 }: {
