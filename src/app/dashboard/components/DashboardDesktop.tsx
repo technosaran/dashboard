@@ -397,7 +397,7 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                     <div className="flex justify-between items-center text-[10px] font-bold text-[--text-secondary]">
                       <span>Saved: ₹{saved.toLocaleString()}</span>
                       <span className="text-[9px] font-black uppercase tracking-wider text-[--text-muted]">
-                        {goal.target_date ? format(new Date(goal.target_date), "MMM yyyy") : "No limit"}
+                        {goal.deadline ? format(new Date(goal.deadline), "MMM yyyy") : "No limit"}
                       </span>
                     </div>
                   </div>
