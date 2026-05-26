@@ -107,7 +107,7 @@ export async function recordMFInvestment(data: {
             p_category: string;
             p_amc_name: string;
             p_date: string;
-            p_account_id: string;
+            p_account_id: string | null;
             p_stamp_duty: number;
             p_trade_type: "buy" | "sell";
         }
@@ -123,7 +123,7 @@ export async function recordMFInvestment(data: {
         p_category: data.category,
         p_amc_name: data.amc_name,
         p_date: data.date,
-        p_account_id: data.account_id,
+        p_account_id: data.account_id || null,
         p_stamp_duty: data.stamp_duty,
         p_trade_type: data.trade_type || "buy"
     });

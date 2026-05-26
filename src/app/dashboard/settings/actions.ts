@@ -79,3 +79,56 @@ export async function updateSettings(settings: ProfileSettings) {
   revalidatePath("/dashboard/settings");
   return { success: true };
 }
+
+export async function seedSampleData() {
+  try {
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError) {
+      console.error("Auth retrieval error during seeding:", authError);
+      return { error: `Authentication failed: ${authError.message}` };
+    }
+    
+    if (!user) {
+      console.error("No active user session found for data seeding.");
+      return { error: "Unauthorized: No active session found. Please log in again." };
+    }
+
+    console.log(`Executing generate_sample_data RPC for user: ${user.id}`);
+    const { data, error } = await (supabase.rpc as any)("generate_sample_data");
+
+    if (error) {
+      console.error("generate_sample_data RPC failed with error:", error);
+      return { error: `Database error: ${error.message} (${error.code})` };
+    }
+    
+    const result = data as Record<string, unknown> | null;
+    
+    if (result && result.success === false) {
+      console.error("generate_sample_data returned internal failure:", result.error);
+      return { error: (result.error as string) || "Database seeding failed internally." };
+    }
+    
+    console.log("Database seeding completed successfully. Revalidating Next.js cache paths...");
+    
+    // Revalidate all major paths
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/accounts");
+    revalidatePath("/dashboard/ledger");
+    revalidatePath("/dashboard/stocks");
+    revalidatePath("/dashboard/mutual-funds");
+    revalidatePath("/dashboard/goals");
+    revalidatePath("/dashboard/bonds");
+    revalidatePath("/dashboard/alternative-assets");
+    revalidatePath("/dashboard/liabilities");
+    revalidatePath("/dashboard/forex");
+    revalidatePath("/dashboard/budget");
+    
+    return { success: true };
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error("Unhandled exception during seedSampleData server action:", err);
+    return { error: `System exception: ${err.message || "Unknown error"}` };
+  }
+}

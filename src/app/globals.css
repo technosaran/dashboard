@@ -306,7 +306,7 @@ input, textarea, [contenteditable="true"] {
 }
 
 /* Premium Buttons - Professional Financial Actions */
-.btn-primary, .btn-secondary, .btn-danger {
+.btn-primary, .btn-secondary, .btn-danger, .btn-success {
   padding: 0 1.75rem;
   height: 3rem;
   min-height: 44px;
@@ -328,7 +328,8 @@ input, textarea, [contenteditable="true"] {
 
 .btn-primary::before,
 .btn-secondary::before,
-.btn-danger::before {
+.btn-danger::before,
+.btn-success::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -339,19 +340,21 @@ input, textarea, [contenteditable="true"] {
 
 .btn-primary:hover::before,
 .btn-secondary:hover::before,
-.btn-danger:hover::before {
+.btn-danger:hover::before,
+.btn-success:hover::before {
   opacity: 1;
 }
 
 .btn-primary:focus-visible,
 .btn-secondary:focus-visible,
-.btn-danger:focus-visible {
+.btn-danger:focus-visible,
+.btn-success:focus-visible {
   outline: 2px solid var(--accent-primary);
   outline-offset: 2px;
 }
 
 @media (max-width: 768px) {
-  .btn-primary, .btn-secondary, .btn-danger {
+  .btn-primary, .btn-secondary, .btn-danger, .btn-success {
     height: 3rem;
     min-height: 48px;
   }
@@ -366,6 +369,17 @@ input, textarea, [contenteditable="true"] {
 .btn-primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(14, 165, 233, 0.3);
+}
+
+.btn-success {
+  background: var(--gradient-success);
+  color: white;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+}
+
+.btn-success:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
 }
 
 .btn-secondary {
@@ -393,7 +407,7 @@ input, textarea, [contenteditable="true"] {
   box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
 }
 
-.btn-primary:active, .btn-secondary:active, .btn-danger:active {
+.btn-primary:active, .btn-secondary:active, .btn-danger:active, .btn-success:active {
   transform: translateY(0) scale(0.98);
 }
 
