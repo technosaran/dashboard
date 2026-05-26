@@ -224,57 +224,61 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
   async function handleAddMF(e: React.FormEvent) {
     e.preventDefault();
     await withLock(async () => {
-      if (editingId) {
-        const res = await updateMFHolding(editingId, {
-          fund_name: formData.fund_name,
-          amc_name: formData.amc_name,
-          scheme_code: formData.scheme_code,
-          fund_symbol: formData.scheme_code,
-          units: parseFloat(formData.units),
-          avg_nav: parseFloat(formData.nav),
-          current_nav: parseFloat(formData.current_nav || formData.nav),
-          category: formData.category,
-          investment_type: formData.investment_type
-        });
-        if (!res?.error) {
-          toast.success("Mutual fund holding updated successfully");
-          setShowAddModal(false);
-          setEditingId(null);
-          setFormData({ 
-            fund_name: "", scheme_code: "", units: "", nav: "", current_nav: "",
-            investment_type: "SIP", category: "Equity", amc_name: "HDFC",
-            date: new Date().toISOString().split("T")[0], account_id: "",
-            trade_type: "buy"
+      try {
+        if (editingId) {
+          const res = await updateMFHolding(editingId, {
+            fund_name: formData.fund_name,
+            amc_name: formData.amc_name,
+            scheme_code: formData.scheme_code,
+            fund_symbol: formData.scheme_code,
+            units: parseFloat(formData.units),
+            nav: parseFloat(formData.nav),
+            current_nav: parseFloat(formData.current_nav || formData.nav),
+            category: formData.category,
+            investment_type: formData.investment_type
           });
-          setSearchQuery("");
+          if (!res?.error) {
+            toast.success("Mutual fund holding updated successfully");
+            setShowAddModal(false);
+            setEditingId(null);
+            setFormData({ 
+              fund_name: "", scheme_code: "", units: "", nav: "", current_nav: "",
+              investment_type: "SIP", category: "Equity", amc_name: "HDFC",
+              date: new Date().toISOString().split("T")[0], account_id: "",
+              trade_type: "buy"
+            });
+            setSearchQuery("");
+          } else {
+            toast.error(res.error);
+          }
         } else {
-          toast.error(res.error);
-        }
-      } else {
-        if (!formData.account_id) {
-            toast.error("Please select a channeling account");
-            return;
-        }
-        const res = await recordMFInvestment({
-          ...formData,
-          units: parseFloat(formData.units),
-          nav: parseFloat(formData.nav),
-          stamp_duty: stampDuty,
-          trade_type: formData.trade_type
-        });
-        if (!res?.error) {
-          toast.success(formData.trade_type === 'buy' ? "Wealth deployed into mutual fund" : "Mutual fund units liquidated successfully");
-          setShowAddModal(false);
-          setFormData({ 
-            fund_name: "", scheme_code: "", units: "", nav: "", current_nav: "",
-            investment_type: "SIP", category: "Equity", amc_name: "HDFC",
-            date: new Date().toISOString().split("T")[0], account_id: "",
-            trade_type: "buy"
+          if (!formData.account_id) {
+              toast.error("Please select a channeling account");
+              return;
+          }
+          const res = await recordMFInvestment({
+            ...formData,
+            units: parseFloat(formData.units),
+            nav: parseFloat(formData.nav),
+            stamp_duty: stampDuty,
+            trade_type: formData.trade_type
           });
-          setSearchQuery("");
-        } else {
-          toast.error(res.error);
+          if (!res?.error) {
+            toast.success(formData.trade_type === 'buy' ? "Wealth deployed into mutual fund" : "Mutual fund units liquidated successfully");
+            setShowAddModal(false);
+            setFormData({ 
+              fund_name: "", scheme_code: "", units: "", nav: "", current_nav: "",
+              investment_type: "SIP", category: "Equity", amc_name: "HDFC",
+              date: new Date().toISOString().split("T")[0], account_id: "",
+              trade_type: "buy"
+            });
+            setSearchQuery("");
+          } else {
+            toast.error(res.error);
+          }
         }
+      } catch (err: any) {
+        toast.error(err?.message || "Failed to process mutual fund investment. Please try again.");
       }
     });
   }

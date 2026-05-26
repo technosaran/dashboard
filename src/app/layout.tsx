@@ -72,21 +72,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn("h-full", "antialiased", "dark", "font-sans")}
+      className={cn("h-full", "antialiased", "dark", "font-sans", "theme-google")}
     >
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              try {
-                if (localStorage.getItem('theme-style') === 'google') {
-                  document.documentElement.classList.add('theme-google');
-                }
-              } catch (_) {}
-            `,
-          }}
-        />
-      </head>
+      <head />
       <body className="min-h-full flex flex-col overflow-x-hidden bg-[--bg-base] text-[--text-primary] font-sans relative">
         {/* Background Depth Effects */}
         <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">

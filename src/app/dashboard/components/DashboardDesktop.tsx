@@ -121,18 +121,6 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
       {/* HEADER SECTION */}
       <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between px-2">
         <Greeting />
-        
-        <div className="flex items-center gap-4 bg-white/[0.02] border border-white/5 rounded-2xl px-5 py-3.5 backdrop-blur-md">
-          <div className="flex flex-col">
-            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Private Node System</span>
-            <span className="text-[12px] font-bold text-white mt-0.5">{format(new Date(), "EEEE, d MMMM yyyy")}</span>
-          </div>
-          <div className="w-px h-8 bg-white/10" />
-          <div className="flex items-center gap-2">
-            <div className={`status-dot ${isValidating ? 'animate-pulse bg-yellow-400 shadow-yellow-400/40' : 'bg-emerald-400 shadow-emerald-400/40'}`} />
-            <span className="text-[10px] font-black uppercase tracking-wider text-[--text-muted]">Synced</span>
-          </div>
-        </div>
       </div>
 
       {/* NET WORTH PROFESSIONAL OVERVIEW CARD */}

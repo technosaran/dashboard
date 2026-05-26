@@ -183,30 +183,34 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     await withLock(async () => {
-      const suffix = formData.exchange === "BSE" ? ".BO" : ".NS";
-      const fullSymbol = formData.symbol ? `${formData.symbol.trim().toUpperCase().split(".")[0]}${suffix}` : undefined;
+      try {
+        const suffix = formData.exchange === "BSE" ? ".BO" : ".NS";
+        const fullSymbol = formData.symbol ? `${formData.symbol.trim().toUpperCase().split(".")[0]}${suffix}` : undefined;
 
-      const payload = {
-        name: formData.name, 
-        symbol: fullSymbol,
-        quantity: parseFloat(formData.quantity),
-        buy_price: parseFloat(formData.buy_price),
-        current_price: parseFloat(formData.current_price),
-        currency: formData.currency,
-        notes: formData.notes || undefined,
-        bought_at: formData.bought_at,
-        deduct_account_id: formData.deduct_from_account || undefined,
-        total_cost_with_charges: !editingId ? zerodhaCharges.netAmount : undefined,
-        trade_type: formData.trade_type
-      };
-      const result = editingId
-        ? await updateInvestment(editingId, payload)
-        : await createInvestment(payload);
-      if (!result?.error) {
-        toast.success(editingId ? "Equity position updated successfully" : "New equity position registered in portfolio");
-        resetForm();
-      } else {
-        toast.error(result.error);
+        const payload = {
+          name: formData.name, 
+          symbol: fullSymbol,
+          quantity: parseFloat(formData.quantity),
+          buy_price: parseFloat(formData.buy_price),
+          current_price: parseFloat(formData.current_price),
+          currency: formData.currency,
+          notes: formData.notes || undefined,
+          bought_at: formData.bought_at,
+          deduct_account_id: formData.deduct_from_account || undefined,
+          total_cost_with_charges: !editingId ? zerodhaCharges.netAmount : undefined,
+          trade_type: formData.trade_type
+        };
+        const result = editingId
+          ? await updateInvestment(editingId, payload)
+          : await createInvestment(payload);
+        if (!result?.error) {
+          toast.success(editingId ? "Equity position updated successfully" : "New equity position registered in portfolio");
+          resetForm();
+        } else {
+          toast.error(result.error);
+        }
+      } catch (err: any) {
+        toast.error(err?.message || "Failed to process stock transaction. Please try again.");
       }
     });
   }

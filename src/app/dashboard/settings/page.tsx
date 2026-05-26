@@ -17,31 +17,7 @@ export default function SettingsPage() {
   const [prevLoading, setPrevLoading] = useState(loading);
   const prevIsSyncingRef = useRef(false);
 
-  // Theme state
-  const [activeTheme, setActiveTheme] = useState<"default" | "google">("default");
 
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem("theme-style");
-      if (stored === "google") {
-        setActiveTheme("google");
-      }
-    } catch (_) {}
-  }, []);
-
-  const handleThemeChange = (theme: "default" | "google") => {
-    setActiveTheme(theme);
-    try {
-      localStorage.setItem("theme-style", theme);
-      if (theme === "google") {
-        document.documentElement.classList.add("theme-google");
-        toast.success("Google Material theme activated!");
-      } else {
-        document.documentElement.classList.remove("theme-google");
-        toast.success("Bloomberg Terminal theme restored.");
-      }
-    } catch (_) {}
-  };
 
   // Reset confirmation state
   const [showResetModal, setShowResetModal] = useState(false);
@@ -322,68 +298,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* Theme Customization ("What if Google developed my site?") */}
-      <div className="max-w-2xl animate-fade-in-up delay-2">
-        <div className="glass-card-static p-6 md:p-10 relative overflow-hidden">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4.098 19.902a3.75 3.75 0 005.304 0l6.401-6.402M4.098 19.902a3.75 3.75 0 015.304 0l6.401-6.402m-11.708 0A3.75 3.75 0 013 15.602c0-.986.38-1.93 1.058-2.636l6.402-6.402m11.708 0a3.75 3.75 0 00-5.304 0l-6.402 6.402m11.708 0a3.75 3.75 0 01-5.304 0l-6.402 6.402m0 0a3.75 3.75 0 01-5.304 0m0 0l-6.402-6.402m14.062 5.093l-.382.382a.75.75 0 000 1.06l.75.75a.75.75 0 001.06 0l.382-.382a.75.75 0 000-1.06l-.75-.75a.75.75 0 00-1.06 0z" />
-              </svg>
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-white">Visual Design Language</h2>
-              <p className="text-xs text-[--text-muted]">Choose the underlying theme structure of the interface.</p>
-            </div>
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Bloomberg Terminal Option */}
-            <div 
-              onClick={() => handleThemeChange("default")}
-              className={`p-5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between h-36 ${activeTheme === 'default' ? 'bg-sky-500/[0.04] border-sky-500/30 ring-1 ring-sky-500/30' : 'bg-black/10 border-white/5 opacity-60 hover:opacity-100 hover:border-white/10'}`}
-            >
-              <div className="flex justify-between items-start">
-                <span className="text-xs font-black uppercase tracking-wider text-[--text-muted]">Corporate</span>
-                {activeTheme === 'default' && (
-                  <span className="w-2 h-2 rounded-full bg-sky-400 shadow-[0_0_8px_rgba(14,165,233,0.5)]" />
-                )}
-              </div>
-              <div>
-                <h3 className="text-[15px] font-black text-white">Bloomberg Terminal</h3>
-                <p className="text-[11px] text-[--text-muted] mt-1">High-contrast, professional deep-charcoal financial style.</p>
-              </div>
-            </div>
-
-            {/* Google Developed Option */}
-            <div 
-              onClick={() => handleThemeChange("google")}
-              className={`p-5 rounded-2xl border transition-all cursor-pointer relative overflow-hidden flex flex-col justify-between h-36 ${activeTheme === 'google' ? 'bg-blue-500/[0.04] border-blue-500/30 ring-1 ring-blue-500/30' : 'bg-black/10 border-white/5 opacity-60 hover:opacity-100 hover:border-white/10'}`}
-            >
-              {/* Google Brand Identity accent bar */}
-              <div className="absolute top-0 left-0 right-0 h-[3px] flex">
-                <div className="flex-1 bg-[#4285f4]" />
-                <div className="flex-1 bg-[#ea4335]" />
-                <div className="flex-1 bg-[#fbbc05]" />
-                <div className="flex-1 bg-[#34a853]" />
-              </div>
-
-              <div className="flex justify-between items-start mt-2">
-                <span className="text-xs font-black uppercase tracking-wider text-[--text-muted]">Dynamic</span>
-                {activeTheme === 'google' && (
-                  <span className="w-2 h-2 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(66,133,244,0.5)]" />
-                )}
-              </div>
-              <div>
-                <h3 className="text-[15px] font-black text-white flex items-center gap-1.5">
-                  <span className="gradient-text bg-gradient-to-r from-blue-400 via-green-400 to-red-400">Google Developed</span>
-                </h3>
-                <p className="text-[11px] text-[--text-muted] mt-1">Dynamic Material You palette with smooth fluid curves.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Module Management */}
       <div className="max-w-2xl animate-fade-in-up delay-2">
