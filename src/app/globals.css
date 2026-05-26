@@ -21,6 +21,11 @@
   /* Premium International Financial Dashboard Theme */
   /* Inspired by Bloomberg Terminal, Goldman Sachs, Morgan Stanley */
 
+  /* Background Depth Effects Custom Properties */
+  --circle-color-1: rgba(14, 165, 233, 0.15);
+  --circle-color-2: rgba(56, 189, 248, 0.12);
+  --circle-color-3: rgba(186, 230, 253, 0.15);
+
   /* Base Colors - Deep Professional Dark */
   --bg-base: #0b0e14;           /* Deep charcoal base - Bloomberg inspired */
   --bg-surface: #151922;        /* Elevated surface - card background */
@@ -732,4 +737,110 @@ select, select option {
 select:focus {
   border-color: var(--accent-primary) !important;
   outline: none !important;
+}
+
+/* ==========================================
+   Google Developed Premium Theme Styles
+   Inspired by Material You, Google Design, Pixel UI
+   ========================================== */
+.theme-google {
+  /* Dynamic Slate Google Dark Base */
+  --bg-base: #0c0e12;
+  --bg-surface: #171a21;
+  --bg-elevated: #212530;
+  --bg-overlay: #0c0e12;
+
+  /* Premium Google Corporate Palette */
+  --accent-primary: #4285f4;         /* Google Blue */
+  --accent-primary-light: #5a95f5;
+  --accent-secondary: #34a853;       /* Google Green */
+  --accent-tertiary: #ea4335;        /* Google Red */
+
+  /* Financial Status Colors Harmonized to Google Branding */
+  --success: #34a853;                /* Google Green */
+  --success-light: #46b763;
+  --danger: #ea4335;                 /* Google Red */
+  --danger-light: #ee5b4d;
+  --warning: #fbbc05;                /* Google Yellow */
+  --warning-light: #fcc723;
+  --info: #4285f4;
+
+  /* Borders & Highlights */
+  --border-default: rgba(66, 133, 244, 0.08);
+  --border-strong: rgba(66, 133, 244, 0.15);
+  --border-subtle: rgba(255, 255, 255, 0.02);
+  --border-accent: rgba(66, 133, 244, 0.35);
+
+  /* Glassmorphism Dynamic Tints */
+  --glass-bg: rgba(23, 26, 33, 0.85);
+  --glass-border: rgba(66, 133, 244, 0.12);
+  --glass-hover: rgba(66, 133, 244, 0.04);
+
+  /* Dynamic Mesh Backdrops using Google Identity Colors */
+  --gradient-primary: linear-gradient(135deg, #4285f4 0%, #34a853 35%, #fbbc05 65%, #ea4335 100%);
+  --gradient-success: linear-gradient(135deg, #34a853 0%, #2e8b57 100%);
+  --gradient-danger: linear-gradient(135deg, #ea4335 0%, #c23b22 100%);
+  
+  --gradient-mesh: radial-gradient(at 0% 0%, rgba(66, 133, 244, 0.14) 0%, transparent 60%),
+                   radial-gradient(at 100% 0%, rgba(52, 168, 83, 0.12) 0%, transparent 60%),
+                   radial-gradient(at 100% 100%, rgba(251, 188, 5, 0.08) 0%, transparent 60%),
+                   radial-gradient(at 0% 100%, rgba(234, 67, 53, 0.1) 0%, transparent 60%);
+
+  /* Google-specific Shadow Glows */
+  --shadow-glow: 0 0 35px rgba(66, 133, 244, 0.22);
+  --shadow-glow-success: 0 0 25px rgba(52, 168, 83, 0.18);
+  --shadow-glow-danger: 0 0 25px rgba(234, 67, 53, 0.18);
+
+  /* Material Design 3 Fluid Radius System */
+  --radius-sm: 14px;
+  --radius-md: 20px;
+  --radius-lg: 28px;
+  --radius-xl: 36px;
+  --radius-2xl: 44px;
+
+  /* Custom Sidebar Tints */
+  --sidebar-bg: rgba(23, 26, 33, 0.99);
+  --sidebar-border: rgba(66, 133, 244, 0.08);
+  --sidebar-active: rgba(66, 133, 244, 0.12);
+  --sidebar-hover: rgba(255, 255, 255, 0.03);
+
+  /* Background circles in RootLayout */
+  --circle-color-1: rgba(66, 133, 244, 0.15); /* Google Blue */
+  --circle-color-2: rgba(52, 168, 83, 0.12);  /* Google Green */
+  --circle-color-3: rgba(234, 67, 53, 0.12);  /* Google Red */
+}
+
+/* Material You Dynamic Accents and Interactive Badges */
+.theme-google .btn-primary {
+  background: var(--accent-primary);
+  box-shadow: 0 4px 14px rgba(66, 133, 244, 0.25);
+  font-family: var(--font-display);
+}
+
+.theme-google .btn-primary:hover {
+  background: var(--accent-primary-light);
+  box-shadow: 0 8px 24px rgba(66, 133, 244, 0.4);
+}
+
+.theme-google .btn-success {
+  background: var(--success);
+  box-shadow: 0 4px 14px rgba(52, 168, 83, 0.25);
+}
+
+.theme-google .btn-success:hover {
+  background: var(--success-light);
+  box-shadow: 0 8px 24px rgba(52, 168, 83, 0.4);
+}
+
+.theme-google select, .theme-google select option {
+  background-color: var(--bg-surface) !important;
+}
+
+.theme-google .glass-card, .theme-google .glass-card-static {
+  border-radius: var(--radius-lg);
+  border-color: var(--border-default);
+}
+
+.theme-google .glass-card:hover {
+  border-color: var(--accent-primary);
 }
