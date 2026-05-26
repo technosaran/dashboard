@@ -232,7 +232,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
             scheme_code: formData.scheme_code,
             fund_symbol: formData.scheme_code,
             units: parseFloat(formData.units),
-            nav: parseFloat(formData.nav),
+            avg_nav: parseFloat(formData.nav),
             current_nav: parseFloat(formData.current_nav || formData.nav),
             category: formData.category,
             investment_type: formData.investment_type
@@ -330,7 +330,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
       </div>
 
       {/* Summary Cards */}
-      <div className="hidden md:grid grid-cols-2 md:grid-cols-5 gap-4 px-4">
+      <div className="hidden md:grid grid-cols-2 md:grid-cols-4 gap-4 px-4">
         <div className="glass-card-static p-6 flex flex-col gap-2">
             <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Invested Capital</span>
             <span className="text-xl md:text-2xl font-black tabular-nums">+₹{stats.totalInvested.toLocaleString()}</span>
@@ -346,10 +346,6 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
         <div className="glass-card-static p-6 flex flex-col gap-2">
             <span className="text-[10px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Avg. Return</span>
             <PnLValue value={stats.totalPnLPercent} prefix="" suffix="%" size="lg" className="items-start" />
-        </div>
-        <div className="glass-card-static p-6 flex flex-col gap-2">
-            <span className="text-[10px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Day&apos;s P&amp;L</span>
-            <PnLValue value={stats.dayPnL} percentage={stats.dayPnLPercent} size="lg" className="items-start" />
         </div>
       </div>
 
@@ -377,7 +373,6 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                   <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">Volume</th>
                   <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">Avg NAV</th>
                   <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">Live NAV</th>
-                  <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">Day Change</th>
                   <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">P&L</th>
                 </tr>
               </thead>
@@ -449,9 +444,6 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                             <td className="px-6 py-5 text-right font-bold tabular-nums text-[#eee] text-[14px]">{Number(mf.units).toFixed(3)}</td>
                             <td className="px-6 py-5 text-right font-medium tabular-nums text-[#666] text-[13px]">₹{Number(mf.avg_nav).toFixed(3)}</td>
                             <td className="px-6 py-5 text-right font-bold tabular-nums text-[#eee] text-[14px]">₹{Number(mf.current_nav).toFixed(3)}</td>
-                             <td className="px-6 py-5 text-right tabular-nums">
-                                 <PnLValue value={(mf.day_change || 0) * Number(mf.units || 0)} percentage={mf.day_change_percent || 0} size="md" />
-                             </td>
                             <td className="px-6 py-5 text-right whitespace-nowrap">
                                 <PnLValue value={pnl} percentage={pnlPercent} size="md" />
                             </td>
@@ -526,13 +518,9 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                       <p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-0.5">Current Value</p>
                       <p className="font-bold text-[--accent-primary-light]">₹{formatNum(currentVal)}</p>
                     </div>
-                    <div>
-                      <p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-0.5">Invested Capital</p>
-                      <p className="font-medium text-[--text-secondary]">₹{formatNum(investment)}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-0.5">Day Change</p>
-                      <PnLValue value={(mf.day_change || 0) * Number(mf.units || 0)} percentage={mf.day_change_percent || 0} size="sm" className="items-end" />
+                    <div className="col-span-2 border-t border-white/5 pt-3 mt-1 flex justify-between items-center">
+                      <span className="text-[9px] font-black uppercase tracking-widest text-[--text-muted]">Invested Capital</span>
+                      <span className="font-medium text-[--text-secondary]">₹{formatNum(investment)}</span>
                     </div>
                   </div>
 

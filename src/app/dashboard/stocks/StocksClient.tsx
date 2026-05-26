@@ -297,7 +297,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
       </div>
 
       {/* Summary Cards Grid */}
-      <div className="hidden md:grid grid-cols-2 md:grid-cols-4 gap-4 px-4 mb-4">
+      <div className="hidden md:grid grid-cols-2 md:grid-cols-3 gap-4 px-4 mb-4">
         <div className="glass-card-static p-6 flex flex-col gap-2">
           <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Total Invested</span>
           <span className="text-xl md:text-2xl font-black tabular-nums">+₹{totalInvested.toLocaleString()}</span>
@@ -309,10 +309,6 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
         <div className="glass-card-static p-6 flex flex-col gap-2">
           <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Unrealized P&L</span>
           <PnLValue value={totalPnL} percentage={totalPnLPercent} size="lg" className="items-start" />
-        </div>
-        <div className="glass-card-static p-6 flex flex-col gap-2">
-          <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">{"Day's P&L"}</span>
-          <PnLValue value={totalDayPnL} percentage={totalDayPnLPercent} size="lg" className="items-start" />
         </div>
       </div>
 
@@ -355,9 +351,6 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                   <th className="py-4 px-4 font-black text-right cursor-pointer hover:text-[--text-primary] group" onClick={() => handleSort("pnl")}>
                     P&L <SortIcon col="pnl" sortKey={sortKey} sortDir={sortDir} />
                   </th>
-                  <th className="py-4 px-4 font-black text-right">
-                    Day Chg.
-                  </th>
                   <th className="py-4 px-4 font-black text-right cursor-pointer hover:text-[--text-primary] group" onClick={() => handleSort("pnlPercent")}>
                     Net chg. <SortIcon col="pnlPercent" sortKey={sortKey} sortDir={sortDir} />
                   </th>
@@ -386,12 +379,9 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                       <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[--text-secondary]">{inv.quantity}</td>
                       <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[--text-secondary]">{formatNum(inv.buy_price)}</td>
                       <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[--text-primary] font-normal">{formatNum(inv.current_price)}</td>
-                      <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[--text-primary]">{formatNum(currentVal)}</td>
+                      <td className="py-4 px-4 text-right tabular-nums">{formatNum(currentVal)}</td>
                       <td className="py-4 px-4 text-right tabular-nums text-[13px] font-medium">
                         <PnLValue value={pnl} showSign={true} prefix="₹" size="sm" />
-                      </td>
-                      <td className="py-4 px-4 text-right tabular-nums">
-                        <PnLValue value={(inv.day_change || 0) * inv.quantity} percentage={inv.day_change_percent || 0} size="sm" />
                       </td>
                       <td className="py-4 px-4 text-right tabular-nums text-[13px] font-medium relative">
                         <PnLValue value={pnlPct} showSign={true} prefix="" suffix="%" size="sm" />
@@ -430,22 +420,11 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                              </div>
                           </div>
                        </div>
-                       <div className="grid grid-cols-2 gap-y-4 border-t border-white/5 pt-4 mb-4 overflow-hidden">
-                          <div className="overflow-hidden"><p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-1">Holding</p><p className="text-[13px] font-black truncate">{inv.quantity} <span className="opacity-40 font-bold ml-1">@ ₹{formatNum(inv.buy_price)}</span></p></div>
-                          <div className="text-right overflow-hidden"><p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-1">Current Value</p><p className="text-[13px] font-black truncate">₹{formatNum(currentVal)}</p></div>
-                          <div className="overflow-hidden"><p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-1">LTP</p><p className="text-[13px] font-black truncate">₹{formatNum(inv.current_price)}</p></div>
-                          <div className="text-right overflow-hidden">
-                             <p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-1">Day Return</p>
-                             <div className="flex flex-col items-end">
-                                <p className={`text-[13px] font-black ${inv.day_change !== null && inv.day_change >= 0 ? "text-success" : "text-danger"}`}>
-                                   {inv.day_change !== null && inv.day_change > 0 ? "+" : ""}{inv.day_change !== null ? formatNum(inv.day_change * inv.quantity) : "—"}
-                                </p>
-                                <p className={`text-[9px] font-bold opacity-60 ${inv.day_change !== null && inv.day_change >= 0 ? "text-success" : "text-danger"}`}>
-                                   ({inv.day_change !== null && inv.day_change > 0 ? "+" : ""}{inv.day_change_percent?.toFixed(2)}%)
-                                </p>
-                             </div>
-                          </div>
-                       </div>
+                       <div className="grid grid-cols-3 gap-x-2 gap-y-4 border-t border-white/5 pt-4 mb-4 overflow-hidden">
+                           <div className="overflow-hidden"><p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-1">Holding</p><p className="text-[13px] font-black truncate">{inv.quantity} <span className="opacity-40 font-bold ml-1">@ ₹{formatNum(inv.buy_price)}</span></p></div>
+                           <div className="overflow-hidden"><p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-1">LTP</p><p className="text-[13px] font-black truncate">₹{formatNum(inv.current_price)}</p></div>
+                           <div className="text-right overflow-hidden"><p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-1">Current Value</p><p className="text-[13px] font-black truncate">₹{formatNum(currentVal)}</p></div>
+                        </div>
                        <div className="flex gap-2">
                           <button onClick={() => { setEditingId(null); setFormData({ symbol: inv.symbol || "", name: inv.name, quantity: "", buy_price: inv.current_price.toString(), current_price: inv.current_price.toString(), exchange: inv.symbol?.endsWith(".BO") ? "BSE" : "NSE", trade_type: "buy", deduct_from_account: "", currency: "INR", notes: "", bought_at: new Date().toISOString().split("T")[0] }); setShowForm(true); }} className="flex-1 py-3 bg-success/20 hover:bg-success/30 text-success border border-success/30 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-success/5">Buy</button>
                           <button onClick={() => startSell(inv)} className="flex-1 py-3 bg-danger/20 hover:bg-danger/30 text-danger border border-danger/30 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-danger/5">Sell</button>

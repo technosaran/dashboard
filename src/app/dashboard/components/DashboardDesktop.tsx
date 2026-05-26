@@ -141,14 +141,6 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                 <div className="text-lg md:text-xl font-bold text-white/50 tracking-tight [font-family:'Outfit',sans-serif] whitespace-nowrap">
                   / ${(stats.totalBalance / 83.5).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} USD
                 </div>
-                <div className={`flex flex-col mb-1 ml-2 ${stats.totalDayPnL >= 0 ? 'text-emerald-400' : 'text-rose-500'}`}>
-                  <span className="text-[13px] font-black tabular-nums whitespace-nowrap">
-                    {stats.totalDayPnL >= 0 ? '+' : '-'}₹{Math.abs(stats.totalDayPnL).toLocaleString()}
-                  </span>
-                  <span className="text-[9px] font-black opacity-60 tabular-nums">
-                    ({stats.totalDayPnL >= 0 ? '+' : ''}{stats.totalDayPnLPercent.toFixed(2)}% today)
-                  </span>
-                </div>
               </div>
 
               <div className="mt-8 flex flex-wrap items-center gap-4 sm:gap-6">
