@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState, useMemo } from "react";
 import { differenceInDays, parseISO, format } from "date-fns";
@@ -10,7 +9,6 @@ import type { Tables } from "@/lib/database.types";
 import { createGoal, updateGoalAmount, deleteGoal, updateGoal } from "./actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
-import { CHART_COLOURS } from "@/lib/chart-colours";
 
 type Goal = Tables<"goals">;
 
@@ -43,6 +41,8 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
   const searchParams = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(searchParams?.get("action") === "new");
   const [showContributeModal, setShowContributeModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletingGoalId, setDeletingGoalId] = useState<string | null>(null);
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
   const [selectedAccountId, setSelectedAccountId] = useState<string>(accounts[0]?.id || "");
   const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
@@ -133,55 +133,59 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
     });
   }
 
-  async function handleDeleteGoal(id: string) {
-    if (!confirm("Are you sure?")) return;
-    const res = await deleteGoal(id);
-    if (!res?.error) toast.success("Milestone deleted from registry");
+  function startDeleteGoal(id: string) {
+    setDeletingGoalId(id);
+    setShowDeleteConfirm(true);
+  }
+
+  async function confirmDeleteGoal() {
+    if (!deletingGoalId) return;
+    await withLock(async () => {
+      const res = await deleteGoal(deletingGoalId);
+      if (!res?.error) {
+        toast.success("Milestone deleted from registry");
+        setShowDeleteConfirm(false);
+        setDeletingGoalId(null);
+      } else {
+        toast.error(res.error);
+      }
+    });
   }
 
   return (
     <div className="flex flex-col gap-[var(--section-gap)]">
       <div className="flex flex-col gap-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="md:hidden w-full p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-center mt-4">
-             <h2 className="text-xl font-black text-white">Goals & Savings</h2>
-             <p className="text-[10px] text-[--text-muted] uppercase tracking-widest mt-1">Mobile Data Node</p>
-             <div className="grid grid-cols-2 gap-3 mt-4">
-               <button onClick={() => setShowAddModal(true)} className="btn-primary shadow-xl shadow-emerald-500/20 bg-emerald-500 hover:bg-emerald-600">Add Goal</button>
-             </div>
-             <Link href="/dashboard" className="block text-center mt-4 text-[10px] text-white/50 uppercase font-black tracking-widest hover:text-white">← System Home</Link>
-          </div>
-          <div className="hidden md:block">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold tracking-tight text-[--text-primary]">Financial Milestones</h1>
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[--text-primary]">Financial Milestones</h1>
               <div className={`status-dot scale-90 ${isValidating ? 'animate-pulse bg-yellow-400' : 'bg-emerald-400 opacity-50'}`} />
             </div>
-            <p className="text-[--text-secondary] text-sm mt-1">Track and manage your long-term savings goals.</p>
+            <p className="text-[--text-secondary] text-xs sm:text-sm mt-1">Track and manage your long-term savings goals.</p>
           </div>
           <button 
             onClick={() => setShowAddModal(true)} 
-            className="hidden md:flex btn-primary gap-2"
+            className="btn-primary flex items-center justify-center gap-2 py-3 px-4 w-full sm:w-auto text-xs sm:text-sm shadow-xl shadow-[--accent-primary]/10"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
             Add New Goal
           </button>
         </div>
-
       </div>
 
-      <div className="hidden md:grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="glass-card-static p-6 flex flex-col gap-1">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+        <div className="glass-card-static p-4 sm:p-6 flex flex-col gap-1">
           <p className="text-[10px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Total Target</p>
-          <p className="text-2xl font-black">₹{stats.totalTarget.toLocaleString()}</p>
+          <p className="text-xl sm:text-2xl font-black">₹{stats.totalTarget.toLocaleString()}</p>
         </div>
-        <div className="glass-card-static p-6 flex flex-col gap-1">
+        <div className="glass-card-static p-4 sm:p-6 flex flex-col gap-1">
           <p className="text-[10px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Saved Amount</p>
-          <p className="text-2xl font-black text-[--accent-primary-light]">₹{stats.totalCurrent.toLocaleString()}</p>
+          <p className="text-xl sm:text-2xl font-black text-[--accent-primary-light]">₹{stats.totalCurrent.toLocaleString()}</p>
         </div>
-        <div className="glass-card-static p-6 flex flex-col gap-4">
+        <div className="glass-card-static p-4 sm:p-6 flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <p className="text-[10px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Overall Progress</p>
-            <p className="text-sm font-black text-[--accent-primary-light]">{stats.overallProgress.toFixed(1)}%</p>
+            <p className="text-xs sm:text-sm font-black text-[--accent-primary-light]">{stats.overallProgress.toFixed(1)}%</p>
           </div>
           <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
             <div 
@@ -302,7 +306,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
                       Add Capital
                     </button>
-                    <button onClick={() => handleDeleteGoal(goal.id)} className="w-12 h-12 rounded-xl bg-danger/10 border border-danger/20 text-danger hover:bg-danger/20 transition-all flex items-center justify-center">
+                    <button onClick={() => startDeleteGoal(goal.id)} className="w-12 h-12 rounded-xl bg-danger/10 border border-danger/20 text-danger hover:bg-danger/20 transition-all flex items-center justify-center">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                     </button>
                   </div>
@@ -335,7 +339,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
                       </div>
                       <div className="flex gap-2">
                         <button onClick={() => startEdit(goal)} className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-[--text-muted] hover:text-blue-400 hover:bg-white/10 transition-all opacity-0 group-hover:opacity-100" title="Edit Goal"><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
-                        <button onClick={() => handleDeleteGoal(goal.id)} className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-[--text-muted] hover:text-rose-400 hover:bg-rose-500/10 transition-all opacity-0 group-hover:opacity-100"><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                        <button onClick={() => startDeleteGoal(goal.id)} className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-[--text-muted] hover:text-rose-400 hover:bg-rose-500/10 transition-all opacity-0 group-hover:opacity-100"><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
                       </div>
                     </div>
                     <div className="space-y-4">
@@ -457,6 +461,28 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
                  <button type="submit" disabled={submitting} className="btn-primary flex-[1.5] h-11 text-[10px] shadow-xl shadow-[--accent-primary]/20">Confirm</button>
                </div>
              </form>
+          </div>
+        </div>
+      )}
+
+      {showDeleteConfirm && (
+        <div className="mobile-dialog-shell fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-md animate-fade-in">
+          <div className="mobile-dialog-panel glass-card-static w-full max-w-sm p-8 animate-scale-in">
+            <div className="flex flex-col items-center text-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-rose-500/15 border border-rose-500/25 flex items-center justify-center">
+                <svg className="w-7 h-7 text-rose-400" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                  <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-[--text-primary]">Delete Milestone</h3>
+                <p className="text-sm text-[--text-secondary] mt-2">Are you sure you want to delete this financial goal? This action cannot be undone.</p>
+              </div>
+              <div className="flex gap-3 w-full mt-2">
+                <button onClick={() => { setShowDeleteConfirm(false); setDeletingGoalId(null); }} className="btn-secondary flex-1 h-12 font-bold rounded-xl">Cancel</button>
+                <button onClick={confirmDeleteGoal} className="btn-danger flex-1 h-12 font-bold rounded-xl" disabled={submitting}>Delete</button>
+              </div>
+            </div>
           </div>
         </div>
       )}
