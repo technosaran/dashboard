@@ -69,6 +69,17 @@ export async function createInvestment(data: {
     return { error: "Current price must be a positive number" };
   }
 
+  // Harden input parameters to prevent empty string UUID and null string database crashes
+  const cleanAccountId = data.deduct_account_id && 
+    data.deduct_account_id.trim().length > 0 && 
+    data.deduct_account_id !== "null" && 
+    data.deduct_account_id !== "undefined" 
+      ? data.deduct_account_id 
+      : null;
+
+  const cleanSymbol = data.symbol && data.symbol.trim().length > 0 ? data.symbol.trim() : "";
+  const cleanNotes = data.notes && data.notes.trim().length > 0 ? data.notes.trim() : null;
+
   const tradeDate = data.bought_at || new Date().toISOString().split("T")[0];
   const turnover = data.quantity * data.buy_price;
   const totalCost = data.total_cost_with_charges ?? turnover;
@@ -98,14 +109,14 @@ export async function createInvestment(data: {
     p_user_id: user.id,
     p_name: data.name,
     p_type: "stock",
-    p_symbol: data.symbol || "",
+    p_symbol: cleanSymbol,
     p_quantity: data.quantity,
     p_buy_price: data.buy_price,
     p_current_price: data.current_price,
     p_currency: data.currency || "INR",
-    p_notes: data.notes || null,
+    p_notes: cleanNotes,
     p_date: tradeDate,
-    p_account_id: data.deduct_account_id || null,
+    p_account_id: cleanAccountId,
     p_total_cost: totalCost,
     p_trade_type: data.trade_type || "buy",
     p_charges: charges

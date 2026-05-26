@@ -51,6 +51,14 @@ export async function createBond(data: BondFormData) {
     return { error: "Maturity date must be after purchase date" };
   }
 
+  // Harden input parameters to prevent empty string UUID database crashes
+  const cleanAccountId = data.account_id && 
+    data.account_id.trim().length > 0 && 
+    data.account_id !== "null" && 
+    data.account_id !== "undefined" 
+      ? data.account_id 
+      : null;
+
   // Use typed RPC to ensure transactional integrity
   const rpc = supabase.rpc as unknown as (
     fn: "record_bond_purchase",
@@ -97,7 +105,7 @@ export async function createBond(data: BondFormData) {
     p_credit_rating: data.credit_rating || null,
     p_platform: data.platform || "Wint",
     p_demat_account: data.demat_account || null,
-    p_account_id: data.account_id || null,
+    p_account_id: cleanAccountId,
     p_notes: data.notes || null,
   });
 

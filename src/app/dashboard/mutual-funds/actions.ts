@@ -95,6 +95,14 @@ export async function recordMFInvestment(data: {
         return { error: "NAV must be a positive number" };
     }
 
+    // Harden input parameters to prevent empty string UUID database crashes
+    const cleanAccountId = data.account_id && 
+      data.account_id.trim().length > 0 && 
+      data.account_id !== "null" && 
+      data.account_id !== "undefined" 
+        ? data.account_id 
+        : null;
+
     const rpc = supabase.rpc as unknown as (
         fn: "record_mf_investment_v4",
         args: {
@@ -123,7 +131,7 @@ export async function recordMFInvestment(data: {
         p_category: data.category,
         p_amc_name: data.amc_name,
         p_date: data.date,
-        p_account_id: data.account_id || null,
+        p_account_id: cleanAccountId,
         p_stamp_duty: data.stamp_duty,
         p_trade_type: data.trade_type || "buy"
     });

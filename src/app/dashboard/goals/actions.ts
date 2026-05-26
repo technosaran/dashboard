@@ -32,6 +32,14 @@ export async function createGoal(data: {
         return { error: "Initial amount cannot be negative" };
     }
 
+    // Harden input parameters to prevent empty string UUID database crashes
+    const cleanAccountId = data.account_id && 
+      data.account_id.trim().length > 0 && 
+      data.account_id !== "null" && 
+      data.account_id !== "undefined" 
+        ? data.account_id 
+        : null;
+
     const rpc = supabase.rpc as unknown as (
         fn: "initialize_goal",
         args: {
@@ -52,7 +60,7 @@ export async function createGoal(data: {
         p_initial_amount: data.current_amount || 0,
         p_deadline: data.deadline || null,
         p_category: data.category || 'Others',
-        p_account_id: data.account_id || null
+        p_account_id: cleanAccountId
     });
 
     if (error) return { error: error.message };
