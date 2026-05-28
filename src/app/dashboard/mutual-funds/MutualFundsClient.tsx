@@ -89,6 +89,8 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
   const [searchResults, setSearchResults] = useState<MFSchemeSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showAllCharges, setShowAllCharges] = useState(false);
+  const [autoCalculateCharges, setAutoCalculateCharges] = useState(true);
+  const [manualCharges, setManualCharges] = useState("");
 
   const [formData, setFormData] = useState({
     fund_name: "",
@@ -109,10 +111,12 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
     return amount * 0.00005; // 0.005% stamp duty
   }, [formData.units, formData.nav]);
 
+  const finalStampDuty = autoCalculateCharges ? stampDuty : (parseFloat(manualCharges) || 0);
+
   const totalDeduction = useMemo(() => {
     const amount = parseFloat(formData.units || "0") * parseFloat(formData.nav || "0");
-    return formData.trade_type === 'buy' ? amount + stampDuty : amount - stampDuty;
-  }, [formData.units, formData.nav, stampDuty, formData.trade_type]);
+    return formData.trade_type === 'buy' ? amount + finalStampDuty : amount - finalStampDuty;
+  }, [formData.units, formData.nav, finalStampDuty, formData.trade_type]);
 
   const stats = useMemo(() => {
     const totalInvested = mfs.reduce((s, g) => s + (Number(g.units) * Number(g.avg_nav)), 0);
@@ -198,6 +202,8 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
         account_id: "",
         trade_type: "sell"
     });
+    setAutoCalculateCharges(true);
+    setManualCharges("");
     setSearchQuery(mf.fund_name);
     setShowAddModal(true);
   };
@@ -217,6 +223,8 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
       account_id: "",
       trade_type: "buy"
     });
+    setAutoCalculateCharges(true);
+    setManualCharges("");
     setSearchQuery(mf.fund_name);
     setShowAddModal(true);
   };
@@ -247,6 +255,8 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
               date: new Date().toISOString().split("T")[0], account_id: "",
               trade_type: "buy"
             });
+            setAutoCalculateCharges(true);
+            setManualCharges("");
             setSearchQuery("");
           } else {
             toast.error(res.error);
@@ -260,7 +270,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
             ...formData,
             units: parseFloat(formData.units),
             nav: parseFloat(formData.nav),
-            stamp_duty: stampDuty,
+            stamp_duty: finalStampDuty,
             trade_type: formData.trade_type
           });
           if (!res?.error) {
@@ -272,6 +282,8 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
               date: new Date().toISOString().split("T")[0], account_id: "",
               trade_type: "buy"
             });
+            setAutoCalculateCharges(true);
+            setManualCharges("");
             setSearchQuery("");
           } else {
             toast.error(res.error);
@@ -321,7 +333,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
               Export
             </button>
             <button 
-              onClick={() => { setEditingId(null); setFormData(prev => ({ ...prev, trade_type: 'buy' })); setSearchQuery(""); setShowAddModal(true); }} 
+              onClick={() => { setEditingId(null); setFormData(prev => ({ ...prev, trade_type: 'buy' })); setAutoCalculateCharges(true); setManualCharges(""); setSearchQuery(""); setShowAddModal(true); }} 
               className="btn-primary !h-12 md:!h-11 !px-8 w-full md:w-auto text-[13px] md:text-[11px] font-black uppercase tracking-widest shadow-[0_4px_20px_rgba(var(--accent-primary-rgb),0.3)] order-first md:order-last"
             >
                 Record Investment
@@ -541,6 +553,8 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                           account_id: "", 
                           trade_type: "buy" 
                         }); 
+                        setAutoCalculateCharges(true);
+                        setManualCharges("");
                         setSearchQuery(mf.fund_name); 
                         setShowAddModal(true); 
                       }} 
@@ -761,25 +775,71 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
 
               {/* Charge Summary Box (With Toggle) */}
               {!editingId ? (
-                <div className="bg-[--bg-surface] border border-[--border-strong] rounded-2xl p-5 space-y-4 shadow-lg">
-                  <div className="flex justify-between items-center">
+                <div className="bg-[--bg-surface] border border-[--border-strong] rounded-2xl p-5 space-y-4 shadow-lg animate-fade-in">
+                  {/* Auto/Manual Toggle and Input */}
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        id="autoCalculateCharges"
+                        checked={autoCalculateCharges}
+                        onChange={(e) => {
+                          setAutoCalculateCharges(e.target.checked);
+                          if (e.target.checked) {
+                            setManualCharges("");
+                          } else {
+                            setManualCharges(stampDuty.toFixed(4));
+                          }
+                        }}
+                        className="w-4 h-4 rounded border-[--border-default] text-[--accent-primary] focus:ring-[--accent-primary] bg-transparent cursor-pointer"
+                      />
+                      <label htmlFor="autoCalculateCharges" className="text-xs font-bold text-[--text-secondary] cursor-pointer select-none">
+                        Auto-calculate regulatory stamp duty (0.005%)
+                      </label>
+                    </div>
+
+                    {!autoCalculateCharges && (
+                      <div className="relative animate-fade-in mt-1">
+                        <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[10px] text-[--text-muted] uppercase tracking-widest font-bold z-10">
+                          Manual Stamp Duty / Charges (₹)
+                        </label>
+                        <input
+                          type="number"
+                          step="0.0001"
+                          value={manualCharges}
+                          onChange={(e) => setManualCharges(e.target.value)}
+                          className="w-full h-12 px-4 bg-transparent border border-[--border-default] rounded-md text-[13px] text-[--text-primary] tabular-nums outline-none focus:border-[--accent-primary] font-bold"
+                          placeholder="0.0000"
+                          required
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex justify-between items-center pt-2 border-t border-white/5">
                       <div className="flex flex-col">
-                          <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-widest">Transaction Levies</span>
+                          <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-widest">
+                            {autoCalculateCharges ? "Transaction Levies" : "Manual Charges Applied"}
+                          </span>
                           <div className="flex items-center gap-2 mt-1">
-                              <span className="text-[14px] font-black text-rose-400">₹{stampDuty.toFixed(4)}</span>
-                              <button 
-                                  type="button" 
-                                  onClick={() => setShowAllCharges(!showAllCharges)}
-                                  className="text-[9px] font-black text-[--accent-primary-light] uppercase tracking-widest hover:underline"
-                              >
-                                  {showAllCharges ? "Hide Details" : "See More"}
-                              </button>
+                              <span className="text-[14px] font-black text-rose-400">
+                                ₹{finalStampDuty.toFixed(4)}
+                              </span>
+                              {autoCalculateCharges && (
+                                <button 
+                                    type="button" 
+                                    onClick={() => setShowAllCharges(!showAllCharges)}
+                                    className="text-[9px] font-black text-[--accent-primary-light] uppercase tracking-widest hover:underline"
+                                >
+                                    {showAllCharges ? "Hide Details" : "See More"}
+                                </button>
+                              )}
                           </div>
                       </div>
                       <span className="text-[9px] text-sky-400 border border-sky-400/20 px-2 py-0.5 rounded font-black uppercase">SEBI Regulatory</span>
                   </div>
 
-                  {showAllCharges && (
+                  {autoCalculateCharges && showAllCharges && (
                       <div className="space-y-2 pt-2 border-t border-white/5 animate-fade-in">
                           <div className="flex justify-between items-center text-[11px]">
                               <span className="text-[--text-muted] font-bold uppercase tracking-wide">Investment Value</span>

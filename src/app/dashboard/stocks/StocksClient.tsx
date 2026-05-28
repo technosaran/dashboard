@@ -60,6 +60,8 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const [autoCalculateCharges, setAutoCalculateCharges] = useState(true);
+  const [manualCharges, setManualCharges] = useState("");
 
 
   const [formData, setFormData] = useState({
@@ -138,6 +140,8 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
       deduct_from_account: "",
       trade_type: "buy"
     });
+    setAutoCalculateCharges(true);
+    setManualCharges("");
     setShowForm(false);
     setEditingId(null);
   }
@@ -187,17 +191,22 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
         const suffix = formData.exchange === "BSE" ? ".BO" : ".NS";
         const fullSymbol = formData.symbol ? `${formData.symbol.trim().toUpperCase().split(".")[0]}${suffix}` : undefined;
 
+        const qty = parseFloat(formData.quantity);
+        const price = parseFloat(formData.buy_price);
+        const finalCharges = autoCalculateCharges ? zerodhaCharges.totalCharges : (parseFloat(manualCharges) || 0);
+        const finalNetAmount = formData.trade_type === "buy" ? (qty * price) + finalCharges : (qty * price) - finalCharges;
+
         const payload = {
           name: formData.name, 
           symbol: fullSymbol,
-          quantity: parseFloat(formData.quantity),
-          buy_price: parseFloat(formData.buy_price),
+          quantity: qty,
+          buy_price: price,
           current_price: parseFloat(formData.current_price),
           currency: formData.currency,
           notes: formData.notes || undefined,
           bought_at: formData.bought_at,
           deduct_account_id: formData.deduct_from_account || undefined,
-          total_cost_with_charges: !editingId ? zerodhaCharges.netAmount : undefined,
+          total_cost_with_charges: !editingId ? finalNetAmount : undefined,
           trade_type: formData.trade_type
         };
         const result = editingId
@@ -635,68 +644,121 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
 
               {/* Zerodha Charges Breakdown (Condensed with Toggle) */}
               {parseFloat(formData.quantity) > 0 && parseFloat(formData.buy_price) > 0 && (
-                <div className="bg-[--bg-base] rounded-xl p-4 border border-[--border-default] animate-fade-in">
-                   <div className="flex justify-between items-center mb-0">
-                     <div className="flex flex-col">
-                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Levies & Taxes</span>
-                        <div className="flex items-center gap-2 mt-1">
-                           <span className="text-[13px] font-black text-[--text-primary]">₹{formatNum(zerodhaCharges.totalCharges)}</span>
-                           <button 
-                             type="button"
-                             onClick={() => setShowChargesInForm(!showChargesInForm)}
-                             className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
-                             title={showChargesInForm ? "Hide charges breakdown" : "Show charges breakdown"}
-                           >
-                             <svg className="w-4 h-4 text-[--accent-primary-light]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                               {showChargesInForm ? (
-                                 <path d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                               ) : (
-                                 <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                               )}
-                             </svg>
-                           </button>
+                <div className="bg-[--bg-base] rounded-xl p-5 border border-[--border-default] animate-fade-in space-y-4">
+                  {/* Auto/Manual Toggle and Input */}
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        id="autoCalculateCharges"
+                        checked={autoCalculateCharges}
+                        onChange={(e) => {
+                          setAutoCalculateCharges(e.target.checked);
+                          if (e.target.checked) {
+                            setManualCharges("");
+                          } else {
+                            setManualCharges(zerodhaCharges.totalCharges.toString());
+                          }
+                        }}
+                        className="w-4 h-4 rounded border-[--border-default] text-[--accent-primary] focus:ring-[--accent-primary] bg-transparent cursor-pointer"
+                      />
+                      <label htmlFor="autoCalculateCharges" className="text-xs font-bold text-[--text-secondary] cursor-pointer select-none">
+                        Auto-calculate Zerodha levies & taxes
+                      </label>
+                    </div>
+
+                    {!autoCalculateCharges && (
+                      <div className="relative animate-fade-in mt-1">
+                        <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[10px] text-[--text-muted] uppercase tracking-widest font-bold z-10">
+                          Manual Brokerage Charges (₹)
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={manualCharges}
+                          onChange={(e) => setManualCharges(e.target.value)}
+                          className="w-full h-12 px-4 bg-transparent border border-[--border-default] rounded-md text-[13px] text-[--text-primary] tabular-nums outline-none focus:border-[--accent-primary] font-bold"
+                          placeholder="0.00"
+                          required
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {autoCalculateCharges ? (
+                    <>
+                      <div className="flex justify-between items-center mb-0 pt-2 border-t border-white/5">
+                        <div className="flex flex-col">
+                          <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Levies & Taxes</span>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-[13px] font-black text-[--text-primary]">₹{formatNum(zerodhaCharges.totalCharges)}</span>
+                            <button 
+                              type="button"
+                              onClick={() => setShowChargesInForm(!showChargesInForm)}
+                              className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
+                              title={showChargesInForm ? "Hide charges breakdown" : "Show charges breakdown"}
+                            >
+                              <svg className="w-4 h-4 text-[--accent-primary-light]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                                {showChargesInForm ? (
+                                  <path d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                ) : (
+                                  <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                )}
+                              </svg>
+                            </button>
+                          </div>
                         </div>
-                     </div>
-                     <span className="text-[9px] text-[--accent-primary-light] border border-[--accent-primary]/20 px-2 py-0.5 rounded font-black uppercase">Zerodha Delivery</span>
-                   </div>
-                   
-                   {showChargesInForm && (
-                     <div className="grid grid-cols-2 gap-x-8 gap-y-2 mt-4 pt-4 border-t border-white/5 animate-fade-in">
-                       <div className="flex justify-between text-[11px]">
-                         <span className="text-[--text-muted]">STT (0.1%)</span>
-                         <span className="text-[--text-primary]">₹{formatNum(zerodhaCharges.stt)}</span>
-                       </div>
-                       <div className="flex justify-between text-[11px]">
-                         <span className="text-[--text-muted]">Txn Fee</span>
-                         <span className="text-[--text-primary]">₹{formatNum(zerodhaCharges.txnCharge)}</span>
-                       </div>
-                       <div className="flex justify-between text-[11px]">
-                         <span className="text-[--text-muted]">GST (18%)</span>
-                         <span className="text-[--text-primary]">₹{formatNum(zerodhaCharges.gst)}</span>
-                       </div>
-                       <div className="flex justify-between text-[11px]">
-                         <span className="text-[--text-muted]">Stamp Duty</span>
-                         <span className="text-[--text-primary]">₹{formatNum(zerodhaCharges.stampDuty)}</span>
-                       </div>
-                       <div className="flex justify-between text-[11px]">
-                         <span className="text-[--text-muted]">SEBI Fee</span>
-                         <span className="text-[--text-primary]">₹{formatNum(zerodhaCharges.sebiCharge)}</span>
-                       </div>
-                       {zerodhaCharges.dpCharges > 0 && (
-                        <div className="flex justify-between text-[11px]">
-                          <span className="text-[--text-muted]">DP Charges</span>
-                          <span className="text-[--text-primary]">₹{formatNum(zerodhaCharges.dpCharges)}</span>
+                        <span className="text-[9px] text-[--accent-primary-light] border border-[--accent-primary]/20 px-2 py-0.5 rounded font-black uppercase">Zerodha Delivery</span>
+                      </div>
+                      
+                      {showChargesInForm && (
+                        <div className="grid grid-cols-2 gap-x-8 gap-y-2 mt-4 pt-4 border-t border-white/5 animate-fade-in">
+                          <div className="flex justify-between text-[11px]">
+                            <span className="text-[--text-muted]">STT (0.1%)</span>
+                            <span className="text-[--text-primary]">₹{formatNum(zerodhaCharges.stt)}</span>
+                          </div>
+                          <div className="flex justify-between text-[11px]">
+                            <span className="text-[--text-muted]">Txn Fee</span>
+                            <span className="text-[--text-primary]">₹{formatNum(zerodhaCharges.txnCharge)}</span>
+                          </div>
+                          <div className="flex justify-between text-[11px]">
+                            <span className="text-[--text-muted]">GST (18%)</span>
+                            <span className="text-[--text-primary]">₹{formatNum(zerodhaCharges.gst)}</span>
+                          </div>
+                          <div className="flex justify-between text-[11px]">
+                            <span className="text-[--text-muted]">Stamp Duty</span>
+                            <span className="text-[--text-primary]">₹{formatNum(zerodhaCharges.stampDuty)}</span>
+                          </div>
+                          <div className="flex justify-between text-[11px]">
+                            <span className="text-[--text-muted]">SEBI Fee</span>
+                            <span className="text-[--text-primary]">₹{formatNum(zerodhaCharges.sebiCharge)}</span>
+                          </div>
+                          {zerodhaCharges.dpCharges > 0 && (
+                            <div className="flex justify-between text-[11px]">
+                              <span className="text-[--text-muted]">DP Charges</span>
+                              <span className="text-[--text-primary]">₹{formatNum(zerodhaCharges.dpCharges)}</span>
+                            </div>
+                          )}
                         </div>
-                       )}
-                     </div>
-                   )}
-                   
-                   <div className="mt-4 pt-3 border-t border-white/5 flex justify-between items-center">
-                      <span className="text-[10px] font-black text-[--text-muted] uppercase tracking-widest">Net Outflow</span>
-                      <span className={`text-[15px] font-black tabular-nums ${formData.trade_type === 'buy' ? 'text-danger' : 'text-success'}`}>
-                        ₹{formatNum(zerodhaCharges.netAmount)}
-                      </span>
-                   </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="flex justify-between items-center mb-0 pt-2 border-t border-white/5">
+                      <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Manual Charges Applied</span>
+                      <span className="text-[13px] font-black text-[--text-primary]">₹{formatNum(parseFloat(manualCharges) || 0)}</span>
+                    </div>
+                  )}
+                  
+                  <div className="mt-4 pt-3 border-t border-white/5 flex justify-between items-center">
+                    <span className="text-[10px] font-black text-[--text-muted] uppercase tracking-widest">Net Outflow</span>
+                    <span className={`text-[15px] font-black tabular-nums ${formData.trade_type === 'buy' ? 'text-danger' : 'text-success'}`}>
+                      ₹{formatNum(
+                        formData.trade_type === 'buy' 
+                          ? (parseFloat(formData.quantity) * parseFloat(formData.buy_price) || 0) + (autoCalculateCharges ? zerodhaCharges.totalCharges : (parseFloat(manualCharges) || 0))
+                          : (parseFloat(formData.quantity) * parseFloat(formData.buy_price) || 0) - (autoCalculateCharges ? zerodhaCharges.totalCharges : (parseFloat(manualCharges) || 0))
+                      )}
+                    </span>
+                  </div>
                 </div>
               )}
 
