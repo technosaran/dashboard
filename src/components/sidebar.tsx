@@ -31,15 +31,6 @@ const nav = [
     ),
   },
   {
-    label: "Wallet",
-    href: "/dashboard/wallet",
-    icon: (
-      <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M21 12h-5.25a3 3 0 00-3 3v0a3 3 0 003 3H21m0-6V5.25A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25v13.5A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V12z" />
-      </svg>
-    ),
-  },
-  {
     label: "Income",
     href: "/dashboard/income",
     icon: (
