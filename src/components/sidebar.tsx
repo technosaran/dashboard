@@ -140,6 +140,15 @@ const nav = [
     ),
   },
   {
+    label: "FnO",
+    href: "/dashboard/fno",
+    icon: (
+      <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 3v18h18M9 15l3-3 3 3 5-5" />
+      </svg>
+    ),
+  },
+  {
     label: "Settings",
     href: "/dashboard/settings",
     icon: (
@@ -214,6 +223,7 @@ export default function Sidebar() {
     { label: "Income", href: "/dashboard/income?action=new", icon: "🟢", color: "var(--success)" },
     { label: "Transfer", href: "/dashboard/accounts?action=transfer", icon: "🔄", color: "var(--accent-primary-light)" },
     { label: "Trade", href: "/dashboard/stocks?action=new", icon: "📈", color: "#3b82f6" },
+    { label: "FnO", href: "/dashboard/fno?action=new", icon: "📊", color: "#10b981" },
     { label: "Funds", href: "/dashboard/mutual-funds?action=new", icon: "🏦", color: "#a855f7" },
     { label: "FX Trade", href: "/dashboard/forex", icon: "💱", color: "#fbbf24" },
   ];

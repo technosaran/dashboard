@@ -7,6 +7,29 @@ import { useEffect, useRef, useCallback } from "react";
 import { useSWRConfig } from "swr";
 import { useUser } from "@/context/user-context";
 
+export interface FnoTrade {
+  id: string;
+  user_id: string;
+  symbol: string;
+  instrument_type: "FUT" | "CE" | "PE";
+  strike_price: number | null;
+  expiry_date: string;
+  trade_type: "BUY" | "SELL";
+  quantity: number;
+  entry_price: number;
+  exit_price: number | null;
+  pnl: number | null;
+  status: "OPEN" | "CLOSED";
+  account_id: string | null;
+  ledger_log_id: string | null;
+  close_ledger_log_id: string | null;
+  notes: string | null;
+  trade_date: string;
+  close_date: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 const supabase = createClient();
 
 type FinanceData = {
@@ -30,6 +53,7 @@ type FinanceData = {
   budgets: Tables<"budgets">[];
   alternativeAssets: Tables<"alternative_assets">[];
   liabilities: Tables<"liabilities">[];
+  fnoTrades: FnoTrade[];
 };
 
 export type { FinanceData };
@@ -96,6 +120,7 @@ export function useFinanceData(initialData?: FinanceData) {
     budgets: [],
     alternativeAssets: [],
     liabilities: [],
+    fnoTrades: [],
   };
 
   const summarySWR = useSWR(SUMMARY_KEY, fetchSummary, {
@@ -146,7 +171,7 @@ export function useFinanceData(initialData?: FinanceData) {
       if (tables.some(t => ["accounts", "transactions", "ledger_logs", "profiles"].includes(t))) {
         void mutate(SUMMARY_KEY);
       }
-      if (tables.some(t => ["investments", "mutual_funds", "bonds", "alternative_assets", "stock_trades", "mutual_fund_trades", "bond_transactions"].includes(t))) {
+      if (tables.some(t => ["investments", "mutual_funds", "bonds", "alternative_assets", "stock_trades", "mutual_fund_trades", "bond_transactions", "fno_trades"].includes(t))) {
         void mutate(INVESTMENTS_KEY);
       }
       if (tables.some(t => ["incomes", "expenses", "budgets", "goals", "liabilities"].includes(t))) {
@@ -318,6 +343,14 @@ export function useFinanceData(initialData?: FinanceData) {
           filter: `user_id=eq.${user_id}`
         }, () => handleChange("forex_transactions"))
   
+        // FnO Trades
+        .on("postgres_changes", { 
+          event: "*", 
+          schema: "public", 
+          table: "fno_trades",
+          filter: `user_id=eq.${user_id}`
+        }, () => handleChange("fno_trades"))
+  
         // Budgets
         .on("postgres_changes", { 
           event: "*", 
@@ -405,6 +438,8 @@ export function useFinanceData(initialData?: FinanceData) {
     forexAccounts: forexSWR.data?.forexAccounts || fallback.forexAccounts,
     forexTrades: forexSWR.data?.forexTrades || fallback.forexTrades,
     forexTransactions: forexSWR.data?.forexTransactions || fallback.forexTransactions,
+    
+    fnoTrades: investmentsSWR.data?.fnoTrades || fallback.fnoTrades,
     
     recipients: familySWR.data?.recipients || fallback.recipients,
   };

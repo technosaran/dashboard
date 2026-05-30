@@ -15,6 +15,7 @@ export const MODULE_KEYS = [
   "Family",
   "Forex",
   "Ledger",
+  "FnO",
 ] as const;
 
 export type ModuleKey = (typeof MODULE_KEYS)[number];
@@ -33,4 +34,5 @@ export const MODULE_DISPLAY_LABELS: Record<ModuleKey, string> = {
   "Family": "Family",
   "Forex": "Forex",
   "Ledger": "Ledger",
+  "FnO": "FnO Trading",
 };
