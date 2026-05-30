@@ -1,9 +1,11 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { endOfDay, format, getMonth, getYear, isWithinInterval, startOfDay } from "date-fns";
 import { toast } from "react-hot-toast";
 import { useFinanceData } from "@/hooks/use-finance-data";
+import { revertLog } from "./actions";
+import { useSubmitLock } from "@/hooks/use-submit-lock";
 
 type LedgerLog = {
   id: string;
@@ -35,26 +37,17 @@ const MONTHS = [
 const DEBIT_ACTIONS = new Set(["ADJUST_DOWN", "TRANSFER_OUT", "DELETE", "SEND_MONEY"]);
 const CREDIT_ACTIONS = new Set(["ADJUST_UP", "TRANSFER_IN", "CREATE"]);
 
-const ACTION_LABELS: Record<string, string> = {
-  CREATE: "Created",
-  DELETE: "Deleted",
-  UPDATE: "Updated",
-  TRANSFER_IN: "Transfer In",
-  TRANSFER_OUT: "Transfer Out",
-  ADJUST_UP: "Adjust Up",
-  ADJUST_DOWN: "Adjust Down",
-  SEND_MONEY: "Family Transfer",
-};
 
-const ACTION_TONE: Record<string, string> = {
-  CREATE: "text-success bg-success/10",
-  DELETE: "text-danger bg-danger/10",
-  UPDATE: "text-[--accent-primary-light] bg-[--accent-primary]/10",
-  TRANSFER_IN: "text-success bg-success/10",
-  TRANSFER_OUT: "text-danger bg-danger/10",
-  ADJUST_UP: "text-success bg-success/10",
-  ADJUST_DOWN: "text-danger bg-danger/10",
-  SEND_MONEY: "text-danger bg-danger/10",
+
+const ACTION_CONFIG: Record<string, { label: string; icon: string; bg: string; text: string; ring: string }> = {
+  CREATE: { label: "Created", icon: "✨", bg: "rgba(16, 185, 129, 0.1)", text: "#10b981", ring: "rgba(16, 185, 129, 0.2)" },
+  DELETE: { label: "Deleted", icon: "🗑️", bg: "rgba(244, 63, 94, 0.1)", text: "#f43f5e", ring: "rgba(244, 63, 94, 0.2)" },
+  UPDATE: { label: "Updated", icon: "✏️", bg: "rgba(99, 102, 241, 0.1)", text: "#818cf8", ring: "rgba(99, 102, 241, 0.2)" },
+  TRANSFER_IN: { label: "Inflow", icon: "📥", bg: "rgba(16, 185, 129, 0.1)", text: "#10b981", ring: "rgba(16, 185, 129, 0.2)" },
+  TRANSFER_OUT: { label: "Outflow", icon: "📤", bg: "rgba(244, 63, 94, 0.1)", text: "#f43f5e", ring: "rgba(244, 63, 94, 0.2)" },
+  ADJUST_UP: { label: "Adjust Up", icon: "📈", bg: "rgba(16, 185, 129, 0.1)", text: "#10b981", ring: "rgba(16, 185, 129, 0.2)" },
+  ADJUST_DOWN: { label: "Adjust Down", icon: "📉", bg: "rgba(244, 63, 94, 0.1)", text: "#f43f5e", ring: "rgba(244, 63, 94, 0.2)" },
+  SEND_MONEY: { label: "Family Send", icon: "👨‍👩‍👧‍👦", bg: "rgba(244, 63, 94, 0.1)", text: "#f43f5e", ring: "rgba(244, 63, 94, 0.2)" },
 };
 
 const formatMoney = (value: number | null | undefined) => {
@@ -87,9 +80,11 @@ export default function LedgerClient() {
   const [monthFilter, setMonthFilter] = useState("All Months");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [showRevertConfirm, setShowRevertConfirm] = useState(false);
   const [revertingId, setRevertingId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [submitting, withLock] = useSubmitLock();
 
   const itemsPerPage = 50;
 
@@ -110,12 +105,26 @@ export default function LedgerClient() {
 
       const date = new Date(log.created_at);
 
+      // Search Filter
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        const detailsMatch = log.details?.toLowerCase().includes(query) || false;
+        const accountMatch = log.account_name?.toLowerCase().includes(query) || false;
+        const actionMatch = log.action_type.toLowerCase().includes(query) || false;
+        const amountMatch = log.amount?.toString().includes(query) || false;
+        if (!detailsMatch && !accountMatch && !actionMatch && !amountMatch) {
+          return false;
+        }
+      }
+
+      // Date Range Filter
       if (startDate || endDate) {
         const start = startDate ? startOfDay(new Date(startDate)) : new Date(0);
         const end = endDate ? endOfDay(new Date(endDate)) : new Date();
         return isWithinInterval(date, { start, end });
       }
 
+      // Year/Month dropdown filters
       const logYear = getYear(date).toString();
       const logMonth = MONTHS[getMonth(date) + 1];
       const matchYear = yearFilter === "All Years" || logYear === yearFilter;
@@ -123,21 +132,16 @@ export default function LedgerClient() {
 
       return matchYear && matchMonth;
     });
-  }, [endDate, logs, monthFilter, startDate, yearFilter]);
+  }, [endDate, logs, monthFilter, startDate, yearFilter, searchQuery]);
 
   const totalFilteredCount = allFilteredLogs.length;
   const totalPages = Math.max(1, Math.ceil(totalFilteredCount / itemsPerPage));
-
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [currentPage, totalPages]);
+  const activePage = Math.min(currentPage, totalPages);
 
   const filteredLogs = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
+    const startIndex = (activePage - 1) * itemsPerPage;
     return allFilteredLogs.slice(startIndex, startIndex + itemsPerPage);
-  }, [allFilteredLogs, currentPage]);
+  }, [allFilteredLogs, activePage]);
 
   const groupedLogs = useMemo(() => {
     const groups: Record<string, LedgerLog[]> = {};
@@ -153,7 +157,7 @@ export default function LedgerClient() {
       const todayKey = format(today, "yyyy-MM-dd");
       const yesterdayKey = format(yesterday, "yyyy-MM-dd");
 
-      let dateLabel = format(logDate, "MMM d, yyyy");
+      let dateLabel = format(logDate, "MMMM d, yyyy");
       if (logDateKey === todayKey) dateLabel = "Today";
       if (logDateKey === yesterdayKey) dateLabel = "Yesterday";
 
@@ -186,116 +190,139 @@ export default function LedgerClient() {
     setEndDate("");
   };
 
-  const getActionBadge = (type: string) => {
-    const label = ACTION_LABELS[type] || type;
-    const tone = ACTION_TONE[type] || "text-[--text-secondary] bg-white/5";
-
-    return (
-      <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold tracking-wide ${tone}`}>
-        {label}
-      </span>
-    );
+  const getActionConfig = (type: string) => {
+    return ACTION_CONFIG[type] || {
+      label: type,
+      icon: "⚙️",
+      bg: "rgba(255, 255, 255, 0.05)",
+      text: "#8b8d98",
+      ring: "rgba(255, 255, 255, 0.1)",
+    };
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      <header className="glass-card-static p-5 sm:p-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-[var(--section-gap)] max-w-7xl mx-auto w-full px-2">
+      {/* Header */}
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 px-2">
+        <div className="flex items-center gap-4">
           <div>
-            <h1 className="text-2xl font-semibold text-[--text-primary] sm:text-3xl">Ledger</h1>
-            <p className="mt-1 text-sm text-[--text-muted]">Track balance movements and account activity in one place.</p>
+            <h1 className="text-3xl font-black tracking-tight text-white uppercase italic">Financial Ledger</h1>
+            <p className="text-[10px] text-[--text-muted] font-black uppercase tracking-[0.3em] mt-1.5">Consolidated Audit Trail & Balance History</p>
           </div>
-          <div className="inline-flex items-center gap-2 text-xs text-[--text-muted]">
-            <span className={`h-2.5 w-2.5 rounded-full ${isValidating ? "animate-pulse bg-warning" : "bg-success"}`} />
-            {isValidating ? "Syncing" : "Up to date"}
+          <div className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-wider text-[--text-muted] mt-1">
+            <span className={`h-2 w-2 rounded-full shadow-lg ${isValidating ? "animate-pulse bg-warning shadow-warning/40" : "bg-success shadow-success/40"}`} />
+            {isValidating ? "Synchronizing" : "Live"}
           </div>
         </div>
       </header>
 
-      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="glass-card-static p-4">
-          <p className="text-xs text-[--text-muted]">Total inflow</p>
-          <p className="mt-2 text-2xl font-semibold text-success">+{formatMoney(totalInflow)}</p>
-        </div>
-        <div className="glass-card-static p-4">
-          <p className="text-xs text-[--text-muted]">Total outflow</p>
-          <p className="mt-2 text-2xl font-semibold text-danger">-{formatMoney(totalOutflow)}</p>
-        </div>
-        <div className="glass-card-static p-4">
-          <p className="text-xs text-[--text-muted]">Entries</p>
-          <p className="mt-2 text-2xl font-semibold text-[--text-primary]">{logs.length.toLocaleString()}</p>
-        </div>
-        <div className="glass-card-static p-4">
-          <p className="text-xs text-[--text-muted]">Filtered results</p>
-          <p className="mt-2 text-2xl font-semibold text-[--text-primary]">{totalFilteredCount.toLocaleString()}</p>
-        </div>
+      {/* Analytics Summary */}
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { label: "Total Capital Inflow", value: totalInflow, sub: "Revenue & Adjustments", color: "text-success", bg: "from-emerald-500/10", border: "hover:border-emerald-500/20", icon: "📈", sign: "+" },
+          { label: "Total Capital Outflow", value: totalOutflow, sub: "Expenses & Transfers", color: "text-danger", bg: "from-rose-500/10", border: "hover:border-rose-500/20", icon: "📉", sign: "-" },
+          { label: "Total Audit Logs", value: logs.length, sub: "Uncompromised Records", color: "text-white", bg: "from-indigo-500/10", border: "hover:border-indigo-500/20", icon: "🛡️", raw: true },
+          { label: "Matched Query Filters", value: totalFilteredCount, sub: "Active Search Query", color: "text-[--accent-primary-light]", bg: "from-sky-500/10", border: "hover:border-sky-500/20", icon: "🔍", raw: true },
+        ].map((s, i) => (
+          <div key={i} className={`glass-card-static p-6 flex flex-col justify-between min-h-[140px] rounded-[24px] border border-white/5 bg-gradient-to-br ${s.bg} to-transparent ${s.border} transition-all duration-300 relative group overflow-hidden`}>
+            <div className="absolute right-4 top-4 text-3xl opacity-5 group-hover:opacity-10 group-hover:scale-110 transition-all duration-300">{s.icon}</div>
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-4">{s.label}</p>
+            <div>
+              <p className={`text-2xl font-black tabular-nums tracking-tight ${s.color}`}>
+                {s.raw ? s.value.toLocaleString() : `${s.sign}${formatMoney(s.value as number)}`}
+              </p>
+              <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-widest mt-1 opacity-60">{s.sub}</p>
+            </div>
+          </div>
+        ))}
       </section>
 
-      <section className="glass-card-static p-4 sm:p-5">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
-          <label className="flex flex-col gap-1">
-            <span className="text-xs text-[--text-muted]">Year</span>
+      {/* Modern Filter toolbar */}
+      <section className="glass-card-static p-6 rounded-[28px] border border-white/5 space-y-6">
+        {/* Real-time Search input */}
+        <div className="relative w-full">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg opacity-40">🔍</span>
+          <input
+            type="text"
+            placeholder="Clearview Search — Filter logs by description, account name, action type, or exact amount..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="w-full bg-white/[0.02] border border-white/[0.05] rounded-2xl pl-12 pr-4 py-4 text-sm font-semibold text-[--text-primary] focus:border-[--accent-primary] outline-none transition-all placeholder-white/20"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-black uppercase tracking-wider text-[--text-muted] hover:text-white transition-colors"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+
+        {/* Dropdowns and Dates Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[9px] font-black uppercase tracking-[0.15em] text-[--text-muted] ml-1">Period Year</span>
             <select
-              className="input-premium !h-11 !text-sm"
+              className="input-premium !h-12 !text-xs !bg-white/[0.02] !border-white/[0.05] focus:!border-[--accent-primary]"
               value={yearFilter}
-              onChange={(event) => {
-                setYearFilter(event.target.value);
+              onChange={(e) => {
+                setYearFilter(e.target.value);
                 setCurrentPage(1);
                 resetRange();
               }}
             >
               {uniqueYears.map((year) => (
-                <option key={year} value={year}>
-                  {year}
-                </option>
+                <option key={year} value={year}>{year}</option>
               ))}
             </select>
-          </label>
+          </div>
 
-          <label className="flex flex-col gap-1">
-            <span className="text-xs text-[--text-muted]">Month</span>
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[9px] font-black uppercase tracking-[0.15em] text-[--text-muted] ml-1">Period Month</span>
             <select
-              className="input-premium !h-11 !text-sm"
+              className="input-premium !h-12 !text-xs !bg-white/[0.02] !border-white/[0.05] focus:!border-[--accent-primary]"
               value={monthFilter}
-              onChange={(event) => {
-                setMonthFilter(event.target.value);
+              onChange={(e) => {
+                setMonthFilter(e.target.value);
                 setCurrentPage(1);
                 resetRange();
               }}
             >
               {MONTHS.map((month) => (
-                <option key={month} value={month}>
-                  {month}
-                </option>
+                <option key={month} value={month}>{month}</option>
               ))}
             </select>
-          </label>
+          </div>
 
-          <label className="flex flex-col gap-1">
-            <span className="text-xs text-[--text-muted]">Start date</span>
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[9px] font-black uppercase tracking-[0.15em] text-[--text-muted] ml-1">Start Date</span>
             <input
               type="date"
-              className="input-premium !h-11 !text-sm"
+              className="input-premium !h-12 !text-xs !bg-white/[0.02] !border-white/[0.05] focus:!border-[--accent-primary]"
               value={startDate}
-              onChange={(event) => {
-                setStartDate(event.target.value);
+              onChange={(e) => {
+                setStartDate(e.target.value);
                 setCurrentPage(1);
               }}
             />
-          </label>
+          </div>
 
-          <label className="flex flex-col gap-1">
-            <span className="text-xs text-[--text-muted]">End date</span>
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[9px] font-black uppercase tracking-[0.15em] text-[--text-muted] ml-1">End Date</span>
             <input
               type="date"
-              className="input-premium !h-11 !text-sm"
+              className="input-premium !h-12 !text-xs !bg-white/[0.02] !border-white/[0.05] focus:!border-[--accent-primary]"
               value={endDate}
-              onChange={(event) => {
-                setEndDate(event.target.value);
+              onChange={(e) => {
+                setEndDate(e.target.value);
                 setCurrentPage(1);
               }}
             />
-          </label>
+          </div>
 
           <div className="flex items-end">
             <button
@@ -303,211 +330,203 @@ export default function LedgerClient() {
               onClick={() => {
                 setYearFilter("All Years");
                 setMonthFilter("All Months");
+                setSearchQuery("");
                 resetRange();
                 setCurrentPage(1);
               }}
-              className="h-11 w-full rounded-xl border border-white/10 bg-white/5 px-4 text-sm font-medium text-[--text-secondary] transition hover:bg-white/10"
+              className="h-12 w-full rounded-2xl border border-white/5 bg-white/5 px-4 text-xs font-black uppercase tracking-wider text-[--text-secondary] transition hover:bg-white/10 hover:text-white"
             >
-              Clear filters
+              Reset Filters
             </button>
           </div>
         </div>
       </section>
 
-      <section className="glass-card-static overflow-hidden p-0">
-        <div className="hidden overflow-x-auto md:block">
-          <table className="w-full min-w-[1000px] border-collapse text-left">
-            <thead>
-              <tr className="border-b border-white/10 bg-white/5">
-                <th className="px-6 py-4 text-xs font-medium text-[--text-muted]">Timestamp</th>
-                <th className="px-4 py-4 text-xs font-medium text-[--text-muted]">Action</th>
-                <th className="px-4 py-4 text-xs font-medium text-[--text-muted]">Account</th>
-                <th className="px-4 py-4 text-xs font-medium text-[--text-muted]">Amount</th>
-                <th className="px-4 py-4 text-xs font-medium text-[--text-muted]">Details</th>
-                <th className="px-6 py-4 text-center text-xs font-medium text-[--text-muted]">Undo</th>
-              </tr>
-            </thead>
-
-            <tbody className="divide-y divide-white/5">
-              {isLoading ? (
-                Array.from({ length: 6 }).map((_, index) => (
-                  <tr key={index} className="animate-pulse">
-                    <td colSpan={6} className="px-6 py-6">
-                      <div className="h-4 rounded bg-white/10" />
-                    </td>
-                  </tr>
-                ))
-              ) : filteredLogs.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-24 text-center">
-                    <p className="text-lg font-medium text-[--text-primary]">No entries found</p>
-                    <p className="mt-1 text-sm text-[--text-muted]">Try a different date range or clear filters.</p>
-                  </td>
-                </tr>
-              ) : (
-                Object.entries(groupedLogs).map(([dateLabel, logsInGroup]) => (
-                  <Fragment key={dateLabel}>
-                    <tr className="sticky top-0 z-10 border-y border-white/10" style={{ backgroundColor: "rgba(21, 25, 34, 0.95)" }}>
-                      <td colSpan={6} className="px-6 py-2.5 text-xs font-medium text-[--accent-primary-light]">
-                        {dateLabel}
-                      </td>
-                    </tr>
-
-                    {logsInGroup.map((log) => {
-                      const isDebit = isDebitLog(log);
-
-                      return (
-                        <tr key={log.id} className="transition hover:bg-white/[0.03]">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <p className="text-sm text-[--text-primary]">
-                              {log.created_at ? format(new Date(log.created_at), "MMM d, yyyy") : "—"}
-                            </p>
-                            <p className="text-xs text-[--text-muted]">
-                              {log.created_at ? format(new Date(log.created_at), "HH:mm:ss") : "—"}
-                            </p>
-                          </td>
-
-                          <td className="px-4 py-4 whitespace-nowrap">{getActionBadge(log.action_type)}</td>
-
-                          <td className="px-4 py-4 text-sm text-[--text-secondary]">{log.account_name || "System"}</td>
-
-                          <td className="px-4 py-4 whitespace-nowrap">
-                            <p className={`text-base font-semibold ${isDebit ? "text-danger" : "text-success"}`}>
-                              {log.amount !== null ? `${isDebit ? "-" : "+"}${formatMoney(log.amount)}` : "—"}
-                            </p>
-                            <p className="text-xs text-[--text-muted]">Balance: {formatMoney(log.new_balance)}</p>
-                          </td>
-
-                          <td className="px-4 py-4 text-sm text-[--text-muted]">{log.details || "—"}</td>
-
-                          <td className="px-6 py-4 text-center">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setRevertingId(log.id);
-                                setShowRevertConfirm(true);
-                              }}
-                              className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-[--text-secondary] transition hover:border-danger/40 hover:bg-danger/10 hover:text-danger"
-                              title="Undo"
-                            >
-                              Undo
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </Fragment>
-                ))
-              )}
-            </tbody>
-          </table>
-
-          {totalFilteredCount > 0 && (
-            <div className="flex items-center justify-between border-t border-white/10 px-4 py-3">
-              <button
-                type="button"
-                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-                disabled={currentPage === 1}
-                className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-[--text-secondary] transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Previous
-              </button>
-
-              <p className="text-xs text-[--text-muted]">
-                Page {currentPage} of {totalPages}
-              </p>
-
-              <button
-                type="button"
-                onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
-                disabled={currentPage === totalPages}
-                className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-[--text-secondary] transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Next
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div className="divide-y divide-white/10 md:hidden">
-          {isLoading ? (
-            Array.from({ length: 5 }).map((_, index) => (
-              <div key={index} className="animate-pulse p-4">
-                <div className="h-4 rounded bg-white/10" />
+      {/* Main Ledger Event Trail (Clearview Feed) */}
+      <section className="glass-card-static p-0 rounded-[32px] border border-white/5 overflow-hidden">
+        {isLoading ? (
+          <div className="space-y-4 p-8">
+            {Array.from({ length: 5 }).map((_, index) => (
+              <div key={index} className="flex gap-4 items-center animate-pulse">
+                <div className="w-12 h-12 rounded-2xl bg-white/5" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-white/5 rounded w-1/4" />
+                  <div className="h-3 bg-white/5 rounded w-1/2" />
+                </div>
               </div>
-            ))
-          ) : filteredLogs.length === 0 ? (
-            <div className="p-8 text-center">
-              <p className="text-base font-medium text-[--text-primary]">No entries found</p>
-              <p className="mt-1 text-xs text-[--text-muted]">Try a different range.</p>
+            ))}
+          </div>
+        ) : filteredLogs.length === 0 ? (
+          <div className="py-24 text-center flex flex-col items-center justify-center gap-4">
+            <div className="text-5xl">🛡️</div>
+            <div>
+              <p className="text-lg font-black text-white">No Ledger Entries Located</p>
+              <p className="text-sm text-[--text-muted] mt-1 max-w-sm">No transaction matches the current filters or query string.</p>
             </div>
-          ) : (
-            filteredLogs.map((log) => {
-              const isDebit = isDebitLog(log);
+            <button
+              onClick={() => {
+                setYearFilter("All Years");
+                setMonthFilter("All Months");
+                setSearchQuery("");
+                resetRange();
+                setCurrentPage(1);
+              }}
+              className="btn-secondary !h-10 !px-6 mt-2 text-[10px] font-black uppercase tracking-widest rounded-xl"
+            >
+              Restore Audit Stream
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-col">
+            {Object.entries(groupedLogs).map(([dateLabel, logsInGroup]) => (
+              <div key={dateLabel} className="flex flex-col">
+                {/* Visual Sticky Date Label */}
+                <div className="sticky top-0 z-10 px-8 py-3.5 bg-[#0a0e1c]/90 backdrop-blur-xl border-y border-white/[0.02] flex items-center justify-between">
+                  <span className="text-[11px] font-black uppercase tracking-[0.25em] text-[--accent-primary-light]">{dateLabel}</span>
+                  <span className="px-2.5 py-0.5 rounded-full text-[8px] font-black bg-white/5 text-[--text-muted] uppercase tracking-widest border border-white/5">
+                    {logsInGroup.length} {logsInGroup.length === 1 ? "Event" : "Events"}
+                  </span>
+                </div>
 
-              return (
-                <article key={log.id} className="p-4">
-                  <div className="mb-3 flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-xs text-[--text-muted]">
-                        {log.created_at ? format(new Date(log.created_at), "MMM d, yyyy HH:mm:ss") : "—"}
-                      </p>
-                      <p className="mt-1 text-sm text-[--text-secondary]">{log.account_name || "System"}</p>
-                    </div>
-                    {getActionBadge(log.action_type)}
-                  </div>
+                {/* Timeline Entries inside group */}
+                <div className="divide-y divide-white/[0.02]">
+                  {logsInGroup.map((log) => {
+                    const isDebit = isDebitLog(log);
+                    const cfg = getActionConfig(log.action_type);
 
-                  <p className={`text-xl font-semibold ${isDebit ? "text-danger" : "text-success"}`}>
-                    {log.amount !== null ? `${isDebit ? "-" : "+"}${formatMoney(log.amount)}` : "—"}
-                  </p>
+                    return (
+                      <div key={log.id} className="group flex flex-col md:flex-row md:items-center justify-between p-6 hover:bg-white/[0.015] transition-all duration-300 relative border-l-4 border-transparent hover:border-[--accent-primary] gap-6">
+                        {/* Left Info: Icon, Action, Timestamp, Details */}
+                        <div className="flex items-start gap-5 flex-1 min-w-0">
+                          <div
+                            className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0 transition-transform group-hover:scale-105 border"
+                            style={{ backgroundColor: cfg.bg, color: cfg.text, borderColor: cfg.ring }}
+                          >
+                            {cfg.icon}
+                          </div>
+                          <div className="flex flex-col min-w-0">
+                            <div className="flex flex-wrap items-center gap-2 mb-1">
+                              <span className="text-sm font-bold text-white tracking-tight">{cfg.label}</span>
+                              {log.account_name && (
+                                <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-white/5 border border-white/10 text-[--text-secondary]">
+                                  {log.account_name}
+                                </span>
+                              )}
+                              <span className="text-[10px] text-[--text-muted] font-medium hidden sm:inline">
+                                • {log.created_at ? format(new Date(log.created_at), "h:mm:ss a") : ""}
+                              </span>
+                            </div>
+                            <p className="text-sm text-[--text-secondary] leading-relaxed break-words">{log.details || "No transactional details provided"}</p>
+                          </div>
+                        </div>
 
-                  <p className="mt-1 text-xs text-[--text-muted]">Balance: {formatMoney(log.new_balance)}</p>
-                  <p className="mt-2 text-sm text-[--text-muted]">{log.details || "—"}</p>
+                        {/* Right: Flow & Actions */}
+                        <div className="flex items-center justify-between md:justify-end gap-6 shrink-0 border-t border-white/[0.02] pt-4 md:pt-0 md:border-0">
+                          {/* Financial Flows */}
+                          <div className="text-left md:text-right flex flex-col">
+                            <span className={`text-lg font-black tabular-nums tracking-tight ${isDebit ? "text-danger" : "text-success"}`}>
+                              {log.amount !== null ? `${isDebit ? "-" : "+"}${formatMoney(log.amount)}` : "—"}
+                            </span>
+                            {log.new_balance !== null && (
+                              <span className="text-[10px] font-bold text-[--text-muted] mt-0.5 uppercase tracking-widest opacity-60">
+                                Bal: {formatMoney(log.new_balance)}
+                              </span>
+                            )}
+                          </div>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setRevertingId(log.id);
-                      setShowRevertConfirm(true);
-                    }}
-                    className="mt-3 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-[--text-secondary] transition hover:border-danger/40 hover:bg-danger/10 hover:text-danger"
-                  >
-                    Undo
-                  </button>
-                </article>
-              );
-            })
-          )}
-        </div>
+                          {/* Action Button: Locked Undo */}
+                          <button
+                            disabled={submitting}
+                            onClick={() => {
+                              setRevertingId(log.id);
+                              setShowRevertConfirm(true);
+                            }}
+                            className="h-10 px-5 border border-white/5 hover:border-danger/30 bg-white/5 hover:bg-danger/10 text-[10px] font-black uppercase tracking-widest text-[--text-secondary] hover:text-danger rounded-xl flex items-center justify-center gap-1.5 transition-all md:opacity-0 md:group-hover:opacity-100 disabled:opacity-30 disabled:pointer-events-none"
+                            title="Undo Transaction"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+                            </svg>
+                            Undo
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Pagination controls */}
+        {totalFilteredCount > 0 && (
+          <div className="flex items-center justify-between border-t border-white/5 p-6 bg-white/[0.01]">
+            <button
+              type="button"
+              onClick={() => {
+                setCurrentPage((page) => Math.max(1, Math.min(totalPages, page) - 1));
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+              disabled={activePage === 1}
+              className="btn-secondary !h-10 !px-4 text-[10px] font-black uppercase tracking-widest rounded-xl disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">
+              Page {activePage} of {totalPages}
+            </span>
+
+            <button
+              type="button"
+              onClick={() => {
+                setCurrentPage((page) => Math.min(totalPages, Math.min(totalPages, page) + 1));
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+              disabled={activePage === totalPages}
+              className="btn-secondary !h-10 !px-4 text-[10px] font-black uppercase tracking-widest rounded-xl disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+          </div>
+        )}
       </section>
 
+      {/* Confirmation Undo Dialog */}
       {showRevertConfirm && (
-        <div className="mobile-dialog-shell fixed inset-0 z-[200] flex items-center justify-center bg-[--bg-base]/80 p-4 backdrop-blur-sm">
-          <div className="mobile-dialog-panel glass-card-static w-full max-w-md p-6">
-            <h3 className="text-lg font-semibold text-[--text-primary]">Undo this ledger entry?</h3>
-            <p className="mt-2 text-sm text-[--text-muted]">This will restore the prior balance and remove this action from history.</p>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="glass-card-static w-full max-w-md p-8 border-rose-500/20 shadow-[0_0_50px_rgba(244,63,94,0.15)] rounded-[32px] text-center animate-scale-in">
+            <div className="w-16 h-16 rounded-full bg-danger/10 text-danger mx-auto flex items-center justify-center mb-6">
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-black text-white mb-2 uppercase italic">Revert Ledger Entry?</h3>
+            <p className="text-sm text-[--text-muted] mb-8 leading-relaxed">
+              This action will completely purge this event log from history, restore account balance to its previous state, and undo any automatic ledger logs.
+            </p>
 
-            <div className="mt-5 flex gap-2">
+            <div className="flex gap-3">
               <button
                 type="button"
+                disabled={submitting}
                 onClick={async () => {
                   if (!revertingId) return;
-
-                  const { revertLog } = await import("./actions");
-                  const result = await revertLog(revertingId);
-
-                  if (result.error) {
-                    toast.error(result.error);
-                  } else {
-                    toast.success("Entry reverted successfully");
-                  }
-
-                  setShowRevertConfirm(false);
-                  setRevertingId(null);
+                  await withLock(async () => {
+                    const result = await revertLog(revertingId);
+                    if (result.error) {
+                      toast.error(result.error);
+                    } else {
+                      toast.success("Transaction entry reverted");
+                    }
+                    setShowRevertConfirm(false);
+                    setRevertingId(null);
+                  });
                 }}
-                className="flex-1 rounded-xl bg-danger px-4 py-2.5 text-sm font-medium text-white transition hover:bg-danger/90"
+                className="flex-1 py-3.5 bg-danger hover:bg-rose-600 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-rose-500/10 disabled:opacity-50"
               >
-                Confirm undo
+                {submitting ? "Reverting..." : "Confirm Undo"}
               </button>
 
               <button
@@ -516,7 +535,7 @@ export default function LedgerClient() {
                   setShowRevertConfirm(false);
                   setRevertingId(null);
                 }}
-                className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-[--text-secondary] transition hover:bg-white/10"
+                className="flex-1 py-3.5 border border-white/5 bg-white/5 hover:bg-white/10 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-all"
               >
                 Cancel
               </button>

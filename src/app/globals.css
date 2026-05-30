@@ -847,42 +847,7 @@ select:focus {
   box-shadow: var(--shadow-glow);
 }
 
-/* White Grids and Border Layout Overrides for the Entire Project */
-.theme-google .border,
-.theme-google .border-t,
-.theme-google .border-b,
-.theme-google .border-l,
-.theme-google .border-r,
-.theme-google .border-x,
-.theme-google .border-y,
-.theme-google .border-white\/5,
-.theme-google .border-white\/10,
-.theme-google .border-white\/20,
-.theme-google .border-white\/\[0\.03\],
-.theme-google .border-white\/\[0\.05\],
-.theme-google .border-white\/\[0\.06\],
-.theme-google .border-white\/\[0\.08\],
-.theme-google .border-white\/\[0\.1\],
-.theme-google .border-white\/\[0\.2\],
-.theme-google .divide-y > *,
-.theme-google .divide-x > *,
-.theme-google .glass-card,
-.theme-google .glass-card-static,
-.theme-google th,
-.theme-google td,
-.theme-google tr,
-.theme-google table,
-.theme-google thead,
-.theme-google tbody {
-  border-color: rgba(255, 255, 255, 0.25) !important;
-}
 
-.theme-google input,
-.theme-google select,
-.theme-google textarea,
-.theme-google .input-premium {
-  border-color: rgba(255, 255, 255, 0.3) !important;
-}
 
 /* Ensure success, danger, and active tabs are preserved */
 .theme-google .border-success,
