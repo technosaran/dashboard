@@ -160,7 +160,7 @@ function NavItem({ label, href, icon, pathname }: (typeof nav)[0] & { pathname: 
       aria-label={label}
       className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-300 no-underline border ${
         active 
-          ? "text-[--accent-primary-light] bg-[--sidebar-active] border-[rgba(14,165,233,0.15)] shadow-[0_0_15px_rgba(14,165,233,0.08)] font-bold" 
+          ? "text-[--accent-primary-light] bg-[--sidebar-active] border-[rgba(99,102,241,0.15)] shadow-[0_0_15px_rgba(99,102,241,0.08)] font-bold" 
           : "text-[--text-secondary] border-transparent hover:bg-[var(--glass-hover)] hover:text-[--text-primary] hover:pl-4 group"
       }`}
     >
@@ -242,14 +242,12 @@ export default function Sidebar() {
 
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex w-52 shrink-0 flex-col h-screen sticky top-0" style={{ background: "var(--sidebar-bg)", borderRight: "1px solid var(--sidebar-border)", backdropFilter: "blur(20px) saturate(1.2)", WebkitBackdropFilter: "blur(20px) saturate(1.2)" }}>
-        <div className="px-6 pt-4 pb-2"><div className="flex flex-col"><h2 className="text-xl font-black text-[--text-primary] tracking-tighter">Finance<span className="text-[--accent-primary]">OS</span></h2></div></div>
-        <div className="divider-glow mx-6" />
-        <nav className="flex-1 px-4 pt-2 space-y-0.5 overflow-y-auto no-scrollbar">
+        <div className="px-6 pt-6 pb-4"><div className="flex flex-col"><h2 className="text-xl font-black text-[--text-primary] tracking-tighter">Finance<span className="text-[--accent-primary]">OS</span></h2></div></div>
+        <nav className="flex-1 px-4 pt-4 space-y-0.5 overflow-y-auto no-scrollbar">
           <p className="px-4 pb-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-[--text-muted] opacity-60">Navigation</p>
           {filteredNav.map((item) => (<NavItem key={item.href} {...item} pathname={pathname} />))}
         </nav>
-        <div className="divider-glow mx-4" />
-        <div className="px-3 py-2 mt-auto pb-6">
+        <div className="px-3 py-2 mt-auto pb-8">
           <button onClick={handleLogout} className="flex w-full items-center justify-center gap-3 rounded-2xl px-4 py-3 text-[11px] font-black uppercase tracking-widest transition-all bg-rose-500 text-white shadow-lg shadow-rose-500/20 hover:bg-rose-600 hover:shadow-rose-500/30 active:scale-[0.98]">
             <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
             Sign Out

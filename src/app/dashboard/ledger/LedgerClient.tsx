@@ -238,10 +238,10 @@ export default function LedgerClient() {
       </section>
 
       {/* Modern Filter toolbar */}
-      <section className="glass-card-static p-6 rounded-[28px] border border-white/5 space-y-6">
+      <section className="glass-card-static p-6 rounded-[28px] border border-white/5 space-y-6 bg-gradient-to-r from-white/[0.01] to-transparent hover:border-white/10 transition-all duration-300">
         {/* Real-time Search input */}
-        <div className="relative w-full">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg opacity-40">🔍</span>
+        <div className="relative w-full group">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg opacity-40 group-focus-within:opacity-100 transition-opacity">🔍</span>
           <input
             type="text"
             placeholder="Clearview Search — Filter logs by description, account name, action type, or exact amount..."
@@ -250,7 +250,7 @@ export default function LedgerClient() {
               setSearchQuery(e.target.value);
               setCurrentPage(1);
             }}
-            className="w-full bg-white/[0.02] border border-white/[0.05] rounded-2xl pl-12 pr-4 py-4 text-sm font-semibold text-[--text-primary] focus:border-[--accent-primary] outline-none transition-all placeholder-white/20"
+            className="w-full bg-white/[0.015] border border-white/[0.05] rounded-2xl pl-12 pr-4 py-4 text-sm font-semibold text-[--text-primary] focus:border-[--accent-primary] focus:bg-white/[0.03] outline-none transition-all placeholder-white/20 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] focus:shadow-[0_0_20px_rgba(99,102,241,0.08)]"
           />
           {searchQuery && (
             <button
@@ -267,7 +267,7 @@ export default function LedgerClient() {
           <div className="flex flex-col gap-1.5">
             <span className="text-[9px] font-black uppercase tracking-[0.15em] text-[--text-muted] ml-1">Period Year</span>
             <select
-              className="input-premium !h-12 !text-xs !bg-white/[0.02] !border-white/[0.05] focus:!border-[--accent-primary]"
+              className="input-premium !h-12 !text-xs !bg-white/[0.015] !border-white/[0.05] focus:!border-[--accent-primary] hover:!border-white/10 transition-all rounded-xl cursor-pointer"
               value={yearFilter}
               onChange={(e) => {
                 setYearFilter(e.target.value);
@@ -284,7 +284,7 @@ export default function LedgerClient() {
           <div className="flex flex-col gap-1.5">
             <span className="text-[9px] font-black uppercase tracking-[0.15em] text-[--text-muted] ml-1">Period Month</span>
             <select
-              className="input-premium !h-12 !text-xs !bg-white/[0.02] !border-white/[0.05] focus:!border-[--accent-primary]"
+              className="input-premium !h-12 !text-xs !bg-white/[0.015] !border-white/[0.05] focus:!border-[--accent-primary] hover:!border-white/10 transition-all rounded-xl cursor-pointer"
               value={monthFilter}
               onChange={(e) => {
                 setMonthFilter(e.target.value);
@@ -302,7 +302,7 @@ export default function LedgerClient() {
             <span className="text-[9px] font-black uppercase tracking-[0.15em] text-[--text-muted] ml-1">Start Date</span>
             <input
               type="date"
-              className="input-premium !h-12 !text-xs !bg-white/[0.02] !border-white/[0.05] focus:!border-[--accent-primary]"
+              className="input-premium !h-12 !text-xs !bg-white/[0.015] !border-white/[0.05] focus:!border-[--accent-primary] hover:!border-white/10 transition-all rounded-xl cursor-pointer"
               value={startDate}
               onChange={(e) => {
                 setStartDate(e.target.value);
@@ -315,7 +315,7 @@ export default function LedgerClient() {
             <span className="text-[9px] font-black uppercase tracking-[0.15em] text-[--text-muted] ml-1">End Date</span>
             <input
               type="date"
-              className="input-premium !h-12 !text-xs !bg-white/[0.02] !border-white/[0.05] focus:!border-[--accent-primary]"
+              className="input-premium !h-12 !text-xs !bg-white/[0.015] !border-white/[0.05] focus:!border-[--accent-primary] hover:!border-white/10 transition-all rounded-xl cursor-pointer"
               value={endDate}
               onChange={(e) => {
                 setEndDate(e.target.value);
@@ -334,7 +334,7 @@ export default function LedgerClient() {
                 resetRange();
                 setCurrentPage(1);
               }}
-              className="h-12 w-full rounded-2xl border border-white/5 bg-white/5 px-4 text-xs font-black uppercase tracking-wider text-[--text-secondary] transition hover:bg-white/10 hover:text-white"
+              className="h-12 w-full rounded-xl border border-white/5 bg-white/5 px-4 text-xs font-black uppercase tracking-wider text-[--text-secondary] transition hover:bg-white/10 hover:text-white"
             >
               Reset Filters
             </button>
@@ -343,7 +343,7 @@ export default function LedgerClient() {
       </section>
 
       {/* Main Ledger Event Trail (Clearview Feed) */}
-      <section className="glass-card-static p-0 rounded-[32px] border border-white/5 overflow-hidden">
+      <section className="glass-card-static p-0 rounded-[32px] border border-white/5 overflow-hidden bg-transparent shadow-none relative">
         {isLoading ? (
           <div className="space-y-4 p-8">
             {Array.from({ length: 5 }).map((_, index) => (
@@ -357,7 +357,7 @@ export default function LedgerClient() {
             ))}
           </div>
         ) : filteredLogs.length === 0 ? (
-          <div className="py-24 text-center flex flex-col items-center justify-center gap-4">
+          <div className="py-24 text-center flex flex-col items-center justify-center gap-4 glass-card-static border-white/5">
             <div className="text-5xl">🛡️</div>
             <div>
               <p className="text-lg font-black text-white">No Ledger Entries Located</p>
@@ -377,30 +377,43 @@ export default function LedgerClient() {
             </button>
           </div>
         ) : (
-          <div className="flex flex-col">
+          <div className="flex flex-col relative">
+            {/* Timeline Vertical Thread Line */}
+            <div className="absolute left-[72px] top-6 bottom-6 w-0.5 bg-gradient-to-b from-indigo-500/25 via-sky-500/15 to-emerald-500/25 pointer-events-none hidden md:block z-0" />
+
             {Object.entries(groupedLogs).map(([dateLabel, logsInGroup]) => (
-              <div key={dateLabel} className="flex flex-col">
-                {/* Visual Sticky Date Label */}
-                <div className="sticky top-0 z-10 px-8 py-3.5 bg-[#0a0e1c]/90 backdrop-blur-xl border-y border-white/[0.02] flex items-center justify-between">
-                  <span className="text-[11px] font-black uppercase tracking-[0.25em] text-[--accent-primary-light]">{dateLabel}</span>
-                  <span className="px-2.5 py-0.5 rounded-full text-[8px] font-black bg-white/5 text-[--text-muted] uppercase tracking-widest border border-white/5">
-                    {logsInGroup.length} {logsInGroup.length === 1 ? "Event" : "Events"}
-                  </span>
+              <div key={dateLabel} className="flex flex-col relative z-10">
+                {/* Floating Date Capsule Header */}
+                <div className="sticky top-3 z-20 px-6 py-2 flex items-center justify-between pointer-events-none">
+                  <div className="flex items-center gap-3 bg-white/[0.04] border border-white/10 backdrop-blur-xl px-4 py-1.5 rounded-full shadow-lg shadow-black/30 pointer-events-auto">
+                    <span className="text-[11px] font-black uppercase tracking-[0.25em] text-[--accent-primary-light]">{dateLabel}</span>
+                    <span className="px-2.5 py-0.5 rounded-full text-[8px] font-black bg-white/5 text-[--text-muted] uppercase tracking-widest border border-white/5">
+                      {logsInGroup.length} {logsInGroup.length === 1 ? "Event" : "Events"}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Timeline Entries inside group */}
-                <div className="divide-y divide-white/[0.02]">
+                <div className="flex flex-col">
                   {logsInGroup.map((log) => {
                     const isDebit = isDebitLog(log);
                     const cfg = getActionConfig(log.action_type);
 
                     return (
-                      <div key={log.id} className="group flex flex-col md:flex-row md:items-center justify-between p-6 hover:bg-white/[0.015] transition-all duration-300 relative border-l-4 border-transparent hover:border-[--accent-primary] gap-6">
+                      <div 
+                        key={log.id} 
+                        className="group flex flex-col md:flex-row md:items-center justify-between p-6 m-3 mx-6 rounded-[24px] bg-white/[0.01] hover:bg-white/[0.025] border border-white/[0.02] hover:border-[--accent-primary]/15 transition-all duration-300 relative gap-6 hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgb(0,0,0,0.15)] z-10"
+                      >
                         {/* Left Info: Icon, Action, Timestamp, Details */}
                         <div className="flex items-start gap-5 flex-1 min-w-0">
                           <div
-                            className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0 transition-transform group-hover:scale-105 border"
-                            style={{ backgroundColor: cfg.bg, color: cfg.text, borderColor: cfg.ring }}
+                            className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0 transition-transform group-hover:scale-105 border-2 z-10 shadow-lg"
+                            style={{ 
+                              backgroundColor: cfg.bg, 
+                              color: cfg.text, 
+                              borderColor: cfg.ring,
+                              boxShadow: `0 0 12px ${cfg.ring}`
+                            }}
                           >
                             {cfg.icon}
                           </div>
@@ -423,12 +436,12 @@ export default function LedgerClient() {
                         {/* Right: Flow & Actions */}
                         <div className="flex items-center justify-between md:justify-end gap-6 shrink-0 border-t border-white/[0.02] pt-4 md:pt-0 md:border-0">
                           {/* Financial Flows */}
-                          <div className="text-left md:text-right flex flex-col">
-                            <span className={`text-lg font-black tabular-nums tracking-tight ${isDebit ? "text-danger" : "text-success"}`}>
+                          <div className="text-left md:text-right flex flex-col justify-center">
+                            <span className={`text-xl font-black tabular-nums tracking-tight filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.2)] ${isDebit ? "text-danger" : "text-success"}`}>
                               {log.amount !== null ? `${isDebit ? "-" : "+"}${formatMoney(log.amount)}` : "—"}
                             </span>
                             {log.new_balance !== null && (
-                              <span className="text-[10px] font-bold text-[--text-muted] mt-0.5 uppercase tracking-widest opacity-60">
+                              <span className="text-[10px] font-bold text-[--text-muted] mt-1 uppercase tracking-widest opacity-60">
                                 Bal: {formatMoney(log.new_balance)}
                               </span>
                             )}
@@ -461,7 +474,7 @@ export default function LedgerClient() {
 
         {/* Pagination controls */}
         {totalFilteredCount > 0 && (
-          <div className="flex items-center justify-between border-t border-white/5 p-6 bg-white/[0.01]">
+          <div className="flex items-center justify-between border-t border-white/5 p-6 bg-white/[0.01] m-3 mx-6 rounded-[24px] border border-white/[0.02]">
             <button
               type="button"
               onClick={() => {
