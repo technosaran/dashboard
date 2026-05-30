@@ -3,6 +3,57 @@
 import { createClient } from "@/lib/supabase-server";
 import { revalidatePath } from "next/cache";
 
+// Self-healing bridge: automatically create a forex_accounts entry matching a standard account ID if it is missing
+async function ensureForexAccount(supabase: any, forexAccountId: string, userId: string) {
+  try {
+    // Check if forex account exists
+    const { data: existing, error: checkErr } = await supabase
+      .from("forex_accounts")
+      .select("id")
+      .eq("id", forexAccountId)
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (existing) return { success: true };
+
+    // If not, fetch standard account details
+    const { data: stdAcc, error: fetchErr } = await supabase
+      .from("accounts")
+      .select("name, broker_name, currency, balance")
+      .eq("id", forexAccountId)
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (fetchErr || !stdAcc) {
+      return { error: "Standard account not found in system: " + (fetchErr?.message || "") };
+    }
+
+    // Insert into forex_accounts to satisfy foreign key constraints
+    const { error: insertErr } = await supabase
+      .from("forex_accounts")
+      .insert({
+        id: forexAccountId,
+        user_id: userId,
+        broker_name: stdAcc.broker_name || "Standard Broker",
+        account_label: stdAcc.name,
+        currency: stdAcc.currency || "USD",
+        balance: stdAcc.balance || 0,
+        total_deposited: stdAcc.balance || 0,
+        total_withdrawn: 0,
+        total_pnl: 0,
+        notes: "Auto-linked from standard accounts"
+      });
+
+    if (insertErr) {
+      return { error: "Failed to initialize forex link for standard account: " + insertErr.message };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    return { error: err?.message || "Failed to bridge standard account to forex accounts" };
+  }
+}
+
 // Create a new forex broker account
 export async function createForexAccount(data: {
   broker_name: string;
@@ -47,6 +98,10 @@ export async function forexDeposit(data: {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Unauthorized" };
+
+    // Ensure the forex account exists by bridging the standard account if needed
+    const ensureRes = await ensureForexAccount(supabase, data.forex_account_id, user.id);
+    if (ensureRes.error) return { error: ensureRes.error };
 
     if (!data.amount || data.amount <= 0 || !Number.isFinite(data.amount)) {
       return { error: "Deposit amount must be a positive number" };
@@ -100,6 +155,10 @@ export async function forexWithdraw(data: {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Unauthorized" };
+
+    // Ensure the forex account exists by bridging the standard account if needed
+    const ensureRes = await ensureForexAccount(supabase, data.forex_account_id, user.id);
+    if (ensureRes.error) return { error: ensureRes.error };
 
     if (!data.amount || data.amount <= 0 || !Number.isFinite(data.amount)) {
       return { error: "Withdrawal amount must be a positive number" };
@@ -157,6 +216,10 @@ export async function logForexTrade(data: {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Unauthorized" };
+
+    // Ensure the forex account exists by bridging the standard account if needed
+    const ensureRes = await ensureForexAccount(supabase, data.forex_account_id, user.id);
+    if (ensureRes.error) return { error: ensureRes.error };
 
     // Input validation
     if (!data.pair || data.pair.trim().length === 0) {
@@ -295,6 +358,12 @@ export async function updateForexTrade(id: string, data: {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Unauthorized" };
+
+    if (data.forex_account_id) {
+      // Ensure the forex account exists by bridging the standard account if needed
+      const ensureRes = await ensureForexAccount(supabase, data.forex_account_id, user.id);
+      if (ensureRes.error) return { error: ensureRes.error };
+    }
 
     const { error } = await supabase
       .from("forex_trades")

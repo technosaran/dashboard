@@ -1,14 +1,10 @@
 "use client";
-
 import { useState, useMemo } from "react";
 import { toast } from "react-hot-toast";
 import { 
-  createForexAccount, 
   forexDeposit, 
   forexWithdraw, 
   logForexTrade,
-  deleteForexAccount,
-  updateForexAccount,
   updateForexTrade
 } from "./actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
@@ -20,34 +16,17 @@ import type { Tables } from "@/lib/database.types";
 export default function ForexClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { accounts, forexAccounts, forexTrades, forexTransactions }, isValidating } = useFinanceData(initialData);
   
-  const [activeTab, setActiveTab] = useState<"accounts" | "trades" | "transactions">("accounts");
-  const [showAccountModal, setShowAccountModal] = useState(false);
+  const [activeTab, setActiveTab] = useState<"trades" | "transactions">("trades");
   const [showTradeModal, setShowTradeModal] = useState(false);
   const [showFundsModal, setShowFundsModal] = useState(false);
   const [fundsType, setFundsType] = useState<"DEPOSIT" | "WITHDRAW">("DEPOSIT");
   const [submitting, withLock] = useSubmitLock();
 
   // Edit States
-  const [showEditAccountModal, setShowEditAccountModal] = useState(false);
-  const [editingAccount, setEditingAccount] = useState<Tables<"forex_accounts"> | null>(null);
   const [showEditTradeModal, setShowEditTradeModal] = useState(false);
   const [editingTrade, setEditingTrade] = useState<Tables<"forex_trades"> | null>(null);
 
   // Form States
-  const [accountForm, setAccountForm] = useState({ broker_name: "", account_label: "", account_number: "", currency: "USD" });
-  
-  const [editAccountForm, setEditAccountForm] = useState({
-    broker_name: "",
-    account_label: "",
-    account_number: "",
-    currency: "USD",
-    balance: "0",
-    total_deposited: "0",
-    total_withdrawn: "0",
-    total_pnl: "0",
-    notes: ""
-  });
-
   const [tradeForm, setTradeForm] = useState({ 
     forex_account_id: "", 
     pair: "EUR/USD", 
@@ -83,58 +62,13 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
     return { totalBalance, totalPnL, totalDeposited, totalWithdrawn };
   }, [forexAccounts]);
 
-  async function handleCreateAccount(e: React.FormEvent) {
-    e.preventDefault();
-    await withLock(async () => {
-      const res = await createForexAccount(accountForm);
-      if (res.success) {
-        toast.success("Forex account created");
-        setShowAccountModal(false);
-        setAccountForm({ broker_name: "", account_label: "", account_number: "", currency: "USD" });
-      } else toast.error(res.error || "Failed");
-    });
-  }
-
-  const startEditAccount = (acc: Tables<"forex_accounts">) => {
-    setEditingAccount(acc);
-    setEditAccountForm({
-      broker_name: acc.broker_name || "",
-      account_label: acc.account_label || "",
-      account_number: acc.account_number || "",
-      currency: acc.currency || "USD",
-      balance: acc.balance !== undefined ? acc.balance.toString() : "0",
-      total_deposited: acc.total_deposited !== undefined ? acc.total_deposited.toString() : "0",
-      total_withdrawn: acc.total_withdrawn !== undefined ? acc.total_withdrawn.toString() : "0",
-      total_pnl: acc.total_pnl !== undefined ? acc.total_pnl.toString() : "0",
-      notes: acc.notes || ""
-    });
-    setShowEditAccountModal(true);
+  const getAccountLabel = (id: string | null) => {
+    if (!id) return "—";
+    const std = accounts.find(a => a.id === id);
+    if (std) return std.name;
+    const fx = forexAccounts.find(a => a.id === id);
+    return fx ? fx.account_label : "—";
   };
-
-  async function handleUpdateAccount(e: React.FormEvent) {
-    e.preventDefault();
-    if (!editingAccount) return;
-    await withLock(async () => {
-      const res = await updateForexAccount(editingAccount.id, {
-        broker_name: editAccountForm.broker_name,
-        account_label: editAccountForm.account_label,
-        account_number: editAccountForm.account_number || undefined,
-        currency: editAccountForm.currency,
-        balance: parseFloat(editAccountForm.balance),
-        total_deposited: parseFloat(editAccountForm.total_deposited),
-        total_withdrawn: parseFloat(editAccountForm.total_withdrawn),
-        total_pnl: parseFloat(editAccountForm.total_pnl),
-        notes: editAccountForm.notes || undefined
-      });
-      if (res.success) {
-        toast.success("Forex account updated successfully");
-        setShowEditAccountModal(false);
-        setEditingAccount(null);
-      } else {
-        toast.error(res.error || "Failed to update account");
-      }
-    });
-  }
 
   async function handleLogTrade(e: React.FormEvent) {
     e.preventDefault();
@@ -223,18 +157,6 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
     });
   }
 
-  async function handleDeleteAccount(id: string) {
-    if (!confirm("Are you sure you want to delete this Forex account?")) return;
-    await withLock(async () => {
-      const res = await deleteForexAccount(id);
-      if (res.success) {
-        toast.success("Forex account deleted successfully");
-      } else {
-        toast.error(res.error || "Failed to delete account");
-      }
-    });
-  }
-
   return (
     <div className="flex flex-col gap-8 p-4 max-w-7xl mx-auto animate-in fade-in duration-700">
       {/* Header */}
@@ -244,7 +166,6 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
           <p className="text-xs text-[--text-muted] font-bold uppercase tracking-[0.3em] mt-2">Global Currency Markets</p>
         </div>
         <div className="flex flex-wrap gap-2.5">
-          <button onClick={() => setShowAccountModal(true)} className="btn-secondary !h-11">Add Account</button>
           <button onClick={() => { setFundsType("DEPOSIT"); setShowFundsModal(true); }} className="btn-secondary !h-11">Deposit</button>
           <button onClick={() => { setFundsType("WITHDRAW"); setShowFundsModal(true); }} className="btn-secondary !h-11">Withdraw</button>
           <button onClick={() => setShowTradeModal(true)} className="btn-primary !h-11 shadow-[0_0_20px_rgba(var(--accent-primary-rgb),0.4)]">Log Trade</button>
@@ -270,10 +191,10 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
 
       {/* Tabs */}
       <div className="flex gap-6 border-b border-white/5 overflow-x-auto custom-scrollbar">
-        {["accounts", "trades", "transactions"].map((tab) => (
+        {["trades", "transactions"].map((tab) => (
           <button
             key={tab}
-            onClick={() => setActiveTab(tab as "accounts" | "trades" | "transactions")}
+            onClick={() => setActiveTab(tab as "trades" | "transactions")}
             className={`pb-4 text-xs font-black uppercase tracking-widest whitespace-nowrap transition-all ${activeTab === tab ? "text-[--accent-primary-light] border-b-2 border-[--accent-primary-light]" : "text-[--text-muted] hover:text-white"}`}
           >
             {tab}
@@ -283,60 +204,6 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
 
       {/* Content */}
       <div className="min-h-[400px]">
-        {activeTab === "accounts" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {forexAccounts.map((acc) => (
-              <div key={acc.id} className="glass-card flex flex-col min-h-[260px] p-6 relative overflow-hidden transition-transform hover:-translate-y-1 group border-white/5">
-                <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[--accent-primary] via-[--accent-secondary] to-[--accent-tertiary]" />
-                
-                <div className="absolute top-4 right-4 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all flex gap-2">
-                   <button onClick={() => startEditAccount(acc)} className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center justify-center hover:bg-amber-500 hover:text-white transition-all">
-                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                   </button>
-                   <button disabled={submitting} onClick={() => handleDeleteAccount(acc.id)} className="w-8 h-8 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-500 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all disabled:opacity-50">
-                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                   </button>
-                </div>
-
-                <div className="flex justify-between items-start mb-8 pr-16">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-[--accent-primary]/10 flex items-center justify-center text-xl shadow-inner border border-white/5">
-                      🌎
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-black text-white group-hover:text-[--accent-primary-light] transition-colors">{acc.account_label}</h3>
-                      <p className="text-[10px] font-bold text-[--text-muted] uppercase tracking-[0.2em] mt-0.5">{acc.broker_name}</p>
-                    </div>
-                  </div>
-                  <span className="text-[10px] font-black px-3 py-1 bg-[--accent-primary]/10 text-[--accent-primary-light] rounded-full uppercase tracking-widest border border-[--accent-primary]/20">
-                    {acc.currency}
-                  </span>
-                </div>
-
-                <div className="mt-auto space-y-6">
-                  <div className="flex justify-between items-baseline">
-                    <span className="text-[10px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Net Worth</span>
-                    <span className="text-2xl font-black text-white tabular-nums">${Number(acc.balance).toLocaleString()}</span>
-                  </div>
-                  
-                  <div className="h-px bg-gradient-to-r from-transparent via-white/5 to-transparent" />
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
-                      <p className="text-[8px] font-black text-[--text-muted] uppercase tracking-widest mb-1">Total P&L</p>
-                      <PnLValue value={acc.total_pnl} prefix="$" size="sm" className="items-start" />
-                    </div>
-                    <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 text-right">
-                      <p className="text-[8px] font-black text-[--text-muted] uppercase tracking-widest mb-1">Capital Flow</p>
-                      <PnLValue value={Number(acc.total_deposited || 0) - Number(acc.total_withdrawn || 0)} prefix="$" size="sm" className="items-end" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
         {activeTab === "trades" && (
           <>
             {/* Desktop Trades Table */}
@@ -348,6 +215,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                     <th className="p-4">Symbol</th>
                     <th className="p-4">Type</th>
                     <th className="p-4">Lots</th>
+                    <th className="p-4">Account</th>
                     <th className="p-4 text-right">Entry Price</th>
                     <th className="p-4 text-right">Exit Price</th>
                     <th className="p-4 text-right">P&L</th>
@@ -357,7 +225,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                 <tbody className="divide-y divide-white/5">
                   {forexTrades.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="p-8 text-center text-sm text-[--text-muted] italic">No trades logged yet.</td>
+                      <td colSpan={9} className="p-8 text-center text-sm text-[--text-muted] italic">No trades logged yet.</td>
                     </tr>
                   ) : (
                     forexTrades.map((t) => (
@@ -370,6 +238,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                           </span>
                         </td>
                         <td className="p-4 text-[12px] font-bold text-white tabular-nums">{t.lot_size}</td>
+                        <td className="p-4 text-[12px] font-bold text-[--text-secondary]">{getAccountLabel(t.forex_account_id)}</td>
                         <td className="p-4 text-right text-[12px] font-medium text-[--text-secondary] tabular-nums">{t.entry_price || "—"}</td>
                         <td className="p-4 text-right text-[12px] font-medium text-[--text-secondary] tabular-nums">{t.exit_price || "—"}</td>
                         <td className="p-4 text-right">
@@ -417,10 +286,8 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                         <p className="font-bold text-white tabular-nums">{t.lot_size}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-0.5">Account Label</p>
-                        <p className="font-bold text-[#eee] truncate max-w-[120px] ml-auto">{
-                          forexAccounts.find(a => a.id === t.forex_account_id)?.account_label || '—'
-                        }</p>
+                        <p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-0.5">Account</p>
+                        <p className="font-bold text-[#eee] truncate max-w-[120px] ml-auto">{getAccountLabel(t.forex_account_id)}</p>
                       </div>
                       <div>
                         <p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-0.5">Entry Price</p>
@@ -463,6 +330,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                   <tr className="bg-white/5 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">
                     <th className="p-4">Date</th>
                     <th className="p-4">Type</th>
+                    <th className="p-4">Account</th>
                     <th className="p-4">Note</th>
                     <th className="p-4 text-right">Amount</th>
                   </tr>
@@ -470,7 +338,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                 <tbody className="divide-y divide-white/5">
                   {forexTransactions.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="p-8 text-center text-sm text-[--text-muted] italic">No transactions logged yet.</td>
+                      <td colSpan={5} className="p-8 text-center text-sm text-[--text-muted] italic">No transactions logged yet.</td>
                     </tr>
                   ) : (
                     forexTransactions.map((tx) => (
@@ -481,6 +349,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                             {tx.transaction_type}
                           </span>
                         </td>
+                        <td className="p-4 text-[12px] font-bold text-[--text-secondary]">{getAccountLabel(tx.forex_account_id)}</td>
                         <td className="p-4 text-[12px] text-[--text-muted]">{tx.notes || "—"}</td>
                         <td className={`p-4 text-right font-black tabular-nums ${tx.transaction_type === 'DEPOSIT' ? 'text-[--accent-primary-light]' : 'text-warning'}`}>
                           {tx.transaction_type === 'DEPOSIT' ? '+' : '-'}${tx.amount.toLocaleString()}
@@ -507,6 +376,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                         <p className="text-[10px] text-[--text-muted] mt-1.5 font-bold uppercase">
                           {format(new Date(tx.transaction_date), "MMM d, yyyy")}
                         </p>
+                        <p className="text-xs font-bold text-white mt-1">Account: {getAccountLabel(tx.forex_account_id)}</p>
                         {tx.notes && (
                           <p className="text-xs text-[--text-secondary] italic mt-2 border-t border-white/5 pt-2">{tx.notes}</p>
                         )}
@@ -525,92 +395,6 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
         )}
       </div>
 
-      {/* Add Account Modal */}
-      {showAccountModal && (
-        <div className="mobile-dialog-shell fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="mobile-dialog-panel glass-card-static w-full max-w-md p-8 animate-in zoom-in duration-300">
-            <h2 className="text-2xl font-black mb-6 text-white">Connect Broker</h2>
-            <form onSubmit={handleCreateAccount} className="space-y-4">
-              <input required className="input-premium" placeholder="Broker Name (e.g. Exness)" value={accountForm.broker_name} onChange={e => setAccountForm({...accountForm, broker_name: e.target.value})} />
-              <input required className="input-premium" placeholder="Account Label" value={accountForm.account_label} onChange={e => setAccountForm({...accountForm, account_label: e.target.value})} />
-              <input className="input-premium" placeholder="Account Number (Optional)" value={accountForm.account_number} onChange={e => setAccountForm({...accountForm, account_number: e.target.value})} />
-              <select className="input-premium" value={accountForm.currency} onChange={e => setAccountForm({...accountForm, currency: e.target.value})}>
-                <option value="USD">USD</option>
-                <option value="EUR">EUR</option>
-                <option value="GBP">GBP</option>
-                <option value="JPY">JPY</option>
-                <option value="INR">INR</option>
-              </select>
-              <div className="flex gap-3 pt-4">
-                <button type="button" onClick={() => setShowAccountModal(false)} className="btn-secondary flex-1">Cancel</button>
-                <button type="submit" disabled={submitting} className="btn-primary flex-1">{submitting ? "Creating..." : "Create Account"}</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Account Modal */}
-      {showEditAccountModal && (
-        <div className="mobile-dialog-shell fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="mobile-dialog-panel glass-card-static w-full max-w-md p-6 animate-in zoom-in duration-300 max-h-[90vh] overflow-y-auto custom-scrollbar">
-            <h2 className="text-2xl font-black mb-6 text-white">Edit Forex Account</h2>
-            <form onSubmit={handleUpdateAccount} className="space-y-4">
-              <div>
-                <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Broker Name</label>
-                <input required className="input-premium" placeholder="Broker Name (e.g. Exness)" value={editAccountForm.broker_name} onChange={e => setEditAccountForm({...editAccountForm, broker_name: e.target.value})} />
-              </div>
-              <div>
-                <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Account Label</label>
-                <input required className="input-premium" placeholder="Account Label" value={editAccountForm.account_label} onChange={e => setEditAccountForm({...editAccountForm, account_label: e.target.value})} />
-              </div>
-              <div>
-                <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Account Number</label>
-                <input className="input-premium" placeholder="Account Number (Optional)" value={editAccountForm.account_number} onChange={e => setEditAccountForm({...editAccountForm, account_number: e.target.value})} />
-              </div>
-              <div>
-                <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Currency</label>
-                <select className="input-premium" value={editAccountForm.currency} onChange={e => setEditAccountForm({...editAccountForm, currency: e.target.value})}>
-                  <option value="USD">USD</option>
-                  <option value="EUR">EUR</option>
-                  <option value="GBP">GBP</option>
-                  <option value="JPY">JPY</option>
-                  <option value="INR">INR</option>
-                </select>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Net Balance</label>
-                  <input required type="number" step="0.01" className="input-premium" placeholder="Balance" value={editAccountForm.balance} onChange={e => setEditAccountForm({...editAccountForm, balance: e.target.value})} />
-                </div>
-                <div>
-                  <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Total P&L</label>
-                  <input required type="number" step="0.01" className="input-premium" placeholder="Total P&L" value={editAccountForm.total_pnl} onChange={e => setEditAccountForm({...editAccountForm, total_pnl: e.target.value})} />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Deposits</label>
-                  <input required type="number" step="0.01" className="input-premium" placeholder="Deposited" value={editAccountForm.total_deposited} onChange={e => setEditAccountForm({...editAccountForm, total_deposited: e.target.value})} />
-                </div>
-                <div>
-                  <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Withdrawals</label>
-                  <input required type="number" step="0.01" className="input-premium" placeholder="Withdrawn" value={editAccountForm.total_withdrawn} onChange={e => setEditAccountForm({...editAccountForm, total_withdrawn: e.target.value})} />
-                </div>
-              </div>
-              <div>
-                <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Notes</label>
-                <textarea className="input-premium min-h-[80px]" placeholder="Notes" value={editAccountForm.notes} onChange={e => setEditAccountForm({...editAccountForm, notes: e.target.value})} />
-              </div>
-              <div className="flex gap-3 pt-4">
-                <button type="button" onClick={() => setShowEditAccountModal(false)} className="btn-secondary flex-1">Cancel</button>
-                <button type="submit" disabled={submitting} className="btn-primary flex-1">{submitting ? "Updating..." : "Save Changes"}</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
       {/* Log Trade Modal */}
       {showTradeModal && (
         <div className="mobile-dialog-shell fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -618,10 +402,10 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
             <h2 className="text-2xl font-black mb-6 text-white">Log Completed Trade</h2>
             <form onSubmit={handleLogTrade} className="space-y-4">
               <div>
-                <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Forex Account</label>
+                <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Select Account</label>
                 <select required className="input-premium" value={tradeForm.forex_account_id} onChange={e => setTradeForm({...tradeForm, forex_account_id: e.target.value})}>
                   <option value="">Select Account</option>
-                  {forexAccounts.map(a => <option key={a.id} value={a.id}>{a.account_label}</option>)}
+                  {accounts.map(a => <option key={a.id} value={a.id}>{a.name} ({a.currency})</option>)}
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -681,10 +465,10 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
             <h2 className="text-2xl font-black mb-6 text-white">Edit Forex Trade</h2>
             <form onSubmit={handleUpdateTrade} className="space-y-4">
               <div>
-                <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Forex Account</label>
+                <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Select Account</label>
                 <select required className="input-premium" value={editTradeForm.forex_account_id} onChange={e => setEditTradeForm({...editTradeForm, forex_account_id: e.target.value})}>
                   <option value="">Select Account</option>
-                  {forexAccounts.map(a => <option key={a.id} value={a.id}>{a.account_label}</option>)}
+                  {accounts.map(a => <option key={a.id} value={a.id}>{a.name} ({a.currency})</option>)}
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -737,25 +521,39 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
         </div>
       )}
 
-      {/* Funds Modal (Deposit/Withdrawal) */}
+      {/* Funds Deposit/Withdraw Modal */}
       {showFundsModal && (
         <div className="mobile-dialog-shell fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="mobile-dialog-panel glass-card-static w-full max-w-md p-8 animate-in zoom-in duration-300">
-            <h2 className="text-2xl font-black mb-6 text-white">{fundsType === 'DEPOSIT' ? 'Add Funds' : 'Withdraw Funds'}</h2>
+            <h2 className="text-2xl font-black mb-6 text-white">{fundsType === "DEPOSIT" ? "Broker Deposit" : "Broker Withdrawal"}</h2>
             <form onSubmit={handleFunds} className="space-y-4">
-              <select required className="input-premium" value={fundsForm.forex_account_id} onChange={e => setFundsForm({...fundsForm, forex_account_id: e.target.value})}>
-                <option value="">Select Forex Account</option>
-                {forexAccounts.map(a => <option key={a.id} value={a.id}>{a.account_label}</option>)}
-              </select>
-              <select className="input-premium" value={fundsForm.bank_account_id} onChange={e => setFundsForm({...fundsForm, bank_account_id: e.target.value})}>
-                <option value="">No Bank Link (Manual)</option>
-                {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-              </select>
-              <input required type="number" step="0.01" className="input-premium" placeholder="Amount ($)" value={fundsForm.amount} onChange={e => setFundsForm({...fundsForm, amount: e.target.value})} />
-              <textarea className="input-premium min-h-[80px]" placeholder="Notes" value={fundsForm.notes} onChange={e => setFundsForm({...fundsForm, notes: e.target.value})} />
+              <div>
+                <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Forex Account (Broker)</label>
+                <select required className="input-premium" value={fundsForm.forex_account_id} onChange={e => setFundsForm({...fundsForm, forex_account_id: e.target.value})}>
+                  <option value="">Select Broker Account</option>
+                  {accounts.map(a => <option key={a.id} value={a.id}>{a.name} ({a.currency})</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Funding Account (Bank/Cash)</label>
+                <select required className="input-premium" value={fundsForm.bank_account_id} onChange={e => setFundsForm({...fundsForm, bank_account_id: e.target.value})}>
+                  <option value="">Select Funding Account</option>
+                  {accounts.map(a => <option key={a.id} value={a.id}>{a.name} ({a.currency})</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Amount ($)</label>
+                <input required type="number" step="0.01" className="input-premium" placeholder="Amount ($)" value={fundsForm.amount} onChange={e => setFundsForm({...fundsForm, amount: e.target.value})} />
+              </div>
+              <div>
+                <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Notes</label>
+                <textarea className="input-premium min-h-[80px]" placeholder="Transaction notes..." value={fundsForm.notes} onChange={e => setFundsForm({...fundsForm, notes: e.target.value})} />
+              </div>
               <div className="flex gap-3 pt-4">
                 <button type="button" onClick={() => setShowFundsModal(false)} className="btn-secondary flex-1">Cancel</button>
-                <button type="submit" disabled={submitting} className="btn-primary flex-1">{submitting ? "Processing..." : "Process"}</button>
+                <button type="submit" disabled={submitting} className="btn-primary flex-1">
+                  {submitting ? "Processing..." : fundsType === "DEPOSIT" ? "Complete Deposit" : "Complete Withdrawal"}
+                </button>
               </div>
             </form>
           </div>
