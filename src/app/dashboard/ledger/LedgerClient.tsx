@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, Fragment } from "react";
 import { endOfDay, format, getMonth, getYear, isWithinInterval, startOfDay } from "date-fns";
 import { toast } from "react-hot-toast";
 import { useFinanceData } from "@/hooks/use-finance-data";
@@ -200,6 +200,19 @@ export default function LedgerClient() {
     };
   };
 
+  const getActionBadge = (type: string) => {
+    const cfg = getActionConfig(type);
+    return (
+      <span 
+        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] text-[10px] font-black uppercase tracking-wider border whitespace-nowrap"
+        style={{ backgroundColor: cfg.bg, color: cfg.text, borderColor: cfg.ring }}
+      >
+        <span className="text-[11px] shrink-0" aria-hidden="true">{cfg.icon}</span>
+        {cfg.label}
+      </span>
+    );
+  };
+
   return (
     <div className="flex flex-col gap-[var(--section-gap)] max-w-7xl mx-auto w-full px-2">
       {/* Header */}
@@ -342,8 +355,8 @@ export default function LedgerClient() {
         </div>
       </section>
 
-      {/* Main Ledger Event Trail (Clearview Feed) */}
-      <section className="glass-card-static p-0 rounded-[32px] border border-white/5 overflow-hidden bg-transparent shadow-none relative">
+      {/* Main Ledger Event Trail (Crisp Financial Grid Table) */}
+      <section className="glass-card-static p-0 rounded-[24px] border border-white/10 overflow-hidden bg-white/[0.01] shadow-lg shadow-black/25">
         {isLoading ? (
           <div className="space-y-4 p-8">
             {Array.from({ length: 5 }).map((_, index) => (
@@ -357,7 +370,7 @@ export default function LedgerClient() {
             ))}
           </div>
         ) : filteredLogs.length === 0 ? (
-          <div className="py-24 text-center flex flex-col items-center justify-center gap-4 glass-card-static border-white/5">
+          <div className="py-24 text-center flex flex-col items-center justify-center gap-4">
             <div className="text-5xl">🛡️</div>
             <div>
               <p className="text-lg font-black text-white">No Ledger Entries Located</p>
@@ -377,104 +390,175 @@ export default function LedgerClient() {
             </button>
           </div>
         ) : (
-          <div className="flex flex-col relative">
-            {/* Timeline Vertical Thread Line */}
-            <div className="absolute left-[72px] top-6 bottom-6 w-0.5 bg-gradient-to-b from-indigo-500/25 via-sky-500/15 to-emerald-500/25 pointer-events-none hidden md:block z-0" />
+          <div className="w-full">
+            {/* Desktop Table View */}
+            <div className="overflow-x-auto hidden md:block">
+              <table className="min-w-full divide-y divide-white/10 table-fixed">
+                <thead className="bg-white/[0.02]">
+                  <tr className="border-b border-white/10">
+                    <th scope="col" className="w-[16%] px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Timestamp</th>
+                    <th scope="col" className="w-[15%] px-4 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Action type</th>
+                    <th scope="col" className="w-[15%] px-4 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Registry Account</th>
+                    <th scope="col" className="w-[30%] px-4 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Audit details</th>
+                    <th scope="col" className="w-[14%] px-4 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Amount Flow</th>
+                    <th scope="col" className="w-[10%] px-6 py-4 text-center text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Reversal</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/10">
+                  {Object.entries(groupedLogs).map(([dateLabel, logsInGroup]) => (
+                    <Fragment key={dateLabel}>
+                      {/* Sticky Date Row Section */}
+                      <tr className="sticky top-0 z-10 border-y border-white/10 bg-[#0d121f]">
+                        <td colSpan={6} className="px-6 py-3 text-[11px] font-black uppercase tracking-[0.25em] text-[--accent-primary-light]">
+                          🗓️ {dateLabel}
+                        </td>
+                      </tr>
 
-            {Object.entries(groupedLogs).map(([dateLabel, logsInGroup]) => (
-              <div key={dateLabel} className="flex flex-col relative z-10">
-                {/* Floating Date Capsule Header */}
-                <div className="sticky top-3 z-20 px-6 py-2 flex items-center justify-between pointer-events-none">
-                  <div className="flex items-center gap-3 bg-white/[0.04] border border-white/10 backdrop-blur-xl px-4 py-1.5 rounded-full shadow-lg shadow-black/30 pointer-events-auto">
-                    <span className="text-[11px] font-black uppercase tracking-[0.25em] text-[--accent-primary-light]">{dateLabel}</span>
-                    <span className="px-2.5 py-0.5 rounded-full text-[8px] font-black bg-white/5 text-[--text-muted] uppercase tracking-widest border border-white/5">
-                      {logsInGroup.length} {logsInGroup.length === 1 ? "Event" : "Events"}
+                      {/* Entries within this Date Group */}
+                      {logsInGroup.map((log) => {
+                        const isDebit = isDebitLog(log);
+                        return (
+                          <tr key={log.id} className="transition-colors hover:bg-white/[0.02] border-b border-white/5">
+                            {/* Timestamp */}
+                            <td className="px-6 py-4.5 whitespace-nowrap">
+                              <p className="text-xs font-bold text-white tracking-tight">
+                                {log.created_at ? format(new Date(log.created_at), "MMM d, yyyy") : "—"}
+                              </p>
+                              <p className="text-[10px] font-mono text-[--text-muted] mt-1 tracking-widest uppercase">
+                                {log.created_at ? format(new Date(log.created_at), "hh:mm:ss a") : "—"}
+                              </p>
+                            </td>
+
+                            {/* Action Badge */}
+                            <td className="px-4 py-4.5 whitespace-nowrap">
+                              {getActionBadge(log.action_type)}
+                            </td>
+
+                            {/* Account Name */}
+                            <td className="px-4 py-4.5 whitespace-nowrap">
+                              <span className="text-xs font-bold text-white tracking-tight px-2 py-1 rounded bg-white/5 border border-white/10">
+                                {log.account_name || "System"}
+                              </span>
+                            </td>
+
+                            {/* Details */}
+                            <td className="px-4 py-4.5 text-xs text-[--text-secondary] leading-relaxed break-words" style={{ wordBreak: "break-word" }}>
+                              {log.details || "No transactional details provided"}
+                            </td>
+
+                            {/* Amount Flow */}
+                            <td className="px-4 py-4.5 whitespace-nowrap text-right">
+                              <p className={`text-base font-black tabular-nums tracking-tight ${isDebit ? "text-danger" : "text-success"}`}>
+                                {log.amount !== null ? `${isDebit ? "-" : "+"}${formatMoney(log.amount)}` : "—"}
+                              </p>
+                              {log.new_balance !== null && (
+                                <p className="text-[10px] font-bold text-[--text-muted] mt-1.5 uppercase tracking-widest opacity-60">
+                                  Bal: {formatMoney(log.new_balance)}
+                                </p>
+                              )}
+                            </td>
+
+                            {/* Reversal Undo Action */}
+                            <td className="px-6 py-4.5 whitespace-nowrap text-center">
+                              <button
+                                type="button"
+                                disabled={submitting}
+                                onClick={() => {
+                                  setRevertingId(log.id);
+                                  setShowRevertConfirm(true);
+                                }}
+                                className="inline-flex items-center gap-1.5 h-8 px-3 border border-white/10 hover:border-danger/30 bg-white/5 hover:bg-danger/10 text-[10px] font-black uppercase tracking-widest text-[--text-secondary] hover:text-danger rounded-lg transition-all disabled:opacity-30 disabled:pointer-events-none"
+                                title="Undo Transaction"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+                                </svg>
+                                Undo
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </Fragment>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards View */}
+            <div className="divide-y divide-white/10 md:hidden">
+              {Object.entries(groupedLogs).map(([dateLabel, logsInGroup]) => (
+                <div key={dateLabel} className="flex flex-col">
+                  {/* Date section header on mobile */}
+                  <div className="sticky top-0 z-10 px-4 py-2.5 bg-[#0d121f] border-y border-white/10 flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-[--accent-primary-light]">{dateLabel}</span>
+                    <span className="px-2 py-0.5 rounded-full text-[8px] font-black bg-white/5 text-[--text-muted] uppercase border border-white/5">
+                      {logsInGroup.length} logs
                     </span>
                   </div>
-                </div>
 
-                {/* Timeline Entries inside group */}
-                <div className="flex flex-col">
-                  {logsInGroup.map((log) => {
-                    const isDebit = isDebitLog(log);
-                    const cfg = getActionConfig(log.action_type);
-
-                    return (
-                      <div 
-                        key={log.id} 
-                        className="group flex flex-col md:flex-row md:items-center justify-between p-6 m-3 mx-6 rounded-[24px] bg-white/[0.01] hover:bg-white/[0.025] border border-white/[0.02] hover:border-[--accent-primary]/15 transition-all duration-300 relative gap-6 hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgb(0,0,0,0.15)] z-10"
-                      >
-                        {/* Left Info: Icon, Action, Timestamp, Details */}
-                        <div className="flex items-start gap-5 flex-1 min-w-0">
-                          <div
-                            className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0 transition-transform group-hover:scale-105 border-2 z-10 shadow-lg"
-                            style={{ 
-                              backgroundColor: cfg.bg, 
-                              color: cfg.text, 
-                              borderColor: cfg.ring,
-                              boxShadow: `0 0 12px ${cfg.ring}`
-                            }}
-                          >
-                            {cfg.icon}
-                          </div>
-                          <div className="flex flex-col min-w-0">
-                            <div className="flex flex-wrap items-center gap-2 mb-1">
-                              <span className="text-sm font-bold text-white tracking-tight">{cfg.label}</span>
-                              {log.account_name && (
-                                <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-white/5 border border-white/10 text-[--text-secondary]">
-                                  {log.account_name}
+                  {/* Individual Mobile Log Cards */}
+                  <div className="divide-y divide-white/5 bg-[#0a0e1c]/40">
+                    {logsInGroup.map((log) => {
+                      const isDebit = isDebitLog(log);
+                      return (
+                        <article key={log.id} className="p-4 flex flex-col gap-3">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="text-[10px] font-mono text-[--text-muted] tracking-wider uppercase">
+                                {log.created_at ? format(new Date(log.created_at), "hh:mm:ss a") : "—"}
+                              </p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="text-xs font-black text-white tracking-tight px-1.5 py-0.5 rounded bg-white/5 border border-white/10">
+                                  {log.account_name || "System"}
                                 </span>
-                              )}
-                              <span className="text-[10px] text-[--text-muted] font-medium hidden sm:inline">
-                                • {log.created_at ? format(new Date(log.created_at), "h:mm:ss a") : ""}
-                              </span>
+                              </div>
                             </div>
-                            <p className="text-sm text-[--text-secondary] leading-relaxed break-words">{log.details || "No transactional details provided"}</p>
-                          </div>
-                        </div>
-
-                        {/* Right: Flow & Actions */}
-                        <div className="flex items-center justify-between md:justify-end gap-6 shrink-0 border-t border-white/[0.02] pt-4 md:pt-0 md:border-0">
-                          {/* Financial Flows */}
-                          <div className="text-left md:text-right flex flex-col justify-center">
-                            <span className={`text-xl font-black tabular-nums tracking-tight filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.2)] ${isDebit ? "text-danger" : "text-success"}`}>
-                              {log.amount !== null ? `${isDebit ? "-" : "+"}${formatMoney(log.amount)}` : "—"}
-                            </span>
-                            {log.new_balance !== null && (
-                              <span className="text-[10px] font-bold text-[--text-muted] mt-1 uppercase tracking-widest opacity-60">
-                                Bal: {formatMoney(log.new_balance)}
-                              </span>
-                            )}
+                            {getActionBadge(log.action_type)}
                           </div>
 
-                          {/* Action Button: Locked Undo */}
-                          <button
-                            disabled={submitting}
-                            onClick={() => {
-                              setRevertingId(log.id);
-                              setShowRevertConfirm(true);
-                            }}
-                            className="h-10 px-5 border border-white/5 hover:border-danger/30 bg-white/5 hover:bg-danger/10 text-[10px] font-black uppercase tracking-widest text-[--text-secondary] hover:text-danger rounded-xl flex items-center justify-center gap-1.5 transition-all md:opacity-0 md:group-hover:opacity-100 disabled:opacity-30 disabled:pointer-events-none"
-                            title="Undo Transaction"
-                          >
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
-                            </svg>
-                            Undo
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
+                          <p className="text-xs text-[--text-secondary] leading-relaxed break-words">{log.details || "No transactional details provided"}</p>
+
+                          <div className="flex items-end justify-between mt-1">
+                            <div>
+                              <p className={`text-base font-black tabular-nums tracking-tight ${isDebit ? "text-danger" : "text-success"}`}>
+                                {log.amount !== null ? `${isDebit ? "-" : "+"}${formatMoney(log.amount)}` : "—"}
+                              </p>
+                              {log.new_balance !== null && (
+                                <p className="text-[9px] font-bold text-[--text-muted] mt-0.5 uppercase tracking-widest opacity-60">
+                                  Bal: {formatMoney(log.new_balance)}
+                                </p>
+                              )}
+                            </div>
+
+                            <button
+                              type="button"
+                              disabled={submitting}
+                              onClick={() => {
+                                setRevertingId(log.id);
+                                setShowRevertConfirm(true);
+                              }}
+                              className="inline-flex items-center gap-1 h-8 px-3 border border-white/10 hover:border-danger/30 bg-white/5 hover:bg-danger/10 text-[9px] font-black uppercase tracking-wider text-[--text-secondary] hover:text-danger rounded-lg transition-all disabled:opacity-30"
+                            >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+                              </svg>
+                              Undo
+                            </button>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
 
         {/* Pagination controls */}
         {totalFilteredCount > 0 && (
-          <div className="flex items-center justify-between border-t border-white/5 p-6 bg-white/[0.01] m-3 mx-6 rounded-[24px] border border-white/[0.02]">
+          <div className="flex items-center justify-between border-t border-white/10 p-5 bg-white/[0.01]">
             <button
               type="button"
               onClick={() => {

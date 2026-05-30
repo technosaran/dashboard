@@ -847,6 +847,43 @@ select:focus {
   box-shadow: var(--shadow-glow);
 }
 
+/* White Grids and Border Layout Overrides, Scoped to Exclude the Sidebar Aside */
+.theme-google :not(aside):not(aside *).border,
+.theme-google :not(aside):not(aside *).border-t,
+.theme-google :not(aside):not(aside *).border-b,
+.theme-google :not(aside):not(aside *).border-l,
+.theme-google :not(aside):not(aside *).border-r,
+.theme-google :not(aside):not(aside *).border-x,
+.theme-google :not(aside):not(aside *).border-y,
+.theme-google :not(aside):not(aside *).border-white\/5,
+.theme-google :not(aside):not(aside *).border-white\/10,
+.theme-google :not(aside):not(aside *).border-white\/20,
+.theme-google :not(aside):not(aside *).border-white\/\[0\.03\],
+.theme-google :not(aside):not(aside *).border-white\/\[0\.05\],
+.theme-google :not(aside):not(aside *).border-white\/\[0\.06\],
+.theme-google :not(aside):not(aside *).border-white\/\[0\.08\],
+.theme-google :not(aside):not(aside *).border-white\/\[0\.1\],
+.theme-google :not(aside):not(aside *).border-white\/\[0\.2\],
+.theme-google :not(aside):not(aside *) .divide-y > *,
+.theme-google :not(aside):not(aside *) .divide-x > *,
+.theme-google :not(aside):not(aside *).glass-card,
+.theme-google :not(aside):not(aside *).glass-card-static,
+.theme-google :not(aside):not(aside *) th,
+.theme-google :not(aside):not(aside *) td,
+.theme-google :not(aside):not(aside *) tr,
+.theme-google :not(aside):not(aside *) table,
+.theme-google :not(aside):not(aside *) thead,
+.theme-google :not(aside):not(aside *) tbody {
+  border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+.theme-google :not(aside):not(aside *) input,
+.theme-google :not(aside):not(aside *) select,
+.theme-google :not(aside):not(aside *) textarea,
+.theme-google :not(aside):not(aside *).input-premium {
+  border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
 
 
 /* Ensure success, danger, and active tabs are preserved */
