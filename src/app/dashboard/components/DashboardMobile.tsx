@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { format } from "date-fns";
-import { memo } from "react";
+import { memo, useState } from "react";
 import type { FinanceData } from "@/hooks/use-finance-data";
+import { seedSampleData } from "../settings/actions";
+import { toast } from "react-hot-toast";
 
 type DashboardStats = {
   totalBalance: number;
@@ -29,8 +31,61 @@ type Props = {
 };
 
 const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, isValidating }: Props) {
+  const [seeding, setSeeding] = useState(false);
+
+  async function handleSeedDemo() {
+    setSeeding(true);
+    const toastId = toast.loading("Populating rich financial demo data...");
+    try {
+      const res = await seedSampleData();
+      if (!res.error) {
+        toast.success("FinanceOS playground successfully populated!", { id: toastId });
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      } else {
+        toast.error(res.error, { id: toastId });
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to populate sample data.", { id: toastId });
+    } finally {
+      setSeeding(false);
+    }
+  }
+
   return (
     <div className="relative z-20 flex min-h-screen flex-col gap-6 pb-[calc(var(--mobile-bottom-nav-height)+1rem)] md:hidden animate-fade-in">
+      
+      {/* INITIALIZATION PLAYGROUND BANNER */}
+      {stats.totalAssets === 0 && recentLogs.length === 0 && (
+        <div className="glass-card-static rich-border relative overflow-hidden p-6 border border-white/10 bg-white/[0.02] text-center">
+          <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[--accent-primary] via-purple-500 to-cyan-400" />
+          <div className="flex flex-col items-center gap-4">
+            <span className="text-3xl">🚀</span>
+            <div className="space-y-1">
+              <h2 className="text-base font-black text-white">Welcome to FinanceOS</h2>
+              <p className="text-[10px] text-[--text-secondary] leading-relaxed">
+                Your database is completely empty. Manually setup your accounts or instantly seed a rich playground feed!
+              </p>
+            </div>
+            <div className="flex flex-col gap-2 w-full mt-2">
+              <button 
+                onClick={handleSeedDemo}
+                disabled={seeding}
+                className="w-full h-11 text-[10px] font-black uppercase tracking-widest bg-gradient-to-r from-[--accent-primary] to-indigo-500 shadow-md text-white rounded-xl active:scale-[0.98] transition-all"
+              >
+                {seeding ? "Seeding Playground..." : "Populate Playground"}
+              </button>
+              <Link 
+                href="/dashboard/accounts?action=new" 
+                className="w-full h-11 text-[10px] font-black uppercase tracking-widest border border-white/10 hover:bg-white/5 text-white rounded-xl active:scale-[0.98] transition-all flex items-center justify-center no-underline"
+              >
+                Create Account
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Mobile Header / Balance */}
       <div className="glass-card-static rich-border relative flex flex-col items-center justify-center overflow-hidden border border-white/10 p-5 text-center shadow-[0_20px_50px_rgba(0,0,0,0.3)] sm:p-6">
         <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[--accent-primary] via-purple-500 to-emerald-500" />

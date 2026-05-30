@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { format } from "date-fns";
-import { useMemo, memo } from "react";
+import { useMemo, memo, useState } from "react";
 import Greeting from "@/components/greeting";
 import type { FinanceData } from "@/hooks/use-finance-data";
+import { seedSampleData } from "../settings/actions";
+import { toast } from "react-hot-toast";
 import { 
   ResponsiveContainer, 
   Tooltip, 
@@ -72,6 +74,28 @@ type Props = {
 };
 
 const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goals, isLoading, isValidating }: Props) {
+  const [seeding, setSeeding] = useState(false);
+
+  async function handleSeedDemo() {
+    setSeeding(true);
+    const toastId = toast.loading("Populating rich financial demo data...");
+    try {
+      const res = await seedSampleData();
+      if (!res.error) {
+        toast.success("FinanceOS playground successfully populated!", { id: toastId });
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      } else {
+        toast.error(res.error, { id: toastId });
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to populate sample data.", { id: toastId });
+    } finally {
+      setSeeding(false);
+    }
+  }
+
   // Extract portfolio data computation into a single useMemo
   const portfolioData = useMemo<PieEntry[]>(() => {
     if (stats.totalAssets <= 0) return [];
@@ -122,6 +146,39 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
       <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between px-2">
         <Greeting />
       </div>
+
+      {/* INITIALIZATION PLAYGROUND BANNER */}
+      {stats.totalAssets === 0 && recentLogs.length === 0 && (
+        <div className="glass-card-static rich-border relative overflow-hidden p-8 md:p-10 border border-white/10 bg-white/[0.02]">
+          <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[--accent-primary] via-purple-500 to-cyan-400" />
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+            <div className="flex-1 space-y-3">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">🚀</span>
+                <h2 className="text-xl font-black text-white">Welcome to your FinanceOS Terminal</h2>
+              </div>
+              <p className="text-xs text-[--text-secondary] leading-relaxed max-w-2xl">
+                Your database is initialized and completely clean. Let's breathe life into your dashboard! You can manually construct your financial system or instantly populate a rich, pre-loaded playground to see allocations, investments, cash flows, and forex logs in action.
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto flex-shrink-0">
+              <button 
+                onClick={handleSeedDemo}
+                disabled={seeding}
+                className="btn-primary !h-12 !px-8 text-[11px] font-black uppercase tracking-widest bg-gradient-to-r from-[--accent-primary] to-indigo-500 shadow-[0_4px_20px_rgba(99,102,241,0.25)] hover:shadow-[0_4px_25px_rgba(99,102,241,0.35)] active:scale-[0.98] transition-all rounded-xl"
+              >
+                {seeding ? "Populating Playground..." : "Populate Rich Demo Data"}
+              </button>
+              <Link 
+                href="/dashboard/accounts?action=new" 
+                className="btn-secondary !h-12 !px-8 text-[11px] font-black uppercase tracking-widest border border-white/10 hover:bg-white/5 active:scale-[0.98] transition-all rounded-xl flex items-center justify-center no-underline"
+              >
+                Create First Account
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* NET WORTH PROFESSIONAL OVERVIEW CARD */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
