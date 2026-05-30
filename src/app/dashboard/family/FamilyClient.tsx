@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase-browser";
 import { createRecipient, deleteRecipient, sendMoneyToFamily, updateRecipient } from "./actions";
 import { getAccounts } from "../accounts/actions";
 import { toast } from "react-hot-toast";
+import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { format } from "date-fns";
 
 type Recipient = {
@@ -56,7 +57,7 @@ export default function FamilyClient({
   const [isSendingMoney, setIsSendingMoney] = useState(false);
   const [selectedRecipient, setSelectedRecipient] = useState<Recipient | null>(null);
   const [recentSends, setRecentSends] = useState<SendHistory[]>(initialHistory);
-  const [sending, setSending] = useState(false);
+  const [submitting, withLock] = useSubmitLock();
   const [activeFilter, setActiveFilter] = useState<string>("All");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -113,40 +114,42 @@ export default function FamilyClient({
 
   const handleAddRecipient = async (e: React.FormEvent) => {
     e.preventDefault();
-    let res;
-    if (isEditingRecipient && editingRecipient) {
-      res = await updateRecipient(editingRecipient.id, {
+    await withLock(async () => {
+      let res;
+      if (isEditingRecipient && editingRecipient) {
+        res = await updateRecipient(editingRecipient.id, {
+          name: newName,
+          relationship: newRelationship,
+        });
+        
+        if (res.success) {
+          toast.success(`${newName} updated`);
+          setIsAddingRecipient(false);
+          setIsEditingRecipient(false);
+          setEditingRecipient(null);
+          fetchData();
+        } else {
+          toast.error(res.error || "Failed to update contact");
+        }
+        return;
+      }
+
+      res = await createRecipient({
         name: newName,
         relationship: newRelationship,
       });
-      
+
       if (res.success) {
-        toast.success(`${newName} updated`);
         setIsAddingRecipient(false);
         setIsEditingRecipient(false);
         setEditingRecipient(null);
+        setNewName("");
+        toast.success(`${newName} added to contacts`);
         fetchData();
       } else {
-        toast.error(res.error || "Failed to update contact");
+        toast.error(res.error || "Failed to add recipient");
       }
-      return;
-    }
-
-    res = await createRecipient({
-      name: newName,
-      relationship: newRelationship,
     });
-
-    if (res.success) {
-      setIsAddingRecipient(false);
-      setIsEditingRecipient(false);
-      setEditingRecipient(null);
-      setNewName("");
-      toast.success(`${newName} added to contacts`);
-      fetchData();
-    } else {
-      toast.error(res.error || "Failed to add recipient");
-    }
   };
 
   const startEdit = (person: Recipient) => {
@@ -164,15 +167,17 @@ export default function FamilyClient({
 
   const confirmDelete = async () => {
     if (!deletingId) return;
-    const res = await deleteRecipient(deletingId);
-    if (res.success) {
-      toast.success("Contact removed");
-      fetchData();
-    } else {
-      toast.error(res.error || "Failed to remove contact");
-    }
-    setShowDeleteConfirm(false);
-    setDeletingId(null);
+    await withLock(async () => {
+      const res = await deleteRecipient(deletingId);
+      if (res.success) {
+        toast.success("Contact removed");
+        fetchData();
+      } else {
+        toast.error(res.error || "Failed to remove contact");
+      }
+      setShowDeleteConfirm(false);
+      setDeletingId(null);
+    });
   };
 
   const handleSendMoney = async (e: React.FormEvent) => {
@@ -191,26 +196,25 @@ export default function FamilyClient({
       return;
     }
 
-    setSending(true);
-    const res = await sendMoneyToFamily({
-      account_id: sendAccountId,
-      recipient_id: selectedRecipient.id,
-      amount,
-      note: sendNote,
-    });
+    await withLock(async () => {
+      const res = await sendMoneyToFamily({
+        account_id: sendAccountId,
+        recipient_id: selectedRecipient.id,
+        amount,
+        note: sendNote,
+      });
 
-    if (res.success) {
-      setIsSendingMoney(false);
-      setSendAmount("");
-      setSendNote("");
-      setSelectedRecipient(null);
-      setSending(false);
-      toast.success(`₹${amount.toLocaleString()} sent to ${selectedRecipient.name}`);
-      fetchData();
-    } else {
-      setSending(false);
-      toast.error(res.error || "Failed to send money");
-    }
+      if (res.success) {
+        setIsSendingMoney(false);
+        setSendAmount("");
+        setSendNote("");
+        setSelectedRecipient(null);
+        toast.success(`₹${amount.toLocaleString()} sent to ${selectedRecipient.name}`);
+        fetchData();
+      } else {
+        toast.error(res.error || "Failed to send money");
+      }
+    });
   };
 
   const getConfig = (rel: string | null) => RELATIONSHIP_CONFIG[rel || "Other"] || RELATIONSHIP_CONFIG.Other;
@@ -433,8 +437,8 @@ export default function FamilyClient({
                   <button type="button" onClick={() => { setIsAddingRecipient(false); setIsEditingRecipient(false); setEditingRecipient(null); setNewName(""); }} className="flex-1 py-3.5 bg-white/[0.03] hover:bg-white/[0.08] rounded-xl text-sm font-medium transition-all text-[--text-primary]">
                     Cancel
                   </button>
-                  <button type="submit" className="flex-1 py-3.5 bg-[--accent-primary] hover:bg-opacity-90 text-white rounded-xl text-sm font-medium transition-all">
-                    {isEditingRecipient ? "Save Changes" : "Save Contact"}
+                  <button type="submit" disabled={submitting} className="flex-1 py-3.5 bg-[--accent-primary] hover:bg-opacity-90 text-white rounded-xl text-sm font-medium transition-all disabled:opacity-50">
+                    {submitting ? "Saving..." : isEditingRecipient ? "Save Changes" : "Save Contact"}
                   </button>
                 </div>
               </form>
@@ -492,8 +496,8 @@ export default function FamilyClient({
                   <button type="button" onClick={() => { setIsSendingMoney(false); setSelectedRecipient(null); }} className="flex-1 py-4 bg-white/[0.03] hover:bg-white/[0.08] rounded-xl text-sm font-medium transition-all text-[--text-primary]">
                     Cancel
                   </button>
-                  <button type="submit" disabled={sending} className="flex-[2] py-4 bg-[--accent-primary] hover:bg-opacity-90 text-white rounded-xl text-sm font-medium transition-all flex items-center justify-center disabled:opacity-50">
-                    {sending ? (
+                  <button type="submit" disabled={submitting} className="flex-[2] py-4 bg-[--accent-primary] hover:bg-opacity-90 text-white rounded-xl text-sm font-medium transition-all flex items-center justify-center disabled:opacity-50">
+                    {submitting ? (
                       <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
@@ -519,7 +523,9 @@ export default function FamilyClient({
             <p className="text-sm text-[--text-muted] mb-8 leading-relaxed">This will permanently remove <span className="text-[--text-primary] font-medium">{recipients.find(r => r.id === deletingId)?.name}</span> from your contacts.</p>
             <div className="flex gap-3 w-full">
               <button onClick={() => { setShowDeleteConfirm(false); setDeletingId(null); }} className="flex-1 py-3.5 bg-white/[0.03] hover:bg-white/[0.08] rounded-xl text-sm font-medium transition-all text-[--text-primary]">Cancel</button>
-              <button onClick={confirmDelete} className="flex-1 py-3.5 bg-danger hover:bg-red-600 text-white rounded-xl text-sm font-medium transition-all">Remove</button>
+              <button onClick={confirmDelete} disabled={submitting} className="flex-1 py-3.5 bg-danger hover:bg-red-600 text-white rounded-xl text-sm font-medium transition-all disabled:opacity-50">
+                {submitting ? "Removing..." : "Remove"}
+              </button>
             </div>
           </div>
         </div>

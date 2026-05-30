@@ -5,6 +5,7 @@ import { toast } from "react-hot-toast";
 import { addAlternativeAsset, updateAlternativeAsset, deleteAlternativeAsset, revertLedgerLog } from "./actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { format, parseISO } from "date-fns";
+import { useSubmitLock } from "@/hooks/use-submit-lock";
 
 const CATEGORIES = [
   { label: "Real Estate", icon: "🏙️" },
@@ -19,7 +20,7 @@ const CATEGORIES = [
 export default function AlternativeAssetsClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { alternativeAssets, ledgerLogs, accounts }, isValidating } = useFinanceData(initialData);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  const [submitting, withLock] = useSubmitLock();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"inventory" | "history">("inventory");
 
@@ -49,38 +50,38 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSubmitting(true);
-    const { account_id, ...assetData } = formData;
-    const payload = {
-      ...assetData,
-      purchase_price: parseFloat(formData.purchase_price),
-      current_value: parseFloat(formData.current_value),
-      purchase_date: formData.purchase_date || undefined,
-    };
+    await withLock(async () => {
+      const { account_id, ...assetData } = formData;
+      const payload = {
+        ...assetData,
+        purchase_price: parseFloat(formData.purchase_price),
+        current_value: parseFloat(formData.current_value),
+        purchase_date: formData.purchase_date || undefined,
+      };
 
-    const res = editingId 
-      ? await updateAlternativeAsset(editingId, payload)
-      : await addAlternativeAsset({ ...payload, account_id });
+      const res = editingId 
+        ? await updateAlternativeAsset(editingId, payload)
+        : await addAlternativeAsset({ ...payload, account_id });
 
-    if (!res.error) {
-      toast.success(editingId ? "Asset updated" : "Asset established");
-      setShowAddModal(false);
-      setEditingId(null);
-      setFormData({ name: "", category: "Real Estate", purchase_price: "", current_value: "", purchase_date: "", notes: "", account_id: "" });
-    } else toast.error(res.error);
-    setSubmitting(false);
+      if (!res.error) {
+        toast.success(editingId ? "Asset updated" : "Asset established");
+        setShowAddModal(false);
+        setEditingId(null);
+        setFormData({ name: "", category: "Real Estate", purchase_price: "", current_value: "", purchase_date: "", notes: "", account_id: "" });
+      } else toast.error(res.error);
+    });
   }
 
   async function handleRevert(logId: string) {
     if (!confirm("Revert this action? This will undo the ledger entry and any associated balance changes.")) return;
-    setSubmitting(true);
-    const res = await revertLedgerLog(logId);
-    if (!res.error) {
-      toast.success("Action reverted successfully");
-    } else {
-      toast.error(res.error);
-    }
-    setSubmitting(false);
+    await withLock(async () => {
+      const res = await revertLedgerLog(logId);
+      if (!res.error) {
+        toast.success("Action reverted successfully");
+      } else {
+        toast.error(res.error);
+      }
+    });
   }
 
   return (

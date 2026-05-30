@@ -24,12 +24,11 @@ export default async function AccountsPage() {
     redirect("/login");
   }
 
-  // Prefetch data on the server for "0 latency" initial load
-  const { data: initialData } = await supabase.rpc("get_finance_overview");
+  const { data: initialData } = await supabase.rpc("get_finance_overview_v2");
 
   return (
     <Suspense fallback={null}>
-      <AccountsClient />
+      <AccountsClient initialData={initialData as FinanceData} />
     </Suspense>
   );
 }

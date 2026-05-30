@@ -10,7 +10,7 @@ export const metadata = {
 
 export default async function BudgetPage() {
   const supabase = await createClient();
-  const { data } = await supabase.rpc("get_finance_overview");
+  const { data } = await supabase.rpc("get_finance_overview_v2");
 
   return (
     <Suspense fallback={<div className="animate-pulse bg-white/5 h-screen rounded-2xl" />}>

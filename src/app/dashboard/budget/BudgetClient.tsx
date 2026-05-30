@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { toast } from "react-hot-toast";
 import { upsertBudget } from "./actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
+import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO } from "date-fns";
 
 const CATEGORIES = [
@@ -21,7 +22,7 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
   const { data: { budgets, expenses, incomes }, isValidating } = useFinanceData(initialData);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [submitting, setSubmitting] = useState(false);
+  const [submitting, withLock] = useSubmitLock();
 
   // Calculate actual spending for selected period
   const actualSpending = useMemo(() => {
@@ -59,15 +60,15 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
     const val = parseFloat(amount);
     if (isNaN(val)) return;
     
-    setSubmitting(true);
-    const res = await upsertBudget({
-      category,
-      amount: val,
-      period_month: selectedMonth,
-      period_year: selectedYear
+    await withLock(async () => {
+      const res = await upsertBudget({
+        category,
+        amount: val,
+        period_month: selectedMonth,
+        period_year: selectedYear
+      });
+      if (res.error) toast.error(res.error);
     });
-    if (res.error) toast.error(res.error);
-    setSubmitting(false);
   }
 
   return (
@@ -143,6 +144,7 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
                         type="number" 
                         placeholder="Set Limit"
                         defaultValue={limit || ""}
+                        disabled={submitting}
                         onBlur={(e) => handleBudgetChange(cat.label, e.target.value)}
                         className="input-premium !h-10 w-32 text-right !bg-white/5 border-transparent focus:border-[--accent-primary] text-sm font-black"
                       />

@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 
 import { addExpense, deleteExpense } from "./actions";
+import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, subMonths } from "date-fns";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 
@@ -31,7 +32,7 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
   const { data: { expenses, accounts }, isValidating } = useFinanceData(initialData);
   const searchParams = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(searchParams.get("action") === "new");
-  const [submitting, setSubmitting] = useState(false);
+  const [submitting, withLock] = useSubmitLock();
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 50;
@@ -54,16 +55,16 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
 
   async function confirmDeleteExpense() {
     if (!deletingExpenseId) return;
-    setSubmitting(true);
-    const res = await deleteExpense(deletingExpenseId);
-    if (!res?.error) {
-      toast.success("Expense entry reverted successfully");
-    } else {
-      toast.error(res.error);
-    }
-    setShowDeleteConfirm(false);
-    setDeletingExpenseId(null);
-    setSubmitting(false);
+    await withLock(async () => {
+      const res = await deleteExpense(deletingExpenseId);
+      if (!res?.error) {
+        toast.success("Expense entry reverted successfully");
+      } else {
+        toast.error(res.error);
+      }
+      setShowDeleteConfirm(false);
+      setDeletingExpenseId(null);
+    });
   }
 
 
@@ -127,22 +128,22 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSubmitting(true);
-    const result = await addExpense({ ...formData, amount: parseFloat(formData.amount), account_id: formData.account_id || undefined });
-    if (!result?.error) {
-      toast.success("Daily expenditure recorded: Ledger updated");
-      setFormData({ 
-        description: "", 
-        amount: "", 
-        category: "Food", 
-        date: new Date().toISOString().split("T")[0], 
-        account_id: "",
-      });
-      setShowAddModal(false);
-    } else {
-      toast.error(result.error);
-    }
-    setSubmitting(false);
+    await withLock(async () => {
+      const result = await addExpense({ ...formData, amount: parseFloat(formData.amount), account_id: formData.account_id || undefined });
+      if (!result?.error) {
+        toast.success("Daily expenditure recorded: Ledger updated");
+        setFormData({ 
+          description: "", 
+          amount: "", 
+          category: "Food", 
+          date: new Date().toISOString().split("T")[0], 
+          account_id: "",
+        });
+        setShowAddModal(false);
+      } else {
+        toast.error(result.error);
+      }
+    });
   }
 
   return (

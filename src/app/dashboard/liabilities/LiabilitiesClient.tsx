@@ -5,6 +5,7 @@ import { toast } from "react-hot-toast";
 import { addLiability, updateLiability, deleteLiability } from "./actions";
 import { revertLedgerLog } from "../alternative-assets/actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
+import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { format, parseISO } from "date-fns";
 
 const CATEGORIES = [
@@ -20,7 +21,7 @@ const CATEGORIES = [
 export default function LiabilitiesClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { liabilities, ledgerLogs, accounts }, isValidating } = useFinanceData(initialData);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  const [submitting, withLock] = useSubmitLock();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"loans" | "history">("loans");
 
@@ -51,41 +52,53 @@ export default function LiabilitiesClient({ initialData }: { initialData?: Finan
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSubmitting(true);
-    const { account_id, ...libData } = formData;
-    const payload = {
-      ...libData,
-      total_amount: parseFloat(formData.total_amount),
-      remaining_amount: parseFloat(formData.remaining_amount),
-      interest_rate: formData.interest_rate ? parseFloat(formData.interest_rate) : undefined,
-      monthly_payment: formData.monthly_payment ? parseFloat(formData.monthly_payment) : undefined,
-      due_date: formData.due_date || undefined,
-    };
+    await withLock(async () => {
+      const { account_id, ...libData } = formData;
+      const payload = {
+        ...libData,
+        total_amount: parseFloat(formData.total_amount),
+        remaining_amount: parseFloat(formData.remaining_amount),
+        interest_rate: formData.interest_rate ? parseFloat(formData.interest_rate) : undefined,
+        monthly_payment: formData.monthly_payment ? parseFloat(formData.monthly_payment) : undefined,
+        due_date: formData.due_date || undefined,
+      };
 
-    const res = editingId 
-      ? await updateLiability(editingId, payload)
-      : await addLiability({ ...payload, account_id });
+      const res = editingId 
+        ? await updateLiability(editingId, payload)
+        : await addLiability({ ...payload, account_id });
 
-    if (!res.error) {
-      toast.success(editingId ? "Liability updated" : "Liability recorded");
-      setShowAddModal(false);
-      setEditingId(null);
-      setFormData({ name: "", category: "Personal Loan", total_amount: "", remaining_amount: "", interest_rate: "", monthly_payment: "", due_date: "", notes: "", account_id: "" });
-    } else toast.error(res.error);
-    setSubmitting(false);
+      if (!res.error) {
+        toast.success(editingId ? "Liability updated" : "Liability recorded");
+        setShowAddModal(false);
+        setEditingId(null);
+        setFormData({ name: "", category: "Personal Loan", total_amount: "", remaining_amount: "", interest_rate: "", monthly_payment: "", due_date: "", notes: "", account_id: "" });
+      } else toast.error(res.error);
+    });
   }
 
   async function handleRevert(logId: string) {
     if (!confirm("Revert this action? This will undo the ledger entry and any associated balance changes.")) return;
-    setSubmitting(true);
-    // Note: revertLedgerLog is imported from alternative-assets/actions.ts or a shared location
-    const res = await revertLedgerLog(logId);
-    if (!res.error) {
-      toast.success("Action reverted successfully");
-    } else {
-      toast.error(res.error);
-    }
-    setSubmitting(false);
+    await withLock(async () => {
+      // Note: revertLedgerLog is imported from alternative-assets/actions.ts or a shared location
+      const res = await revertLedgerLog(logId);
+      if (!res.error) {
+        toast.success("Action reverted successfully");
+      } else {
+        toast.error(res.error);
+      }
+    });
+  }
+
+  async function handleDeleteLiability(id: string) {
+    if (!confirm("Permanently purge this debt record?")) return;
+    await withLock(async () => {
+      const res = await deleteLiability(id);
+      if (!res.error) {
+        toast.success("Liability deleted successfully");
+      } else {
+        toast.error(res.error);
+      }
+    });
   }
 
   return (
@@ -217,7 +230,7 @@ export default function LiabilitiesClient({ initialData }: { initialData?: Finan
                           <span className="text-[10px] font-black text-[--text-muted] uppercase tracking-widest opacity-60">Due: {format(parseISO(l.due_date), "MMM d, yyyy")}</span>
                         </div>
                       ) : <div />}
-                      <button onClick={() => { if(confirm("Permanently purge this debt record?")) deleteLiability(l.id); }} className="text-rose-500 hover:text-rose-400 transition-colors">
+                      <button disabled={submitting} onClick={() => handleDeleteLiability(l.id)} className="text-rose-500 hover:text-rose-400 transition-colors disabled:opacity-50">
                          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                       </button>
                     </div>

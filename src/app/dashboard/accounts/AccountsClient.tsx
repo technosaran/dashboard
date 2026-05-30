@@ -12,6 +12,7 @@ import BankLogo from "@/components/bank-logo";
 
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { getChartColour } from "@/lib/chart-colours";
+import { useSubmitLock } from "@/hooks/use-submit-lock";
 
 // Dynamic imports for chart performance
 const PieChart = dynamic(() => import("recharts").then(mod => mod.PieChart), { ssr: false });
@@ -81,7 +82,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
   const [editingId, setEditingId] = useState<string | null>(null);
   const [bankSearch, setBankSearch] = useState("");
   const [bankResults, setBankResults] = useState<Bank[]>([]);
-  const [submitting, setSubmitting] = useState(false);
+  const [submitting, withLock] = useSubmitLock();
   const [showTransferModal, setShowTransferModal] = useState(searchParams.get("action") === "transfer");
   const [transferFromId, setTransferFromId] = useState<string | null>(null);
   const [transferData, setTransferData] = useState({ to_account_id: "", amount: "", note: "" });
@@ -109,23 +110,22 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSubmitting(true);
-    const data = { name: formData.name, type: formData.type, balance: parseFloat(formData.balance), currency: formData.currency, bank_name: formData.bank_name || null };
-    const result = editingId ? await updateAccount(editingId, data) : await createAccount(data);
-    if (!result?.error) {
-      toast.success(editingId ? "Financial node updated successfully" : "New account initialized successfully");
-      resetForm();
-    } else {
-      toast.error(result.error);
-    }
-    setSubmitting(false);
+    await withLock(async () => {
+      const data = { name: formData.name, type: formData.type, balance: parseFloat(formData.balance), currency: formData.currency, bank_name: formData.bank_name || null };
+      const result = editingId ? await updateAccount(editingId, data) : await createAccount(data);
+      if (!result?.error) {
+        toast.success(editingId ? "Financial node updated successfully" : "New account initialized successfully");
+        resetForm();
+      } else {
+        toast.error(result.error);
+      }
+    });
   }
 
   function resetForm() {
     setFormData({ name: "", type: "checking", balance: "0", currency: "INR", bank_name: "" });
     setShowForm(false);
     setEditingId(null);
-    setSubmitting(false);
   }
 
   function startEdit(account: Account) {
@@ -143,26 +143,46 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
 
   async function confirmDelete() {
     if (!deletingAccountId) return;
-    const res = await deleteAccount(deletingAccountId);
-    if (!res?.error) { toast.success("Account permanently removed from portfolio"); } else toast.error(res.error);
-    setShowDeleteConfirm(false);
-    setDeletingAccountId(null);
+    await withLock(async () => {
+      const res = await deleteAccount(deletingAccountId);
+      if (!res?.error) {
+        toast.success("Account permanently removed from portfolio");
+      } else {
+        toast.error(res.error);
+      }
+      setShowDeleteConfirm(false);
+      setDeletingAccountId(null);
+    });
   }
 
   async function handleAdjust(e: React.FormEvent) {
     e.preventDefault();
     if (!adjustingAccountId) return;
-    const amount = parseFloat(adjustData.amount);
-    const finalAmount = adjustData.type === "subtract" ? -amount : amount;
-    const res = await adjustBalance(adjustingAccountId, finalAmount, adjustData.note);
-    if (!res?.error) { toast.success("Balance adjustment finalized"); setShowAdjustModal(false); } else toast.error(res.error);
+    await withLock(async () => {
+      const amount = parseFloat(adjustData.amount);
+      const finalAmount = adjustData.type === "subtract" ? -amount : amount;
+      const res = await adjustBalance(adjustingAccountId, finalAmount, adjustData.note);
+      if (!res?.error) {
+        toast.success("Balance adjustment finalized");
+        setShowAdjustModal(false);
+      } else {
+        toast.error(res.error);
+      }
+    });
   }
 
   async function handleTransfer(e: React.FormEvent) {
     e.preventDefault();
     if (!transferFromId) return;
-    const res = await createTransfer({ from_account_id: transferFromId, to_account_id: transferData.to_account_id, amount: parseFloat(transferData.amount), note: transferData.note || null });
-    if (!res?.error) { toast.success("Inter-account transfer executed successfully"); setShowTransferModal(false); } else toast.error(res.error);
+    await withLock(async () => {
+      const res = await createTransfer({ from_account_id: transferFromId, to_account_id: transferData.to_account_id, amount: parseFloat(transferData.amount), note: transferData.note || null });
+      if (!res?.error) {
+        toast.success("Inter-account transfer executed successfully");
+        setShowTransferModal(false);
+      } else {
+        toast.error(res.error);
+      }
+    });
   }
 
   const balancesByCurrency = useMemo(() => 

@@ -12,6 +12,7 @@ import {
   updateForexTrade
 } from "./actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
+import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { format } from "date-fns";
 import PnLValue from "@/components/pnl-value";
 import type { Tables } from "@/lib/database.types";
@@ -24,7 +25,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
   const [showTradeModal, setShowTradeModal] = useState(false);
   const [showFundsModal, setShowFundsModal] = useState(false);
   const [fundsType, setFundsType] = useState<"DEPOSIT" | "WITHDRAW">("DEPOSIT");
-  const [submitting, setSubmitting] = useState(false);
+  const [submitting, withLock] = useSubmitLock();
 
   // Edit States
   const [showEditAccountModal, setShowEditAccountModal] = useState(false);
@@ -84,14 +85,14 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
 
   async function handleCreateAccount(e: React.FormEvent) {
     e.preventDefault();
-    setSubmitting(true);
-    const res = await createForexAccount(accountForm);
-    if (res.success) {
-      toast.success("Forex account created");
-      setShowAccountModal(false);
-      setAccountForm({ broker_name: "", account_label: "", account_number: "", currency: "USD" });
-    } else toast.error(res.error || "Failed");
-    setSubmitting(false);
+    await withLock(async () => {
+      const res = await createForexAccount(accountForm);
+      if (res.success) {
+        toast.success("Forex account created");
+        setShowAccountModal(false);
+        setAccountForm({ broker_name: "", account_label: "", account_number: "", currency: "USD" });
+      } else toast.error(res.error || "Failed");
+    });
   }
 
   const startEditAccount = (acc: Tables<"forex_accounts">) => {
@@ -113,56 +114,56 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
   async function handleUpdateAccount(e: React.FormEvent) {
     e.preventDefault();
     if (!editingAccount) return;
-    setSubmitting(true);
-    const res = await updateForexAccount(editingAccount.id, {
-      broker_name: editAccountForm.broker_name,
-      account_label: editAccountForm.account_label,
-      account_number: editAccountForm.account_number || undefined,
-      currency: editAccountForm.currency,
-      balance: parseFloat(editAccountForm.balance),
-      total_deposited: parseFloat(editAccountForm.total_deposited),
-      total_withdrawn: parseFloat(editAccountForm.total_withdrawn),
-      total_pnl: parseFloat(editAccountForm.total_pnl),
-      notes: editAccountForm.notes || undefined
+    await withLock(async () => {
+      const res = await updateForexAccount(editingAccount.id, {
+        broker_name: editAccountForm.broker_name,
+        account_label: editAccountForm.account_label,
+        account_number: editAccountForm.account_number || undefined,
+        currency: editAccountForm.currency,
+        balance: parseFloat(editAccountForm.balance),
+        total_deposited: parseFloat(editAccountForm.total_deposited),
+        total_withdrawn: parseFloat(editAccountForm.total_withdrawn),
+        total_pnl: parseFloat(editAccountForm.total_pnl),
+        notes: editAccountForm.notes || undefined
+      });
+      if (res.success) {
+        toast.success("Forex account updated successfully");
+        setShowEditAccountModal(false);
+        setEditingAccount(null);
+      } else {
+        toast.error(res.error || "Failed to update account");
+      }
     });
-    if (res.success) {
-      toast.success("Forex account updated successfully");
-      setShowEditAccountModal(false);
-      setEditingAccount(null);
-    } else {
-      toast.error(res.error || "Failed to update account");
-    }
-    setSubmitting(false);
   }
 
   async function handleLogTrade(e: React.FormEvent) {
     e.preventDefault();
-    setSubmitting(true);
-    const res = await logForexTrade({
-      ...tradeForm,
-      lot_size: parseFloat(tradeForm.lot_size),
-      pnl: parseFloat(tradeForm.pnl),
-      trade_date: tradeForm.trade_date || undefined,
-      entry_price: tradeForm.entry_price ? parseFloat(tradeForm.entry_price) : undefined,
-      exit_price: tradeForm.exit_price ? parseFloat(tradeForm.exit_price) : undefined,
-      notes: tradeForm.notes || undefined,
-    });
-    if (res.success) {
-      toast.success("Trade logged successfully");
-      setShowTradeModal(false);
-      setTradeForm({ 
-        forex_account_id: "", 
-        pair: "EUR/USD", 
-        trade_type: "BUY", 
-        lot_size: "0.01", 
-        pnl: "", 
-        trade_date: new Date().toISOString().split("T")[0],
-        entry_price: "", 
-        exit_price: "", 
-        notes: "" 
+    await withLock(async () => {
+      const res = await logForexTrade({
+        ...tradeForm,
+        lot_size: parseFloat(tradeForm.lot_size),
+        pnl: parseFloat(tradeForm.pnl),
+        trade_date: tradeForm.trade_date || undefined,
+        entry_price: tradeForm.entry_price ? parseFloat(tradeForm.entry_price) : undefined,
+        exit_price: tradeForm.exit_price ? parseFloat(tradeForm.exit_price) : undefined,
+        notes: tradeForm.notes || undefined,
       });
-    } else toast.error(res.error || "Failed");
-    setSubmitting(false);
+      if (res.success) {
+        toast.success("Trade logged successfully");
+        setShowTradeModal(false);
+        setTradeForm({ 
+          forex_account_id: "", 
+          pair: "EUR/USD", 
+          trade_type: "BUY", 
+          lot_size: "0.01", 
+          pnl: "", 
+          trade_date: new Date().toISOString().split("T")[0],
+          entry_price: "", 
+          exit_price: "", 
+          notes: "" 
+        });
+      } else toast.error(res.error || "Failed");
+    });
   }
 
   const startEditTrade = (trade: Tables<"forex_trades">) => {
@@ -184,42 +185,54 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
   async function handleUpdateTrade(e: React.FormEvent) {
     e.preventDefault();
     if (!editingTrade) return;
-    setSubmitting(true);
-    const res = await updateForexTrade(editingTrade.id, {
-      forex_account_id: editTradeForm.forex_account_id,
-      pair: editTradeForm.pair,
-      trade_type: editTradeForm.trade_type,
-      lot_size: parseFloat(editTradeForm.lot_size),
-      pnl: parseFloat(editTradeForm.pnl),
-      trade_date: editTradeForm.trade_date,
-      entry_price: editTradeForm.entry_price ? parseFloat(editTradeForm.entry_price) : undefined,
-      exit_price: editTradeForm.exit_price ? parseFloat(editTradeForm.exit_price) : undefined,
-      notes: editTradeForm.notes || undefined
+    await withLock(async () => {
+      const res = await updateForexTrade(editingTrade.id, {
+        forex_account_id: editTradeForm.forex_account_id,
+        pair: editTradeForm.pair,
+        trade_type: editTradeForm.trade_type,
+        lot_size: parseFloat(editTradeForm.lot_size),
+        pnl: parseFloat(editTradeForm.pnl),
+        trade_date: editTradeForm.trade_date,
+        entry_price: editTradeForm.entry_price ? parseFloat(editTradeForm.entry_price) : undefined,
+        exit_price: editTradeForm.exit_price ? parseFloat(editTradeForm.exit_price) : undefined,
+        notes: editTradeForm.notes || undefined
+      });
+      if (res.success) {
+        toast.success("Trade updated successfully");
+        setShowEditTradeModal(false);
+        setEditingTrade(null);
+      } else {
+        toast.error(res.error || "Failed to update trade");
+      }
     });
-    if (res.success) {
-      toast.success("Trade updated successfully");
-      setShowEditTradeModal(false);
-      setEditingTrade(null);
-    } else {
-      toast.error(res.error || "Failed to update trade");
-    }
-    setSubmitting(false);
   }
 
   async function handleFunds(e: React.FormEvent) {
     e.preventDefault();
-    setSubmitting(true);
-    const action = fundsType === "DEPOSIT" ? forexDeposit : forexWithdraw;
-    const res = await action({
-      ...fundsForm,
-      amount: parseFloat(fundsForm.amount),
+    await withLock(async () => {
+      const action = fundsType === "DEPOSIT" ? forexDeposit : forexWithdraw;
+      const res = await action({
+        ...fundsForm,
+        amount: parseFloat(fundsForm.amount),
+      });
+      if (res.success) {
+        toast.success(`${fundsType} completed`);
+        setShowFundsModal(false);
+        setFundsForm({ forex_account_id: "", bank_account_id: "", amount: "", notes: "" });
+      } else toast.error(res.error || "Failed");
     });
-    if (res.success) {
-      toast.success(`${fundsType} completed`);
-      setShowFundsModal(false);
-      setFundsForm({ forex_account_id: "", bank_account_id: "", amount: "", notes: "" });
-    } else toast.error(res.error || "Failed");
-    setSubmitting(false);
+  }
+
+  async function handleDeleteAccount(id: string) {
+    if (!confirm("Are you sure you want to delete this Forex account?")) return;
+    await withLock(async () => {
+      const res = await deleteForexAccount(id);
+      if (res.success) {
+        toast.success("Forex account deleted successfully");
+      } else {
+        toast.error(res.error || "Failed to delete account");
+      }
+    });
   }
 
   return (
@@ -280,7 +293,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                    <button onClick={() => startEditAccount(acc)} className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center justify-center hover:bg-amber-500 hover:text-white transition-all">
                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                    </button>
-                   <button onClick={() => { if(confirm("Are you sure you want to delete this Forex account?")) deleteForexAccount(acc.id); }} className="w-8 h-8 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-500 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all">
+                   <button disabled={submitting} onClick={() => handleDeleteAccount(acc.id)} className="w-8 h-8 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-500 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all disabled:opacity-50">
                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                    </button>
                 </div>

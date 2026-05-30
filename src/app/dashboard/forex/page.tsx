@@ -19,11 +19,11 @@ export default async function ForexPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: initialData } = await supabase.rpc("get_finance_overview");
+  const { data: initialData } = await supabase.rpc("get_finance_overview_v2");
 
   return (
     <Suspense fallback={null}>
-      <ForexClient />
+      <ForexClient initialData={initialData as FinanceData} />
     </Suspense>
   );
 }

@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { toast } from "react-hot-toast";
 import { createBond, revalueBonds, updateBond } from "./actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
+import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { format, differenceInDays, parseISO } from "date-fns";
 
 const formatNum = (num: number | string) => {
@@ -45,7 +46,7 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"holdings" | "history">("holdings");
-  const [submitting, setSubmitting] = useState(false);
+  const [submitting, withLock] = useSubmitLock();
 
   const [formData, setFormData] = useState({
     bond_name: "",
@@ -117,43 +118,95 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSubmitting(true);
     
-    if (editingId) {
-      const quantity = parseInt(formData.quantity) || 1;
-      const purchasePrice = parseFloat(formData.purchase_price) || 0;
-      const currentPrice = parseFloat(formData.current_price) || 0;
-      const faceValue = parseFloat(formData.face_value) || 0;
-      const totalInvested = purchasePrice * quantity;
-      const currentValue = parseFloat(formData.current_value) || (currentPrice * quantity);
+    await withLock(async () => {
+      if (editingId) {
+        const quantity = parseInt(formData.quantity) || 1;
+        const purchasePrice = parseFloat(formData.purchase_price) || 0;
+        const currentPrice = parseFloat(formData.current_price) || 0;
+        const faceValue = parseFloat(formData.face_value) || 0;
+        const totalInvested = purchasePrice * quantity;
+        const currentValue = parseFloat(formData.current_value) || (currentPrice * quantity);
 
-      const result = await updateBond(editingId, {
-        bond_name: formData.bond_name,
-        isin: formData.isin,
-        issuer: formData.issuer,
-        bond_type: formData.bond_type as "Government" | "Corporate" | "Tax-Free" | "Infrastructure" | "PSU",
-        face_value: faceValue,
-        quantity: quantity,
+        const result = await updateBond(editingId, {
+          bond_name: formData.bond_name,
+          isin: formData.isin,
+          issuer: formData.issuer,
+          bond_type: formData.bond_type as "Government" | "Corporate" | "Tax-Free" | "Infrastructure" | "PSU",
+          face_value: faceValue,
+          quantity: quantity,
+          purchase_price: purchasePrice,
+          current_price: currentPrice,
+          coupon_rate: parseFloat(formData.coupon_rate) || 0,
+          ytm: formData.ytm ? parseFloat(formData.ytm) : undefined,
+          purchase_date: formData.purchase_date,
+          maturity_date: formData.maturity_date,
+          next_interest_date: formData.next_interest_date || undefined,
+          interest_frequency: formData.interest_frequency as "Monthly" | "Quarterly" | "Semi-Annual" | "Annual",
+          credit_rating: formData.credit_rating,
+          platform: formData.platform,
+          notes: formData.notes,
+          accrued_interest: parseFloat(formData.accrued_interest) || 0,
+          total_interest_earned: parseFloat(formData.total_interest_earned) || 0,
+          current_value: currentValue,
+          total_invested: totalInvested
+        });
+        if (!result?.error) {
+          toast.success("Bond holding details updated");
+          setShowAddModal(false);
+          setEditingId(null);
+          setFormData({
+            bond_name: "", isin: "", issuer: "", bond_type: "Government",
+            face_value: "1000", quantity: "1", purchase_price: "", current_price: "",
+            coupon_rate: "", ytm: "", purchase_date: new Date().toISOString().split("T")[0],
+            maturity_date: "", next_interest_date: "", interest_frequency: "Semi-Annual",
+            credit_rating: "", platform: "Wint", demat_account: "", account_id: "", notes: "",
+            accrued_interest: "0", total_interest_earned: "0", current_value: ""
+          });
+        } else {
+          toast.error(result.error);
+        }
+        return;
+      }
+
+      // Client-side validation to prevent NaN/empty values reaching the RPC
+      const purchasePrice = parseFloat(formData.purchase_price);
+      const couponRate = parseFloat(formData.coupon_rate);
+      const faceValue = parseFloat(formData.face_value);
+      const quantity = parseInt(formData.quantity);
+
+      if (!formData.bond_name.trim() || !formData.isin.trim() || !formData.issuer.trim()) {
+        toast.error("Bond name, ISIN, and issuer are required");
+        return;
+      }
+      if (isNaN(purchasePrice) || purchasePrice <= 0) {
+        toast.error("Please enter a valid purchase price");
+        return;
+      }
+      if (isNaN(couponRate) || couponRate < 0) {
+        toast.error("Please enter a valid coupon rate");
+        return;
+      }
+      if (!formData.maturity_date) {
+        toast.error("Maturity date is required");
+        return;
+      }
+
+      const result = await createBond({
+        ...formData,
+        face_value: faceValue || 1000,
+        quantity: quantity || 1,
         purchase_price: purchasePrice,
-        current_price: currentPrice,
-        coupon_rate: parseFloat(formData.coupon_rate) || 0,
+        current_price: parseFloat(formData.current_price) || purchasePrice,
+        coupon_rate: couponRate,
         ytm: formData.ytm ? parseFloat(formData.ytm) : undefined,
-        purchase_date: formData.purchase_date,
-        maturity_date: formData.maturity_date,
-        next_interest_date: formData.next_interest_date || undefined,
+        bond_type: formData.bond_type as "Government" | "Corporate" | "Tax-Free" | "Infrastructure" | "PSU",
         interest_frequency: formData.interest_frequency as "Monthly" | "Quarterly" | "Semi-Annual" | "Annual",
-        credit_rating: formData.credit_rating,
-        platform: formData.platform,
-        notes: formData.notes,
-        accrued_interest: parseFloat(formData.accrued_interest) || 0,
-        total_interest_earned: parseFloat(formData.total_interest_earned) || 0,
-        current_value: currentValue,
-        total_invested: totalInvested
       });
+
       if (!result?.error) {
-        toast.success("Bond holding details updated");
+        toast.success("Bond investment recorded in portfolio");
         setShowAddModal(false);
-        setEditingId(null);
         setFormData({
           bond_name: "", isin: "", issuer: "", bond_type: "Government",
           face_value: "1000", quantity: "1", purchase_price: "", current_price: "",
@@ -165,64 +218,7 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
       } else {
         toast.error(result.error);
       }
-      setSubmitting(false);
-      return;
-    }
-
-    // Client-side validation to prevent NaN/empty values reaching the RPC
-    const purchasePrice = parseFloat(formData.purchase_price);
-    const couponRate = parseFloat(formData.coupon_rate);
-    const faceValue = parseFloat(formData.face_value);
-    const quantity = parseInt(formData.quantity);
-
-    if (!formData.bond_name.trim() || !formData.isin.trim() || !formData.issuer.trim()) {
-      toast.error("Bond name, ISIN, and issuer are required");
-      setSubmitting(false);
-      return;
-    }
-    if (isNaN(purchasePrice) || purchasePrice <= 0) {
-      toast.error("Please enter a valid purchase price");
-      setSubmitting(false);
-      return;
-    }
-    if (isNaN(couponRate) || couponRate < 0) {
-      toast.error("Please enter a valid coupon rate");
-      setSubmitting(false);
-      return;
-    }
-    if (!formData.maturity_date) {
-      toast.error("Maturity date is required");
-      setSubmitting(false);
-      return;
-    }
-
-    const result = await createBond({
-      ...formData,
-      face_value: faceValue || 1000,
-      quantity: quantity || 1,
-      purchase_price: purchasePrice,
-      current_price: parseFloat(formData.current_price) || purchasePrice,
-      coupon_rate: couponRate,
-      ytm: formData.ytm ? parseFloat(formData.ytm) : undefined,
-      bond_type: formData.bond_type as "Government" | "Corporate" | "Tax-Free" | "Infrastructure" | "PSU",
-      interest_frequency: formData.interest_frequency as "Monthly" | "Quarterly" | "Semi-Annual" | "Annual",
     });
-
-    if (!result?.error) {
-      toast.success("Bond investment recorded in portfolio");
-      setShowAddModal(false);
-      setFormData({
-        bond_name: "", isin: "", issuer: "", bond_type: "Government",
-        face_value: "1000", quantity: "1", purchase_price: "", current_price: "",
-        coupon_rate: "", ytm: "", purchase_date: new Date().toISOString().split("T")[0],
-        maturity_date: "", next_interest_date: "", interest_frequency: "Semi-Annual",
-        credit_rating: "", platform: "Wint", demat_account: "", account_id: "", notes: "",
-        accrued_interest: "0", total_interest_earned: "0", current_value: ""
-      });
-    } else {
-      toast.error(result.error);
-    }
-    setSubmitting(false);
   }
 
   const getBondTypeColor = (type: string) => {

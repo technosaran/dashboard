@@ -8,6 +8,7 @@ import { toast } from "react-hot-toast";
 import { addIncome, deleteIncome } from "./actions";
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, subMonths } from "date-fns";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
+import { useSubmitLock } from "@/hooks/use-submit-lock";
 
 import { exportToCSV } from "@/lib/export-csv";
 
@@ -56,7 +57,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
   const { data: { incomes, accounts }, isValidating } = useFinanceData(initialData);
   const searchParams = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(searchParams.get("action") === "new");
-  const [submitting, setSubmitting] = useState(false);
+  const [submitting, withLock] = useSubmitLock();
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 50;
@@ -79,16 +80,16 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
 
   async function confirmDeleteIncome() {
     if (!deletingIncomeId) return;
-    setSubmitting(true);
-    const res = await deleteIncome(deletingIncomeId);
-    if (!res?.error) {
-      toast.success("Income entry reverted successfully");
-    } else {
-      toast.error(res.error);
-    }
-    setShowDeleteConfirm(false);
-    setDeletingIncomeId(null);
-    setSubmitting(false);
+    await withLock(async () => {
+      const res = await deleteIncome(deletingIncomeId);
+      if (!res?.error) {
+        toast.success("Income entry reverted successfully");
+      } else {
+        toast.error(res.error);
+      }
+      setShowDeleteConfirm(false);
+      setDeletingIncomeId(null);
+    });
   }
 
 
@@ -169,20 +170,20 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSubmitting(true);
-    const result = await addIncome({ 
-      ...formData, 
-      amount: parseFloat(formData.amount), 
-      account_id: formData.account_id || undefined 
+    await withLock(async () => {
+      const result = await addIncome({ 
+        ...formData, 
+        amount: parseFloat(formData.amount), 
+        account_id: formData.account_id || undefined 
+      });
+      if (!result?.error) {
+        toast.success("Revenue inflow registered successfully");
+        setFormData({ description: "", amount: "", category: "Salary", date: new Date().toISOString().split("T")[0], account_id: "" });
+        setShowAddModal(false);
+      } else {
+        toast.error(result.error);
+      }
     });
-    if (!result?.error) {
-      toast.success("Revenue inflow registered successfully");
-      setFormData({ description: "", amount: "", category: "Salary", date: new Date().toISOString().split("T")[0], account_id: "" });
-      setShowAddModal(false);
-    } else {
-      toast.error(result.error);
-    }
-    setSubmitting(false);
   }
 
   return (

@@ -21,12 +21,11 @@ export default async function BondsPage() {
 
   if (!user) redirect("/login");
 
-  // Prefetch data on server for instant load (matching all other modules)
-  const { data: initialData } = await supabase.rpc("get_finance_overview");
+  const { data: initialData } = await supabase.rpc("get_finance_overview_v2");
 
   return (
     <Suspense fallback={null}>
-      <BondsClient />
+      <BondsClient initialData={initialData as FinanceData} />
     </Suspense>
   );
 }
