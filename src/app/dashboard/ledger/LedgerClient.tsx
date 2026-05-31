@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, Fragment } from "react";
-import { endOfDay, format, getMonth, getYear, isWithinInterval, startOfDay } from "date-fns";
+import { endOfDay, format, isWithinInterval, startOfDay } from "date-fns";
 import { toast } from "react-hot-toast";
 import { useFinanceData } from "@/hooks/use-finance-data";
 import { revertLog } from "./actions";
@@ -76,8 +76,6 @@ export default function LedgerClient() {
     isLoading,
   } = useFinanceData();
 
-  const [yearFilter, setYearFilter] = useState("All Years");
-  const [monthFilter, setMonthFilter] = useState("All Months");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -85,19 +83,98 @@ export default function LedgerClient() {
   const [revertingId, setRevertingId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [submitting, withLock] = useSubmitLock();
+  
+  // Calendar states
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [currentCalendarMonth, setCurrentCalendarMonth] = useState(new Date().getMonth());
+  const [currentCalendarYear, setCurrentCalendarYear] = useState(new Date().getFullYear());
 
   const itemsPerPage = 50;
 
-  const uniqueYears = useMemo(() => {
-    const years = new Set<string>();
-    logs.forEach((log) => {
-      if (log.created_at) {
-        years.add(getYear(new Date(log.created_at)).toString());
-      }
-    });
+  const calendarDays = useMemo(() => {
+    const days = [];
+    const daysInMonth = new Date(currentCalendarYear, currentCalendarMonth + 1, 0).getDate();
+    const firstDayIndex = new Date(currentCalendarYear, currentCalendarMonth, 1).getDay();
 
-    return ["All Years", ...Array.from(years).sort((a, b) => b.localeCompare(a))];
-  }, [logs]);
+    // Padding for days of previous month
+    for (let i = 0; i < firstDayIndex; i++) {
+      days.push(null);
+    }
+
+    // Days of current month
+    for (let i = 1; i <= daysInMonth; i++) {
+      days.push(new Date(currentCalendarYear, currentCalendarMonth, i));
+    }
+
+    return days;
+  }, [currentCalendarMonth, currentCalendarYear]);
+
+  const handleDayClick = (day: Date) => {
+    const formattedDate = format(day, "yyyy-MM-dd");
+    
+    if (!startDate || (startDate && endDate)) {
+      setStartDate(formattedDate);
+      setEndDate("");
+    } else {
+      if (formattedDate < startDate) {
+        setStartDate(formattedDate);
+        setEndDate("");
+      } else {
+        setEndDate(formattedDate);
+        setShowCalendar(false);
+      }
+    }
+    setCurrentPage(1);
+  };
+
+  const handlePrevMonth = () => {
+    if (currentCalendarMonth === 0) {
+      setCurrentCalendarMonth(11);
+      setCurrentCalendarYear(currentCalendarYear - 1);
+    } else {
+      setCurrentCalendarMonth(currentCalendarMonth - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (currentCalendarMonth === 11) {
+      setCurrentCalendarMonth(0);
+      setCurrentCalendarYear(currentCalendarYear + 1);
+    } else {
+      setCurrentCalendarMonth(currentCalendarMonth + 1);
+    }
+  };
+
+  const selectQuickRange = (range: string) => {
+    const today = new Date();
+    const todayStr = format(today, "yyyy-MM-dd");
+    
+    if (range === "Today") {
+      setStartDate(todayStr);
+      setEndDate(todayStr);
+    } else if (range === "Yesterday") {
+      const yesterday = new Date();
+      yesterday.setDate(today.getDate() - 1);
+      const yesterdayStr = format(yesterday, "yyyy-MM-dd");
+      setStartDate(yesterdayStr);
+      setEndDate(yesterdayStr);
+    } else if (range === "This Month") {
+      const start = new Date(today.getFullYear(), today.getMonth(), 1);
+      const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      setStartDate(format(start, "yyyy-MM-dd"));
+      setEndDate(format(end, "yyyy-MM-dd"));
+    } else if (range === "Last 30 Days") {
+      const start = new Date();
+      start.setDate(today.getDate() - 30);
+      setStartDate(format(start, "yyyy-MM-dd"));
+      setEndDate(todayStr);
+    } else if (range === "All Time") {
+      setStartDate("");
+      setEndDate("");
+    }
+    setCurrentPage(1);
+    setShowCalendar(false);
+  };
 
   const allFilteredLogs = useMemo(() => {
     return logs.filter((log) => {
@@ -124,15 +201,9 @@ export default function LedgerClient() {
         return isWithinInterval(date, { start, end });
       }
 
-      // Year/Month dropdown filters
-      const logYear = getYear(date).toString();
-      const logMonth = MONTHS[getMonth(date) + 1];
-      const matchYear = yearFilter === "All Years" || logYear === yearFilter;
-      const matchMonth = monthFilter === "All Months" || logMonth === monthFilter;
-
-      return matchYear && matchMonth;
+      return true;
     });
-  }, [endDate, logs, monthFilter, startDate, yearFilter, searchQuery]);
+  }, [endDate, logs, startDate, searchQuery]);
 
   const totalFilteredCount = allFilteredLogs.length;
   const totalPages = Math.max(1, Math.ceil(totalFilteredCount / itemsPerPage));
@@ -251,19 +322,19 @@ export default function LedgerClient() {
       </section>
 
       {/* Modern Filter toolbar */}
-      <section className="glass-card-static p-6 rounded-[28px] border border-white/5 space-y-6 bg-gradient-to-r from-white/[0.01] to-transparent hover:border-white/10 transition-all duration-300">
+      <section className="flex flex-col md:flex-row gap-4 items-center px-2">
         {/* Real-time Search input */}
-        <div className="relative w-full group">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg opacity-40 group-focus-within:opacity-100 transition-opacity">🔍</span>
+        <div className="relative flex-1 w-full group">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg opacity-40 group-focus-within:opacity-100 transition-opacity" aria-hidden="true">🔍</span>
           <input
             type="text"
-            placeholder="Clearview Search — Filter logs by description, account name, action type, or exact amount..."
+            placeholder="Search ledger logs by description, account name, action type, or exact amount..."
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
               setCurrentPage(1);
             }}
-            className="w-full bg-white/[0.015] border border-white/[0.05] rounded-2xl pl-12 pr-4 py-4 text-sm font-semibold text-[--text-primary] focus:border-[--accent-primary] focus:bg-white/[0.03] outline-none transition-all placeholder-white/20 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] focus:shadow-[0_0_20px_rgba(99,102,241,0.08)]"
+            className="w-full h-14 bg-white/[0.015] border border-white/[0.05] rounded-2xl pl-12 pr-4 py-4 text-sm font-semibold text-[--text-primary] focus:border-[--accent-primary] focus:bg-white/[0.03] outline-none transition-all placeholder-white/20 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] focus:shadow-[0_0_20px_rgba(99,102,241,0.08)]"
           />
           {searchQuery && (
             <button
@@ -275,83 +346,129 @@ export default function LedgerClient() {
           )}
         </div>
 
-        {/* Dropdowns and Dates Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          <div className="flex flex-col gap-1.5">
-            <span className="text-[9px] font-black uppercase tracking-[0.15em] text-[--text-muted] ml-1">Period Year</span>
-            <select
-              className="input-premium !h-12 !text-xs !bg-white/[0.015] !border-white/[0.05] focus:!border-[--accent-primary] hover:!border-white/10 transition-all rounded-xl cursor-pointer"
-              value={yearFilter}
-              onChange={(e) => {
-                setYearFilter(e.target.value);
-                setCurrentPage(1);
-                resetRange();
-              }}
-            >
-              {uniqueYears.map((year) => (
-                <option key={year} value={year}>{year}</option>
-              ))}
-            </select>
-          </div>
+        {/* Date Range Calendar Picker */}
+        <div className="relative w-full md:w-[320px] shrink-0">
+          <button
+            type="button"
+            onClick={() => setShowCalendar(!showCalendar)}
+            className="w-full h-14 bg-white/[0.015] border border-white/[0.05] hover:border-white/10 focus:border-[--accent-primary] transition-all rounded-2xl px-4 flex items-center justify-between cursor-pointer text-sm font-bold text-[--text-primary]"
+          >
+            <span className="flex items-center gap-2">
+              <span>📅</span>
+              {startDate || endDate ? (
+                <span className="text-white text-xs">
+                  {startDate ? format(new Date(startDate), "MMM d, yyyy") : "—"} to {endDate ? format(new Date(endDate), "MMM d, yyyy") : "—"}
+                </span>
+              ) : (
+                <span className="text-white/40 text-xs">Filter by Date Range...</span>
+              )}
+            </span>
+            {startDate || endDate ? (
+              <span 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  resetRange();
+                  setCurrentPage(1);
+                }}
+                className="text-[9px] font-black uppercase tracking-widest text-rose-400 hover:text-rose-500 bg-rose-500/10 border border-rose-500/20 px-2 py-1 rounded"
+              >
+                Clear
+              </span>
+            ) : (
+              <span className="text-xs opacity-40">▼</span>
+            )}
+          </button>
 
-          <div className="flex flex-col gap-1.5">
-            <span className="text-[9px] font-black uppercase tracking-[0.15em] text-[--text-muted] ml-1">Period Month</span>
-            <select
-              className="input-premium !h-12 !text-xs !bg-white/[0.015] !border-white/[0.05] focus:!border-[--accent-primary] hover:!border-white/10 transition-all rounded-xl cursor-pointer"
-              value={monthFilter}
-              onChange={(e) => {
-                setMonthFilter(e.target.value);
-                setCurrentPage(1);
-                resetRange();
-              }}
-            >
-              {MONTHS.map((month) => (
-                <option key={month} value={month}>{month}</option>
-              ))}
-            </select>
-          </div>
+          {showCalendar && (
+            <>
+              {/* Click outside overlay */}
+              <div className="fixed inset-0 z-40" onClick={() => setShowCalendar(false)} />
+              
+              {/* Calendar Card Dropdown */}
+              <div 
+                className="absolute right-0 top-[calc(100%+0.5rem)] z-50 glass-card-static !p-4 border border-white/10 rounded-2xl w-[320px] shadow-2xl flex flex-col gap-4 animate-scale-in"
+                style={{ background: "rgba(10, 14, 28, 0.95)", backdropFilter: "blur(20px)" }}
+              >
+                {/* Calendar Header */}
+                <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                  <button 
+                    type="button" 
+                    onClick={handlePrevMonth}
+                    className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 transition-colors flex items-center justify-center font-bold text-xs text-white"
+                  >
+                    ◀
+                  </button>
+                  <span className="text-xs font-black uppercase tracking-wider text-white">
+                    {MONTHS[currentCalendarMonth + 1]} {currentCalendarYear}
+                  </span>
+                  <button 
+                    type="button" 
+                    onClick={handleNextMonth}
+                    className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 transition-colors flex items-center justify-center font-bold text-xs text-white"
+                  >
+                    ▶
+                  </button>
+                </div>
 
-          <div className="flex flex-col gap-1.5">
-            <span className="text-[9px] font-black uppercase tracking-[0.15em] text-[--text-muted] ml-1">Start Date</span>
-            <input
-              type="date"
-              className="input-premium !h-12 !text-xs !bg-white/[0.015] !border-white/[0.05] focus:!border-[--accent-primary] hover:!border-white/10 transition-all rounded-xl cursor-pointer"
-              value={startDate}
-              onChange={(e) => {
-                setStartDate(e.target.value);
-                setCurrentPage(1);
-              }}
-            />
-          </div>
+                {/* Day of Week Headers */}
+                <div className="grid grid-cols-7 gap-1 text-center">
+                  {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => (
+                    <span key={d} className="text-[9px] font-black uppercase text-[--text-muted]">{d}</span>
+                  ))}
+                </div>
 
-          <div className="flex flex-col gap-1.5">
-            <span className="text-[9px] font-black uppercase tracking-[0.15em] text-[--text-muted] ml-1">End Date</span>
-            <input
-              type="date"
-              className="input-premium !h-12 !text-xs !bg-white/[0.015] !border-white/[0.05] focus:!border-[--accent-primary] hover:!border-white/10 transition-all rounded-xl cursor-pointer"
-              value={endDate}
-              onChange={(e) => {
-                setEndDate(e.target.value);
-                setCurrentPage(1);
-              }}
-            />
-          </div>
+                {/* Days Grid */}
+                <div className="grid grid-cols-7 gap-1 text-center">
+                  {calendarDays.map((day, idx) => {
+                    if (!day) return <div key={`empty-${idx}`} />;
+                    
+                    const formatted = format(day, "yyyy-MM-dd");
+                    const isSelectedStart = startDate === formatted;
+                    const isSelectedEnd = endDate === formatted;
+                    const isWithinRange = startDate && endDate && formatted >= startDate && formatted <= endDate;
+                    
+                    return (
+                      <button
+                        key={formatted}
+                        type="button"
+                        onClick={() => handleDayClick(day)}
+                        className={`w-9 h-9 rounded-xl text-[11px] font-black transition-all flex items-center justify-center ${
+                          isSelectedStart || isSelectedEnd
+                            ? "bg-[--accent-primary] text-white shadow-lg shadow-[--accent-primary]/25"
+                            : isWithinRange
+                            ? "bg-[--accent-primary]/15 text-[--accent-primary-light] border border-[--accent-primary]/10"
+                            : "hover:bg-white/5 text-white/70 hover:text-white"
+                        }`}
+                      >
+                        {day.getDate()}
+                      </button>
+                    );
+                  })}
+                </div>
 
-          <div className="flex items-end">
-            <button
-              type="button"
-              onClick={() => {
-                setYearFilter("All Years");
-                setMonthFilter("All Months");
-                setSearchQuery("");
-                resetRange();
-                setCurrentPage(1);
-              }}
-              className="h-12 w-full rounded-xl border border-white/5 bg-white/5 px-4 text-xs font-black uppercase tracking-wider text-[--text-secondary] transition hover:bg-white/10 hover:text-white"
-            >
-              Reset Filters
-            </button>
-          </div>
+                {/* Quick Selection Shortcuts */}
+                <div className="border-t border-white/5 pt-3 grid grid-cols-2 gap-2">
+                  {["Today", "Yesterday", "This Month", "Last 30 Days"].map((range) => (
+                    <button
+                      key={range}
+                      type="button"
+                      onClick={() => selectQuickRange(range)}
+                      className="py-2 bg-white/5 hover:bg-white/10 transition-colors text-[9px] font-black uppercase tracking-wider text-white/80 hover:text-white rounded-lg border border-white/5"
+                    >
+                      {range}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => selectQuickRange("All Time")}
+                    className="col-span-2 py-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-400 hover:text-rose-300 text-[9px] font-black uppercase tracking-wider transition-colors rounded-lg"
+                  >
+                    Reset Date Range
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </section>
 
@@ -378,8 +495,6 @@ export default function LedgerClient() {
             </div>
             <button
               onClick={() => {
-                setYearFilter("All Years");
-                setMonthFilter("All Months");
                 setSearchQuery("");
                 resetRange();
                 setCurrentPage(1);
