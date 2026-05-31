@@ -171,9 +171,6 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                 <h2 className="bg-gradient-to-r from-white via-white to-slate-400 bg-clip-text text-[clamp(2.5rem,6vw,4rem)] font-[950] leading-none tracking-[-0.05em] text-transparent drop-shadow-[0_10px_35px_rgba(14,165,233,0.3)] [font-family:'Outfit',sans-serif] whitespace-nowrap overflow-x-auto no-scrollbar">
                   ₹{stats.totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0 })}
                 </h2>
-                <div className="text-lg md:text-xl font-bold text-white/50 tracking-tight [font-family:'Outfit',sans-serif] whitespace-nowrap">
-                  / ${(stats.totalBalance / 83.5).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} USD
-                </div>
               </div>
 
               <div className="mt-8 flex flex-wrap items-center gap-4 sm:gap-6">

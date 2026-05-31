@@ -323,7 +323,6 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
                       <tr key={exp.id} className="hover:bg-white/[0.015] transition-colors group">
                         <td className="px-4 md:px-6 py-5 whitespace-nowrap">
                           <p className="text-[13px] font-bold text-[--text-primary]">{exp.date ? format(parseISO(exp.date), "MMM d, yy") : "—"}</p>
-                          <p className="text-[9px] text-[--text-muted] uppercase font-bold">Verified</p>
                         </td>
                         <td className="px-4 md:px-6 py-4">
                           <div className="flex items-center gap-3">

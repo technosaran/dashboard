@@ -238,7 +238,6 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
                          <div className={`w-1.5 h-1.5 rounded-full ${gain >= 0 ? "bg-success shadow-[0_0_8px_var(--success)]" : "bg-danger shadow-[0_0_8px_var(--danger)]"}`} />
                          <span className="text-[10px] font-bold text-[--text-secondary]">{asset.purchase_date ? format(parseISO(asset.purchase_date), "MMM yyyy") : "Date Unknown"}</span>
                        </div>
-                       <div className="text-[9px] font-black text-[--text-muted] uppercase tracking-widest bg-white/5 px-2 py-0.5 rounded-md border border-white/10 group-hover:border-[--accent-primary]/30 transition-colors">Verified</div>
                     </div>
                   </div>
                 </div>

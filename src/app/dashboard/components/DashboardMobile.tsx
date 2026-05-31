@@ -65,16 +65,13 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, isVal
         
         <p className="mb-2 text-[10px] font-black uppercase tracking-[0.28em] text-[--text-muted]">Portfolio Net Worth</p>
         <div className="flex w-full max-w-full flex-col items-center px-1 sm:px-2">
-          <h2 className="no-scrollbar mb-1 w-full overflow-x-auto overflow-y-hidden bg-gradient-to-b from-white to-white/60 bg-clip-text text-center text-[clamp(1.8rem,10vw,2.8rem)] font-[900] leading-none tracking-tighter text-transparent whitespace-nowrap">
+          <h2 className="no-scrollbar mb-2 w-full overflow-x-auto overflow-y-hidden bg-gradient-to-b from-white to-white/60 bg-clip-text text-center text-[clamp(1.8rem,10vw,2.8rem)] font-[900] leading-none tracking-tighter text-transparent whitespace-nowrap">
              ₹{stats.totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0 })}
           </h2>
-          <p className="mb-2 text-xs font-bold tracking-tight text-white/50 sm:text-sm whitespace-nowrap">
-             ${(stats.totalBalance / 83.5).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} USD
-          </p>
         </div>
         <div className={`mb-4 flex flex-wrap items-center justify-center gap-2 ${stats.totalDayPnL >= 0 ? 'text-emerald-400' : 'text-rose-500'}`}>
           <span className="text-[11px] font-black tabular-nums sm:text-[12px] whitespace-nowrap">
-            {stats.totalDayPnL >= 0 ? '+' : '-'}₹{Math.abs(stats.totalDayPnL).toLocaleString()} ({stats.totalDayPnL >= 0 ? '+' : '-'}${Math.abs(stats.totalDayPnL / 83.5).toLocaleString(undefined, { maximumFractionDigits: 0 })})
+            {stats.totalDayPnL >= 0 ? '+' : '-'}₹{Math.abs(stats.totalDayPnL).toLocaleString()}
           </span>
           <span className="text-[9px] font-black opacity-60 tabular-nums">
             ({stats.totalDayPnL >= 0 ? '+' : ''}{stats.totalDayPnLPercent.toFixed(2)}%)
@@ -84,12 +81,10 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, isVal
         <div className="grid w-full grid-cols-2 gap-2 border-t border-white/5 pt-4 sm:gap-3">
            <div className="flex min-w-0 flex-col items-center overflow-hidden rounded-xl border border-emerald-500/10 bg-emerald-500/5 py-2.5">
             <span className="w-full truncate px-1 text-[clamp(8px,2.6vw,10px)] font-black text-emerald-400">+₹{stats.totalAssets.toLocaleString()}</span>
-             <span className="text-[8px] text-emerald-400/60 font-bold">+${Math.round(stats.totalAssets / 83.5).toLocaleString()}</span>
              <span className="text-[8px] text-[--text-muted] uppercase font-black tracking-widest mt-0.5">Total Assets</span>
            </div>
            <div className="flex min-w-0 flex-col items-center overflow-hidden rounded-xl border border-rose-500/10 bg-rose-500/5 py-2.5">
             <span className="w-full truncate px-1 text-[clamp(8px,2.6vw,10px)] font-black text-rose-500">-₹{stats.debtBalance.toLocaleString()}</span>
-             <span className="text-[8px] text-rose-500/60 font-bold">-${Math.round(stats.debtBalance / 83.5).toLocaleString()}</span>
              <span className="text-[8px] text-[--text-muted] uppercase font-black tracking-widest mt-0.5">Total Debt</span>
            </div>
         </div>

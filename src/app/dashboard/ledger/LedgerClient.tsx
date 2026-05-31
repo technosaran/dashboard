@@ -293,9 +293,8 @@ export default function LedgerClient() {
             <h1 className="text-3xl font-black tracking-tight text-white uppercase italic">Financial Ledger</h1>
             <p className="text-[10px] text-[--text-muted] font-black uppercase tracking-[0.3em] mt-1.5">Consolidated Audit Trail & Balance History</p>
           </div>
-          <div className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-wider text-[--text-muted] mt-1">
+          <div className="inline-flex items-center gap-2 mt-1">
             <span className={`h-2 w-2 rounded-full shadow-lg ${isValidating ? "animate-pulse bg-warning shadow-warning/40" : "bg-success shadow-success/40"}`} />
-            {isValidating ? "Synchronizing" : "Live"}
           </div>
         </div>
       </header>

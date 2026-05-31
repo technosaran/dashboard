@@ -29,6 +29,7 @@ export default async function FamilyPage() {
       .from("recipients")
       .select("*")
       .eq("user_id", user.id)
+      .eq("relationship", "Family")
       .order("name"),
     getAccounts(),
     supabase

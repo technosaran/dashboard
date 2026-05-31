@@ -34,8 +34,6 @@ const QUICK_AMOUNTS = [500, 1000, 2000, 5000, 10000];
 
 const RELATIONSHIP_CONFIG: Record<string, { emoji: string; color: string; soft: string }> = {
   Family: { emoji: "👨‍👩‍👧‍👦", color: "var(--accent-primary-light)", soft: "rgba(162, 155, 254, 0.16)" },
-  Friend: { emoji: "🤝", color: "var(--success)", soft: "rgba(0, 184, 148, 0.16)" },
-  Other: { emoji: "👤", color: "var(--warning)", soft: "rgba(253, 203, 110, 0.16)" },
 };
 
 interface FamilyClientProps {
@@ -58,7 +56,6 @@ export default function FamilyClient({
   const [selectedRecipient, setSelectedRecipient] = useState<Recipient | null>(null);
   const [recentSends, setRecentSends] = useState<SendHistory[]>(initialHistory);
   const [submitting, withLock] = useSubmitLock();
-  const [activeFilter, setActiveFilter] = useState<string>("All");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<"contacts" | "history">("contacts");
@@ -67,7 +64,7 @@ export default function FamilyClient({
 
   // Form states
   const [newName, setNewName] = useState("");
-  const [newRelationship, setNewRelationship] = useState("Family");
+  const [newRelationship] = useState("Family");
 
   const [sendAmount, setSendAmount] = useState("");
   const [sendAccountId, setSendAccountId] = useState(initialAccounts[0]?.id || "");
@@ -82,7 +79,7 @@ export default function FamilyClient({
     }
 
     const [recipRes, accRes, historyRes] = await Promise.all([
-      supabase.from("recipients").select("*").eq("user_id", user.id).order("name"),
+      supabase.from("recipients").select("*").eq("user_id", user.id).eq("relationship", "Family").order("name"),
       getAccounts(),
       supabase
         .from("ledger_logs")
@@ -155,7 +152,6 @@ export default function FamilyClient({
   const startEdit = (person: Recipient) => {
     setEditingRecipient(person);
     setNewName(person.name);
-    setNewRelationship(person.relationship || "Other");
     setIsEditingRecipient(true);
     setIsAddingRecipient(true);
   };
@@ -217,11 +213,12 @@ export default function FamilyClient({
     });
   };
 
-  const getConfig = (rel: string | null) => RELATIONSHIP_CONFIG[rel || "Other"] || RELATIONSHIP_CONFIG.Other;
+  const getConfig = (rel?: string | null) => {
+    if (rel) {}
+    return RELATIONSHIP_CONFIG.Family;
+  };
 
-  const filteredRecipients = activeFilter === "All"
-    ? recipients
-    : recipients.filter(r => r.relationship === activeFilter);
+  const filteredRecipients = recipients;
 
   const totalSent = recentSends.reduce((sum, s) => sum + (s.amount || 0), 0);
 
@@ -231,10 +228,10 @@ export default function FamilyClient({
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-5">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-[--text-primary]">
-            Family & Friends
+            Family Hub
           </h1>
           <p className="text-sm mt-1.5 text-[--text-muted]">
-            Manage your contacts and transfer money quickly.
+            Manage your family contacts and transfer money quickly.
           </p>
         </div>
         <button
@@ -249,43 +246,21 @@ export default function FamilyClient({
       </div>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="bg-white/[0.02] border border-white/[0.05] rounded-2xl p-6 flex flex-col gap-2">
-          <p className="text-xs font-medium text-[--text-muted]">Total Contacts</p>
+          <p className="text-xs font-medium text-[--text-muted]">Registered Family Members</p>
           <p className="text-3xl font-light text-[--text-primary]">{recipients.length}</p>
         </div>
         <div className="bg-white/[0.02] border border-white/[0.05] rounded-2xl p-6 flex flex-col gap-2">
-          <p className="text-xs font-medium text-[--text-muted]">Family Members</p>
-          <p className="text-3xl font-light text-[--text-primary]">
-            {recipients.filter(r => r.relationship === "Family").length}
-          </p>
-        </div>
-        <div className="bg-white/[0.02] border border-white/[0.05] rounded-2xl p-6 flex flex-col gap-2">
-          <p className="text-xs font-medium text-[--text-muted]">Recently Sent</p>
+          <p className="text-xs font-medium text-[--text-muted]">Recently Transferred Capital</p>
           <p className="text-3xl font-light text-success">
             ₹{totalSent.toLocaleString()}
           </p>
         </div>
       </div>
 
-      {/* Filter Tabs & History Toggle */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-          {(["All", "Family", "Friend", "Other"] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveFilter(tab)}
-              className={`px-4 py-2 rounded-xl text-xs font-medium transition-all whitespace-nowrap min-h-[38px] flex items-center justify-center ${
-                activeFilter === tab 
-                  ? "bg-[--accent-primary] text-white shadow-sm" 
-                  : "bg-white/[0.02] text-[--text-muted] hover:bg-white/[0.05] border border-white/[0.05]"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-        
+      {/* View Toggle */}
+      <div className="flex justify-end">
         <div className="flex bg-white/[0.02] border border-white/[0.05] p-1 rounded-xl w-fit">
           <button
             onClick={() => setActiveView("contacts")}
@@ -317,10 +292,10 @@ export default function FamilyClient({
                  <svg className="w-8 h-8 text-white/20" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
               </div>
               <p className="text-xl font-medium text-[--text-primary]">
-                {activeFilter === "All" ? "No contacts yet" : `No ${activeFilter.toLowerCase()} contacts`}
+                No family contacts yet
               </p>
               <p className="text-sm text-[--text-muted] max-w-sm mx-auto">
-                Add a contact to start sending money from this section.
+                Add a family member to start sending money from this section.
               </p>
             </div>
           ) : (
@@ -335,7 +310,7 @@ export default function FamilyClient({
                       </div>
                       <div>
                         <h3 className="text-base font-medium text-[--text-primary]">{person.name}</h3>
-                        <p className="text-xs text-[--text-muted] mt-1">{person.relationship || "Other"}</p>
+                        <p className="text-xs text-[--text-muted] mt-1">Family Member</p>
                       </div>
                     </div>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -420,19 +395,7 @@ export default function FamilyClient({
                   <label className="block text-sm font-medium text-[--text-secondary] mb-2">Full Name</label>
                   <input required value={newName} onChange={(e) => setNewName(e.target.value)} className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-3 text-[--text-primary] focus:border-[--accent-primary] focus:ring-1 focus:ring-[--accent-primary] outline-none transition-all placeholder-white/20" placeholder="e.g. Priya Sharma" />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-[--text-secondary] mb-2">Relationship</label>
-                  <div className="grid grid-cols-3 gap-3">
-                    {(["Family", "Friend", "Other"] as const).map((rel) => {
-                      const isActive = newRelationship === rel;
-                      return (
-                        <button key={rel} type="button" onClick={() => setNewRelationship(rel)} className={`py-2.5 rounded-xl text-sm font-medium transition-all ${isActive ? 'bg-[--accent-primary] text-white' : 'bg-white/[0.03] text-[--text-muted] hover:bg-white/[0.06] border border-white/[0.05]'}`}>
-                          {rel}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
+
                 <div className="pt-4 flex gap-3">
                   <button type="button" onClick={() => { setIsAddingRecipient(false); setIsEditingRecipient(false); setEditingRecipient(null); setNewName(""); }} className="flex-1 py-3.5 bg-white/[0.03] hover:bg-white/[0.08] rounded-xl text-sm font-medium transition-all text-[--text-primary]">
                     Cancel
