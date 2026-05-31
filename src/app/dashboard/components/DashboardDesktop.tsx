@@ -49,6 +49,8 @@ type TrendDataEntry = {
 
 type DashboardStats = {
   totalBalance: number;
+  netWorthINR: number;
+  netWorthUSD: number;
   totalDayPnL: number;
   totalDayPnLPercent: number;
   monthlySpend: number;
@@ -167,10 +169,22 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                   Portfolio Net Worth {isLoading && <span className="text-[10px] lowercase italic">(loading...)</span>}
                 </span>
               </div>
-              <div className="flex items-baseline gap-x-4 gap-y-2 flex-wrap max-w-full">
-                <h2 className="bg-gradient-to-r from-white via-white to-slate-400 bg-clip-text text-[clamp(2.5rem,6vw,4rem)] font-[950] leading-none tracking-[-0.05em] text-transparent drop-shadow-[0_10px_35px_rgba(14,165,233,0.3)] [font-family:'Outfit',sans-serif] whitespace-nowrap overflow-x-auto no-scrollbar">
-                  ₹{stats.totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0 })}
-                </h2>
+              <div className="flex flex-col md:flex-row md:items-center gap-x-12 gap-y-6 flex-wrap max-w-full">
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-black tracking-widest text-[--text-muted] uppercase mb-1">Rupees (INR)</span>
+                  <h2 className="bg-gradient-to-r from-white via-white to-slate-300 bg-clip-text text-[clamp(2.2rem,5vw,3.5rem)] font-[950] leading-none tracking-[-0.04em] text-transparent drop-shadow-[0_10px_35px_rgba(14,165,233,0.3)] [font-family:'Outfit',sans-serif] whitespace-nowrap overflow-x-auto no-scrollbar">
+                    ₹{stats.netWorthINR.toLocaleString(undefined, { minimumFractionDigits: 0 })}
+                  </h2>
+                </div>
+                
+                <div className="w-px h-16 bg-white/10 hidden md:block" />
+                
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-black tracking-widest text-[--text-muted] uppercase mb-1">Dollars (USD)</span>
+                  <h2 className="bg-gradient-to-r from-[--accent-primary-light] via-indigo-200 to-indigo-300 bg-clip-text text-[clamp(2.2rem,5vw,3.5rem)] font-[950] leading-none tracking-[-0.04em] text-transparent drop-shadow-[0_10px_35px_rgba(99,102,241,0.3)] [font-family:'Outfit',sans-serif] whitespace-nowrap overflow-x-auto no-scrollbar">
+                    ${stats.netWorthUSD.toLocaleString(undefined, { minimumFractionDigits: 0 })}
+                  </h2>
+                </div>
               </div>
 
               <div className="mt-8 flex flex-wrap items-center gap-4 sm:gap-6">

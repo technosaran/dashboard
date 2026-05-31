@@ -7,6 +7,8 @@ import type { FinanceData } from "@/hooks/use-finance-data";
 
 type DashboardStats = {
   totalBalance: number;
+  netWorthINR: number;
+  netWorthUSD: number;
   totalDayPnL: number;
   totalDayPnLPercent: number;
   monthlySpend: number;
@@ -64,10 +66,20 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, isVal
         <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-emerald-500/5 blur-3xl rounded-full" />
         
         <p className="mb-2 text-[10px] font-black uppercase tracking-[0.28em] text-[--text-muted]">Portfolio Net Worth</p>
-        <div className="flex w-full max-w-full flex-col items-center px-1 sm:px-2">
-          <h2 className="no-scrollbar mb-2 w-full overflow-x-auto overflow-y-hidden bg-gradient-to-b from-white to-white/60 bg-clip-text text-center text-[clamp(1.8rem,10vw,2.8rem)] font-[900] leading-none tracking-tighter text-transparent whitespace-nowrap">
-             ₹{stats.totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0 })}
-          </h2>
+        <div className="flex flex-col items-center w-full gap-3 my-3">
+          <div className="flex flex-col items-center">
+            <span className="text-[8px] font-black tracking-widest text-[--text-muted] uppercase mb-0.5">Rupees (INR)</span>
+            <h2 className="no-scrollbar w-full overflow-x-auto overflow-y-hidden bg-gradient-to-b from-white to-white/70 bg-clip-text text-center text-[clamp(1.6rem,8vw,2.4rem)] font-[900] leading-none tracking-tighter text-transparent whitespace-nowrap">
+               ₹{stats.netWorthINR.toLocaleString(undefined, { minimumFractionDigits: 0 })}
+            </h2>
+          </div>
+          <div className="h-px w-20 bg-white/10" />
+          <div className="flex flex-col items-center">
+            <span className="text-[8px] font-black tracking-widest text-[--text-muted] uppercase mb-0.5">Dollars (USD)</span>
+            <h2 className="no-scrollbar w-full overflow-x-auto overflow-y-hidden bg-gradient-to-b from-[--accent-primary-light] to-indigo-300 bg-clip-text text-center text-[clamp(1.6rem,8vw,2.4rem)] font-[900] leading-none tracking-tighter text-transparent whitespace-nowrap">
+               ${stats.netWorthUSD.toLocaleString(undefined, { minimumFractionDigits: 0 })}
+            </h2>
+          </div>
         </div>
         <div className={`mb-4 flex flex-wrap items-center justify-center gap-2 ${stats.totalDayPnL >= 0 ? 'text-emerald-400' : 'text-rose-500'}`}>
           <span className="text-[11px] font-black tabular-nums sm:text-[12px] whitespace-nowrap">
