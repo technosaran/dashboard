@@ -2,13 +2,11 @@
 
 import Link from "next/link";
 import { format } from "date-fns";
-import { useMemo, memo, useState } from "react";
+import { useMemo, memo } from "react";
 import Greeting from "@/components/greeting";
 import type { FinanceData } from "@/hooks/use-finance-data";
-import { seedSampleData } from "../settings/actions";
-import { toast } from "react-hot-toast";
+import dynamic from "next/dynamic";
 import { 
-  ResponsiveContainer, 
   Tooltip, 
   PieChart, 
   Pie, 
@@ -20,6 +18,11 @@ import {
   CartesianGrid 
 } from "recharts";
 import type { Tables } from "@/lib/database.types";
+
+const ResponsiveContainer = dynamic(
+  () => import("recharts").then((mod) => mod.ResponsiveContainer),
+  { ssr: false }
+);
 
 import { getChartColour } from "@/lib/chart-colours";
 
@@ -74,27 +77,7 @@ type Props = {
 };
 
 const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goals, isLoading, isValidating }: Props) {
-  const [seeding, setSeeding] = useState(false);
 
-  async function handleSeedDemo() {
-    setSeeding(true);
-    const toastId = toast.loading("Populating rich financial demo data...");
-    try {
-      const res = await seedSampleData();
-      if (!res.error) {
-        toast.success("FinanceOS playground successfully populated!", { id: toastId });
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
-      } else {
-        toast.error(res.error, { id: toastId });
-      }
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to populate sample data.", { id: toastId });
-    } finally {
-      setSeeding(false);
-    }
-  }
 
   // Extract portfolio data computation into a single useMemo
   const portfolioData = useMemo<PieEntry[]>(() => {
@@ -158,20 +141,13 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                 <h2 className="text-xl font-black text-white">Welcome to your FinanceOS Terminal</h2>
               </div>
               <p className="text-xs text-[--text-secondary] leading-relaxed max-w-2xl">
-                Your database is initialized and completely clean. Let's breathe life into your dashboard! You can manually construct your financial system or instantly populate a rich, pre-loaded playground to see allocations, investments, cash flows, and forex logs in action.
+                Your database is initialized and completely clean. Let&apos;s breathe life into your dashboard! Manually construct your financial system to see allocations, investments, cash flows, and forex logs in action.
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto flex-shrink-0">
-              <button 
-                onClick={handleSeedDemo}
-                disabled={seeding}
-                className="btn-primary !h-12 !px-8 text-[11px] font-black uppercase tracking-widest bg-gradient-to-r from-[--accent-primary] to-indigo-500 shadow-[0_4px_20px_rgba(99,102,241,0.25)] hover:shadow-[0_4px_25px_rgba(99,102,241,0.35)] active:scale-[0.98] transition-all rounded-xl"
-              >
-                {seeding ? "Populating Playground..." : "Populate Rich Demo Data"}
-              </button>
               <Link 
                 href="/dashboard/accounts?action=new" 
-                className="btn-secondary !h-12 !px-8 text-[11px] font-black uppercase tracking-widest border border-white/10 hover:bg-white/5 active:scale-[0.98] transition-all rounded-xl flex items-center justify-center no-underline"
+                className="btn-primary !h-12 !px-8 text-[11px] font-black uppercase tracking-widest bg-gradient-to-r from-[--accent-primary] to-indigo-500 shadow-[0_4px_20px_rgba(99,102,241,0.25)] hover:shadow-[0_4px_25px_rgba(99,102,241,0.35)] active:scale-[0.98] transition-all rounded-xl flex items-center justify-center no-underline"
               >
                 Create First Account
               </Link>

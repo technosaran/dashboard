@@ -195,6 +195,13 @@ input, textarea, [contenteditable="true"] {
   user-select: text;
 }
 
+/* Global Mobile Form Zoom Prevention (Prevents annoying iOS Safari auto-zoom on focus) */
+@media (max-width: 768px) {
+  input, select, textarea, [contenteditable="true"] {
+    font-size: 16px !important;
+  }
+}
+
 /* Premium Glass Cards - Financial Dashboard Style */
 .glass-card,
 .glass-card-static {

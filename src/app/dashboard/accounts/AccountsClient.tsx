@@ -244,174 +244,246 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
           <button onClick={() => setShowForm(true)} className="btn-primary h-11 w-full sm:w-auto flex items-center justify-center gap-2"><svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>New Account</button>
         </div>
       </div>
-
       {activeTab === "accounts" ? (
-      <>
-      {/* Portfolio Balance Card with Integrated Chart */}
-      <div className="glass-card-static rich-border relative overflow-hidden p-6 md:p-10">
-        <p className="text-[10px] md:text-xs font-bold uppercase tracking-[0.3em] text-[--text-muted] mb-4">Portfolio Assets</p>
-        
-        {/* Desktop: Side-by-side layout */}
-        <div className="hidden lg:grid lg:grid-cols-[2fr_1fr] lg:gap-6 lg:items-center mb-8">
-          {/* Left: Balance Info - Takes 2/3 of space */}
-          <div>
-            <div className="flex flex-wrap items-baseline gap-3 mb-4">
-              {Object.entries(balancesByCurrency).map(([curr, bal]) => (
-                <h2 key={curr} className="text-2xl md:text-3xl font-black tracking-tight text-[--text-primary]">
-                  {getCurrencySymbol(curr)}{bal.toLocaleString()}
-                </h2>
-              ))}
-            </div>
-            <div className="grid grid-cols-3 gap-3">
-              {chartData.map((item, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-3 rounded-xl px-4 py-3 transition-all"
-                  style={{ background: hexToRgba(item.color, 0.12), border: `1px solid ${hexToRgba(item.color, 0.28)}` }}
-                >
-                  <div className="relative flex-shrink-0">
-                    {accounts[i].bank_name ? <BankLogo bankName={accounts[i].bank_name!} size={32} /> : <CategoryIcon type={accounts[i].type} className="w-8 h-8" />}
-                  </div>
-                  <div className="flex flex-col min-w-0 flex-1 text-left">
-                    <p className="font-bold text-[10px] text-[--text-secondary] truncate">{item.name}</p>
-                    <p className="font-black text-sm" style={{ color: item.color }}>{getCurrencySymbol(item.currency)}{item.value.toLocaleString()}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Right: Chart - Takes 1/3 of space */}
-          <div className="relative h-[280px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie 
-                  data={chartData} 
-                  innerRadius="60%" 
-                  outerRadius="85%" 
-                  paddingAngle={5} 
-                  dataKey="value" 
-                  stroke="none"
-                  animationDuration={1000}
-                >
-                  {chartData.map((e, i) => (<Cell key={`cell-${i}`} fill={e.fill} />))}
-                </Pie>
-                <Tooltip 
-                  contentStyle={{ 
-                    background: 'var(--bg-surface)', 
-                    border: '1px solid var(--border-default)', 
-                    borderRadius: '12px',
-                    boxShadow: 'var(--shadow-lg)',
-                    fontWeight: 700
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
-              <p className="text-[8px] uppercase font-black text-[--text-muted] mb-1 tracking-widest">Net Value</p>
-              <div className="flex flex-col gap-2">
-                {Object.entries(balancesByCurrency).map(([c,b]) => (
-                  <p key={c} className="text-base font-black text-[--text-primary] leading-tight">
-                    {getCurrencySymbol(c)}{b.toLocaleString()}
-                  </p>
-                ))}
+        accounts.length === 0 ? (
+          <div className="glass-card-static rich-border relative overflow-hidden p-8 md:p-16 text-center flex flex-col items-center justify-center min-h-[450px]">
+            {/* Glowing background */}
+            <div className="absolute -top-24 -left-24 w-96 h-96 bg-[--accent-primary]/10 rounded-full blur-[100px] pointer-events-none" />
+            <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-purple-500/10 rounded-full blur-[100px] pointer-events-none" />
+            
+            {/* Dashed Border Container for Icon */}
+            <div className="relative mb-6 p-6 rounded-3xl bg-white/[0.02] border border-white/5 shadow-2xl">
+              <div className="absolute inset-0 rounded-3xl bg-gradient-to-b from-[--accent-primary]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[--accent-primary]/15 to-purple-500/15 border border-[--accent-primary]/25 flex items-center justify-center shadow-[0_0_30px_-5px_rgba(14,165,233,0.3)] animate-pulse">
+                <svg className="w-8 h-8 text-[--accent-primary-light]" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* Mobile/Tablet: Stacked layout */}
-        <div className="lg:hidden">
-          <div className="flex flex-wrap items-baseline justify-center gap-4 md:gap-6 mb-6">
-            {Object.entries(balancesByCurrency).map(([curr, bal]) => (
-              <h2 key={curr} className="text-3xl md:text-5xl font-black tracking-tight text-[--text-primary]">
-                {getCurrencySymbol(curr)}{bal.toLocaleString()}
-              </h2>
-            ))}
-          </div>
+            <h3 className="text-2xl md:text-3xl font-black text-[--text-primary] tracking-tight">Establish Your First Balance Node</h3>
+            <p className="text-sm md:text-base text-[--text-muted] mt-3 max-w-lg mx-auto font-medium leading-relaxed">
+              Build your financial engine. Register a checking, savings, credit, investment, or cash node to start tracking assets, executing transfers, and mapping out your net worth.
+            </p>
 
-          {/* Chart below balance on mobile */}
-          <div className="relative h-[280px] md:h-[350px] mb-6">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie 
-                  data={chartData} 
-                  innerRadius="60%" 
-                  outerRadius="85%" 
-                  paddingAngle={5} 
-                  dataKey="value" 
-                  stroke="none"
-                  animationDuration={1000}
-                >
-                  {chartData.map((e, i) => (<Cell key={`cell-${i}`} fill={e.fill} />))}
-                </Pie>
-                <Tooltip 
-                  contentStyle={{ 
-                    background: 'var(--bg-surface)', 
-                    border: '1px solid var(--border-default)', 
-                    borderRadius: '12px',
-                    boxShadow: 'var(--shadow-lg)',
-                    fontWeight: 700
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
-              <p className="text-[9px] md:text-[11px] uppercase font-black text-[--text-muted] mb-1 tracking-widest">Net Value</p>
-              <div className="flex flex-col gap-2">
-                {Object.entries(balancesByCurrency).map(([c,b]) => (
-                  <p key={c} className="text-lg md:text-2xl font-black text-[--text-primary] leading-tight">
-                    {getCurrencySymbol(c)}{b.toLocaleString()}
-                  </p>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Account list below chart on mobile */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {chartData.map((item, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-3 rounded-2xl px-4 py-3 h-[64px] md:h-[72px] transition-all"
-                style={{ background: hexToRgba(item.color, 0.12), border: `1px solid ${hexToRgba(item.color, 0.28)}` }}
+            <div className="mt-8 flex flex-col sm:flex-row items-center gap-4">
+              <button 
+                onClick={() => {
+                  setFormData({ name: "", type: "checking", balance: "0", currency: "INR", bank_name: "" });
+                  setShowForm(true);
+                }} 
+                className="btn-primary h-13 px-8 rounded-xl font-bold uppercase tracking-wider text-[11px] shadow-xl shadow-[--accent-primary]/20 transition-all flex items-center gap-2"
               >
-                <div className="relative flex-shrink-0">
-                  {accounts[i].bank_name ? <BankLogo bankName={accounts[i].bank_name!} size={40} /> : <CategoryIcon type={accounts[i].type} className="w-10 h-10" />}
-                </div>
-                <div className="flex flex-col min-w-0 flex-1 text-left">
-                  <p className="font-bold text-[11px] md:text-xs text-[--text-secondary] truncate">{item.name}</p>
-                  <p className="font-black text-[13px] md:text-sm" style={{ color: item.color }}>{getCurrencySymbol(item.currency)}{item.value.toLocaleString()}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
+                Create Account
+              </button>
+            </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {accounts.map((a) => {
-          const style = TYPE_STYLES[a.type] || TYPE_STYLES.checking;
-          return (
-            <div key={a.id} className="glass-card rich-border flex flex-col min-h-[260px] p-6 relative overflow-hidden transition-transform hover:-translate-y-1">
-              <div className="absolute top-0 left-0 right-0 h-[3px]" style={{ background: style.gradient }} />
-              <div className="flex justify-between items-start mb-6">
-                 <div><span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider" style={{ background: style.badge, color: style.color, border: `1px solid ${style.badgeBorder}` }}>{a.type}</span><div className="flex items-center gap-3 mt-4">{a.bank_name ? <BankLogo bankName={a.bank_name} size={48} /> : <CategoryIcon type={a.type} className="w-12 h-12" />}<span className="text-base font-bold text-[--text-secondary]">{a.bank_name || a.name}</span></div></div>
-                 {a.name !== "Cash" && <button onClick={() => startEdit(a)} className="p-2 rounded-xl bg-white/5 border border-white/10 text-[--text-muted] hover:text-white transition-all"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>}
+            {/* Quick Initialize suggestions */}
+            <div className="mt-10 pt-8 border-t border-white/5 w-full max-w-md">
+              <p className="text-[10px] font-black text-[--text-muted] uppercase tracking-[0.2em] mb-4">Or Quick-start with a template</p>
+              <div className="flex flex-wrap justify-center gap-2">
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setFormData({ name: "Primary Checking", type: "checking", balance: "5000", currency: "INR", bank_name: "" });
+                    setShowForm(true);
+                  }}
+                  className="px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/[0.08] hover:border-white/20 transition-all text-xs font-bold text-[--text-secondary] flex items-center gap-2"
+                >
+                  🏦 Primary Checking
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setFormData({ name: "High-Yield Savings", type: "savings", balance: "25000", currency: "INR", bank_name: "" });
+                    setShowForm(true);
+                  }}
+                  className="px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/[0.08] hover:border-white/20 transition-all text-xs font-bold text-[--text-secondary] flex items-center gap-2"
+                >
+                  💰 High-Yield Savings
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setFormData({ name: "Physical Cash Wallet", type: "cash", balance: "1000", currency: "INR", bank_name: "" });
+                    setShowForm(true);
+                  }}
+                  className="px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/[0.08] hover:border-white/20 transition-all text-xs font-bold text-[--text-secondary] flex items-center gap-2"
+                >
+                  💵 Cash Wallet
+                </button>
               </div>
-              <div className="mt-auto">
-                <h3 className="text-lg font-bold truncate">{a.name}</h3>
-                <p className="text-2xl font-black mt-1" style={{ color: style.color }}>{getCurrencySymbol(a.currency)} {a.balance.toLocaleString()}</p>
-                <div className="flex gap-2 mt-6">
-                  <button onClick={() => { setAdjustingAccountId(a.id); setShowAdjustModal(true); }} className="flex-1 h-12 rounded-xl font-bold text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-2" style={{ background: style.iconBg, color: style.color, border: `1px solid ${style.badgeBorder}` }}><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>Adjust balance</button>
-                  {a.name !== "Cash" && <button onClick={() => handleDelete(a.id)} className="w-12 h-12 rounded-xl bg-danger/10 border border-danger/20 text-danger hover:bg-danger/20 transition-all flex items-center justify-center"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>}
+            </div>
+          </div>
+        ) : (
+          <>
+          {/* Portfolio Balance Card with Integrated Chart */}
+          <div className="glass-card-static rich-border relative overflow-hidden p-6 md:p-10">
+            <p className="text-[10px] md:text-xs font-bold uppercase tracking-[0.3em] text-[--text-muted] mb-4">Portfolio Assets</p>
+            
+            {/* Desktop: Side-by-side layout */}
+            <div className="hidden lg:grid lg:grid-cols-[2fr_1fr] lg:gap-6 lg:items-center mb-8">
+              {/* Left: Balance Info - Takes 2/3 of space */}
+              <div>
+                <div className="flex flex-wrap items-baseline gap-3 mb-4">
+                  {Object.entries(balancesByCurrency).map(([curr, bal]) => (
+                    <h2 key={curr} className="text-2xl md:text-3xl font-black tracking-tight text-[--text-primary]">
+                      {getCurrencySymbol(curr)}{bal.toLocaleString()}
+                    </h2>
+                  ))}
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  {chartData.map((item, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center gap-3 rounded-xl px-4 py-3 transition-all"
+                      style={{ background: hexToRgba(item.color, 0.12), border: `1px solid ${hexToRgba(item.color, 0.28)}` }}
+                    >
+                      <div className="relative flex-shrink-0">
+                        {accounts[i].bank_name ? <BankLogo bankName={accounts[i].bank_name!} size={32} /> : <CategoryIcon type={accounts[i].type} className="w-8 h-8" />}
+                      </div>
+                      <div className="flex flex-col min-w-0 flex-1 text-left">
+                        <p className="font-bold text-[10px] text-[--text-secondary] truncate">{item.name}</p>
+                        <p className="font-black text-sm" style={{ color: item.color }}>{getCurrencySymbol(item.currency)}{item.value.toLocaleString()}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Right: Chart - Takes 1/3 of space */}
+              <div className="relative h-[280px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie 
+                      data={chartData} 
+                      innerRadius="60%" 
+                      outerRadius="85%" 
+                      paddingAngle={5} 
+                      dataKey="value" 
+                      stroke="none"
+                      animationDuration={1000}
+                    >
+                      {chartData.map((e, i) => (<Cell key={`cell-${i}`} fill={e.fill} />))}
+                    </Pie>
+                    <Tooltip 
+                      contentStyle={{ 
+                        background: 'var(--bg-surface)', 
+                        border: '1px solid var(--border-default)', 
+                        borderRadius: '12px',
+                        boxShadow: 'var(--shadow-lg)',
+                        fontWeight: 700
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
+                  <p className="text-[8px] uppercase font-black text-[--text-muted] mb-1 tracking-widest">Net Value</p>
+                  <div className="flex flex-col gap-2">
+                    {Object.entries(balancesByCurrency).map(([c,b]) => (
+                      <p key={c} className="text-base font-black text-[--text-primary] leading-tight">
+                        {getCurrencySymbol(c)}{b.toLocaleString()}
+                      </p>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
-          );
-        })}
-      </div>
-      </>
+
+            {/* Mobile/Tablet: Stacked layout */}
+            <div className="lg:hidden">
+              <div className="flex flex-wrap items-baseline justify-center gap-4 md:gap-6 mb-6">
+                {Object.entries(balancesByCurrency).map(([curr, bal]) => (
+                  <h2 key={curr} className="text-3xl md:text-5xl font-black tracking-tight text-[--text-primary]">
+                    {getCurrencySymbol(curr)}{bal.toLocaleString()}
+                  </h2>
+                ))}
+              </div>
+
+              {/* Chart below balance on mobile */}
+              <div className="relative h-[280px] md:h-[350px] mb-6">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie 
+                      data={chartData} 
+                      innerRadius="60%" 
+                      outerRadius="85%" 
+                      paddingAngle={5} 
+                      dataKey="value" 
+                      stroke="none"
+                      animationDuration={1000}
+                    >
+                      {chartData.map((e, i) => (<Cell key={`cell-${i}`} fill={e.fill} />))}
+                    </Pie>
+                    <Tooltip 
+                      contentStyle={{ 
+                        background: 'var(--bg-surface)', 
+                        border: '1px solid var(--border-default)', 
+                        borderRadius: '12px',
+                        boxShadow: 'var(--shadow-lg)',
+                        fontWeight: 700
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
+                  <p className="text-[9px] md:text-[11px] uppercase font-black text-[--text-muted] mb-1 tracking-widest">Net Value</p>
+                  <div className="flex flex-col gap-2">
+                    {Object.entries(balancesByCurrency).map(([c,b]) => (
+                      <p key={c} className="text-lg md:text-2xl font-black text-[--text-primary] leading-tight">
+                        {getCurrencySymbol(c)}{b.toLocaleString()}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Account list below chart on mobile */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {chartData.map((item, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center gap-3 rounded-2xl px-4 py-3 h-[64px] md:h-[72px] transition-all"
+                    style={{ background: hexToRgba(item.color, 0.12), border: `1px solid ${hexToRgba(item.color, 0.28)}` }}
+                  >
+                    <div className="relative flex-shrink-0">
+                      {accounts[i].bank_name ? <BankLogo bankName={accounts[i].bank_name!} size={40} /> : <CategoryIcon type={accounts[i].type} className="w-10 h-10" />}
+                    </div>
+                    <div className="flex flex-col min-w-0 flex-1 text-left">
+                      <p className="font-bold text-[11px] md:text-xs text-[--text-secondary] truncate">{item.name}</p>
+                      <p className="font-black text-[13px] md:text-sm" style={{ color: item.color }}>{getCurrencySymbol(item.currency)}{item.value.toLocaleString()}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {accounts.map((a) => {
+              const style = TYPE_STYLES[a.type] || TYPE_STYLES.checking;
+              return (
+                <div key={a.id} className="glass-card rich-border flex flex-col min-h-[260px] p-6 relative overflow-hidden transition-transform hover:-translate-y-1">
+                  <div className="absolute top-0 left-0 right-0 h-[3px]" style={{ background: style.gradient }} />
+                  <div className="flex justify-between items-start mb-6">
+                     <div><span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider" style={{ background: style.badge, color: style.color, border: `1px solid ${style.badgeBorder}` }}>{a.type}</span><div className="flex items-center gap-3 mt-4">{a.bank_name ? <BankLogo bankName={a.bank_name} size={48} /> : <CategoryIcon type={a.type} className="w-12 h-12" />}<span className="text-base font-bold text-[--text-secondary]">{a.bank_name || a.name}</span></div></div>
+                     {a.name !== "Cash" && <button onClick={() => startEdit(a)} className="p-2 rounded-xl bg-white/5 border border-white/10 text-[--text-muted] hover:text-white transition-all"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>}
+                  </div>
+                  <div className="mt-auto">
+                    <h3 className="text-lg font-bold truncate">{a.name}</h3>
+                    <p className="text-2xl font-black mt-1" style={{ color: style.color }}>{getCurrencySymbol(a.currency)} {a.balance.toLocaleString()}</p>
+                    <div className="flex gap-2 mt-6">
+                      <button onClick={() => { setAdjustingAccountId(a.id); setShowAdjustModal(true); }} className="flex-1 h-12 rounded-xl font-bold text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-2" style={{ background: style.iconBg, color: style.color, border: `1px solid ${style.badgeBorder}` }}><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>Adjust balance</button>
+                      {a.name !== "Cash" && <button onClick={() => handleDelete(a.id)} className="w-12 h-12 rounded-xl bg-danger/10 border border-danger/20 text-danger hover:bg-danger/20 transition-all flex items-center justify-center"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          </>
+        )
       ) : (
       <div className="glass-card-static overflow-hidden">
         <div className="p-6 border-b border-white/5 flex items-center justify-between gap-3">

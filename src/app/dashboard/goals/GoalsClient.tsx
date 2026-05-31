@@ -316,10 +316,20 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
 
             </div>
           ) : (
-            <div className="py-24 text-center">
-
-              <h3 className="text-2xl font-black text-white">No Active Objectives</h3>
-              <p className="text-sm text-[--text-muted] mt-2 max-w-xs mx-auto">Initialize a new financial milestone to begin tracking your progress.</p>
+            <div className="glass-card-static relative overflow-hidden p-8 md:p-16 flex flex-col items-center text-center min-h-[400px] justify-center">
+              <div className="absolute -top-24 -left-24 w-96 h-96 bg-amber-500/10 rounded-full blur-[100px] pointer-events-none" />
+              <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-violet-500/10 rounded-full blur-[100px] pointer-events-none" />
+              <div className="relative mb-6 p-6 rounded-3xl bg-white/[0.02] border border-white/5 shadow-2xl">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500/15 to-violet-500/15 border border-amber-500/25 flex items-center justify-center shadow-[0_0_30px_-5px_rgba(245,158,11,0.3)] animate-pulse">
+                  <svg className="w-8 h-8 text-amber-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" /></svg>
+                </div>
+              </div>
+              <h3 className="text-2xl md:text-3xl font-black text-[--text-primary] tracking-tight">No Active Objectives</h3>
+              <p className="text-sm text-[--text-muted] mt-3 max-w-lg mx-auto font-medium leading-relaxed">Initialize a new financial milestone to begin tracking your progress toward your goals.</p>
+              <button onClick={() => setShowAddModal(true)} className="btn-primary h-13 px-8 rounded-xl font-bold uppercase tracking-wider text-[11px] shadow-xl shadow-amber-500/20 !bg-amber-500 hover:!bg-amber-600 mt-8 flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
+                Set Your First Goal
+              </button>
             </div>
           )}
         </div>
@@ -355,10 +365,16 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
               })}
             </div>
           ) : (
-            <div className="py-24 text-center">
-
-              <h3 className="text-2xl font-black text-white">Registry Empty</h3>
-              <p className="text-sm text-[--text-muted] mt-2 max-w-xs mx-auto">No archived breakthroughs detected. Your achievements will manifest here.</p>
+            <div className="glass-card-static relative overflow-hidden p-8 md:p-16 flex flex-col items-center text-center min-h-[400px] justify-center">
+              <div className="absolute -top-24 -left-24 w-96 h-96 bg-purple-500/10 rounded-full blur-[100px] pointer-events-none" />
+              <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-indigo-500/10 rounded-full blur-[100px] pointer-events-none" />
+              <div className="relative mb-6 p-6 rounded-3xl bg-white/[0.02] border border-white/5 shadow-2xl">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500/15 to-indigo-500/15 border border-purple-500/25 flex items-center justify-center shadow-[0_0_30px_-5px_rgba(168,85,247,0.3)] animate-pulse">
+                  <svg className="w-8 h-8 text-purple-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 007.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M18.75 4.236c.982.143 1.954.317 2.916.52A6.003 6.003 0 0016.27 9.728M18.75 4.236V4.5c0 2.108-.966 3.99-2.48 5.228m0 0a6.023 6.023 0 01-2.77.704 6.023 6.023 0 01-2.77-.704" /></svg>
+                </div>
+              </div>
+              <h3 className="text-2xl md:text-3xl font-black text-[--text-primary] tracking-tight">No Completed Goals Yet</h3>
+              <p className="text-sm text-[--text-muted] mt-3 max-w-lg mx-auto font-medium leading-relaxed">Start by tracking active goals and funding them to completion. Your achievements will be celebrated here.</p>
             </div>
           )}
         </div>

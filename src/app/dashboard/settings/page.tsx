@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, startTransition } from "react";
 import { useUser } from "@/context/user-context";
-import { resetUserData, updateSettings, seedSampleData } from "./actions";
+import { resetUserData, updateSettings } from "./actions";
 import { toast } from "react-hot-toast";
 import { useFinanceData } from "@/hooks/use-finance-data";
 import type { FinanceData } from "@/hooks/use-finance-data";
