@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase-server";
 import { revalidatePath } from "next/cache";
 import { revertLedgerLog as revertAction } from "../alternative-assets/actions";
+import { parseToISODate } from "@/lib/utils";
 
 export async function revertLedgerLog(logId: string) {
   return await revertAction(logId);
@@ -80,7 +81,7 @@ export async function createInvestment(data: {
   const cleanSymbol = data.symbol && data.symbol.trim().length > 0 ? data.symbol.trim() : "";
   const cleanNotes = data.notes && data.notes.trim().length > 0 ? data.notes.trim() : null;
 
-  const tradeDate = data.bought_at || new Date().toISOString().split("T")[0];
+  const tradeDate = parseToISODate(data.bought_at);
   const turnover = data.quantity * data.buy_price;
   const totalCost = data.total_cost_with_charges ?? turnover;
   const charges = Math.abs(totalCost - turnover);

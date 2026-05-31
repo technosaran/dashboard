@@ -4,6 +4,7 @@
 import { createClient } from "@/lib/supabase-server";
 import { revalidatePath } from "next/cache";
 import { revertLedgerLog as revertAction } from "../alternative-assets/actions";
+import { parseToISODate } from "@/lib/utils";
 
 export async function revertLedgerLog(logId: string) {
     return await revertAction(logId);
@@ -121,6 +122,8 @@ export async function recordMFInvestment(data: {
         }
     ) => Promise<{ data: MutualFundRpcResult; error: { message: string } | null }>;
 
+    const cleanDate = parseToISODate(data.date);
+
     const { data: res, error } = await rpc("record_mf_investment_v4", {
         p_user_id: user.id,
         p_fund_name: data.fund_name,
@@ -130,7 +133,7 @@ export async function recordMFInvestment(data: {
         p_investment_type: data.investment_type,
         p_category: data.category,
         p_amc_name: data.amc_name,
-        p_date: data.date,
+        p_date: cleanDate,
         p_account_id: cleanAccountId,
         p_stamp_duty: data.stamp_duty,
         p_trade_type: data.trade_type || "buy"

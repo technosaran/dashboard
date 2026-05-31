@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { cn } from '@/lib/utils';
+import { cn, parseToISODate } from '@/lib/utils';
 
 describe('cn (class name merger)', () => {
   it('should merge class names', () => {
@@ -26,3 +26,36 @@ describe('cn (class name merger)', () => {
     expect(cn('')).toBe('');
   });
 });
+
+describe('parseToISODate', () => {
+
+  it('should parse YYYY-MM-DD format directly', () => {
+    expect(parseToISODate('2026-05-31')).toBe('2026-05-31');
+  });
+
+  it('should parse DD-MM-YYYY format and convert to YYYY-MM-DD', () => {
+    expect(parseToISODate('31-05-2026')).toBe('2026-05-31');
+  });
+
+  it('should parse DD/MM/YYYY format and convert to YYYY-MM-DD', () => {
+    expect(parseToISODate('31/05/2026')).toBe('2026-05-31');
+  });
+
+  it('should pad single digits properly', () => {
+    expect(parseToISODate('1/2/2025')).toBe('2025-02-01');
+    expect(parseToISODate('01-02-2025')).toBe('2025-02-01');
+  });
+
+  it('should handle whitespaces', () => {
+    expect(parseToISODate('  31-05-2026  ')).toBe('2026-05-31');
+  });
+
+  it('should fallback to current date for null/undefined/empty string', () => {
+    const today = new Date().toISOString().split('T')[0];
+    expect(parseToISODate(null)).toBe(today);
+    expect(parseToISODate(undefined)).toBe(today);
+    expect(parseToISODate('')).toBe(today);
+    expect(parseToISODate('   ')).toBe(today);
+  });
+});
+

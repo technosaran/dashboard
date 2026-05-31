@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase-server";
 import { revalidatePath } from "next/cache";
+import { parseToISODate } from "@/lib/utils";
 
 export async function addExpense(formData: {
   description: string;
@@ -32,6 +33,8 @@ export async function addExpense(formData: {
       return { error: "Date is required" };
     }
 
+    const cleanDate = parseToISODate(formData.date);
+
     // Call the atomic RPC function
     // This ensures that balance deduction, ledger logging, and expense recording
     // all happen or all fail (transactional integrity).
@@ -40,7 +43,7 @@ export async function addExpense(formData: {
       p_description: formData.description,
       p_amount: formData.amount,
       p_category: formData.category,
-      p_date: formData.date,
+      p_date: cleanDate,
       p_account_id: formData.account_id || undefined
     });
 

@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase-server";
 import { revalidatePath } from "next/cache";
+import { parseToISODate } from "@/lib/utils";
 
 export async function addIncome(formData: {
   description: string;
@@ -32,13 +33,15 @@ export async function addIncome(formData: {
       return { error: "Date is required" };
     }
 
+    const cleanDate = parseToISODate(formData.date);
+
     // Call the atomic record_income RPC function
     const { data, error } = await supabase.rpc("record_income", {
       p_user_id: user.id,
       p_description: formData.description,
       p_amount: formData.amount,
       p_category: formData.category,
-      p_date: formData.date,
+      p_date: cleanDate,
       p_account_id: formData.account_id || undefined
     });
 
