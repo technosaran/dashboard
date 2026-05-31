@@ -209,11 +209,7 @@ export default function LoginPage() {
                   <div className="login-submit-shimmer" />
                 </button>
 
-                <div className="divider-glow" style={{ margin: '1.5rem 0' }} />
-                
-                <p className="login-subtitle" style={{ fontSize: '13px', textAlign: 'center' }}>
-                  New to FinanceOS? <Link href="/signup" style={{ color: 'var(--accent-primary)', textDecoration: 'none', fontWeight: 600 }}>Create an account</Link>
-                </p>
+
               </form>
             </div>
           </div>

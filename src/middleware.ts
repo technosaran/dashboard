@@ -51,7 +51,7 @@ export default async function middleware(request: NextRequest) {
 
   // ── Dynamic CSP with Nonce ───────────────────────────────
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
-  const cspHeader = [
+  const cspHeaderParts = [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : ""}`,
     `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`, // unsafe-inline for Tailwind/CSS-in-JS if needed
@@ -61,8 +61,13 @@ export default async function middleware(request: NextRequest) {
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",
-    "upgrade-insecure-requests"
-  ].join("; ");
+  ];
+
+  if (process.env.NODE_ENV === 'production') {
+    cspHeaderParts.push("upgrade-insecure-requests");
+  }
+
+  const cspHeader = cspHeaderParts.join("; ");
 
   const response = supabaseResponse;
   response.headers.set("Content-Security-Policy", cspHeader);

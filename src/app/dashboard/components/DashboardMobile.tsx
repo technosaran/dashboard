@@ -91,14 +91,14 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, isVal
         </div>
 
         <div className="grid w-full grid-cols-2 gap-2 border-t border-white/5 pt-4 sm:gap-3">
-           <div className="flex min-w-0 flex-col items-center overflow-hidden rounded-xl border border-emerald-500/10 bg-emerald-500/5 py-2.5">
-            <span className="w-full truncate px-1 text-[clamp(8px,2.6vw,10px)] font-black text-emerald-400">+₹{stats.totalAssets.toLocaleString()}</span>
+            <div className="flex min-w-0 flex-col items-center overflow-hidden rounded-xl border border-emerald-500/10 bg-emerald-500/5 py-2.5">
+             <span className="w-full block overflow-x-auto no-scrollbar whitespace-nowrap px-1 text-[clamp(8px,2.6vw,10px)] font-black text-emerald-400 text-center">+₹{stats.totalAssets.toLocaleString()}</span>
              <span className="text-[8px] text-[--text-muted] uppercase font-black tracking-widest mt-0.5">Total Assets</span>
-           </div>
-           <div className="flex min-w-0 flex-col items-center overflow-hidden rounded-xl border border-rose-500/10 bg-rose-500/5 py-2.5">
-            <span className="w-full truncate px-1 text-[clamp(8px,2.6vw,10px)] font-black text-rose-500">-₹{stats.debtBalance.toLocaleString()}</span>
+            </div>
+            <div className="flex min-w-0 flex-col items-center overflow-hidden rounded-xl border border-rose-500/10 bg-rose-500/5 py-2.5">
+             <span className="w-full block overflow-x-auto no-scrollbar whitespace-nowrap px-1 text-[clamp(8px,2.6vw,10px)] font-black text-rose-500 text-center">-₹{stats.debtBalance.toLocaleString()}</span>
              <span className="text-[8px] text-[--text-muted] uppercase font-black tracking-widest mt-0.5">Total Debt</span>
-           </div>
+            </div>
         </div>
 
         <div className="mt-3 flex w-full justify-center gap-4 border-t border-white/5 pt-3">
@@ -186,16 +186,16 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, isVal
          <div className="grid grid-cols-2 gap-2">
            <div className="glass-card-static p-2 flex items-center gap-2 border-blue-500/20 bg-blue-500/5">
              <div className="w-6 h-6 rounded-lg bg-blue-500/20 flex items-center justify-center text-xs flex-shrink-0">📈</div>
-             <div className="flex flex-col min-w-0">
+             <div className="flex flex-col min-w-0 flex-1">
                <span className="text-[9px] font-black uppercase tracking-wider text-white/70">Stocks</span>
-               <span className="text-[11px] font-black tabular-nums text-white truncate">₹{stats.stockBalance.toLocaleString()}</span>
+               <span className="text-[11px] font-black tabular-nums text-white block w-full overflow-x-auto no-scrollbar whitespace-nowrap">₹{stats.stockBalance.toLocaleString()}</span>
              </div>
            </div>
            <div className="glass-card-static p-2 flex items-center gap-2 border-purple-500/20 bg-purple-500/5">
              <div className="w-6 h-6 rounded-lg bg-purple-500/20 flex items-center justify-center text-xs flex-shrink-0">🏦</div>
-             <div className="flex flex-col min-w-0">
+             <div className="flex flex-col min-w-0 flex-1">
                <span className="text-[9px] font-black uppercase tracking-wider text-white/70">Funds</span>
-               <span className="text-[11px] font-black tabular-nums text-white truncate">₹{stats.mfBalance.toLocaleString()}</span>
+               <span className="text-[11px] font-black tabular-nums text-white block w-full overflow-x-auto no-scrollbar whitespace-nowrap">₹{stats.mfBalance.toLocaleString()}</span>
              </div>
            </div>
          </div>
