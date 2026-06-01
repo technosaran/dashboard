@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import type { Tables } from "@/lib/database.types";
 import { toast } from "react-hot-toast";
@@ -12,7 +12,6 @@ import {
   deleteInvestment, 
   revertLedgerLog
 } from "./actions";
-import { calculateZerodhaCharges } from "@/lib/investment-utils";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
 import PnLValue from "@/components/pnl-value";
@@ -55,7 +54,6 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
   const [editingId, setEditingId] = useState<string | null>(null);
   const [submitting, withLock] = useSubmitLock();
 
-  const [showChargesInForm, setShowChargesInForm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("name");
@@ -73,12 +71,6 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
 
   const [activeTab, setActiveTab] = useState<"holdings" | "history">("holdings");
 
-  const zerodhaCharges = useMemo(() => {
-    const qty = parseFloat(formData.quantity) || 0;
-    const price = parseFloat(formData.buy_price) || 0;
-    return calculateZerodhaCharges(qty, price, formData.exchange, formData.trade_type === "buy");
-  }, [formData.quantity, formData.buy_price, formData.exchange, formData.trade_type]);
-
 
 
   async function handleRevert(logId: string | null) {
@@ -92,7 +84,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
 
 
   // --- Computed ---
-  const { totalInvested, totalCurrent, totalPnL, totalPnLPercent, totalDayPnL, totalDayPnLPercent } = useMemo(() => {
+  const { totalInvested, totalCurrent, totalPnL, totalPnLPercent } = useMemo(() => {
     const invested = stocks.reduce((s, i) => s + Number(i.buy_price || 0) * Number(i.quantity || 0), 0);
     const current = stocks.reduce((s, i) => s + Number(i.current_price || 0) * Number(i.quantity || 0), 0);
     const pnl = current - invested;

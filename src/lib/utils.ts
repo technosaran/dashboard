@@ -38,7 +38,7 @@ export function parseToISODate(dateStr: string | null | undefined): string {
   // Try parsing DD-MM-YYYY
   const dmYMatch = trimmed.match(/^(\d{2})-(\d{2})-(\d{4})$/);
   if (dmYMatch) {
-    const [_, day, month, year] = dmYMatch;
+    const [, day, month, year] = dmYMatch;
     return `${year}-${month}-${day}`;
   }
 

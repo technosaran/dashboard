@@ -5,7 +5,7 @@ import { toast } from "react-hot-toast";
 import { upsertBudget } from "./actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
-import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO } from "date-fns";
+import { format, parseISO } from "date-fns";
 
 const CATEGORIES = [
   { label: "Food", icon: "🍔" },
@@ -19,7 +19,7 @@ const CATEGORIES = [
 ];
 
 export default function BudgetClient({ initialData }: { initialData?: FinanceData }) {
-  const { data: { budgets, expenses, incomes }, isValidating } = useFinanceData(initialData);
+  const { data: { budgets, expenses, incomes } } = useFinanceData(initialData);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [submitting, withLock] = useSubmitLock();

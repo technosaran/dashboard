@@ -7,7 +7,7 @@ import { revalidatePath } from "next/cache";
 async function ensureForexAccount(supabase: any, forexAccountId: string, userId: string) {
   try {
     // Check if forex account exists
-    const { data: existing, error: checkErr } = await supabase
+    const { data: existing } = await supabase
       .from("forex_accounts")
       .select("id")
       .eq("id", forexAccountId)

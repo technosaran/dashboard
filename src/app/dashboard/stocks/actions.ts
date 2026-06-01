@@ -196,7 +196,7 @@ export async function deleteInvestment(id: string) {
 
 
 
-export async function getStockDetails(symbol: string, _exchange: string = "NSE"): Promise<{ error: string } | { name: string; price: number; currency: string }> {
+export async function getStockDetails(): Promise<{ error: string } | { name: string; price: number; currency: string }> {
   return { error: "Real-time sync is disabled. Enter current price manually." };
 }
 

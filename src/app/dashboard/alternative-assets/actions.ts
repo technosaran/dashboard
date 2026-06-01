@@ -117,7 +117,7 @@ export async function revertLedgerLog(logId: string) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Unauthorized" };
 
-    const { data, error } = await supabase.rpc("revert_ledger_log", {
+    const { error } = await supabase.rpc("revert_ledger_log", {
       p_log_id: logId,
       p_user_id: user.id
     });

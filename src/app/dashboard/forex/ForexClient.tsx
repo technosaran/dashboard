@@ -14,7 +14,7 @@ import PnLValue from "@/components/pnl-value";
 import type { Tables } from "@/lib/database.types";
 
 export default function ForexClient({ initialData }: { initialData?: FinanceData }) {
-  const { data: { accounts, forexAccounts, forexTrades, forexTransactions }, isValidating } = useFinanceData(initialData);
+  const { data: { accounts, forexAccounts, forexTrades, forexTransactions } } = useFinanceData(initialData);
   
   const [activeTab, setActiveTab] = useState<"trades" | "transactions">("trades");
   const [showTradeModal, setShowTradeModal] = useState(false);

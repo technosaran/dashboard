@@ -1,23 +1,19 @@
 
 "use client";
 
-import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { useState, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 import Image from "next/image";
 
 import type { Tables } from "@/lib/database.types";
-import { recordMFInvestment, refreshNAV, searchMFSchemes, getLiveNAV, revertLedgerLog, updateMFHolding } from "./actions";
+import { recordMFInvestment, revertLedgerLog, updateMFHolding } from "./actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import PnLValue from "@/components/pnl-value";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
 
 type MF = Tables<"mutual_funds"> & { scheme_code?: string | null; fund_symbol?: string | null; pnlPercent?: number };
 
-type MFSchemeSearchResult = {
-  schemeCode: number;
-  schemeName: string;
-};
 
 // Helper function to get official AMC logo (Zerodha Coin Style)
 function getAMCLogoUrl(amcName: string): string {
@@ -80,15 +76,9 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
   const [editingId, setEditingId] = useState<string | null>(null);
   const [submitting, withLock] = useSubmitLock();
   const [activeTab, setActiveTab] = useState<"holdings" | "history">("holdings");
-  const refreshingRef = useRef(false);
-  const mfsRef = useRef<MF[]>(mfs);
-  const isMountedRef = useRef(true);
+
   
   // Search state
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<MFSchemeSearchResult[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [showAllCharges, setShowAllCharges] = useState(false);
   const [charges, setCharges] = useState("0");
 
   const [formData, setFormData] = useState({
@@ -104,11 +94,6 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
     account_id: "",
     trade_type: "buy" as "buy" | "sell"
   });
-
-  const stampDuty = useMemo(() => {
-    const amount = parseFloat(formData.units || "0") * parseFloat(formData.nav || "0");
-    return amount * 0.00005; // 0.005% stamp duty
-  }, [formData.units, formData.nav]);
 
   const finalStampDuty = parseFloat(charges) || 0;
 
@@ -130,15 +115,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
     return { totalInvested, totalCurrentValue, totalPnL, totalPnLPercent, dayPnL, dayPnLPercent };
   }, [mfs]);
 
-  useEffect(() => {
-    mfsRef.current = mfs;
-  }, [mfs]);
 
-  useEffect(() => {
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, []);
 
   async function handleRevert(logId: string | null) {
     if (!logId) return toast.error("No ledger log found for this trade");
@@ -202,7 +179,6 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
         trade_type: "sell"
     });
     setCharges("0");
-    setSearchQuery(mf.fund_name);
     setShowAddModal(true);
   };
 
@@ -222,7 +198,6 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
       trade_type: "buy"
     });
     setCharges("0");
-    setSearchQuery(mf.fund_name);
     setShowAddModal(true);
   };
 
@@ -253,7 +228,6 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
               trade_type: "buy"
             });
             setCharges("0");
-            setSearchQuery("");
           } else {
             toast.error(res.error);
           }
@@ -279,7 +253,6 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
               trade_type: "buy"
             });
             setCharges("0");
-            setSearchQuery("");
           } else {
             toast.error(res.error);
           }
@@ -290,19 +263,6 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
     });
   }
 
-  const handleRefreshAll = useCallback(async () => {
-    if (!isMountedRef.current || refreshingRef.current) return;
-    refreshingRef.current = true;
-    const toastId = toast.loading("Syncing with Market NAVs...");
-    try {
-        await refreshNAV(mfsRef.current.map((mf) => ({ id: mf.id, scheme_code: mf.fund_symbol || mf.scheme_code || "" })));
-        toast.success("Portfolio revalued!", { id: toastId });
-    } catch {
-        toast.error("Sync failed", { id: toastId });
-    } finally {
-      refreshingRef.current = false;
-    }
-  }, []);
 
   return (
     <div className="flex flex-col gap-[var(--section-gap)]">
@@ -328,7 +288,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
               Export
             </button>
             <button 
-              onClick={() => { setEditingId(null); setFormData(prev => ({ ...prev, trade_type: 'buy' })); setCharges("0"); setSearchQuery(""); setShowAddModal(true); }} 
+              onClick={() => { setEditingId(null); setFormData(prev => ({ ...prev, trade_type: 'buy' })); setCharges("0"); setShowAddModal(true); }} 
               className="btn-primary !h-12 md:!h-11 !px-8 w-full md:w-auto text-[13px] md:text-[11px] font-black uppercase tracking-widest shadow-[0_4px_20px_rgba(var(--accent-primary-rgb),0.3)] order-first md:order-last"
             >
                 Record Investment
@@ -549,7 +509,6 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                           trade_type: "buy" 
                         }); 
                         setCharges("0");
-                        setSearchQuery(mf.fund_name); 
                         setShowAddModal(true); 
                       }} 
                       className="flex-1 py-2.5 bg-success/15 hover:bg-success/25 text-success border border-success/20 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all"

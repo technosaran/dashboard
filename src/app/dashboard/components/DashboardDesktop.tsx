@@ -78,7 +78,7 @@ type Props = {
   isValidating: boolean;
 };
 
-const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goals, isLoading, isValidating }: Props) {
+const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goals, isLoading }: Props) {
 
 
   // Extract portfolio data computation into a single useMemo

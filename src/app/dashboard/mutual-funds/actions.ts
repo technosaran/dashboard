@@ -37,34 +37,7 @@ export async function searchMFSchemes(query: string) {
     }
 }
 
-async function fetchWithRetry(url: string, retries = 5): Promise<Response> {
-    let lastError: Error | null = null;
-    for (let i = 0; i < retries; i++) {
-        try {
-            const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
-            const res = await fetch(url, { 
-                headers: { 
-                    "User-Agent": userAgent,
-                    "Accept": "application/json",
-                    "Cache-Control": "no-cache"
-                },
-                cache: "no-store", 
-                next: { revalidate: 0 } 
-            });
-            if (res.ok) return res;
-            if (res.status === 429) {
-                const wait = 1000 * (i + 1) + Math.random() * 500;
-                await new Promise(r => setTimeout(r, wait));
-            }
-        } catch (e) {
-            lastError = e as Error;
-            await new Promise(r => setTimeout(r, 500 * (i + 1)));
-        }
-    }
-    throw lastError || new Error(`Failed to fetch ${url} after ${retries} attempts`);
-}
-
-export async function getLiveNAV(schemeCode: string) {
+export async function getLiveNAV() {
     return null;
 }
 
@@ -146,7 +119,7 @@ export async function recordMFInvestment(data: {
     return res;
 }
 
-export async function refreshNAV(mfs: { id: string, scheme_code: string }[]) {
+export async function refreshNAV() {
     return [];
 }
 
