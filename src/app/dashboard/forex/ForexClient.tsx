@@ -426,8 +426,8 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
               <div>
                 <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Select Account</label>
                 <select required className="input-premium" value={tradeForm.forex_account_id} onChange={e => setTradeForm({...tradeForm, forex_account_id: e.target.value})}>
-                  <option value="">Select Account</option>
-                  {accounts.map(a => <option key={a.id} value={a.id}>{a.name} ({a.currency})</option>)}
+                  <option value="" className="bg-[--bg-surface]">Select Account</option>
+                  {forexAccounts.map(a => <option key={a.id} value={a.id} className="bg-[--bg-surface]">{a.account_label} ({a.currency})</option>)}
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -438,8 +438,8 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                 <div>
                   <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Trade Direction</label>
                   <select className="input-premium" value={tradeForm.trade_type} onChange={e => setTradeForm({...tradeForm, trade_type: e.target.value as "BUY" | "SELL"})}>
-                    <option value="BUY">BUY</option>
-                    <option value="SELL">SELL</option>
+                    <option value="BUY" className="bg-[--bg-surface]">BUY</option>
+                    <option value="SELL" className="bg-[--bg-surface]">SELL</option>
                   </select>
                 </div>
               </div>
@@ -489,8 +489,8 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
               <div>
                 <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Select Account</label>
                 <select required className="input-premium" value={editTradeForm.forex_account_id} onChange={e => setEditTradeForm({...editTradeForm, forex_account_id: e.target.value})}>
-                  <option value="">Select Account</option>
-                  {accounts.map(a => <option key={a.id} value={a.id}>{a.name} ({a.currency})</option>)}
+                  <option value="" className="bg-[--bg-surface]">Select Account</option>
+                  {forexAccounts.map(a => <option key={a.id} value={a.id} className="bg-[--bg-surface]">{a.account_label} ({a.currency})</option>)}
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -501,8 +501,8 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                 <div>
                   <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Trade Direction</label>
                   <select className="input-premium" value={editTradeForm.trade_type} onChange={e => setEditTradeForm({...editTradeForm, trade_type: e.target.value as "BUY" | "SELL"})}>
-                    <option value="BUY">BUY</option>
-                    <option value="SELL">SELL</option>
+                    <option value="BUY" className="bg-[--bg-surface]">BUY</option>
+                    <option value="SELL" className="bg-[--bg-surface]">SELL</option>
                   </select>
                 </div>
               </div>
@@ -546,21 +546,21 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
       {/* Funds Deposit/Withdraw Modal */}
       {showFundsModal && (
         <div className="mobile-dialog-shell fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="mobile-dialog-panel glass-card-static w-full max-w-md p-8 animate-in zoom-in duration-300">
+          <div className="mobile-dialog-panel glass-card-static w-full max-w-md p-8 animate-in zoom-in duration-300 max-h-[90vh] overflow-y-auto custom-scrollbar">
             <h2 className="text-2xl font-black mb-6 text-white">{fundsType === "DEPOSIT" ? "Broker Deposit" : "Broker Withdrawal"}</h2>
             <form onSubmit={handleFunds} className="space-y-4">
               <div>
                 <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Forex Account (Broker)</label>
                 <select required className="input-premium" value={fundsForm.forex_account_id} onChange={e => setFundsForm({...fundsForm, forex_account_id: e.target.value})}>
-                  <option value="">Select Broker Account</option>
-                  {accounts.map(a => <option key={a.id} value={a.id}>{a.name} ({a.currency})</option>)}
+                  <option value="" className="bg-[--bg-surface]">Select Broker Account</option>
+                  {forexAccounts.map(a => <option key={a.id} value={a.id} className="bg-[--bg-surface]">{a.account_label} ({a.currency})</option>)}
                 </select>
               </div>
               <div>
                 <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Funding Account (Bank/Cash)</label>
                 <select required className="input-premium" value={fundsForm.bank_account_id} onChange={e => setFundsForm({...fundsForm, bank_account_id: e.target.value})}>
-                  <option value="">Select Funding Account</option>
-                  {accounts.map(a => <option key={a.id} value={a.id}>{a.name} ({a.currency})</option>)}
+                  <option value="" className="bg-[--bg-surface]">Select Funding Account</option>
+                  {accounts.map(a => <option key={a.id} value={a.id} className="bg-[--bg-surface]">{a.name} ({a.currency})</option>)}
                 </select>
               </div>
               <div>

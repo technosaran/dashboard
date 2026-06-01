@@ -457,7 +457,7 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
 
       {showDeleteConfirm && (
         <div className="mobile-dialog-shell fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-md animate-fade-in">
-          <div className="mobile-dialog-panel glass-card-static w-full max-w-sm p-8 animate-scale-in">
+          <div className="mobile-dialog-panel glass-card-static w-full max-w-sm p-8 animate-scale-in max-h-[90vh] overflow-y-auto custom-scrollbar">
             <div className="flex flex-col items-center text-center gap-4">
               <div className="w-14 h-14 rounded-2xl bg-rose-500/15 border border-rose-500/25 flex items-center justify-center">
                 <svg className="w-7 h-7 text-rose-400" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">

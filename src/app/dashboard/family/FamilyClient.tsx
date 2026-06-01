@@ -378,7 +378,7 @@ export default function FamilyClient({
 
       {isAddingRecipient && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-[#0a0a0a] border border-white/[0.08] rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-scale-in">
+          <div className="bg-[#0a0a0a] border border-white/[0.08] rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-scale-in max-h-[90vh] overflow-y-auto custom-scrollbar">
             <div className="p-6 md:p-8">
               <div className="flex items-center justify-between mb-8">
                 <div>
@@ -412,7 +412,7 @@ export default function FamilyClient({
 
       {isSendingMoney && selectedRecipient && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-[#0a0a0a] border border-white/[0.08] rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-scale-in">
+          <div className="bg-[#0a0a0a] border border-white/[0.08] rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-scale-in max-h-[90vh] overflow-y-auto custom-scrollbar">
             <div className="p-6 md:p-8">
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-4">
@@ -478,7 +478,7 @@ export default function FamilyClient({
 
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-[#0a0a0a] border border-white/[0.08] rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl p-6 md:p-8 text-center animate-scale-in">
+          <div className="bg-[#0a0a0a] border border-white/[0.08] rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl p-6 md:p-8 text-center animate-scale-in max-h-[90vh] overflow-y-auto custom-scrollbar">
             <div className="w-16 h-16 rounded-full bg-danger/10 text-danger mx-auto flex items-center justify-center mb-6">
               <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
             </div>

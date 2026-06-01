@@ -707,7 +707,7 @@ export default function LedgerClient() {
       {/* Confirmation Undo Dialog */}
       {showRevertConfirm && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-          <div className="glass-card-static w-full max-w-md p-8 border-rose-500/20 shadow-[0_0_50px_rgba(244,63,94,0.15)] rounded-[32px] text-center animate-scale-in">
+          <div className="glass-card-static w-full max-w-md p-8 border-rose-500/20 shadow-[0_0_50px_rgba(244,63,94,0.15)] rounded-[32px] text-center animate-scale-in max-h-[90vh] overflow-y-auto custom-scrollbar">
             <div className="w-16 h-16 rounded-full bg-danger/10 text-danger mx-auto flex items-center justify-center mb-6">
               <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />

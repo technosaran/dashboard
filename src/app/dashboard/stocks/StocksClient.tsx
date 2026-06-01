@@ -657,7 +657,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
 
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-           <div className="w-full max-w-xs bg-[--bg-surface] border border-[--border-default] rounded-sm p-6 text-center shadow-2xl">
+           <div className="w-full max-w-xs bg-[--bg-surface] border border-[--border-default] rounded-sm p-6 text-center shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
               <h3 className="text-base font-medium text-[--text-primary] mb-2">Delete holding?</h3>
               <p className="text-[12px] text-[--text-muted] mb-6">This action cannot be undone.</p>
               <div className="flex gap-3">

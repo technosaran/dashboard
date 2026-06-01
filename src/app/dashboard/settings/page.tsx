@@ -382,7 +382,7 @@ export default function SettingsPage() {
           onClick={() => setShowResetModal(false)}
         >
           <div
-            className="glass-card-static p-8 max-w-md w-full animate-fade-in-up"
+            className="glass-card-static p-8 max-w-md w-full animate-fade-in-up max-h-[90vh] overflow-y-auto custom-scrollbar"
             style={{ background: "var(--bg-surface)", border: "1px solid rgba(239, 68, 68, 0.2)" }}
             onClick={(e) => e.stopPropagation()}
           >
