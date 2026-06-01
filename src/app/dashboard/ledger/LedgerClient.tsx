@@ -2,10 +2,7 @@
 
 import { useMemo, useState, Fragment } from "react";
 import { endOfDay, format, isWithinInterval, startOfDay } from "date-fns";
-import { toast } from "react-hot-toast";
 import { useFinanceData } from "@/hooks/use-finance-data";
-import { revertLog } from "./actions";
-import { useSubmitLock } from "@/hooks/use-submit-lock";
 
 type LedgerLog = {
   id: string;
@@ -79,10 +76,7 @@ export default function LedgerClient() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [showRevertConfirm, setShowRevertConfirm] = useState(false);
-  const [revertingId, setRevertingId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [submitting, withLock] = useSubmitLock();
   
   // Calendar states
   const [showCalendar, setShowCalendar] = useState(false);
@@ -510,12 +504,11 @@ export default function LedgerClient() {
               <table className="min-w-full divide-y divide-white/10 table-fixed">
                 <thead className="bg-white/[0.02]">
                   <tr className="border-b border-white/10">
-                    <th scope="col" className="w-[16%] px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Timestamp</th>
+                    <th scope="col" className="w-[18%] px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Timestamp</th>
                     <th scope="col" className="w-[15%] px-4 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Action type</th>
-                    <th scope="col" className="w-[15%] px-4 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Registry Account</th>
-                    <th scope="col" className="w-[30%] px-4 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Audit details</th>
-                    <th scope="col" className="w-[14%] px-4 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Amount Flow</th>
-                    <th scope="col" className="w-[10%] px-6 py-4 text-center text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Reversal</th>
+                    <th scope="col" className="w-[17%] px-4 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Registry Account</th>
+                    <th scope="col" className="w-[35%] px-4 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Audit details</th>
+                    <th scope="col" className="w-[15%] px-4 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Amount Flow</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/10">
@@ -571,25 +564,6 @@ export default function LedgerClient() {
                                 </p>
                               )}
                             </td>
-
-                            {/* Reversal Undo Action */}
-                            <td className="px-6 py-4.5 whitespace-nowrap text-center">
-                              <button
-                                type="button"
-                                disabled={submitting}
-                                onClick={() => {
-                                  setRevertingId(log.id);
-                                  setShowRevertConfirm(true);
-                                }}
-                                className="inline-flex items-center gap-1.5 h-8 px-3 border border-white/10 hover:border-danger/30 bg-white/5 hover:bg-danger/10 text-[10px] font-black uppercase tracking-widest text-[--text-secondary] hover:text-danger rounded-lg transition-all disabled:opacity-30 disabled:pointer-events-none"
-                                title="Undo Transaction"
-                              >
-                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
-                                </svg>
-                                Undo
-                              </button>
-                            </td>
                           </tr>
                         );
                       })}
@@ -644,21 +618,6 @@ export default function LedgerClient() {
                                 </p>
                               )}
                             </div>
-
-                            <button
-                              type="button"
-                              disabled={submitting}
-                              onClick={() => {
-                                setRevertingId(log.id);
-                                setShowRevertConfirm(true);
-                              }}
-                              className="inline-flex items-center gap-1 h-8 px-3 border border-white/10 hover:border-danger/30 bg-white/5 hover:bg-danger/10 text-[9px] font-black uppercase tracking-wider text-[--text-secondary] hover:text-danger rounded-lg transition-all disabled:opacity-30"
-                            >
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
-                              </svg>
-                              Undo
-                            </button>
                           </div>
                         </article>
                       );
@@ -703,57 +662,6 @@ export default function LedgerClient() {
           </div>
         )}
       </section>
-
-      {/* Confirmation Undo Dialog */}
-      {showRevertConfirm && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-          <div className="glass-card-static w-full max-w-md p-8 border-rose-500/20 shadow-[0_0_50px_rgba(244,63,94,0.15)] rounded-[32px] text-center animate-scale-in max-h-[90vh] overflow-y-auto custom-scrollbar">
-            <div className="w-16 h-16 rounded-full bg-danger/10 text-danger mx-auto flex items-center justify-center mb-6">
-              <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-            </div>
-            <h3 className="text-xl font-black text-white mb-2 uppercase italic">Revert Ledger Entry?</h3>
-            <p className="text-sm text-[--text-muted] mb-8 leading-relaxed">
-              This action will completely purge this event log from history, restore account balance to its previous state, and undo any automatic ledger logs.
-            </p>
-
-            <div className="flex gap-3">
-              <button
-                type="button"
-                disabled={submitting}
-                onClick={async () => {
-                  if (!revertingId) return;
-                  await withLock(async () => {
-                    const result = await revertLog(revertingId);
-                    if (result.error) {
-                      toast.error(result.error);
-                    } else {
-                      toast.success("Transaction entry reverted");
-                    }
-                    setShowRevertConfirm(false);
-                    setRevertingId(null);
-                  });
-                }}
-                className="flex-1 py-3.5 bg-danger hover:bg-rose-600 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-rose-500/10 disabled:opacity-50"
-              >
-                {submitting ? "Reverting..." : "Confirm Undo"}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setShowRevertConfirm(false);
-                  setRevertingId(null);
-                }}
-                className="flex-1 py-3.5 border border-white/5 bg-white/5 hover:bg-white/10 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-all"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

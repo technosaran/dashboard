@@ -1,12 +1,12 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 
 import { addIncome, deleteIncome } from "./actions";
-import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, subMonths } from "date-fns";
+import { format, parseISO, subMonths } from "date-fns";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
 
@@ -62,6 +62,9 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 50;
 
+  const [selectedMonth, setSelectedMonth] = useState(() => new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear());
+
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingIncomeId, setDeletingIncomeId] = useState<string | null>(null);
 
@@ -72,6 +75,39 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
     date: new Date().toISOString().split("T")[0],
     account_id: "",
   });
+
+  // Align form default date with the selected month and year
+  useEffect(() => {
+    if (showAddModal) {
+      const t = setTimeout(() => {
+        setFormData(prev => {
+          const today = new Date();
+          const [currYear, currMonth] = prev.date.split("-").map(Number);
+          
+          if (currMonth === selectedMonth && currYear === selectedYear) {
+            return prev;
+          }
+          
+          const yyyy = selectedYear;
+          const mm = String(selectedMonth).padStart(2, '0');
+          
+          if (today.getMonth() + 1 === selectedMonth && today.getFullYear() === selectedYear) {
+            const dd = String(today.getDate()).padStart(2, '0');
+            return { ...prev, date: `${yyyy}-${mm}-${dd}` };
+          } else {
+            return { ...prev, date: `${yyyy}-${mm}-01` };
+          }
+        });
+      }, 0);
+      return () => clearTimeout(t);
+    }
+  }, [selectedMonth, selectedYear, showAddModal]);
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setMounted(true), 0);
+    return () => clearTimeout(t);
+  }, []);
 
   async function handleDeleteIncome(id: string) {
     setDeletingIncomeId(id);
@@ -95,25 +131,28 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
 
 
   const stats = useMemo(() => {
-    const now = new Date();
-    const currentMonth = incomes.filter(i => i.date && isWithinInterval(parseISO(i.date), { start: startOfMonth(now), end: endOfMonth(now) }));
+    const targetDate = new Date(selectedYear, selectedMonth - 1, 1);
+    const currentMonth = incomes.filter(i => {
+      if (!i.date) return false;
+      const d = parseISO(i.date);
+      return d.getMonth() + 1 === selectedMonth && d.getFullYear() === selectedYear;
+    });
     const totalIncome = incomes.reduce((s, i) => s + Number(i.amount), 0);
     const monthlyTotal = currentMonth.reduce((s, i) => s + Number(i.amount), 0);
     
     // YoY comparison - same month last year
-    const lastYearSameMonth = new Date(now.getFullYear() - 1, now.getMonth(), 1);
-    const lastYearIncomes = incomes.filter(i => 
-      i.date && isWithinInterval(parseISO(i.date), { 
-        start: startOfMonth(lastYearSameMonth), 
-        end: endOfMonth(lastYearSameMonth) 
-      })
-    );
+    const lastYearSameMonth = new Date(selectedYear - 1, selectedMonth - 1, 1);
+    const lastYearIncomes = incomes.filter(i => {
+      if (!i.date) return false;
+      const d = parseISO(i.date);
+      return d.getMonth() + 1 === lastYearSameMonth.getMonth() + 1 && d.getFullYear() === lastYearSameMonth.getFullYear();
+    });
     const lastYearTotal = lastYearIncomes.reduce((s, i) => s + Number(i.amount), 0);
     const yoyChange = lastYearTotal > 0 ? ((monthlyTotal - lastYearTotal) / lastYearTotal) * 100 : 0;
     const yoyAbsolute = monthlyTotal - lastYearTotal;
     
     const catMap: Record<string, number> = {};
-    incomes.forEach(i => {
+    currentMonth.forEach(i => {
       catMap[i.category] = (catMap[i.category] || 0) + Number(i.amount);
     });
     const pieData = Object.entries(catMap)
@@ -134,37 +173,43 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
 
     const trendMap: Record<string, number> = {};
     for (let i = 5; i >= 0; i--) {
-      const d = subMonths(now, i);
-      trendMap[format(d, "MMM")] = 0;
+      const d = subMonths(targetDate, i);
+      trendMap[format(d, "MMM yy")] = 0;
     }
     incomes.forEach(i => {
       if (!i.date) return;
-      const m = format(parseISO(i.date), "MMM");
+      const m = format(parseISO(i.date), "MMM yy");
       if (trendMap[m] !== undefined) trendMap[m] += Number(i.amount);
     });
     const trendData = Object.entries(trendMap).map(([name, value]) => ({ name, value }));
 
     return { totalIncome, monthlyTotal, pieData, trendData, yoyChange, yoyAbsolute, lastYearTotal };
-  }, [incomes]);
+  }, [incomes, selectedMonth, selectedYear]);
 
   const filteredIncomes = useMemo(() => {
     const filtered = incomes.filter(i => {
       const matchCat = categoryFilter === "All" || i.category === categoryFilter;
-      return matchCat;
+      if (!matchCat) return false;
+      if (!i.date) return false;
+      const d = parseISO(i.date);
+      return d.getMonth() + 1 === selectedMonth && d.getFullYear() === selectedYear;
     });
     
     // Pagination
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     return filtered.slice(startIndex, endIndex);
-  }, [incomes, categoryFilter, currentPage]);
+  }, [incomes, categoryFilter, currentPage, selectedMonth, selectedYear]);
 
   const totalFilteredCount = useMemo(() => {
     return incomes.filter(i => {
       const matchCat = categoryFilter === "All" || i.category === categoryFilter;
-      return matchCat;
+      if (!matchCat) return false;
+      if (!i.date) return false;
+      const d = parseISO(i.date);
+      return d.getMonth() + 1 === selectedMonth && d.getFullYear() === selectedYear;
     }).length;
-  }, [incomes, categoryFilter]);
+  }, [incomes, categoryFilter, selectedMonth, selectedYear]);
 
   const totalPages = Math.ceil(totalFilteredCount / itemsPerPage);
 
@@ -178,7 +223,14 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
       });
       if (!result?.error) {
         toast.success("Revenue inflow registered successfully");
-        setFormData({ description: "", amount: "", category: "Salary", date: new Date().toISOString().split("T")[0], account_id: "" });
+        const today = new Date();
+        const yyyy = selectedYear;
+        const mm = String(selectedMonth).padStart(2, '0');
+        const defaultDate = (today.getMonth() + 1 === selectedMonth && today.getFullYear() === selectedYear)
+          ? `${yyyy}-${mm}-${String(today.getDate()).padStart(2, '0')}`
+          : `${yyyy}-${mm}-01`;
+
+        setFormData({ description: "", amount: "", category: "Salary", date: defaultDate, account_id: "" });
         setShowAddModal(false);
       } else {
         toast.error(result.error);
@@ -197,6 +249,26 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
           <p className="text-[--text-secondary] text-[13px] md:text-sm mt-1">Monitor your revenue streams and track financial growth.</p>
         </div>
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          <select 
+            className="btn-secondary !h-11 px-4 text-xs font-bold" 
+            value={selectedMonth} 
+            onChange={e => setSelectedMonth(parseInt(e.target.value))}
+          >
+            {Array.from({ length: 12 }, (_, i) => (
+              <option key={i + 1} value={i + 1} className="bg-[--bg-surface]">
+                {format(new Date(2020, i, 1), "MMMM")}
+              </option>
+            ))}
+          </select>
+          <select 
+            className="btn-secondary !h-11 px-4 text-xs font-bold" 
+            value={selectedYear} 
+            onChange={e => setSelectedYear(parseInt(e.target.value))}
+          >
+            {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map(y => (
+              <option key={y} value={y} className="bg-[--bg-surface]">{y}</option>
+            ))}
+          </select>
           <button 
             onClick={() => {
               try {
@@ -534,7 +606,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
                 </div>
                 <div className="space-y-3">
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Transaction Date</label>
-                  <input type="date" required className="input-premium" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} />
+                  <input type="date" required className="input-premium" value={mounted ? formData.date : ""} onChange={e => setFormData({ ...formData, date: e.target.value })} />
                 </div>
                 <div className="space-y-3 col-span-1 md:col-span-2">
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Deposit into Account</label>

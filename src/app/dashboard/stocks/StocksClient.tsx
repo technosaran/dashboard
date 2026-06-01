@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { format } from "date-fns";
 import type { Tables } from "@/lib/database.types";
 import { toast } from "react-hot-toast";
@@ -64,10 +64,15 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
   const [formData, setFormData] = useState({
     name: "", symbol: "", quantity: "", buy_price: "", current_price: "",
     currency: "INR", notes: "", bought_at: new Date().toISOString().split("T")[0],
-    exchange: "NSE" as "NSE" | "BSE",
     deduct_from_account: "",
     trade_type: "buy" as "buy" | "sell"
   });
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setMounted(true), 0);
+    return () => clearTimeout(t);
+  }, []);
 
   const [activeTab, setActiveTab] = useState<"holdings" | "history">("holdings");
 
@@ -127,7 +132,6 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
     setFormData({
       name: "", symbol: "", quantity: "", buy_price: "", current_price: "",
       currency: "INR", notes: "", bought_at: new Date().toISOString().split("T")[0],
-      exchange: "NSE",
       deduct_from_account: "",
       trade_type: "buy"
     });
@@ -137,17 +141,15 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
   }
 
   function startEdit(inv: Stock) {
-    const isBSE = inv.symbol?.endsWith(".BO");
     setFormData({
       name: inv.name, 
-      symbol: (inv.symbol || "").split(".")[0],
+      symbol: inv.symbol || "",
       quantity: inv.quantity.toString(), 
       buy_price: inv.buy_price.toString(),
       current_price: inv.current_price.toString(), 
       currency: inv.currency,
       notes: inv.notes || "", 
       bought_at: inv.bought_at || new Date().toISOString().split("T")[0],
-      exchange: isBSE ? "BSE" : "NSE",
       deduct_from_account: "", 
       trade_type: "buy"
     });
@@ -156,17 +158,15 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
   }
 
   function startSell(inv: Stock) {
-    const isBSE = inv.symbol?.endsWith(".BO");
     setFormData({
       name: inv.name, 
-      symbol: (inv.symbol || "").split(".")[0],
+      symbol: inv.symbol || "",
       quantity: inv.quantity.toString(), 
       buy_price: inv.current_price.toString(), // Default to LTP for sell
       current_price: inv.current_price.toString(), 
       currency: inv.currency,
       notes: "", 
       bought_at: new Date().toISOString().split("T")[0],
-      exchange: isBSE ? "BSE" : "NSE",
       deduct_from_account: "", 
       trade_type: "sell"
     });
@@ -178,8 +178,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
     e.preventDefault();
     await withLock(async () => {
       try {
-        const suffix = formData.exchange === "BSE" ? ".BO" : ".NS";
-        const fullSymbol = formData.symbol ? `${formData.symbol.trim().toUpperCase().split(".")[0]}${suffix}` : undefined;
+        const fullSymbol = formData.symbol ? formData.symbol.trim().toUpperCase() : undefined;
 
         const qty = parseFloat(formData.quantity);
         const price = parseFloat(formData.buy_price);
@@ -425,7 +424,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                            <div className="text-right overflow-hidden"><p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-1">Current Value</p><p className="text-[13px] font-black truncate">₹{formatNum(currentVal)}</p></div>
                         </div>
                        <div className="flex gap-2">
-                          <button onClick={() => { setEditingId(null); setFormData({ symbol: inv.symbol || "", name: inv.name, quantity: "", buy_price: inv.current_price.toString(), current_price: inv.current_price.toString(), exchange: inv.symbol?.endsWith(".BO") ? "BSE" : "NSE", trade_type: "buy", deduct_from_account: "", currency: "INR", notes: "", bought_at: new Date().toISOString().split("T")[0] }); setShowForm(true); }} className="flex-1 py-3 bg-success/20 hover:bg-success/30 text-success border border-success/30 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-success/5">Buy</button>
+                          <button onClick={() => { setEditingId(null); setFormData({ symbol: inv.symbol || "", name: inv.name, quantity: "", buy_price: inv.current_price.toString(), current_price: inv.current_price.toString(), trade_type: "buy", deduct_from_account: "", currency: "INR", notes: "", bought_at: new Date().toISOString().split("T")[0] }); setShowForm(true); }} className="flex-1 py-3 bg-success/20 hover:bg-success/30 text-success border border-success/30 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-success/5">Buy</button>
                           <button onClick={() => startSell(inv)} className="flex-1 py-3 bg-danger/20 hover:bg-danger/30 text-danger border border-danger/30 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-danger/5">Sell</button>
                           <button onClick={() => startEdit(inv)} className="w-12 py-3 bg-white/10 hover:bg-white/20 text-white border border-white/20 text-[10px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center transition-all shadow-lg">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
@@ -510,34 +509,15 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="relative">
-                  <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[10px] text-[--text-muted] uppercase tracking-widest font-bold z-10">Symbol</label>
-                  <input
-                    required value={formData.symbol}
-                    onChange={e => setFormData({ ...formData, symbol: e.target.value.toUpperCase() })}
-                    className="w-full h-12 px-4 bg-transparent border border-[--border-default] rounded-md text-[13px] text-[--text-primary] focus:border-[--accent-primary] outline-none font-bold uppercase placeholder:text-[--text-disabled]"
-                    placeholder="SBIN"
-                    autoComplete="off"
-                  />
-                </div>
-
-                <div className="flex gap-1 p-1 bg-[--bg-base] rounded-md border border-[--border-default]">
-                   <button
-                     type="button"
-                     onClick={() => setFormData({ ...formData, exchange: "NSE" })}
-                     className={`flex-1 h-10 text-[10px] font-bold rounded-md transition-all ${formData.exchange === "NSE" ? "bg-[--accent-primary] text-white shadow-lg" : "text-[--text-muted] hover:text-[--text-primary]"}`}
-                   >
-                     NSE
-                   </button>
-                   <button
-                     type="button"
-                     onClick={() => setFormData({ ...formData, exchange: "BSE" })}
-                     className={`flex-1 h-10 text-[10px] font-bold rounded-md transition-all ${formData.exchange === "BSE" ? "bg-[--accent-primary] text-white shadow-lg" : "text-[--text-muted] hover:text-[--text-primary]"}`}
-                   >
-                     BSE
-                   </button>
-                </div>
+              <div className="relative">
+                <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[10px] text-[--text-muted] uppercase tracking-widest font-bold z-10">Symbol</label>
+                <input
+                  required value={formData.symbol}
+                  onChange={e => setFormData({ ...formData, symbol: e.target.value.toUpperCase() })}
+                  className="w-full h-12 px-4 bg-transparent border border-[--border-default] rounded-md text-[13px] text-[--text-primary] focus:border-[--accent-primary] outline-none font-bold uppercase placeholder:text-[--text-disabled]"
+                  placeholder="e.g. SBIN, RELIANCE, AAPL"
+                  autoComplete="off"
+                />
               </div>
 
               <div className="relative">
@@ -615,7 +595,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                   <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[10px] text-[--text-muted] uppercase tracking-widest font-bold z-10">Transaction Date</label>
                   <input
                     required type="date"
-                    value={formData.bought_at}
+                    value={mounted ? formData.bought_at : ""}
                     onChange={e => setFormData({ ...formData, bought_at: e.target.value })}
                     className="w-full h-12 px-4 bg-transparent border border-[--border-default] rounded-md text-[13px] text-[--text-primary] outline-none focus:border-[--accent-primary] font-bold"
                   />

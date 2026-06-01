@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import { format, endOfMonth, startOfMonth, parseISO, subMonths } from "date-fns";
+import { format, parseISO, subMonths } from "date-fns";
 import { useFinanceData } from "@/hooks/use-finance-data";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import type { FinanceData } from "@/hooks/use-finance-data";
@@ -111,8 +111,8 @@ export default function DashboardClient({ initialData }: { initialData?: Finance
     const netWorthUSD = cashBalanceUSD + stockBalanceUSD;
     
     const now = new Date();
-    const startOfCurrMonth = startOfMonth(now).getTime();
-    const endOfCurrMonth = endOfMonth(now).getTime();
+    const currentMonthNum = now.getMonth();
+    const currentYearNum = now.getFullYear();
     
     let monthlySpend = 0;
     let monthlyIncome = 0;
@@ -123,7 +123,7 @@ export default function DashboardClient({ initialData }: { initialData?: Finance
     const trendMap: Record<string, TrendMapEntry> = {};
     for (let i = 5; i >= 0; i--) {
       const d = subMonths(now, i);
-      const m = format(d, "MMM");
+      const m = format(d, "MMM yy");
       trendMap[m] = { name: m, income: 0, expense: 0 };
     }
 
@@ -133,12 +133,11 @@ export default function DashboardClient({ initialData }: { initialData?: Finance
       if (!t.date) continue;
       
       const tDate = parseISO(t.date);
-      const tTime = tDate.getTime();
       const tAmount = Number(t.amount);
       const tType = t.type;
       
-      // Monthly Stats & Category Map
-      if (tTime >= startOfCurrMonth && tTime <= endOfCurrMonth) {
+      // Monthly Stats & Category Map - Timezone-robust direct comparison
+      if (tDate.getMonth() === currentMonthNum && tDate.getFullYear() === currentYearNum) {
         if (tType === "income") monthlyIncome += tAmount;
         if (tType === "expense") {
           monthlySpend += tAmount;
@@ -158,7 +157,7 @@ export default function DashboardClient({ initialData }: { initialData?: Finance
       }
 
       // 6-Month Trend
-      const m = format(tDate, "MMM");
+      const m = format(tDate, "MMM yy");
       if (trendMap[m]) {
         if (tType === "income") trendMap[m].income += tAmount;
         if (tType === "expense") trendMap[m].expense += tAmount;

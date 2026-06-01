@@ -1,12 +1,11 @@
 "use client";
-
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 
 import { addExpense, deleteExpense } from "./actions";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
-import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, subMonths } from "date-fns";
+import { format, parseISO, subMonths } from "date-fns";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 
 import dynamic from "next/dynamic";
@@ -43,6 +42,9 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 50;
 
+  const [selectedMonth, setSelectedMonth] = useState(() => new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear());
+
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingExpenseId, setDeletingExpenseId] = useState<string | null>(null);
 
@@ -53,6 +55,39 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
     date: new Date().toISOString().split("T")[0],
     account_id: "",
   });
+
+  // Align form default date with the selected month and year
+  useEffect(() => {
+    if (showAddModal) {
+      const t = setTimeout(() => {
+        setFormData(prev => {
+          const today = new Date();
+          const [currYear, currMonth] = prev.date.split("-").map(Number);
+          
+          if (currMonth === selectedMonth && currYear === selectedYear) {
+            return prev;
+          }
+          
+          const yyyy = selectedYear;
+          const mm = String(selectedMonth).padStart(2, '0');
+          
+          if (today.getMonth() + 1 === selectedMonth && today.getFullYear() === selectedYear) {
+            const dd = String(today.getDate()).padStart(2, '0');
+            return { ...prev, date: `${yyyy}-${mm}-${dd}` };
+          } else {
+            return { ...prev, date: `${yyyy}-${mm}-01` };
+          }
+        });
+      }, 0);
+      return () => clearTimeout(t);
+    }
+  }, [selectedMonth, selectedYear, showAddModal]);
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setMounted(true), 0);
+    return () => clearTimeout(t);
+  }, []);
 
   async function handleDeleteExpense(id: string) {
     setDeletingExpenseId(id);
@@ -77,58 +112,68 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
 
 
   const stats = useMemo(() => {
-    const now = new Date();
-    const currentMonth = expenses.filter(e => e.date && isWithinInterval(parseISO(e.date), { start: startOfMonth(now), end: endOfMonth(now) }));
+    const targetDate = new Date(selectedYear, selectedMonth - 1, 1);
+    const currentMonth = expenses.filter(e => {
+      if (!e.date) return false;
+      const d = parseISO(e.date);
+      return d.getMonth() + 1 === selectedMonth && d.getFullYear() === selectedYear;
+    });
     const totalSpent = expenses.reduce((s, e) => s + Number(e.amount), 0);
     const monthlyTotal = currentMonth.reduce((s, e) => s + Number(e.amount), 0);
     
     const catMap: Record<string, number> = {};
-    expenses.forEach(e => {
+    currentMonth.forEach(e => {
       catMap[e.category] = (catMap[e.category] || 0) + Number(e.amount);
     });
     const pieData = Object.entries(catMap).map(([name, value]) => {
       const color = CATEGORIES.find(c => c.label === name)?.color || getCategoryColour("Others");
       return {
-      name, 
-      value,
-      fill: color,
-      color: color,
-    };
+        name, 
+        value,
+        fill: color,
+        color: color,
+      };
     }).sort((a, b) => b.value - a.value);
 
     const trendMap: Record<string, number> = {};
     for (let i = 5; i >= 0; i--) {
-      const d = subMonths(now, i);
-      trendMap[format(d, "MMM")] = 0;
+      const d = subMonths(targetDate, i);
+      trendMap[format(d, "MMM yy")] = 0;
     }
     expenses.forEach(e => {
       if (!e.date) return;
-      const m = format(parseISO(e.date), "MMM");
+      const m = format(parseISO(e.date), "MMM yy");
       if (trendMap[m] !== undefined) trendMap[m] += Number(e.amount);
     });
     const trendData = Object.entries(trendMap).map(([name, value]) => ({ name, value }));
 
     return { totalSpent, monthlyTotal, pieData, trendData };
-  }, [expenses]);
+  }, [expenses, selectedMonth, selectedYear]);
 
   const filteredExpenses = useMemo(() => {
     const filtered = expenses.filter(e => {
       const matchCat = categoryFilter === "All" || e.category === categoryFilter;
-      return matchCat;
+      if (!matchCat) return false;
+      if (!e.date) return false;
+      const d = parseISO(e.date);
+      return d.getMonth() + 1 === selectedMonth && d.getFullYear() === selectedYear;
     });
     
     // Pagination
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     return filtered.slice(startIndex, endIndex);
-  }, [expenses, categoryFilter, currentPage]);
+  }, [expenses, categoryFilter, currentPage, selectedMonth, selectedYear]);
 
   const totalFilteredCount = useMemo(() => {
     return expenses.filter(e => {
       const matchCat = categoryFilter === "All" || e.category === categoryFilter;
-      return matchCat;
+      if (!matchCat) return false;
+      if (!e.date) return false;
+      const d = parseISO(e.date);
+      return d.getMonth() + 1 === selectedMonth && d.getFullYear() === selectedYear;
     }).length;
-  }, [expenses, categoryFilter]);
+  }, [expenses, categoryFilter, selectedMonth, selectedYear]);
 
   const totalPages = Math.ceil(totalFilteredCount / itemsPerPage);
 
@@ -138,11 +183,18 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
       const result = await addExpense({ ...formData, amount: parseFloat(formData.amount), account_id: formData.account_id || undefined });
       if (!result?.error) {
         toast.success("Daily expenditure recorded: Ledger updated");
+        const today = new Date();
+        const yyyy = selectedYear;
+        const mm = String(selectedMonth).padStart(2, '0');
+        const defaultDate = (today.getMonth() + 1 === selectedMonth && today.getFullYear() === selectedYear)
+          ? `${yyyy}-${mm}-${String(today.getDate()).padStart(2, '0')}`
+          : `${yyyy}-${mm}-01`;
+
         setFormData({ 
           description: "", 
           amount: "", 
           category: "Food", 
-          date: new Date().toISOString().split("T")[0], 
+          date: defaultDate, 
           account_id: "",
         });
         setShowAddModal(false);
@@ -163,6 +215,26 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
           <p className="text-[--text-secondary] text-[13px] md:text-sm mt-1">Monitor your spending and analyze your monthly expenditure.</p>
         </div>
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          <select 
+            className="btn-secondary !h-11 px-4 text-xs font-bold" 
+            value={selectedMonth} 
+            onChange={e => setSelectedMonth(parseInt(e.target.value))}
+          >
+            {Array.from({ length: 12 }, (_, i) => (
+              <option key={i + 1} value={i + 1} className="bg-[--bg-surface]">
+                {format(new Date(2020, i, 1), "MMMM")}
+              </option>
+            ))}
+          </select>
+          <select 
+            className="btn-secondary !h-11 px-4 text-xs font-bold" 
+            value={selectedYear} 
+            onChange={e => setSelectedYear(parseInt(e.target.value))}
+          >
+            {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map(y => (
+              <option key={y} value={y} className="bg-[--bg-surface]">{y}</option>
+            ))}
+          </select>
           <button 
             onClick={() => {
               try {
@@ -481,7 +553,7 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
         <div className="mobile-dialog-shell fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-xl animate-fade-in shadow-2xl">
           <div className="mobile-dialog-panel glass-card-static w-full max-w-2xl p-6 md:p-10 border-[--accent-primary]/20 shadow-[0_0_100px_rgba(108,92,231,0.15)] max-h-[95vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-8 md:mb-10"><div className="flex items-center gap-3"><div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-[--accent-primary]/20 flex items-center justify-center"><svg className="w-5 h-5 md:w-6 md:h-6 text-[--accent-primary]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></div><h2 className="text-xl md:text-3xl font-black">Record Transaction</h2></div><button onClick={() => setShowAddModal(false)} className="text-[--text-muted] hover:text-[--text-primary] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"><svg className="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg></button></div>
-            <form onSubmit={handleSubmit} className="space-y-8"><div className="grid grid-cols-1 md:grid-cols-2 gap-8"><div className="space-y-3"><label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">{["Food", "Shopping", "Entertainment"].includes(formData.category) ? "Merchant / Store" : "Description / Purpose"}</label><input type="text" required className="input-premium" placeholder="e.g. Starbucks" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} /></div><div className="space-y-3"><label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Debit Amount</label><input type="number" required className="input-premium" placeholder="0.00" value={formData.amount} onChange={e => setFormData({ ...formData, amount: e.target.value })} /></div><div className="space-y-3"><label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Expenditure Sector</label><select className="input-premium" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })}>{CATEGORIES.map(c => <option key={c.label} value={c.label}>{c.label}</option>)}</select></div><div className="space-y-3"><label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Transaction Date</label><input type="date" required className="input-premium" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} /></div><div className="space-y-3"><label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Deduct from Account</label><select className="input-premium" value={formData.account_id} onChange={e => setFormData({ ...formData, account_id: e.target.value })}><option value="">No Deduction (Track only)</option>{accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}</select></div></div><button type="submit" disabled={submitting} className="btn-primary w-full shadow-xl shadow-[--accent-primary]/20 mt-4">{submitting ? "Processing..." : "Confirm Record"}</button>
+            <form onSubmit={handleSubmit} className="space-y-8"><div className="grid grid-cols-1 md:grid-cols-2 gap-8"><div className="space-y-3"><label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">{["Food", "Shopping", "Entertainment"].includes(formData.category) ? "Merchant / Store" : "Description / Purpose"}</label><input type="text" required className="input-premium" placeholder="e.g. Starbucks" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} /></div><div className="space-y-3"><label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Debit Amount</label><input type="number" required className="input-premium" placeholder="0.00" value={formData.amount} onChange={e => setFormData({ ...formData, amount: e.target.value })} /></div><div className="space-y-3"><label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Expenditure Sector</label><select className="input-premium" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })}>{CATEGORIES.map(c => <option key={c.label} value={c.label}>{c.label}</option>)}</select></div><div className="space-y-3"><label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Transaction Date</label><input type="date" required className="input-premium" value={mounted ? formData.date : ""} onChange={e => setFormData({ ...formData, date: e.target.value })} /></div><div className="space-y-3"><label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Deduct from Account</label><select className="input-premium" value={formData.account_id} onChange={e => setFormData({ ...formData, account_id: e.target.value })}><option value="">No Deduction (Track only)</option>{accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}</select></div></div><button type="submit" disabled={submitting} className="btn-primary w-full shadow-xl shadow-[--accent-primary]/20 mt-4">{submitting ? "Processing..." : "Confirm Record"}</button>
             </form>
           </div>
         </div>
