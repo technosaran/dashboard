@@ -199,14 +199,22 @@ export default function LedgerClient() {
     });
   }, [endDate, logs, startDate, searchQuery]);
 
+  const sortedFilteredLogs = useMemo(() => {
+    return [...allFilteredLogs].sort((a, b) => {
+      const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return bTime - aTime;
+    });
+  }, [allFilteredLogs]);
+
   const totalFilteredCount = allFilteredLogs.length;
   const totalPages = Math.max(1, Math.ceil(totalFilteredCount / itemsPerPage));
   const activePage = Math.min(currentPage, totalPages);
 
   const filteredLogs = useMemo(() => {
     const startIndex = (activePage - 1) * itemsPerPage;
-    return allFilteredLogs.slice(startIndex, startIndex + itemsPerPage);
-  }, [allFilteredLogs, activePage]);
+    return sortedFilteredLogs.slice(startIndex, startIndex + itemsPerPage);
+  }, [sortedFilteredLogs, activePage]);
 
   const groupedLogs = useMemo(() => {
     const groups: Record<string, LedgerLog[]> = {};
@@ -331,7 +339,11 @@ export default function LedgerClient() {
           />
           {searchQuery && (
             <button
-              onClick={() => setSearchQuery("")}
+              type="button"
+              onClick={() => {
+                setSearchQuery("");
+                setCurrentPage(1);
+              }}
               className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-black uppercase tracking-wider text-[--text-muted] hover:text-white transition-colors"
             >
               Clear
@@ -357,16 +369,18 @@ export default function LedgerClient() {
               )}
             </span>
             {startDate || endDate ? (
-              <span 
+              <button
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   resetRange();
                   setCurrentPage(1);
                 }}
+                aria-label="Clear selected date range"
                 className="text-[9px] font-black uppercase tracking-widest text-rose-400 hover:text-rose-500 bg-rose-500/10 border border-rose-500/20 px-2 py-1 rounded"
               >
                 Clear
-              </span>
+              </button>
             ) : (
               <span className="text-xs opacity-40">▼</span>
             )}
