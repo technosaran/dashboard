@@ -5,7 +5,10 @@ import {
   forexDeposit, 
   forexWithdraw, 
   logForexTrade,
-  updateForexTrade
+  updateForexTrade,
+  createForexAccount,
+  updateForexAccount,
+  deleteForexAccount
 } from "./actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
@@ -16,11 +19,33 @@ import type { Tables } from "@/lib/database.types";
 export default function ForexClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { accounts, forexAccounts, forexTrades, forexTransactions } } = useFinanceData(initialData);
   
-  const [activeTab, setActiveTab] = useState<"trades" | "transactions">("trades");
+  const [activeTab, setActiveTab] = useState<"trades" | "transactions" | "accounts">("trades");
   const [showTradeModal, setShowTradeModal] = useState(false);
   const [showFundsModal, setShowFundsModal] = useState(false);
+  const [showAccountModal, setShowAccountModal] = useState(false);
+  const [showEditAccountModal, setShowEditAccountModal] = useState(false);
+  const [showDeleteAccountConfirm, setShowDeleteAccountConfirm] = useState(false);
+  const [editingAccount, setEditingAccount] = useState<Tables<"forex_accounts"> | null>(null);
+  const [deletingAccountId, setDeletingAccountId] = useState<string | null>(null);
   const [fundsType, setFundsType] = useState<"DEPOSIT" | "WITHDRAW">("DEPOSIT");
   const [submitting, withLock] = useSubmitLock();
+
+  // Forex Account Form States
+  const [accountForm, setAccountForm] = useState({
+    broker_name: "",
+    account_label: "",
+    account_number: "",
+    currency: "USD",
+    notes: ""
+  });
+
+  const [editAccountForm, setEditAccountForm] = useState({
+    broker_name: "",
+    account_label: "",
+    account_number: "",
+    currency: "USD",
+    notes: ""
+  });
 
   // Edit States
   const [showEditTradeModal, setShowEditTradeModal] = useState(false);
@@ -69,6 +94,79 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
     const fx = forexAccounts.find(a => a.id === id);
     return fx ? fx.account_label : "—";
   };
+
+  async function handleCreateAccount(e: React.FormEvent) {
+    e.preventDefault();
+    await withLock(async () => {
+      const res = await createForexAccount({
+        broker_name: accountForm.broker_name,
+        account_label: accountForm.account_label,
+        account_number: accountForm.account_number || undefined,
+        currency: accountForm.currency,
+        notes: accountForm.notes || undefined
+      });
+      if (res.success) {
+        toast.success("Broker account created successfully");
+        setShowAccountModal(false);
+        setAccountForm({
+          broker_name: "",
+          account_label: "",
+          account_number: "",
+          currency: "USD",
+          notes: ""
+        });
+      } else {
+        toast.error(res.error || "Failed to create account");
+      }
+    });
+  }
+
+  const startEditAccount = (account: Tables<"forex_accounts">) => {
+    setEditingAccount(account);
+    setEditAccountForm({
+      broker_name: account.broker_name || "",
+      account_label: account.account_label || "",
+      account_number: account.account_number || "",
+      currency: account.currency || "USD",
+      notes: account.notes || ""
+    });
+    setShowEditAccountModal(true);
+  };
+
+  async function handleUpdateAccount(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingAccount) return;
+    await withLock(async () => {
+      const res = await updateForexAccount(editingAccount.id, {
+        broker_name: editAccountForm.broker_name,
+        account_label: editAccountForm.account_label,
+        account_number: editAccountForm.account_number || undefined,
+        currency: editAccountForm.currency,
+        notes: editAccountForm.notes || undefined
+      });
+      if (res.success) {
+        toast.success("Broker account updated successfully");
+        setShowEditAccountModal(false);
+        setEditingAccount(null);
+      } else {
+        toast.error(res.error || "Failed to update account");
+      }
+    });
+  }
+
+  async function handleDeleteAccount() {
+    if (!deletingAccountId) return;
+    await withLock(async () => {
+      const res = await deleteForexAccount(deletingAccountId);
+      if (res.success) {
+        toast.success("Broker account deleted successfully");
+        setShowDeleteAccountConfirm(false);
+        setDeletingAccountId(null);
+      } else {
+        toast.error(res.error || "Failed to delete account");
+      }
+    });
+  }
 
   async function handleLogTrade(e: React.FormEvent) {
     e.preventDefault();
@@ -168,6 +266,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
         <div className="flex flex-wrap gap-2.5">
           <button onClick={() => { setFundsType("DEPOSIT"); setShowFundsModal(true); }} className="btn-secondary !h-11">Deposit</button>
           <button onClick={() => { setFundsType("WITHDRAW"); setShowFundsModal(true); }} className="btn-secondary !h-11">Withdraw</button>
+          <button onClick={() => setShowAccountModal(true)} className="btn-secondary !h-11">Add Account</button>
           <button onClick={() => setShowTradeModal(true)} className="btn-primary !h-11 shadow-[0_0_20px_rgba(var(--accent-primary-rgb),0.4)]">Log Trade</button>
         </div>
       </div>
@@ -184,6 +283,9 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
           <h3 className="text-2xl md:text-3xl font-black text-[--text-primary] tracking-tight">Launch Your Forex Terminal</h3>
           <p className="text-sm text-[--text-muted] mt-3 max-w-lg mx-auto font-medium leading-relaxed">Track currency trades, manage broker deposits/withdrawals, and monitor your P&L across global forex markets.</p>
           <div className="flex flex-wrap gap-3 mt-8">
+            <button onClick={() => setShowAccountModal(true)} className="btn-secondary h-13 px-8 rounded-xl font-bold uppercase tracking-wider text-[11px]">
+              Create Broker Account
+            </button>
             <button onClick={() => setShowTradeModal(true)} className="btn-primary h-13 px-8 rounded-xl font-bold uppercase tracking-wider text-[11px] shadow-xl shadow-[--accent-primary]/20 flex items-center gap-2">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
               Log First Trade
@@ -211,10 +313,10 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
 
       {/* Tabs */}
       <div className="flex gap-6 border-b border-white/5 overflow-x-auto custom-scrollbar">
-        {["trades", "transactions"].map((tab) => (
+        {["trades", "transactions", "accounts"].map((tab) => (
           <button
             key={tab}
-            onClick={() => setActiveTab(tab as "trades" | "transactions")}
+            onClick={() => setActiveTab(tab as "trades" | "transactions" | "accounts")}
             className={`pb-4 text-xs font-black uppercase tracking-widest whitespace-nowrap transition-all ${activeTab === tab ? "text-[--accent-primary-light] border-b-2 border-[--accent-primary-light]" : "text-[--text-muted] hover:text-white"}`}
           >
             {tab}
@@ -413,6 +515,80 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
             </div>
           </>
         )}
+
+        {activeTab === "accounts" && (
+          <div className="space-y-6 animate-in fade-in duration-300">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-black text-white uppercase italic tracking-wide">Forex Accounts & Brokers</h2>
+              <button onClick={() => setShowAccountModal(true)} className="btn-secondary !h-9 text-[10px] font-black uppercase tracking-widest px-4">
+                + New Broker
+              </button>
+            </div>
+            
+            {forexAccounts.length === 0 ? (
+              <div className="glass-card-static p-12 text-center text-sm text-[--text-muted] italic">
+                No Forex broker accounts linked yet. Click &quot;New Broker&quot; or &quot;Add Account&quot; to get started.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {forexAccounts.map((account) => (
+                  <div key={account.id} className="glass-card-static p-6 relative overflow-hidden group border-white/5 hover:border-white/10 transition-all rounded-[24px]">
+                    {/* Background glow on hover */}
+                    <div className="absolute -right-16 -top-16 w-32 h-32 bg-[--accent-primary]/5 rounded-full blur-[30px] group-hover:bg-[--accent-primary]/10 transition-colors pointer-events-none" />
+                    
+                    <div className="flex justify-between items-start gap-4 mb-4">
+                      <div>
+                        <h3 className="text-lg font-black text-white truncate max-w-[200px]">{account.account_label}</h3>
+                        <p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mt-0.5">{account.broker_name}</p>
+                      </div>
+                      <span className="text-[10px] font-black px-2 py-0.5 bg-white/5 text-white rounded">
+                        {account.currency}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 border-t border-b border-white/5 py-4 my-4 text-xs">
+                      <div>
+                        <p className="text-[8px] font-black uppercase tracking-widest text-[--text-muted] mb-1">Balance</p>
+                        <p className="font-black text-white text-base tabular-nums">${Number(account.balance).toLocaleString()}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[8px] font-black uppercase tracking-widest text-[--text-muted] mb-1">Net P&L</p>
+                        <PnLValue value={Number(account.total_pnl)} prefix="$" size="sm" className="items-end" />
+                      </div>
+                      <div>
+                        <p className="text-[8px] font-black uppercase tracking-widest text-[--text-muted] mb-1">Total Deposited</p>
+                        <p className="font-bold text-[--accent-primary-light] tabular-nums">${Number(account.total_deposited).toLocaleString()}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[8px] font-black uppercase tracking-widest text-[--text-muted] mb-1">Total Withdrawn</p>
+                        <p className="font-bold text-warning tabular-nums">${Number(account.total_withdrawn).toLocaleString()}</p>
+                      </div>
+                    </div>
+
+                    {account.notes && (
+                      <p className="text-xs text-[--text-secondary] italic line-clamp-2 mb-4 min-h-[2rem]">{account.notes}</p>
+                    )}
+
+                    <div className="flex gap-2.5 mt-2">
+                      <button 
+                        onClick={() => startEditAccount(account)}
+                        className="flex-1 py-2 bg-white/5 hover:bg-white/10 text-white border border-white/5 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all"
+                      >
+                        Edit Broker
+                      </button>
+                      <button 
+                        onClick={() => { setDeletingAccountId(account.id); setShowDeleteAccountConfirm(true); }}
+                        className="py-2 px-3 bg-danger/10 hover:bg-danger text-danger hover:text-white border border-danger/25 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
       </>
       )}
@@ -578,6 +754,186 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* Add Forex Account Modal */}
+      {showAccountModal && (
+        <div className="mobile-dialog-shell fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="mobile-dialog-panel glass-card-static w-full max-w-md p-6 animate-in zoom-in duration-300 max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <h2 className="text-2xl font-black mb-6 text-white text-left uppercase italic tracking-wide">Create Broker Account</h2>
+            <form onSubmit={handleCreateAccount} className="space-y-4">
+              <div>
+                <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Broker Name</label>
+                <input 
+                  required 
+                  className="input-premium" 
+                  placeholder="e.g. MetaTrader 5, ICMarkets, Pepperstone" 
+                  value={accountForm.broker_name} 
+                  onChange={e => setAccountForm({...accountForm, broker_name: e.target.value})} 
+                />
+              </div>
+              <div>
+                <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Account Label</label>
+                <input 
+                  required 
+                  className="input-premium" 
+                  placeholder="e.g. Personal Live Account, Prop Account 100k" 
+                  value={accountForm.account_label} 
+                  onChange={e => setAccountForm({...accountForm, account_label: e.target.value})} 
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Account Number (Optional)</label>
+                  <input 
+                    className="input-premium" 
+                    placeholder="e.g. 5098234" 
+                    value={accountForm.account_number} 
+                    onChange={e => setAccountForm({...accountForm, account_number: e.target.value})} 
+                  />
+                </div>
+                <div>
+                  <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Currency</label>
+                  <select 
+                    className="input-premium text-white" 
+                    value={accountForm.currency} 
+                    onChange={e => setAccountForm({...accountForm, currency: e.target.value})}
+                  >
+                    <option value="USD" className="bg-[--bg-surface]">USD ($)</option>
+                    <option value="EUR" className="bg-[--bg-surface]">EUR (€)</option>
+                    <option value="GBP" className="bg-[--bg-surface]">GBP (£)</option>
+                    <option value="JPY" className="bg-[--bg-surface]">JPY (¥)</option>
+                    <option value="AUD" className="bg-[--bg-surface]">AUD (A$)</option>
+                    <option value="CAD" className="bg-[--bg-surface]">CAD (C$)</option>
+                    <option value="INR" className="bg-[--bg-surface]">INR (₹)</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Notes</label>
+                <textarea 
+                  className="input-premium min-h-[80px]" 
+                  placeholder="Account notes, leverage info, API details..." 
+                  value={accountForm.notes} 
+                  onChange={e => setAccountForm({...accountForm, notes: e.target.value})} 
+                />
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button type="button" onClick={() => setShowAccountModal(false)} className="btn-secondary flex-1">Cancel</button>
+                <button type="submit" disabled={submitting} className="btn-primary flex-1">
+                  {submitting ? "Creating..." : "Create Account"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Forex Account Modal */}
+      {showEditAccountModal && (
+        <div className="mobile-dialog-shell fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="mobile-dialog-panel glass-card-static w-full max-w-md p-6 animate-in zoom-in duration-300 max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <h2 className="text-2xl font-black mb-6 text-white text-left uppercase italic tracking-wide">Edit Broker Account</h2>
+            <form onSubmit={handleUpdateAccount} className="space-y-4">
+              <div>
+                <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Broker Name</label>
+                <input 
+                  required 
+                  className="input-premium" 
+                  placeholder="Broker Name" 
+                  value={editAccountForm.broker_name} 
+                  onChange={e => setEditAccountForm({...editAccountForm, broker_name: e.target.value})} 
+                />
+              </div>
+              <div>
+                <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Account Label</label>
+                <input 
+                  required 
+                  className="input-premium" 
+                  placeholder="Account Label" 
+                  value={editAccountForm.account_label} 
+                  onChange={e => setEditAccountForm({...editAccountForm, account_label: e.target.value})} 
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Account Number (Optional)</label>
+                  <input 
+                    className="input-premium" 
+                    placeholder="Account Number" 
+                    value={editAccountForm.account_number} 
+                    onChange={e => setEditAccountForm({...editAccountForm, account_number: e.target.value})} 
+                  />
+                </div>
+                <div>
+                  <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Currency</label>
+                  <select 
+                    className="input-premium text-white" 
+                    value={editAccountForm.currency} 
+                    onChange={e => setEditAccountForm({...editAccountForm, currency: e.target.value})}
+                  >
+                    <option value="USD" className="bg-[--bg-surface]">USD ($)</option>
+                    <option value="EUR" className="bg-[--bg-surface]">EUR (€)</option>
+                    <option value="GBP" className="bg-[--bg-surface]">GBP (£)</option>
+                    <option value="JPY" className="bg-[--bg-surface]">JPY (¥)</option>
+                    <option value="AUD" className="bg-[--bg-surface]">AUD (A$)</option>
+                    <option value="CAD" className="bg-[--bg-surface]">CAD (C$)</option>
+                    <option value="INR" className="bg-[--bg-surface]">INR (₹)</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Notes</label>
+                <textarea 
+                  className="input-premium min-h-[80px]" 
+                  placeholder="Account notes..." 
+                  value={editAccountForm.notes} 
+                  onChange={e => setEditAccountForm({...editAccountForm, notes: e.target.value})} 
+                />
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button type="button" onClick={() => { setShowEditAccountModal(false); setEditingAccount(null); }} className="btn-secondary flex-1">Cancel</button>
+                <button type="submit" disabled={submitting} className="btn-primary flex-1">
+                  {submitting ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Forex Account Confirmation Modal */}
+      {showDeleteAccountConfirm && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="glass-card-static w-full max-w-sm p-8 border-rose-500/20 shadow-[0_0_50px_rgba(244,63,94,0.15)] rounded-[32px] text-center animate-scale-in max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <div className="w-16 h-16 rounded-full bg-danger/10 text-danger mx-auto flex items-center justify-center mb-6">
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-black text-white mb-2 uppercase italic">Delete Forex Account?</h3>
+            <p className="text-sm text-[--text-muted] mb-8 leading-relaxed">
+              This action will permanently delete this broker account and **all historical trades and transactions** associated with it. This action cannot be undone.
+            </p>
+
+            <div className="flex gap-3">
+              <button 
+                type="button" 
+                onClick={() => { setShowDeleteAccountConfirm(false); setDeletingAccountId(null); }} 
+                className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all"
+              >
+                Cancel
+              </button>
+              <button 
+                type="button" 
+                disabled={submitting} 
+                onClick={handleDeleteAccount} 
+                className="flex-1 py-3 bg-danger hover:bg-rose-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-rose-500/10 disabled:opacity-50"
+              >
+                {submitting ? "Deleting..." : "Confirm Delete"}
+              </button>
+            </div>
           </div>
         </div>
       )}
