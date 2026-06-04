@@ -72,6 +72,18 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
     });
   }
 
+  async function handleDeleteAsset(id: string, name: string) {
+    if (!confirm(`Permanently purge this asset record: "${name}"?`)) return;
+    await withLock(async () => {
+      const res = await deleteAlternativeAsset(id);
+      if (!res.error) {
+        toast.success(`Asset "${name}" successfully purged`);
+      } else {
+        toast.error(res.error);
+      }
+    });
+  }
+
   async function handleRevert(logId: string) {
     if (!confirm("Revert this action? This will undo the ledger entry and any associated balance changes.")) return;
     await withLock(async () => {
@@ -208,7 +220,11 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
                       }} className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 text-[--text-muted] flex items-center justify-center hover:bg-[--accent-primary] hover:text-white transition-all">
                          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                       </button>
-                      <button onClick={() => { if(confirm("Permanently purge this asset record?")) deleteAlternativeAsset(asset.id); }} className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 text-rose-500 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all">
+                      <button 
+                        onClick={() => handleDeleteAsset(asset.id, asset.name)} 
+                        disabled={submitting}
+                        className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 text-rose-500 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
                          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                       </button>
                     </div>

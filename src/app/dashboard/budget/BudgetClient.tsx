@@ -67,7 +67,11 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
         period_month: selectedMonth,
         period_year: selectedYear
       });
-      if (res.error) toast.error(res.error);
+      if (!res.error) {
+        toast.success(`${category} budget updated to ₹${val.toLocaleString()}`);
+      } else {
+        toast.error(res.error);
+      }
     });
   }
 
