@@ -156,3 +156,7 @@ BEGIN
     )::JSON;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- 9. Drop obsolete 4-parameter adjust_account_balance overload to resolve ambiguity
+DROP FUNCTION IF EXISTS public.adjust_account_balance(UUID, UUID, NUMERIC, TEXT);
+
