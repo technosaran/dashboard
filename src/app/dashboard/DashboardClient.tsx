@@ -212,7 +212,7 @@ export default function DashboardClient({ initialData }: { initialData?: Finance
       mfBalance, 
       trendData: Object.values(trendMap) 
     };
-  }, [accounts, transactions, investments, mutualFunds, bonds, alternativeAssets, liabilities]);
+  }, [accounts, transactions, investments, mutualFunds, bonds, alternativeAssets, liabilities, forexAccounts]);
 
   // Conditionally render only one view based on screen size
   if (isMobile) {
