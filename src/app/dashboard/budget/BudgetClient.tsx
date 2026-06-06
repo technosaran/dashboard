@@ -19,7 +19,7 @@ const CATEGORIES = [
 ];
 
 export default function BudgetClient({ initialData }: { initialData?: FinanceData }) {
-  const { data: { budgets, expenses, incomes } } = useFinanceData(initialData);
+  const { data: { budgets, expenses, incomes }, mutate } = useFinanceData(initialData);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [submitting, withLock] = useSubmitLock();
@@ -61,12 +61,13 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
       const budget = currentBudgets.find(b => b.category === category);
       if (budget) {
         await withLock(async () => {
-          const res = await deleteBudget(budget.id);
-          if (!res.error) {
-            toast.success(`${category} budget cleared`);
-          } else {
-            toast.error(res.error);
-          }
+           const res = await deleteBudget(budget.id);
+           if (!res.error) {
+             toast.success(`${category} budget cleared`);
+             mutate();
+           } else {
+             toast.error(res.error);
+           }
         });
       }
       return;
@@ -84,6 +85,7 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
       });
       if (!res.error) {
         toast.success(`${category} budget updated to ₹${val.toLocaleString()}`);
+        mutate();
       } else {
         toast.error(res.error);
       }

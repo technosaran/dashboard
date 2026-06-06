@@ -19,7 +19,7 @@ function formatNum(val: number, decimals = 2): string {
 }
 
 export default function FnoClient({ initialData }: { initialData?: FinanceData }) {
-  const { data: { fnoTrades, accounts }, isValidating } = useFinanceData(initialData);
+  const { data: { fnoTrades, accounts }, isValidating, mutate } = useFinanceData(initialData);
   const searchParams = useSearchParams();
   
   const [showLogForm, setShowLogForm] = useState(searchParams?.get("action") === "new");
@@ -138,6 +138,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
         if (!res.error) {
           toast.success("FnO Trade logged successfully!");
           resetLogForm();
+          mutate();
         } else {
           toast.error(res.error);
         }
@@ -167,6 +168,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
         if (!res.error) {
           toast.success("Position closed successfully!");
           resetCloseForm();
+          mutate();
         } else {
           toast.error(res.error);
         }
@@ -184,6 +186,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
         const res = await deleteFnoTrade(id);
         if (!res.error) {
           toast.success("Trade record deleted successfully");
+          mutate();
         } else {
           toast.error(res.error);
         }

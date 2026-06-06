@@ -42,7 +42,7 @@ const BOND_TYPES = ["Government", "Corporate", "Tax-Free", "Infrastructure", "PS
 const INTEREST_FREQUENCIES = ["Monthly", "Quarterly", "Semi-Annual", "Annual"];
 
 export default function BondsClient({ initialData }: { initialData?: FinanceData }) {
-  const { data: { accounts, bonds: bondsData, bondTransactions, ledgerLogs }, isValidating } = useFinanceData(initialData);
+  const { data: { accounts, bonds: bondsData, bondTransactions, ledgerLogs }, isValidating, mutate } = useFinanceData(initialData);
   const bonds = useMemo(() => (bondsData || []).filter(b => b.status === 'Active') as Bond[], [bondsData]);
   const searchParams = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(searchParams.get("action") === "new");
@@ -153,19 +153,20 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
           current_value: currentValue,
           total_invested: totalInvested
         });
-        if (!result?.error) {
-          toast.success("Bond holding details updated");
-          setShowAddModal(false);
-          setEditingId(null);
-          setFormData({
-            bond_name: "", isin: "", issuer: "", bond_type: "Government",
-            face_value: "1000", quantity: "1", purchase_price: "", current_price: "",
-            coupon_rate: "", ytm: "", purchase_date: new Date().toISOString().split("T")[0],
-            maturity_date: "", next_interest_date: "", interest_frequency: "Semi-Annual",
-            credit_rating: "", platform: "Wint", demat_account: "", account_id: "", notes: "",
-            accrued_interest: "0", total_interest_earned: "0", current_value: ""
-          });
-        } else {
+          if (!result?.error) {
+            toast.success("Bond holding details updated");
+            setShowAddModal(false);
+            setEditingId(null);
+            setFormData({
+              bond_name: "", isin: "", issuer: "", bond_type: "Government",
+              face_value: "1000", quantity: "1", purchase_price: "", current_price: "",
+              coupon_rate: "", ytm: "", purchase_date: new Date().toISOString().split("T")[0],
+              maturity_date: "", next_interest_date: "", interest_frequency: "Semi-Annual",
+              credit_rating: "", platform: "Wint", demat_account: "", account_id: "", notes: "",
+              accrued_interest: "0", total_interest_earned: "0", current_value: ""
+            });
+            mutate();
+          } else {
           toast.error(result.error);
         }
         return;
@@ -217,6 +218,7 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
           credit_rating: "", platform: "Wint", demat_account: "", account_id: "", notes: "",
           accrued_interest: "0", total_interest_earned: "0", current_value: ""
         });
+        mutate();
       } else {
         toast.error(result.error);
       }
@@ -227,8 +229,10 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
     if (!logId) return toast.error("No ledger log found for this transaction");
     if (!confirm("Revert this transaction? This will undo the bond transaction and reverse any account transactions.")) return;
     const res = await revertLedgerLog(logId);
-    if (!res.error) toast.success("Transaction reverted");
-    else toast.error(res.error);
+    if (!res.error) {
+      toast.success("Transaction reverted");
+      mutate();
+    } else toast.error(res.error);
   }
 
   const getBondTypeColor = (type: string) => {

@@ -1,34 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState, startTransition } from "react";
-import { createClient } from "@/lib/supabase-browser";
+import { useEffect, useState } from "react";
 import { createRecipient, deleteRecipient, sendMoneyToFamily, updateRecipient } from "./actions";
-import { getAccounts } from "../accounts/actions";
 import { toast } from "react-hot-toast";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { format } from "date-fns";
-
-type Recipient = {
-  id: string;
-  name: string;
-  relationship: string | null;
-  created_at: string | null;
-};
-
-type Account = {
-  id: string;
-  name: string;
-  balance: number;
-  currency: string;
-};
-
-type SendHistory = {
-  id: string;
-  created_at: string | null;
-  details: string | null;
-  amount: number | null;
-  action_type: string;
-};
+import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 
 const QUICK_AMOUNTS = [500, 1000, 2000, 5000, 10000];
 
@@ -37,77 +14,37 @@ const RELATIONSHIP_CONFIG: Record<string, { emoji: string; color: string; soft: 
 };
 
 interface FamilyClientProps {
-  initialRecipients: Recipient[];
-  initialAccounts: Account[];
-  initialHistory: SendHistory[];
+  initialData: FinanceData;
 }
 
 export default function FamilyClient({
-  initialRecipients,
-  initialAccounts,
-  initialHistory,
+  initialData,
 }: FamilyClientProps) {
-  const supabase = createClient();
-  const [recipients, setRecipients] = useState<Recipient[]>(initialRecipients);
-  const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
-  const [loading, setLoading] = useState(false);
+  const { data: { recipients, accounts, ledgerLogs }, mutate, isLoading } = useFinanceData(initialData);
   const [isAddingRecipient, setIsAddingRecipient] = useState(false);
   const [isSendingMoney, setIsSendingMoney] = useState(false);
-  const [selectedRecipient, setSelectedRecipient] = useState<Recipient | null>(null);
-  const [recentSends, setRecentSends] = useState<SendHistory[]>(initialHistory);
+  const [selectedRecipient, setSelectedRecipient] = useState<any | null>(null);
   const [submitting, withLock] = useSubmitLock();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<"contacts" | "history">("contacts");
   const [isEditingRecipient, setIsEditingRecipient] = useState(false);
-  const [editingRecipient, setEditingRecipient] = useState<Recipient | null>(null);
+  const [editingRecipient, setEditingRecipient] = useState<any | null>(null);
 
   // Form states
   const [newName, setNewName] = useState("");
   const [newRelationship] = useState("Family");
 
   const [sendAmount, setSendAmount] = useState("");
-  const [sendAccountId, setSendAccountId] = useState(initialAccounts[0]?.id || "");
+  const [sendAccountId, setSendAccountId] = useState("");
   const [sendNote, setSendNote] = useState("");
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      setLoading(false);
-      return;
-    }
-
-    const [recipRes, accRes, historyRes] = await Promise.all([
-      supabase.from("recipients").select("*").eq("user_id", user.id).eq("relationship", "Family").order("name"),
-      getAccounts(),
-      supabase
-        .from("ledger_logs")
-        .select("*")
-        .eq("user_id", user.id)
-        .eq("action_type", "SEND_MONEY")
-        .order("created_at", { ascending: false })
-        .limit(10),
-    ]);
-
-    if (recipRes.data) setRecipients(recipRes.data as Recipient[]);
-    if (accRes.data) setAccounts(accRes.data as Account[]);
-    if (historyRes.data) setRecentSends(historyRes.data as SendHistory[]);
-    setLoading(false);
-  }, [supabase]);
-
+  // Initialize sendAccountId once accounts are loaded
   useEffect(() => {
-    const channel = supabase
-      .channel("family-realtime-v1")
-      .on("postgres_changes", { event: "*", schema: "public", table: "recipients" }, () => startTransition(fetchData))
-      .on("postgres_changes", { event: "*", schema: "public", table: "accounts" }, () => startTransition(fetchData))
-      .on("postgres_changes", { event: "*", schema: "public", table: "ledger_logs" }, () => startTransition(fetchData))
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [fetchData, supabase]);
+    if (accounts.length > 0 && !sendAccountId) {
+      setSendAccountId(accounts[0].id);
+    }
+  }, [accounts, sendAccountId]);
 
   const handleAddRecipient = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -124,7 +61,7 @@ export default function FamilyClient({
           setIsAddingRecipient(false);
           setIsEditingRecipient(false);
           setEditingRecipient(null);
-          fetchData();
+          mutate();
         } else {
           toast.error(res.error || "Failed to update contact");
         }
@@ -142,14 +79,14 @@ export default function FamilyClient({
         setEditingRecipient(null);
         setNewName("");
         toast.success(`${newName} added to contacts`);
-        fetchData();
+        mutate();
       } else {
         toast.error(res.error || "Failed to add recipient");
       }
     });
   };
 
-  const startEdit = (person: Recipient) => {
+  const startEdit = (person: any) => {
     setEditingRecipient(person);
     setNewName(person.name);
     setIsEditingRecipient(true);
@@ -167,7 +104,7 @@ export default function FamilyClient({
       const res = await deleteRecipient(deletingId);
       if (res.success) {
         toast.success("Contact removed");
-        fetchData();
+        mutate();
       } else {
         toast.error(res.error || "Failed to remove contact");
       }
@@ -206,7 +143,7 @@ export default function FamilyClient({
         setSendNote("");
         setSelectedRecipient(null);
         toast.success(`₹${amount.toLocaleString()} sent to ${selectedRecipient.name}`);
-        fetchData();
+        mutate();
       } else {
         toast.error(res.error || "Failed to send money");
       }
@@ -219,6 +156,10 @@ export default function FamilyClient({
   };
 
   const filteredRecipients = recipients;
+
+  const recentSends = ledgerLogs
+    .filter((log) => log.action_type === "SEND_MONEY")
+    .slice(0, 10);
 
   const totalSent = recentSends.reduce((sum, s) => sum + (s.amount || 0), 0);
 
@@ -280,7 +221,7 @@ export default function FamilyClient({
       {/* Main View Render */}
       {activeView === "contacts" ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {loading ? (
+          {isLoading ? (
             Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="h-[180px] bg-white/[0.02] border border-white/[0.05] rounded-2xl animate-pulse" />
             ))

@@ -34,7 +34,7 @@ const CATEGORIES = [
 
 
 export default function ExpensesClient({ initialData }: { initialData?: FinanceData }) {
-  const { data: { expenses, accounts }, isValidating } = useFinanceData(initialData);
+  const { data: { expenses, accounts }, isValidating, mutate } = useFinanceData(initialData);
   const searchParams = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(searchParams.get("action") === "new");
   const [submitting, withLock] = useSubmitLock();
@@ -100,6 +100,7 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
       const res = await deleteExpense(deletingExpenseId);
       if (!res?.error) {
         toast.success("Expense entry reverted successfully");
+        mutate();
       } else {
         toast.error(res.error);
       }
@@ -198,6 +199,7 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
           account_id: "",
         });
         setShowAddModal(false);
+        mutate();
       } else {
         toast.error(result.error);
       }

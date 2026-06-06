@@ -20,7 +20,7 @@ const CATEGORIES = [
 ];
 
 export default function LiabilitiesClient({ initialData }: { initialData?: FinanceData }) {
-  const { data: { liabilities, ledgerLogs, accounts } } = useFinanceData(initialData);
+  const { data: { liabilities, ledgerLogs, accounts }, mutate } = useFinanceData(initialData);
   const searchParams = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(searchParams.get("action") === "new");
   const [submitting, withLock] = useSubmitLock();
@@ -74,6 +74,7 @@ export default function LiabilitiesClient({ initialData }: { initialData?: Finan
         setShowAddModal(false);
         setEditingId(null);
         setFormData({ name: "", category: "Personal Loan", total_amount: "", remaining_amount: "", interest_rate: "", monthly_payment: "", due_date: "", notes: "", account_id: "" });
+        mutate();
       } else toast.error(res.error);
     });
   }
@@ -85,6 +86,7 @@ export default function LiabilitiesClient({ initialData }: { initialData?: Finan
       const res = await revertLedgerLog(logId);
       if (!res.error) {
         toast.success("Action reverted successfully");
+        mutate();
       } else {
         toast.error(res.error);
       }
@@ -97,6 +99,7 @@ export default function LiabilitiesClient({ initialData }: { initialData?: Finan
       const res = await deleteLiability(id);
       if (!res.error) {
         toast.success("Liability deleted successfully");
+        mutate();
       } else {
         toast.error(res.error);
       }

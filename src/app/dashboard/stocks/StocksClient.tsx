@@ -33,7 +33,7 @@ const SortIcon = ({ col, sortKey, sortDir }: { col: SortKey; sortKey: SortKey; s
 );
 
 export default function StocksClient({ initialData }: { initialData?: FinanceData }) {
-  const { data: { investments, accounts, stockTrades: trades }, isValidating } = useFinanceData(initialData);
+  const { data: { investments, accounts, stockTrades: trades }, isValidating, mutate } = useFinanceData(initialData);
   const stocks = useMemo(() => {
     return investments.filter(i => i.type === "stock").map(i => {
       const currentPrice = Number(i.current_price || 0);
@@ -82,8 +82,10 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
     if (!logId) return toast.error("No ledger log found for this trade");
     if (!confirm("Revert this trade? This will undo the portfolio change and reverse any account transactions.")) return;
     const res = await revertLedgerLog(logId);
-    if (!res.error) toast.success("Trade reverted");
-    else toast.error(res.error);
+    if (!res.error) {
+      toast.success("Trade reverted");
+      mutate();
+    } else toast.error(res.error);
   }
 
 
@@ -204,6 +206,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
         if (!result?.error) {
           toast.success(editingId ? "Equity position updated successfully" : "New equity position registered in portfolio");
           resetForm();
+          mutate();
         } else {
           toast.error(result.error);
         }
@@ -216,7 +219,10 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
   async function confirmDelete() {
     if (!deletingId) return;
     const res = await deleteInvestment(deletingId);
-    if (!res?.error) { toast.success("Investment record purged from architecture"); } else toast.error(res.error);
+    if (!res?.error) { 
+      toast.success("Investment record purged from architecture"); 
+      mutate();
+    } else toast.error(res.error);
     setShowDeleteConfirm(false);
     setDeletingId(null);
   }

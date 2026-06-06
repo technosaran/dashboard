@@ -54,7 +54,7 @@ const INCOME_CATEGORIES = [
 
 export default function IncomeClient({ initialData }: { initialData?: FinanceData }) {
 
-  const { data: { incomes, accounts }, isValidating } = useFinanceData(initialData);
+  const { data: { incomes, accounts }, isValidating, mutate } = useFinanceData(initialData);
   const searchParams = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(searchParams.get("action") === "new");
   const [submitting, withLock] = useSubmitLock();
@@ -120,6 +120,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
       const res = await deleteIncome(deletingIncomeId);
       if (!res?.error) {
         toast.success("Income entry reverted successfully");
+        mutate();
       } else {
         toast.error(res.error);
       }
@@ -232,6 +233,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
 
         setFormData({ description: "", amount: "", category: "Salary", date: defaultDate, account_id: "" });
         setShowAddModal(false);
+        mutate();
       } else {
         toast.error(result.error);
       }

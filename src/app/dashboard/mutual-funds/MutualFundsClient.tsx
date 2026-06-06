@@ -53,7 +53,7 @@ const formatNum = (num: number | string) => {
 };
 
 export default function MutualFundsClient({ initialData }: { initialData?: FinanceData }) {
-  const { data: { mutualFunds: rawMfs, accounts, mutualFundTrades: trades }, isValidating } = useFinanceData(initialData);
+  const { data: { mutualFunds: rawMfs, accounts, mutualFundTrades: trades }, isValidating, mutate } = useFinanceData(initialData);
   const mutualFunds = useMemo(() => {
     return rawMfs.filter(mf => Number(mf.units) > 0).map(mf => {
       const currentNav = Number(mf.current_nav || 0);
@@ -121,8 +121,10 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
     if (!logId) return toast.error("No ledger log found for this trade");
     if (!confirm("Revert this fund transaction? This will undo the portfolio change and reverse any account transactions.")) return;
     const res = await revertLedgerLog(logId);
-    if (!res.error) toast.success("Transaction reverted");
-    else toast.error(res.error);
+    if (!res.error) {
+      toast.success("Transaction reverted");
+      mutate();
+    } else toast.error(res.error);
   }
 
   // Export MF holdings to CSV
@@ -228,6 +230,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
               trade_type: "buy"
             });
             setCharges("0");
+            mutate();
           } else {
             toast.error(res.error);
           }
@@ -253,6 +256,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
               trade_type: "buy"
             });
             setCharges("0");
+            mutate();
           } else {
             toast.error(res.error);
           }

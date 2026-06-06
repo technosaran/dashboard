@@ -74,7 +74,7 @@ function hexToRgba(hex: string, alpha: number): string {
 }
 
 export default function AccountsClient({ initialData }: { initialData?: FinanceData }) {
-  const { data: { accounts, ledgerLogs }, isValidating } = useFinanceData(initialData);
+  const { data: { accounts, ledgerLogs }, isValidating, mutate } = useFinanceData(initialData);
   const searchParams = useSearchParams();
   const [showForm, setShowForm] = useState(searchParams.get("action") === "new");
   const [activeTab, setActiveTab] = useState<"accounts" | "history">(searchParams.get("tab") === "history" ? "history" : "accounts");
@@ -116,6 +116,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
       if (!result?.error) {
         toast.success(editingId ? "Financial node updated successfully" : "New account initialized successfully");
         resetForm();
+        mutate();
       } else {
         toast.error(result.error);
       }
@@ -147,6 +148,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
       const res = await deleteAccount(deletingAccountId);
       if (!res?.error) {
         toast.success("Account permanently removed from portfolio");
+        mutate();
       } else {
         toast.error(res.error);
       }
@@ -165,6 +167,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
       if (!res?.error) {
         toast.success("Balance adjustment finalized");
         setShowAdjustModal(false);
+        mutate();
       } else {
         toast.error(res.error);
       }
@@ -179,6 +182,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
       if (!res?.error) {
         toast.success("Inter-account transfer executed successfully");
         setShowTransferModal(false);
+        mutate();
       } else {
         toast.error(res.error);
       }

@@ -18,7 +18,7 @@ import PnLValue from "@/components/pnl-value";
 import type { Tables } from "@/lib/database.types";
 
 export default function ForexClient({ initialData }: { initialData?: FinanceData }) {
-  const { data: { accounts, forexAccounts, forexTrades, forexTransactions, ledgerLogs } } = useFinanceData(initialData);
+  const { data: { accounts, forexAccounts, forexTrades, forexTransactions, ledgerLogs }, mutate } = useFinanceData(initialData);
   
   const searchParams = useSearchParams();
   const action = searchParams.get("action");
@@ -101,6 +101,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
           currency: "USD",
           notes: ""
         });
+        mutate();
       } else {
         toast.error(res.error || "Failed to create account");
       }
@@ -113,6 +114,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
       const res = await deleteForexAccount(id);
       if (res.success) {
         toast.success("Broker account deleted successfully");
+        mutate();
       } else {
         toast.error(res.error || "Failed to delete account");
       }
@@ -147,6 +149,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
         });
         setTradeAmount("");
         setTradePnlType("profit");
+        mutate();
       } else toast.error(res.error || "Failed");
     });
   }
@@ -186,6 +189,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
         toast.success("Daily summary updated successfully");
         setShowEditTradeModal(false);
         setEditingTrade(null);
+        mutate();
       } else {
         toast.error(res.error || "Failed to update trade");
       }
@@ -211,6 +215,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
         toast.success(`${fundsType === "DEPOSIT" ? "Deposit" : "Withdrawal"} completed successfully`);
         setShowFundsModal(false);
         setFundsForm({ forex_account_id: "", bank_account_id: "", amount: "", notes: "" });
+        mutate();
       } else toast.error(res.error || "Failed");
     });
   }
@@ -220,8 +225,10 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
     if (!confirm("Revert this transaction? This will undo the deposit/withdrawal and reverse any account transactions.")) return;
     await withLock(async () => {
       const res = await revertLedgerLog(logId);
-      if (!res.error) toast.success("Transaction reverted");
-      else toast.error(res.error);
+      if (!res.error) {
+        toast.success("Transaction reverted");
+        mutate();
+      } else toast.error(res.error);
     });
   }
 

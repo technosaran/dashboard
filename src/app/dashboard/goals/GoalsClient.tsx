@@ -37,7 +37,7 @@ const CARD_COLORS = [
 ];
 
 export default function GoalsClient({ initialData }: { initialData?: FinanceData }) {
-  const { data: { goals, accounts }, isValidating } = useFinanceData(initialData);
+  const { data: { goals, accounts }, isValidating, mutate } = useFinanceData(initialData);
   const searchParams = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(searchParams?.get("action") === "new");
   const [showContributeModal, setShowContributeModal] = useState(false);
@@ -109,6 +109,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
         setShowAddModal(false);
         setFormData({ name: "", target_amount: "", current_amount: "0", deadline: "", category: "Others", account_id: "" });
         setEditingGoalId(null);
+        mutate();
       } else {
         toast.error(res.error);
       }
@@ -127,6 +128,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
         toast.success("Capital injected into savings goal");
         setShowContributeModal(false);
         setContributeAmount("");
+        mutate();
       } else {
         toast.error(res.error);
       }
@@ -146,6 +148,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
         toast.success("Milestone deleted from registry");
         setShowDeleteConfirm(false);
         setDeletingGoalId(null);
+        mutate();
       } else {
         toast.error(res.error);
       }

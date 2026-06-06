@@ -19,7 +19,7 @@ const CATEGORIES = [
 ];
 
 export default function AlternativeAssetsClient({ initialData }: { initialData?: FinanceData }) {
-  const { data: { alternativeAssets, ledgerLogs, accounts } } = useFinanceData(initialData);
+  const { data: { alternativeAssets, ledgerLogs, accounts }, mutate } = useFinanceData(initialData);
   const searchParams = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(searchParams.get("action") === "new");
   const [submitting, withLock] = useSubmitLock();
@@ -70,6 +70,7 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
         setShowAddModal(false);
         setEditingId(null);
         setFormData({ name: "", category: "Real Estate", purchase_price: "", current_value: "", purchase_date: "", notes: "", account_id: "" });
+        mutate();
       } else toast.error(res.error);
     });
   }
@@ -80,6 +81,7 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
       const res = await deleteAlternativeAsset(id);
       if (!res.error) {
         toast.success(`Asset "${name}" successfully purged`);
+        mutate();
       } else {
         toast.error(res.error);
       }
@@ -92,6 +94,7 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
       const res = await revertLedgerLog(logId);
       if (!res.error) {
         toast.success("Action reverted successfully");
+        mutate();
       } else {
         toast.error(res.error);
       }
