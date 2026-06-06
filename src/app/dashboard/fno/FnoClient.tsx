@@ -459,7 +459,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
                     onChange={e => setLogFormData({ ...logFormData, symbol: e.target.value.toUpperCase() })}
                     className="w-full h-12 px-4 bg-transparent border border-white/15 focus:border-[--accent-primary] rounded-xl text-[13px] text-white outline-none font-bold placeholder:text-[--text-disabled] uppercase"
                     placeholder="e.g. NIFTY, SBIN"
-                    autoComplete="off"
+                    autoComplete="new-password"
                   />
                 </div>
 
@@ -488,6 +488,8 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
                     onChange={e => setLogFormData({ ...logFormData, strike_price: e.target.value })}
                     className="w-full h-12 px-4 bg-transparent border border-white/15 focus:border-[--accent-primary] disabled:opacity-40 disabled:border-white/5 disabled:placeholder-transparent rounded-xl text-[13px] text-white outline-none font-bold"
                     placeholder="e.g. 18500"
+                    autoComplete="new-password"
+                    inputMode="decimal"
                   />
                 </div>
 
@@ -498,6 +500,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
                     value={logFormData.expiry_date}
                     onChange={e => setLogFormData({ ...logFormData, expiry_date: e.target.value })}
                     className="w-full h-12 px-4 bg-transparent border border-white/15 focus:border-[--accent-primary] rounded-xl text-[13px] text-white outline-none font-bold"
+                    autoComplete="new-password"
                   />
                 </div>
               </div>
@@ -522,6 +525,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
                     value={logFormData.trade_date}
                     onChange={e => setLogFormData({ ...logFormData, trade_date: e.target.value })}
                     className="w-full h-12 px-4 bg-transparent border border-white/15 focus:border-[--accent-primary] rounded-xl text-[13px] text-white outline-none font-bold"
+                    autoComplete="new-password"
                   />
                 </div>
               </div>
@@ -535,6 +539,8 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
                     onChange={e => setLogFormData({ ...logFormData, quantity: e.target.value })}
                     className="w-full h-12 px-4 bg-transparent border border-white/15 focus:border-[--accent-primary] rounded-xl text-[13px] text-white outline-none font-bold"
                     placeholder="e.g. 50"
+                    autoComplete="new-password"
+                    inputMode="decimal"
                   />
                 </div>
 
@@ -547,6 +553,8 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
                     onChange={e => setLogFormData({ ...logFormData, entry_price: e.target.value })}
                     className="w-full h-12 px-4 bg-transparent border border-white/15 focus:border-[--accent-primary] rounded-xl text-[13px] text-white outline-none font-bold"
                     placeholder="e.g. 124.50"
+                    autoComplete="new-password"
+                    inputMode="decimal"
                   />
                 </div>
               </div>
@@ -579,6 +587,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
                   onChange={e => setLogFormData({ ...logFormData, notes: e.target.value })}
                   className="w-full min-h-[60px] py-3 px-4 bg-transparent border border-white/15 focus:border-[--accent-primary] rounded-xl text-[13px] text-white outline-none font-medium placeholder:text-[--text-disabled]"
                   placeholder="Optional annotations for this derivative trade"
+                  autoComplete="new-password"
                 />
               </div>
 
@@ -632,6 +641,8 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
                   className="w-full h-12 px-4 bg-transparent border border-white/15 focus:border-[--accent-primary] rounded-xl text-[13px] text-white outline-none font-bold"
                   placeholder="e.g. 148.30"
                   autoFocus
+                  autoComplete="new-password"
+                  inputMode="decimal"
                 />
               </div>
 
@@ -642,6 +653,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
                   value={closeFormData.close_date}
                   onChange={e => setCloseFormData({ ...closeFormData, close_date: e.target.value })}
                   className="w-full h-12 px-4 bg-transparent border border-white/15 focus:border-[--accent-primary] rounded-xl text-[13px] text-white outline-none font-bold"
+                  autoComplete="new-password"
                 />
               </div>
 

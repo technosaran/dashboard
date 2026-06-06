@@ -39,7 +39,12 @@ export async function addLiability(formData: {
         p_source_id: liability.id,
         p_source_type: "liability"
       });
-      if (accErr) console.error("Balance adjustment failed:", accErr);
+      if (accErr) {
+        console.error("Balance adjustment failed:", accErr);
+        // Rollback: delete the liability record we just inserted to maintain ACID transactional integrity
+        await supabase.from("liabilities").delete().eq("id", liability.id);
+        return { error: `Failed to adjust account balance: ${accErr.message}` };
+      }
     }
 
     revalidatePath("/dashboard/liabilities");

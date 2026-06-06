@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
-import { createBond, updateBond } from "./actions";
+import { createBond, updateBond, revertLedgerLog } from "./actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { format, differenceInDays, parseISO } from "date-fns";
@@ -41,9 +42,10 @@ const BOND_TYPES = ["Government", "Corporate", "Tax-Free", "Infrastructure", "PS
 const INTEREST_FREQUENCIES = ["Monthly", "Quarterly", "Semi-Annual", "Annual"];
 
 export default function BondsClient({ initialData }: { initialData?: FinanceData }) {
-  const { data: { accounts, bonds: bondsData, bondTransactions }, isValidating } = useFinanceData(initialData);
+  const { data: { accounts, bonds: bondsData, bondTransactions, ledgerLogs }, isValidating } = useFinanceData(initialData);
   const bonds = useMemo(() => (bondsData || []).filter(b => b.status === 'Active') as Bond[], [bondsData]);
-  const [showAddModal, setShowAddModal] = useState(false);
+  const searchParams = useSearchParams();
+  const [showAddModal, setShowAddModal] = useState(searchParams.get("action") === "new");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"holdings" | "history">("holdings");
   const [submitting, withLock] = useSubmitLock();
@@ -219,6 +221,14 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
         toast.error(result.error);
       }
     });
+  }
+
+  async function handleRevert(logId: string | null) {
+    if (!logId) return toast.error("No ledger log found for this transaction");
+    if (!confirm("Revert this transaction? This will undo the bond transaction and reverse any account transactions.")) return;
+    const res = await revertLedgerLog(logId);
+    if (!res.error) toast.success("Transaction reverted");
+    else toast.error(res.error);
   }
 
   const getBondTypeColor = (type: string) => {
@@ -542,7 +552,7 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
                         MATURITY: 'text-warning',
                       };
                       return (
-                        <tr key={txn.id} className="hover:bg-white/[0.015] transition-colors">
+                        <tr key={txn.id} className="hover:bg-white/[0.015] transition-colors group">
                           <td className="px-6 py-4 text-[13px] font-medium text-[--text-primary]">
                             {txn.transaction_date ? format(parseISO(txn.transaction_date), "MMM d, yyyy") : "—"}
                           </td>
@@ -557,8 +567,24 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
                           <td className="px-6 py-4 text-right text-[13px] font-medium text-[--text-secondary] tabular-nums">
                             {txn.price_per_bond ? `₹${Number(txn.price_per_bond).toLocaleString()}` : "—"}
                           </td>
-                          <td className="px-6 py-4 text-right text-[14px] font-black text-[--text-primary] tabular-nums">
-                            ₹{Number(txn.amount).toLocaleString()}
+                          <td className="px-6 py-4 text-right text-[14px] font-black text-[--text-primary] tabular-nums flex items-center justify-end gap-4">
+                            <span>₹{Number(txn.amount).toLocaleString()}</span>
+                            {(() => {
+                              const matchingLog = ledgerLogs?.find(log => 
+                                log.source_type === 'bond' && 
+                                log.source_id === txn.bond_id && 
+                                Number(log.amount) === Number(txn.amount)
+                              );
+                              return matchingLog ? (
+                                <button 
+                                  onClick={() => handleRevert(matchingLog.id)}
+                                  disabled={submitting}
+                                  className="text-[9px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-all bg-rose-500/5 px-2 py-1 rounded-lg border border-rose-500/10"
+                                >
+                                  Revert
+                                </button>
+                              ) : null;
+                            })()}
                           </td>
                         </tr>
                       );
@@ -598,9 +624,27 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
                       </div>
                       <div className="flex justify-between items-center pt-2 border-t border-white/5">
                         <span className="text-[10px] font-black uppercase tracking-widest text-[#666]">Total Amount</span>
-                        <span className="font-black text-sm text-white">
-                          ₹{Number(txn.amount).toLocaleString()}
-                        </span>
+                        <div className="flex items-center gap-3">
+                          <span className="font-black text-sm text-white">
+                            ₹{Number(txn.amount).toLocaleString()}
+                          </span>
+                          {(() => {
+                            const matchingLog = ledgerLogs?.find(log => 
+                              log.source_type === 'bond' && 
+                              log.source_id === txn.bond_id && 
+                              Number(log.amount) === Number(txn.amount)
+                            );
+                            return matchingLog ? (
+                              <button 
+                                onClick={() => handleRevert(matchingLog.id)}
+                                disabled={submitting}
+                                className="text-[9px] font-black uppercase tracking-widest text-rose-500 bg-rose-500/5 px-2 py-1 rounded-lg border border-rose-500/10"
+                              >
+                                Revert
+                              </button>
+                            ) : null;
+                          })()}
+                        </div>
                       </div>
                     </div>
                   );
@@ -628,17 +672,17 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="md:col-span-2">
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Bond Name</label>
-                  <input required className="input-premium" value={formData.bond_name} onChange={e => setFormData({...formData, bond_name: e.target.value})} placeholder="e.g., 7.18% Govt of India 2033" />
+                  <input required className="input-premium" value={formData.bond_name} onChange={e => setFormData({...formData, bond_name: e.target.value})} placeholder="e.g., 7.18% Govt of India 2033" autoComplete="new-password" />
                 </div>
 
                 <div>
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">ISIN</label>
-                  <input required className="input-premium" value={formData.isin} onChange={e => setFormData({...formData, isin: e.target.value})} placeholder="INE123A01012" />
+                  <input required className="input-premium" value={formData.isin} onChange={e => setFormData({...formData, isin: e.target.value})} placeholder="INE123A01012" autoComplete="new-password" />
                 </div>
 
                 <div>
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Issuer</label>
-                  <input required className="input-premium" value={formData.issuer} onChange={e => setFormData({...formData, issuer: e.target.value})} placeholder="Government of India" />
+                  <input required className="input-premium" value={formData.issuer} onChange={e => setFormData({...formData, issuer: e.target.value})} placeholder="Government of India" autoComplete="new-password" />
                 </div>
 
                 <div>
@@ -650,42 +694,42 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
 
                 <div>
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Credit Rating</label>
-                  <input className="input-premium" value={formData.credit_rating} onChange={e => setFormData({...formData, credit_rating: e.target.value})} placeholder="e.g. CRISIL AAA" />
+                  <input className="input-premium" value={formData.credit_rating} onChange={e => setFormData({...formData, credit_rating: e.target.value})} placeholder="e.g. CRISIL AAA" autoComplete="new-password" />
                 </div>
 
                 <div>
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Face Value</label>
-                  <input required type="number" className="input-premium" value={formData.face_value} onChange={e => setFormData({...formData, face_value: e.target.value})} />
+                  <input required type="number" className="input-premium" value={formData.face_value} onChange={e => setFormData({...formData, face_value: e.target.value})} autoComplete="new-password" inputMode="decimal" />
                 </div>
 
                 <div>
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Quantity</label>
-                  <input required type="number" className="input-premium" value={formData.quantity} onChange={e => setFormData({...formData, quantity: e.target.value})} />
+                  <input required type="number" className="input-premium" value={formData.quantity} onChange={e => setFormData({...formData, quantity: e.target.value})} autoComplete="new-password" inputMode="decimal" />
                 </div>
 
                 <div>
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Purchase Price</label>
-                  <input required type="number" step="0.01" className="input-premium" value={formData.purchase_price} onChange={e => setFormData({...formData, purchase_price: e.target.value})} />
+                  <input required type="number" step="0.01" className="input-premium" value={formData.purchase_price} onChange={e => setFormData({...formData, purchase_price: e.target.value})} autoComplete="new-password" inputMode="decimal" />
                 </div>
 
                 <div>
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Current Price (Market LTP)</label>
-                  <input required type="number" step="0.01" className="input-premium" value={formData.current_price} onChange={e => setFormData({...formData, current_price: e.target.value})} />
+                  <input required type="number" step="0.01" className="input-premium" value={formData.current_price} onChange={e => setFormData({...formData, current_price: e.target.value})} autoComplete="new-password" inputMode="decimal" />
                 </div>
 
                 <div>
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Current Total Value</label>
-                  <input required type="number" step="0.01" className="input-premium" value={formData.current_value} onChange={e => setFormData({...formData, current_value: e.target.value})} placeholder="Leave blank to auto-calculate" />
+                  <input required type="number" step="0.01" className="input-premium" value={formData.current_value} onChange={e => setFormData({...formData, current_value: e.target.value})} placeholder="Leave blank to auto-calculate" autoComplete="new-password" inputMode="decimal" />
                 </div>
 
                 <div>
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Coupon Rate (%)</label>
-                  <input required type="number" step="0.01" className="input-premium" value={formData.coupon_rate} onChange={e => setFormData({...formData, coupon_rate: e.target.value})} />
+                  <input required type="number" step="0.01" className="input-premium" value={formData.coupon_rate} onChange={e => setFormData({...formData, coupon_rate: e.target.value})} autoComplete="new-password" inputMode="decimal" />
                 </div>
 
                 <div>
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Yield to Maturity (YTM %)</label>
-                  <input type="number" step="0.01" className="input-premium" value={formData.ytm} onChange={e => setFormData({...formData, ytm: e.target.value})} placeholder="7.25" />
+                  <input type="number" step="0.01" className="input-premium" value={formData.ytm} onChange={e => setFormData({...formData, ytm: e.target.value})} placeholder="7.25" autoComplete="new-password" inputMode="decimal" />
                 </div>
 
                 <div>
@@ -697,32 +741,32 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
 
                 <div>
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Purchase Date</label>
-                  <input required type="date" className="input-premium" value={formData.purchase_date} onChange={e => setFormData({...formData, purchase_date: e.target.value})} />
+                  <input required type="date" className="input-premium" value={formData.purchase_date} onChange={e => setFormData({...formData, purchase_date: e.target.value})} autoComplete="new-password" />
                 </div>
 
                 <div>
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Maturity Date</label>
-                  <input required type="date" className="input-premium" value={formData.maturity_date} onChange={e => setFormData({...formData, maturity_date: e.target.value})} />
+                  <input required type="date" className="input-premium" value={formData.maturity_date} onChange={e => setFormData({...formData, maturity_date: e.target.value})} autoComplete="new-password" />
                 </div>
 
                 <div>
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Next Interest Payment Date</label>
-                  <input type="date" className="input-premium" value={formData.next_interest_date} onChange={e => setFormData({...formData, next_interest_date: e.target.value})} />
+                  <input type="date" className="input-premium" value={formData.next_interest_date} onChange={e => setFormData({...formData, next_interest_date: e.target.value})} autoComplete="new-password" />
                 </div>
 
                 <div>
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Platform</label>
-                  <input className="input-premium" value={formData.platform} onChange={e => setFormData({...formData, platform: e.target.value})} placeholder="Wint" />
+                  <input className="input-premium" value={formData.platform} onChange={e => setFormData({...formData, platform: e.target.value})} placeholder="Wint" autoComplete="new-password" />
                 </div>
 
                 <div>
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Accrued Interest</label>
-                  <input required type="number" step="0.01" className="input-premium" value={formData.accrued_interest} onChange={e => setFormData({...formData, accrued_interest: e.target.value})} />
+                  <input required type="number" step="0.01" className="input-premium" value={formData.accrued_interest} onChange={e => setFormData({...formData, accrued_interest: e.target.value})} autoComplete="new-password" inputMode="decimal" />
                 </div>
 
                 <div>
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Total Interest Earned</label>
-                  <input required type="number" step="0.01" className="input-premium" value={formData.total_interest_earned} onChange={e => setFormData({...formData, total_interest_earned: e.target.value})} />
+                  <input required type="number" step="0.01" className="input-premium" value={formData.total_interest_earned} onChange={e => setFormData({...formData, total_interest_earned: e.target.value})} autoComplete="new-password" inputMode="decimal" />
                 </div>
 
                 {!editingId ? (

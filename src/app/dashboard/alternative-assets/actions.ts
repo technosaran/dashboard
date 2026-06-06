@@ -38,7 +38,12 @@ export async function addAlternativeAsset(formData: {
         p_source_id: asset.id,
         p_source_type: "alternative_asset"
       });
-      if (accErr) console.error("Balance adjustment failed:", accErr);
+      if (accErr) {
+        console.error("Balance adjustment failed:", accErr);
+        // Rollback: delete the asset record we just inserted to maintain ACID transactional integrity
+        await supabase.from("alternative_assets").delete().eq("id", asset.id);
+        return { error: `Failed to adjust account balance: ${accErr.message}` };
+      }
     }
 
     revalidatePath("/dashboard/alternative-assets");

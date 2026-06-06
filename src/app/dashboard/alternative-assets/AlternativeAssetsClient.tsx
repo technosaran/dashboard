@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { addAlternativeAsset, updateAlternativeAsset, deleteAlternativeAsset, revertLedgerLog } from "./actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
@@ -19,7 +20,8 @@ const CATEGORIES = [
 
 export default function AlternativeAssetsClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { alternativeAssets, ledgerLogs, accounts } } = useFinanceData(initialData);
-  const [showAddModal, setShowAddModal] = useState(false);
+  const searchParams = useSearchParams();
+  const [showAddModal, setShowAddModal] = useState(searchParams.get("action") === "new");
   const [submitting, withLock] = useSubmitLock();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"inventory" | "history">("inventory");
@@ -340,7 +342,7 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Asset Name</label>
-                  <input required className="input-premium" placeholder="e.g. 2BHK Apartment - Mumbai" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                  <input required className="input-premium" placeholder="e.g. 2BHK Apartment - Mumbai" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} autoComplete="new-password" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Classification</label>
@@ -350,15 +352,15 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Acquisition Cost (₹)</label>
-                  <input required type="number" className="input-premium" value={formData.purchase_price} onChange={e => setFormData({...formData, purchase_price: e.target.value})} />
+                  <input required type="number" className="input-premium" value={formData.purchase_price} onChange={e => setFormData({...formData, purchase_price: e.target.value})} autoComplete="new-password" inputMode="decimal" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Current Valuation (₹)</label>
-                  <input required type="number" className="input-premium" value={formData.current_value} onChange={e => setFormData({...formData, current_value: e.target.value})} />
+                  <input required type="number" className="input-premium" value={formData.current_value} onChange={e => setFormData({...formData, current_value: e.target.value})} autoComplete="new-password" inputMode="decimal" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Acquisition Date</label>
-                  <input type="date" className="input-premium" value={formData.purchase_date} onChange={e => setFormData({...formData, purchase_date: e.target.value})} />
+                  <input type="date" className="input-premium" value={formData.purchase_date} onChange={e => setFormData({...formData, purchase_date: e.target.value})} autoComplete="new-password" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Source Account (Optional)</label>
@@ -371,7 +373,7 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Inventory Notes / Location</label>
-                  <textarea className="input-premium min-h-[100px] py-4" value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} />
+                  <textarea className="input-premium min-h-[100px] py-4" value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} autoComplete="new-password" />
                 </div>
               </div>
               <button type="submit" disabled={submitting} className="btn-primary w-full shadow-xl shadow-[--accent-primary]/20 mt-4">

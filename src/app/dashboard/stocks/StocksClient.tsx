@@ -386,6 +386,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                         <div className="absolute inset-0 flex items-center justify-end pr-4 gap-2 opacity-0 group-hover:opacity-100 transition-all pointer-events-none group-hover:pointer-events-auto bg-[--bg-base] backdrop-blur-md">
                           <button onClick={(e) => { e.stopPropagation(); startSell(inv); }} className="h-7 px-4 bg-rose-500 hover:bg-rose-600 text-white text-[11px] font-black rounded shadow-[0_4px_10px_rgba(244,63,94,0.2)] transition-colors uppercase tracking-tight">SELL</button>
                           <button onClick={(e) => { e.stopPropagation(); startEdit(inv); }} className="h-7 px-4 bg-sky-500 hover:bg-sky-600 text-white text-[11px] font-black rounded shadow-[0_4px_10px_rgba(14,165,233,0.2)] transition-colors uppercase tracking-tight">EDIT</button>
+                          <button onClick={(e) => { e.stopPropagation(); setDeletingId(inv.id); setShowDeleteConfirm(true); }} className="h-7 px-4 bg-red-600 hover:bg-red-700 text-white text-[11px] font-black rounded shadow-[0_4px_10px_rgba(220,38,38,0.2)] transition-colors uppercase tracking-tight">DELETE</button>
                         </div>
                       </td>
                     </tr>
@@ -428,6 +429,9 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                           <button onClick={() => startSell(inv)} className="flex-1 py-3 bg-danger/20 hover:bg-danger/30 text-danger border border-danger/30 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-danger/5">Sell</button>
                           <button onClick={() => startEdit(inv)} className="w-12 py-3 bg-white/10 hover:bg-white/20 text-white border border-white/20 text-[10px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center transition-all shadow-lg">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                          </button>
+                          <button onClick={() => { setDeletingId(inv.id); setShowDeleteConfirm(true); }} className="w-12 py-3 bg-danger/20 hover:bg-danger/30 text-danger border border-danger/30 text-[10px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center transition-all shadow-lg shadow-danger/5">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                           </button>
                        </div>
                     </div>
@@ -516,7 +520,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                   onChange={e => setFormData({ ...formData, symbol: e.target.value.toUpperCase() })}
                   className="w-full h-12 px-4 bg-transparent border border-[--border-default] rounded-md text-[13px] text-[--text-primary] focus:border-[--accent-primary] outline-none font-bold uppercase placeholder:text-[--text-disabled]"
                   placeholder="e.g. SBIN, RELIANCE, AAPL"
-                  autoComplete="off"
+                  autoComplete="new-password"
                 />
               </div>
 
@@ -527,6 +531,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                   onChange={e => setFormData({ ...formData, name: e.target.value })}
                   className="w-full h-12 px-4 bg-transparent border border-[--border-default] rounded-md text-[13px] text-[--text-primary] focus:border-[--accent-primary] outline-none font-medium placeholder:text-[--text-disabled]"
                   placeholder="State Bank of India"
+                  autoComplete="new-password"
                 />
               </div>
 
@@ -539,6 +544,8 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                     onChange={e => setFormData({ ...formData, quantity: e.target.value })}
                     className="w-full h-12 px-4 bg-transparent border border-[--border-default] rounded-md text-[13px] text-[--text-primary] tabular-nums outline-none focus:border-[--accent-primary] font-bold"
                     placeholder="0"
+                    autoComplete="new-password"
+                    inputMode="decimal"
                   />
                 </div>
                 <div className="relative">
@@ -549,6 +556,8 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                     onChange={e => setFormData({ ...formData, buy_price: e.target.value })}
                     className="w-full h-12 px-4 bg-transparent border border-[--border-default] rounded-md text-[13px] text-[--text-primary] tabular-nums outline-none focus:border-[--accent-primary] font-bold"
                     placeholder="0.00"
+                    autoComplete="new-password"
+                    inputMode="decimal"
                   />
                 </div>
               </div>
@@ -562,6 +571,8 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                     onChange={e => setFormData({ ...formData, current_price: e.target.value })}
                     className="w-full h-12 px-4 bg-transparent border border-[--border-default] rounded-md text-[13px] text-[--text-primary] tabular-nums outline-none focus:border-[--accent-primary] font-bold"
                     placeholder="0.00"
+                    autoComplete="new-password"
+                    inputMode="decimal"
                   />
                 </div>
 
@@ -598,6 +609,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                     value={mounted ? formData.bought_at : ""}
                     onChange={e => setFormData({ ...formData, bought_at: e.target.value })}
                     className="w-full h-12 px-4 bg-transparent border border-[--border-default] rounded-md text-[13px] text-[--text-primary] outline-none focus:border-[--accent-primary] font-bold"
+                    autoComplete="new-password"
                   />
                 </div>
 
@@ -610,6 +622,8 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                     onChange={e => setCharges(e.target.value)}
                     className="w-full h-12 px-4 bg-transparent border border-[--border-default] rounded-md text-[13px] text-[--text-primary] tabular-nums outline-none focus:border-[--accent-primary] font-bold"
                     placeholder="0.00"
+                    autoComplete="new-password"
+                    inputMode="decimal"
                   />
                 </div>
               </div>
@@ -621,6 +635,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                   onChange={e => setFormData({ ...formData, notes: e.target.value })}
                   className="w-full h-12 px-4 bg-transparent border border-[--border-default] rounded-md text-[13px] text-[--text-primary] outline-none focus:border-[--accent-primary] font-medium"
                   placeholder="Optional notes"
+                  autoComplete="new-password"
                 />
               </div>
 

@@ -225,7 +225,10 @@ export default function Sidebar() {
     { label: "Trade", href: "/dashboard/stocks?action=new", icon: "📈", color: "#3b82f6" },
     { label: "FnO", href: "/dashboard/fno?action=new", icon: "📊", color: "#10b981" },
     { label: "Funds", href: "/dashboard/mutual-funds?action=new", icon: "🏦", color: "#a855f7" },
-    { label: "FX Trade", href: "/dashboard/forex", icon: "💱", color: "#fbbf24" },
+    { label: "Bonds", href: "/dashboard/bonds?action=new", icon: "🔏", color: "#eab308" },
+    { label: "Forex", href: "/dashboard/forex?action=new", icon: "💱", color: "#fbbf24" },
+    { label: "Liability", href: "/dashboard/liabilities?action=new", icon: "💸", color: "#ec4899" },
+    { label: "Alt Asset", href: "/dashboard/alternative-assets?action=new", icon: "🏢", color: "#14b8a6" },
   ];
 
   const mobileNavLeft = filteredNav.slice(0, 2); 
@@ -237,14 +240,14 @@ export default function Sidebar() {
     <>
       {/* Universal Quick Action Hub */}
       <div className={`md:hidden fixed inset-0 z-[100] bg-black/80 backdrop-blur-md transition-all duration-500 ${isQuickActionOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`} onClick={() => setIsQuickActionOpen(false)}>
-        <div className={`absolute bottom-[calc(var(--mobile-bottom-nav-height)+0.75rem)] left-4 right-4 grid grid-cols-2 gap-3 sm:left-8 sm:right-8 sm:gap-4 transition-all duration-500 ${isQuickActionOpen ? "translate-y-0 scale-100" : "translate-y-16 scale-90"}`} onClick={e => e.stopPropagation()}>
+        <div className={`absolute bottom-[calc(var(--mobile-bottom-nav-height)+0.5rem)] left-4 right-4 max-h-[75vh] overflow-y-auto no-scrollbar grid grid-cols-2 gap-2.5 sm:gap-3 transition-all duration-500 ${isQuickActionOpen ? "translate-y-0 scale-100" : "translate-y-16 scale-90"}`} onClick={e => e.stopPropagation()}>
           {quickActions.map((action) => (
-            <Link key={action.label} href={action.href} prefetch={true} onClick={() => setIsQuickActionOpen(false)} aria-label={`Add new ${action.label}`} className="glass-card-static p-6 flex flex-col items-center justify-center gap-3 no-underline transition-all active:scale-95 shadow-lg" style={{ background: "var(--bg-surface)", border: `1px solid ${action.color}30` }}>
-              <div className="text-3xl filter drop-shadow-[0_4px_10px_rgba(0,0,0,0.1)]" aria-hidden="true">{action.icon}</div>
-              <span className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: action.color }}>{action.label}</span>
+            <Link key={action.label} href={action.href} prefetch={true} onClick={() => setIsQuickActionOpen(false)} aria-label={`Add new ${action.label}`} className="glass-card-static p-4 flex flex-col items-center justify-center gap-2.5 no-underline transition-all active:scale-95 shadow-lg" style={{ background: "var(--bg-surface)", border: `1px solid ${action.color}30` }}>
+              <div className="text-2xl filter drop-shadow-[0_4px_10px_rgba(0,0,0,0.1)]" aria-hidden="true">{action.icon}</div>
+              <span className="text-[9px] font-black uppercase tracking-[0.2em]" style={{ color: action.color }}>{action.label}</span>
             </Link>
           ))}
-          <button onClick={() => setIsQuickActionOpen(false)} aria-label="Cancel quick actions" className="col-span-2 glass-card-static py-4 flex items-center justify-center bg-white/5 border-white/10 mt-2 backdrop-blur-md">
+          <button onClick={() => setIsQuickActionOpen(false)} aria-label="Cancel quick actions" className="col-span-2 glass-card-static py-3 flex items-center justify-center bg-white/5 border-white/10 mt-1 backdrop-blur-md">
             <span className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Cancel</span>
           </button>
         </div>

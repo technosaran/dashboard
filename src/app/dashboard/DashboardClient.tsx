@@ -39,7 +39,8 @@ export default function DashboardClient({ initialData }: { initialData?: Finance
     bonds = [], 
     alternativeAssets = [], 
     liabilities = [],
-    goals = []
+    goals = [],
+    forexAccounts = []
   } = financeData || {};
 
   const isMobile = useMediaQuery('(max-width: 767px)');
@@ -88,9 +89,20 @@ export default function DashboardClient({ initialData }: { initialData?: Finance
       return sum + (inv.currency === 'USD' ? value : 0);
     }, 0);
 
-    // 3. Auto-exchanged calculations for legacy compatibility
+    // 3. Forex balances
+    const forexBalanceINR = forexAccounts.reduce((sum, acc) => {
+      const balance = Number(acc.balance || 0);
+      return sum + (acc.currency !== 'USD' ? balance : 0);
+    }, 0);
+    const forexBalanceUSD = forexAccounts.reduce((sum, acc) => {
+      const balance = Number(acc.balance || 0);
+      return sum + (acc.currency === 'USD' ? balance : 0);
+    }, 0);
+
+    // 4. Auto-exchanged calculations for legacy compatibility
     const cashBalance = cashBalanceINR + (cashBalanceUSD * 83.5);
     const stockBalance = stockBalanceINR + (stockBalanceUSD * 83.5);
+    const forexBalance = forexBalanceINR + (forexBalanceUSD * 83.5);
     
     const mfBalance = mutualFunds.reduce((sum, mf) => sum + (Number(mf.units) * Number(mf.current_nav || 0)), 0);
     const bondBalance = (bonds || []).filter(b => b.status === 'Active').reduce((sum, b) => sum + Number(b.current_value || 0), 0);
@@ -101,14 +113,14 @@ export default function DashboardClient({ initialData }: { initialData?: Finance
     const stockCount = investments.filter((inv) => Number(inv.quantity) > 0).length;
     const mfCount = mutualFunds.filter((mf) => Number(mf.units) > 0).length;
     
-    const liquidBalance = cashBalance + stockBalance + mfBalance + bondBalance;
+    const liquidBalance = cashBalance + stockBalance + mfBalance + bondBalance + forexBalance;
     const totalAssets = liquidBalance + altBalance;
     const netWorth = totalAssets - debtBalance;
 
     // Calculate separate Net Worth metrics
-    const totalAssetsINR = cashBalanceINR + stockBalanceINR + mfBalance + bondBalance + altBalance;
+    const totalAssetsINR = cashBalanceINR + stockBalanceINR + mfBalance + bondBalance + altBalance + forexBalanceINR;
     const netWorthINR = totalAssetsINR - debtBalance;
-    const netWorthUSD = cashBalanceUSD + stockBalanceUSD;
+    const netWorthUSD = cashBalanceUSD + stockBalanceUSD + forexBalanceUSD;
     
     const now = new Date();
     const currentMonthNum = now.getMonth();

@@ -393,7 +393,7 @@ export default function FamilyClient({
               <form onSubmit={handleAddRecipient} className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-[--text-secondary] mb-2">Full Name</label>
-                  <input required value={newName} onChange={(e) => setNewName(e.target.value)} className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-3 text-[--text-primary] focus:border-[--accent-primary] focus:ring-1 focus:ring-[--accent-primary] outline-none transition-all placeholder-white/20" placeholder="e.g. Priya Sharma" />
+                  <input required value={newName} onChange={(e) => setNewName(e.target.value)} className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-3 text-[--text-primary] focus:border-[--accent-primary] focus:ring-1 focus:ring-[--accent-primary] outline-none transition-all placeholder-white/20" placeholder="e.g. Priya Sharma" autoComplete="new-password" />
                 </div>
 
                 <div className="pt-4 flex gap-3">
@@ -441,7 +441,7 @@ export default function FamilyClient({
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl text-[--text-muted]">
                       {accounts.find(a => a.id === sendAccountId)?.currency === 'USD' ? '$' : '₹'}
                     </span>
-                    <input required type="number" step="0.01" min="1" value={sendAmount} onChange={(e) => setSendAmount(e.target.value)} className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl pl-10 pr-4 py-4 text-2xl font-medium text-[--text-primary] focus:border-[--accent-primary] outline-none transition-all placeholder-white/10" placeholder="0.00" />
+                    <input required type="number" step="0.01" min="1" value={sendAmount} onChange={(e) => setSendAmount(e.target.value)} className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl pl-10 pr-4 py-4 text-2xl font-medium text-[--text-primary] focus:border-[--accent-primary] outline-none transition-all placeholder-white/10" placeholder="0.00" autoComplete="new-password" inputMode="decimal" />
                   </div>
                   <div className="flex gap-2 mt-3 flex-wrap">
                     {QUICK_AMOUNTS.map((amt) => (
@@ -453,7 +453,7 @@ export default function FamilyClient({
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-[--text-secondary] mb-2">Note (Optional)</label>
-                  <input value={sendNote} onChange={(e) => setSendNote(e.target.value)} className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-3 text-[--text-primary] focus:border-[--accent-primary] outline-none transition-all placeholder-white/20" placeholder="What's this for?" />
+                  <input value={sendNote} onChange={(e) => setSendNote(e.target.value)} className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-3 text-[--text-primary] focus:border-[--accent-primary] outline-none transition-all placeholder-white/20" placeholder="What's this for?" autoComplete="new-password" />
                 </div>
                 <div className="pt-4 flex gap-3">
                   <button type="button" onClick={() => { setIsSendingMoney(false); setSelectedRecipient(null); }} className="flex-1 py-4 bg-white/[0.03] hover:bg-white/[0.08] rounded-xl text-sm font-medium transition-all text-[--text-primary]">

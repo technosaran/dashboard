@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase-server";
 import { revalidatePath } from "next/cache";
+import { revertLedgerLog as revertAction } from "../alternative-assets/actions";
 
 type BondFormData = {
   bond_name: string;
@@ -198,4 +199,15 @@ export async function updateBond(id: string, data: {
     console.error("Error in updateBond:", err);
     return { error: err?.message || "An unexpected error occurred" };
   }
+}
+
+export async function revertLedgerLog(logId: string) {
+  const res = await revertAction(logId);
+  if (!res.error) {
+    revalidatePath("/dashboard/bonds");
+    revalidatePath("/dashboard/ledger");
+    revalidatePath("/dashboard/accounts");
+    revalidatePath("/dashboard");
+  }
+  return res;
 }

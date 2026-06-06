@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { toast } from "react-hot-toast";
-import { upsertBudget } from "./actions";
+import { upsertBudget, deleteBudget } from "./actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { format, parseISO } from "date-fns";
@@ -57,6 +57,21 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
   const totalSpent = Object.values(actualSpending).reduce((s, v) => s + v, 0);
 
   async function handleBudgetChange(category: string, amount: string) {
+    if (amount.trim() === "") {
+      const budget = currentBudgets.find(b => b.category === category);
+      if (budget) {
+        await withLock(async () => {
+          const res = await deleteBudget(budget.id);
+          if (!res.error) {
+            toast.success(`${category} budget cleared`);
+          } else {
+            toast.error(res.error);
+          }
+        });
+      }
+      return;
+    }
+
     const val = parseFloat(amount);
     if (isNaN(val)) return;
     
@@ -168,6 +183,8 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
                         disabled={submitting}
                         onBlur={(e) => handleBudgetChange(cat.label, e.target.value)}
                         className="input-premium !h-10 w-32 text-right !bg-white/5 border-transparent focus:border-[--accent-primary] text-sm font-black"
+                        autoComplete="new-password"
+                        inputMode="decimal"
                       />
                     </div>
                   </div>

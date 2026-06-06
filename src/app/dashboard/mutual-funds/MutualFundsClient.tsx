@@ -655,6 +655,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                     placeholder="e.g. Axis Bluechip Fund"
                     value={formData.fund_name}
                     onChange={e => setFormData({ ...formData, fund_name: e.target.value })}
+                    autoComplete="new-password"
                   />
                 </div>
                 <div className="space-y-2">
@@ -665,6 +666,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                     placeholder="e.g. Axis Mutual Fund"
                     value={formData.amc_name}
                     onChange={e => setFormData({ ...formData, amc_name: e.target.value })}
+                    autoComplete="new-password"
                   />
                 </div>
                 <div className="space-y-2">
@@ -675,6 +677,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                     placeholder="e.g. INF846K01DP8"
                     value={formData.scheme_code}
                     onChange={e => setFormData({ ...formData, scheme_code: e.target.value })}
+                    autoComplete="new-password"
                   />
                 </div>
               </div>
@@ -682,15 +685,15 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
               <div className="grid grid-cols-2 md:grid-cols-3 gap-6 pt-2">
                 <div className="space-y-2">
                   <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">Allocated Units</label>
-                  <input required type="number" step="0.001" className="input-premium h-12" placeholder="0.000" value={formData.units} onChange={e => setFormData({...formData, units: e.target.value})} />
+                  <input required type="number" step="0.001" className="input-premium h-12" placeholder="0.000" value={formData.units} onChange={e => setFormData({...formData, units: e.target.value})} autoComplete="new-password" inputMode="decimal" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">Avg. Buy Price (NAV)</label>
-                  <input required type="number" step="0.0001" className="input-premium h-12" placeholder="0.0000" value={formData.nav} onChange={e => setFormData({...formData, nav: e.target.value})} />
+                  <input required type="number" step="0.0001" className="input-premium h-12" placeholder="0.0000" value={formData.nav} onChange={e => setFormData({...formData, nav: e.target.value})} autoComplete="new-password" inputMode="decimal" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">Current NAV (Live)</label>
-                  <input required type="number" step="0.0001" className="input-premium h-12" placeholder="0.0000" value={formData.current_nav} onChange={e => setFormData({...formData, current_nav: e.target.value})} />
+                  <input required type="number" step="0.0001" className="input-premium h-12" placeholder="0.0000" value={formData.current_nav} onChange={e => setFormData({...formData, current_nav: e.target.value})} autoComplete="new-password" inputMode="decimal" />
                 </div>
               </div>
 
@@ -710,7 +713,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                 </div>
                 <div className="space-y-2">
                   <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">Trade Date</label>
-                  <input type="date" className="input-premium h-12" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} />
+                  <input type="date" className="input-premium h-12" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} autoComplete="new-password" />
                 </div>
               </div>
 
@@ -734,6 +737,8 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                     placeholder="0.0000"
                     value={charges}
                     onChange={e => setCharges(e.target.value)}
+                    autoComplete="new-password"
+                    inputMode="decimal"
                   />
                 </div>
               </div>

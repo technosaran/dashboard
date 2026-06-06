@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { addLiability, updateLiability, deleteLiability } from "./actions";
 import { revertLedgerLog } from "../alternative-assets/actions";
@@ -20,7 +21,8 @@ const CATEGORIES = [
 
 export default function LiabilitiesClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { liabilities, ledgerLogs, accounts } } = useFinanceData(initialData);
-  const [showAddModal, setShowAddModal] = useState(false);
+  const searchParams = useSearchParams();
+  const [showAddModal, setShowAddModal] = useState(searchParams.get("action") === "new");
   const [submitting, withLock] = useSubmitLock();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"loans" | "history">("loans");
@@ -337,7 +339,7 @@ export default function LiabilitiesClient({ initialData }: { initialData?: Finan
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Liability Name</label>
-                  <input required className="input-premium" placeholder="e.g. HDFC Home Loan" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                  <input required className="input-premium" placeholder="e.g. HDFC Home Loan" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} autoComplete="new-password" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Category</label>
@@ -347,23 +349,23 @@ export default function LiabilitiesClient({ initialData }: { initialData?: Finan
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Total Principal (₹)</label>
-                  <input required type="number" className="input-premium" value={formData.total_amount} onChange={e => setFormData({...formData, total_amount: e.target.value})} />
+                  <input required type="number" className="input-premium" value={formData.total_amount} onChange={e => setFormData({...formData, total_amount: e.target.value})} autoComplete="new-password" inputMode="decimal" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Remaining Balance (₹)</label>
-                  <input required type="number" className="input-premium" value={formData.remaining_amount} onChange={e => setFormData({...formData, remaining_amount: e.target.value})} />
+                  <input required type="number" className="input-premium" value={formData.remaining_amount} onChange={e => setFormData({...formData, remaining_amount: e.target.value})} autoComplete="new-password" inputMode="decimal" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Interest Rate (%)</label>
-                  <input type="number" step="0.01" className="input-premium" value={formData.interest_rate} onChange={e => setFormData({...formData, interest_rate: e.target.value})} />
+                  <input type="number" step="0.01" className="input-premium" value={formData.interest_rate} onChange={e => setFormData({...formData, interest_rate: e.target.value})} autoComplete="new-password" inputMode="decimal" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Monthly EMI (₹)</label>
-                  <input type="number" className="input-premium" value={formData.monthly_payment} onChange={e => setFormData({...formData, monthly_payment: e.target.value})} />
+                  <input type="number" className="input-premium" value={formData.monthly_payment} onChange={e => setFormData({...formData, monthly_payment: e.target.value})} autoComplete="new-password" inputMode="decimal" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Next Due Date</label>
-                  <input type="date" className="input-premium" value={formData.due_date} onChange={e => setFormData({...formData, due_date: e.target.value})} />
+                  <input type="date" className="input-premium" value={formData.due_date} onChange={e => setFormData({...formData, due_date: e.target.value})} autoComplete="new-password" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Destination Account (Optional)</label>
@@ -376,7 +378,7 @@ export default function LiabilitiesClient({ initialData }: { initialData?: Finan
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Notes / Account Number</label>
-                  <textarea className="input-premium min-h-[100px] py-4" value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} />
+                  <textarea className="input-premium min-h-[100px] py-4" value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} autoComplete="new-password" />
                 </div>
               </div>
               <button type="submit" disabled={submitting} className="btn-primary w-full shadow-xl shadow-[--danger]/20 !bg-danger hover:!bg-rose-600 mt-4">

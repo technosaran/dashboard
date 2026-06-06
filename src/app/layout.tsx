@@ -62,6 +62,7 @@ import { Toaster } from "react-hot-toast";
 import { Suspense } from "react";
 import ProgressBar from "@/components/progress-bar";
 import { cn } from "@/lib/utils";
+import PwaSecurityManager from "@/components/pwa-security-manager";
 
 
 export default function RootLayout({
@@ -84,6 +85,8 @@ export default function RootLayout({
           <div className="absolute inset-0 bg-[url('/noise.svg')] opacity-[0.03] mix-blend-multiply pointer-events-none" />
         </div>
 
+        <PwaSecurityManager />
+
         <Suspense fallback={null}>
           <ProgressBar />
         </Suspense>
@@ -91,17 +94,41 @@ export default function RootLayout({
         <Toaster 
           position="top-center"
           toastOptions={{
-            duration: 3000,
+            duration: 4000,
             style: {
-              background: "var(--bg-surface)",
+              background: "rgba(18, 18, 18, 0.9)",
+              backdropFilter: "blur(16px)",
               color: "var(--text-primary)",
-              border: "1px solid var(--border-default)",
-              borderRadius: "var(--radius-md,12px)",
-              fontSize: "14px",
-              fontWeight: "500",
-              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.4)",
-              maxWidth: "90vw",
+              border: "1.5px solid rgba(255, 255, 255, 0.1)",
+              borderRadius: "16px",
+              padding: "16px 28px",
+              fontSize: "18px",
+              fontWeight: "700",
+              boxShadow: "0 20px 50px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05)",
+              maxWidth: "600px",
+              textAlign: "center",
+              letterSpacing: "0.01em",
             },
+            success: {
+              iconTheme: {
+                primary: "#10b981",
+                secondary: "#ffffff",
+              },
+              style: {
+                border: "1.5px solid rgba(16, 185, 129, 0.4)",
+                boxShadow: "0 20px 50px rgba(0, 0, 0, 0.6), 0 0 20px rgba(16, 185, 129, 0.15)",
+              }
+            },
+            error: {
+              iconTheme: {
+                primary: "#f43f5e",
+                secondary: "#ffffff",
+              },
+              style: {
+                border: "1.5px solid rgba(244, 63, 94, 0.4)",
+                boxShadow: "0 20px 50px rgba(0, 0, 0, 0.6), 0 0 20px rgba(244, 63, 94, 0.15)",
+              }
+            }
           }}
         />
       </body>
