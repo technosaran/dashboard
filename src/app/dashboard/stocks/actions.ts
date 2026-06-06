@@ -86,7 +86,7 @@ export async function createInvestment(data: {
   const totalCost = data.total_cost_with_charges ?? turnover;
   const charges = Math.abs(totalCost - turnover);
 
-  const rpc = supabase.rpc as unknown as (
+  const rpc = supabase.rpc.bind(supabase) as unknown as (
     fn: "record_investment",
     args: {
       p_user_id: string;

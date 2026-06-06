@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { differenceInDays, parseISO, format } from "date-fns";
 import { toast } from "react-hot-toast";
 
@@ -37,7 +37,7 @@ const CARD_COLORS = [
 ];
 
 export default function GoalsClient({ initialData }: { initialData?: FinanceData }) {
-  const { data: { goals, accounts }, isValidating, mutate } = useFinanceData(initialData);
+  const { data: { profile, goals, accounts }, isValidating, mutate } = useFinanceData(initialData);
   const searchParams = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(searchParams?.get("action") === "new");
   const [showContributeModal, setShowContributeModal] = useState(false);
@@ -59,9 +59,26 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
   });
 
   const [contributeAmount, setContributeAmount] = useState("");
-  if (!selectedAccountId && accounts.length > 0) {
-    setSelectedAccountId(accounts[0].id);
-  }
+  // Initialize selectedAccountId / default account selection
+  useEffect(() => {
+    if (accounts.length > 0 && !selectedAccountId) {
+      const defaultAccId = profile?.settings?.default_accounts?.goals;
+      const defaultAccExists = defaultAccId && accounts.some(a => a.id === defaultAccId);
+      setTimeout(() => {
+        setSelectedAccountId(defaultAccExists ? defaultAccId : accounts[0].id);
+      }, 0);
+    }
+  }, [accounts, selectedAccountId, profile]);
+
+  useEffect(() => {
+    if (accounts.length > 0 && !formData.account_id) {
+      const defaultAccId = profile?.settings?.default_accounts?.goals;
+      const defaultAccExists = defaultAccId && accounts.some(a => a.id === defaultAccId);
+      setTimeout(() => {
+        setFormData(prev => ({ ...prev, account_id: defaultAccExists ? defaultAccId : "" }));
+      }, 0);
+    }
+  }, [accounts, formData.account_id, profile]);
 
 
 
@@ -156,7 +173,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
   }
 
   return (
-    <div className="flex flex-col gap-[var(--section-gap)]">
+    <div className="flex flex-col gap-[var(--section-gap)] animate-fade-in">
       <div className="flex flex-col gap-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -436,6 +453,17 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
                        </option>
                      ))}
                    </select>
+                   {formData.account_id && (() => {
+                     const selectedAcc = accounts.find(a => a.id === formData.account_id);
+                     return selectedAcc ? (
+                       <div className="mt-2 p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between text-xs text-[--text-secondary] animate-fade-in">
+                         <span className="font-medium text-[10px]">Selected Balance</span>
+                         <span className="font-bold text-white text-[11px]">
+                           ₹{selectedAcc.balance.toLocaleString()}
+                         </span>
+                       </div>
+                     ) : null;
+                   })()}
                  </div>
                )}
 
@@ -469,6 +497,17 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
                        </option>
                      ))}
                    </select>
+                   {selectedAccountId && (() => {
+                     const selectedAcc = accounts.find(a => a.id === selectedAccountId);
+                     return selectedAcc ? (
+                       <div className="mt-2 p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between text-xs text-[--text-secondary] animate-fade-in">
+                         <span className="font-medium text-[10px]">Selected Balance</span>
+                         <span className="font-bold text-white text-[11px]">
+                           ₹{selectedAcc.balance.toLocaleString()}
+                         </span>
+                       </div>
+                     ) : null;
+                   })()}
                  </div>
                  <div className="space-y-1 text-left">
                     <label className="text-[9px] font-black text-[--text-muted] uppercase tracking-widest ml-1">Amount (₹)</label>

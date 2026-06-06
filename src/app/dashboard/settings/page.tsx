@@ -10,12 +10,54 @@ import { MODULE_KEYS, MODULE_DISPLAY_LABELS } from "@/lib/modules";
 
 export default function SettingsPage() {
   const { username, setUsername, loading, isSyncing } = useUser();
-  const { data: { profile }, mutate } = useFinanceData();
+  const { data: { profile, accounts }, mutate } = useFinanceData();
   const [input, setInput] = useState(username);
   const [lastSaved, setLastSaved] = useState<string | null>(null);
   const [prevUsername, setPrevUsername] = useState(username);
   const [prevLoading, setPrevLoading] = useState(loading);
   const prevIsSyncingRef = useRef(false);
+
+  const defaultAccounts = profile?.settings?.default_accounts || {};
+
+  const handleDefaultAccountChange = async (sectionKey: string, accountId: string) => {
+    const updatedDefaultAccounts = {
+      ...defaultAccounts,
+      [sectionKey]: accountId || null
+    };
+
+    const updatedSettings = {
+      ...profile?.settings,
+      default_accounts: updatedDefaultAccounts
+    };
+
+    // Optimistic update
+    const optimisticProfile = { 
+      username: profile?.username || "", 
+      settings: updatedSettings 
+    };
+    mutate((prev: any) => prev ? { ...prev, profile: optimisticProfile } : prev, false);
+
+    const res = await updateSettings(updatedSettings);
+    if (res.error) {
+      toast.error(res.error);
+      mutate(); // rollback
+    } else {
+      toast.success("Default account updated");
+      mutate(); // full re-fetch to sync
+    }
+  };
+
+  const SECTIONS_REQUIRING_ACCOUNT = [
+    { key: "expenses", label: "Expenses Section" },
+    { key: "income", label: "Income Section" },
+    { key: "family", label: "Family Transfers" },
+    { key: "forex", label: "Forex Operations" },
+    { key: "goals", label: "Goals & Savings" },
+    { key: "fno", label: "Futures & Options" },
+    { key: "stocks", label: "Stock Portfolio" },
+    { key: "mutual_funds", label: "Mutual Funds" },
+    { key: "bonds", label: "Bond Investments" },
+  ];
 
 
 
@@ -279,7 +321,52 @@ export default function SettingsPage() {
         </div>
       </div>
 
+      {/* Default Accounts Section */}
+      <div className="max-w-2xl animate-fade-in-up delay-2">
+        <div className="glass-card-static p-6 md:p-10 relative overflow-hidden">
+          <div
+            className="absolute top-0 left-0 right-0"
+            style={{
+              height: "3px",
+              background: "var(--gradient-primary)",
+              opacity: 0.7,
+            }}
+          />
 
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400">
+               <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+            </div>
+            <div>
+               <h2 className="text-base font-bold text-white">Default Accounts</h2>
+               <p className="text-xs text-[--text-muted]">Configure the default account to pre-select for each financial section.</p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {SECTIONS_REQUIRING_ACCOUNT.map((section) => {
+              const currentVal = defaultAccounts[section.key] || "";
+              return (
+                <div key={section.key} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-white/[0.02] border border-white/5">
+                  <span className="text-[13px] font-bold text-white ml-1">{section.label}</span>
+                  <select
+                    value={currentVal}
+                    onChange={(e) => handleDefaultAccountChange(section.key, e.target.value)}
+                    className="bg-[--bg-surface] text-white border border-white/10 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-[--accent-primary] min-w-[200px]"
+                  >
+                    <option value="">None (Select First Available)</option>
+                    {accounts.map((acc) => (
+                      <option key={acc.id} value={acc.id}>
+                        {acc.name} ({acc.currency} {Number(acc.balance).toLocaleString()})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
 
       {/* Module Management */}
       <div className="max-w-2xl animate-fade-in-up delay-2">

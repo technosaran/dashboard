@@ -77,7 +77,7 @@ export async function recordMFInvestment(data: {
         ? data.account_id 
         : null;
 
-    const rpc = supabase.rpc as unknown as (
+    const rpc = supabase.rpc.bind(supabase) as unknown as (
         fn: "record_mf_investment_v4",
         args: {
             p_user_id: string;

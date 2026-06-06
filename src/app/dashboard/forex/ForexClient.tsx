@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { 
@@ -18,7 +18,7 @@ import PnLValue from "@/components/pnl-value";
 import type { Tables } from "@/lib/database.types";
 
 export default function ForexClient({ initialData }: { initialData?: FinanceData }) {
-  const { data: { accounts, forexAccounts, forexTrades, forexTransactions, ledgerLogs }, mutate } = useFinanceData(initialData);
+  const { data: { profile, accounts, forexAccounts, forexTrades, forexTransactions, ledgerLogs }, mutate } = useFinanceData(initialData);
   
   const searchParams = useSearchParams();
   const action = searchParams.get("action");
@@ -56,6 +56,17 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
 
   // Funds form
   const [fundsForm, setFundsForm] = useState({ forex_account_id: "", bank_account_id: "", amount: "", notes: "" });
+
+  // Initialize default bank account for deposits/withdrawals
+  useEffect(() => {
+    if (accounts.length > 0 && !fundsForm.bank_account_id) {
+      const defaultAccId = profile?.settings?.default_accounts?.forex;
+      const defaultAccExists = defaultAccId && accounts.some(a => a.id === defaultAccId);
+      setTimeout(() => {
+        setFundsForm(prev => ({ ...prev, bank_account_id: defaultAccExists ? defaultAccId : accounts[0].id }));
+      }, 0);
+    }
+  }, [accounts, fundsForm.bank_account_id, profile]);
 
   // Broker Account form
   const [accountForm, setAccountForm] = useState({
@@ -246,7 +257,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
   }, [editTradeAmount, editTradePnlType]);
 
   return (
-    <div className="flex flex-col gap-8 p-4 max-w-7xl mx-auto animate-in fade-in duration-700">
+    <div className="flex flex-col gap-8 p-4 max-w-7xl mx-auto animate-fade-in">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
@@ -309,7 +320,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
             onClick={() => setActiveTab(tab as "trades" | "transactions" | "accounts")}
             className={`pb-4 text-xs font-black uppercase tracking-widest whitespace-nowrap transition-all ${activeTab === tab ? "text-[--accent-primary-light] border-b-2 border-[--accent-primary-light]" : "text-[--text-muted] hover:text-white"}`}
           >
-            {tab}
+            {tab === "trades" ? "Daily P&L Summaries" : tab === "transactions" ? "Broker Fund Logs" : "Broker Accounts"}
           </button>
         ))}
       </div>
@@ -773,10 +784,23 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                       No bank accounts found in the global standard Accounts.
                     </div>
                   ) : (
-                    <select required className="input-premium !h-10 text-xs" value={fundsForm.bank_account_id} onChange={e => setFundsForm({...fundsForm, bank_account_id: e.target.value})}>
-                      <option value="" className="bg-[--bg-surface]">Select Funding</option>
-                      {accounts.map(a => <option key={a.id} value={a.id} className="bg-[--bg-surface]">{a.name} ({a.currency})</option>)}
-                    </select>
+                    <>
+                      <select required className="input-premium !h-10 text-xs" value={fundsForm.bank_account_id} onChange={e => setFundsForm({...fundsForm, bank_account_id: e.target.value})}>
+                        <option value="" className="bg-[--bg-surface]">Select Funding</option>
+                        {accounts.map(a => <option key={a.id} value={a.id} className="bg-[--bg-surface]">{a.name} ({a.currency})</option>)}
+                      </select>
+                      {fundsForm.bank_account_id && (() => {
+                        const selectedAcc = accounts.find(a => a.id === fundsForm.bank_account_id);
+                        return selectedAcc ? (
+                          <div className="mt-2 p-2 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between text-[11px] text-[--text-secondary] animate-fade-in">
+                            <span className="font-medium">Selected Balance</span>
+                            <span className="font-bold text-white">
+                              {selectedAcc.currency === 'USD' ? '$' : '₹'}{selectedAcc.balance.toLocaleString()}
+                            </span>
+                          </div>
+                        ) : null;
+                      })()}
+                    </>
                   )}
                 </div>
               </div>

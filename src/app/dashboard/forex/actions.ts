@@ -108,7 +108,7 @@ export async function forexDeposit(data: {
       return { error: "Deposit amount must be a positive number" };
     }
 
-    const rpc = supabase.rpc as unknown as (
+    const rpc = supabase.rpc.bind(supabase) as unknown as (
       fn: "forex_deposit",
       args: {
         p_user_id: string;
@@ -165,7 +165,7 @@ export async function forexWithdraw(data: {
       return { error: "Withdrawal amount must be a positive number" };
     }
 
-    const rpc = supabase.rpc as unknown as (
+    const rpc = supabase.rpc.bind(supabase) as unknown as (
       fn: "forex_withdraw",
       args: {
         p_user_id: string;
@@ -233,7 +233,7 @@ export async function logForexTrade(data: {
       return { error: "P&L must be a valid number" };
     }
 
-    const rpc = supabase.rpc as unknown as (
+    const rpc = supabase.rpc.bind(supabase) as unknown as (
       fn: "forex_log_trade",
       args: {
         p_user_id: string;

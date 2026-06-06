@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { createBond, updateBond, revertLedgerLog } from "./actions";
@@ -42,7 +42,7 @@ const BOND_TYPES = ["Government", "Corporate", "Tax-Free", "Infrastructure", "PS
 const INTEREST_FREQUENCIES = ["Monthly", "Quarterly", "Semi-Annual", "Annual"];
 
 export default function BondsClient({ initialData }: { initialData?: FinanceData }) {
-  const { data: { accounts, bonds: bondsData, bondTransactions, ledgerLogs }, isValidating, mutate } = useFinanceData(initialData);
+  const { data: { accounts, bonds: bondsData, bondTransactions, ledgerLogs, profile }, isValidating, mutate } = useFinanceData(initialData);
   const bonds = useMemo(() => (bondsData || []).filter(b => b.status === 'Active') as Bond[], [bondsData]);
   const searchParams = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(searchParams.get("action") === "new");
@@ -74,6 +74,19 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
     total_interest_earned: "0",
     current_value: ""
   });
+
+  // Initialize default account when accounts/profile loads or modal is opened
+  useEffect(() => {
+    if (accounts.length > 0 && showAddModal && !formData.account_id) {
+      const defaultAccId = profile?.settings?.default_accounts?.bonds;
+      const defaultAccExists = defaultAccId && accounts.some(a => a.id === defaultAccId);
+      if (defaultAccExists) {
+        setTimeout(() => {
+          setFormData(prev => ({ ...prev, account_id: defaultAccId }));
+        }, 0);
+      }
+    }
+  }, [accounts, profile, showAddModal, formData.account_id]);
 
   const stats = useMemo(() => {
     const totalInvested = bonds.reduce((s, b) => s + Number(b.total_invested), 0);
@@ -255,7 +268,7 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
   };
 
   return (
-    <div className="flex flex-col gap-[var(--section-gap)]">
+    <div className="flex flex-col gap-[var(--section-gap)] animate-fade-in">
       
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 px-4">
@@ -780,6 +793,17 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
                       <option value="">No Deduction</option>
                       {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
                     </select>
+                    {formData.account_id && (() => {
+                      const selectedAcc = accounts.find(a => a.id === formData.account_id);
+                      return selectedAcc ? (
+                        <div className="mt-2 p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between text-xs text-[--text-secondary] animate-fade-in">
+                          <span className="font-medium">Selected Balance</span>
+                          <span className="font-bold text-white">
+                            {selectedAcc.currency === 'USD' ? '$' : '₹'}{selectedAcc.balance.toLocaleString()}
+                          </span>
+                        </div>
+                      ) : null;
+                    })()}
                   </div>
                 ) : null}
 

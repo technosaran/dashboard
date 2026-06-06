@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 import Image from "next/image";
@@ -53,7 +53,7 @@ const formatNum = (num: number | string) => {
 };
 
 export default function MutualFundsClient({ initialData }: { initialData?: FinanceData }) {
-  const { data: { mutualFunds: rawMfs, accounts, mutualFundTrades: trades }, isValidating, mutate } = useFinanceData(initialData);
+  const { data: { mutualFunds: rawMfs, accounts, mutualFundTrades: trades, profile }, isValidating, mutate } = useFinanceData(initialData);
   const mutualFunds = useMemo(() => {
     return rawMfs.filter(mf => Number(mf.units) > 0).map(mf => {
       const currentNav = Number(mf.current_nav || 0);
@@ -94,6 +94,19 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
     account_id: "",
     trade_type: "buy" as "buy" | "sell"
   });
+
+  // Initialize default account when accounts/profile loads or modal is opened
+  useEffect(() => {
+    if (accounts.length > 0 && showAddModal && !formData.account_id) {
+      const defaultAccId = profile?.settings?.default_accounts?.mutual_funds;
+      const defaultAccExists = defaultAccId && accounts.some(a => a.id === defaultAccId);
+      if (defaultAccExists) {
+        setTimeout(() => {
+          setFormData(prev => ({ ...prev, account_id: defaultAccId }));
+        }, 0);
+      }
+    }
+  }, [accounts, profile, showAddModal, formData.account_id]);
 
   const finalStampDuty = parseFloat(charges) || 0;
 
@@ -269,7 +282,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
 
 
   return (
-    <div className="flex flex-col gap-[var(--section-gap)]">
+    <div className="flex flex-col gap-[var(--section-gap)] animate-fade-in">
       
       {/* Portfolio Overview */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 px-4">
@@ -729,6 +742,17 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                         <option value="">{formData.trade_type === 'buy' ? 'Fund Account' : 'Dest. Account'}</option>
                         {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name} (₹{acc.balance.toLocaleString()})</option>)}
                     </select>
+                    {formData.account_id && (() => {
+                      const selectedAcc = accounts.find(a => a.id === formData.account_id);
+                      return selectedAcc ? (
+                        <div className="mt-2 p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between text-xs text-[--text-secondary] animate-fade-in">
+                          <span className="font-medium">Selected Balance</span>
+                          <span className="font-bold text-white">
+                            {selectedAcc.currency === 'USD' ? '$' : '₹'}{selectedAcc.balance.toLocaleString()}
+                          </span>
+                        </div>
+                      ) : null;
+                    })()}
                   </div>
                 ) : null}
 

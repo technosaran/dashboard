@@ -33,7 +33,7 @@ export interface FnoTrade {
 const supabase = createClient();
 
 type FinanceData = {
-  profile: { username: string; settings: { enabled_modules: string[] } } | null;
+  profile: { username: string; settings: { enabled_modules: string[]; default_accounts?: Record<string, string | null> } } | null;
   accounts: Tables<"accounts">[];
   transactions: Tables<"transactions">[];
   ledgerLogs: Tables<"ledger_logs">[];
@@ -124,37 +124,42 @@ export function useFinanceData(initialData?: FinanceData) {
   };
 
   const summarySWR = useSWR(SUMMARY_KEY, fetchSummary, {
-    revalidateOnFocus: true,
+    revalidateOnFocus: false,
     revalidateOnReconnect: true,
-    dedupingInterval: 2000,
+    revalidateIfStale: false,
+    dedupingInterval: 30000,
     fallbackData: fallback
   });
 
   const investmentsSWR = useSWR(INVESTMENTS_KEY, fetchInvestments, {
-    revalidateOnFocus: true,
+    revalidateOnFocus: false,
     revalidateOnReconnect: true,
-    dedupingInterval: 5000, // Investments change less frequently
+    revalidateIfStale: false,
+    dedupingInterval: 30000,
     fallbackData: fallback
   });
 
   const cashflowSWR = useSWR(CASHFLOW_KEY, fetchCashflow, {
-    revalidateOnFocus: true,
+    revalidateOnFocus: false,
     revalidateOnReconnect: true,
-    dedupingInterval: 4000,
+    revalidateIfStale: false,
+    dedupingInterval: 30000,
     fallbackData: fallback
   });
 
   const forexSWR = useSWR(FOREX_KEY, fetchForex, {
-    revalidateOnFocus: true,
+    revalidateOnFocus: false,
     revalidateOnReconnect: true,
-    dedupingInterval: 1000, // Forex trades can be rapid
+    revalidateIfStale: false,
+    dedupingInterval: 30000,
     fallbackData: fallback
   });
 
   const familySWR = useSWR(FAMILY_KEY, fetchFamily, {
-    revalidateOnFocus: true,
+    revalidateOnFocus: false,
     revalidateOnReconnect: true,
-    dedupingInterval: 10000, // Family info changes rarely
+    revalidateIfStale: false,
+    dedupingInterval: 30000,
     fallbackData: fallback
   });
 

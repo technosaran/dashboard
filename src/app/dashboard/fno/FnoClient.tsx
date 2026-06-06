@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { format } from "date-fns";
 import { toast } from "react-hot-toast";
 
@@ -19,7 +19,7 @@ function formatNum(val: number, decimals = 2): string {
 }
 
 export default function FnoClient({ initialData }: { initialData?: FinanceData }) {
-  const { data: { fnoTrades, accounts }, isValidating, mutate } = useFinanceData(initialData);
+  const { data: { fnoTrades, accounts, profile }, isValidating, mutate } = useFinanceData(initialData);
   const searchParams = useSearchParams();
   
   const [showLogForm, setShowLogForm] = useState(searchParams?.get("action") === "new");
@@ -42,6 +42,19 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
     notes: "",
     trade_date: new Date().toISOString().split("T")[0]
   });
+
+  // Initialize default account when accounts/profile loads or modal is opened
+  useEffect(() => {
+    if (accounts.length > 0 && showLogForm && !logFormData.account_id) {
+      const defaultAccId = profile?.settings?.default_accounts?.fno;
+      const defaultAccExists = defaultAccId && accounts.some(a => a.id === defaultAccId);
+      if (defaultAccExists) {
+        setTimeout(() => {
+          setLogFormData(prev => ({ ...prev, account_id: defaultAccId }));
+        }, 0);
+      }
+    }
+  }, [accounts, profile, showLogForm, logFormData.account_id]);
 
   const [closeFormData, setCloseFormData] = useState({
     exit_price: "",
@@ -197,7 +210,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
   }
 
   return (
-    <div className="flex flex-col gap-[var(--section-gap)]">
+    <div className="flex flex-col gap-[var(--section-gap)] animate-fade-in">
       
       {/* ── Header ── */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 px-4 mb-4">
@@ -562,25 +575,38 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
                 </div>
               </div>
 
-              <div className="relative">
-                <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[9px] text-[--text-muted] uppercase tracking-widest font-black z-10">Linked Bank/Broker Account (Premium Flow)</label>
-                <select
-                  value={logFormData.account_id}
-                  onChange={e => setLogFormData({ ...logFormData, account_id: e.target.value })}
-                  className="w-full h-12 px-4 pr-10 bg-transparent border border-white/15 focus:border-[--accent-primary] rounded-xl text-[12px] text-white outline-none font-bold appearance-none"
-                >
-                  <option value="" className="bg-[--bg-surface] text-slate-400">N/A (Historical / Unlinked)</option>
-                  {accounts.map(acc => (
-                    <option key={acc.id} value={acc.id} className="bg-[--bg-surface] text-white">
-                      {acc.name} (₹{formatNum(acc.balance)})
-                    </option>
-                  ))}
-                </select>
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                    <path d="M19 9l-7 7-7-7" />
-                  </svg>
+              <div className="space-y-1">
+                <div className="relative">
+                  <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[9px] text-[--text-muted] uppercase tracking-widest font-black z-10">Linked Bank/Broker Account (Premium Flow)</label>
+                  <select
+                    value={logFormData.account_id}
+                    onChange={e => setLogFormData({ ...logFormData, account_id: e.target.value })}
+                    className="w-full h-12 px-4 pr-10 bg-transparent border border-white/15 focus:border-[--accent-primary] rounded-xl text-[12px] text-white outline-none font-bold appearance-none"
+                  >
+                    <option value="" className="bg-[--bg-surface] text-slate-400">N/A (Historical / Unlinked)</option>
+                    {accounts.map(acc => (
+                      <option key={acc.id} value={acc.id} className="bg-[--bg-surface] text-white">
+                        {acc.name} (₹{formatNum(acc.balance)})
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                      <path d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
                 </div>
+                {logFormData.account_id && (() => {
+                  const selectedAcc = accounts.find(a => a.id === logFormData.account_id);
+                  return selectedAcc ? (
+                    <div className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between text-xs text-[--text-secondary] animate-fade-in">
+                      <span className="font-medium">Selected Balance</span>
+                      <span className="font-bold text-white">
+                        {selectedAcc.currency === 'USD' ? '$' : '₹'}{selectedAcc.balance.toLocaleString()}
+                      </span>
+                    </div>
+                  ) : null;
+                })()}
               </div>
 
               <div className="relative">

@@ -33,7 +33,7 @@ const SortIcon = ({ col, sortKey, sortDir }: { col: SortKey; sortKey: SortKey; s
 );
 
 export default function StocksClient({ initialData }: { initialData?: FinanceData }) {
-  const { data: { investments, accounts, stockTrades: trades }, isValidating, mutate } = useFinanceData(initialData);
+  const { data: { investments, accounts, stockTrades: trades, profile }, isValidating, mutate } = useFinanceData(initialData);
   const stocks = useMemo(() => {
     return investments.filter(i => i.type === "stock").map(i => {
       const currentPrice = Number(i.current_price || 0);
@@ -67,6 +67,19 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
     deduct_from_account: "",
     trade_type: "buy" as "buy" | "sell"
   });
+
+  // Initialize default account when accounts/profile loads or modal is opened
+  useEffect(() => {
+    if (accounts.length > 0 && showForm && !formData.deduct_from_account) {
+      const defaultAccId = profile?.settings?.default_accounts?.stocks;
+      const defaultAccExists = defaultAccId && accounts.some(a => a.id === defaultAccId);
+      if (defaultAccExists) {
+        setTimeout(() => {
+          setFormData(prev => ({ ...prev, deduct_from_account: defaultAccId }));
+        }, 0);
+      }
+    }
+  }, [accounts, profile, showForm, formData.deduct_from_account]);
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -269,7 +282,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
 
 
   return (
-    <div className="flex flex-col gap-[var(--section-gap)]">
+    <div className="flex flex-col gap-[var(--section-gap)] animate-fade-in">
       
       {/* ── Portfolio Overview Header ── */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 px-4 mb-8">
@@ -582,28 +595,41 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                   />
                 </div>
 
-                <div className="relative">
-                  <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[10px] text-[--text-muted] uppercase tracking-widest font-bold z-10">
-                    {formData.trade_type === 'buy' ? 'Deduct From' : 'Deposit To'}
-                  </label>
-                  <select
-                    value={formData.deduct_from_account || ""}
-                    onChange={e => setFormData({ ...formData, deduct_from_account: e.target.value })}
-                    className="w-full h-12 px-4 pr-10 bg-transparent border border-[--border-default] rounded-md text-[12px] text-[--text-primary] outline-none focus:border-[--accent-primary] appearance-none font-bold"
-                    disabled={!!editingId}
-                  >
-                    <option value="" className="bg-[--bg-surface]">N/A (Historical)</option>
-                    {accounts.map(acc => (
-                      <option key={acc.id} value={acc.id} className="bg-[--bg-surface]">
-                        {acc.name} (₹{formatNum(acc.balance)})
-                      </option>
-                    ))}
-                  </select>
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[--text-muted]">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                      <path d="M19 9l-7 7-7-7" />
-                    </svg>
+                <div className="space-y-1">
+                  <div className="relative">
+                    <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[10px] text-[--text-muted] uppercase tracking-widest font-bold z-10">
+                      {formData.trade_type === 'buy' ? 'Deduct From' : 'Deposit To'}
+                    </label>
+                    <select
+                      value={formData.deduct_from_account || ""}
+                      onChange={e => setFormData({ ...formData, deduct_from_account: e.target.value })}
+                      className="w-full h-12 px-4 pr-10 bg-transparent border border-[--border-default] rounded-md text-[12px] text-[--text-primary] outline-none focus:border-[--accent-primary] appearance-none font-bold"
+                      disabled={!!editingId}
+                    >
+                      <option value="" className="bg-[--bg-surface]">N/A (Historical)</option>
+                      {accounts.map(acc => (
+                        <option key={acc.id} value={acc.id} className="bg-[--bg-surface]">
+                          {acc.name} (₹{formatNum(acc.balance)})
+                        </option>
+                      ))}
+                    </select>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[--text-muted]">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                        <path d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
                   </div>
+                  {formData.deduct_from_account && (() => {
+                    const selectedAcc = accounts.find(a => a.id === formData.deduct_from_account);
+                    return selectedAcc ? (
+                      <div className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between text-xs text-[--text-secondary] animate-fade-in">
+                        <span className="font-medium">Selected Balance</span>
+                        <span className="font-bold text-white">
+                          {selectedAcc.currency === 'USD' ? '$' : '₹'}{selectedAcc.balance.toLocaleString()}
+                        </span>
+                      </div>
+                    ) : null;
+                  })()}
                 </div>
               </div>
 

@@ -20,7 +20,7 @@ interface FamilyClientProps {
 export default function FamilyClient({
   initialData,
 }: FamilyClientProps) {
-  const { data: { recipients, accounts, ledgerLogs }, mutate, isLoading } = useFinanceData(initialData);
+  const { data: { profile, recipients, accounts, ledgerLogs }, mutate, isLoading } = useFinanceData(initialData);
   const [isAddingRecipient, setIsAddingRecipient] = useState(false);
   const [isSendingMoney, setIsSendingMoney] = useState(false);
   const [selectedRecipient, setSelectedRecipient] = useState<any | null>(null);
@@ -42,9 +42,13 @@ export default function FamilyClient({
   // Initialize sendAccountId once accounts are loaded
   useEffect(() => {
     if (accounts.length > 0 && !sendAccountId) {
-      setSendAccountId(accounts[0].id);
+      const defaultAccId = profile?.settings?.default_accounts?.family;
+      const defaultAccExists = defaultAccId && accounts.some(a => a.id === defaultAccId);
+      setTimeout(() => {
+        setSendAccountId(defaultAccExists ? defaultAccId : accounts[0].id);
+      }, 0);
     }
-  }, [accounts, sendAccountId]);
+  }, [accounts, sendAccountId, profile]);
 
   const handleAddRecipient = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -164,7 +168,7 @@ export default function FamilyClient({
   const totalSent = recentSends.reduce((sum, s) => sum + (s.amount || 0), 0);
 
   return (
-    <div className="flex flex-col gap-8 max-w-[1400px] mx-auto w-full">
+    <div className="flex flex-col gap-8 max-w-[1400px] mx-auto w-full animate-fade-in">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-5">
         <div>
@@ -177,7 +181,7 @@ export default function FamilyClient({
         </div>
         <button
           onClick={() => setIsAddingRecipient(true)}
-          className="bg-[--accent-primary] hover:bg-opacity-90 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2 shadow-sm"
+          className="btn-primary flex items-center justify-center gap-2 px-5 py-2.5 shadow-xl shadow-[--accent-primary]/10"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -341,7 +345,7 @@ export default function FamilyClient({
                   <button type="button" onClick={() => { setIsAddingRecipient(false); setIsEditingRecipient(false); setEditingRecipient(null); setNewName(""); }} className="flex-1 py-3.5 bg-white/[0.03] hover:bg-white/[0.08] rounded-xl text-sm font-medium transition-all text-[--text-primary]">
                     Cancel
                   </button>
-                  <button type="submit" disabled={submitting} className="flex-1 py-3.5 bg-[--accent-primary] hover:bg-opacity-90 text-white rounded-xl text-sm font-medium transition-all disabled:opacity-50">
+                  <button type="submit" disabled={submitting} className="btn-primary flex-1 shadow-lg shadow-[--accent-primary]/10">
                     {submitting ? "Saving..." : isEditingRecipient ? "Save Changes" : "Save Contact"}
                   </button>
                 </div>
@@ -375,6 +379,17 @@ export default function FamilyClient({
                   <select required value={sendAccountId} onChange={(e) => setSendAccountId(e.target.value)} className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-3.5 text-[--text-primary] focus:border-[--accent-primary] outline-none transition-all appearance-none cursor-pointer">
                     {accounts.map((acc) => (<option key={acc.id} value={acc.id} className="bg-[#0a0a0a] text-[--text-primary]">{acc.name} ({acc.currency} {acc.balance.toLocaleString()})</option>))}
                   </select>
+                  {sendAccountId && (() => {
+                    const selectedAcc = accounts.find(a => a.id === sendAccountId);
+                    return selectedAcc ? (
+                      <div className="mt-2 p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between text-xs text-[--text-secondary] animate-fade-in">
+                        <span className="font-medium">Selected Balance</span>
+                        <span className="font-bold text-white">
+                          {selectedAcc.currency === 'USD' ? '$' : '₹'}{selectedAcc.balance.toLocaleString()}
+                        </span>
+                      </div>
+                    ) : null;
+                  })()}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-[--text-secondary] mb-2">Amount</label>
@@ -400,7 +415,7 @@ export default function FamilyClient({
                   <button type="button" onClick={() => { setIsSendingMoney(false); setSelectedRecipient(null); }} className="flex-1 py-4 bg-white/[0.03] hover:bg-white/[0.08] rounded-xl text-sm font-medium transition-all text-[--text-primary]">
                     Cancel
                   </button>
-                  <button type="submit" disabled={submitting} className="flex-[2] py-4 bg-[--accent-primary] hover:bg-opacity-90 text-white rounded-xl text-sm font-medium transition-all flex items-center justify-center disabled:opacity-50">
+                  <button type="submit" disabled={submitting} className="btn-primary flex-[2] shadow-xl shadow-[--accent-primary]/15">
                     {submitting ? (
                       <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -427,7 +442,7 @@ export default function FamilyClient({
             <p className="text-sm text-[--text-muted] mb-8 leading-relaxed">This will permanently remove <span className="text-[--text-primary] font-medium">{recipients.find(r => r.id === deletingId)?.name}</span> from your contacts.</p>
             <div className="flex gap-3 w-full">
               <button onClick={() => { setShowDeleteConfirm(false); setDeletingId(null); }} className="flex-1 py-3.5 bg-white/[0.03] hover:bg-white/[0.08] rounded-xl text-sm font-medium transition-all text-[--text-primary]">Cancel</button>
-              <button onClick={confirmDelete} disabled={submitting} className="flex-1 py-3.5 bg-danger hover:bg-red-600 text-white rounded-xl text-sm font-medium transition-all disabled:opacity-50">
+              <button onClick={confirmDelete} disabled={submitting} className="btn-danger flex-1">
                 {submitting ? "Removing..." : "Remove"}
               </button>
             </div>

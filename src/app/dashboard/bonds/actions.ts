@@ -62,7 +62,7 @@ export async function createBond(data: BondFormData) {
         : null;
 
     // Use typed RPC to ensure transactional integrity
-    const rpc = supabase.rpc as unknown as (
+    const rpc = supabase.rpc.bind(supabase) as unknown as (
       fn: "record_bond_purchase",
       args: {
         p_user_id: string;

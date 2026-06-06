@@ -60,7 +60,8 @@ export async function resetUserData() {
 
 type ProfileSettings = {
   enabled_modules?: string[];
-  [key: string]: string | number | boolean | null | string[] | undefined;
+  default_accounts?: Record<string, string | null>;
+  [key: string]: any;
 };
 
 export async function updateSettings(settings: ProfileSettings) {

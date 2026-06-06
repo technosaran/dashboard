@@ -54,7 +54,7 @@ const INCOME_CATEGORIES = [
 
 export default function IncomeClient({ initialData }: { initialData?: FinanceData }) {
 
-  const { data: { incomes, accounts }, isValidating, mutate } = useFinanceData(initialData);
+  const { data: { incomes, accounts, profile }, isValidating, mutate } = useFinanceData(initialData);
   const searchParams = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(searchParams.get("action") === "new");
   const [submitting, withLock] = useSubmitLock();
@@ -75,6 +75,19 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
     date: new Date().toISOString().split("T")[0],
     account_id: "",
   });
+
+  // Initialize default account when accounts/profile loads or modal is opened
+  useEffect(() => {
+    if (accounts.length > 0 && showAddModal && !formData.account_id) {
+      const defaultAccId = profile?.settings?.default_accounts?.income;
+      const defaultAccExists = defaultAccId && accounts.some(a => a.id === defaultAccId);
+      if (defaultAccExists) {
+        setTimeout(() => {
+          setFormData(prev => ({ ...prev, account_id: defaultAccId }));
+        }, 0);
+      }
+    }
+  }, [accounts, profile, showAddModal, formData.account_id]);
 
   // Align form default date with the selected month and year
   useEffect(() => {
@@ -241,7 +254,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
   }
 
   return (
-    <div className="flex flex-col gap-[var(--section-gap)]">
+    <div className="flex flex-col gap-[var(--section-gap)] animate-fade-in">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <div className="flex items-center gap-3">
@@ -616,6 +629,17 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
                     <option value="" className="bg-[--bg-surface]">Suspense (No Account)</option>
                     {accounts.map(acc => <option key={acc.id} value={acc.id} className="bg-[--bg-surface]">{acc.name}</option>)}
                   </select>
+                  {formData.account_id && (() => {
+                    const selectedAcc = accounts.find(a => a.id === formData.account_id);
+                    return selectedAcc ? (
+                      <div className="mt-2 p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between text-xs text-[--text-secondary] animate-fade-in">
+                        <span className="font-medium">Selected Balance</span>
+                        <span className="font-bold text-white">
+                          {selectedAcc.currency === 'USD' ? '$' : '₹'}{selectedAcc.balance.toLocaleString()}
+                        </span>
+                      </div>
+                    ) : null;
+                  })()}
                 </div>
               </div>
               <button type="submit" disabled={submitting} className="btn-primary w-full shadow-xl shadow-[--accent-primary]/20 mt-4">{submitting ? "Deploying..." : "Finalize Entry"}</button>
