@@ -89,13 +89,13 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
             </div>
 
             <div className="flex gap-4 justify-center">
-              <button
+              <button type="button"
                 onClick={handleSkip}
                 className="px-8 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-[--text-primary] font-bold text-sm border border-white/10 transition-all"
               >
                 Skip for Now
               </button>
-              <button
+              <button type="button"
                 onClick={() => setStep("account")}
                 className="btn-primary px-10 py-3 shadow-2xl shadow-[--accent-primary]/20"
               >
@@ -133,7 +133,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
             ) : (
               <div className="mb-8 p-6 rounded-2xl bg-white/[0.02] border border-white/5">
                 <p className="text-sm text-[--text-muted] mb-4">Click below to add your first account</p>
-                <button
+                <button type="button"
                   onClick={goToAccounts}
                   className="btn-primary px-8 py-3"
                 >
@@ -143,13 +143,13 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
             )}
 
             <div className="flex gap-4 justify-center">
-              <button
+              <button type="button"
                 onClick={handleSkip}
                 className="px-6 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-[--text-muted] font-bold text-sm transition-all"
               >
                 Skip
               </button>
-              <button
+              <button type="button"
                 onClick={() => setStep("income")}
                 disabled={!accountCreated}
                 className="btn-primary px-8 py-2 disabled:opacity-30 disabled:cursor-not-allowed"
@@ -188,7 +188,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
             ) : (
               <div className="mb-8 p-6 rounded-2xl bg-white/[0.02] border border-white/5">
                 <p className="text-sm text-[--text-muted] mb-4">Click below to log your first income</p>
-                <button
+                <button type="button"
                   onClick={goToIncome}
                   className="btn-primary px-8 py-3 bg-success hover:bg-success"
                 >
@@ -198,19 +198,19 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
             )}
 
             <div className="flex gap-4 justify-center">
-              <button
+              <button type="button"
                 onClick={() => setStep("account")}
                 className="px-6 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-[--text-muted] font-bold text-sm transition-all"
               >
                 Back
               </button>
-              <button
+              <button type="button"
                 onClick={handleSkip}
                 className="px-6 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-[--text-muted] font-bold text-sm transition-all"
               >
                 Skip
               </button>
-              <button
+              <button type="button"
                 onClick={() => setStep("expense")}
                 disabled={!incomeLogged}
                 className="btn-primary px-8 py-2 disabled:opacity-30 disabled:cursor-not-allowed"
@@ -249,7 +249,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
             ) : (
               <div className="mb-8 p-6 rounded-2xl bg-white/[0.02] border border-white/5">
                 <p className="text-sm text-[--text-muted] mb-4">Click below to record your first expense</p>
-                <button
+                <button type="button"
                   onClick={goToExpenses}
                   className="btn-primary px-8 py-3 bg-danger hover:bg-danger"
                 >
@@ -259,13 +259,13 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
             )}
 
             <div className="flex gap-4 justify-center">
-              <button
+              <button type="button"
                 onClick={() => setStep("income")}
                 className="px-6 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-[--text-muted] font-bold text-sm transition-all"
               >
                 Back
               </button>
-              <button
+              <button type="button"
                 onClick={handleComplete}
                 disabled={!expenseLogged}
                 className="btn-primary px-10 py-2 disabled:opacity-30 disabled:cursor-not-allowed"

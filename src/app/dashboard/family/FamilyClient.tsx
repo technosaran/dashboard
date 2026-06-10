@@ -179,7 +179,7 @@ export default function FamilyClient({
             Manage your family contacts and transfer money quickly.
           </p>
         </div>
-        <button
+        <button type="button"
           onClick={() => setIsAddingRecipient(true)}
           className="btn-primary flex items-center justify-center gap-2 px-5 py-2.5 shadow-xl shadow-[--accent-primary]/10"
         >
@@ -207,13 +207,13 @@ export default function FamilyClient({
       {/* View Toggle */}
       <div className="flex justify-end">
         <div className="flex bg-white/[0.02] border border-white/[0.05] p-1 rounded-xl w-fit">
-          <button
+          <button type="button"
             onClick={() => setActiveView("contacts")}
             className={`px-4 py-2 rounded-lg text-xs font-medium transition-all ${activeView === "contacts" ? "bg-white/[0.1] text-[--text-primary]" : "text-[--text-muted] hover:text-[--text-primary]"}`}
           >
             Contacts
           </button>
-          <button
+          <button type="button"
             onClick={() => setActiveView("history")}
             className={`px-4 py-2 rounded-lg text-xs font-medium transition-all ${activeView === "history" ? "bg-white/[0.1] text-[--text-primary]" : "text-[--text-muted] hover:text-[--text-primary]"}`}
           >
@@ -259,12 +259,12 @@ export default function FamilyClient({
                       </div>
                     </div>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => startEdit(person)} className="p-2 text-[--text-muted] hover:text-white transition-colors rounded-full hover:bg-white/[0.05]">
+                      <button type="button" onClick={() => startEdit(person)} className="p-2 text-[--text-muted] hover:text-white transition-colors rounded-full hover:bg-white/[0.05]">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
                       </button>
-                      <button onClick={() => handleDeleteRecipient(person.id)} className="p-2 text-[--text-muted] hover:text-danger transition-colors rounded-full hover:bg-white/[0.05]">
+                      <button type="button" onClick={() => handleDeleteRecipient(person.id)} className="p-2 text-[--text-muted] hover:text-danger transition-colors rounded-full hover:bg-white/[0.05]">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
@@ -273,7 +273,7 @@ export default function FamilyClient({
                   </div>
                   
                   <div className="mt-2 pt-4 border-t border-white/[0.05]">
-                    <button
+                    <button type="button"
                       onClick={() => { setSelectedRecipient(person); setSendAmount(""); setSendNote(""); setIsSendingMoney(true); }}
                       className="w-full py-2.5 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 bg-white/[0.03] hover:bg-white/[0.08] text-[--text-primary]"
                     >
@@ -330,7 +330,7 @@ export default function FamilyClient({
                   <h2 className="text-xl font-medium text-[--text-primary]">{isEditingRecipient ? "Edit Contact" : "Add Contact"}</h2>
                   <p className="text-sm text-[--text-muted] mt-1">{isEditingRecipient ? "Update details for this contact." : "Enter contact details below."}</p>
                 </div>
-                <button onClick={() => { setIsAddingRecipient(false); setIsEditingRecipient(false); setEditingRecipient(null); setNewName(""); }} className="p-2 text-[--text-muted] hover:text-[--text-primary] transition-colors rounded-full hover:bg-white/5">
+                <button type="button" onClick={() => { setIsAddingRecipient(false); setIsEditingRecipient(false); setEditingRecipient(null); setNewName(""); }} className="p-2 text-[--text-muted] hover:text-[--text-primary] transition-colors rounded-full hover:bg-white/5">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
               </div>
@@ -369,7 +369,7 @@ export default function FamilyClient({
                     <p className="text-sm text-[--text-muted] mt-1">To {selectedRecipient.name}</p>
                   </div>
                 </div>
-                <button onClick={() => { setIsSendingMoney(false); setSelectedRecipient(null); }} className="p-2 text-[--text-muted] hover:text-[--text-primary] transition-colors rounded-full hover:bg-white/5">
+                <button type="button" onClick={() => { setIsSendingMoney(false); setSelectedRecipient(null); }} className="p-2 text-[--text-muted] hover:text-[--text-primary] transition-colors rounded-full hover:bg-white/5">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
               </div>
@@ -441,8 +441,8 @@ export default function FamilyClient({
             <h3 className="text-xl font-medium text-[--text-primary] mb-2">Remove Contact?</h3>
             <p className="text-sm text-[--text-muted] mb-8 leading-relaxed">This will permanently remove <span className="text-[--text-primary] font-medium">{recipients.find(r => r.id === deletingId)?.name}</span> from your contacts.</p>
             <div className="flex gap-3 w-full">
-              <button onClick={() => { setShowDeleteConfirm(false); setDeletingId(null); }} className="flex-1 py-3.5 bg-white/[0.03] hover:bg-white/[0.08] rounded-xl text-sm font-medium transition-all text-[--text-primary]">Cancel</button>
-              <button onClick={confirmDelete} disabled={submitting} className="btn-danger flex-1">
+              <button type="button" onClick={() => { setShowDeleteConfirm(false); setDeletingId(null); }} className="flex-1 py-3.5 bg-white/[0.03] hover:bg-white/[0.08] rounded-xl text-sm font-medium transition-all text-[--text-primary]">Cancel</button>
+              <button type="button" onClick={confirmDelete} disabled={submitting} className="btn-danger flex-1">
                 {submitting ? "Removing..." : "Remove"}
               </button>
             </div>

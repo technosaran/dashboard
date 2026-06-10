@@ -96,7 +96,7 @@ export default function Error({
         )}
 
         <div style={{ display: "flex", gap: "12px", justifyContent: "center" }}>
-          <button
+          <button type="button"
             onClick={reset}
             style={{
               height: "48px",

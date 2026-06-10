@@ -300,7 +300,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
           <div className={`status-dot scale-90 ${isValidating ? 'animate-pulse bg-yellow-400' : 'bg-emerald-400 opacity-50'}`} />
         </div>
         <div className="flex flex-wrap md:flex-nowrap items-center gap-3 w-full md:w-auto">
-            <button 
+            <button type="button" 
               onClick={exportHoldings} 
               className="btn-secondary !h-11 !px-6 flex items-center justify-center gap-2 hidden md:flex"
               title="Export Holdings"
@@ -310,7 +310,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
               </svg>
               Export
             </button>
-            <button 
+            <button type="button" 
               onClick={() => { setEditingId(null); setFormData(prev => ({ ...prev, trade_type: 'buy' })); setCharges("0"); setShowAddModal(true); }} 
               className="btn-primary !h-12 md:!h-11 !px-8 w-full md:w-auto text-[13px] md:text-[11px] font-black uppercase tracking-widest shadow-[0_4px_20px_rgba(var(--accent-primary-rgb),0.3)] order-first md:order-last"
             >
@@ -340,13 +340,13 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
       </div>
 
       <div className="mx-4 flex items-center gap-1 bg-white/5 p-1 rounded-xl w-fit">
-        <button
+        <button type="button"
           onClick={() => setActiveTab("holdings")}
           className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === "holdings" ? "bg-[--accent-primary] text-white shadow-lg shadow-[--accent-primary]/20" : "text-[--text-muted] hover:text-[--text-primary]"}`}
         >
           Holdings ({mfs.length})
         </button>
-        <button
+        <button type="button"
           onClick={() => setActiveTab("history")}
           className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === "history" ? "bg-success text-white shadow-lg shadow-[--success]/20" : "text-[--text-muted] hover:text-[--text-primary]"}`}
         >
@@ -397,7 +397,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                                         <div className="flex items-center gap-2">
                                             <span className="font-bold text-[14px] text-[#eee] group-hover:text-[--accent-primary-light] transition-colors">{mf.fund_name}</span>
                                             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button 
+                                                <button type="button" 
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         toast(`Total Charges: ₹${(Number(mf.units) * Number(mf.avg_nav) * 0.00005).toFixed(4)} (Stamp Duty)`, {
@@ -413,13 +413,13 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                                                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                                      </svg>
                                                  </button>
-                                                <button 
+                                                <button type="button" 
                                                     onClick={(e) => { e.stopPropagation(); startEdit(mf); }}
                                                     className="px-2 py-0.5 bg-sky-500/10 hover:bg-sky-500 text-sky-400 hover:text-white text-[9px] font-black uppercase rounded transition-all"
                                                 >
                                                     Edit
                                                 </button>
-                                                <button 
+                                                <button type="button" 
                                                     onClick={(e) => { e.stopPropagation(); startSell(mf); }}
                                                     className="px-2 py-0.5 bg-danger/10 hover:bg-danger text-danger hover:text-white text-[9px] font-black uppercase rounded transition-all"
                                                 >
@@ -515,7 +515,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                   </div>
 
                   <div className="flex gap-2">
-                    <button 
+                    <button type="button" 
                       onClick={() => { 
                         setEditingId(null); 
                         setFormData({ 
@@ -538,13 +538,13 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                     >
                       Buy More
                     </button>
-                    <button 
+                    <button type="button" 
                       onClick={() => startSell(mf)} 
                       className="flex-1 py-2.5 bg-danger/15 hover:bg-danger/25 text-danger border border-danger/20 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all"
                     >
                       Redeem
                     </button>
-                    <button 
+                    <button type="button" 
                       onClick={() => startEdit(mf)} 
                       className="w-12 py-2.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 text-[10px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center transition-all"
                     >
@@ -594,7 +594,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                          </span>
                       </td>
                       <td className="px-6 py-4 text-right">
-                         <button 
+                         <button type="button" 
                            onClick={() => handleRevert(trade.ledger_log_id)}
                            disabled={submitting}
                            className="text-[9px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-all bg-rose-500/5 px-3 py-1 rounded-lg border border-rose-500/10"
@@ -641,7 +641,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                     </span>
                   </div>
                   <div className="mt-3 flex justify-end">
-                    <button 
+                    <button type="button" 
                       onClick={() => handleRevert(trade.ledger_log_id)}
                       disabled={submitting}
                       className="w-full py-2.5 text-[10px] font-black uppercase tracking-widest text-rose-500 bg-rose-500/5 hover:bg-rose-500/10 rounded-xl border border-rose-500/10 transition-all"
@@ -662,7 +662,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
           <div className="mobile-dialog-panel glass-card-static w-full max-w-3xl p-8 md:p-12 rounded-3xl max-h-[85vh] overflow-y-auto custom-scrollbar">
             <div className="flex justify-between items-center mb-12">
               <h2 className="text-3xl font-black tracking-tight">{editingId ? 'Edit Mutual Fund Holding' : formData.trade_type === 'buy' ? 'Investment Log' : 'Asset Redemption'}</h2>
-              <button onClick={() => setShowAddModal(false)} className="text-[--text-muted] hover:text-[--text-primary] transition-colors p-2">
+              <button type="button" onClick={() => setShowAddModal(false)} className="text-[--text-muted] hover:text-[--text-primary] transition-colors p-2">
                 <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>

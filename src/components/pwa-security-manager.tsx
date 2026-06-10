@@ -65,7 +65,7 @@ export default function PwaSecurityManager() {
           <h3 className="text-lg font-black tracking-tight text-white">Console Locked</h3>
           <p className="text-xs text-[--text-secondary]">Visual shielding active. Tap anywhere to resume your session.</p>
         </div>
-        <button 
+        <button type="button" 
           className="btn-primary !h-10 text-[10px] font-black uppercase tracking-widest px-6 w-full"
           onClick={() => setIsBlurred(false)}
         >

@@ -265,10 +265,10 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
           <p className="text-xs text-[--text-muted] font-bold uppercase tracking-[0.3em] mt-2">Global Currency Markets</p>
         </div>
         <div className="flex flex-wrap gap-2.5">
-          <button onClick={() => setShowAccountModal(true)} className="btn-secondary !h-11">Add Broker Account</button>
-          <button onClick={() => { setFundsType("DEPOSIT"); setFundsForm({ forex_account_id: "", bank_account_id: "", amount: "", notes: "" }); setShowFundsModal(true); }} className="btn-secondary !h-11">Deposit</button>
-          <button onClick={() => { setFundsType("WITHDRAW"); setFundsForm({ forex_account_id: "", bank_account_id: "", amount: "", notes: "" }); setShowFundsModal(true); }} className="btn-secondary !h-11">Withdraw</button>
-          <button onClick={() => setShowTradeModal(true)} className="btn-primary !h-11 shadow-[0_0_20px_rgba(var(--accent-primary-rgb),0.4)]">Log Daily P&L</button>
+          <button type="button" onClick={() => setShowAccountModal(true)} className="btn-secondary !h-11">Add Broker Account</button>
+          <button type="button" onClick={() => { setFundsType("DEPOSIT"); setFundsForm({ forex_account_id: "", bank_account_id: "", amount: "", notes: "" }); setShowFundsModal(true); }} className="btn-secondary !h-11">Deposit</button>
+          <button type="button" onClick={() => { setFundsType("WITHDRAW"); setFundsForm({ forex_account_id: "", bank_account_id: "", amount: "", notes: "" }); setShowFundsModal(true); }} className="btn-secondary !h-11">Withdraw</button>
+          <button type="button" onClick={() => setShowTradeModal(true)} className="btn-primary !h-11 shadow-[0_0_20px_rgba(var(--accent-primary-rgb),0.4)]">Log Daily P&L</button>
         </div>
       </div>
 
@@ -284,10 +284,10 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
           <h3 className="text-2xl md:text-3xl font-black text-[--text-primary] tracking-tight">Launch Your Forex Terminal</h3>
           <p className="text-sm text-[--text-muted] mt-3 max-w-lg mx-auto font-medium leading-relaxed">Track currency trading performance, manage deposits/withdrawals, and monitor net returns across forex markets.</p>
           <div className="flex flex-wrap gap-3 mt-8">
-            <button onClick={() => setShowAccountModal(true)} className="btn-secondary h-13 px-8 rounded-xl font-bold uppercase tracking-wider text-[11px]">
+            <button type="button" onClick={() => setShowAccountModal(true)} className="btn-secondary h-13 px-8 rounded-xl font-bold uppercase tracking-wider text-[11px]">
               Add Broker Account
             </button>
-            <button onClick={() => setShowTradeModal(true)} className="btn-primary h-13 px-8 rounded-xl font-bold uppercase tracking-wider text-[11px] shadow-xl shadow-[--accent-primary]/20 flex items-center gap-2">
+            <button type="button" onClick={() => setShowTradeModal(true)} className="btn-primary h-13 px-8 rounded-xl font-bold uppercase tracking-wider text-[11px] shadow-xl shadow-[--accent-primary]/20 flex items-center gap-2">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
               Log First P&L Entry
             </button>
@@ -315,7 +315,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
       {/* Tabs */}
       <div className="flex gap-6 border-b border-white/5 overflow-x-auto custom-scrollbar">
         {["trades", "transactions", "accounts"].map((tab) => (
-          <button
+          <button type="button"
             key={tab}
             onClick={() => setActiveTab(tab as "trades" | "transactions" | "accounts")}
             className={`pb-4 text-xs font-black uppercase tracking-widest whitespace-nowrap transition-all ${activeTab === tab ? "text-[--accent-primary-light] border-b-2 border-[--accent-primary-light]" : "text-[--text-muted] hover:text-white"}`}
@@ -356,7 +356,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                           <PnLValue value={t.pnl} prefix="$" size="sm" className="items-end" />
                         </td>
                         <td className="p-4 text-center">
-                          <button onClick={() => startEditTrade(t)} className="px-2 py-1 bg-sky-500/10 hover:bg-sky-500 text-sky-400 hover:text-white text-[9px] font-black uppercase rounded transition-all">
+                          <button type="button" onClick={() => startEditTrade(t)} className="px-2 py-1 bg-sky-500/10 hover:bg-sky-500 text-sky-400 hover:text-white text-[9px] font-black uppercase rounded transition-all">
                             Edit
                           </button>
                         </td>
@@ -394,7 +394,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                     )}
 
                     <div className="flex gap-2 mt-4">
-                      <button 
+                      <button type="button" 
                         onClick={() => startEditTrade(t)}
                         className="flex-1 py-2 bg-sky-500/10 hover:bg-sky-500 text-sky-400 hover:text-white border border-sky-500/20 text-[10px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-1.5 transition-all"
                       >
@@ -447,7 +447,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                           <td className={`p-4 text-right font-black tabular-nums flex items-center justify-end gap-4 ${tx.transaction_type === 'DEPOSIT' ? 'text-[--accent-primary-light]' : 'text-warning'}`}>
                             <span>{tx.transaction_type === 'DEPOSIT' ? '+' : '-'}${tx.amount.toLocaleString()}</span>
                             {matchingLog && (
-                              <button 
+                              <button type="button" 
                                 onClick={() => handleRevert(matchingLog.id)}
                                 disabled={submitting}
                                 className="text-[9px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-all bg-rose-500/5 px-2 py-1 rounded-lg border border-rose-500/10"
@@ -494,7 +494,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                             {tx.transaction_type === 'DEPOSIT' ? '+' : '-'}${tx.amount.toLocaleString()}
                           </span>
                           {matchingLog && (
-                            <button 
+                            <button type="button" 
                               onClick={() => handleRevert(matchingLog.id)}
                               disabled={submitting}
                               className="text-[9px] font-black uppercase tracking-widest text-rose-500 bg-rose-500/5 px-2 py-1 rounded-lg border border-rose-500/10"
@@ -519,7 +519,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                 <div className="text-4xl mb-4 opacity-30">🏦</div>
                 <h4 className="text-lg font-black text-white">No Broker Accounts Registered</h4>
                 <p className="text-xs text-[--text-muted] mt-2 max-w-sm leading-relaxed">Add dedicated broker accounts directly in the Forex terminal. You can then log daily profits or losses and record transfer transactions easily.</p>
-                <button onClick={() => setShowAccountModal(true)} className="btn-primary mt-6 !h-10 text-xs px-6">Add Broker Account</button>
+                <button type="button" onClick={() => setShowAccountModal(true)} className="btn-primary mt-6 !h-10 text-xs px-6">Add Broker Account</button>
               </div>
             ) : (
               forexAccounts.map((a) => (
@@ -561,7 +561,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                   </div>
                   
                   <div className="border-t border-white/5 pt-4 flex justify-end">
-                    <button onClick={() => handleDeleteAccount(a.id)} className="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-600 border border-rose-500/20 text-rose-400 hover:text-white text-[9px] font-black uppercase tracking-widest rounded-lg transition-all flex items-center gap-1.5">
+                    <button type="button" onClick={() => handleDeleteAccount(a.id)} className="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-600 border border-rose-500/20 text-rose-400 hover:text-white text-[9px] font-black uppercase tracking-widest rounded-lg transition-all flex items-center gap-1.5">
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                       Delete Broker
                     </button>

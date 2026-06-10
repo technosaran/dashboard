@@ -500,7 +500,7 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
               <p className="text-lg font-black text-white">No Ledger Entries Located</p>
               <p className="text-sm text-[--text-muted] mt-1 max-w-sm">No transaction matches the current filters or query string.</p>
             </div>
-            <button
+            <button type="button"
               onClick={() => {
                 setSearchQuery("");
                 resetRange();

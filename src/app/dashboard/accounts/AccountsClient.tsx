@@ -240,12 +240,12 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
           <div className={`status-dot scale-90 ${isValidating ? 'animate-pulse bg-yellow-400' : 'bg-emerald-400 opacity-50'}`} />
         </div>
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-          <button onClick={() => setActiveTab(activeTab === "accounts" ? "history" : "accounts")} className="btn-secondary h-11 w-full sm:w-auto flex items-center justify-center gap-2">
+          <button type="button" onClick={() => setActiveTab(activeTab === "accounts" ? "history" : "accounts")} className="btn-secondary h-11 w-full sm:w-auto flex items-center justify-center gap-2">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             {activeTab === "accounts" ? "History" : "Accounts"}
           </button>
-          <button onClick={() => { setTransferFromId(null); setShowTransferModal(true); }} className="btn-secondary h-11 w-full sm:w-auto flex items-center justify-center gap-2"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>Transfer</button>
-          <button onClick={() => setShowForm(true)} className="btn-primary h-11 w-full sm:w-auto flex items-center justify-center gap-2"><svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>New Account</button>
+          <button type="button" onClick={() => { setTransferFromId(null); setShowTransferModal(true); }} className="btn-secondary h-11 w-full sm:w-auto flex items-center justify-center gap-2"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>Transfer</button>
+          <button type="button" onClick={() => setShowForm(true)} className="btn-primary h-11 w-full sm:w-auto flex items-center justify-center gap-2"><svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>New Account</button>
         </div>
       </div>
       {activeTab === "accounts" ? (
@@ -271,7 +271,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
             </p>
 
             <div className="mt-8 flex flex-col sm:flex-row items-center gap-4">
-              <button 
+              <button type="button" 
                 onClick={() => {
                   setFormData({ name: "", type: "checking", balance: "0", currency: "INR", bank_name: "" });
                   setShowForm(true);
@@ -472,14 +472,14 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
                   <div className="absolute top-0 left-0 right-0 h-[3px]" style={{ background: style.gradient }} />
                   <div className="flex justify-between items-start mb-6">
                      <div><span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider" style={{ background: style.badge, color: style.color, border: `1px solid ${style.badgeBorder}` }}>{a.type}</span><div className="flex items-center gap-3 mt-4">{a.bank_name ? <BankLogo bankName={a.bank_name} size={48} /> : <CategoryIcon type={a.type} className="w-12 h-12" />}<span className="text-base font-bold text-[--text-secondary]">{a.bank_name || a.name}</span></div></div>
-                     {a.name !== "Cash" && <button onClick={() => startEdit(a)} className="p-2 rounded-xl bg-white/5 border border-white/10 text-[--text-muted] hover:text-white transition-all"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>}
+                     {a.name !== "Cash" && <button type="button" onClick={() => startEdit(a)} className="p-2 rounded-xl bg-white/5 border border-white/10 text-[--text-muted] hover:text-white transition-all"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>}
                   </div>
                   <div className="mt-auto">
                     <h3 className="text-lg font-bold truncate">{a.name}</h3>
                     <p className="text-2xl font-black mt-1" style={{ color: style.color }}>{getCurrencySymbol(a.currency)} {a.balance.toLocaleString()}</p>
                     <div className="flex gap-2 mt-6">
-                      <button onClick={() => { setAdjustingAccountId(a.id); setShowAdjustModal(true); }} className="flex-1 h-12 rounded-xl font-bold text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-2" style={{ background: style.iconBg, color: style.color, border: `1px solid ${style.badgeBorder}` }}><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>Adjust balance</button>
-                      {a.name !== "Cash" && <button onClick={() => handleDelete(a.id)} className="w-12 h-12 rounded-xl bg-danger/10 border border-danger/20 text-danger hover:bg-danger/20 transition-all flex items-center justify-center"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>}
+                      <button type="button" onClick={() => { setAdjustingAccountId(a.id); setShowAdjustModal(true); }} className="flex-1 h-12 rounded-xl font-bold text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-2" style={{ background: style.iconBg, color: style.color, border: `1px solid ${style.badgeBorder}` }}><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>Adjust balance</button>
+                      {a.name !== "Cash" && <button type="button" onClick={() => handleDelete(a.id)} className="w-12 h-12 rounded-xl bg-danger/10 border border-danger/20 text-danger hover:bg-danger/20 transition-all flex items-center justify-center"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>}
                     </div>
                   </div>
                 </div>
@@ -499,9 +499,9 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
         </div>
 
         <div className="p-4 border-b border-white/5 flex flex-wrap gap-2">
-          <button onClick={() => setHistoryAccountId("all")} className={`px-4 h-10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${historyAccountId === "all" ? "bg-[--accent-primary]/20 text-[--accent-primary-light] border border-[--accent-primary]/30" : "bg-white/5 text-[--text-muted] border border-white/10 hover:text-[--text-primary]"}`}>All Accounts</button>
+          <button type="button" onClick={() => setHistoryAccountId("all")} className={`px-4 h-10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${historyAccountId === "all" ? "bg-[--accent-primary]/20 text-[--accent-primary-light] border border-[--accent-primary]/30" : "bg-white/5 text-[--text-muted] border border-white/10 hover:text-[--text-primary]"}`}>All Accounts</button>
           {accounts.map((account) => (
-            <button key={account.id} onClick={() => setHistoryAccountId(account.id)} className={`px-4 h-10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${historyAccountId === account.id ? "bg-[--accent-primary]/20 text-[--accent-primary-light] border border-[--accent-primary]/30" : "bg-white/5 text-[--text-muted] border border-white/10 hover:text-[--text-primary]"}`}>{account.name}</button>
+            <button type="button" key={account.id} onClick={() => setHistoryAccountId(account.id)} className={`px-4 h-10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${historyAccountId === account.id ? "bg-[--accent-primary]/20 text-[--accent-primary-light] border border-[--accent-primary]/30" : "bg-white/5 text-[--text-muted] border border-white/10 hover:text-[--text-primary]"}`}>{account.name}</button>
           ))}
         </div>
 
@@ -547,7 +547,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
       {showForm && (
         <div className="mobile-dialog-shell fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-xl animate-fade-in">
            <div className="mobile-dialog-panel glass-card-static w-full max-w-xl p-8 animate-scale-in max-h-[90vh] overflow-y-auto">
-              <div className="flex justify-between items-center mb-8"><div><h2 className="text-2xl font-black">{editingId ? "Update Account" : "Open New Account"}</h2><p className="text-xs text-[--text-muted] mt-1 uppercase tracking-widest font-bold">Financial Entity Register</p></div><button onClick={resetForm} className="p-2 rounded-xl bg-white/5 text-[--text-muted]"><svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg></button></div>
+              <div className="flex justify-between items-center mb-8"><div><h2 className="text-2xl font-black">{editingId ? "Update Account" : "Open New Account"}</h2><p className="text-xs text-[--text-muted] mt-1 uppercase tracking-widest font-bold">Financial Entity Register</p></div><button type="button" onClick={resetForm} className="p-2 rounded-xl bg-white/5 text-[--text-muted]"><svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg></button></div>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div><label className="block text-[10px] font-black uppercase tracking-widest text-[--text-muted] mb-2 ml-1">Account Label</label><input required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="input-premium" placeholder="e.g. Primary Savings" autoComplete="new-password" /></div>
                 <div className="grid grid-cols-2 gap-4">
@@ -568,7 +568,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
 
       {showAdjustModal && (
         <div className="mobile-dialog-shell fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-md animate-fade-in"><div className="mobile-dialog-panel glass-card-static w-full max-w-sm p-8 animate-scale-in max-h-[90vh] overflow-y-auto custom-scrollbar">
-          <div className="flex justify-between items-center mb-6"><div><h3 className="text-xl font-black">Adjust Balance</h3><p className="text-[10px] font-bold text-[--text-muted] uppercase tracking-widest">Balance Modification</p></div><button onClick={() => setShowAdjustModal(false)} className="text-[--text-muted]"><svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg></button></div>
+          <div className="flex justify-between items-center mb-6"><div><h3 className="text-xl font-black">Adjust Balance</h3><p className="text-[10px] font-bold text-[--text-muted] uppercase tracking-widest">Balance Modification</p></div><button type="button" onClick={() => setShowAdjustModal(false)} className="text-[--text-muted]"><svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg></button></div>
           <form onSubmit={handleAdjust} className="space-y-6">
             <div className="grid grid-cols-2 gap-2">
               <button 
@@ -596,7 +596,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
       {showTransferModal && (
         <div className="mobile-dialog-shell fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-md animate-fade-in">
            <div className="mobile-dialog-panel glass-card-static w-full max-w-md p-8 animate-scale-in max-h-[90vh] overflow-y-auto custom-scrollbar">
-              <div className="flex justify-between items-center mb-8"><div><h3 className="text-xl font-black">Inter-Account Transfer</h3><p className="text-[10px] font-bold text-[--text-muted] uppercase tracking-widest">Financial reallocation</p></div><button onClick={() => setShowTransferModal(false)} className="text-[--text-muted]"><svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg></button></div>
+              <div className="flex justify-between items-center mb-8"><div><h3 className="text-xl font-black">Inter-Account Transfer</h3><p className="text-[10px] font-bold text-[--text-muted] uppercase tracking-widest">Financial reallocation</p></div><button type="button" onClick={() => setShowTransferModal(false)} className="text-[--text-muted]"><svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg></button></div>
               <form onSubmit={handleTransfer} className="space-y-6">
                 <div><label className="block text-[10px] font-black text-[--text-muted] mb-2 ml-1">SOURCE ACCOUNT</label><select aria-label="Select source account" id="transfer-source" name="from_account" required value={transferFromId || ""} onChange={e => setTransferFromId(e.target.value)} className="input-premium h-14"><option value="">Select source</option>{accounts.map(a => <option key={a.id} value={a.id} style={{background: "var(--bg-surface)"}}>{a.name} ({getCurrencySymbol(a.currency)}{a.balance.toLocaleString()})</option>)}</select></div>
                 <div><label className="block text-[10px] font-black text-[--text-muted] mb-2 ml-1">DESTINATION ACCOUNT</label><select aria-label="Select destination account" id="transfer-destination" name="to_account" required value={transferData.to_account_id} onChange={e => setTransferData({...transferData, to_account_id: e.target.value})} className="input-premium h-14"><option value="">Select target</option>{accounts.map(a => a.id !== transferFromId && <option key={a.id} value={a.id} style={{background: "var(--bg-surface)"}}>{a.name} ({getCurrencySymbol(a.currency)}{a.balance.toLocaleString()})</option>)}</select></div>
@@ -619,8 +619,8 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
                 <p className="text-sm text-[--text-secondary] mt-2">Are you sure you want to delete <span className="font-bold text-rose-400">{accounts.find(a => a.id === deletingAccountId)?.name}</span>? This action cannot be undone.</p>
               </div>
               <div className="flex gap-3 w-full mt-2">
-                <button onClick={() => { setShowDeleteConfirm(false); setDeletingAccountId(null); }} className="btn-secondary flex-1 h-12 font-bold rounded-xl">Cancel</button>
-                <button onClick={confirmDelete} className="btn-danger flex-1 h-12 font-bold rounded-xl">Delete</button>
+                <button type="button" onClick={() => { setShowDeleteConfirm(false); setDeletingAccountId(null); }} className="btn-secondary flex-1 h-12 font-bold rounded-xl">Cancel</button>
+                <button type="button" onClick={confirmDelete} className="btn-danger flex-1 h-12 font-bold rounded-xl">Delete</button>
               </div>
             </div>
           </div>

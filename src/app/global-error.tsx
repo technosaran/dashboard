@@ -85,7 +85,7 @@ export default function GlobalError({
             </p>
           )}
 
-          <button
+          <button type="button"
             onClick={reset}
             style={{
               height: "48px",

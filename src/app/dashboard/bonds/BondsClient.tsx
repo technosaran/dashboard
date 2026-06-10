@@ -280,7 +280,7 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
           </div>
           <div className={`status-dot scale-90 ${isValidating ? 'animate-pulse bg-yellow-400' : 'bg-emerald-400 opacity-50'}`} />
         </div>
-        <button onClick={() => setShowAddModal(true)} className="btn-primary !h-11 !px-8">
+        <button type="button" onClick={() => setShowAddModal(true)} className="btn-primary !h-11 !px-8">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
           Add Bond
         </button>
@@ -320,13 +320,13 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
       {/* Tabs & Sync */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 border-b border-white/5 pb-4">
         <div className="flex items-center gap-8">
-          <button
+          <button type="button"
             onClick={() => setActiveTab("holdings")}
             className={`text-xs font-black uppercase tracking-widest pb-3 px-1 transition-all ${activeTab === "holdings" ? "text-[--accent-primary-light] border-b-2 border-[--accent-primary-light]" : "text-[--text-muted] hover:text-[--text-primary]"}`}
           >
             Holdings ({bonds.length})
           </button>
-          <button
+          <button type="button"
             onClick={() => setActiveTab("history")}
             className={`text-xs font-black uppercase tracking-widest pb-3 px-1 transition-all ${activeTab === "history" ? "text-[--accent-primary-light] border-b-2 border-[--accent-primary-light]" : "text-[--text-muted] hover:text-[--text-primary]"}`}
           >
@@ -343,7 +343,7 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
               <div className="text-6xl mb-4">📜</div>
               <h3 className="text-2xl font-black text-[--text-primary] mb-2">No Bonds in Portfolio</h3>
               <p className="text-sm text-[--text-muted] mb-8">Start building your fixed income portfolio with government and corporate bonds</p>
-              <button onClick={() => setShowAddModal(true)} className="btn-primary shadow-2xl shadow-[--accent-primary]/20">Add Your First Bond</button>
+              <button type="button" onClick={() => setShowAddModal(true)} className="btn-primary shadow-2xl shadow-[--accent-primary]/20">Add Your First Bond</button>
             </div>
           ) : (
             <>
@@ -430,7 +430,7 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
                                   {daysToMaturity} days
                                 </span>
                               </div>
-                              <button
+                              <button type="button"
                                 onClick={(e) => { e.stopPropagation(); startEdit(bond); }}
                                 className="px-2.5 py-1 bg-sky-500/10 hover:bg-sky-500 text-sky-400 hover:text-white text-[9px] font-black uppercase rounded transition-all ml-4 opacity-0 group-hover:opacity-100"
                               >
@@ -522,7 +522,7 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
                       </div>
 
                       <div className="flex gap-2">
-                        <button 
+                        <button type="button" 
                           onClick={() => startEdit(bond)} 
                           className="w-full py-2.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 text-[10px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 transition-all"
                         >
@@ -594,7 +594,7 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
                                 Number(log.amount) === Number(txn.amount)
                               );
                               return matchingLog ? (
-                                <button 
+                                <button type="button" 
                                   onClick={() => handleRevert(matchingLog.id)}
                                   disabled={submitting}
                                   className="text-[9px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-all bg-rose-500/5 px-2 py-1 rounded-lg border border-rose-500/10"
@@ -653,7 +653,7 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
                               Number(log.amount) === Number(txn.amount)
                             );
                             return matchingLog ? (
-                              <button 
+                              <button type="button" 
                                 onClick={() => handleRevert(matchingLog.id)}
                                 disabled={submitting}
                                 className="text-[9px] font-black uppercase tracking-widest text-rose-500 bg-rose-500/5 px-2 py-1 rounded-lg border border-rose-500/10"
@@ -679,7 +679,7 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
           <div className="mobile-dialog-panel glass-card-static w-full max-w-3xl p-8 max-h-[95vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-8">
               <h2 className="text-2xl font-black">{editingId ? 'Edit Bond Holding' : 'Add Bond Investment'}</h2>
-              <button onClick={() => { setShowAddModal(false); setEditingId(null); }} className="text-[--text-muted] hover:text-white">
+              <button type="button" onClick={() => { setShowAddModal(false); setEditingId(null); }} className="text-[--text-muted] hover:text-white">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path d="M6 18L18 6M6 6l12 12" />
                 </svg>

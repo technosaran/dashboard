@@ -396,7 +396,7 @@ export default function SettingsPage() {
                       <span className={`w-2 h-2 rounded-full ${enabledModules.includes(module) ? 'bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.5)]' : 'bg-white/10'}`} />
                       <span className="text-[13px] font-bold text-white">{displayLabel}</span>
                    </div>
-                   <button 
+                   <button type="button" 
                      onClick={() => toggleModule(module)}
                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${enabledModules.includes(module) ? 'bg-cyan-500' : 'bg-white/10'}`}
                    >
@@ -457,7 +457,7 @@ export default function SettingsPage() {
                 permanently.
               </p>
             </div>
-            <button
+            <button type="button"
               onClick={handleResetClick}
               className="btn-danger !h-11 !px-6 whitespace-nowrap shadow-xl shadow-rose-500/20"
             >
@@ -514,13 +514,13 @@ export default function SettingsPage() {
             </div>
 
             <div className="flex gap-3">
-              <button
+              <button type="button"
                 onClick={() => setShowResetModal(false)}
                 className="flex-1 h-12 rounded-xl border border-white/10 bg-white/5 text-sm font-bold text-[--text-primary] hover:bg-white/10 transition-all"
               >
                 Cancel
               </button>
-              <button
+              <button type="button"
                 onClick={handleResetConfirm}
                 disabled={!canExecuteReset}
                 className="flex-1 h-12 rounded-xl bg-rose-500 text-white text-sm font-black uppercase tracking-wider transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:bg-rose-600 shadow-lg shadow-rose-500/20"

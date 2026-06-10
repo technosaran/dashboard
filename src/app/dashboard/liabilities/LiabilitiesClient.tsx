@@ -115,14 +115,14 @@ export default function LiabilitiesClient({ initialData }: { initialData?: Finan
         </div>
         <div className="flex items-center gap-3">
           <div className="flex bg-white/5 p-1 rounded-2xl border border-white/10">
-            <button 
+            <button type="button" 
               disabled={submitting}
               onClick={() => setActiveTab("loans")}
               className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === "loans" ? "bg-rose-500 text-white shadow-lg" : "text-[--text-muted] hover:text-white"}`}
             >
               Active Loans
             </button>
-            <button 
+            <button type="button" 
               disabled={submitting}
               onClick={() => setActiveTab("history")}
               className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === "history" ? "bg-rose-500 text-white shadow-lg" : "text-[--text-muted] hover:text-white"}`}
@@ -130,7 +130,7 @@ export default function LiabilitiesClient({ initialData }: { initialData?: Finan
               History
             </button>
           </div>
-          <button onClick={() => setShowAddModal(true)} disabled={submitting} className="btn-primary !h-12 !px-8 !bg-rose-500 hover:!bg-rose-600 shadow-[0_0_30px_rgba(244,63,94,0.3)] !rounded-2xl text-[11px] font-black tracking-widest uppercase">{submitting ? "Working..." : "Record Liability"}</button>
+          <button type="button" onClick={() => setShowAddModal(true)} disabled={submitting} className="btn-primary !h-12 !px-8 !bg-rose-500 hover:!bg-rose-600 shadow-[0_0_30px_rgba(244,63,94,0.3)] !rounded-2xl text-[11px] font-black tracking-widest uppercase">{submitting ? "Working..." : "Record Liability"}</button>
         </div>
       </div>
 
@@ -147,7 +147,7 @@ export default function LiabilitiesClient({ initialData }: { initialData?: Finan
               </div>
               <h3 className="text-2xl md:text-3xl font-black text-[--text-primary] tracking-tight">No Active Liabilities</h3>
               <p className="text-sm text-[--text-muted] mt-3 max-w-lg mx-auto font-medium leading-relaxed">Track loans, EMIs, credit cards, and other debt obligations. Monitor repayment progress and stay on top of your financial commitments.</p>
-              <button onClick={() => setShowAddModal(true)} disabled={submitting} className="btn-primary h-13 px-8 rounded-xl font-bold uppercase tracking-wider text-[11px] !bg-rose-500 hover:!bg-rose-600 shadow-xl shadow-rose-500/20 mt-8 flex items-center gap-2">
+              <button type="button" onClick={() => setShowAddModal(true)} disabled={submitting} className="btn-primary h-13 px-8 rounded-xl font-bold uppercase tracking-wider text-[11px] !bg-rose-500 hover:!bg-rose-600 shadow-xl shadow-rose-500/20 mt-8 flex items-center gap-2">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
                 Record First Liability
               </button>
@@ -203,7 +203,7 @@ export default function LiabilitiesClient({ initialData }: { initialData?: Finan
                       </div>
                     </div>
                     <div className="flex gap-2">
-                       <button onClick={() => {
+                       <button type="button" onClick={() => {
                          setEditingId(l.id);
                          setFormData({
                            name: l.name,
@@ -253,7 +253,7 @@ export default function LiabilitiesClient({ initialData }: { initialData?: Finan
                           <span className="text-[10px] font-black text-[--text-muted] uppercase tracking-widest opacity-60">Due: {format(parseISO(l.due_date), "MMM d, yyyy")}</span>
                         </div>
                       ) : <div />}
-                      <button disabled={submitting} onClick={() => handleDeleteLiability(l.id)} className="text-rose-500 hover:text-rose-400 transition-colors disabled:opacity-50">
+                      <button type="button" disabled={submitting} onClick={() => handleDeleteLiability(l.id)} className="text-rose-500 hover:text-rose-400 transition-colors disabled:opacity-50">
                          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                       </button>
                     </div>
@@ -309,7 +309,7 @@ export default function LiabilitiesClient({ initialData }: { initialData?: Finan
                         </p>
                       </td>
                       <td className="py-5 px-8 text-right">
-                         <button 
+                         <button type="button" 
                            onClick={() => handleRevert(log.id)}
                            disabled={submitting}
                            className="text-[9px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-all bg-rose-500/5 px-3 py-1 rounded-lg border border-rose-500/10"
@@ -336,7 +336,7 @@ export default function LiabilitiesClient({ initialData }: { initialData?: Finan
           <div className="mobile-dialog-panel glass-card-static w-full max-w-2xl p-6 md:p-10 border-rose-500/20 shadow-[0_0_100px_rgba(244,63,94,0.1)] max-h-[95vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-10">
               <h2 className="text-3xl font-black">{editingId ? "Update Liability" : "Record Liability"}</h2>
-              <button onClick={() => { setShowAddModal(false); setEditingId(null); }} className="text-[--text-muted] hover:text-white transition-colors"><svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg></button>
+              <button type="button" onClick={() => { setShowAddModal(false); setEditingId(null); }} className="text-[--text-muted] hover:text-white transition-colors"><svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg></button>
             </div>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

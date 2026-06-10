@@ -222,7 +222,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
           <div className={`status-dot scale-90 ${isValidating ? 'animate-pulse bg-yellow-400' : 'bg-emerald-400 opacity-50'}`} />
         </div>
         <div className="flex items-center gap-3 w-full md:w-auto">
-          <button 
+          <button type="button" 
             onClick={() => setShowLogForm(true)} 
             className="btn-primary !h-12 md:!h-11 !px-8 w-full md:w-auto text-[13px] md:text-[11px] font-black uppercase tracking-widest shadow-[0_4px_20px_rgba(var(--accent-primary-rgb),0.3)]"
           >
@@ -254,13 +254,13 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
       {/* ── Navigation Tabs ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/5 gap-4 px-4">
         <div className="flex items-center gap-8">
-           <button 
+           <button type="button" 
              onClick={() => setActiveTab("positions")}
              className={`text-xs font-black uppercase tracking-widest pb-3 px-1 transition-all ${activeTab === 'positions' ? 'text-[--accent-primary-light] border-b-2 border-[--accent-primary-light]' : 'text-[--text-muted] hover:text-[--text-primary]'}`}
            >
              Active Positions ({activePositions.length})
            </button>
-           <button 
+           <button type="button" 
              onClick={() => setActiveTab("history")}
              className={`text-xs font-black uppercase tracking-widest pb-3 px-1 transition-all ${activeTab === 'history' ? 'text-[--accent-primary-light] border-b-2 border-[--accent-primary-light]' : 'text-[--text-muted] hover:text-[--text-primary]'}`}
            >
@@ -312,13 +312,13 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
                         <td className="py-4 px-4 text-right tabular-nums text-[13px] font-bold text-white">₹{formatNum(premium)}</td>
                         <td className="py-4 px-4 text-right">
                           <div className="flex gap-2 justify-end">
-                            <button 
+                            <button type="button" 
                               onClick={() => { setSelectedTrade(trade); setShowCloseForm(true); }}
                               className="h-8 px-4 bg-sky-500 hover:bg-sky-600 text-white text-[10px] font-black rounded-lg shadow-md transition-colors uppercase tracking-widest"
                             >
                               Close
                             </button>
-                            <button 
+                            <button type="button" 
                               onClick={() => handleDeleteTrade(trade.id)}
                               disabled={submitting}
                               className="h-8 px-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/20 text-[10px] font-black rounded-lg transition-colors uppercase tracking-widest"
@@ -358,7 +358,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
               </p>
 
               {/* CTA button */}
-              <button
+              <button type="button"
                 onClick={() => setShowLogForm(true)}
                 className="btn-primary !h-11 !px-8 text-[11px] font-black uppercase tracking-widest shadow-[0_4px_20px_rgba(var(--accent-primary-rgb),0.3)]"
               >
@@ -411,7 +411,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
                           <PnLValue value={Number(trade.pnl || 0)} showSign={true} size="sm" prefix="₹" />
                         </td>
                         <td className="py-4 px-4 text-right">
-                          <button 
+                          <button type="button" 
                             onClick={() => handleDeleteTrade(trade.id)}
                             disabled={submitting}
                             className="h-8 px-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/20 text-[10px] font-black rounded-lg transition-colors uppercase tracking-widest"
@@ -459,7 +459,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
           <div className="glass-card-static w-full max-w-xl p-8 max-h-[90vh] overflow-y-auto custom-scrollbar border border-white/20 bg-[--bg-surface]">
             <div className="flex justify-between items-center mb-8 pb-2 border-b border-white/5">
               <h2 className="text-2xl font-black text-white">Log FnO Trade</h2>
-              <button onClick={resetLogForm} className="p-2 hover:bg-white/5 rounded-full transition-colors">
+              <button type="button" onClick={resetLogForm} className="p-2 hover:bg-white/5 rounded-full transition-colors">
                 <svg className="w-8 h-8 text-[--text-muted]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                   <path d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -643,7 +643,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
           <div className="glass-card-static w-full max-w-md p-8 border border-white/20 bg-[--bg-surface] rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
             <div className="flex justify-between items-center mb-6 pb-2 border-b border-white/5">
               <h2 className="text-xl font-black text-white">Close Position</h2>
-              <button onClick={resetCloseForm} className="p-2 hover:bg-white/5 rounded-full transition-colors">
+              <button type="button" onClick={resetCloseForm} className="p-2 hover:bg-white/5 rounded-full transition-colors">
                 <svg className="w-8 h-8 text-[--text-muted]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                   <path d="M6 18L18 6M6 6l12 12" />
                 </svg>

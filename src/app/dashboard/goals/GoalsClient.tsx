@@ -183,7 +183,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
             </div>
             <p className="text-[--text-secondary] text-xs sm:text-sm mt-1">Track and manage your long-term savings goals.</p>
           </div>
-          <button 
+          <button type="button" 
             onClick={() => setShowAddModal(true)} 
             className="btn-primary flex items-center justify-center gap-2 py-3 px-4 w-full sm:w-auto text-xs sm:text-sm shadow-xl shadow-[--accent-primary]/10"
           >
@@ -218,13 +218,13 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
 
       <div className="flex justify-start">
         <div className="flex items-center gap-1 bg-white/5 p-1 rounded-2xl">
-          <button 
+          <button type="button" 
             onClick={() => setActiveTab('active')}
             className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'active' ? 'bg-[--accent-primary] text-white shadow-lg shadow-[--accent-primary]/20' : 'text-[--text-muted] hover:text-[--text-primary]'}`}
           >
             Active
           </button>
-          <button 
+          <button type="button" 
             onClick={() => setActiveTab('completed')}
             className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'completed' ? 'bg-success text-white shadow-lg shadow-[--success]/20' : 'text-[--text-muted] hover:text-[--text-primary]'}`}
           >
@@ -264,7 +264,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
                          </div>
                        </div>
                     </div>
-                    <button onClick={() => startEdit(goal)} className="p-2 rounded-xl bg-white/5 border border-white/10 text-[--text-muted] hover:text-white transition-all">
+                    <button type="button" onClick={() => startEdit(goal)} className="p-2 rounded-xl bg-white/5 border border-white/10 text-[--text-muted] hover:text-white transition-all">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                         <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                       </svg>
@@ -318,7 +318,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
                   </div>
 
                   <div className="flex gap-2">
-                    <button
+                    <button type="button"
                       onClick={() => { setSelectedGoalId(goal.id); setShowContributeModal(true); }}
                       className="flex-1 h-12 rounded-xl font-bold text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-2"
                       style={{ background: `${cardColor.color}15`, color: cardColor.color, border: `1px solid ${cardColor.color}30` }}
@@ -326,7 +326,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
                       Add Capital
                     </button>
-                    <button onClick={() => startDeleteGoal(goal.id)} className="w-12 h-12 rounded-xl bg-danger/10 border border-danger/20 text-danger hover:bg-danger/20 transition-all flex items-center justify-center">
+                    <button type="button" onClick={() => startDeleteGoal(goal.id)} className="w-12 h-12 rounded-xl bg-danger/10 border border-danger/20 text-danger hover:bg-danger/20 transition-all flex items-center justify-center">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                     </button>
                   </div>
@@ -346,7 +346,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
               </div>
               <h3 className="text-2xl md:text-3xl font-black text-[--text-primary] tracking-tight">No Active Objectives</h3>
               <p className="text-sm text-[--text-muted] mt-3 max-w-lg mx-auto font-medium leading-relaxed">Initialize a new financial milestone to begin tracking your progress toward your goals.</p>
-              <button onClick={() => setShowAddModal(true)} className="btn-primary h-13 px-8 rounded-xl font-bold uppercase tracking-wider text-[11px] shadow-xl shadow-amber-500/20 !bg-amber-500 hover:!bg-amber-600 mt-8 flex items-center gap-2">
+              <button type="button" onClick={() => setShowAddModal(true)} className="btn-primary h-13 px-8 rounded-xl font-bold uppercase tracking-wider text-[11px] shadow-xl shadow-amber-500/20 !bg-amber-500 hover:!bg-amber-600 mt-8 flex items-center gap-2">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
                 Set Your First Goal
               </button>
@@ -368,8 +368,8 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
                         <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: cardColor.color }}>Achieved</p>
                       </div>
                       <div className="flex gap-2">
-                        <button onClick={() => startEdit(goal)} className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-[--text-muted] hover:text-blue-400 hover:bg-white/10 transition-all opacity-0 group-hover:opacity-100" title="Edit Goal"><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
-                        <button onClick={() => startDeleteGoal(goal.id)} className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-[--text-muted] hover:text-rose-400 hover:bg-rose-500/10 transition-all opacity-0 group-hover:opacity-100"><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                        <button type="button" onClick={() => startEdit(goal)} className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-[--text-muted] hover:text-blue-400 hover:bg-white/10 transition-all opacity-0 group-hover:opacity-100" title="Edit Goal"><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
+                        <button type="button" onClick={() => startDeleteGoal(goal.id)} className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-[--text-muted] hover:text-rose-400 hover:bg-rose-500/10 transition-all opacity-0 group-hover:opacity-100"><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
                       </div>
                     </div>
                     <div className="space-y-4">
@@ -405,7 +405,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
           <div className="mobile-dialog-panel glass-card-static w-full max-w-xl p-8 md:p-12 max-h-[90vh] overflow-y-auto custom-scrollbar">
              <div className="flex justify-between items-center mb-10">
                <h2 className="text-3xl font-black tracking-tight">{editingGoalId ? "Update Milestone" : "Set Milestone"}</h2>
-               <button onClick={() => { setShowAddModal(false); setEditingGoalId(null); setFormData({ name: "", target_amount: "", current_amount: "0", deadline: "", category: "Others", account_id: "" }); }} className="text-[--text-muted] hover:text-[--text-primary] transition-colors p-2">
+               <button type="button" onClick={() => { setShowAddModal(false); setEditingGoalId(null); setFormData({ name: "", target_amount: "", current_amount: "0", deadline: "", category: "Others", account_id: "" }); }} className="text-[--text-muted] hover:text-[--text-primary] transition-colors p-2">
                  <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg>
                </button>
              </div>
@@ -543,8 +543,8 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
                 <p className="text-sm text-[--text-secondary] mt-2">Are you sure you want to delete this financial goal? This action cannot be undone.</p>
               </div>
               <div className="flex gap-3 w-full mt-2">
-                <button onClick={() => { setShowDeleteConfirm(false); setDeletingGoalId(null); }} className="btn-secondary flex-1 h-12 font-bold rounded-xl">Cancel</button>
-                <button onClick={confirmDeleteGoal} className="btn-danger flex-1 h-12 font-bold rounded-xl" disabled={submitting}>Delete</button>
+                <button type="button" onClick={() => { setShowDeleteConfirm(false); setDeletingGoalId(null); }} className="btn-secondary flex-1 h-12 font-bold rounded-xl">Cancel</button>
+                <button type="button" onClick={confirmDeleteGoal} className="btn-danger flex-1 h-12 font-bold rounded-xl" disabled={submitting}>Delete</button>
               </div>
             </div>
           </div>

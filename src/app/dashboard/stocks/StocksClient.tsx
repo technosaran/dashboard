@@ -298,7 +298,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
           <div className={`status-dot scale-90 ${isValidating ? 'animate-pulse bg-yellow-400' : 'bg-emerald-400 opacity-50'}`} />
         </div>
         <div className="flex flex-wrap md:flex-nowrap items-center gap-3 w-full md:w-auto">
-            <button 
+            <button type="button" 
               onClick={exportHoldings} 
               className="btn-secondary !h-11 !px-6 flex items-center justify-center gap-2 hidden md:flex"
               title="Export Holdings"
@@ -308,7 +308,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
               </svg>
               Export
             </button>
-            <button 
+            <button type="button" 
               onClick={() => setShowForm(true)} 
               className="btn-primary !h-12 md:!h-11 !px-8 w-full md:w-auto text-[13px] md:text-[11px] font-black uppercase tracking-widest shadow-[0_4px_20px_rgba(var(--accent-primary-rgb),0.3)] order-first md:order-last"
             >
@@ -335,13 +335,13 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 border-b border-white/5 gap-4 px-4">
         <div className="flex items-center gap-8">
-           <button 
+           <button type="button" 
              onClick={() => setActiveTab("holdings")}
              className={`text-xs font-black uppercase tracking-widest pb-3 px-1 transition-all ${activeTab === 'holdings' ? 'text-[--accent-primary-light] border-b-2 border-[--accent-primary-light]' : 'text-[--text-muted] hover:text-[--text-primary]'}`}
            >
              Holdings ({stocks.filter(s => Number(s.quantity) > 0).length})
            </button>
-           <button 
+           <button type="button" 
              onClick={() => setActiveTab("history")}
              className={`text-xs font-black uppercase tracking-widest pb-3 px-1 transition-all ${activeTab === 'history' ? 'text-[--accent-primary-light] border-b-2 border-[--accent-primary-light]' : 'text-[--text-muted] hover:text-[--text-primary]'}`}
            >
@@ -407,9 +407,9 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                       <td className="py-4 px-4 text-right tabular-nums text-[13px] font-medium relative">
                         <PnLValue value={pnlPct} showSign={true} prefix="" suffix="%" size="sm" />
                         <div className="absolute inset-0 flex items-center justify-end pr-4 gap-2 opacity-0 group-hover:opacity-100 transition-all pointer-events-none group-hover:pointer-events-auto bg-[--bg-base] backdrop-blur-md">
-                          <button onClick={(e) => { e.stopPropagation(); startSell(inv); }} className="h-7 px-4 bg-rose-500 hover:bg-rose-600 text-white text-[11px] font-black rounded shadow-[0_4px_10px_rgba(244,63,94,0.2)] transition-colors uppercase tracking-tight">SELL</button>
-                          <button onClick={(e) => { e.stopPropagation(); startEdit(inv); }} className="h-7 px-4 bg-sky-500 hover:bg-sky-600 text-white text-[11px] font-black rounded shadow-[0_4px_10px_rgba(14,165,233,0.2)] transition-colors uppercase tracking-tight">EDIT</button>
-                          <button onClick={(e) => { e.stopPropagation(); setDeletingId(inv.id); setShowDeleteConfirm(true); }} className="h-7 px-4 bg-red-600 hover:bg-red-700 text-white text-[11px] font-black rounded shadow-[0_4px_10px_rgba(220,38,38,0.2)] transition-colors uppercase tracking-tight">DELETE</button>
+                          <button type="button" onClick={(e) => { e.stopPropagation(); startSell(inv); }} className="h-7 px-4 bg-rose-500 hover:bg-rose-600 text-white text-[11px] font-black rounded shadow-[0_4px_10px_rgba(244,63,94,0.2)] transition-colors uppercase tracking-tight">SELL</button>
+                          <button type="button" onClick={(e) => { e.stopPropagation(); startEdit(inv); }} className="h-7 px-4 bg-sky-500 hover:bg-sky-600 text-white text-[11px] font-black rounded shadow-[0_4px_10px_rgba(14,165,233,0.2)] transition-colors uppercase tracking-tight">EDIT</button>
+                          <button type="button" onClick={(e) => { e.stopPropagation(); setDeletingId(inv.id); setShowDeleteConfirm(true); }} className="h-7 px-4 bg-red-600 hover:bg-red-700 text-white text-[11px] font-black rounded shadow-[0_4px_10px_rgba(220,38,38,0.2)] transition-colors uppercase tracking-tight">DELETE</button>
                         </div>
                       </td>
                     </tr>
@@ -448,12 +448,12 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                            <div className="text-right overflow-hidden"><p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-1">Current Value</p><p className="text-[13px] font-black truncate">₹{formatNum(currentVal)}</p></div>
                         </div>
                        <div className="flex gap-2">
-                          <button onClick={() => { setEditingId(null); setFormData({ symbol: inv.symbol || "", name: inv.name, quantity: "", buy_price: inv.current_price.toString(), current_price: inv.current_price.toString(), trade_type: "buy", deduct_from_account: "", currency: "INR", notes: "", bought_at: new Date().toISOString().split("T")[0] }); setShowForm(true); }} className="flex-1 py-3 bg-success/20 hover:bg-success/30 text-success border border-success/30 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-success/5">Buy</button>
-                          <button onClick={() => startSell(inv)} className="flex-1 py-3 bg-danger/20 hover:bg-danger/30 text-danger border border-danger/30 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-danger/5">Sell</button>
-                          <button onClick={() => startEdit(inv)} className="w-12 py-3 bg-white/10 hover:bg-white/20 text-white border border-white/20 text-[10px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center transition-all shadow-lg">
+                          <button type="button" onClick={() => { setEditingId(null); setFormData({ symbol: inv.symbol || "", name: inv.name, quantity: "", buy_price: inv.current_price.toString(), current_price: inv.current_price.toString(), trade_type: "buy", deduct_from_account: "", currency: "INR", notes: "", bought_at: new Date().toISOString().split("T")[0] }); setShowForm(true); }} className="flex-1 py-3 bg-success/20 hover:bg-success/30 text-success border border-success/30 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-success/5">Buy</button>
+                          <button type="button" onClick={() => startSell(inv)} className="flex-1 py-3 bg-danger/20 hover:bg-danger/30 text-danger border border-danger/30 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-danger/5">Sell</button>
+                          <button type="button" onClick={() => startEdit(inv)} className="w-12 py-3 bg-white/10 hover:bg-white/20 text-white border border-white/20 text-[10px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center transition-all shadow-lg">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                           </button>
-                          <button onClick={() => { setDeletingId(inv.id); setShowDeleteConfirm(true); }} className="w-12 py-3 bg-danger/20 hover:bg-danger/30 text-danger border border-danger/30 text-[10px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center transition-all shadow-lg shadow-danger/5">
+                          <button type="button" onClick={() => { setDeletingId(inv.id); setShowDeleteConfirm(true); }} className="w-12 py-3 bg-danger/20 hover:bg-danger/30 text-danger border border-danger/30 text-[10px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center transition-all shadow-lg shadow-danger/5">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                           </button>
                        </div>
@@ -465,7 +465,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
         ) : (
           <div className="flex flex-col items-center justify-center py-32 border border-dashed border-[--border-default] rounded-sm bg-[--bg-surface]/50">
             <p className="text-[--text-muted] text-sm mb-4">You don&apos;t have any holdings yet.</p>
-            <button onClick={() => setShowForm(true)} className="text-[--accent-primary-light] text-xs font-medium hover:underline">Add your first stock</button>
+            <button type="button" onClick={() => setShowForm(true)} className="text-[--accent-primary-light] text-xs font-medium hover:underline">Add your first stock</button>
           </div>
         )
       ) : activeTab === "history" ? (
@@ -501,7 +501,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                        <span className={trade.trade_type === 'buy' ? 'text-rose-400' : 'text-emerald-400'}>
                          {trade.trade_type === 'buy' ? '-' : '+'}₹{formatNum(trade.total_amount)}
                        </span>
-                       <button 
+                       <button type="button" 
                          onClick={() => handleRevert(trade.ledger_log_id)}
                          disabled={submitting}
                          className="text-[9px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-all bg-rose-500/5 px-2 py-1 rounded-lg border border-rose-500/10"
@@ -528,7 +528,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
               <h2 className="text-2xl font-black">
                 {editingId ? "Modify Portfolio" : (formData.trade_type === 'buy' ? 'Asset Acquisition' : 'Asset Disposal')}
               </h2>
-              <button onClick={resetForm} className="p-2 hover:bg-white/5 rounded-full transition-colors">
+              <button type="button" onClick={resetForm} className="p-2 hover:bg-white/5 rounded-full transition-colors">
                 <svg className="w-8 h-8 text-[--text-muted]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                   <path d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -695,13 +695,13 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
               <h3 className="text-base font-medium text-[--text-primary] mb-2">Delete holding?</h3>
               <p className="text-[12px] text-[--text-muted] mb-6">This action cannot be undone.</p>
               <div className="flex gap-3">
-                <button 
+                <button type="button" 
                   onClick={() => { setShowDeleteConfirm(false); setDeletingId(null); }}
                   className="flex-1 h-10 border border-[--border-default] text-[--text-primary] text-xs font-medium rounded-sm hover:bg-[--bg-elevated] transition-colors"
                 >
                   CANCEL
                 </button>
-                <button 
+                <button type="button" 
                   onClick={confirmDelete}
                   className="flex-1 h-10 bg-danger text-white text-xs font-medium rounded-sm hover:opacity-90 transition-colors"
                 >

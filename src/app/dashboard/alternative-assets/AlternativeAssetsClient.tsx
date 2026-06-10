@@ -110,14 +110,14 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
         </div>
         <div className="flex items-center gap-3 w-full md:w-auto">
           <div className="flex bg-white/5 p-1 rounded-2xl border border-white/10 flex-1 md:flex-none">
-            <button 
+            <button type="button" 
               disabled={submitting}
               onClick={() => setActiveTab("inventory")}
               className={`flex-1 md:px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === "inventory" ? "bg-[--accent-primary] text-white shadow-lg" : "text-[--text-muted] hover:text-white"}`}
             >
               Inventory
             </button>
-            <button 
+            <button type="button" 
               disabled={submitting}
               onClick={() => setActiveTab("history")}
               className={`flex-1 md:px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === "history" ? "bg-[--accent-primary] text-white shadow-lg" : "text-[--text-muted] hover:text-white"}`}
@@ -125,7 +125,7 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
               History
             </button>
           </div>
-          <button onClick={() => setShowAddModal(true)} disabled={submitting} className="btn-primary !h-12 !px-8 shadow-[0_0_30px_rgba(var(--accent-primary-rgb),0.3)] !rounded-2xl text-[11px] font-black tracking-widest uppercase hidden md:block">{submitting ? "Working..." : "Record New Asset"}</button>
+          <button type="button" onClick={() => setShowAddModal(true)} disabled={submitting} className="btn-primary !h-12 !px-8 shadow-[0_0_30px_rgba(var(--accent-primary-rgb),0.3)] !rounded-2xl text-[11px] font-black tracking-widest uppercase hidden md:block">{submitting ? "Working..." : "Record New Asset"}</button>
         </div>
       </div>
 
@@ -142,7 +142,7 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
               </div>
               <h3 className="text-2xl md:text-3xl font-black text-[--text-primary] tracking-tight">Register Your First Asset</h3>
               <p className="text-sm text-[--text-muted] mt-3 max-w-lg mx-auto font-medium leading-relaxed">Track real estate, gold, collectibles, and other tangible holdings. Build a complete picture of your alternative wealth portfolio.</p>
-              <button onClick={() => setShowAddModal(true)} disabled={submitting} className="btn-primary h-13 px-8 rounded-xl font-bold uppercase tracking-wider text-[11px] shadow-xl shadow-[--accent-primary]/20 mt-8 flex items-center gap-2">
+              <button type="button" onClick={() => setShowAddModal(true)} disabled={submitting} className="btn-primary h-13 px-8 rounded-xl font-bold uppercase tracking-wider text-[11px] shadow-xl shadow-[--accent-primary]/20 mt-8 flex items-center gap-2">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
                 Record New Asset
               </button>
@@ -211,7 +211,7 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <button onClick={() => {
+                      <button type="button" onClick={() => {
                         setEditingId(asset.id);
                         setFormData({
                           name: asset.name,
@@ -225,7 +225,7 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
                       }} className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 text-[--text-muted] flex items-center justify-center hover:bg-[--accent-primary] hover:text-white transition-all">
                          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                       </button>
-                      <button 
+                      <button type="button" 
                         onClick={() => handleDeleteAsset(asset.id, asset.name)} 
                         disabled={submitting}
                         className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 text-rose-500 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
@@ -312,7 +312,7 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
                         </p>
                       </td>
                       <td className="py-5 px-8 text-right">
-                         <button 
+                         <button type="button" 
                            onClick={() => handleRevert(log.id)}
                            disabled={submitting}
                            className="text-[9px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-all bg-rose-500/5 px-3 py-1 rounded-lg border border-rose-500/10"
@@ -339,7 +339,7 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
           <div className="mobile-dialog-panel glass-card-static w-full max-w-2xl p-6 md:p-10 border-[--accent-primary]/20 shadow-[0_0_100px_rgba(14,165,233,0.1)] max-h-[95vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-10">
               <h2 className="text-3xl font-black">{editingId ? "Update Asset" : "Establish Asset"}</h2>
-              <button onClick={() => { setShowAddModal(false); setEditingId(null); }} className="text-[--text-muted] hover:text-white transition-colors"><svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg></button>
+              <button type="button" onClick={() => { setShowAddModal(false); setEditingId(null); }} className="text-[--text-muted] hover:text-white transition-colors"><svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg></button>
             </div>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
