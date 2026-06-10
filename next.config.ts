@@ -13,6 +13,7 @@ const nextConfig: NextConfig = {
 
   // Compression & performance
   compress: true,
+  poweredByHeader: false,
   
   // Build optimizations
   productionBrowserSourceMaps: false,
@@ -57,13 +58,13 @@ const nextConfig: NextConfig = {
     {
       source: "/sw.js",
       headers: [
-        { key: "Cache-Control", value: "public, max-age=0, must-revalidate" },
+        { key: "Cache-Control", value: "public, max-age=0" },
       ],
     },
     {
       source: "/workbox-:path.js",
       headers: [
-        { key: "Cache-Control", value: "public, max-age=0, must-revalidate" },
+        { key: "Cache-Control", value: "public, max-age=0" },
       ],
     },
   ],

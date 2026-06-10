@@ -181,6 +181,8 @@ html, body {
   overscroll-behavior-y: none;
   padding-bottom: env(safe-area-inset-bottom, 0);
   color-scheme: dark;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 /* Force Financial Status Colors */
