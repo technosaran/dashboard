@@ -18,8 +18,7 @@ export default async function DashboardLayout({
     <UserProvider>
       <SWRProvider initialData={initialData as unknown as FinanceData}>
         <div
-          className="flex min-h-[100dvh] flex-col overflow-hidden md:h-[100dvh] md:flex-row w-full relative"
-          style={{ background: "var(--bg-base)" }}
+          className="flex min-h-[100dvh] flex-col overflow-hidden md:h-[100dvh] md:flex-row w-full relative bg-[--bg-base]"
         >
           <Sidebar />
           <main className="relative flex-1 overflow-y-auto overflow-x-hidden">

@@ -49,6 +49,18 @@ const nextConfig: NextConfig = {
       ],
     },
     {
+      source: "/favicon.png",
+      headers: [
+        { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+      ],
+    },
+    {
+      source: "/noise.svg",
+      headers: [
+        { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+      ],
+    },
+    {
       source: "/manifest.webmanifest",
       headers: [
         { key: "Cache-Control", value: "public, max-age=86400" },

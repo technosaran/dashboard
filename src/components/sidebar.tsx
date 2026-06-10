@@ -242,12 +242,12 @@ export default function Sidebar() {
       <div className={`md:hidden fixed inset-0 z-[100] bg-black/80 backdrop-blur-md transition-all duration-500 ${isQuickActionOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`} onClick={() => setIsQuickActionOpen(false)}>
         <div className={`absolute bottom-[calc(var(--mobile-bottom-nav-height)+0.5rem)] left-4 right-4 max-h-[75vh] overflow-y-auto no-scrollbar grid grid-cols-2 gap-2.5 sm:gap-3 transition-all duration-500 ${isQuickActionOpen ? "translate-y-0 scale-100" : "translate-y-16 scale-90"}`} onClick={e => e.stopPropagation()}>
           {quickActions.map((action) => (
-            <Link key={action.label} href={action.href} prefetch={true} onClick={() => setIsQuickActionOpen(false)} aria-label={`Add new ${action.label}`} className="glass-card-static p-4 flex flex-col items-center justify-center gap-2.5 no-underline transition-all active:scale-95 shadow-lg" style={{ background: "var(--bg-surface)", border: `1px solid ${action.color}30` }}>
+            <Link key={action.label} href={action.href} prefetch={true} onClick={() => setIsQuickActionOpen(false)} aria-label={`Add new ${action.label}`} className="glass-card-static p-4 flex flex-col items-center justify-center gap-2.5 no-underline transition-all active:scale-95 shadow-lg bg-[--bg-surface]" style={{ border: `1px solid ${action.color}30` }}>
               <div className="text-2xl filter drop-shadow-[0_4px_10px_rgba(0,0,0,0.1)]" aria-hidden="true">{action.icon}</div>
               <span className="text-[9px] font-black uppercase tracking-[0.2em]" style={{ color: action.color }}>{action.label}</span>
             </Link>
           ))}
-          <button onClick={() => setIsQuickActionOpen(false)} aria-label="Cancel quick actions" className="col-span-2 glass-card-static py-3 flex items-center justify-center bg-white/5 border-white/10 mt-1 backdrop-blur-md">
+          <button type="button" onClick={() => setIsQuickActionOpen(false)} aria-label="Cancel quick actions" className="col-span-2 glass-card-static py-3 flex items-center justify-center bg-white/5 border-white/10 mt-1 backdrop-blur-md">
             <span className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Cancel</span>
           </button>
         </div>
@@ -261,7 +261,7 @@ export default function Sidebar() {
           {filteredNav.map((item) => (<NavItem key={item.href} {...item} pathname={pathname} />))}
         </nav>
         <div className="px-3 py-2 mt-auto pb-8">
-          <button onClick={handleLogout} className="flex w-full items-center justify-center gap-3 rounded-2xl px-4 py-3 text-[11px] font-black uppercase tracking-widest transition-all bg-rose-500 text-white shadow-lg shadow-rose-500/20 hover:bg-rose-600 hover:shadow-rose-500/30 active:scale-[0.98]">
+          <button type="button" onClick={handleLogout} className="flex w-full items-center justify-center gap-3 rounded-2xl px-4 py-3 text-[11px] font-black uppercase tracking-widest transition-all bg-rose-500 text-white shadow-lg shadow-rose-500/20 hover:bg-rose-600 hover:shadow-rose-500/30 active:scale-[0.98]">
             <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
             Sign Out
           </button>
@@ -280,7 +280,7 @@ export default function Sidebar() {
               </Link>
             ))}
           </div>
-          <button onClick={handleLogout} className="w-full flex items-center justify-between px-6 h-14 rounded-[24px] bg-rose-500 text-white font-black text-[11px] uppercase tracking-[0.2em] active:scale-[0.98] transition-all shadow-xl shadow-rose-500/20">
+          <button type="button" onClick={handleLogout} className="w-full flex items-center justify-between px-6 h-14 rounded-[24px] bg-rose-500 text-white font-black text-[11px] uppercase tracking-[0.2em] active:scale-[0.98] transition-all shadow-xl shadow-rose-500/20">
             <div className="flex items-center gap-3"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg><span>Terminate Session</span></div>
             <div className="text-[10px] font-black opacity-60 tracking-tight">V2.0.4</div>
           </button>
@@ -312,6 +312,7 @@ export default function Sidebar() {
         {/* UNIVERSAL FAB */}
         <div className="flex-1 flex justify-center h-full items-center relative">
            <button 
+             type="button"
              onClick={() => setIsQuickActionOpen(!isQuickActionOpen)}
              aria-label={isQuickActionOpen ? "Close quick actions" : "Open quick actions"}
              className={`w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all duration-500 active:scale-95 absolute -top-4 z-[110] ${isQuickActionOpen ? "bg-rose-500 rotate-45" : "bg-gradient-to-br from-sky-500 to-cyan-400"}`}
@@ -332,7 +333,7 @@ export default function Sidebar() {
           );
         })}
         
-        <button onClick={() => setIsMoreOpen(true)} className={`flex-1 flex flex-col items-center justify-center h-full relative transition-all active:scale-90 ${isMoreOpen ? "text-[--accent-primary-light]" : "text-[--text-muted]"}`}>
+        <button type="button" onClick={() => setIsMoreOpen(true)} className={`flex-1 flex flex-col items-center justify-center h-full relative transition-all active:scale-90 ${isMoreOpen ? "text-[--accent-primary-light]" : "text-[--text-muted]"}`}>
           <div className={`${isMoreOpen ? "scale-110 translate-y-0" : "opacity-40"} transition-all duration-300`}><svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" /></svg></div>
           <span className={`text-[8px] font-black uppercase tracking-widest absolute bottom-2 transition-all duration-300 ${isMoreOpen ? "opacity-100" : "opacity-0 translate-y-2"}`}>More</span>
         </button>
