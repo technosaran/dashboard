@@ -67,7 +67,7 @@ self.addEventListener('fetch', (event) => {
           // If offline and request is document, show a basic fallback or let next handles it
           return response || new Response('Offline mode. Please check your connection.', {
             status: 503,
-            headers: { 'Content-Type': 'text/plain' }
+            headers: { 'Content-Type': 'text/plain; charset=utf-8' }
           });
         });
       })

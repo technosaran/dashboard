@@ -73,8 +73,6 @@ export default async function middleware(request: NextRequest) {
   response.headers.set("Content-Security-Policy", cspHeader);
   response.headers.set("x-nonce", nonce);
 
-  // Prevent clickjacking
-  response.headers.set("X-Frame-Options", "DENY");
   // Prevent MIME type sniffing
   response.headers.set("X-Content-Type-Options", "nosniff");
   // Referrer policy
