@@ -33,7 +33,6 @@ const nextConfig: NextConfig = {
       source: "/(.*)",
       headers: [
         { key: "X-DNS-Prefetch-Control", value: "on" },
-        { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
         { key: "X-Content-Type-Options", value: "nosniff" },
         { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
         {
@@ -50,7 +49,7 @@ const nextConfig: NextConfig = {
       ],
     },
     {
-      source: "/manifest.json",
+      source: "/manifest.webmanifest",
       headers: [
         { key: "Cache-Control", value: "public, max-age=86400" },
       ],
