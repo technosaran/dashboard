@@ -6,15 +6,17 @@ import { useMemo, memo } from "react";
 import Greeting from "@/components/greeting";
 import type { FinanceData } from "@/hooks/use-finance-data";
 import dynamic from "next/dynamic";
-const Tooltip = dynamic(() => import("recharts").then((mod) => mod.Tooltip), { ssr: false });
-const PieChart = dynamic(() => import("recharts").then((mod) => mod.PieChart), { ssr: false });
-const Pie = dynamic(() => import("recharts").then((mod) => mod.Pie), { ssr: false });
-const Cell = dynamic(() => import("recharts").then((mod) => mod.Cell), { ssr: false });
-const AreaChart = dynamic(() => import("recharts").then((mod) => mod.AreaChart), { ssr: false });
-const Area = dynamic(() => import("recharts").then((mod) => mod.Area), { ssr: false });
-const XAxis = dynamic(() => import("recharts").then((mod) => mod.XAxis), { ssr: false });
-const YAxis = dynamic(() => import("recharts").then((mod) => mod.YAxis), { ssr: false });
-const CartesianGrid = dynamic(() => import("recharts").then((mod) => mod.CartesianGrid), { ssr: false });
+import { 
+  Tooltip, 
+  PieChart, 
+  Pie, 
+  Cell, 
+  AreaChart, 
+  Area, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid 
+} from "recharts";
 import type { Tables } from "@/lib/database.types";
 
 const ResponsiveContainer = dynamic(
