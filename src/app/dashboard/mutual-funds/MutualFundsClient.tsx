@@ -7,10 +7,12 @@ import { toast } from "react-hot-toast";
 import Image from "next/image";
 
 import type { Tables } from "@/lib/database.types";
-import { recordMFInvestment, revertLedgerLog, updateMFHolding } from "./actions";
+import { recordMFInvestment, updateMFHolding } from "./actions";
+import { revertLedgerLog } from "../alternative-assets/actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import PnLValue from "@/components/pnl-value";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
+import { exportToCSV } from "@/lib/export-csv";
 
 type MF = Tables<"mutual_funds"> & { scheme_code?: string | null; fund_symbol?: string | null; pnlPercent?: number };
 
@@ -148,33 +150,37 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
       const pnl = currentVal - investment;
       const pnlPercent = investment > 0 ? (pnl / investment) * 100 : 0;
       return {
-        'Fund Name': mf.fund_name,
-        'AMC': mf.amc_name || '',
-        'Category': mf.category || '',
-        'Type': mf.investment_type || '',
-        'Units': Number(mf.units).toFixed(3),
-        'Avg NAV': Number(mf.avg_nav).toFixed(4),
-        'Current NAV': Number(mf.current_nav).toFixed(4),
-        'Invested': investment.toFixed(2),
-        'Current Value': currentVal.toFixed(2),
-        'P&L': pnl.toFixed(2),
-        'P&L %': pnlPercent.toFixed(2)
+        fundName: mf.fund_name,
+        amc: mf.amc_name || '',
+        category: mf.category || '',
+        type: mf.investment_type || '',
+        units: Number(mf.units).toFixed(3),
+        avgNav: Number(mf.avg_nav).toFixed(4),
+        currentNav: Number(mf.current_nav).toFixed(4),
+        invested: investment.toFixed(2),
+        currentValue: currentVal.toFixed(2),
+        pnl: pnl.toFixed(2),
+        pnlPercent: pnlPercent.toFixed(2)
       };
     });
     
-    const headers = Object.keys(csvData[0] || {});
-    const csv = [
-      headers.join(','),
-      ...csvData.map(row => headers.map(h => `"${row[h as keyof typeof row]}"`).join(','))
-    ].join('\n');
-    
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `mutual_funds_${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    exportToCSV(
+      csvData,
+      "mutual_funds",
+      [
+        { key: "fundName", label: "Fund Name" },
+        { key: "amc", label: "AMC" },
+        { key: "category", label: "Category" },
+        { key: "type", label: "Type" },
+        { key: "units", label: "Units" },
+        { key: "avgNav", label: "Avg NAV" },
+        { key: "currentNav", label: "Current NAV" },
+        { key: "invested", label: "Invested" },
+        { key: "currentValue", label: "Current Value" },
+        { key: "pnl", label: "P&L" },
+        { key: "pnlPercent", label: "P&L %" }
+      ]
+    );
     toast.success('Mutual funds exported successfully');
   }
 

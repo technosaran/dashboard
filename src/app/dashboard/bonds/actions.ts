@@ -2,7 +2,6 @@
 
 import { createClient } from "@/lib/supabase-server";
 import { revalidatePath } from "next/cache";
-import { revertLedgerLog as revertAction } from "../alternative-assets/actions";
 
 type BondFormData = {
   bond_name: string;
@@ -128,10 +127,6 @@ export async function createBond(data: BondFormData) {
   }
 }
 
-export async function revalueBonds() {
-  return { success: true };
-}
-
 export async function updateBond(id: string, data: {
   bond_name?: string;
   isin?: string;
@@ -201,13 +196,4 @@ export async function updateBond(id: string, data: {
   }
 }
 
-export async function revertLedgerLog(logId: string) {
-  const res = await revertAction(logId);
-  if (!res.error) {
-    revalidatePath("/dashboard/bonds");
-    revalidatePath("/dashboard/ledger");
-    revalidatePath("/dashboard/accounts");
-    revalidatePath("/dashboard");
-  }
-  return res;
-}
+

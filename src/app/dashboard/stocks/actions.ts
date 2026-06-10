@@ -2,12 +2,7 @@
 
 import { createClient } from "@/lib/supabase-server";
 import { revalidatePath } from "next/cache";
-import { revertLedgerLog as revertAction } from "../alternative-assets/actions";
 import { parseToISODate } from "@/lib/utils";
-
-export async function revertLedgerLog(logId: string) {
-  return await revertAction(logId);
-}
 
 type RecordInvestmentResult = {
   success: boolean;
@@ -191,15 +186,4 @@ export async function deleteInvestment(id: string) {
   revalidatePath("/dashboard/accounts");
   revalidatePath("/dashboard");
   return { success: true };
-}
-
-
-
-
-export async function getStockDetails(): Promise<{ error: string } | { name: string; price: number; currency: string }> {
-  return { error: "Real-time sync is disabled. Enter current price manually." };
-}
-
-export async function refreshAllPrices(): Promise<{ success: boolean; error?: string; results?: unknown[] }> {
-  return { success: true, results: [] };
 }

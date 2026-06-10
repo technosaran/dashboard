@@ -9,12 +9,13 @@ import { toast } from "react-hot-toast";
 import { 
   createInvestment, 
   updateInvestment, 
-  deleteInvestment, 
-  revertLedgerLog
+  deleteInvestment
 } from "./actions";
+import { revertLedgerLog } from "../alternative-assets/actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
 import PnLValue from "@/components/pnl-value";
+import { exportToCSV } from "@/lib/export-csv";
 
 type Stock = Tables<"investments"> & { total_charges?: number; pnlPercent?: number };
 
@@ -250,32 +251,35 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
       const pnl = currentVal - invested;
       const pnlPct = invested > 0 ? (pnl / invested) * 100 : 0;
       return {
-        Symbol: inv.symbol?.split('.')[0] || '',
-        Name: inv.name,
-        Quantity: inv.quantity,
-        'Avg Cost': inv.buy_price.toFixed(2),
-        LTP: inv.current_price.toFixed(2),
-        'Current Value': currentVal.toFixed(2),
-        'P&L': pnl.toFixed(2),
-        'P&L %': pnlPct.toFixed(2),
-        'Day Change': inv.day_change || 0,
-        'Day Change %': inv.day_change_percent || 0
+        symbol: inv.symbol?.split('.')[0] || '',
+        name: inv.name,
+        quantity: inv.quantity,
+        avgCost: inv.buy_price.toFixed(2),
+        ltp: inv.current_price.toFixed(2),
+        currentValue: currentVal.toFixed(2),
+        pnl: pnl.toFixed(2),
+        pnlPct: pnlPct.toFixed(2),
+        dayChange: inv.day_change || 0,
+        dayChangePercent: inv.day_change_percent || 0
       };
     });
     
-    const headers = Object.keys(csvData[0] || {});
-    const csv = [
-      headers.join(','),
-      ...csvData.map(row => headers.map(h => row[h as keyof typeof row]).join(','))
-    ].join('\n');
-    
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `holdings_${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    exportToCSV(
+      csvData,
+      "holdings",
+      [
+        { key: "symbol", label: "Symbol" },
+        { key: "name", label: "Name" },
+        { key: "quantity", label: "Quantity" },
+        { key: "avgCost", label: "Avg Cost" },
+        { key: "ltp", label: "LTP" },
+        { key: "currentValue", label: "Current Value" },
+        { key: "pnl", label: "P&L" },
+        { key: "pnlPct", label: "P&L %" },
+        { key: "dayChange", label: "Day Change" },
+        { key: "dayChangePercent", label: "Day Change %" }
+      ]
+    );
     toast.success('Holdings exported successfully');
   }
 

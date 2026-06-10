@@ -8,9 +8,9 @@ import {
   forexDeposit,
   forexWithdraw,
   createForexAccount,
-  deleteForexAccount,
-  revertLedgerLog
+  deleteForexAccount
 } from "./actions";
+import { revertLedgerLog } from "../alternative-assets/actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { format } from "date-fns";

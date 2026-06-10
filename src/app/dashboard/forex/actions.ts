@@ -2,7 +2,6 @@
 
 import { createClient } from "@/lib/supabase-server";
 import { revalidatePath } from "next/cache";
-import { revertLedgerLog as revertAction } from "../alternative-assets/actions";
 
 // Self-healing bridge: automatically create a forex_accounts entry matching a standard account ID if it is missing
 async function ensureForexAccount(supabase: any, forexAccountId: string, userId: string) {
@@ -391,13 +390,4 @@ export async function updateForexTrade(id: string, data: {
   }
 }
 
-export async function revertLedgerLog(logId: string) {
-  const res = await revertAction(logId);
-  if (!res.error) {
-    revalidatePath("/dashboard/forex");
-    revalidatePath("/dashboard/ledger");
-    revalidatePath("/dashboard/accounts");
-    revalidatePath("/dashboard");
-  }
-  return res;
-}
+

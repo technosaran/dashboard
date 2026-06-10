@@ -3,12 +3,8 @@
 
 import { createClient } from "@/lib/supabase-server";
 import { revalidatePath } from "next/cache";
-import { revertLedgerLog as revertAction } from "../alternative-assets/actions";
 import { parseToISODate } from "@/lib/utils";
 
-export async function revertLedgerLog(logId: string) {
-    return await revertAction(logId);
-}
 
 type MutualFundRpcResult = {
     success?: boolean;
@@ -35,10 +31,6 @@ export async function searchMFSchemes(query: string) {
     } catch {
         return [];
     }
-}
-
-export async function getLiveNAV() {
-    return null;
 }
 
 export async function recordMFInvestment(data: {
@@ -117,10 +109,6 @@ export async function recordMFInvestment(data: {
     revalidatePath("/dashboard/ledger");
     revalidatePath("/dashboard");
     return res;
-}
-
-export async function refreshNAV() {
-    return [];
 }
 
 export async function updateMFHolding(id: string, data: {
