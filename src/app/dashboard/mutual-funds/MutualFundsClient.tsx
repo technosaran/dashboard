@@ -723,14 +723,14 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
                 <div className="space-y-2">
                   <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">Investment Model</label>
-                  <select className="input-premium h-12" value={formData.investment_type} onChange={e => setFormData({...formData, investment_type: e.target.value})}>
+                  <select aria-label="Select investment type" id="mf-investment-type" name="investment_type" className="input-premium h-12" value={formData.investment_type} onChange={e => setFormData({...formData, investment_type: e.target.value})}>
                     <option value="SIP">SIP Engine</option>
                     <option value="LUMPSUM">One-Time Capital</option>
                   </select>
                 </div>
                 <div className="space-y-2">
                   <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">Asset Sector</label>
-                  <select className="input-premium h-12" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
+                  <select aria-label="Select fund category" id="mf-category" name="category" className="input-premium h-12" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
                     {["Equity", "Debt", "Hybrid", "Index", "Liquid", "ELSS"].map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
@@ -744,7 +744,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                 {!editingId ? (
                   <div className="space-y-2">
                     <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">{formData.trade_type === 'buy' ? 'Capital Source' : 'Deposit To'}</label>
-                    <select required={!editingId} className="input-premium h-12" value={formData.account_id} onChange={e => setFormData({...formData, account_id: e.target.value})}>
+                    <select aria-label="Select account" id="mf-account" name="account_id" required={!editingId} className="input-premium h-12" value={formData.account_id} onChange={e => setFormData({...formData, account_id: e.target.value})}>
                         <option value="">{formData.trade_type === 'buy' ? 'Fund Account' : 'Dest. Account'}</option>
                         {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name} (₹{acc.balance.toLocaleString()})</option>)}
                     </select>

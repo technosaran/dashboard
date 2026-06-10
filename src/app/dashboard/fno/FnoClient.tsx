@@ -525,6 +525,9 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
                 <div className="relative">
                   <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[9px] text-[--text-muted] uppercase tracking-widest font-black z-10">Order Action</label>
                   <select
+                    aria-label="Select option type"
+                    id="fno-option-type"
+                    name="option_type"
                     value={logFormData.trade_type}
                     onChange={e => setLogFormData({ ...logFormData, trade_type: e.target.value as "BUY" | "SELL" })}
                     className="w-full h-12 px-4 bg-transparent border border-white/15 focus:border-[--accent-primary] rounded-xl text-[12px] text-white outline-none font-black appearance-none"
@@ -579,6 +582,9 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
                 <div className="relative">
                   <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[9px] text-[--text-muted] uppercase tracking-widest font-black z-10">Linked Bank/Broker Account (Premium Flow)</label>
                   <select
+                    aria-label="Select account"
+                    id="fno-account"
+                    name="account_id"
                     value={logFormData.account_id}
                     onChange={e => setLogFormData({ ...logFormData, account_id: e.target.value })}
                     className="w-full h-12 px-4 pr-10 bg-transparent border border-white/15 focus:border-[--accent-primary] rounded-xl text-[12px] text-white outline-none font-bold appearance-none"

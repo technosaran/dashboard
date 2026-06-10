@@ -605,6 +605,9 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                       {formData.trade_type === 'buy' ? 'Deduct From' : 'Deposit To'}
                     </label>
                     <select
+                      aria-label="Select account"
+                      id="stock-account"
+                      name="account_id"
                       value={formData.deduct_from_account || ""}
                       onChange={e => setFormData({ ...formData, deduct_from_account: e.target.value })}
                       className="w-full h-12 px-4 pr-10 bg-transparent border border-[--border-default] rounded-md text-[12px] text-[--text-primary] outline-none focus:border-[--accent-primary] appearance-none font-bold"

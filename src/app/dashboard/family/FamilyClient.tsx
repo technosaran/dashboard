@@ -376,7 +376,7 @@ export default function FamilyClient({
               <form onSubmit={handleSendMoney} className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-[--text-secondary] mb-2">From Account</label>
-                  <select required value={sendAccountId} onChange={(e) => setSendAccountId(e.target.value)} className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-3.5 text-[--text-primary] focus:border-[--accent-primary] outline-none transition-all appearance-none cursor-pointer">
+                  <select aria-label="Select sending account" id="family-send-account" name="send_account_id" required value={sendAccountId} onChange={(e) => setSendAccountId(e.target.value)} className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-3.5 text-[--text-primary] focus:border-[--accent-primary] outline-none transition-all appearance-none cursor-pointer">
                     {accounts.map((acc) => (<option key={acc.id} value={acc.id} className="bg-[#0a0a0a] text-[--text-primary]">{acc.name} ({acc.currency} {acc.balance.toLocaleString()})</option>))}
                   </select>
                   {sendAccountId && (() => {

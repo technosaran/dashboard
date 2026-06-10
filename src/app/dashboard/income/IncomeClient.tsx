@@ -268,6 +268,9 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
             className="btn-secondary !h-11 px-4 text-xs font-bold" 
             value={selectedMonth} 
             onChange={e => setSelectedMonth(parseInt(e.target.value))}
+            aria-label="Select month"
+            id="income-month-select"
+            name="month"
           >
             {Array.from({ length: 12 }, (_, i) => (
               <option key={i + 1} value={i + 1} className="bg-[--bg-surface]">
@@ -279,6 +282,9 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
             className="btn-secondary !h-11 px-4 text-xs font-bold" 
             value={selectedYear} 
             onChange={e => setSelectedYear(parseInt(e.target.value))}
+            aria-label="Select year"
+            id="income-year-select"
+            name="year"
           >
             {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map(y => (
               <option key={y} value={y} className="bg-[--bg-surface]">{y}</option>
@@ -396,7 +402,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
 
       <div className="glass-card-static overflow-hidden border-white/5">
         <div className="p-5 border-b border-white/5 bg-white/[0.01] flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3 w-full md:w-auto"><select className="input-premium py-2 text-sm w-32 md:w-40" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}><option value="All">All Sources</option>{INCOME_CATEGORIES.map(c => <option key={c.label} value={c.label}>{c.label}</option>)}</select></div>
+          <div className="flex items-center gap-3 w-full md:w-auto"><select className="input-premium py-2 text-sm w-32 md:w-40" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} aria-label="Filter by source" id="income-category-filter" name="categoryFilter"><option value="All">All Sources</option>{INCOME_CATEGORIES.map(c => <option key={c.label} value={c.label}>{c.label}</option>)}</select></div>
           <div className="text-[10px] font-bold text-[--text-muted]">
             Showing {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, totalFilteredCount)} of {totalFilteredCount} results
           </div>
@@ -607,25 +613,25 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-3">
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">{formData.category === "Salary" ? "Company / Employer" : "Description / Source"}</label>
-                  <input type="text" required className="input-premium" placeholder={formData.category === "Salary" ? "e.g. Google" : "e.g. Freelance Web Design"} value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} autoComplete="new-password" />
+                  <input type="text" required className="input-premium" placeholder={formData.category === "Salary" ? "e.g. Google" : "e.g. Freelance Web Design"} value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} autoComplete="new-password" id="income-description" name="description" />
                 </div>
                 <div className="space-y-3">
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Amount Received</label>
-                  <input type="number" required className="input-premium" placeholder="0.00" value={formData.amount} onChange={e => setFormData({ ...formData, amount: e.target.value })} autoComplete="new-password" inputMode="decimal" />
+                  <input type="number" required className="input-premium" placeholder="0.00" value={formData.amount} onChange={e => setFormData({ ...formData, amount: e.target.value })} autoComplete="new-password" inputMode="decimal" id="income-amount" name="amount" />
                 </div>
                 <div className="space-y-3">
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Income Stream</label>
-                  <select className="input-premium" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })}>
+                  <select className="input-premium" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} aria-label="Select income stream" id="income-category" name="category">
                     {INCOME_CATEGORIES.map(c => <option key={c.label} value={c.label} className="bg-[--bg-surface]">{c.label}</option>)}
                   </select>
                 </div>
                 <div className="space-y-3">
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Transaction Date</label>
-                  <input type="date" required className="input-premium" value={mounted ? formData.date : ""} onChange={e => setFormData({ ...formData, date: e.target.value })} autoComplete="new-password" />
+                  <input type="date" required className="input-premium" value={mounted ? formData.date : ""} onChange={e => setFormData({ ...formData, date: e.target.value })} autoComplete="new-password" id="income-date" name="date" />
                 </div>
                 <div className="space-y-3 col-span-1 md:col-span-2">
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Deposit into Account</label>
-                  <select className="input-premium" value={formData.account_id} onChange={e => setFormData({ ...formData, account_id: e.target.value })}>
+                  <select className="input-premium" value={formData.account_id} onChange={e => setFormData({ ...formData, account_id: e.target.value })} aria-label="Select deposit account" id="income-account" name="account_id">
                     <option value="" className="bg-[--bg-surface]">Suspense (No Account)</option>
                     {accounts.map(acc => <option key={acc.id} value={acc.id} className="bg-[--bg-surface]">{acc.name}</option>)}
                   </select>

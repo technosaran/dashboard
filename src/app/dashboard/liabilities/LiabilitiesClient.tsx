@@ -346,7 +346,7 @@ export default function LiabilitiesClient({ initialData }: { initialData?: Finan
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Category</label>
-                  <select className="input-premium" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
+                  <select aria-label="Select liability category" id="liability-category" name="category" className="input-premium" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
                     {CATEGORIES.map(c => <option key={c.label} value={c.label}>{c.label}</option>)}
                   </select>
                 </div>
@@ -372,7 +372,7 @@ export default function LiabilitiesClient({ initialData }: { initialData?: Finan
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Destination Account (Optional)</label>
-                  <select className="input-premium" value={formData.account_id} onChange={e => setFormData({...formData, account_id: e.target.value})}>
+                  <select aria-label="Select account" id="liability-account" name="account_id" className="input-premium" value={formData.account_id} onChange={e => setFormData({...formData, account_id: e.target.value})}>
                     <option value="">No Transaction</option>
                     {accounts.map(acc => (
                       <option key={acc.id} value={acc.id}>{acc.name} (₹{acc.balance.toLocaleString()})</option>

@@ -427,7 +427,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold uppercase tracking-wider text-[--text-muted] ml-1">Category</label>
-                    <select className="input-premium h-12 text-sm" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
+                    <select aria-label="Select goal category" id="goal-category" name="category" className="input-premium h-12 text-sm" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
                       {GOAL_CATEGORIES.map(c => <option key={c.label} value={c.label} style={{background: '#0c1021'}}>{c.label}</option>)}
                     </select>
                   </div>
@@ -441,6 +441,9 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
                  <div className="space-y-2 animate-fade-in">
                    <label className="text-[10px] font-black uppercase tracking-widest text-[--accent-primary-light] ml-1">Deduct Initial From</label>
                    <select 
+                     aria-label="Select deduction account"
+                     id="goal-account"
+                     name="account_id"
                      required
                      className="input-premium h-12 text-sm border-[--accent-primary]/30" 
                      value={formData.account_id} 
@@ -486,6 +489,9 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
                  <div className="space-y-1 text-left">
                    <label className="text-[9px] font-black text-[--text-muted] uppercase tracking-widest ml-1">Debit From</label>
                    <select 
+                    aria-label="Select debit account"
+                    id="goal-contribute-account"
+                    name="debit_account"
                     required
                     className="input-premium !h-11 text-xs" 
                     value={selectedAccountId} 
@@ -511,7 +517,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
                  </div>
                  <div className="space-y-1 text-left">
                     <label className="text-[9px] font-black text-[--text-muted] uppercase tracking-widest ml-1">Amount (₹)</label>
-                    <input required autoFocus type="number" step="0.01" className="bg-transparent border-b-2 border-white/10 w-full text-3xl font-black text-center py-2 outline-none focus:border-[--accent-primary] transition-colors tabular-nums" placeholder="0.00" value={contributeAmount} onChange={e => setContributeAmount(e.target.value)} autoComplete="new-password" inputMode="decimal" />
+                    <input id="goal-contribute-amount" name="contribute_amount" required autoFocus type="number" step="0.01" className="bg-transparent border-b-2 border-white/10 w-full text-3xl font-black text-center py-2 outline-none focus:border-[--accent-primary] transition-colors tabular-nums" placeholder="0.00" value={contributeAmount} onChange={e => setContributeAmount(e.target.value)} autoComplete="new-password" inputMode="decimal" />
                  </div>
                </div>
                <div className="flex gap-3 pt-2">

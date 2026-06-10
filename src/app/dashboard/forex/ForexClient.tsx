@@ -594,7 +594,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                       first.
                     </div>
                   ) : (
-                    <select required className="input-premium !h-10 text-xs" value={tradeForm.forex_account_id} onChange={e => setTradeForm({...tradeForm, forex_account_id: e.target.value})}>
+                    <select aria-label="Select forex account" id="forex-trade-account" name="forex_account_id" required className="input-premium !h-10 text-xs" value={tradeForm.forex_account_id} onChange={e => setTradeForm({...tradeForm, forex_account_id: e.target.value})}>
                       <option value="" className="bg-[--bg-surface]">Select Account</option>
                       {forexAccounts.map(a => <option key={a.id} value={a.id} className="bg-[--bg-surface]">{a.account_label} ({a.broker_name})</option>)}
                     </select>
@@ -679,7 +679,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Select Broker</label>
-                  <select required className="input-premium !h-10 text-xs" value={editTradeForm.forex_account_id} onChange={e => setEditTradeForm({...editTradeForm, forex_account_id: e.target.value})}>
+                  <select aria-label="Select forex account" id="forex-edit-trade-account" name="forex_account_id" required className="input-premium !h-10 text-xs" value={editTradeForm.forex_account_id} onChange={e => setEditTradeForm({...editTradeForm, forex_account_id: e.target.value})}>
                     <option value="" className="bg-[--bg-surface]">Select Account</option>
                     {forexAccounts.map(a => <option key={a.id} value={a.id} className="bg-[--bg-surface]">{a.account_label} ({a.broker_name})</option>)}
                   </select>
@@ -771,7 +771,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                       first.
                     </div>
                   ) : (
-                    <select required className="input-premium !h-10 text-xs" value={fundsForm.forex_account_id} onChange={e => setFundsForm({...fundsForm, forex_account_id: e.target.value})}>
+                    <select aria-label="Select forex account" id="forex-funds-account" name="forex_account_id" required className="input-premium !h-10 text-xs" value={fundsForm.forex_account_id} onChange={e => setFundsForm({...fundsForm, forex_account_id: e.target.value})}>
                       <option value="" className="bg-[--bg-surface]">Select Broker</option>
                       {forexAccounts.map(a => <option key={a.id} value={a.id} className="bg-[--bg-surface]">{a.account_label} ({a.broker_name})</option>)}
                     </select>
@@ -785,7 +785,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                     </div>
                   ) : (
                     <>
-                      <select required className="input-premium !h-10 text-xs" value={fundsForm.bank_account_id} onChange={e => setFundsForm({...fundsForm, bank_account_id: e.target.value})}>
+                      <select aria-label="Select bank account" id="forex-bank-account" name="bank_account_id" required className="input-premium !h-10 text-xs" value={fundsForm.bank_account_id} onChange={e => setFundsForm({...fundsForm, bank_account_id: e.target.value})}>
                         <option value="" className="bg-[--bg-surface]">Select Funding</option>
                         {accounts.map(a => <option key={a.id} value={a.id} className="bg-[--bg-surface]">{a.name} ({a.currency})</option>)}
                       </select>
@@ -848,7 +848,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                 </div>
                 <div>
                   <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Currency</label>
-                  <select required className="input-premium !h-10 text-xs" value={accountForm.currency} onChange={e => setAccountForm({...accountForm, currency: e.target.value})}>
+                  <select aria-label="Select currency" id="forex-currency" name="currency" required className="input-premium !h-10 text-xs" value={accountForm.currency} onChange={e => setAccountForm({...accountForm, currency: e.target.value})}>
                     <option value="USD" className="bg-[--bg-surface]">USD</option>
                     <option value="EUR" className="bg-[--bg-surface]">EUR</option>
                     <option value="GBP" className="bg-[--bg-surface]">GBP</option>

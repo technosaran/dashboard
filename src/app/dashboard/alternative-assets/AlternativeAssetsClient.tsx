@@ -349,7 +349,7 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Classification</label>
-                  <select className="input-premium" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
+                  <select aria-label="Select asset category" id="alt-asset-category" name="category" className="input-premium" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
                     {CATEGORIES.map(c => <option key={c.label} value={c.label}>{c.label}</option>)}
                   </select>
                 </div>
@@ -367,7 +367,7 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Source Account (Optional)</label>
-                  <select className="input-premium" value={formData.account_id} onChange={e => setFormData({...formData, account_id: e.target.value})}>
+                  <select aria-label="Select account" id="alt-asset-account" name="account_id" className="input-premium" value={formData.account_id} onChange={e => setFormData({...formData, account_id: e.target.value})}>
                     <option value="">No Transaction</option>
                     {accounts.map(acc => (
                       <option key={acc.id} value={acc.id}>{acc.name} (₹{acc.balance.toLocaleString()})</option>

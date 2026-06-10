@@ -100,12 +100,12 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
           <p className="text-xs text-[--text-muted] font-bold uppercase tracking-[0.3em] mt-2">Fiscal Strategy & Controls</p>
         </div>
         <div className="flex items-center gap-3">
-          <select className="btn-secondary !h-11 px-4" value={selectedMonth} onChange={e => setSelectedMonth(parseInt(e.target.value))}>
+          <select className="btn-secondary !h-11 px-4" value={selectedMonth} onChange={e => setSelectedMonth(parseInt(e.target.value))} aria-label="Select month" id="budget-month-select" name="month">
             {Array.from({ length: 12 }, (_, i) => (
               <option key={i+1} value={i+1}>{format(new Date(2000, i), "MMMM")}</option>
             ))}
           </select>
-          <select className="btn-secondary !h-11 px-4" value={selectedYear} onChange={e => setSelectedYear(parseInt(e.target.value))}>
+          <select className="btn-secondary !h-11 px-4" value={selectedYear} onChange={e => setSelectedYear(parseInt(e.target.value))} aria-label="Select year" id="budget-year-select" name="year">
             {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map(y => (
               <option key={y} value={y}>{y}</option>
             ))}
@@ -187,6 +187,8 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
                         className="input-premium !h-10 w-32 text-right !bg-white/5 border-transparent focus:border-[--accent-primary] text-sm font-black"
                         autoComplete="new-password"
                         inputMode="decimal"
+                        name="budget-limit"
+                        id={`budget-limit-${cat.label}`}
                       />
                     </div>
                   </div>

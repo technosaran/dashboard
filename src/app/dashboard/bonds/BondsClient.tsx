@@ -705,7 +705,7 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
 
                 <div>
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Bond Type</label>
-                  <select className="input-premium" value={formData.bond_type} onChange={e => setFormData({...formData, bond_type: e.target.value})}>
+                  <select aria-label="Select bond type" id="bond-type" name="bond_type" className="input-premium" value={formData.bond_type} onChange={e => setFormData({...formData, bond_type: e.target.value})}>
                     {BOND_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
                 </div>
@@ -752,7 +752,7 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
 
                 <div>
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Interest Frequency</label>
-                  <select className="input-premium" value={formData.interest_frequency} onChange={e => setFormData({...formData, interest_frequency: e.target.value})}>
+                  <select aria-label="Select interest frequency" id="bond-interest-freq" name="interest_frequency" className="input-premium" value={formData.interest_frequency} onChange={e => setFormData({...formData, interest_frequency: e.target.value})}>
                     {INTEREST_FREQUENCIES.map(f => <option key={f} value={f}>{f}</option>)}
                   </select>
                 </div>
@@ -790,7 +790,7 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
                 {!editingId ? (
                   <div>
                     <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Deduct from Account</label>
-                    <select className="input-premium" value={formData.account_id} onChange={e => setFormData({...formData, account_id: e.target.value})}>
+                    <select aria-label="Select account" id="bond-account" name="account_id" className="input-premium" value={formData.account_id} onChange={e => setFormData({...formData, account_id: e.target.value})}>
                       <option value="">No Deduction</option>
                       {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
                     </select>

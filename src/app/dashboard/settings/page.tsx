@@ -287,6 +287,7 @@ export default function SettingsPage() {
           <div className="space-y-5">
             <div>
               <label
+                htmlFor="settings-display-name"
                 className="block text-xs font-semibold uppercase tracking-wider mb-2"
                 style={{ color: "var(--text-muted)" }}
               >
@@ -294,6 +295,8 @@ export default function SettingsPage() {
               </label>
               <input
                 type="text"
+                id="settings-display-name"
+                name="display_name"
                 value={input}
                 onChange={handleChange}
                 maxLength={30}
@@ -350,6 +353,9 @@ export default function SettingsPage() {
                 <div key={section.key} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-white/[0.02] border border-white/5">
                   <span className="text-[13px] font-bold text-white ml-1">{section.label}</span>
                   <select
+                    aria-label={`Default account for ${section.label}`}
+                    id={`default-account-${section.key}`}
+                    name={`default_account_${section.key}`}
                     value={currentVal}
                     onChange={(e) => handleDefaultAccountChange(section.key, e.target.value)}
                     className="bg-[--bg-surface] text-white border border-white/10 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-[--accent-primary] min-w-[200px]"
@@ -496,6 +502,8 @@ export default function SettingsPage() {
               </label>
               <input
                 type="text"
+                id="reset-confirm-text"
+                name="reset_confirm"
                 value={resetConfirmText}
                 onChange={(e) => setResetConfirmText(e.target.value)}
                 className="input-premium h-12 text-sm font-bold"
