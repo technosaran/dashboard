@@ -2,7 +2,7 @@
 
 import { useMemo, useState, Fragment } from "react";
 import { endOfDay, format, isWithinInterval, startOfDay } from "date-fns";
-import { useFinanceData } from "@/hooks/use-finance-data";
+import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 
 type LedgerLog = {
   id: string;
@@ -66,12 +66,12 @@ const isCreditLog = (log: LedgerLog) => {
   return CREDIT_ACTIONS.has(log.action_type);
 };
 
-export default function LedgerClient() {
+export default function LedgerClient({ initialData }: { initialData?: FinanceData }) {
   const {
     data: { ledgerLogs: logs },
     isValidating,
     isLoading,
-  } = useFinanceData();
+  } = useFinanceData(initialData);
 
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");

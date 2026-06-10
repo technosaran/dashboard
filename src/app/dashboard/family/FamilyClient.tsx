@@ -14,7 +14,7 @@ const RELATIONSHIP_CONFIG: Record<string, { emoji: string; color: string; soft: 
 };
 
 interface FamilyClientProps {
-  initialData: FinanceData;
+  initialData?: FinanceData;
 }
 
 export default function FamilyClient({

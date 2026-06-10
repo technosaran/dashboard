@@ -3,7 +3,6 @@ import { createClient } from "@/lib/supabase-server";
 import ForexClient from "./ForexClient";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import type { FinanceData } from "@/hooks/use-finance-data";
 
 export const metadata: Metadata = {
   title: "Forex",
@@ -19,11 +18,9 @@ export default async function ForexPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: initialData } = await supabase.rpc("get_finance_overview_v2");
-
   return (
     <Suspense fallback={null}>
-      <ForexClient initialData={initialData as FinanceData} />
+      <ForexClient />
     </Suspense>
   );
 }

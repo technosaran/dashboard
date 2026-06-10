@@ -3,7 +3,6 @@ import { createClient } from "@/lib/supabase-server";
 import FamilyClient from "./FamilyClient";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import type { FinanceData } from "@/hooks/use-finance-data";
 
 export const metadata: Metadata = {
   title: "Family",
@@ -23,11 +22,9 @@ export default async function FamilyPage() {
     redirect("/login");
   }
 
-  const { data: initialData } = await supabase.rpc("get_finance_overview_v2");
-
   return (
     <Suspense fallback={null}>
-      <FamilyClient initialData={initialData as FinanceData} />
+      <FamilyClient />
     </Suspense>
   );
 }

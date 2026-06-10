@@ -2,7 +2,6 @@ import { Suspense } from "react";
 import { createClient } from "@/lib/supabase-server";
 import AccountsClient from "./AccountsClient";
 import { redirect } from "next/navigation";
-import type { FinanceData } from "@/hooks/use-finance-data";
 
 import type { Metadata } from "next";
 
@@ -24,11 +23,9 @@ export default async function AccountsPage() {
     redirect("/login");
   }
 
-  const { data: initialData } = await supabase.rpc("get_finance_overview_v2");
-
   return (
     <Suspense fallback={null}>
-      <AccountsClient initialData={initialData as FinanceData} />
+      <AccountsClient />
     </Suspense>
   );
 }

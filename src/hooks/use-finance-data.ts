@@ -57,11 +57,11 @@ type FinanceData = {
 };
 
 export type { FinanceData };
-const SUMMARY_KEY = "finance_summary";
-const INVESTMENTS_KEY = "finance_investments";
-const CASHFLOW_KEY = "finance_cashflow";
-const FOREX_KEY = "finance_forex";
-const FAMILY_KEY = "finance_family";
+export const SUMMARY_KEY = "finance_summary";
+export const INVESTMENTS_KEY = "finance_investments";
+export const CASHFLOW_KEY = "finance_cashflow";
+export const FOREX_KEY = "finance_forex";
+export const FAMILY_KEY = "finance_family";
 
 async function fetchSummary(): Promise<Partial<FinanceData>> {
   const { data, error } = await supabase.rpc("get_summary_v1");
@@ -124,43 +124,74 @@ export function useFinanceData(initialData?: FinanceData) {
   };
 
   const summarySWR = useSWR(SUMMARY_KEY, fetchSummary, {
-    revalidateOnFocus: false,
+    revalidateOnFocus: true,
     revalidateOnReconnect: true,
     revalidateIfStale: false,
     dedupingInterval: 30000,
-    fallbackData: fallback
+    revalidateOnMount: false,
+    fallbackData: initialData ? {
+      profile: initialData.profile,
+      accounts: initialData.accounts,
+      transactions: initialData.transactions,
+      ledgerLogs: initialData.ledgerLogs,
+    } : undefined
   });
 
   const investmentsSWR = useSWR(INVESTMENTS_KEY, fetchInvestments, {
-    revalidateOnFocus: false,
+    revalidateOnFocus: true,
     revalidateOnReconnect: true,
     revalidateIfStale: false,
     dedupingInterval: 30000,
-    fallbackData: fallback
+    revalidateOnMount: false,
+    fallbackData: initialData ? {
+      investments: initialData.investments,
+      mutualFunds: initialData.mutualFunds,
+      bonds: initialData.bonds,
+      alternativeAssets: initialData.alternativeAssets,
+      stockTrades: initialData.stockTrades,
+      mutualFundTrades: initialData.mutualFundTrades,
+      bondTransactions: initialData.bondTransactions,
+      fnoTrades: initialData.fnoTrades,
+    } : undefined
   });
 
   const cashflowSWR = useSWR(CASHFLOW_KEY, fetchCashflow, {
-    revalidateOnFocus: false,
+    revalidateOnFocus: true,
     revalidateOnReconnect: true,
     revalidateIfStale: false,
     dedupingInterval: 30000,
-    fallbackData: fallback
+    revalidateOnMount: false,
+    fallbackData: initialData ? {
+      incomes: initialData.incomes,
+      expenses: initialData.expenses,
+      budgets: initialData.budgets,
+      goals: initialData.goals,
+      liabilities: initialData.liabilities,
+    } : undefined
   });
 
   const forexSWR = useSWR(FOREX_KEY, fetchForex, {
-    revalidateOnFocus: false,
+    revalidateOnFocus: true,
     revalidateOnReconnect: true,
     revalidateIfStale: false,
     dedupingInterval: 30000,
-    fallbackData: fallback
+    revalidateOnMount: false,
+    fallbackData: initialData ? {
+      forexAccounts: initialData.forexAccounts,
+      forexTrades: initialData.forexTrades,
+      forexTransactions: initialData.forexTransactions,
+    } : undefined
   });
 
   const familySWR = useSWR(FAMILY_KEY, fetchFamily, {
-    revalidateOnFocus: false,
+    revalidateOnFocus: true,
     revalidateOnReconnect: true,
     revalidateIfStale: false,
     dedupingInterval: 30000,
-    fallbackData: fallback
+    revalidateOnMount: false,
+    fallbackData: initialData ? {
+      recipients: initialData.recipients,
+    } : undefined
   });
 
   // Debounced update to batch rapid changes together
@@ -403,21 +434,7 @@ export function useFinanceData(initialData?: FinanceData) {
     };
   }, [debouncedMutate, user_id]);
 
-  // Handle visibility change for instant sync when returning to tab
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        void mutate(SUMMARY_KEY);
-        // Only revalidate other segments if they are older than their TTL
-        void mutate(INVESTMENTS_KEY);
-        void mutate(CASHFLOW_KEY);
-        void mutate(FOREX_KEY);
-      }
-    };
 
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, [mutate]);
 
   // Aggregate the data from all verticals
   const mergedData: FinanceData = {
