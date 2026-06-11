@@ -523,8 +523,8 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
 
       {showForm && (
         <div className="mobile-dialog-shell fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-md animate-fade-in shadow-2xl">
-          <div className="mobile-dialog-panel glass-card-static !bg-[--bg-surface] w-full max-w-xl p-6 md:p-8 max-h-[85vh] overflow-y-auto custom-scrollbar">
-            <div className="flex justify-between items-center mb-8 pb-2">
+          <div className="mobile-dialog-panel glass-card-static !bg-[--bg-surface] w-full max-w-xl p-6 md:p-8 max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-black">
                 {editingId ? "Modify Portfolio" : (formData.trade_type === 'buy' ? 'Asset Acquisition' : 'Asset Disposal')}
               </h2>
@@ -535,7 +535,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div className="relative">
                 <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[10px] text-[--text-muted] uppercase tracking-widest font-bold z-10">Symbol</label>
                 <input
