@@ -28,13 +28,12 @@ export default function FamilyClient({
   const [submitting, withLock] = useSubmitLock();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [activeView, setActiveView] = useState<"contacts" | "history" | "analytics">("contacts");
+  const [activeView, setActiveView] = useState<"contacts" | "history">("contacts");
   const [isEditingRecipient, setIsEditingRecipient] = useState(false);
   const [editingRecipient, setEditingRecipient] = useState<any | null>(null);
   
   // Search and Sort
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortOption, setSortOption] = useState<"name-asc" | "name-desc" | "amount-desc">("amount-desc");
   
   // Member specific history
   const [selectedHistoryRecipient, setSelectedHistoryRecipient] = useState<string | null>(null);
@@ -180,17 +179,8 @@ export default function FamilyClient({
   }, [ledgerLogs, recipients]);
 
   const filteredRecipients = useMemo(() => {
-    let filtered = recipients.filter(r => r.name.toLowerCase().includes(searchQuery.toLowerCase()));
-    
-    filtered.sort((a, b) => {
-      if (sortOption === "name-asc") return a.name.localeCompare(b.name);
-      if (sortOption === "name-desc") return b.name.localeCompare(a.name);
-      if (sortOption === "amount-desc") return (recipientTotals[b.id] || 0) - (recipientTotals[a.id] || 0);
-      return 0;
-    });
-    
-    return filtered;
-  }, [recipients, searchQuery, sortOption, recipientTotals]);
+    return recipients.filter(r => r.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  }, [recipients, searchQuery]);
 
   const pieData = useMemo(() => {
     return recipients.map(r => ({
@@ -244,6 +234,53 @@ export default function FamilyClient({
         </div>
       </div>
 
+      {pieData.length > 0 && (
+        <div className="bg-white/[0.02] border border-white/[0.05] rounded-2xl overflow-hidden animate-fade-in p-6">
+          <div className="mb-6">
+            <h3 className="text-lg font-medium text-[--text-primary]">Funds Distribution</h3>
+            <p className="text-sm text-[--text-muted]">Breakdown of transferred capital by family member.</p>
+          </div>
+          <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="w-full md:w-1/2 h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={70}
+                    outerRadius={110}
+                    paddingAngle={5}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {pieData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value: any) => `₹${Number(value).toLocaleString()}`}
+                    contentStyle={{ backgroundColor: '#171717', borderColor: '#333', borderRadius: '12px' }}
+                    itemStyle={{ color: '#fff' }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="w-full md:w-1/2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {pieData.map((entry, index) => (
+                <div key={entry.name} className="flex items-center justify-between bg-white/[0.02] border border-white/5 p-3 rounded-xl">
+                  <div className="flex items-center gap-3">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }}></div>
+                    <span className="text-sm font-medium text-[--text-primary] truncate max-w-[100px]">{entry.name}</span>
+                  </div>
+                  <span className="text-sm font-bold text-white">₹{entry.value.toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* View Toggle */}
       <div className="flex justify-end">
         <div className="flex bg-white/[0.02] border border-white/[0.05] p-1 rounded-xl w-fit">
@@ -259,12 +296,7 @@ export default function FamilyClient({
           >
             History
           </button>
-          <button type="button"
-            onClick={() => setActiveView("analytics")}
-            className={`px-4 py-2 rounded-lg text-xs font-medium transition-all ${activeView === "analytics" ? "bg-white/[0.1] text-[--text-primary]" : "text-[--text-muted] hover:text-[--text-primary]"}`}
-          >
-            Analytics
-          </button>
+
         </div>
       </div>
 
@@ -286,18 +318,7 @@ export default function FamilyClient({
                 className="block w-full pl-10 pr-3 py-2 border border-white/10 rounded-xl leading-5 bg-black/20 text-white placeholder-white/40 focus:outline-none focus:ring-1 focus:ring-[--accent-primary] focus:border-[--accent-primary] sm:text-sm transition-colors"
               />
             </div>
-            <div className="flex items-center gap-3 w-full md:w-auto">
-              <label className="text-sm text-[--text-muted] whitespace-nowrap">Sort By:</label>
-              <select
-                value={sortOption}
-                onChange={(e) => setSortOption(e.target.value as any)}
-                className="w-full md:w-auto bg-black/20 border border-white/10 rounded-xl px-3 py-2 text-sm text-[--text-primary] focus:border-[--accent-primary] outline-none appearance-none cursor-pointer"
-              >
-                <option value="amount-desc">Most Transferred</option>
-                <option value="name-asc">Name (A-Z)</option>
-                <option value="name-desc">Name (Z-A)</option>
-              </select>
-            </div>
+
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {isLoading ? (
@@ -371,7 +392,7 @@ export default function FamilyClient({
           )}
         </div>
         </div>
-      ) : activeView === "history" ? (
+      ) : (
         <div className="bg-white/[0.02] border border-white/[0.05] rounded-2xl overflow-hidden animate-fade-in">
           <div className="px-6 py-4 border-b border-white/[0.05] bg-white/[0.01] flex justify-between items-center">
             <h3 className="text-sm font-medium text-[--text-primary]">{selectedHistoryRecipient ? `Transfers for ${recipients.find(r => r.id === selectedHistoryRecipient)?.name}` : "Recent Transfers"}</h3>
@@ -405,90 +426,6 @@ export default function FamilyClient({
                 </div>
               ))
             )}
-          </div>
-        </div>
-      ) : (
-        <div className="bg-white/[0.02] border border-white/[0.05] rounded-2xl overflow-hidden animate-fade-in p-6">
-          <div className="mb-6">
-            <h3 className="text-lg font-medium text-[--text-primary]">Funds Distribution</h3>
-            <p className="text-sm text-[--text-muted]">Breakdown of transferred capital by family member.</p>
-          </div>
-          
-          {pieData.length === 0 ? (
-            <div className="py-16 text-center text-sm text-[--text-muted]">No transfer data available for analytics.</div>
-          ) : (
-            <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-              <div className="w-full md:w-1/2 h-[350px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={pieData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={80}
-                      outerRadius={120}
-                      paddingAngle={5}
-                      dataKey="value"
-                      stroke="none"
-                    >
-                      {pieData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={(value: any) => `₹${Number(value).toLocaleString()}`}
-                      contentStyle={{ backgroundColor: '#171717', borderColor: '#333', borderRadius: '12px' }}
-                      itemStyle={{ color: '#fff' }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="w-full md:w-1/2 flex flex-col gap-3">
-                {pieData.map((entry, index) => (
-                  <div key={entry.name} className="flex items-center justify-between bg-white/[0.02] border border-white/5 p-3 rounded-xl">
-                    <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }}></div>
-                      <span className="text-sm font-medium text-[--text-primary]">{entry.name}</span>
-                    </div>
-                    <span className="text-sm font-bold text-white">₹{entry.value.toLocaleString()}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {isAddingRecipient && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-[#0a0a0a] border border-white/[0.08] rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-scale-in max-h-[90vh] overflow-y-auto custom-scrollbar">
-            <div className="p-6 md:p-8">
-              <div className="flex items-center justify-between mb-8">
-                <div>
-                  <h2 className="text-xl font-medium text-[--text-primary]">{isEditingRecipient ? "Edit Contact" : "Add Contact"}</h2>
-                  <p className="text-sm text-[--text-muted] mt-1">{isEditingRecipient ? "Update details for this contact." : "Enter contact details below."}</p>
-                </div>
-                <button type="button" onClick={() => { setIsAddingRecipient(false); setIsEditingRecipient(false); setEditingRecipient(null); setNewName(""); }} className="p-2 text-[--text-muted] hover:text-[--text-primary] transition-colors rounded-full hover:bg-white/5">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
-              </div>
-
-              <form onSubmit={handleAddRecipient} className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-[--text-secondary] mb-2">Full Name</label>
-                  <input required value={newName} onChange={(e) => setNewName(e.target.value)} className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-3 text-[--text-primary] focus:border-[--accent-primary] focus:ring-1 focus:ring-[--accent-primary] outline-none transition-all placeholder-white/20" placeholder="e.g. Priya Sharma" autoComplete="new-password" />
-                </div>
-
-                <div className="pt-4 flex gap-3">
-                  <button type="button" onClick={() => { setIsAddingRecipient(false); setIsEditingRecipient(false); setEditingRecipient(null); setNewName(""); }} className="flex-1 py-3.5 bg-white/[0.03] hover:bg-white/[0.08] rounded-xl text-sm font-medium transition-all text-[--text-primary]">
-                    Cancel
-                  </button>
-                  <button type="submit" disabled={submitting} className="btn-primary flex-1 shadow-lg shadow-[--accent-primary]/10">
-                    {submitting ? "Saving..." : isEditingRecipient ? "Save Changes" : "Save Contact"}
-                  </button>
-                </div>
-              </form>
-            </div>
           </div>
         </div>
       )}
