@@ -956,4 +956,9 @@ select:focus {
 .window-blur-overlay.active {
   opacity: 1;
   pointer-events: auto;
+}
+
+/* Fix for modal bleed-through: Force opaque background on modal panels to prevent underlying text from rendering through backdrop-blur */
+.mobile-dialog-panel.glass-card-static {
+  background: var(--bg-surface) !important;
 }

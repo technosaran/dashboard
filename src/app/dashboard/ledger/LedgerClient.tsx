@@ -480,7 +480,7 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
       </section>
 
       {/* Main Ledger Event Trail (Crisp Financial Grid Table) */}
-      <section className="glass-card-static p-0 rounded-[24px] border border-white/10 overflow-hidden bg-white/[0.01] shadow-lg shadow-black/25">
+      <section className="glass-card-static p-0 min-h-[400px] rounded-[24px] border border-white/10 overflow-hidden bg-white/[0.01] shadow-lg shadow-black/25">
         {isLoading ? (
           <div className="space-y-4 p-8">
             {Array.from({ length: 5 }).map((_, index) => (

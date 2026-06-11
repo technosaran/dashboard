@@ -140,6 +140,15 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
         toast.error("Please enter a valid positive amount");
         return;
       }
+
+      if (tradePnlType === "loss") {
+        const forexAcc = forexAccounts.find(a => a.id === tradeForm.forex_account_id);
+        if (forexAcc && forexAcc.balance < rawVal) {
+          toast.error("Loss amount cannot exceed available broker balance");
+          return;
+        }
+      }
+
       const finalPnl = tradePnlType === "profit" ? rawVal : -rawVal;
       const res = await logForexTrade({
         forex_account_id: tradeForm.forex_account_id,
@@ -186,6 +195,19 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
         toast.error("Please enter a valid positive amount");
         return;
       }
+
+      if (editTradePnlType === "loss") {
+        const forexAcc = forexAccounts.find(a => a.id === editTradeForm.forex_account_id);
+        if (forexAcc) {
+          // Adjust balance by adding back the old PnL, then check if the new loss is too high
+          const availableBalance = forexAcc.balance - editingTrade.pnl;
+          if (availableBalance < rawVal) {
+            toast.error("Loss amount cannot exceed available broker balance");
+            return;
+          }
+        }
+      }
+
       const finalPnl = editTradePnlType === "profit" ? rawVal : -rawVal;
       const res = await updateForexTrade(editingTrade.id, {
         forex_account_id: editTradeForm.forex_account_id,
@@ -215,6 +237,23 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
         toast.error("Please enter a valid positive amount");
         return;
       }
+
+      if (fundsType === "DEPOSIT" && fundsForm.bank_account_id) {
+        const bankAcc = accounts.find(a => a.id === fundsForm.bank_account_id);
+        if (bankAcc && bankAcc.balance < rawVal) {
+          toast.error("Insufficient funds in selected funding account");
+          return;
+        }
+      }
+
+      if (fundsType === "WITHDRAW") {
+        const forexAcc = forexAccounts.find(a => a.id === fundsForm.forex_account_id);
+        if (forexAcc && forexAcc.balance < rawVal) {
+          toast.error("Insufficient funds in broker account for withdrawal");
+          return;
+        }
+      }
+
       const action = fundsType === "DEPOSIT" ? forexDeposit : forexWithdraw;
       const res = await action({
         forex_account_id: fundsForm.forex_account_id,

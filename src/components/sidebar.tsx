@@ -270,11 +270,11 @@ export default function Sidebar() {
 
       {/* Mobile More Overlay */}
       <div className={`md:hidden fixed inset-0 z-[60] bg-slate-900/40 backdrop-blur-md transition-all duration-500 ease-in-out ${isMoreOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`} onClick={() => setIsMoreOpen(false)}>
-        <div className={`fixed bottom-0 left-0 right-0 rounded-t-[40px] p-6 pb-[calc(env(safe-area-inset-bottom,0px)+1.5rem)] max-h-[85vh] overflow-y-auto no-scrollbar transition-all duration-500 cubic-bezier(0.32, 0.72, 0, 1) transform ${isMoreOpen ? "translate-y-0" : "translate-y-full"}`} onClick={(e) => e.stopPropagation()} style={{ background: "var(--bg-surface)", boxShadow: "0 -20px 60px rgba(15, 23, 42, 0.15)", borderTop: "1px solid var(--border-default)" }}>
+        <div className={`fixed bottom-0 left-0 right-0 rounded-t-[40px] p-6 pb-[calc(env(safe-area-inset-bottom,0px)+6rem)] max-h-[85vh] overflow-y-auto no-scrollbar transition-all duration-500 cubic-bezier(0.32, 0.72, 0, 1) transform ${isMoreOpen ? "translate-y-0" : "translate-y-full"}`} onClick={(e) => e.stopPropagation()} style={{ background: "var(--bg-surface)", boxShadow: "0 -20px 60px rgba(15, 23, 42, 0.15)", borderTop: "1px solid var(--border-default)" }}>
           <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-8 opacity-60" />
           <div className="grid grid-cols-3 gap-3 mb-6">
             {moreNav.map((item) => (
-              <Link key={item.label} href={item.href} prefetch={true} onClick={() => setIsMoreOpen(false)} className="flex flex-col items-center justify-center p-4 rounded-[28px] bg-white/[0.02] border border-white/[0.04] active:bg-white/10 transition-all no-underline gap-2">
+              <Link key={item.label} href={item.href} prefetch={true} onClick={() => setIsMoreOpen(false)} className="flex flex-col items-center justify-center p-4 rounded-[28px] bg-white/[0.02] border border-white/[0.04] active:bg-white/10 transition-all no-underline gap-2 aspect-square">
                 <div className="w-10 h-10 rounded-full bg-[--accent-primary]/10 flex items-center justify-center text-[--accent-primary-light]">{item.icon}</div>
                 <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.15em] text-center">{item.label}</span>
               </Link>
