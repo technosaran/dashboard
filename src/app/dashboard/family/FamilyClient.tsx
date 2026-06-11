@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { createRecipient, deleteRecipient, sendMoneyToFamily, updateRecipient } from "./actions";
 import { toast } from "react-hot-toast";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { format } from "date-fns";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 
 const QUICK_AMOUNTS = [500, 1000, 2000, 5000, 10000];
 
@@ -27,9 +28,16 @@ export default function FamilyClient({
   const [submitting, withLock] = useSubmitLock();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [activeView, setActiveView] = useState<"contacts" | "history">("contacts");
+  const [activeView, setActiveView] = useState<"contacts" | "history" | "analytics">("contacts");
   const [isEditingRecipient, setIsEditingRecipient] = useState(false);
   const [editingRecipient, setEditingRecipient] = useState<any | null>(null);
+  
+  // Search and Sort
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortOption, setSortOption] = useState<"name-asc" | "name-desc" | "amount-desc">("amount-desc");
+  
+  // Member specific history
+  const [selectedHistoryRecipient, setSelectedHistoryRecipient] = useState<string | null>(null);
 
   // Form states
   const [newName, setNewName] = useState("");
@@ -159,10 +167,42 @@ export default function FamilyClient({
     return RELATIONSHIP_CONFIG.Family;
   };
 
-  const filteredRecipients = recipients;
+  // Aggregate amounts sent per recipient for Analytics & Sorting
+  const recipientTotals = useMemo(() => {
+    const totals: Record<string, number> = {};
+    recipients.forEach(r => totals[r.id] = 0);
+    ledgerLogs.forEach(log => {
+      if (log.action_type === "SEND_MONEY" && log.source_id && totals[log.source_id] !== undefined) {
+        totals[log.source_id] += Number(log.amount || 0);
+      }
+    });
+    return totals;
+  }, [ledgerLogs, recipients]);
+
+  const filteredRecipients = useMemo(() => {
+    let filtered = recipients.filter(r => r.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    
+    filtered.sort((a, b) => {
+      if (sortOption === "name-asc") return a.name.localeCompare(b.name);
+      if (sortOption === "name-desc") return b.name.localeCompare(a.name);
+      if (sortOption === "amount-desc") return (recipientTotals[b.id] || 0) - (recipientTotals[a.id] || 0);
+      return 0;
+    });
+    
+    return filtered;
+  }, [recipients, searchQuery, sortOption, recipientTotals]);
+
+  const pieData = useMemo(() => {
+    return recipients.map(r => ({
+      name: r.name,
+      value: recipientTotals[r.id] || 0
+    })).filter(d => d.value > 0).sort((a, b) => b.value - a.value);
+  }, [recipients, recipientTotals]);
+
+  const PIE_COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#6366f1'];
 
   const recentSends = ledgerLogs
-    .filter((log) => log.action_type === "SEND_MONEY")
+    .filter((log) => log.action_type === "SEND_MONEY" && (!selectedHistoryRecipient || log.source_id === selectedHistoryRecipient))
     .slice(0, 10);
 
   const totalSent = recentSends.reduce((sum, s) => sum + (s.amount || 0), 0);
@@ -214,17 +254,52 @@ export default function FamilyClient({
             Contacts
           </button>
           <button type="button"
-            onClick={() => setActiveView("history")}
+            onClick={() => { setActiveView("history"); setSelectedHistoryRecipient(null); }}
             className={`px-4 py-2 rounded-lg text-xs font-medium transition-all ${activeView === "history" ? "bg-white/[0.1] text-[--text-primary]" : "text-[--text-muted] hover:text-[--text-primary]"}`}
           >
             History
+          </button>
+          <button type="button"
+            onClick={() => setActiveView("analytics")}
+            className={`px-4 py-2 rounded-lg text-xs font-medium transition-all ${activeView === "analytics" ? "bg-white/[0.1] text-[--text-primary]" : "text-[--text-muted] hover:text-[--text-primary]"}`}
+          >
+            Analytics
           </button>
         </div>
       </div>
 
       {/* Main View Render */}
       {activeView === "contacts" ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white/[0.02] border border-white/[0.05] p-4 rounded-2xl animate-fade-in">
+            <div className="relative w-full md:max-w-md">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg className="h-5 w-5 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <input
+                type="text"
+                placeholder="Search family members..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="block w-full pl-10 pr-3 py-2 border border-white/10 rounded-xl leading-5 bg-black/20 text-white placeholder-white/40 focus:outline-none focus:ring-1 focus:ring-[--accent-primary] focus:border-[--accent-primary] sm:text-sm transition-colors"
+              />
+            </div>
+            <div className="flex items-center gap-3 w-full md:w-auto">
+              <label className="text-sm text-[--text-muted] whitespace-nowrap">Sort By:</label>
+              <select
+                value={sortOption}
+                onChange={(e) => setSortOption(e.target.value as any)}
+                className="w-full md:w-auto bg-black/20 border border-white/10 rounded-xl px-3 py-2 text-sm text-[--text-primary] focus:border-[--accent-primary] outline-none appearance-none cursor-pointer"
+              >
+                <option value="amount-desc">Most Transferred</option>
+                <option value="name-asc">Name (A-Z)</option>
+                <option value="name-desc">Name (Z-A)</option>
+              </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {isLoading ? (
             Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="h-[180px] bg-white/[0.02] border border-white/[0.05] rounded-2xl animate-pulse" />
@@ -273,23 +348,36 @@ export default function FamilyClient({
                   </div>
                   
                   <div className="mt-2 pt-4 border-t border-white/[0.05]">
-                    <button type="button"
-                      onClick={() => { setSelectedRecipient(person); setSendAmount(""); setSendNote(""); setIsSendingMoney(true); }}
-                      className="w-full py-2.5 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 bg-white/[0.03] hover:bg-white/[0.08] text-[--text-primary]"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg>
-                      Send Money
-                    </button>
+                    <div className="flex gap-2">
+                      <button type="button"
+                        onClick={() => { setSelectedHistoryRecipient(person.id); setActiveView("history"); }}
+                        className="w-1/3 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 bg-white/[0.02] border border-white/5 hover:bg-white/[0.05] text-[--text-muted] hover:text-[--text-primary]"
+                        title="View History"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                      </button>
+                      <button type="button"
+                        onClick={() => { setSelectedRecipient(person); setSendAmount(""); setSendNote(""); setIsSendingMoney(true); }}
+                        className="w-2/3 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 bg-white/[0.03] border border-white/5 hover:bg-white/[0.08] text-[--text-primary]"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg>
+                        Send Money
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
             })
           )}
         </div>
-      ) : (
+        </div>
+      ) : activeView === "history" ? (
         <div className="bg-white/[0.02] border border-white/[0.05] rounded-2xl overflow-hidden animate-fade-in">
-          <div className="px-6 py-4 border-b border-white/[0.05] bg-white/[0.01]">
-            <h3 className="text-sm font-medium text-[--text-primary]">Recent Transfers</h3>
+          <div className="px-6 py-4 border-b border-white/[0.05] bg-white/[0.01] flex justify-between items-center">
+            <h3 className="text-sm font-medium text-[--text-primary]">{selectedHistoryRecipient ? `Transfers for ${recipients.find(r => r.id === selectedHistoryRecipient)?.name}` : "Recent Transfers"}</h3>
+            {selectedHistoryRecipient && (
+              <button type="button" onClick={() => setSelectedHistoryRecipient(null)} className="text-xs text-[--text-muted] hover:text-[--text-primary] underline">View All</button>
+            )}
           </div>
           <div className="divide-y divide-white/[0.05]">
             {recentSends.length === 0 ? (
@@ -318,6 +406,56 @@ export default function FamilyClient({
               ))
             )}
           </div>
+        </div>
+      ) : (
+        <div className="bg-white/[0.02] border border-white/[0.05] rounded-2xl overflow-hidden animate-fade-in p-6">
+          <div className="mb-6">
+            <h3 className="text-lg font-medium text-[--text-primary]">Funds Distribution</h3>
+            <p className="text-sm text-[--text-muted]">Breakdown of transferred capital by family member.</p>
+          </div>
+          
+          {pieData.length === 0 ? (
+            <div className="py-16 text-center text-sm text-[--text-muted]">No transfer data available for analytics.</div>
+          ) : (
+            <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+              <div className="w-full md:w-1/2 h-[350px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={80}
+                      outerRadius={120}
+                      paddingAngle={5}
+                      dataKey="value"
+                      stroke="none"
+                    >
+                      {pieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value: any) => `₹${Number(value).toLocaleString()}`}
+                      contentStyle={{ backgroundColor: '#171717', borderColor: '#333', borderRadius: '12px' }}
+                      itemStyle={{ color: '#fff' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="w-full md:w-1/2 flex flex-col gap-3">
+                {pieData.map((entry, index) => (
+                  <div key={entry.name} className="flex items-center justify-between bg-white/[0.02] border border-white/5 p-3 rounded-xl">
+                    <div className="flex items-center gap-3">
+                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }}></div>
+                      <span className="text-sm font-medium text-[--text-primary]">{entry.name}</span>
+                    </div>
+                    <span className="text-sm font-bold text-white">₹{entry.value.toLocaleString()}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
