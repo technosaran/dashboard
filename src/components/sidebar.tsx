@@ -7,6 +7,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useFinanceData } from "@/hooks/use-finance-data";
 import { MODULE_KEYS } from "@/lib/modules";
 import type { ModuleKey } from "@/lib/modules";
+import { GlobalNetWorth } from "@/components/global-net-worth";
 
 const nav = [
   {
@@ -255,8 +256,11 @@ export default function Sidebar() {
 
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex w-52 shrink-0 flex-col h-screen sticky top-0" style={{ background: "var(--sidebar-bg)", borderRight: "1px solid var(--sidebar-border)", backdropFilter: "blur(20px) saturate(1.2)", WebkitBackdropFilter: "blur(20px) saturate(1.2)" }}>
-        <div className="px-6 pt-6 pb-4"><div className="flex flex-col"><h2 className="text-xl font-black text-[--text-primary] tracking-tighter">Finance<span className="text-[--accent-primary]">OS</span></h2></div></div>
-        <nav className="flex-1 px-4 pt-4 space-y-0.5 overflow-y-auto no-scrollbar">
+        <div className="px-6 pt-6 pb-2"><div className="flex flex-col"><h2 className="text-xl font-black text-[--text-primary] tracking-tighter">Finance<span className="text-[--accent-primary]">OS</span></h2></div></div>
+        <div className="px-4 pb-2">
+          <GlobalNetWorth />
+        </div>
+        <nav className="flex-1 px-4 pt-2 space-y-0.5 overflow-y-auto no-scrollbar">
           <p className="px-4 pb-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-[--text-muted] opacity-60">Navigation</p>
           {filteredNav.map((item) => (<NavItem key={item.href} {...item} pathname={pathname} />))}
         </nav>
