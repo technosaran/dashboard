@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { createRecipient, deleteRecipient, sendMoneyToFamily, updateRecipient } from "./actions";
 import { toast } from "react-hot-toast";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { format } from "date-fns";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
-import { Plus, Users, Search, Edit2, Trash2, X, Send, History, Wallet, ArrowUpRight, CheckCircle2 } from "lucide-react";
+import { Plus, Search, Edit2, Trash2, X, Send, History, ArrowUpRight, CheckCircle2 } from "lucide-react";
 
 const QUICK_AMOUNTS = [500, 1000, 2000, 5000, 10000];
 
@@ -163,14 +163,14 @@ export default function FamilyClient({
   };
 
   // Analytics
-  const getRecipientId = (log: any) => {
+  const getRecipientId = useCallback((log: any) => {
     if (log.metadata?.recipient_id) return log.metadata.recipient_id;
     if (log.details) {
       const match = recipients.find(r => log.details.startsWith(`Sent money to ${r.name}`));
       if (match) return match.id;
     }
     return null;
-  };
+  }, [recipients]);
 
   const recipientTotals = useMemo(() => {
     const totals: Record<string, number> = {};
@@ -184,7 +184,7 @@ export default function FamilyClient({
       }
     });
     return totals;
-  }, [ledgerLogs, recipients]);
+  }, [ledgerLogs, recipients, getRecipientId]);
 
   const filteredRecipients = useMemo(() => {
     return recipients.filter(r => r.name.toLowerCase().includes(searchQuery.toLowerCase()));

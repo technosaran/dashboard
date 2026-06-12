@@ -2,6 +2,7 @@
 
 import React from "react";
 import { SWRConfig } from "swr";
+import { RealtimeSyncProvider } from "./realtime-sync-provider";
 import type { FinanceData } from "@/hooks/use-finance-data";
 import {
   SUMMARY_KEY,
@@ -61,7 +62,9 @@ export function SWRProvider({ children, initialData }: SWRProviderProps) {
 
   return (
     <SWRConfig value={{ fallback }}>
-      {children}
+      <RealtimeSyncProvider>
+        {children}
+      </RealtimeSyncProvider>
     </SWRConfig>
   );
 }
