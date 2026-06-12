@@ -248,69 +248,58 @@ export default function FamilyClient({
               </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-[--text-secondary]">
-                <thead className="text-xs uppercase bg-[#181818] text-[--text-muted] border-b border-white/10">
-                  <tr>
-                    <th className="px-6 py-4 font-semibold">Name</th>
-                    <th className="px-6 py-4 font-semibold">Total Transferred</th>
-                    <th className="px-6 py-4 font-semibold text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5">
-                  {isLoading ? (
-                    <tr>
-                      <td colSpan={3} className="px-6 py-8 text-center text-white/40">Loading contacts...</td>
-                    </tr>
-                  ) : filteredRecipients.length === 0 ? (
-                    <tr>
-                      <td colSpan={3} className="px-6 py-12 text-center">
-                        <p className="text-[--text-primary] font-medium">No contacts found</p>
-                        <p className="text-xs text-[--text-muted] mt-1">Try a different search or add a new contact.</p>
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredRecipients.map((person) => (
-                      <tr key={person.id} className="hover:bg-white/[0.02] transition-colors">
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-[--accent-primary]/20 text-[--accent-primary] flex items-center justify-center font-bold">
-                              {person.name.charAt(0).toUpperCase()}
-                            </div>
-                            <div className="flex flex-col">
-                              <span className="font-semibold text-white">{person.name}</span>
-                              <span className="text-xs text-[--text-muted]">Family</span>
-                            </div>
+            <div className="p-4 bg-[#111111]">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {isLoading ? (
+                  Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="bg-[#151515] border border-white/10 rounded-md h-[160px] animate-pulse"></div>
+                  ))
+                ) : filteredRecipients.length === 0 ? (
+                  <div className="col-span-full py-12 text-center">
+                    <p className="text-[--text-primary] font-medium">No contacts found</p>
+                    <p className="text-xs text-[--text-muted] mt-1">Try a different search or add a new contact.</p>
+                  </div>
+                ) : (
+                  filteredRecipients.map((person) => (
+                    <div key={person.id} className="bg-[#151515] border border-white/10 rounded-md p-5 flex flex-col justify-between hover:border-[--accent-primary]/50 transition-colors group">
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-[#1a1a1a] border border-white/5 text-white flex items-center justify-center font-bold text-lg shadow-inner">
+                            {person.name.charAt(0).toUpperCase()}
                           </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="font-medium">₹{(recipientTotals[person.id] || 0).toLocaleString()}</span>
-                        </td>
-                        <td className="px-6 py-4 text-right space-x-2 whitespace-nowrap">
-                          <button
-                            onClick={() => { setSelectedHistoryRecipient(person.id); setActiveView("history"); }}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#1e1e1e] hover:bg-[#2a2a2a] border border-white/10 rounded text-xs font-medium text-white transition-colors"
-                          >
-                            <History className="w-3.5 h-3.5" /> History
+                          <div className="flex flex-col">
+                            <span className="font-bold text-white leading-tight">{person.name}</span>
+                            <span className="text-xs text-[--text-muted] mt-0.5">Total: ₹{(recipientTotals[person.id] || 0).toLocaleString()}</span>
+                          </div>
+                        </div>
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => startEdit(person)} className="p-1.5 text-[--text-muted] hover:text-white transition-colors rounded hover:bg-white/5" title="Edit">
+                            <Edit2 className="w-3.5 h-3.5" />
                           </button>
-                          <button
-                            onClick={() => { setSelectedRecipient(person); setIsSendingMoney(true); }}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[--accent-primary] hover:bg-[--accent-primary]/90 rounded text-xs font-medium text-white transition-colors"
-                          >
-                            <Send className="w-3.5 h-3.5" /> Send
+                          <button onClick={() => handleDeleteRecipient(person.id)} className="p-1.5 text-[--text-muted] hover:text-danger transition-colors rounded hover:bg-white/5" title="Remove">
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
-                          <button onClick={() => startEdit(person)} className="p-1.5 text-[--text-muted] hover:text-white transition-colors" title="Edit">
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                          <button onClick={() => handleDeleteRecipient(person.id)} className="p-1.5 text-[--text-muted] hover:text-danger transition-colors" title="Remove">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2 mt-4">
+                        <button
+                          onClick={() => { setSelectedRecipient(person); setIsSendingMoney(true); }}
+                          className="flex-1 inline-flex justify-center items-center gap-1.5 py-2 bg-[--accent-primary] hover:bg-[--accent-primary]/90 rounded-sm text-xs font-medium text-white transition-colors"
+                        >
+                          <Send className="w-3.5 h-3.5" /> Send
+                        </button>
+                        <button
+                          onClick={() => { setSelectedHistoryRecipient(person.id); setActiveView("history"); }}
+                          className="flex-1 inline-flex justify-center items-center gap-1.5 py-2 bg-[#1e1e1e] hover:bg-[#2a2a2a] border border-white/10 rounded-sm text-xs font-medium text-white transition-colors"
+                        >
+                          <History className="w-3.5 h-3.5" /> History
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
         )}
