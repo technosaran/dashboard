@@ -79,7 +79,9 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, isVal
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
               </svg>
             </div>
-            <h2 className={`no-scrollbar w-full overflow-x-auto overflow-y-hidden bg-clip-text text-center text-[clamp(1.6rem,8vw,2.4rem)] font-[900] leading-none tracking-tighter text-transparent whitespace-nowrap transition-all duration-300 ${
+            <h2 
+              key={showUSD ? 'usd' : 'inr'}
+              className={`animate-fade-in no-scrollbar w-full overflow-x-auto overflow-y-hidden bg-clip-text text-center text-[clamp(1.6rem,8vw,2.4rem)] font-[900] leading-none tracking-tighter text-transparent whitespace-nowrap transition-all duration-500 ${
               showUSD 
                 ? "bg-gradient-to-b from-[--accent-primary-light] to-indigo-300"
                 : "bg-gradient-to-b from-white to-white/70"
