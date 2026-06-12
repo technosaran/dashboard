@@ -163,12 +163,24 @@ export default function FamilyClient({
   };
 
   // Analytics
+  const getRecipientId = (log: any) => {
+    if (log.metadata?.recipient_id) return log.metadata.recipient_id;
+    if (log.details) {
+      const match = recipients.find(r => log.details.startsWith(`Sent money to ${r.name}`));
+      if (match) return match.id;
+    }
+    return null;
+  };
+
   const recipientTotals = useMemo(() => {
     const totals: Record<string, number> = {};
     recipients.forEach(r => totals[r.id] = 0);
     ledgerLogs.forEach(log => {
-      if (log.action_type === "SEND_MONEY" && log.source_id && totals[log.source_id] !== undefined) {
-        totals[log.source_id] += Number(log.amount || 0);
+      if (log.action_type === "SEND_MONEY") {
+        const recId = getRecipientId(log);
+        if (recId && totals[recId] !== undefined) {
+          totals[recId] += Number(log.amount || 0);
+        }
       }
     });
     return totals;
@@ -179,7 +191,11 @@ export default function FamilyClient({
   }, [recipients, searchQuery]);
 
   const recentSends = ledgerLogs
-    .filter((log) => log.action_type === "SEND_MONEY" && (!selectedHistoryRecipient || log.source_id === selectedHistoryRecipient))
+    .filter((log) => {
+      if (log.action_type !== "SEND_MONEY") return false;
+      const recId = getRecipientId(log);
+      return (!selectedHistoryRecipient || recId === selectedHistoryRecipient);
+    })
     .slice(0, 20);
 
   const totalSent = recentSends.reduce((sum, s) => sum + (s.amount || 0), 0);
@@ -359,7 +375,7 @@ export default function FamilyClient({
                         <td className="px-6 py-4 font-medium text-white">
                           <div className="flex flex-col">
                             <span>{send.details || "Transfer"}</span>
-                            <span className="text-xs text-[--text-muted]">To: {recipients.find(r => r.id === send.source_id)?.name || "Unknown"}</span>
+                            <span className="text-xs text-[--text-muted]">To: {recipients.find(r => r.id === getRecipientId(send))?.name || "Unknown"}</span>
                           </div>
                         </td>
                         <td className="px-6 py-4 text-right">
