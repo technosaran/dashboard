@@ -233,8 +233,8 @@ export default function FamilyClient({
 
         {/* TAB: CONTACTS */}
         {activeView === "contacts" && (
-          <div className="bg-[#111111] border border-white/10 rounded-md overflow-hidden">
-            <div className="p-4 border-b border-white/10 bg-[#151515] flex flex-col sm:flex-row justify-between gap-4 items-center">
+          <div className="flex flex-col gap-6">
+            <div className="glass-card-static p-4 border-b border-white/10 flex flex-col sm:flex-row justify-between gap-4 items-center">
               <h2 className="text-sm font-semibold text-white">Contact List</h2>
               <div className="relative w-full sm:w-64">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
@@ -248,58 +248,72 @@ export default function FamilyClient({
               </div>
             </div>
 
-            <div className="p-4 bg-[#111111]">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {isLoading ? (
-                  Array.from({ length: 6 }).map((_, i) => (
-                    <div key={i} className="bg-[#151515] border border-white/10 rounded-md h-[160px] animate-pulse"></div>
-                  ))
-                ) : filteredRecipients.length === 0 ? (
-                  <div className="col-span-full py-12 text-center">
-                    <p className="text-[--text-primary] font-medium">No contacts found</p>
-                    <p className="text-xs text-[--text-muted] mt-1">Try a different search or add a new contact.</p>
-                  </div>
-                ) : (
-                  filteredRecipients.map((person) => (
-                    <div key={person.id} className="bg-[#151515] border border-white/10 rounded-md p-5 flex flex-col justify-between hover:border-[--accent-primary]/50 transition-colors group">
-                      <div className="flex justify-between items-start mb-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-[#1a1a1a] border border-white/5 text-white flex items-center justify-center font-bold text-lg shadow-inner">
-                            {person.name.charAt(0).toUpperCase()}
-                          </div>
-                          <div className="flex flex-col">
-                            <span className="font-bold text-white leading-tight">{person.name}</span>
-                            <span className="text-xs text-[--text-muted] mt-0.5">Total: ₹{(recipientTotals[person.id] || 0).toLocaleString()}</span>
-                          </div>
-                        </div>
-                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => startEdit(person)} className="p-1.5 text-[--text-muted] hover:text-white transition-colors rounded hover:bg-white/5" title="Edit">
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button onClick={() => handleDeleteRecipient(person.id)} className="p-1.5 text-[--text-muted] hover:text-danger transition-colors rounded hover:bg-white/5" title="Remove">
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="flex gap-2 mt-4">
-                        <button
-                          onClick={() => { setSelectedRecipient(person); setIsSendingMoney(true); }}
-                          className="flex-1 inline-flex justify-center items-center gap-1.5 py-2 bg-[--accent-primary] hover:bg-[--accent-primary]/90 rounded-sm text-xs font-medium text-white transition-colors"
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {isLoading ? (
+                Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="glass-card rich-border min-h-[260px] p-6 animate-pulse" />
+                ))
+              ) : filteredRecipients.length === 0 ? (
+                <div className="col-span-full py-12 text-center glass-card-static">
+                  <p className="text-[--text-primary] font-medium">No contacts found</p>
+                  <p className="text-xs text-[--text-muted] mt-1">Try a different search or add a new contact.</p>
+                </div>
+              ) : (
+                filteredRecipients.map((person) => (
+                  <div key={person.id} className="glass-card rich-border flex flex-col min-h-[260px] p-6 relative overflow-hidden transition-transform hover:-translate-y-1">
+                    <div className="absolute top-0 left-0 right-0 h-[3px]" style={{ background: "linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%)" }} />
+                    <div className="flex justify-between items-start mb-6">
+                       <div>
+                         <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-[rgba(14,165,233,0.05)] text-[--accent-primary] border border-[rgba(14,165,233,0.1)]">
+                           Family
+                         </span>
+                         <div className="flex items-center gap-3 mt-4">
+                           <div className="w-12 h-12 rounded-xl border border-white/5 shadow-inner bg-[rgba(14,165,233,0.05)] text-[--accent-primary] flex items-center justify-center text-xl font-bold">
+                             {person.name.charAt(0).toUpperCase()}
+                           </div>
+                           <span className="text-base font-bold text-[--text-secondary]">Contact</span>
+                         </div>
+                       </div>
+                       <button type="button" onClick={() => startEdit(person)} className="p-2 rounded-xl bg-white/5 border border-white/10 text-[--text-muted] hover:text-white transition-all">
+                         <Edit2 className="w-4 h-4" />
+                       </button>
+                    </div>
+                    
+                    <div className="mt-auto">
+                      <h3 className="text-lg font-bold truncate">{person.name}</h3>
+                      <p className="text-2xl font-black mt-1 text-[--accent-primary]">₹{(recipientTotals[person.id] || 0).toLocaleString()}</p>
+                      
+                      <div className="flex gap-2 mt-6">
+                        <button 
+                          type="button" 
+                          onClick={() => { setSelectedRecipient(person); setIsSendingMoney(true); }} 
+                          className="flex-1 h-12 rounded-xl font-bold text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-2 bg-[rgba(14,165,233,0.05)] text-[--accent-primary] border border-[rgba(14,165,233,0.1)] hover:bg-[rgba(14,165,233,0.15)]"
                         >
-                          <Send className="w-3.5 h-3.5" /> Send
+                          <Send className="w-4 h-4" /> Send
                         </button>
-                        <button
-                          onClick={() => { setSelectedHistoryRecipient(person.id); setActiveView("history"); }}
-                          className="flex-1 inline-flex justify-center items-center gap-1.5 py-2 bg-[#1e1e1e] hover:bg-[#2a2a2a] border border-white/10 rounded-sm text-xs font-medium text-white transition-colors"
+                        
+                        <button 
+                          type="button" 
+                          onClick={() => { setSelectedHistoryRecipient(person.id); setActiveView("history"); }} 
+                          className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 text-[--text-muted] hover:text-white transition-all flex items-center justify-center"
+                          title="History"
                         >
-                          <History className="w-3.5 h-3.5" /> History
+                          <History className="w-4 h-4" />
+                        </button>
+                        
+                        <button 
+                          type="button" 
+                          onClick={() => handleDeleteRecipient(person.id)} 
+                          className="w-12 h-12 rounded-xl bg-danger/10 border border-danger/20 text-danger hover:bg-danger/20 transition-all flex items-center justify-center"
+                          title="Remove"
+                        >
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </div>
-                  ))
-                )}
-              </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         )}
