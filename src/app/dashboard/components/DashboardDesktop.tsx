@@ -207,27 +207,29 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
 
             {/* PORTFOLIO ALLOCATION PIE CHART */}
             <div className="flex-1 max-w-md w-full bg-white/[0.01] border border-white/5 rounded-3xl p-6 relative overflow-hidden">
-              <div className="flex items-center gap-6 h-full">
+              <div className="flex flex-col sm:flex-row items-center gap-6 h-full justify-between">
                 {portfolioData.length === 0 ? (
                   <div className="w-full flex h-[200px] items-center justify-center italic text-[--text-muted] text-sm rounded-3xl">No portfolio data available.</div>
                 ) : (
                   <>
-                    <div className="w-1/2 space-y-2.5">
+                    <div className="flex-1 min-w-0 space-y-2.5 w-full">
                       <p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-3">Portfolio Allocation</p>
                       {portfolioData.map((item) => (
-                        <div key={item.name} className="flex justify-between items-center group gap-2 min-w-0 py-1.5 hover:bg-white/[0.02] px-2 rounded-lg transition-colors">
-                          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        <div key={item.name} className="flex justify-between items-center group gap-3 min-w-0 py-1.5 hover:bg-white/[0.02] px-2 rounded-lg transition-colors">
+                          <div className="flex items-center gap-2.5 min-w-0">
                             <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: item.color }} />
                             <span className="text-[11px] font-bold text-[--text-secondary] truncate group-hover:text-white transition-colors">{item.name}</span>
                           </div>
-                          <div className="flex items-center gap-2 flex-shrink-0">
+                          <div className="flex items-center gap-2 flex-shrink-0 text-right">
                             <span className="text-[9px] font-bold text-[--text-muted]">{item.percentage}%</span>
-                            <span className="text-[11px] font-black tabular-nums whitespace-nowrap" style={{ color: item.color }}>₹{item.value.toLocaleString()}</span>
+                            <span className="text-[11px] font-black tabular-nums whitespace-nowrap" style={{ color: item.color }}>
+                              ₹{item.value > 10000000 ? Intl.NumberFormat('en-IN', { notation: 'compact', maximumFractionDigits: 2 }).format(item.value) : item.value.toLocaleString()}
+                            </span>
                           </div>
                         </div>
                       ))}
                     </div>
-                    <div className="h-[185px] w-1/2 relative">
+                    <div className="h-[140px] w-[140px] flex-shrink-0 relative">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie 
@@ -235,7 +237,7 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                             cx="50%" 
                             cy="50%" 
                             innerRadius={50} 
-                            outerRadius={70} 
+                            outerRadius={65} 
                             paddingAngle={5} 
                             dataKey="value"
                           >
@@ -250,8 +252,10 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                         </PieChart>
                       </ResponsiveContainer>
                       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
-                        <span className="text-[7px] uppercase font-black tracking-widest text-[--text-muted]">Assets</span>
-                        <span className="text-[12px] font-black text-white mt-0.5">₹{stats.totalAssets.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                        <span className="text-[8px] uppercase font-black tracking-widest text-[--text-muted]">Assets</span>
+                        <span className="text-[12px] font-black text-white mt-0.5">
+                          ₹{Intl.NumberFormat('en-IN', { notation: 'compact', maximumFractionDigits: 1 }).format(stats.totalAssets)}
+                        </span>
                       </div>
                     </div>
                   </>
