@@ -89,6 +89,14 @@ export async function deleteAccount(id: string) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Unauthorized" };
 
+    // Unlink any transactions that reference this account to prevent foreign key constraint violations
+    // We set the account_id to null instead of deleting the trades, preserving the user's portfolio history
+    await Promise.all([
+      supabase.from("forex_transactions").update({ bank_account_id: null }).eq("bank_account_id", id),
+      supabase.from("bond_transactions").update({ account_id: null }).eq("account_id", id),
+      supabase.from("mutual_fund_trades").update({ account_id: null }).eq("account_id", id),
+    ]);
+
     const { data: rpcData, error } = await supabase.rpc("delete_account_atomic_v2", {
       p_user_id: user.id,
       p_account_id: id
