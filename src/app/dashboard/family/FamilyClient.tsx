@@ -36,7 +36,7 @@ export default function FamilyClient({
 
   // Form states
   const [newName, setNewName] = useState("");
-  const [newRelationship] = useState("Family");
+  const [newRelationship, setNewRelationship] = useState("Family");
 
   const [sendAmount, setSendAmount] = useState("");
   const [sendAccountId, setSendAccountId] = useState("");
@@ -92,6 +92,7 @@ export default function FamilyClient({
     setIsEditingRecipient(false);
     setEditingRecipient(null);
     setNewName("");
+    setNewRelationship("Family");
     setIsSendingMoney(false);
     setSelectedRecipient(null);
     setSendAmount("");
@@ -103,6 +104,7 @@ export default function FamilyClient({
   const startEdit = (person: any) => {
     setEditingRecipient(person);
     setNewName(person.name);
+    setNewRelationship(person.relationship || "Family");
     setIsEditingRecipient(true);
     setIsAddingRecipient(true);
   };
@@ -265,7 +267,7 @@ export default function FamilyClient({
                     <div className="flex justify-between items-start mb-6">
                        <div>
                          <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-[rgba(14,165,233,0.05)] text-[--accent-primary] border border-[rgba(14,165,233,0.1)]">
-                           Family
+                           {person.relationship || "Family"}
                          </span>
                          <div className="flex items-center gap-3 mt-4">
                            <div className="w-12 h-12 rounded-xl border border-white/5 shadow-inner bg-[rgba(14,165,233,0.05)] text-[--accent-primary] flex items-center justify-center text-xl font-bold">
@@ -355,7 +357,10 @@ export default function FamilyClient({
                           <span className="text-xs text-[--text-muted] ml-2 block sm:inline">{send.created_at ? format(new Date(send.created_at), "h:mm a") : ""}</span>
                         </td>
                         <td className="px-6 py-4 font-medium text-white">
-                          {send.details || "Transfer"}
+                          <div className="flex flex-col">
+                            <span>{send.details || "Transfer"}</span>
+                            <span className="text-xs text-[--text-muted]">To: {recipients.find(r => r.id === send.source_id)?.name || "Unknown"}</span>
+                          </div>
                         </td>
                         <td className="px-6 py-4 text-right">
                           <span className="font-semibold text-danger">-₹{(send.amount || 0).toLocaleString()}</span>
@@ -410,6 +415,10 @@ export default function FamilyClient({
                 <div>
                   <label className="block text-sm font-medium text-[--text-secondary] mb-1.5">Full Name</label>
                   <input autoFocus required type="text" value={newName} onChange={(e) => setNewName(e.target.value)} className="w-full bg-[#1a1a1a] border border-white/10 rounded-md px-3 py-2 text-white focus:border-[--accent-primary] outline-none text-sm" placeholder="Enter contact name" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[--text-secondary] mb-1.5">Relationship</label>
+                  <input required type="text" value={newRelationship} onChange={(e) => setNewRelationship(e.target.value)} className="w-full bg-[#1a1a1a] border border-white/10 rounded-md px-3 py-2 text-white focus:border-[--accent-primary] outline-none text-sm" placeholder="e.g. Brother, Friend" />
                 </div>
                 <div className="flex justify-end gap-3 pt-4">
                   <button type="button" onClick={closeModals} className="px-4 py-2 border border-white/10 hover:bg-white/5 rounded-md text-sm font-medium text-white transition-colors">Cancel</button>
