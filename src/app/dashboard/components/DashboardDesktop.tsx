@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { format } from "date-fns";
-import { useMemo, memo } from "react";
+import { useMemo, memo, useState } from "react";
 import Greeting from "@/components/greeting";
 import type { FinanceData } from "@/hooks/use-finance-data";
 import dynamic from "next/dynamic";
@@ -79,8 +79,7 @@ type Props = {
 };
 
 const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goals, isLoading }: Props) {
-
-
+  const [showUSD, setShowUSD] = useState(false);
   // Extract portfolio data computation into a single useMemo
   const portfolioData = useMemo<PieEntry[]>(() => {
     if (stats.totalAssets <= 0) return [];
@@ -170,19 +169,28 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                 </span>
               </div>
               <div className="flex flex-col md:flex-row md:items-center gap-x-12 gap-y-6 flex-wrap max-w-full">
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-black tracking-widest text-[--text-muted] uppercase mb-1">Rupees (INR)</span>
-                  <h2 className="bg-gradient-to-r from-white via-white to-slate-300 bg-clip-text text-[clamp(2.2rem,5vw,3.5rem)] font-[950] leading-none tracking-[-0.04em] text-transparent drop-shadow-[0_10px_35px_rgba(14,165,233,0.3)] [font-family:'Outfit',sans-serif] whitespace-nowrap overflow-x-auto no-scrollbar">
-                    ₹{stats.netWorthINR.toLocaleString(undefined, { minimumFractionDigits: 0 })}
-                  </h2>
-                </div>
-                
-                <div className="w-px h-16 bg-white/10 hidden md:block" />
-                
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-black tracking-widest text-[--text-muted] uppercase mb-1">Dollars (USD)</span>
-                  <h2 className="bg-gradient-to-r from-[--accent-primary-light] via-indigo-200 to-indigo-300 bg-clip-text text-[clamp(2.2rem,5vw,3.5rem)] font-[950] leading-none tracking-[-0.04em] text-transparent drop-shadow-[0_10px_35px_rgba(99,102,241,0.3)] [font-family:'Outfit',sans-serif] whitespace-nowrap overflow-x-auto no-scrollbar">
-                    ${stats.netWorthUSD.toLocaleString(undefined, { minimumFractionDigits: 0 })}
+                <div 
+                  className="flex flex-col cursor-pointer group/nw select-none" 
+                  onClick={() => setShowUSD(!showUSD)}
+                  title="Click to toggle currency"
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[10px] font-black tracking-widest text-[--text-muted] uppercase transition-colors group-hover/nw:text-white">
+                      {showUSD ? 'Dollars (USD)' : 'Rupees (INR)'}
+                    </span>
+                    <svg className="w-3 h-3 text-[--text-muted] opacity-50 group-hover/nw:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                    </svg>
+                  </div>
+                  <h2 className={`bg-gradient-to-r text-[clamp(2.2rem,5vw,3.5rem)] font-[950] leading-none tracking-[-0.04em] text-transparent [font-family:'Outfit',sans-serif] whitespace-nowrap overflow-x-auto no-scrollbar transition-all duration-300 ${
+                    showUSD 
+                      ? "from-[--accent-primary-light] via-indigo-200 to-indigo-300 drop-shadow-[0_10px_35px_rgba(99,102,241,0.3)]" 
+                      : "from-white via-white to-slate-300 drop-shadow-[0_10px_35px_rgba(14,165,233,0.3)]"
+                  }`}>
+                    {showUSD 
+                      ? `$${stats.netWorthUSD.toLocaleString(undefined, { minimumFractionDigits: 0 })}` 
+                      : `₹${stats.netWorthINR.toLocaleString(undefined, { minimumFractionDigits: 0 })}`
+                    }
                   </h2>
                 </div>
               </div>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { format } from "date-fns";
-import { memo } from "react";
+import { memo, useState } from "react";
 import type { FinanceData } from "@/hooks/use-finance-data";
 
 type DashboardStats = {
@@ -31,7 +31,7 @@ type Props = {
 };
 
 const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, isValidating }: Props) {
-
+  const [showUSD, setShowUSD] = useState(false);
 
   return (
     <div className="relative z-20 flex min-h-screen flex-col gap-6 pb-[calc(var(--mobile-bottom-nav-height)+1rem)] md:hidden animate-fade-in">
@@ -66,18 +66,28 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, isVal
         <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-emerald-500/5 blur-3xl rounded-full" />
         
         <p className="mb-2 text-[10px] font-black uppercase tracking-[0.28em] text-[--text-muted]">Portfolio Net Worth</p>
-        <div className="flex flex-col items-center w-full gap-3 my-3">
+        <div 
+          className="flex flex-col items-center w-full gap-3 my-3 cursor-pointer group/nw select-none"
+          onClick={() => setShowUSD(!showUSD)}
+        >
           <div className="flex flex-col items-center">
-            <span className="text-[8px] font-black tracking-widest text-[--text-muted] uppercase mb-0.5">Rupees (INR)</span>
-            <h2 className="no-scrollbar w-full overflow-x-auto overflow-y-hidden bg-gradient-to-b from-white to-white/70 bg-clip-text text-center text-[clamp(1.6rem,8vw,2.4rem)] font-[900] leading-none tracking-tighter text-transparent whitespace-nowrap">
-               ₹{stats.netWorthINR.toLocaleString(undefined, { minimumFractionDigits: 0 })}
-            </h2>
-          </div>
-          <div className="h-px w-20 bg-white/10" />
-          <div className="flex flex-col items-center">
-            <span className="text-[8px] font-black tracking-widest text-[--text-muted] uppercase mb-0.5">Dollars (USD)</span>
-            <h2 className="no-scrollbar w-full overflow-x-auto overflow-y-hidden bg-gradient-to-b from-[--accent-primary-light] to-indigo-300 bg-clip-text text-center text-[clamp(1.6rem,8vw,2.4rem)] font-[900] leading-none tracking-tighter text-transparent whitespace-nowrap">
-               ${stats.netWorthUSD.toLocaleString(undefined, { minimumFractionDigits: 0 })}
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <span className="text-[8px] font-black tracking-widest text-[--text-muted] uppercase transition-colors group-hover/nw:text-white">
+                {showUSD ? 'Dollars (USD)' : 'Rupees (INR)'}
+              </span>
+              <svg className="w-2.5 h-2.5 text-[--text-muted] opacity-50 group-hover/nw:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+              </svg>
+            </div>
+            <h2 className={`no-scrollbar w-full overflow-x-auto overflow-y-hidden bg-clip-text text-center text-[clamp(1.6rem,8vw,2.4rem)] font-[900] leading-none tracking-tighter text-transparent whitespace-nowrap transition-all duration-300 ${
+              showUSD 
+                ? "bg-gradient-to-b from-[--accent-primary-light] to-indigo-300"
+                : "bg-gradient-to-b from-white to-white/70"
+            }`}>
+               {showUSD 
+                 ? `$${stats.netWorthUSD.toLocaleString(undefined, { minimumFractionDigits: 0 })}`
+                 : `₹${stats.netWorthINR.toLocaleString(undefined, { minimumFractionDigits: 0 })}`
+               }
             </h2>
           </div>
         </div>
