@@ -658,8 +658,9 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
 
       {/* Record Investment Modal */}
       {showAddModal && (
-        <div className="mobile-dialog-shell fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-xl animate-fade-in px-4">
-          <div className="mobile-dialog-panel glass-card-static w-full max-w-3xl p-8 md:p-12 rounded-3xl max-h-[85vh] overflow-y-auto custom-scrollbar">
+        <div className="mobile-dialog-shell fixed inset-0 z-[200] overflow-y-auto custom-scrollbar bg-[--bg-base]/80 backdrop-blur-xl animate-fade-in px-4">
+          <div className="flex min-h-full items-center justify-center p-4 py-12">
+            <div className="mobile-dialog-panel glass-card-static w-full max-w-3xl p-8 md:p-12 rounded-3xl">
             <div className="flex justify-between items-center mb-12">
               <h2 className="text-3xl font-black tracking-tight">{editingId ? 'Edit Mutual Fund Holding' : formData.trade_type === 'buy' ? 'Investment Log' : 'Asset Redemption'}</h2>
               <button type="button" onClick={() => setShowAddModal(false)} className="text-[--text-muted] hover:text-[--text-primary] transition-colors p-2">
@@ -791,6 +792,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                  {editingId ? "Update Mutual Fund Holding" : submitting ? (formData.trade_type === 'buy' ? "Deploying Capital..." : "Liquidating...") : (formData.trade_type === 'buy' ? "Authorize Investment" : "Authorize Redemption")}
               </button>
             </form>
+          </div>
           </div>
         </div>
       )}

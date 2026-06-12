@@ -455,8 +455,9 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
 
       {/* ── Log Trade Modal ── */}
       {showLogForm && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-          <div className="glass-card-static w-full max-w-xl p-8 max-h-[90vh] overflow-y-auto custom-scrollbar border border-white/20 bg-[--bg-surface]">
+        <div className="fixed inset-0 z-[200] overflow-y-auto custom-scrollbar bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="flex min-h-full items-center justify-center p-4 py-12">
+            <div className="glass-card-static w-full max-w-xl p-8 border border-white/20 bg-[--bg-surface]">
             <div className="flex justify-between items-center mb-8 pb-2 border-b border-white/5">
               <h2 className="text-2xl font-black text-white">Log FnO Trade</h2>
               <button type="button" onClick={resetLogForm} className="p-2 hover:bg-white/5 rounded-full transition-colors">
@@ -634,13 +635,15 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
               </button>
             </form>
           </div>
+          </div>
         </div>
       )}
 
       {/* ── Close Position Modal ── */}
       {showCloseForm && selectedTrade && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-          <div className="glass-card-static w-full max-w-md p-8 border border-white/20 bg-[--bg-surface] rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
+        <div className="fixed inset-0 z-[200] overflow-y-auto custom-scrollbar bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="flex min-h-full items-center justify-center p-4 py-12">
+            <div className="glass-card-static w-full max-w-md p-8 border border-white/20 bg-[--bg-surface] rounded-2xl shadow-2xl">
             <div className="flex justify-between items-center mb-6 pb-2 border-b border-white/5">
               <h2 className="text-xl font-black text-white">Close Position</h2>
               <button type="button" onClick={resetCloseForm} className="p-2 hover:bg-white/5 rounded-full transition-colors">
@@ -699,6 +702,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
                 {submitting ? "Settling Position..." : "Finalize Position & Settle P&L"}
               </button>
             </form>
+          </div>
           </div>
         </div>
       )}

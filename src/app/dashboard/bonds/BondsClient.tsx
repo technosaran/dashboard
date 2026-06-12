@@ -675,8 +675,9 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
 
       {/* Add Bond Modal */}
       {showAddModal && (
-        <div className="mobile-dialog-shell fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-xl">
-          <div className="mobile-dialog-panel glass-card-static w-full max-w-3xl p-8 max-h-[95vh] overflow-y-auto">
+        <div className="mobile-dialog-shell fixed inset-0 z-[200] overflow-y-auto custom-scrollbar bg-[--bg-base]/80 backdrop-blur-xl">
+          <div className="flex min-h-full items-center justify-center p-4 py-12">
+            <div className="mobile-dialog-panel glass-card-static w-full max-w-3xl p-8">
             <div className="flex justify-between items-center mb-8">
               <h2 className="text-2xl font-black">{editingId ? 'Edit Bond Holding' : 'Add Bond Investment'}</h2>
               <button type="button" onClick={() => { setShowAddModal(false); setEditingId(null); }} className="text-[--text-muted] hover:text-white">
@@ -818,6 +819,7 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
                 {editingId ? "Update Bond Details" : submitting ? "Adding..." : "Add Bond"}
               </button>
             </form>
+          </div>
           </div>
         </div>
       )}

@@ -3,7 +3,6 @@ import { UserProvider } from "@/context/user-context";
 import { createClient } from "@/lib/supabase-server";
 import { SWRProvider } from "@/components/swr-provider";
 import type { FinanceData } from "@/hooks/use-finance-data";
-import { GlobalNetWorth } from "@/components/global-net-worth";
 
 export const dynamic = "force-dynamic";
 
@@ -53,9 +52,6 @@ export default async function DashboardLayout({
                 paddingTop: "calc(var(--page-padding-y) + env(safe-area-inset-top, 0px))"
               }}
             >
-              <div className="md:hidden w-full mb-6 sticky top-0 z-50 py-2 bg-[--bg-base]/80 backdrop-blur-md">
-                <GlobalNetWorth />
-              </div>
               {children}
             </div>
           </main>
