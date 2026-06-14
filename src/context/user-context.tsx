@@ -28,9 +28,9 @@ const UserContext = createContext<UserContextType>({
   setUsername: () => {},
 });
 
-const supabase = createClient();
-
 export function UserProvider({ children }: { children: React.ReactNode }) {
+  const [supabase] = useState(() => createClient());
+
   const [username, setUsernameState] = useState("");
   const [loading, setLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -62,7 +62,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
     applyUser(user);
     setLoading(false);
-  }, [applyUser]);
+  }, [applyUser, supabase]);
 
   useEffect(() => {
     startTransition(() => {
@@ -95,7 +95,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         clearTimeout(updateTimeoutRef.current);
       }
     };
-  }, [fetchUser]);
+  }, [fetchUser, supabase]);
 
   useEffect(() => {
     if (!currentUserId) {
@@ -137,7 +137,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         channelRef.current = null;
       }
     };
-  }, [currentUserId]);
+  }, [currentUserId, supabase]);
 
   const setUsername = useCallback((name: string) => {
     // Immediate local update for responsiveness
@@ -184,7 +184,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         updateTimeoutRef.current = null;
       }
     }, 400); // Reduced to 400ms for better responsiveness
-  }, []);
+  }, [supabase]);
 
   return (
     <UserContext.Provider value={{ username, user_id: currentUserId, loading, isSyncing, setUsername }}>

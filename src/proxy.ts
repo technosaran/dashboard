@@ -2,6 +2,14 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export default async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // 1. FAST PATH FOR STATIC ASSETS (Bypasses Supabase Auth check entirely)
+  const isStaticAsset = pathname.startsWith("/_next") || pathname.startsWith("/favicon") || pathname.includes(".");
+  if (isStaticAsset) {
+    return NextResponse.next();
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -26,18 +34,11 @@ export default async function middleware(request: NextRequest) {
   );
 
   // ── Optimized & Secure User Check ────────────────────────
-  // getUser() is the secure way to verify user auth in middleware
+  // Only execute database getUser call if we're on a non-static path
   const { data: { user } } = await supabase.auth.getUser();
-
-  const { pathname } = request.nextUrl;
 
   // Public routes that don't need auth
   const isPublicRoute = pathname === "/login" || pathname === "/";
-  const isStaticAsset = pathname.startsWith("/_next") || pathname.startsWith("/favicon") || pathname.includes(".");
-
-  if (isStaticAsset) {
-    return supabaseResponse;
-  }
 
   // Redirect unauthenticated users to login
   if (!user && !isPublicRoute) {
@@ -51,9 +52,12 @@ export default async function middleware(request: NextRequest) {
 
   // ── Dynamic CSP with Nonce ───────────────────────────────
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
+  const isDev = process.env.NODE_ENV === "development";
   const cspHeaderParts = [
     "default-src 'self'",
-    `script-src 'self' 'unsafe-inline' 'unsafe-eval'`,
+    isDev
+      ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
+      : `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
     `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`, // unsafe-inline for Tailwind/CSS-in-JS if needed
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: blob: https://logos.hunter.io https://companyenrich.com https://www.google.com https://icons.duckduckgo.com https://*.yahoo.com https://*.yahooapis.com https://logo.clearbit.com",

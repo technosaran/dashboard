@@ -1,14 +1,14 @@
 "use client";
 
-import React, { useEffect, useRef, useCallback } from "react";
+import React, { useEffect, useRef, useCallback, useState } from "react";
 import { useSWRConfig } from "swr";
 import { createClient } from "@/lib/supabase-browser";
 import { useUser } from "@/context/user-context";
 import { SUMMARY_KEY, INVESTMENTS_KEY, CASHFLOW_KEY, FOREX_KEY, FAMILY_KEY } from "@/hooks/use-finance-data";
 
-const supabase = createClient();
-
 export function RealtimeSyncProvider({ children }: { children: React.ReactNode }) {
+  const [supabase] = useState(() => createClient());
+
   const { user_id } = useUser();
   const { mutate } = useSWRConfig();
   const updateQueueRef = useRef<Set<string>>(new Set());
@@ -95,7 +95,7 @@ export function RealtimeSyncProvider({ children }: { children: React.ReactNode }
       }
       void supabase.removeChannel(channel);
     };
-  }, [debouncedMutate, user_id]);
+  }, [debouncedMutate, user_id, supabase]);
 
   return <>{children}</>;
 }

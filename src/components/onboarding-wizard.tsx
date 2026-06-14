@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { useFinanceData } from "@/hooks/use-finance-data";
+import { useUser } from "@/context/user-context";
 
 type OnboardingStep = "welcome" | "account" | "income" | "expense" | "complete";
 
@@ -16,19 +17,22 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
   const [step, setStep] = useState<OnboardingStep>("welcome");
   
   const { data: financeData } = useFinanceData();
+  const { user_id } = useUser();
   const { accounts = [], incomes = [], expenses = [] } = financeData || {};
 
   const accountCreated = accounts.length > 0;
   const incomeLogged = incomes.length > 0;
   const expenseLogged = expenses.length > 0;
 
+  const getStorageKey = () => user_id ? `onboarding_completed_${user_id}` : "onboarding_completed";
+
   function handleSkip() {
-    localStorage.setItem("onboarding_completed", "true");
+    localStorage.setItem(getStorageKey(), "true");
     onComplete();
   }
 
   function handleComplete() {
-    localStorage.setItem("onboarding_completed", "true");
+    localStorage.setItem(getStorageKey(), "true");
     toast.success("Welcome to your Finance Dashboard! 🎉");
     onComplete();
   }

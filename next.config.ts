@@ -5,14 +5,14 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "logos.hunter.io" },
       { protocol: "https", hostname: "companyenrich.com" },
-      { protocol: "https", hostname: "www.google.com" },
+      { protocol: "https", hostname: "www.google.com", pathname: "/s2/favicons/**" },
       { protocol: "https", hostname: "icons.duckduckgo.com" },
       { protocol: "https", hostname: "logo.clearbit.com" },
     ],
   },
-
-  // Compression & performance
-  compress: true,
+  turbopack: {
+    root: "c:/Users/saran/OneDrive/Desktop/dashboard",
+  },
   poweredByHeader: false,
   
   // Build optimizations
@@ -34,6 +34,8 @@ const nextConfig: NextConfig = {
       headers: [
         { key: "X-DNS-Prefetch-Control", value: "on" },
         { key: "X-Content-Type-Options", value: "nosniff" },
+        { key: "X-Frame-Options", value: "DENY" },
+        { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
         { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
         {
           key: "Permissions-Policy",

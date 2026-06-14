@@ -5,7 +5,6 @@ import { format, parseISO, subMonths } from "date-fns";
 import { useFinanceData } from "@/hooks/use-finance-data";
 import { useNetWorth } from "@/hooks/use-net-worth";
 import { useMediaQuery } from "@/hooks/use-media-query";
-import type { FinanceData } from "@/hooks/use-finance-data";
 import { getChartColour } from "@/lib/chart-colours";
 import DashboardMobile from "./components/DashboardMobile";
 import DashboardDesktop from "./components/DashboardDesktop";
@@ -25,9 +24,9 @@ type TrendEntry = {
   type: string;
 };
 
-export default function DashboardClient({ initialData }: { initialData?: FinanceData }) {
+export default function DashboardClient() {
   const { user_id } = useUser();
-  const { data: financeData, isLoading, isValidating } = useFinanceData(initialData);
+  const { data: financeData, isLoading, isValidating } = useFinanceData();
   
   const { 
     accounts = [], 

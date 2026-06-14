@@ -118,9 +118,7 @@ export function useFinanceData(initialData?: FinanceData) {
   const summarySWR = useSWR(SUMMARY_KEY, fetchSummary, {
     revalidateOnFocus: true,
     revalidateOnReconnect: true,
-    revalidateIfStale: false,
     dedupingInterval: 30000,
-    revalidateOnMount: false,
     fallbackData: initialData ? {
       profile: initialData.profile,
       accounts: initialData.accounts,
@@ -132,9 +130,7 @@ export function useFinanceData(initialData?: FinanceData) {
   const investmentsSWR = useSWR(INVESTMENTS_KEY, fetchInvestments, {
     revalidateOnFocus: true,
     revalidateOnReconnect: true,
-    revalidateIfStale: false,
     dedupingInterval: 30000,
-    revalidateOnMount: false,
     fallbackData: initialData ? {
       investments: initialData.investments,
       mutualFunds: initialData.mutualFunds,
@@ -150,9 +146,7 @@ export function useFinanceData(initialData?: FinanceData) {
   const cashflowSWR = useSWR(CASHFLOW_KEY, fetchCashflow, {
     revalidateOnFocus: true,
     revalidateOnReconnect: true,
-    revalidateIfStale: false,
     dedupingInterval: 30000,
-    revalidateOnMount: false,
     fallbackData: initialData ? {
       incomes: initialData.incomes,
       expenses: initialData.expenses,
@@ -165,9 +159,7 @@ export function useFinanceData(initialData?: FinanceData) {
   const forexSWR = useSWR(FOREX_KEY, fetchForex, {
     revalidateOnFocus: true,
     revalidateOnReconnect: true,
-    revalidateIfStale: false,
     dedupingInterval: 30000,
-    revalidateOnMount: false,
     fallbackData: initialData ? {
       forexAccounts: initialData.forexAccounts,
       forexTrades: initialData.forexTrades,
@@ -178,9 +170,7 @@ export function useFinanceData(initialData?: FinanceData) {
   const familySWR = useSWR(FAMILY_KEY, fetchFamily, {
     revalidateOnFocus: true,
     revalidateOnReconnect: true,
-    revalidateIfStale: false,
     dedupingInterval: 30000,
-    revalidateOnMount: false,
     fallbackData: initialData ? {
       recipients: initialData.recipients,
     } : undefined

@@ -2,7 +2,6 @@
 
 import { useNetWorth } from "@/hooks/use-net-worth";
 import { useFinanceData } from "@/hooks/use-finance-data";
-import { ArrowUpRight } from "lucide-react";
 
 export function GlobalNetWorth() {
   const { netWorthINR } = useNetWorth();
