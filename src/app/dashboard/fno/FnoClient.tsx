@@ -4,6 +4,8 @@ import { useSearchParams } from "next/navigation";
 import { useMemo, useState, useEffect } from "react";
 import { format } from "date-fns";
 import { toast } from "react-hot-toast";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import Link from "next/link";
 
 import { 
   logFnoTrade, 
@@ -20,6 +22,7 @@ function formatNum(val: number, decimals = 2): string {
 
 export default function FnoClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { fnoTrades, accounts, profile }, isValidating, mutate } = useFinanceData(initialData);
+  const isMobile = useMediaQuery('(max-width: 767px)');
   const searchParams = useSearchParams();
   
   const [showLogForm, setShowLogForm] = useState(searchParams?.get("action") === "new");
@@ -28,6 +31,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
   const [submitting, withLock] = useSubmitLock();
 
   const [activeTab, setActiveTab] = useState<"positions" | "history">("positions");
+  const [mobileTab, setMobileTab] = useState<"log" | "close">("log");
 
   // Form states
   const [logFormData, setLogFormData] = useState({
@@ -207,6 +211,271 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
         toast.error(err?.message || "Failed to delete trade.");
       }
     });
+  }
+
+  if (isMobile) {
+    return (
+      <div className="flex flex-col gap-6 animate-fade-in pb-[calc(var(--mobile-bottom-nav-height)+2rem)]">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-black text-[--text-primary]">F&O Desk</h1>
+            <div className={`status-dot scale-70 ${submitting ? 'animate-pulse bg-yellow-400' : 'bg-emerald-400'}`} />
+          </div>
+          <Link href="/dashboard" className="text-[10px] font-black uppercase text-[--text-muted] no-underline bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg active:scale-95 transition-all">
+            Back
+          </Link>
+        </div>
+
+        <div className="flex bg-white/5 p-1 rounded-2xl border border-white/10 w-full">
+          <button type="button"
+            onClick={() => setMobileTab("log")}
+            className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${mobileTab === "log" ? "bg-[--accent-primary] text-white shadow-lg" : "text-[--text-muted]"}`}
+          >
+            Log Trade
+          </button>
+          <button type="button"
+            onClick={() => setMobileTab("close")}
+            className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${mobileTab === "close" ? "bg-[--accent-primary] text-white shadow-lg" : "text-[--text-muted]"}`}
+          >
+            Close Position
+          </button>
+        </div>
+
+        {mobileTab === "close" ? (
+          activePositions.length === 0 ? (
+            <div className="glass-card-static p-6 text-center border border-white/5 bg-white/[0.01]">
+              <p className="text-xs text-[--text-muted] font-medium leading-relaxed">
+                No active open positions to close.
+                All derivative contracts have been settled.
+              </p>
+            </div>
+          ) : (
+            <div className="glass-card-static p-5 border border-white/5 bg-white/[0.01]">
+              <form onSubmit={handleCloseSubmit} className="space-y-5">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Select Active Position</label>
+                  <select
+                    required
+                    className="input-premium"
+                    value={selectedTrade?.id || ""}
+                    onChange={e => {
+                      const trade = activePositions.find(t => t.id === e.target.value);
+                      setSelectedTrade(trade || null);
+                    }}
+                    aria-label="Select active position"
+                    id="mobile-close-trade-select"
+                    name="trade_id"
+                  >
+                    <option value="">Choose a position</option>
+                    {activePositions.map(t => (
+                      <option key={t.id} value={t.id} style={{ background: "var(--bg-surface)" }}>
+                        {t.symbol} {t.instrument_type} {t.strike_price ? `₹${t.strike_price}` : ""} ({t.quantity} Qty @ ₹{t.entry_price})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {selectedTrade && (
+                  <>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Avg Exit Premium (₹)</label>
+                      <input
+                        required
+                        type="number"
+                        step="any"
+                        className="input-premium"
+                        value={closeFormData.exit_price}
+                        onChange={e => setCloseFormData({ ...closeFormData, exit_price: e.target.value })}
+                        autoComplete="off"
+                        inputMode="decimal"
+                        placeholder="e.g. 148.30"
+                        id="mobile-close-exit-price"
+                        name="exit_price"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Settlement Date</label>
+                      <input
+                        required
+                        type="date"
+                        className="input-premium"
+                        value={closeFormData.close_date}
+                        onChange={e => setCloseFormData({ ...closeFormData, close_date: e.target.value })}
+                        autoComplete="off"
+                        id="mobile-close-date"
+                        name="close_date"
+                      />
+                    </div>
+
+                    <button type="submit" disabled={submitting} className="btn-primary w-full h-12 shadow-md mt-6">
+                      {submitting ? "Settle Position..." : "Finalize Position & Settle P&L"}
+                    </button>
+                  </>
+                )}
+              </form>
+            </div>
+          )
+        ) : (
+          <div className="glass-card-static p-5 border border-white/5 bg-white/[0.01]">
+            <form onSubmit={handleLogSubmit} className="space-y-5">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Underlying Symbol</label>
+                <input
+                  required
+                  className="input-premium uppercase"
+                  placeholder="e.g. NIFTY, SBIN"
+                  value={logFormData.symbol}
+                  onChange={e => setLogFormData({ ...logFormData, symbol: e.target.value.toUpperCase() })}
+                  autoComplete="off"
+                  id="mobile-fno-symbol"
+                  name="symbol"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Instrument Type</label>
+                <div className="flex gap-1 p-1 bg-white/5 rounded-xl border border-white/10">
+                  {(["FUT", "CE", "PE"] as const).map(type => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setLogFormData({ ...logFormData, instrument_type: type })}
+                      className={`flex-1 h-10 text-[10px] font-black rounded-lg transition-all ${logFormData.instrument_type === type ? "bg-[--accent-primary] text-white shadow-md" : "text-[--text-muted]"}`}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Strike Price</label>
+                <input
+                  type="number"
+                  step="any"
+                  disabled={logFormData.instrument_type === "FUT"}
+                  className="input-premium disabled:opacity-40 disabled:border-white/5 disabled:placeholder-transparent"
+                  placeholder="e.g. 18500"
+                  value={logFormData.strike_price}
+                  onChange={e => setLogFormData({ ...logFormData, strike_price: e.target.value })}
+                  inputMode="decimal"
+                  id="mobile-fno-strike"
+                  name="strike_price"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Contract Expiry</label>
+                <input
+                  required
+                  type="date"
+                  className="input-premium"
+                  value={logFormData.expiry_date}
+                  onChange={e => setLogFormData({ ...logFormData, expiry_date: e.target.value })}
+                  id="mobile-fno-expiry"
+                  name="expiry_date"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Order Action</label>
+                <select
+                  className="input-premium"
+                  value={logFormData.trade_type}
+                  onChange={e => setLogFormData({ ...logFormData, trade_type: e.target.value as "BUY" | "SELL" })}
+                  aria-label="Select order type"
+                  id="mobile-fno-type"
+                  name="trade_type"
+                >
+                  <option value="BUY" style={{ background: "var(--bg-surface)" }}>BUY (Long / Pay Premium)</option>
+                  <option value="SELL" style={{ background: "var(--bg-surface)" }}>SELL (Short / Collect Premium)</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Contract Date</label>
+                <input
+                  required
+                  type="date"
+                  className="input-premium"
+                  value={logFormData.trade_date}
+                  onChange={e => setLogFormData({ ...logFormData, trade_date: e.target.value })}
+                  id="mobile-fno-date"
+                  name="trade_date"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Lot Quantity</label>
+                <input
+                  required
+                  type="number"
+                  className="input-premium"
+                  placeholder="e.g. 50"
+                  value={logFormData.quantity}
+                  onChange={e => setLogFormData({ ...logFormData, quantity: e.target.value })}
+                  inputMode="decimal"
+                  id="mobile-fno-qty"
+                  name="quantity"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Avg Entry Premium (₹)</label>
+                <input
+                  required
+                  type="number"
+                  step="any"
+                  className="input-premium"
+                  placeholder="e.g. 124.50"
+                  value={logFormData.entry_price}
+                  onChange={e => setLogFormData({ ...logFormData, entry_price: e.target.value })}
+                  inputMode="decimal"
+                  id="mobile-fno-entry-price"
+                  name="entry_price"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Linked Account (Premium Flow)</label>
+                <select
+                  className="input-premium"
+                  value={logFormData.account_id}
+                  onChange={e => setLogFormData({ ...logFormData, account_id: e.target.value })}
+                  aria-label="Select linked account"
+                  id="mobile-fno-account"
+                  name="account_id"
+                >
+                  <option value="" style={{ background: "var(--bg-surface)" }}>N/A (Historical / Unlinked)</option>
+                  {accounts.map(acc => (
+                    <option key={acc.id} value={acc.id} style={{ background: "var(--bg-surface)" }}>
+                      {acc.name} (₹{formatNum(acc.balance)})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Auditing Notes</label>
+                <textarea
+                  className="input-premium min-h-[80px] py-3"
+                  placeholder="Optional annotations for this trade"
+                  value={logFormData.notes}
+                  onChange={e => setLogFormData({ ...logFormData, notes: e.target.value })}
+                  id="mobile-fno-notes"
+                  name="notes"
+                />
+              </div>
+
+              <button type="submit" disabled={submitting} className="btn-primary w-full h-12 shadow-md mt-6">
+                {submitting ? "Processing..." : "Authorize Derivative Position"}
+              </button>
+            </form>
+          </div>
+        )}
+      </div>
+    );
   }
 
   return (

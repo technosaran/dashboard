@@ -7,6 +7,8 @@ import { addExpense, deleteExpense } from "./actions";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { format, parseISO, subMonths } from "date-fns";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import Link from "next/link";
 
 import dynamic from "next/dynamic";
 
@@ -42,6 +44,7 @@ const CATEGORIES = [
 
 export default function ExpensesClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { expenses, accounts, profile }, isValidating, mutate } = useFinanceData(initialData);
+  const isMobile = useMediaQuery('(max-width: 767px)');
   const searchParams = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(searchParams.get("action") === "new");
   const [submitting, withLock] = useSubmitLock();
@@ -224,6 +227,73 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
         toast.error(result.error);
       }
     });
+  }
+
+  if (isMobile) {
+    return (
+      <div className="flex flex-col gap-6 animate-fade-in pb-[calc(var(--mobile-bottom-nav-height)+2rem)]">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-black text-[--text-primary]">Record Expense</h1>
+            <div className={`status-dot scale-70 ${isValidating ? 'animate-pulse bg-yellow-400' : 'bg-emerald-400'}`} />
+          </div>
+          <Link href="/dashboard" className="text-[10px] font-black uppercase text-[--text-muted] no-underline bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg active:scale-95 transition-all">
+            Back
+          </Link>
+        </div>
+        
+        <div className="glass-card-static p-5 border border-white/5 bg-white/[0.01]">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">
+                {["Food", "Shopping", "Entertainment"].includes(formData.category) ? "Merchant / Store" : "Description / Purpose"}
+              </label>
+              <input type="text" required className="input-premium" placeholder="e.g. Starbucks" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} autoComplete="off" id="expense-description" name="description" />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Debit Amount</label>
+              <input type="number" required className="input-premium" placeholder="0.00" value={formData.amount} onChange={e => setFormData({ ...formData, amount: e.target.value })} autoComplete="off" inputMode="decimal" id="expense-amount" name="amount" />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Expenditure Sector</label>
+              <select className="input-premium" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} aria-label="Select expenditure category" id="expense-category" name="category">
+                {CATEGORIES.map(c => <option key={c.label} value={c.label}>{c.label}</option>)}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Transaction Date</label>
+              <input type="date" required className="input-premium" value={mounted ? formData.date : ""} onChange={e => setFormData({ ...formData, date: e.target.value })} autoComplete="off" id="expense-date" name="date" />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Deduct from Account</label>
+              <select className="input-premium" value={formData.account_id} onChange={e => setFormData({ ...formData, account_id: e.target.value })} aria-label="Select debit account" id="expense-account" name="account_id">
+                <option value="">No Deduction (Track only)</option>
+                {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
+              </select>
+              {formData.account_id && (() => {
+                const selectedAcc = accounts.find(a => a.id === formData.account_id);
+                return selectedAcc ? (
+                  <div className="mt-2 p-2 rounded-lg bg-white/[0.02] border border-white/5 flex items-center justify-between text-[11px] text-[--text-secondary]">
+                    <span>Selected Balance</span>
+                    <span className="font-bold text-white">
+                      {selectedAcc.currency === 'USD' ? '$' : '₹'}{selectedAcc.balance.toLocaleString()}
+                    </span>
+                  </div>
+                ) : null;
+              })()}
+            </div>
+
+            <button type="submit" disabled={submitting} className="btn-primary w-full h-12 shadow-md mt-6">
+              {submitting ? "Processing..." : "Confirm Record"}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
   }
 
   return (

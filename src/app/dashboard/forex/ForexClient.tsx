@@ -16,12 +16,21 @@ import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { format } from "date-fns";
 import PnLValue from "@/components/pnl-value";
 import type { Tables } from "@/lib/database.types";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import Link from "next/link";
 
 export default function ForexClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { profile, accounts, forexAccounts, forexTrades, forexTransactions, ledgerLogs }, mutate } = useFinanceData(initialData);
   
   const searchParams = useSearchParams();
   const action = searchParams.get("action");
+  
+  const isMobile = useMediaQuery('(max-width: 767px)');
+  const [mobileTab, setMobileTab] = useState<"pnl" | "funds" | "account">(() => {
+    if (action === "account") return "account";
+    if (action === "deposit" || action === "withdraw") return "funds";
+    return "pnl";
+  });
   
   const [activeTab, setActiveTab] = useState<"trades" | "transactions" | "accounts">(
     action === "account" ? "accounts" : "trades"
@@ -288,12 +297,229 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
     if (isNaN(amt) || amt <= 0) return "0.00";
     return (tradePnlType === "profit" ? "+" : "-") + amt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }, [tradeAmount, tradePnlType]);
-
   const parsedPreviewEdit = useMemo(() => {
     const amt = parseFloat(editTradeAmount);
     if (isNaN(amt) || amt <= 0) return "0.00";
     return (editTradePnlType === "profit" ? "+" : "-") + amt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }, [editTradeAmount, editTradePnlType]);
+
+  if (isMobile) {
+    return (
+      <div className="flex flex-col gap-6 animate-fade-in pb-[calc(var(--mobile-bottom-nav-height)+2rem)]">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-black text-[--text-primary]">Forex Record</h1>
+            <div className={`status-dot scale-70 ${submitting ? 'animate-pulse bg-yellow-400' : 'bg-emerald-400'}`} />
+          </div>
+          <Link href="/dashboard" className="text-[10px] font-black uppercase text-[--text-muted] no-underline bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg active:scale-95 transition-all">
+            Back
+          </Link>
+        </div>
+
+        {/* Mobile Tab Selector */}
+        <div className="flex bg-white/5 p-1 rounded-2xl border border-white/10 gap-1">
+          <button
+            type="button"
+            onClick={() => setMobileTab("pnl")}
+            className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${mobileTab === "pnl" ? "bg-[--accent-primary] text-white shadow-lg" : "text-[--text-muted]"}`}
+          >
+            Log P&L
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileTab("funds")}
+            className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${mobileTab === "funds" ? "bg-[--accent-primary] text-white shadow-lg" : "text-[--text-muted]"}`}
+          >
+            Funds
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileTab("account")}
+            className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${mobileTab === "account" ? "bg-[--accent-primary] text-white shadow-lg" : "text-[--text-muted]"}`}
+          >
+            Account
+          </button>
+        </div>
+
+        <div className="glass-card-static p-5 border border-white/5 bg-white/[0.01]">
+          {mobileTab === "pnl" && (
+            <form onSubmit={handleLogTrade} className="space-y-5">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Select Broker Account</label>
+                <select aria-label="Select forex account" required className="input-premium" value={tradeForm.forex_account_id} onChange={e => setTradeForm({...tradeForm, forex_account_id: e.target.value})}>
+                  <option value="">Select Account</option>
+                  {forexAccounts.map(a => <option key={a.id} value={a.id}>{a.account_label} ({a.broker_name})</option>)}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Date</label>
+                <input required type="date" className="input-premium" value={tradeForm.trade_date} onChange={e => setTradeForm({...tradeForm, trade_date: e.target.value})} />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Entry Type</label>
+                <div className="flex bg-white/5 p-1 rounded-xl border border-white/5 gap-1 h-12">
+                  <button
+                    type="button"
+                    onClick={() => setTradePnlType("profit")}
+                    className={`flex-1 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all flex items-center justify-center ${tradePnlType === "profit" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "text-[--text-muted]"}`}
+                  >
+                    + Profit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTradePnlType("loss")}
+                    className={`flex-1 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all flex items-center justify-center ${tradePnlType === "loss" ? "bg-rose-500/20 text-rose-400 border border-rose-500/30" : "text-[--text-muted]"}`}
+                  >
+                    - Loss
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">P&L Amount ($)</label>
+                <input required type="number" step="0.01" min="0.01" className="input-premium font-bold" placeholder="0.00" value={tradeAmount} onChange={e => setTradeAmount(e.target.value)} inputMode="decimal" />
+              </div>
+
+              {parseFloat(tradeAmount) > 0 && (
+                <div className={`p-3 rounded-xl border flex justify-between items-center transition-all ${tradePnlType === "profit" ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-400" : "bg-rose-500/5 border-rose-500/20 text-rose-400"}`}>
+                  <span className="text-[9px] font-black uppercase tracking-widest">Calculation Preview</span>
+                  <span className="text-sm font-black tabular-nums">{parsedPreviewTrade}</span>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Notes (Optional)</label>
+                <textarea className="input-premium min-h-[80px]" placeholder="Trading notes..." value={tradeForm.notes} onChange={e => setTradeForm({...tradeForm, notes: e.target.value})} />
+              </div>
+
+              <button type="submit" disabled={submitting || forexAccounts.length === 0} className="btn-primary w-full h-12 shadow-md mt-6">
+                {submitting ? "Logging..." : "Log Daily P&L"}
+              </button>
+            </form>
+          )}
+
+          {mobileTab === "funds" && (
+            <form onSubmit={handleFunds} className="space-y-5">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Action Type</label>
+                <div className="flex bg-white/5 p-1 rounded-xl border border-white/5 gap-1 h-12">
+                  <button
+                    type="button"
+                    onClick={() => setFundsType("DEPOSIT")}
+                    className={`flex-1 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all flex items-center justify-center ${fundsType === "DEPOSIT" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "text-[--text-muted]"}`}
+                  >
+                    Deposit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFundsType("WITHDRAW")}
+                    className={`flex-1 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all flex items-center justify-center ${fundsType === "WITHDRAW" ? "bg-rose-500/20 text-rose-400 border border-rose-500/30" : "text-[--text-muted]"}`}
+                  >
+                    Withdraw
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Broker Account</label>
+                {forexAccounts.length === 0 ? (
+                  <div className="text-xs text-rose-400 font-bold p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl leading-snug">
+                    No broker accounts found. Create one first.
+                  </div>
+                ) : (
+                  <select aria-label="Select forex account" required className="input-premium" value={fundsForm.forex_account_id} onChange={e => setFundsForm({...fundsForm, forex_account_id: e.target.value})}>
+                    <option value="">Select Broker</option>
+                    {forexAccounts.map(a => <option key={a.id} value={a.id}>{a.account_label} ({a.broker_name})</option>)}
+                  </select>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Funding Account</label>
+                {accounts.length === 0 ? (
+                  <div className="text-xs text-rose-400 font-bold p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl leading-snug">
+                    No bank accounts found in the global standard Accounts.
+                  </div>
+                ) : (
+                  <>
+                    <select aria-label="Select bank account" required className="input-premium" value={fundsForm.bank_account_id} onChange={e => setFundsForm({...fundsForm, bank_account_id: e.target.value})}>
+                      <option value="">Select Funding</option>
+                      {accounts.map(a => <option key={a.id} value={a.id}>{a.name} ({a.currency})</option>)}
+                    </select>
+                    {fundsForm.bank_account_id && (() => {
+                      const selectedAcc = accounts.find(a => a.id === fundsForm.bank_account_id);
+                      return selectedAcc ? (
+                        <div className="mt-2 p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between text-xs text-[--text-secondary]">
+                          <span className="font-medium">Selected Balance</span>
+                          <span className="font-bold text-white">
+                            {selectedAcc.currency === 'USD' ? '$' : '₹'}{selectedAcc.balance.toLocaleString()}
+                          </span>
+                        </div>
+                      ) : null;
+                    })()}
+                  </>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Amount ($)</label>
+                <input required type="number" step="0.01" className="input-premium" placeholder="0.00" value={fundsForm.amount} onChange={e => setFundsForm({...fundsForm, amount: e.target.value})} inputMode="decimal" />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Notes (Optional)</label>
+                <textarea className="input-premium min-h-[80px]" placeholder="Transaction notes..." value={fundsForm.notes} onChange={e => setFundsForm({...fundsForm, notes: e.target.value})} />
+              </div>
+
+              <button type="submit" disabled={submitting || forexAccounts.length === 0} className="btn-primary w-full h-12 shadow-md mt-6">
+                {submitting ? "Processing..." : fundsType === "DEPOSIT" ? "Complete Deposit" : "Complete Withdrawal"}
+              </button>
+            </form>
+          )}
+
+          {mobileTab === "account" && (
+            <form onSubmit={handleCreateAccount} className="space-y-5">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Broker Name</label>
+                <input required type="text" className="input-premium" placeholder="e.g. MetaTrader 5" value={accountForm.broker_name} onChange={e => setAccountForm({...accountForm, broker_name: e.target.value})} />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Account Label</label>
+                <input required type="text" className="input-premium" placeholder="e.g. Live Account" value={accountForm.account_label} onChange={e => setAccountForm({...accountForm, account_label: e.target.value})} />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Account Number (Optional)</label>
+                <input type="text" className="input-premium" placeholder="e.g. 104859" value={accountForm.account_number} onChange={e => setAccountForm({...accountForm, account_number: e.target.value})} />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Currency</label>
+                <select aria-label="Select currency" required className="input-premium" value={accountForm.currency} onChange={e => setAccountForm({...accountForm, currency: e.target.value})}>
+                  <option value="USD">USD</option>
+                  <option value="EUR">EUR</option>
+                  <option value="GBP">GBP</option>
+                  <option value="INR">INR</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Notes (Optional)</label>
+                <textarea className="input-premium min-h-[80px]" placeholder="Leverage details, leverage, etc..." value={accountForm.notes} onChange={e => setAccountForm({...accountForm, notes: e.target.value})} />
+              </div>
+
+              <button type="submit" disabled={submitting} className="btn-primary w-full h-12 shadow-md mt-6">
+                {submitting ? "Creating..." : "Create Account"}
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-8 p-4 max-w-7xl mx-auto animate-fade-in">

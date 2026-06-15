@@ -10,8 +10,10 @@ import type { Tables } from "@/lib/database.types";
 import { recordMFInvestment, updateMFHolding } from "./actions";
 import { revertLedgerLog } from "../alternative-assets/actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
-import PnLValue from "@/components/pnl-value";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import Link from "next/link";
+import PnLValue from "@/components/pnl-value";
 import { exportToCSV } from "@/lib/export-csv";
 
 type MF = Tables<"mutual_funds"> & { scheme_code?: string | null; fund_symbol?: string | null; pnlPercent?: number };
@@ -56,6 +58,7 @@ const formatNum = (num: number | string) => {
 
 export default function MutualFundsClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { mutualFunds: rawMfs, accounts, mutualFundTrades: trades, profile }, isValidating, mutate } = useFinanceData(initialData);
+  const isMobile = useMediaQuery('(max-width: 767px)');
   const mutualFunds = useMemo(() => {
     return rawMfs.filter(mf => Number(mf.units) > 0).map(mf => {
       const currentNav = Number(mf.current_nav || 0);
@@ -286,6 +289,113 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
     });
   }
 
+
+  if (isMobile) {
+    return (
+      <div className="flex flex-col gap-6 animate-fade-in pb-[calc(var(--mobile-bottom-nav-height)+2rem)]">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-black text-[--text-primary]">Record Mutual Fund</h1>
+            <div className={`status-dot scale-70 ${isValidating ? 'animate-pulse bg-yellow-400' : 'bg-emerald-400'}`} />
+          </div>
+          <Link href="/dashboard" className="text-[10px] font-black uppercase text-[--text-muted] no-underline bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg active:scale-95 transition-all">
+            Back
+          </Link>
+        </div>
+
+        <div className="flex bg-white/5 rounded-xl p-1 border border-white/5">
+          <button 
+            type="button"
+            onClick={() => setFormData({ ...formData, trade_type: "buy" })}
+            className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
+              formData.trade_type === "buy" ? "bg-[--accent-primary] text-white shadow-md" : "text-[--text-muted]"
+            }`}
+          >
+            Subscription (Buy)
+          </button>
+          <button 
+            type="button"
+            onClick={() => setFormData({ ...formData, trade_type: "sell" })}
+            className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
+              formData.trade_type === "sell" ? "bg-rose-500 text-white shadow-md" : "text-[--text-muted]"
+            }`}
+          >
+            Redemption (Sell)
+          </button>
+        </div>
+
+        <div className="glass-card-static p-5 border border-white/5 bg-white/[0.01]">
+          <form onSubmit={handleAddMF} className="space-y-5">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Fund Name</label>
+              <input type="text" required className="input-premium" placeholder="e.g. Parag Parikh Flexi Cap Fund" value={formData.fund_name} onChange={e => setFormData({ ...formData, fund_name: e.target.value })} autoComplete="off" id="mf-name" name="fund_name" />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Scheme Code</label>
+                <input type="text" required className="input-premium" placeholder="e.g. 119598" value={formData.scheme_code} onChange={e => setFormData({ ...formData, scheme_code: e.target.value })} autoComplete="off" id="mf-scheme" name="scheme_code" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">AMC Name</label>
+                <input type="text" required className="input-premium" placeholder="e.g. PPFAS" value={formData.amc_name} onChange={e => setFormData({ ...formData, amc_name: e.target.value })} autoComplete="off" id="mf-amc" name="amc_name" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Units</label>
+                <input type="number" required step="any" className="input-premium" placeholder="0.000" value={formData.units} onChange={e => setFormData({ ...formData, units: e.target.value })} autoComplete="off" inputMode="decimal" id="mf-units" name="units" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">NAV (Price)</label>
+                <input type="number" required step="any" className="input-premium" placeholder="0.00" value={formData.nav} onChange={e => setFormData({ ...formData, nav: e.target.value })} autoComplete="off" inputMode="decimal" id="mf-nav" name="nav" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Type</label>
+                <select className="input-premium" value={formData.investment_type} onChange={e => setFormData({ ...formData, investment_type: e.target.value })} aria-label="Select investment type" id="mf-type" name="investment_type">
+                  <option value="SIP">SIP</option>
+                  <option value="Lumpsum">Lumpsum</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Category</label>
+                <select className="input-premium" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} aria-label="Select mf category" id="mf-category" name="category">
+                  <option value="Equity">Equity</option>
+                  <option value="Debt">Debt</option>
+                  <option value="Hybrid">Hybrid</option>
+                  <option value="Liquid">Liquid</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Transaction Date</label>
+              <input type="date" required className="input-premium" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} autoComplete="off" id="mf-date" name="date" />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">
+                {formData.trade_type === 'buy' ? 'Deduct From Account' : 'Deposit To Account'}
+              </label>
+              <select className="input-premium" value={formData.account_id} onChange={e => setFormData({ ...formData, account_id: e.target.value })} aria-label="Select account" id="mf-account" name="account_id">
+                <option value="">No Deduction (Track only)</option>
+                {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
+              </select>
+            </div>
+
+            <button type="submit" disabled={submitting} className="btn-primary w-full h-12 shadow-md mt-6">
+              {submitting ? "Processing..." : "Confirm Record"}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-[var(--section-gap)] animate-fade-in">

@@ -7,6 +7,8 @@ import { addAlternativeAsset, updateAlternativeAsset, deleteAlternativeAsset, re
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { format, parseISO } from "date-fns";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import Link from "next/link";
 
 const CATEGORIES = [
   { label: "Real Estate", icon: "🏙️" },
@@ -20,6 +22,7 @@ const CATEGORIES = [
 
 export default function AlternativeAssetsClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { alternativeAssets, ledgerLogs, accounts }, mutate } = useFinanceData(initialData);
+  const isMobile = useMediaQuery('(max-width: 767px)');
   const searchParams = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(searchParams.get("action") === "new");
   const [submitting, withLock] = useSubmitLock();
@@ -62,8 +65,8 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
       };
 
       const res = editingId 
-        ? await updateAlternativeAsset(editingId, payload)
-        : await addAlternativeAsset({ ...payload, account_id });
+         ? await updateAlternativeAsset(editingId, payload)
+         : await addAlternativeAsset({ ...payload, account_id });
 
       if (!res.error) {
         toast.success(editingId ? "Asset updated" : "Asset established");
@@ -99,6 +102,72 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
         toast.error(res.error);
       }
     });
+  }
+
+  if (isMobile) {
+    return (
+      <div className="flex flex-col gap-6 animate-fade-in pb-[calc(var(--mobile-bottom-nav-height)+2rem)]">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-black text-[--text-primary]">Record Asset</h1>
+            <div className={`status-dot scale-70 ${submitting ? 'animate-pulse bg-yellow-400' : 'bg-emerald-400'}`} />
+          </div>
+          <Link href="/dashboard" className="text-[10px] font-black uppercase text-[--text-muted] no-underline bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg active:scale-95 transition-all">
+            Back
+          </Link>
+        </div>
+        
+        <div className="glass-card-static p-5 border border-white/5 bg-white/[0.01]">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Asset Name</label>
+              <input required className="input-premium" placeholder="e.g. 2BHK Apartment" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} autoComplete="off" id="asset-name" name="name" />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Classification</label>
+              <select className="input-premium" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} aria-label="Select classification" id="asset-category" name="category">
+                {CATEGORIES.map(c => <option key={c.label} value={c.label}>{c.label}</option>)}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Acquisition Cost (₹)</label>
+              <input required type="number" className="input-premium" value={formData.purchase_price} onChange={e => setFormData({...formData, purchase_price: e.target.value})} autoComplete="off" inputMode="decimal" id="asset-purchase-price" name="purchase_price" />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Current Valuation (₹)</label>
+              <input required type="number" className="input-premium" value={formData.current_value} onChange={e => setFormData({...formData, current_value: e.target.value})} autoComplete="off" inputMode="decimal" id="asset-current-value" name="current_value" />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Acquisition Date</label>
+              <input type="date" className="input-premium" value={formData.purchase_date} onChange={e => setFormData({...formData, purchase_date: e.target.value})} autoComplete="off" id="asset-purchase-date" name="purchase_date" />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Source Account (Optional)</label>
+              <select className="input-premium" value={formData.account_id} onChange={e => setFormData({...formData, account_id: e.target.value})} aria-label="Select source account" id="asset-account" name="account_id">
+                <option value="">No Transaction</option>
+                {accounts.map(acc => (
+                  <option key={acc.id} value={acc.id}>{acc.name} (₹{acc.balance.toLocaleString()})</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Inventory Notes / Location</label>
+              <textarea className="input-premium min-h-[80px] py-3" value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} autoComplete="off" id="asset-notes" name="notes" />
+            </div>
+
+            <button type="submit" disabled={submitting} className="btn-primary w-full h-12 shadow-md mt-6">
+              {submitting ? "Processing..." : "Establish Entry"}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
   }
 
   return (

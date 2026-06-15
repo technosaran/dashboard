@@ -14,6 +14,8 @@ import {
 import { revertLedgerLog } from "../alternative-assets/actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import Link from "next/link";
 import PnLValue from "@/components/pnl-value";
 import { exportToCSV } from "@/lib/export-csv";
 
@@ -35,6 +37,7 @@ const SortIcon = ({ col, sortKey, sortDir }: { col: SortKey; sortKey: SortKey; s
 
 export default function StocksClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { investments, accounts, stockTrades: trades, profile }, isValidating, mutate } = useFinanceData(initialData);
+  const isMobile = useMediaQuery('(max-width: 767px)');
   const stocks = useMemo(() => {
     return investments.filter(i => i.type === "stock").map(i => {
       const currentPrice = Number(i.current_price || 0);
@@ -284,6 +287,87 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
   }
 
 
+
+  if (isMobile) {
+    return (
+      <div className="flex flex-col gap-6 animate-fade-in pb-[calc(var(--mobile-bottom-nav-height)+2rem)]">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-black text-[--text-primary]">Record Stock Trade</h1>
+            <div className={`status-dot scale-70 ${isValidating ? 'animate-pulse bg-yellow-400' : 'bg-emerald-400'}`} />
+          </div>
+          <Link href="/dashboard" className="text-[10px] font-black uppercase text-[--text-muted] no-underline bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg active:scale-95 transition-all">
+            Back
+          </Link>
+        </div>
+
+        <div className="flex bg-white/5 rounded-xl p-1 border border-white/5">
+          <button 
+            type="button"
+            onClick={() => setFormData({ ...formData, trade_type: "buy" })}
+            className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
+              formData.trade_type === "buy" ? "bg-[--accent-primary] text-white shadow-md" : "text-[--text-muted]"
+            }`}
+          >
+            Buy Position
+          </button>
+          <button 
+            type="button"
+            onClick={() => setFormData({ ...formData, trade_type: "sell" })}
+            className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
+              formData.trade_type === "sell" ? "bg-rose-500 text-white shadow-md" : "text-[--text-muted]"
+            }`}
+          >
+            Sell Position
+          </button>
+        </div>
+
+        <div className="glass-card-static p-5 border border-white/5 bg-white/[0.01]">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Symbol</label>
+              <input type="text" required className="input-premium" placeholder="e.g. SBIN, RELIANCE, AAPL" value={formData.symbol} onChange={e => setFormData({ ...formData, symbol: e.target.value.toUpperCase() })} autoComplete="off" id="stock-symbol" name="symbol" />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Company Name</label>
+              <input type="text" required className="input-premium" placeholder="e.g. State Bank of India" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} autoComplete="off" id="stock-name" name="name" />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Quantity</label>
+                <input type="number" required step="any" className="input-premium" placeholder="0" value={formData.quantity} onChange={e => setFormData({ ...formData, quantity: e.target.value })} autoComplete="off" inputMode="decimal" id="stock-quantity" name="quantity" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Avg Price</label>
+                <input type="number" required step="0.01" className="input-premium" placeholder="0.00" value={formData.buy_price} onChange={e => setFormData({ ...formData, buy_price: e.target.value })} autoComplete="off" inputMode="decimal" id="stock-price" name="price" />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Current Price (LTP)</label>
+              <input type="number" required step="0.01" className="input-premium" placeholder="0.00" value={formData.current_price} onChange={e => setFormData({ ...formData, current_price: e.target.value })} autoComplete="off" inputMode="decimal" id="stock-current-price" name="current_price" />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">
+                {formData.trade_type === 'buy' ? 'Deduct From Account' : 'Deposit To Account'}
+              </label>
+              <select className="input-premium" value={formData.deduct_from_account || ""} onChange={e => setFormData({ ...formData, deduct_from_account: e.target.value })} aria-label="Select account" id="stock-account" name="deduct_from_account">
+                <option value="">No Deduction (Track only)</option>
+                {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
+              </select>
+            </div>
+
+            <button type="submit" disabled={submitting} className="btn-primary w-full h-12 shadow-md mt-6">
+              {submitting ? "Processing..." : "Confirm Record"}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-[var(--section-gap)] animate-fade-in">
