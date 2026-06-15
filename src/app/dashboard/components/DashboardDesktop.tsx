@@ -186,7 +186,7 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                     key={showUSD ? 'usd' : 'inr'} 
                     className={`animate-fade-in bg-clip-text bg-gradient-to-r text-[clamp(2.2rem,5vw,3.5rem)] font-[950] leading-none tracking-[-0.04em] text-transparent [font-family:'Outfit',sans-serif] whitespace-nowrap overflow-x-auto no-scrollbar transition-all duration-500 ${
                     showUSD 
-                      ? "from-[--accent-primary-light] via-indigo-200 to-indigo-300 drop-shadow-[0_10px_35px_rgba(99,102,241,0.3)]" 
+                      ? "from-white via-sky-200 to-indigo-300 drop-shadow-[0_10px_35px_rgba(99,102,241,0.3)]" 
                       : "from-white via-white to-slate-300 drop-shadow-[0_10px_35px_rgba(14,165,233,0.3)]"
                   }`}>
                     {showUSD 

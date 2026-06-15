@@ -6,7 +6,7 @@ import { toast } from "react-hot-toast";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { format } from "date-fns";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
-import { Plus, Search, Edit2, Trash2, X, Send, History, ArrowUpRight, CheckCircle2 } from "lucide-react";
+import { Plus, Edit2, Trash2, X, Send, History, ArrowUpRight, CheckCircle2 } from "lucide-react";
 
 const QUICK_AMOUNTS = [500, 1000, 2000, 5000, 10000];
 
@@ -27,9 +27,6 @@ export default function FamilyClient({
   const [activeView, setActiveView] = useState<"contacts" | "history">("contacts");
   const [isEditingRecipient, setIsEditingRecipient] = useState(false);
   const [editingRecipient, setEditingRecipient] = useState<any | null>(null);
-  
-  // Search
-  const [searchQuery, setSearchQuery] = useState("");
   
   // Member specific history
   const [selectedHistoryRecipient, setSelectedHistoryRecipient] = useState<string | null>(null);
@@ -186,9 +183,7 @@ export default function FamilyClient({
     return totals;
   }, [ledgerLogs, recipients, getRecipientId]);
 
-  const filteredRecipients = useMemo(() => {
-    return recipients.filter(r => r.name.toLowerCase().includes(searchQuery.toLowerCase()));
-  }, [recipients, searchQuery]);
+
 
   const recentSends = ledgerLogs
     .filter((log) => {
@@ -211,7 +206,7 @@ export default function FamilyClient({
         <div className="flex items-center gap-3">
           <button
             onClick={() => setIsAddingRecipient(true)}
-            className="bg-[--accent-primary] hover:bg-[--accent-primary]/90 text-white flex items-center gap-2 px-4 py-2.5 rounded-md font-medium text-sm transition-colors shadow-sm"
+            className="btn-primary !h-11 !px-5 text-xs font-black uppercase tracking-widest flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
             New Contact
@@ -252,18 +247,8 @@ export default function FamilyClient({
         {/* TAB: CONTACTS */}
         {activeView === "contacts" && (
           <div className="flex flex-col gap-6">
-            <div className="glass-card-static p-4 border-b border-white/10 flex flex-col sm:flex-row justify-between gap-4 items-center">
+            <div className="glass-card-static p-4 border-b border-white/10 flex items-center justify-between">
               <h2 className="text-sm font-semibold text-white">Contact List</h2>
-              <div className="relative w-full sm:w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
-                <input
-                  type="text"
-                  placeholder="Search by name..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 bg-[#1a1a1a] border border-white/10 rounded-sm text-sm text-white placeholder:text-white/40 focus:border-[--accent-primary] outline-none"
-                />
-              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -271,13 +256,13 @@ export default function FamilyClient({
                 Array.from({ length: 6 }).map((_, i) => (
                   <div key={i} className="glass-card rich-border min-h-[260px] p-6 animate-pulse" />
                 ))
-              ) : filteredRecipients.length === 0 ? (
+              ) : recipients.length === 0 ? (
                 <div className="col-span-full py-12 text-center glass-card-static">
                   <p className="text-[--text-primary] font-medium">No contacts found</p>
-                  <p className="text-xs text-[--text-muted] mt-1">Try a different search or add a new contact.</p>
+                  <p className="text-xs text-[--text-muted] mt-1">Add a new contact to get started.</p>
                 </div>
               ) : (
-                filteredRecipients.map((person) => (
+                recipients.map((person) => (
                   <div key={person.id} className="glass-card rich-border flex flex-col min-h-[260px] p-6 relative overflow-hidden transition-transform hover:-translate-y-1">
                     <div className="absolute top-0 left-0 right-0 h-[3px]" style={{ background: "linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%)" }} />
                     <div className="flex justify-between items-start mb-6">
@@ -292,7 +277,7 @@ export default function FamilyClient({
                            <span className="text-base font-bold text-[--text-secondary]">Contact</span>
                          </div>
                        </div>
-                       <button type="button" onClick={() => startEdit(person)} className="p-2 rounded-xl bg-white/5 border border-white/10 text-[--text-muted] hover:text-white transition-all">
+                       <button type="button" onClick={() => startEdit(person)} className="p-2 rounded-xl bg-white/5 border border-white/10 text-[--text-muted] hover:text-[--accent-primary-light] hover:border-[--accent-primary]/30 transition-all">
                          <Edit2 className="w-4 h-4" />
                        </button>
                     </div>
@@ -305,7 +290,7 @@ export default function FamilyClient({
                         <button 
                           type="button" 
                           onClick={() => { setSelectedRecipient(person); setIsSendingMoney(true); }} 
-                          className="flex-1 h-12 rounded-xl font-bold text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-2 bg-[rgba(14,165,233,0.05)] text-[--accent-primary] border border-[rgba(14,165,233,0.1)] hover:bg-[rgba(14,165,233,0.15)]"
+                          className="flex-1 h-12 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 bg-[--accent-primary]/10 text-[--accent-primary-light] border border-[--accent-primary]/20 hover:bg-[--accent-primary]/20"
                         >
                           <Send className="w-4 h-4" /> Send
                         </button>
@@ -313,7 +298,7 @@ export default function FamilyClient({
                         <button 
                           type="button" 
                           onClick={() => { setSelectedHistoryRecipient(person.id); setActiveView("history"); }} 
-                          className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 text-[--text-muted] hover:text-white transition-all flex items-center justify-center"
+                          className="w-12 h-12 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-400 hover:bg-sky-500/20 transition-all flex items-center justify-center"
                           title="History"
                         >
                           <History className="w-4 h-4" />
@@ -322,7 +307,7 @@ export default function FamilyClient({
                         <button 
                           type="button" 
                           onClick={() => handleDeleteRecipient(person.id)} 
-                          className="w-12 h-12 rounded-xl bg-danger/10 border border-danger/20 text-danger hover:bg-danger/20 transition-all flex items-center justify-center"
+                          className="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500/20 transition-all flex items-center justify-center"
                           title="Remove"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -408,8 +393,8 @@ export default function FamilyClient({
                 Are you sure you want to remove <span className="text-white font-medium">{recipients.find(r => r.id === deletingId)?.name}</span>? This action cannot be undone.
               </p>
               <div className="flex justify-end gap-3">
-                <button onClick={closeModals} className="px-4 py-2 border border-white/10 hover:bg-white/5 rounded-md text-sm font-medium text-white transition-colors">Cancel</button>
-                <button onClick={confirmDelete} disabled={submitting} className="px-4 py-2 bg-danger hover:bg-danger/90 rounded-md text-sm font-medium text-white transition-colors disabled:opacity-50">
+                <button onClick={closeModals} className="btn-secondary !h-11 !px-5 text-xs font-black uppercase tracking-widest">Cancel</button>
+                <button onClick={confirmDelete} disabled={submitting} className="btn-danger !h-11 !px-5 text-xs font-black uppercase tracking-widest flex items-center justify-center disabled:opacity-50">
                   {submitting ? "Deleting..." : "Delete"}
                 </button>
               </div>
@@ -436,12 +421,12 @@ export default function FamilyClient({
                   <label className="block text-sm font-medium text-[--text-secondary] mb-1.5">Relationship</label>
                   <input required type="text" value={newRelationship} onChange={(e) => setNewRelationship(e.target.value)} className="w-full bg-[#1a1a1a] border border-white/10 rounded-md px-3 py-2 text-white focus:border-[--accent-primary] outline-none text-sm" placeholder="e.g. Brother, Friend" />
                 </div>
-                <div className="flex justify-end gap-3 pt-4">
-                  <button type="button" onClick={closeModals} className="px-4 py-2 border border-white/10 hover:bg-white/5 rounded-md text-sm font-medium text-white transition-colors">Cancel</button>
-                  <button type="submit" disabled={submitting || !newName.trim()} className="px-4 py-2 bg-[--accent-primary] hover:bg-[--accent-primary]/90 rounded-md text-sm font-medium text-white transition-colors disabled:opacity-50">
-                    {submitting ? "Saving..." : "Save Details"}
-                  </button>
-                </div>
+                 <div className="flex justify-end gap-3 pt-4">
+                   <button type="button" onClick={closeModals} className="btn-secondary !h-11 !px-5 text-xs font-black uppercase tracking-widest">Cancel</button>
+                   <button type="submit" disabled={submitting || !newName.trim()} className="btn-primary !h-11 !px-5 text-xs font-black uppercase tracking-widest disabled:opacity-50">
+                     {submitting ? "Saving..." : "Save Details"}
+                   </button>
+                 </div>
               </form>
             </div>
           )}
@@ -501,14 +486,14 @@ export default function FamilyClient({
                   <input value={sendNote} onChange={(e) => setSendNote(e.target.value)} className="w-full bg-[#1a1a1a] border border-white/10 rounded-md px-3 py-2 text-white focus:border-[--accent-primary] outline-none text-sm" placeholder="Description" />
                 </div>
 
-                <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
-                  <button type="button" onClick={closeModals} className="px-4 py-2 border border-white/10 hover:bg-white/5 rounded-md text-sm font-medium text-white transition-colors">
-                    Cancel
-                  </button>
-                  <button type="submit" disabled={submitting || !sendAmount} className="px-6 py-2 bg-[--accent-primary] hover:bg-[--accent-primary]/90 rounded-md text-sm font-medium text-white transition-colors flex items-center gap-2 disabled:opacity-50">
-                    {submitting ? "Processing..." : <><ArrowUpRight className="w-4 h-4" /> Transfer</>}
-                  </button>
-                </div>
+                 <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+                   <button type="button" onClick={closeModals} className="btn-secondary !h-11 !px-5 text-xs font-black uppercase tracking-widest">
+                     Cancel
+                   </button>
+                   <button type="submit" disabled={submitting || !sendAmount} className="btn-primary !h-11 !px-6 text-xs font-black uppercase tracking-widest flex items-center gap-2 disabled:opacity-50">
+                     {submitting ? "Processing..." : <><ArrowUpRight className="w-4 h-4" /> Transfer</>}
+                   </button>
+                 </div>
               </form>
             </div>
           )}
