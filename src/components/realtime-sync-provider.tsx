@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useCallback, useState } from "react";
 import { useSWRConfig } from "swr";
 import { createClient } from "@/lib/supabase-browser";
 import { useUser } from "@/context/user-context";
-import { SUMMARY_KEY, INVESTMENTS_KEY, CASHFLOW_KEY, FOREX_KEY, FAMILY_KEY } from "@/hooks/use-finance-data";
+import { OVERVIEW_KEY } from "@/hooks/use-finance-data";
 
 export function RealtimeSyncProvider({ children }: { children: React.ReactNode }) {
   const [supabase] = useState(() => createClient());
@@ -20,27 +20,12 @@ export function RealtimeSyncProvider({ children }: { children: React.ReactNode }
     }
     
     debounceTimerRef.current = setTimeout(() => {
-      const tables = Array.from(updateQueueRef.current);
-      
-      if (tables.some(t => ["accounts", "transactions", "ledger_logs", "profiles"].includes(t))) {
-        void mutate(SUMMARY_KEY);
-      }
-      if (tables.some(t => ["investments", "mutual_funds", "bonds", "alternative_assets", "stock_trades", "mutual_fund_trades", "bond_transactions", "fno_trades"].includes(t))) {
-        void mutate(INVESTMENTS_KEY);
-      }
-      if (tables.some(t => ["incomes", "expenses", "budgets", "goals", "liabilities"].includes(t))) {
-        void mutate(CASHFLOW_KEY);
-      }
-      if (tables.some(t => ["forex_accounts", "forex_trades", "forex_transactions"].includes(t))) {
-        void mutate(FOREX_KEY);
-      }
-      if (tables.some(t => ["recipients"].includes(t))) {
-        void mutate(FAMILY_KEY);
-      }
+      // Mutate the single unified overview cache key for instant update of all components
+      void mutate(OVERVIEW_KEY);
       
       updateQueueRef.current.clear();
       debounceTimerRef.current = null;
-    }, 500); 
+    }, 100); // Debounce duration reduced to 100ms for instant real-time response
   }, [mutate]);
 
   useEffect(() => {

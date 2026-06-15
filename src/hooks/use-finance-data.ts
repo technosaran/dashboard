@@ -54,44 +54,16 @@ type FinanceData = {
 };
 
 export type { FinanceData };
-export const SUMMARY_KEY = "finance_summary";
-export const INVESTMENTS_KEY = "finance_investments";
-export const CASHFLOW_KEY = "finance_cashflow";
-export const FOREX_KEY = "finance_forex";
-export const FAMILY_KEY = "finance_family";
+export const OVERVIEW_KEY = "finance_overview";
 
-async function fetchSummary(): Promise<Partial<FinanceData>> {
-  const { data, error } = await supabase.rpc("get_summary_v1");
+async function fetchOverview(): Promise<FinanceData> {
+  const { data, error } = await supabase.rpc("get_finance_overview_v2");
   if (error) throw error;
-  return data as unknown as Partial<FinanceData>;
-}
-
-async function fetchInvestments(): Promise<Partial<FinanceData>> {
-  const { data, error } = await supabase.rpc("get_investments_v1");
-  if (error) throw error;
-  return data as unknown as Partial<FinanceData>;
-}
-
-async function fetchCashflow(): Promise<Partial<FinanceData>> {
-  const { data, error } = await supabase.rpc("get_cashflow_v1");
-  if (error) throw error;
-  return data as unknown as Partial<FinanceData>;
-}
-
-async function fetchForex(): Promise<Partial<FinanceData>> {
-  const { data, error } = await supabase.rpc("get_forex_v1");
-  if (error) throw error;
-  return data as unknown as Partial<FinanceData>;
-}
-
-async function fetchFamily(): Promise<Partial<FinanceData>> {
-  const { data, error } = await supabase.rpc("get_family_v1");
-  if (error) throw error;
-  return data as unknown as Partial<FinanceData>;
+  return data as unknown as FinanceData;
 }
 
 export function useFinanceData(initialData?: FinanceData) {
-  const fallback = initialData || {
+  const fallback: FinanceData = initialData || {
     profile: null,
     accounts: [],
     transactions: [],
@@ -115,120 +87,46 @@ export function useFinanceData(initialData?: FinanceData) {
     fnoTrades: [],
   };
 
-  const summarySWR = useSWR(SUMMARY_KEY, fetchSummary, {
-    revalidateOnFocus: true,
-    revalidateOnReconnect: true,
-    dedupingInterval: 30000,
-    fallbackData: initialData ? {
-      profile: initialData.profile,
-      accounts: initialData.accounts,
-      transactions: initialData.transactions,
-      ledgerLogs: initialData.ledgerLogs,
-    } : undefined
-  });
+  const { data, error, isValidating, mutate } = useSWR<FinanceData>(
+    OVERVIEW_KEY,
+    fetchOverview,
+    {
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+      dedupingInterval: 2000, // Reduced to 2 seconds for instant UI response
+      fallbackData: initialData
+    }
+  );
 
-  const investmentsSWR = useSWR(INVESTMENTS_KEY, fetchInvestments, {
-    revalidateOnFocus: true,
-    revalidateOnReconnect: true,
-    dedupingInterval: 30000,
-    fallbackData: initialData ? {
-      investments: initialData.investments,
-      mutualFunds: initialData.mutualFunds,
-      bonds: initialData.bonds,
-      alternativeAssets: initialData.alternativeAssets,
-      stockTrades: initialData.stockTrades,
-      mutualFundTrades: initialData.mutualFundTrades,
-      bondTransactions: initialData.bondTransactions,
-      fnoTrades: initialData.fnoTrades,
-    } : undefined
-  });
-
-  const cashflowSWR = useSWR(CASHFLOW_KEY, fetchCashflow, {
-    revalidateOnFocus: true,
-    revalidateOnReconnect: true,
-    dedupingInterval: 30000,
-    fallbackData: initialData ? {
-      incomes: initialData.incomes,
-      expenses: initialData.expenses,
-      budgets: initialData.budgets,
-      goals: initialData.goals,
-      liabilities: initialData.liabilities,
-    } : undefined
-  });
-
-  const forexSWR = useSWR(FOREX_KEY, fetchForex, {
-    revalidateOnFocus: true,
-    revalidateOnReconnect: true,
-    dedupingInterval: 30000,
-    fallbackData: initialData ? {
-      forexAccounts: initialData.forexAccounts,
-      forexTrades: initialData.forexTrades,
-      forexTransactions: initialData.forexTransactions,
-    } : undefined
-  });
-
-  const familySWR = useSWR(FAMILY_KEY, fetchFamily, {
-    revalidateOnFocus: true,
-    revalidateOnReconnect: true,
-    dedupingInterval: 30000,
-    fallbackData: initialData ? {
-      recipients: initialData.recipients,
-    } : undefined
-  });
-
-  // Aggregate the data from all verticals
   const mergedData: FinanceData = {
-    profile: summarySWR.data?.profile || fallback.profile,
-    accounts: summarySWR.data?.accounts || fallback.accounts,
-    transactions: summarySWR.data?.transactions || fallback.transactions,
-    ledgerLogs: summarySWR.data?.ledgerLogs || fallback.ledgerLogs,
-    
-    investments: investmentsSWR.data?.investments || fallback.investments,
-    mutualFunds: investmentsSWR.data?.mutualFunds || fallback.mutualFunds,
-    bonds: investmentsSWR.data?.bonds || fallback.bonds,
-    alternativeAssets: investmentsSWR.data?.alternativeAssets || fallback.alternativeAssets,
-    stockTrades: investmentsSWR.data?.stockTrades || fallback.stockTrades,
-    mutualFundTrades: investmentsSWR.data?.mutualFundTrades || fallback.mutualFundTrades,
-    bondTransactions: investmentsSWR.data?.bondTransactions || fallback.bondTransactions,
-    
-    incomes: cashflowSWR.data?.incomes || fallback.incomes,
-    expenses: cashflowSWR.data?.expenses || fallback.expenses,
-    budgets: cashflowSWR.data?.budgets || fallback.budgets,
-    goals: cashflowSWR.data?.goals || fallback.goals,
-    liabilities: cashflowSWR.data?.liabilities || fallback.liabilities,
-    
-    forexAccounts: forexSWR.data?.forexAccounts || fallback.forexAccounts,
-    forexTrades: forexSWR.data?.forexTrades || fallback.forexTrades,
-    forexTransactions: forexSWR.data?.forexTransactions || fallback.forexTransactions,
-    
-    fnoTrades: investmentsSWR.data?.fnoTrades || fallback.fnoTrades,
-    
-    recipients: familySWR.data?.recipients || fallback.recipients,
+    profile: data?.profile || fallback.profile,
+    accounts: data?.accounts || fallback.accounts,
+    transactions: data?.transactions || fallback.transactions,
+    ledgerLogs: data?.ledgerLogs || fallback.ledgerLogs,
+    investments: data?.investments || fallback.investments,
+    mutualFunds: data?.mutualFunds || fallback.mutualFunds,
+    bonds: data?.bonds || fallback.bonds,
+    alternativeAssets: data?.alternativeAssets || fallback.alternativeAssets,
+    stockTrades: data?.stockTrades || fallback.stockTrades,
+    mutualFundTrades: data?.mutualFundTrades || fallback.mutualFundTrades,
+    bondTransactions: data?.bondTransactions || fallback.bondTransactions,
+    incomes: data?.incomes || fallback.incomes,
+    expenses: data?.expenses || fallback.expenses,
+    budgets: data?.budgets || fallback.budgets,
+    goals: data?.goals || fallback.goals,
+    liabilities: data?.liabilities || fallback.liabilities,
+    forexAccounts: data?.forexAccounts || fallback.forexAccounts,
+    forexTrades: data?.forexTrades || fallback.forexTrades,
+    forexTransactions: data?.forexTransactions || fallback.forexTransactions,
+    fnoTrades: data?.fnoTrades || fallback.fnoTrades,
+    recipients: data?.recipients || fallback.recipients,
   };
 
   return {
-    ...summarySWR,
     data: mergedData,
-    isLoading: summarySWR.isLoading || investmentsSWR.isLoading || cashflowSWR.isLoading,
-    error: summarySWR.error || investmentsSWR.error || cashflowSWR.error,
-    mutate: async (data?: unknown, options?: unknown) => {
-      // If a callback or data is provided, we apply it to the relevant vertical(s)
-      // For this architecture, we focus optimistic updates on the Summary vertical (profiles/accounts)
-      if (data !== undefined) {
-        await summarySWR.mutate(
-          data as Parameters<typeof summarySWR.mutate>[0],
-          options as Parameters<typeof summarySWR.mutate>[1]
-        );
-      } else {
-        // Full re-fetch of all segments
-        await Promise.all([
-          summarySWR.mutate(),
-          investmentsSWR.mutate(),
-          cashflowSWR.mutate(),
-          forexSWR.mutate(),
-          familySWR.mutate()
-        ]);
-      }
-    }
+    isLoading: !data && !error,
+    isValidating,
+    error,
+    mutate
   };
 }
