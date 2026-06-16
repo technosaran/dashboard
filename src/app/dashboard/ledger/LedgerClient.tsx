@@ -84,7 +84,6 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
 
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   
   // Calendar states
@@ -185,18 +184,6 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
 
       const date = new Date(log.created_at);
 
-      // Search Filter
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase();
-        const detailsMatch = log.details?.toLowerCase().includes(query) || false;
-        const accountMatch = log.account_name?.toLowerCase().includes(query) || false;
-        const actionMatch = log.action_type.toLowerCase().includes(query) || false;
-        const amountMatch = log.amount?.toString().includes(query) || false;
-        if (!detailsMatch && !accountMatch && !actionMatch && !amountMatch) {
-          return false;
-        }
-      }
-
       // Date Range Filter
       if (startDate || endDate) {
         const start = startDate ? startOfDay(new Date(startDate)) : new Date(0);
@@ -206,7 +193,7 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
 
       return true;
     });
-  }, [endDate, logs, startDate, searchQuery]);
+  }, [endDate, logs, startDate]);
 
   const sortedFilteredLogs = useMemo(() => {
     return [...allFilteredLogs].sort((a, b) => {
@@ -318,7 +305,7 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
           { label: "Total Capital Inflow", value: totalInflow, sub: "Revenue & Adjustments", color: "text-success", bg: "from-emerald-500/10", border: "hover:border-emerald-500/20", icon: "📈", sign: "+" },
           { label: "Total Capital Outflow", value: totalOutflow, sub: "Expenses & Transfers", color: "text-danger", bg: "from-rose-500/10", border: "hover:border-rose-500/20", icon: "📉", sign: "-" },
           { label: "Total Audit Logs", value: logs.length, sub: "Uncompromised Records", color: "text-white", bg: "from-indigo-500/10", border: "hover:border-indigo-500/20", icon: "🛡️", raw: true },
-          { label: "Matched Query Filters", value: totalFilteredCount, sub: "Active Search Query", color: "text-[--accent-primary-light]", bg: "from-sky-500/10", border: "hover:border-sky-500/20", icon: "🔍", raw: true },
+          { label: "Filtered Records", value: totalFilteredCount, sub: "Date Range Filter", color: "text-[--accent-primary-light]", bg: "from-sky-500/10", border: "hover:border-sky-500/20", icon: "🔍", raw: true },
         ].map((s, i) => (
           <div key={i} className={`glass-card-static p-6 flex flex-col justify-between min-h-[140px] rounded-[24px] border border-white/5 bg-gradient-to-br ${s.bg} to-transparent ${s.border} transition-all duration-300 relative group overflow-hidden`}>
             <div className="absolute right-4 top-4 text-3xl opacity-5 group-hover:opacity-10 group-hover:scale-110 transition-all duration-300">{s.icon}</div>
@@ -335,32 +322,7 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
 
       {/* Modern Filter toolbar */}
       <section className="flex flex-col md:flex-row gap-4 items-center px-2">
-        {/* Real-time Search input */}
-        <div className="relative flex-1 w-full group">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg opacity-40 group-focus-within:opacity-100 transition-opacity" aria-hidden="true">🔍</span>
-          <input
-            type="text"
-            placeholder="Search ledger logs by description, account name, action type, or exact amount..."
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="w-full h-14 bg-white/[0.015] border border-white/[0.05] rounded-2xl pl-12 pr-4 py-4 text-sm font-semibold text-[--text-primary] focus:border-[--accent-primary] focus:bg-white/[0.03] outline-none transition-all placeholder-white/20 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] focus:shadow-[0_0_20px_rgba(99,102,241,0.08)]"
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => {
-                setSearchQuery("");
-                setCurrentPage(1);
-              }}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-black uppercase tracking-wider text-[--text-muted] hover:text-white transition-colors"
-            >
-              Clear
-            </button>
-          )}
-        </div>
+
 
         {/* Date Range Calendar Picker */}
         <div className="relative w-full md:w-[320px] shrink-0">
@@ -509,11 +471,10 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
             <div className="text-5xl">🛡️</div>
             <div>
               <p className="text-lg font-black text-white">No Ledger Entries Located</p>
-              <p className="text-sm text-[--text-muted] mt-1 max-w-sm">No transaction matches the current filters or query string.</p>
+              <p className="text-sm text-[--text-muted] mt-1 max-w-sm">No transaction matches the current date filters.</p>
             </div>
             <button type="button"
               onClick={() => {
-                setSearchQuery("");
                 resetRange();
                 setCurrentPage(1);
               }}
