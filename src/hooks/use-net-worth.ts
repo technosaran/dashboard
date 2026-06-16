@@ -59,10 +59,10 @@ export function useNetWorth() {
     const totalAssets = liquidBalance + altBalance;
     const netWorth = totalAssets - debtBalance;
 
-    // Calculate separate Net Worth metrics
-    const totalAssetsINR = cashBalanceINR + stockBalanceINR + mfBalance + bondBalance + altBalance + forexBalanceINR;
-    const netWorthINR = totalAssetsINR - debtBalance;
-    const netWorthUSD = cashBalanceUSD + stockBalanceUSD + forexBalanceUSD;
+    // Calculate consolidated Net Worth metrics in different currencies
+    const totalAssetsINR = totalAssets;
+    const netWorthINR = netWorth;
+    const netWorthUSD = netWorth / 83.5;
 
     return {
       netWorth,

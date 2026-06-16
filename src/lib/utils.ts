@@ -17,23 +17,32 @@ export function parseToISODate(dateStr: string | null | undefined): string {
     return trimmed;
   }
   
-  // Try parsing DD-MM-YYYY
-  const dmYMatch = trimmed.match(/^(\d{2})-(\d{2})-(\d{4})$/);
-  if (dmYMatch) {
-    const [, day, month, year] = dmYMatch;
-    return `${year}-${month}-${day}`;
-  }
-
-  // Try parsing DD/MM/YYYY or MM/DD/YYYY
+  // Try parsing DD-MM-YYYY / MM-DD-YYYY or DD/MM/YYYY / MM/DD/YYYY
   const parts = trimmed.split(/[-/]/);
   if (parts.length === 3) {
     // If first part is 4 digits (YYYY-MM-DD or YYYY/MM/DD)
     if (parts[0].length === 4) {
+      const p1 = Number(parts[1]);
+      if (p1 > 12) {
+        // YYYY-DD-MM (fallback swap)
+        return `${parts[0]}-${parts[2].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
+      }
       return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
     }
-    // If third part is 4 digits (DD-MM-YYYY or DD/MM/YYYY)
+    // If third part is 4 digits (DD-MM-YYYY or MM-DD-YYYY)
     if (parts[2].length === 4) {
-      return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+      const p0 = Number(parts[0]);
+      const p1 = Number(parts[1]);
+      if (p0 > 12) {
+        // First part is day, second is month (DD-MM-YYYY)
+        return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+      } else if (p1 > 12) {
+        // Second part is day, first is month (MM-DD-YYYY)
+        return `${parts[2]}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
+      } else {
+        // Ambiguous (both <= 12), default to DD-MM-YYYY
+        return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+      }
     }
   }
 

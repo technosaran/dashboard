@@ -38,6 +38,12 @@ const SortIcon = ({ col, sortKey, sortDir }: { col: SortKey; sortKey: SortKey; s
 export default function StocksClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { investments, accounts, stockTrades: trades, profile }, isValidating, mutate } = useFinanceData(initialData);
   const isMobile = useMediaQuery('(max-width: 767px)');
+  const getTradeCurrency = (trade: (typeof trades)[number]) => {
+    const inv = investments.find(i => i.id === trade.investment_id);
+    if (inv) return inv.currency;
+    const invBySym = investments.find(i => i.symbol === trade.symbol);
+    return invBySym ? invBySym.currency : "INR";
+  };
   const stocks = useMemo(() => {
     return investments.filter(i => i.type === "stock").map(i => {
       const currentPrice = Number(i.current_price || 0);
@@ -108,12 +114,24 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
 
 
   // --- Computed ---
-  const { totalInvested, totalCurrent, totalPnL, totalPnLPercent } = useMemo(() => {
-    const invested = stocks.reduce((s, i) => s + Number(i.buy_price || 0) * Number(i.quantity || 0), 0);
-    const current = stocks.reduce((s, i) => s + Number(i.current_price || 0) * Number(i.quantity || 0), 0);
+  const { totalInvested, totalCurrent, totalPnL, totalPnLPercent, totalDayPnL, totalDayPnLPercent } = useMemo(() => {
+    const invested = stocks.reduce((s, i) => {
+      const isUSD = i.currency === 'USD';
+      const val = Number(i.buy_price || 0) * Number(i.quantity || 0);
+      return s + (isUSD ? val * 83.5 : val);
+    }, 0);
+    const current = stocks.reduce((s, i) => {
+      const isUSD = i.currency === 'USD';
+      const val = Number(i.current_price || 0) * Number(i.quantity || 0);
+      return s + (isUSD ? val * 83.5 : val);
+    }, 0);
     const pnl = current - invested;
     const pnlPercent = invested > 0 ? (pnl / invested) * 100 : 0;
-    const dayPnL = stocks.reduce((s, i) => s + Number(i.day_change || 0) * Number(i.quantity || 0), 0);
+    const dayPnL = stocks.reduce((s, i) => {
+      const isUSD = i.currency === 'USD';
+      const dayChange = Number(i.day_change || 0) * Number(i.quantity || 0);
+      return s + (isUSD ? dayChange * 83.5 : dayChange);
+    }, 0);
     const prevDay = current - dayPnL;
     const dayPnLPercent = prevDay > 0 ? (dayPnL / prevDay) * 100 : 0;
     return { totalInvested: invested, totalCurrent: current, totalPnL: pnl, totalPnLPercent: pnlPercent, totalDayPnL: dayPnL, totalDayPnLPercent: dayPnLPercent };
@@ -482,11 +500,17 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                         </div>
                       </td>
                       <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[--text-secondary]">{inv.quantity}</td>
-                      <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[--text-secondary]">{formatNum(inv.buy_price)}</td>
-                      <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[--text-primary] font-normal">{formatNum(inv.current_price)}</td>
-                      <td className="py-4 px-4 text-right tabular-nums">{formatNum(currentVal)}</td>
+                      <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[--text-secondary]">
+                        {inv.currency === 'USD' ? '$' : '₹'}{formatNum(inv.buy_price)}
+                      </td>
+                      <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[--text-primary] font-normal">
+                        {inv.currency === 'USD' ? '$' : '₹'}{formatNum(inv.current_price)}
+                      </td>
+                      <td className="py-4 px-4 text-right tabular-nums">
+                        {inv.currency === 'USD' ? '$' : '₹'}{formatNum(currentVal)}
+                      </td>
                       <td className="py-4 px-4 text-right tabular-nums text-[13px] font-medium">
-                        <PnLValue value={pnl} showSign={true} prefix="₹" size="sm" />
+                        <PnLValue value={pnl} showSign={true} prefix={inv.currency === 'USD' ? '$' : '₹'} size="sm" />
                       </td>
                       <td className="py-4 px-4 text-right tabular-nums text-[13px] font-medium relative">
                         <PnLValue value={pnlPct} showSign={true} prefix="" suffix="%" size="sm" />
@@ -519,7 +543,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                           </div>
                           <div className="text-right">
                              <div className={`text-[15px] font-black ${isProfit ? "text-success" : "text-danger"}`}>
-                                {isProfit ? "+" : ""}₹{formatNum(pnl)}
+                                {isProfit ? "+" : ""}{inv.currency === 'USD' ? '$' : '₹'}{formatNum(pnl)}
                              </div>
                              <div className={`text-[10px] font-bold opacity-60 ${isProfit ? "text-success" : "text-danger"}`}>
                                 {isProfit ? "+" : ""}{pnlPct.toFixed(2)}%
@@ -527,9 +551,9 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                           </div>
                        </div>
                        <div className="grid grid-cols-3 gap-x-2 gap-y-4 border-t border-white/5 pt-4 mb-4 overflow-hidden">
-                           <div className="overflow-hidden"><p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-1">Holding</p><p className="text-[13px] font-black truncate">{inv.quantity} <span className="opacity-40 font-bold ml-1">@ ₹{formatNum(inv.buy_price)}</span></p></div>
-                           <div className="overflow-hidden"><p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-1">LTP</p><p className="text-[13px] font-black truncate">₹{formatNum(inv.current_price)}</p></div>
-                           <div className="text-right overflow-hidden"><p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-1">Current Value</p><p className="text-[13px] font-black truncate">₹{formatNum(currentVal)}</p></div>
+                           <div className="overflow-hidden"><p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-1">Holding</p><p className="text-[13px] font-black truncate">{inv.quantity} <span className="opacity-40 font-bold ml-1">@ {inv.currency === 'USD' ? '$' : '₹'}{formatNum(inv.buy_price)}</span></p></div>
+                           <div className="overflow-hidden"><p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-1">LTP</p><p className="text-[13px] font-black truncate">{inv.currency === 'USD' ? '$' : '₹'}{formatNum(inv.current_price)}</p></div>
+                           <div className="text-right overflow-hidden"><p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-1">Current Value</p><p className="text-[13px] font-black truncate">{inv.currency === 'USD' ? '$' : '₹'}{formatNum(currentVal)}</p></div>
                         </div>
                        <div className="flex gap-2">
                           <button type="button" onClick={() => { setEditingId(null); setFormData({ symbol: inv.symbol || "", name: inv.name, quantity: "", buy_price: inv.current_price.toString(), current_price: inv.current_price.toString(), trade_type: "buy", deduct_from_account: "", currency: "INR", notes: "", bought_at: new Date().toISOString().split("T")[0] }); setShowForm(true); }} className="flex-1 py-3 bg-success/20 hover:bg-success/30 text-success border border-success/30 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-success/5">Buy</button>
@@ -579,11 +603,11 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                     </td>
                     <td className="py-4 px-4 text-[13px] font-bold text-white group-hover:text-[--accent-primary-light] transition-colors">{trade.symbol.split('.')[0]}</td>
                     <td className="py-4 px-4 text-right tabular-nums text-[13px] text-white/80">{trade.quantity}</td>
-                    <td className="py-4 px-4 text-right tabular-nums text-[13px] text-white/80">₹{formatNum(trade.price)}</td>
-                    <td className="py-4 px-4 text-right tabular-nums text-[11px] text-rose-500/80">₹{formatNum(trade.charges ?? 0)}</td>
+                    <td className="py-4 px-4 text-right tabular-nums text-[13px] text-white/80">{getTradeCurrency(trade) === 'USD' ? '$' : '₹'}{formatNum(trade.price)}</td>
+                    <td className="py-4 px-4 text-right tabular-nums text-[11px] text-rose-500/80">{getTradeCurrency(trade) === 'USD' ? '$' : '₹'}{formatNum(trade.charges ?? 0)}</td>
                     <td className="py-4 px-4 text-right tabular-nums text-[13px] font-black flex items-center justify-end gap-4">
                        <span className={trade.trade_type === 'buy' ? 'text-rose-400' : 'text-emerald-400'}>
-                         {trade.trade_type === 'buy' ? '-' : '+'}₹{formatNum(trade.total_amount)}
+                         {trade.trade_type === 'buy' ? '-' : '+'}{getTradeCurrency(trade) === 'USD' ? '$' : '₹'}{formatNum(trade.total_amount)}
                        </span>
                        <button type="button" 
                          onClick={() => handleRevert(trade.ledger_log_id)}

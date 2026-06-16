@@ -19,10 +19,16 @@ const CATEGORIES = [
 ];
 
 export default function BudgetClient({ initialData }: { initialData?: FinanceData }) {
-  const { data: { budgets, expenses, incomes }, mutate } = useFinanceData(initialData);
+  const { data: { budgets, expenses, incomes, accounts }, mutate } = useFinanceData(initialData);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [submitting, withLock] = useSubmitLock();
+
+  const getAccountCurrency = (accountId: string | null) => {
+    if (!accountId) return "INR";
+    const acc = accounts.find(a => a.id === accountId);
+    return acc ? acc.currency : "INR";
+  };
 
   // Calculate actual spending for selected period
   const actualSpending = useMemo(() => {
@@ -31,11 +37,13 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
       if (!e.date) return;
       const date = parseISO(e.date);
       if (date.getMonth() + 1 === selectedMonth && date.getFullYear() === selectedYear) {
-        spending[e.category] = (spending[e.category] || 0) + Number(e.amount);
+        const isUSD = getAccountCurrency(e.account_id) === 'USD';
+        const amt = Number(e.amount) * (isUSD ? 83.5 : 1);
+        spending[e.category] = (spending[e.category] || 0) + amt;
       }
     });
     return spending;
-  }, [expenses, selectedMonth, selectedYear]);
+  }, [expenses, accounts, selectedMonth, selectedYear]);
 
   // Calculate total income for selected period
   const totalIncome = useMemo(() => {
@@ -43,11 +51,12 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
       if (!inc.date) return sum;
       const date = parseISO(inc.date);
       if (date.getMonth() + 1 === selectedMonth && date.getFullYear() === selectedYear) {
-        return sum + Number(inc.amount);
+        const isUSD = getAccountCurrency(inc.account_id) === 'USD';
+        return sum + Number(inc.amount) * (isUSD ? 83.5 : 1);
       }
       return sum;
     }, 0);
-  }, [incomes, selectedMonth, selectedYear]);
+  }, [incomes, accounts, selectedMonth, selectedYear]);
 
   const currentBudgets = useMemo(() => {
     return budgets.filter(b => b.period_month === selectedMonth && b.period_year === selectedYear);

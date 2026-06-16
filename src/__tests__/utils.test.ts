@@ -50,6 +50,11 @@ describe('parseToISODate', () => {
     expect(parseToISODate('  31-05-2026  ')).toBe('2026-05-31');
   });
 
+  it('should parse US MM/DD/YYYY format when day component > 12', () => {
+    expect(parseToISODate('12/31/2025')).toBe('2025-12-31');
+    expect(parseToISODate('05-13-2026')).toBe('2026-05-13');
+  });
+
   it('should fallback to current date for null/undefined/empty string', () => {
     const today = new Date().toISOString().split('T')[0];
     expect(parseToISODate(null)).toBe(today);

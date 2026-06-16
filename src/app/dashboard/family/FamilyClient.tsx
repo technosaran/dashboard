@@ -18,6 +18,11 @@ export default function FamilyClient({
   initialData,
 }: FamilyClientProps) {
   const { data: { profile, recipients, accounts, ledgerLogs }, mutate, isLoading } = useFinanceData(initialData);
+  const getAccountCurrency = (accountId: string | null) => {
+    if (!accountId) return "INR";
+    const acc = accounts.find(a => a.id === accountId);
+    return acc ? acc.currency : "INR";
+  };
   const [isAddingRecipient, setIsAddingRecipient] = useState(false);
   const [isSendingMoney, setIsSendingMoney] = useState(false);
   const [selectedRecipient, setSelectedRecipient] = useState<any | null>(null);
@@ -151,7 +156,8 @@ export default function FamilyClient({
 
       if (res.success) {
         closeModals();
-        toast.success(`₹${amount.toLocaleString()} sent to ${selectedRecipient.name}`);
+        const toastSymbol = getAccountCurrency(sendAccountId) === 'USD' ? '$' : '₹';
+        toast.success(`${toastSymbol}${amount.toLocaleString()} sent to ${selectedRecipient.name}`);
         mutate();
       } else {
         toast.error(res.error || "Failed to send money");
@@ -176,12 +182,13 @@ export default function FamilyClient({
       if (log.action_type === "SEND_MONEY") {
         const recId = getRecipientId(log);
         if (recId && totals[recId] !== undefined) {
-          totals[recId] += Number(log.amount || 0);
+          const isUSD = getAccountCurrency(log.account_id) === 'USD';
+          totals[recId] += Number(log.amount || 0) * (isUSD ? 83.5 : 1);
         }
       }
     });
     return totals;
-  }, [ledgerLogs, recipients, getRecipientId]);
+  }, [ledgerLogs, recipients, getRecipientId, accounts]);
 
 
 
@@ -193,7 +200,10 @@ export default function FamilyClient({
     })
     .slice(0, 20);
 
-  const totalSent = recentSends.reduce((sum, s) => sum + (s.amount || 0), 0);
+  const totalSent = recentSends.reduce((sum, s) => {
+    const isUSD = getAccountCurrency(s.account_id) === 'USD';
+    return sum + Number(s.amount || 0) * (isUSD ? 83.5 : 1);
+  }, 0);
 
   return (
     <div className="flex flex-col gap-8 max-w-[1200px] mx-auto w-full pb-10">
@@ -364,7 +374,7 @@ export default function FamilyClient({
                           </div>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <span className="font-semibold text-danger">-₹{(send.amount || 0).toLocaleString()}</span>
+                          <span className="font-semibold text-danger">-{getAccountCurrency(send.account_id)}{(send.amount || 0).toLocaleString()}</span>
                         </td>
                         <td className="px-6 py-4 text-right">
                           <span className="inline-flex items-center gap-1 text-xs font-medium text-success bg-success/10 px-2 py-1 rounded">

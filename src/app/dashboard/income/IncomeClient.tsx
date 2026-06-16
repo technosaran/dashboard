@@ -58,6 +58,11 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
 
   const { data: { incomes, accounts, profile }, isValidating, mutate } = useFinanceData(initialData);
   const isMobile = useMediaQuery('(max-width: 767px)');
+  const getAccountCurrency = (accountId: string | null) => {
+    if (!accountId) return "INR";
+    const acc = accounts.find(a => a.id === accountId);
+    return acc ? acc.currency : "INR";
+  };
   const searchParams = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(searchParams.get("action") === "new");
   const [submitting, withLock] = useSubmitLock();
@@ -154,8 +159,8 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
       const d = parseISO(i.date);
       return d.getMonth() + 1 === selectedMonth && d.getFullYear() === selectedYear;
     });
-    const totalIncome = incomes.reduce((s, i) => s + Number(i.amount), 0);
-    const monthlyTotal = currentMonth.reduce((s, i) => s + Number(i.amount), 0);
+    const totalIncome = incomes.reduce((s, i) => s + Number(i.amount) * (getAccountCurrency(i.account_id) === 'USD' ? 83.5 : 1), 0);
+    const monthlyTotal = currentMonth.reduce((s, i) => s + Number(i.amount) * (getAccountCurrency(i.account_id) === 'USD' ? 83.5 : 1), 0);
     
     // YoY comparison - same month last year
     const lastYearSameMonth = new Date(selectedYear - 1, selectedMonth - 1, 1);
@@ -164,13 +169,14 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
       const d = parseISO(i.date);
       return d.getMonth() + 1 === lastYearSameMonth.getMonth() + 1 && d.getFullYear() === lastYearSameMonth.getFullYear();
     });
-    const lastYearTotal = lastYearIncomes.reduce((s, i) => s + Number(i.amount), 0);
+    const lastYearTotal = lastYearIncomes.reduce((s, i) => s + Number(i.amount) * (getAccountCurrency(i.account_id) === 'USD' ? 83.5 : 1), 0);
     const yoyChange = lastYearTotal > 0 ? ((monthlyTotal - lastYearTotal) / lastYearTotal) * 100 : 0;
     const yoyAbsolute = monthlyTotal - lastYearTotal;
     
     const catMap: Record<string, number> = {};
     currentMonth.forEach(i => {
-      catMap[i.category] = (catMap[i.category] || 0) + Number(i.amount);
+      const isUSD = getAccountCurrency(i.account_id) === 'USD';
+      catMap[i.category] = (catMap[i.category] || 0) + Number(i.amount) * (isUSD ? 83.5 : 1);
     });
     const pieData = Object.entries(catMap)
       .map(([name, value]) => {
@@ -196,12 +202,15 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
     incomes.forEach(i => {
       if (!i.date) return;
       const m = format(parseISO(i.date), "MMM yy");
-      if (trendMap[m] !== undefined) trendMap[m] += Number(i.amount);
+      if (trendMap[m] !== undefined) {
+        const isUSD = getAccountCurrency(i.account_id) === 'USD';
+        trendMap[m] += Number(i.amount) * (isUSD ? 83.5 : 1);
+      }
     });
     const trendData = Object.entries(trendMap).map(([name, value]) => ({ name, value }));
 
     return { totalIncome, monthlyTotal, pieData, trendData, yoyChange, yoyAbsolute, lastYearTotal };
-  }, [incomes, selectedMonth, selectedYear]);
+  }, [incomes, selectedMonth, selectedYear, accounts]);
 
   const filteredIncomes = useMemo(() => {
     const filtered = incomes.filter(i => {
@@ -536,7 +545,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
                           </div>
                         </td>
                         <td className="px-4 md:px-6 py-4 whitespace-nowrap text-right">
-                          <p className="text-[15px] md:text-base font-black text-success">+₹{Number(inc.amount).toLocaleString()}</p>
+                          <p className="text-[15px] md:text-base font-black text-success">+{getAccountCurrency(inc.account_id) === 'USD' ? '$' : '₹'}{Number(inc.amount).toLocaleString()}</p>
                         </td>
                         <td className="px-4 md:px-6 py-4 whitespace-nowrap text-right">
                           <button type="button" 
@@ -581,7 +590,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
                       </div>
                     </div>
                     <div className="text-right flex flex-col items-end gap-1">
-                      <span className="text-[15px] font-black text-success">+₹{Number(inc.amount).toLocaleString()}</span>
+                      <span className="text-[15px] font-black text-success">+{getAccountCurrency(inc.account_id) === 'USD' ? '$' : '₹'}{Number(inc.amount).toLocaleString()}</span>
                       <span className="px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-[0.1em] bg-success/5 border border-success/10 text-success" style={{color: theme.color}}>{inc.category}</span>
                     </div>
                   </div>

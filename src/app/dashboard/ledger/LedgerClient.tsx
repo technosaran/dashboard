@@ -8,6 +8,7 @@ type LedgerLog = {
   id: string;
   created_at: string | null;
   account_name: string | null;
+  account_id: string | null;
   action_type: string;
   amount: number | null;
   previous_balance: number | null;
@@ -47,9 +48,10 @@ const ACTION_CONFIG: Record<string, { label: string; icon: string; bg: string; t
   SEND_MONEY: { label: "Family Send", icon: "👨‍👩‍👧‍👦", bg: "rgba(244, 63, 94, 0.1)", text: "#f43f5e", ring: "rgba(244, 63, 94, 0.2)" },
 };
 
-const formatMoney = (value: number | null | undefined) => {
+const formatMoney = (value: number | null | undefined, currency = "INR") => {
   if (value === null || value === undefined) return "—";
-  return `₹${value.toLocaleString()}`;
+  const symbol = currency === "USD" ? "$" : "₹";
+  return `${symbol}${value.toLocaleString()}`;
 };
 
 const isDebitLog = (log: LedgerLog) => {
@@ -68,10 +70,16 @@ const isCreditLog = (log: LedgerLog) => {
 
 export default function LedgerClient({ initialData }: { initialData?: FinanceData }) {
   const {
-    data: { ledgerLogs: logs },
+    data: { ledgerLogs: logs, accounts },
     isValidating,
     isLoading,
   } = useFinanceData(initialData);
+
+  const getLogCurrency = (accountId: string | null) => {
+    if (!accountId) return "INR";
+    const acc = accounts.find(a => a.id === accountId);
+    return acc ? acc.currency : "INR";
+  };
 
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -247,16 +255,18 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
   const totalInflow = useMemo(() => {
     return logs.reduce((sum, log) => {
       if (!isCreditLog(log)) return sum;
-      return sum + (log.amount || 0);
+      const isUSD = getLogCurrency(log.account_id) === 'USD';
+      return sum + (log.amount || 0) * (isUSD ? 83.5 : 1);
     }, 0);
-  }, [logs]);
+  }, [logs, accounts]);
 
   const totalOutflow = useMemo(() => {
     return logs.reduce((sum, log) => {
       if (!isDebitLog(log)) return sum;
-      return sum + (log.amount || 0);
+      const isUSD = getLogCurrency(log.account_id) === 'USD';
+      return sum + (log.amount || 0) * (isUSD ? 83.5 : 1);
     }, 0);
-  }, [logs]);
+  }, [logs, accounts]);
 
   const resetRange = () => {
     setStartDate("");
@@ -570,11 +580,11 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
                             {/* Amount Flow */}
                             <td className="px-4 py-4.5 whitespace-nowrap text-right">
                               <p className={`text-base font-black tabular-nums tracking-tight ${isDebit ? "text-danger" : "text-success"}`}>
-                                {log.amount !== null ? `${isDebit ? "-" : "+"}${formatMoney(log.amount)}` : "—"}
+                                {log.amount !== null ? `${isDebit ? "-" : "+"}${formatMoney(log.amount, getLogCurrency(log.account_id))}` : "—"}
                               </p>
                               {log.new_balance !== null && (
                                 <p className="text-[10px] font-bold text-[--text-muted] mt-1.5 uppercase tracking-widest opacity-60">
-                                  Bal: {formatMoney(log.new_balance)}
+                                  Bal: {formatMoney(log.new_balance, getLogCurrency(log.account_id))}
                                 </p>
                               )}
                             </td>
@@ -624,11 +634,11 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
                           <div className="flex items-end justify-between mt-1">
                             <div>
                               <p className={`text-base font-black tabular-nums tracking-tight ${isDebit ? "text-danger" : "text-success"}`}>
-                                {log.amount !== null ? `${isDebit ? "-" : "+"}${formatMoney(log.amount)}` : "—"}
+                                {log.amount !== null ? `${isDebit ? "-" : "+"}${formatMoney(log.amount, getLogCurrency(log.account_id))}` : "—"}
                               </p>
                               {log.new_balance !== null && (
                                 <p className="text-[9px] font-bold text-[--text-muted] mt-0.5 uppercase tracking-widest opacity-60">
-                                  Bal: {formatMoney(log.new_balance)}
+                                  Bal: {formatMoney(log.new_balance, getLogCurrency(log.account_id))}
                                 </p>
                               )}
                             </div>

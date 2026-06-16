@@ -88,10 +88,26 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
 
   // Stats computed from Forex Account aggregates
   const stats = useMemo(() => {
-    const totalBalance = forexAccounts.reduce((s, a) => s + Number(a.balance), 0);
-    const totalPnL = forexAccounts.reduce((s, a) => s + Number(a.total_pnl), 0);
-    const totalDeposited = forexAccounts.reduce((s, a) => s + Number(a.total_deposited), 0);
-    const totalWithdrawn = forexAccounts.reduce((s, a) => s + Number(a.total_withdrawn), 0);
+    const totalBalance = forexAccounts.reduce((s, a) => {
+      const isINR = a.currency !== 'USD';
+      const bal = Number(a.balance);
+      return s + (isINR ? bal / 83.5 : bal);
+    }, 0);
+    const totalPnL = forexAccounts.reduce((s, a) => {
+      const isINR = a.currency !== 'USD';
+      const pnl = Number(a.total_pnl);
+      return s + (isINR ? pnl / 83.5 : pnl);
+    }, 0);
+    const totalDeposited = forexAccounts.reduce((s, a) => {
+      const isINR = a.currency !== 'USD';
+      const dep = Number(a.total_deposited);
+      return s + (isINR ? dep / 83.5 : dep);
+    }, 0);
+    const totalWithdrawn = forexAccounts.reduce((s, a) => {
+      const isINR = a.currency !== 'USD';
+      const wd = Number(a.total_withdrawn);
+      return s + (isINR ? wd / 83.5 : wd);
+    }, 0);
     return { totalBalance, totalPnL, totalDeposited, totalWithdrawn };
   }, [forexAccounts]);
 
@@ -99,6 +115,12 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
     if (!id) return "—";
     const fx = forexAccounts.find(a => a.id === id);
     return fx ? `${fx.account_label} (${fx.broker_name})` : "—";
+  };
+
+  const getAccountCurrency = (id: string | null) => {
+    if (!id) return "USD";
+    const fx = forexAccounts.find(a => a.id === id);
+    return fx ? fx.currency : "USD";
   };
 
   async function handleCreateAccount(e: React.FormEvent) {
@@ -618,7 +640,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                         <td className="p-4 text-[12px] font-bold text-[--text-secondary]">{getAccountLabel(t.forex_account_id)}</td>
                         <td className="p-4 text-[12px] text-[--text-muted] max-w-xs truncate" title={t.notes || ""}>{t.notes || "—"}</td>
                         <td className="p-4 text-right">
-                          <PnLValue value={t.pnl} prefix="$" size="sm" className="items-end" />
+                          <PnLValue value={t.pnl} prefix={getAccountCurrency(t.forex_account_id) === 'USD' ? '$' : '₹'} size="sm" className="items-end" />
                         </td>
                         <td className="p-4 text-center">
                           <button type="button" onClick={() => startEditTrade(t)} className="px-2 py-1 bg-sky-500/10 hover:bg-sky-500 text-sky-400 hover:text-white text-[9px] font-black uppercase rounded transition-all">
@@ -647,7 +669,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                         <p className="text-sm font-black text-white mt-0.5">{getAccountLabel(t.forex_account_id)}</p>
                       </div>
                       <div className="text-right flex flex-col items-end">
-                        <PnLValue value={t.pnl} prefix="$" size="md" className="items-end" />
+                        <PnLValue value={t.pnl} prefix={getAccountCurrency(t.forex_account_id) === 'USD' ? '$' : '₹'} size="md" className="items-end" />
                       </div>
                     </div>
 
@@ -710,7 +732,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                           <td className="p-4 text-[12px] font-bold text-[--text-secondary]">{getAccountLabel(tx.forex_account_id)}</td>
                           <td className="p-4 text-[12px] text-[--text-muted]">{tx.notes || "—"}</td>
                           <td className={`p-4 text-right font-black tabular-nums flex items-center justify-end gap-4 ${tx.transaction_type === 'DEPOSIT' ? 'text-[--accent-primary-light]' : 'text-warning'}`}>
-                            <span>{tx.transaction_type === 'DEPOSIT' ? '+' : '-'}${tx.amount.toLocaleString()}</span>
+                            <span>{tx.transaction_type === 'DEPOSIT' ? '+' : '-'}{getAccountCurrency(tx.forex_account_id) === 'USD' ? '$' : '₹'}{tx.amount.toLocaleString()}</span>
                             {matchingLog && (
                               <button type="button" 
                                 onClick={() => handleRevert(matchingLog.id)}
@@ -756,7 +778,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                         </div>
                         <div className="text-right flex flex-col items-end gap-2">
                           <span className={`text-sm font-black tabular-nums ${tx.transaction_type === 'DEPOSIT' ? 'text-[--accent-primary-light]' : 'text-warning'}`}>
-                            {tx.transaction_type === 'DEPOSIT' ? '+' : '-'}${tx.amount.toLocaleString()}
+                            {tx.transaction_type === 'DEPOSIT' ? '+' : '-'}{getAccountCurrency(tx.forex_account_id) === 'USD' ? '$' : '₹'}{tx.amount.toLocaleString()}
                           </span>
                           {matchingLog && (
                             <button type="button" 
@@ -802,21 +824,21 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                     <div className="grid grid-cols-2 gap-y-3.5 gap-x-2 mt-6 border-t border-white/5 pt-4 text-xs">
                       <div>
                         <p className="text-[9px] font-black uppercase text-[--text-muted] tracking-wider mb-0.5">Active Balance</p>
-                        <p className="font-extrabold text-white tabular-nums">${Number(a.balance).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                        <p className="font-extrabold text-white tabular-nums">{a.currency === 'USD' ? '$' : '₹'}{Number(a.balance).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
                       </div>
                       <div>
                         <p className="text-[9px] font-black uppercase text-[--text-muted] tracking-wider mb-0.5">Performance P&L</p>
                         <p className={`font-extrabold tabular-nums ${Number(a.total_pnl) >= 0 ? "text-success" : "text-danger"}`}>
-                          {Number(a.total_pnl) >= 0 ? "+" : ""}${Number(a.total_pnl).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                          {Number(a.total_pnl) >= 0 ? "+" : ""}{a.currency === 'USD' ? '$' : '₹'}{Number(a.total_pnl).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </p>
                       </div>
                       <div>
                         <p className="text-[9px] font-black uppercase text-[--text-muted] tracking-wider mb-0.5">Total Inflow</p>
-                        <p className="font-bold text-[--text-secondary] tabular-nums">${Number(a.total_deposited).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                        <p className="font-bold text-[--text-secondary] tabular-nums">{a.currency === 'USD' ? '$' : '₹'}{Number(a.total_deposited).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
                       </div>
                       <div>
                         <p className="text-[9px] font-black uppercase text-[--text-muted] tracking-wider mb-0.5">Total Outflow</p>
-                        <p className="font-bold text-[--text-secondary] tabular-nums">${Number(a.total_withdrawn).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                        <p className="font-bold text-[--text-secondary] tabular-nums">{a.currency === 'USD' ? '$' : '₹'}{Number(a.total_withdrawn).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
                       </div>
                     </div>
                     

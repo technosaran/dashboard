@@ -26,12 +26,18 @@ type DashboardStats = {
 type Props = {
   stats: DashboardStats;
   recentLogs: FinanceData["ledgerLogs"];
+  accounts: FinanceData["accounts"];
   isLoading: boolean;
   isValidating: boolean;
 };
 
-const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, isValidating }: Props) {
+const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, accounts, isValidating }: Props) {
   const [showUSD, setShowUSD] = useState(false);
+  const getAccountCurrency = (accountId: string | null) => {
+    if (!accountId) return "INR";
+    const acc = accounts.find(a => a.id === accountId);
+    return acc ? acc.currency : "INR";
+  };
 
   const quickActions = [
     { label: "Expense", href: "/dashboard/expenses?action=new", icon: "🔴", color: "var(--danger)", desc: "Deduct money" },
@@ -106,6 +112,7 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, isVal
         <div className="space-y-1.5">
           {recentLogs.slice(0, 4).map((log) => {
              const isOut = ["DELETE", "TRANSFER_OUT", "SEND_MONEY", "ADJUST_DOWN"].includes(log.action_type);
+             const logCurrencySymbol = getAccountCurrency(log.account_id) === 'USD' ? '$' : '₹';
              return (
                <div key={log.id} className="glass-card-static flex items-center justify-between gap-3 p-3 bg-white/[0.01] border border-white/5 rounded-xl">
                  <div className="flex min-w-0 items-center gap-2.5">
@@ -118,7 +125,7 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, isVal
                     </div>
                   </div>
                  <span className={`shrink-0 text-[11px] font-black tabular-nums ${isOut ? "text-danger" : "text-success"}`}>
-                    {log.amount ? `${isOut ? "-" : "+"}₹${log.amount.toLocaleString()}` : "—"}
+                    {log.amount ? `${isOut ? "-" : "+"}${logCurrencySymbol}${log.amount.toLocaleString()}` : "—"}
                   </span>
                </div>
              );

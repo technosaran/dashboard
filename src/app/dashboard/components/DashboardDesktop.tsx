@@ -74,12 +74,18 @@ type Props = {
   stats: DashboardStats;
   recentLogs: FinanceData["ledgerLogs"];
   goals: Tables<"goals">[];
+  accounts: FinanceData["accounts"];
   isLoading: boolean;
   isValidating: boolean;
 };
 
-const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goals, isLoading }: Props) {
+const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goals, accounts, isLoading }: Props) {
   const [showUSD, setShowUSD] = useState(false);
+  const getAccountCurrency = (accountId: string | null) => {
+    if (!accountId) return "INR";
+    const acc = accounts.find(a => a.id === accountId);
+    return acc ? acc.currency : "INR";
+  };
   // Extract portfolio data computation into a single useMemo
   const portfolioData = useMemo<PieEntry[]>(() => {
     if (stats.totalAssets <= 0) return [];
@@ -202,14 +208,24 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                   <div className="w-9 h-9 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 text-base shadow-inner">📈</div>
                   <div className="flex flex-col">
                     <span className="text-[9px] font-black uppercase tracking-widest text-[--text-muted]">Liquid Assets</span>
-                    <span className="text-sm sm:text-base font-black text-emerald-400">+₹{stats.totalAssets.toLocaleString()}</span>
+                    <span className="text-sm sm:text-base font-black text-emerald-400">
+                      {showUSD 
+                        ? `+$${(stats.totalAssets / 83.5).toLocaleString(undefined, { maximumFractionDigits: 0 })}` 
+                        : `+₹${stats.totalAssets.toLocaleString()}`
+                      }
+                    </span>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 bg-rose-500/5 border border-rose-500/10 px-5 py-3.5 rounded-2xl transition-all hover:bg-rose-500/10">
                   <div className="w-9 h-9 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-400 text-base shadow-inner">📉</div>
                   <div className="flex flex-col">
                     <span className="text-[9px] font-black uppercase tracking-widest text-[--text-muted]">Outstanding Debt</span>
-                    <span className="text-sm sm:text-base font-black text-rose-500">-₹{stats.debtBalance.toLocaleString()}</span>
+                    <span className="text-sm sm:text-base font-black text-rose-500">
+                      {showUSD 
+                        ? `-$${(stats.debtBalance / 83.5).toLocaleString(undefined, { maximumFractionDigits: 0 })}` 
+                        : `-₹${stats.debtBalance.toLocaleString()}`
+                      }
+                    </span>
                   </div>
                 </div>
               </div>
@@ -233,7 +249,10 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                           <div className="flex items-center gap-2 flex-shrink-0 text-right">
                             <span className="text-[9px] font-bold text-[--text-muted]">{item.percentage}%</span>
                             <span className="text-[11px] font-black tabular-nums whitespace-nowrap" style={{ color: item.color }}>
-                              ₹{item.value > 10000000 ? Intl.NumberFormat('en-IN', { notation: 'compact', maximumFractionDigits: 2 }).format(item.value) : item.value.toLocaleString()}
+                              {showUSD 
+                                ? `$${(item.value / 83.5).toLocaleString(undefined, { maximumFractionDigits: 0 })}` 
+                                : `₹${item.value > 10000000 ? Intl.NumberFormat('en-IN', { notation: 'compact', maximumFractionDigits: 2 }).format(item.value) : item.value.toLocaleString()}`
+                              }
                             </span>
                           </div>
                         </div>
@@ -257,14 +276,17 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                           </Pie>
                           <Tooltip 
                             contentStyle={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "12px" }}
-                            formatter={(value) => `₹${Number(value || 0).toLocaleString()}`}
+                            formatter={(value) => showUSD ? `$${(Number(value || 0) / 83.5).toLocaleString(undefined, { maximumFractionDigits: 0 })}` : `₹${Number(value || 0).toLocaleString()}`}
                           />
                         </PieChart>
                       </ResponsiveContainer>
                       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
                         <span className="text-[8px] uppercase font-black tracking-widest text-[--text-muted]">Assets</span>
                         <span className="text-[12px] font-black text-white mt-0.5">
-                          ₹{Intl.NumberFormat('en-IN', { notation: 'compact', maximumFractionDigits: 1 }).format(stats.totalAssets)}
+                          {showUSD 
+                            ? `$${Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(stats.totalAssets / 83.5)}` 
+                            : `₹${Intl.NumberFormat('en-IN', { notation: 'compact', maximumFractionDigits: 1 }).format(stats.totalAssets)}`
+                          }
                         </span>
                       </div>
                     </div>
@@ -361,7 +383,7 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                     </div>
                     <div className="text-right shrink-0">
                       <span className={`text-[14px] font-black tabular-nums ${isOut ? "text-danger" : "text-success"}`}>
-                        {log.amount ? `${isOut ? "-" : "+"}₹${log.amount.toLocaleString()}` : "—"}
+                        {log.amount ? `${isOut ? "-" : "+"}${getAccountCurrency(log.account_id) === 'USD' ? '$' : '₹'}${log.amount.toLocaleString()}` : "—"}
                       </span>
                     </div>
                   </div>

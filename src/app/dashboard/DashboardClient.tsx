@@ -102,13 +102,19 @@ export default function DashboardClient() {
       trendMap[m] = { name: m, income: 0, expense: 0 };
     }
 
+    const getAccountCurrency = (accountId: string) => {
+      const acc = accounts.find(a => a.id === accountId);
+      return acc ? acc.currency : "INR";
+    };
+
     // Single pass over transactions
     for (let i = 0; i < transactions.length; i++) {
       const t = transactions[i];
       if (!t.date) continue;
       
       const tDate = parseISO(t.date);
-      const tAmount = Number(t.amount);
+      const isUSD = getAccountCurrency(t.account_id) === 'USD';
+      const tAmount = Number(t.amount) * (isUSD ? 83.5 : 1);
       const tType = t.type;
       
       // Monthly Stats & Category Map - Timezone-robust direct comparison
@@ -175,14 +181,14 @@ export default function DashboardClient() {
       mfBalance, 
       trendData: Object.values(trendMap) 
     };
-  }, [transactions, netWorthData, investments, mutualFunds]);
+  }, [transactions, netWorthData, investments, mutualFunds, accounts]);
 
   // Conditionally render only one view based on screen size
   if (isMobile) {
     return (
       <>
         {showOnboarding && <OnboardingWizard onComplete={handleOnboardingComplete} />}
-        <DashboardMobile stats={stats} recentLogs={recentLogs} isLoading={isLoading} isValidating={isValidating} />
+        <DashboardMobile stats={stats} recentLogs={recentLogs} accounts={accounts} isLoading={isLoading} isValidating={isValidating} />
       </>
     );
   }
@@ -190,7 +196,7 @@ export default function DashboardClient() {
   return (
     <>
       {showOnboarding && <OnboardingWizard onComplete={handleOnboardingComplete} />}
-      <DashboardDesktop stats={stats} recentLogs={recentLogs} goals={goals} isLoading={isLoading} isValidating={isValidating} />
+      <DashboardDesktop stats={stats} recentLogs={recentLogs} goals={goals} accounts={accounts} isLoading={isLoading} isValidating={isValidating} />
     </>
   );
 }

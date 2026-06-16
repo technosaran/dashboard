@@ -45,6 +45,11 @@ const CATEGORIES = [
 export default function ExpensesClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { expenses, accounts, profile }, isValidating, mutate } = useFinanceData(initialData);
   const isMobile = useMediaQuery('(max-width: 767px)');
+  const getAccountCurrency = (accountId: string | null) => {
+    if (!accountId) return "INR";
+    const acc = accounts.find(a => a.id === accountId);
+    return acc ? acc.currency : "INR";
+  };
   const searchParams = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(searchParams.get("action") === "new");
   const [submitting, withLock] = useSubmitLock();
@@ -142,12 +147,13 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
       const d = parseISO(e.date);
       return d.getMonth() + 1 === selectedMonth && d.getFullYear() === selectedYear;
     });
-    const totalSpent = expenses.reduce((s, e) => s + Number(e.amount), 0);
-    const monthlyTotal = currentMonth.reduce((s, e) => s + Number(e.amount), 0);
+    const totalSpent = expenses.reduce((s, e) => s + Number(e.amount) * (getAccountCurrency(e.account_id) === 'USD' ? 83.5 : 1), 0);
+    const monthlyTotal = currentMonth.reduce((s, e) => s + Number(e.amount) * (getAccountCurrency(e.account_id) === 'USD' ? 83.5 : 1), 0);
     
     const catMap: Record<string, number> = {};
     currentMonth.forEach(e => {
-      catMap[e.category] = (catMap[e.category] || 0) + Number(e.amount);
+      const isUSD = getAccountCurrency(e.account_id) === 'USD';
+      catMap[e.category] = (catMap[e.category] || 0) + Number(e.amount) * (isUSD ? 83.5 : 1);
     });
     const pieData = Object.entries(catMap).map(([name, value]) => {
       const color = CATEGORIES.find(c => c.label === name)?.color || getCategoryColour("Others");
@@ -167,12 +173,15 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
     expenses.forEach(e => {
       if (!e.date) return;
       const m = format(parseISO(e.date), "MMM yy");
-      if (trendMap[m] !== undefined) trendMap[m] += Number(e.amount);
+      if (trendMap[m] !== undefined) {
+        const isUSD = getAccountCurrency(e.account_id) === 'USD';
+        trendMap[m] += Number(e.amount) * (isUSD ? 83.5 : 1);
+      }
     });
     const trendData = Object.entries(trendMap).map(([name, value]) => ({ name, value }));
 
     return { totalSpent, monthlyTotal, pieData, trendData };
-  }, [expenses, selectedMonth, selectedYear]);
+  }, [expenses, selectedMonth, selectedYear, accounts]);
 
   const filteredExpenses = useMemo(() => {
     const filtered = expenses.filter(e => {
@@ -510,7 +519,7 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
                           </div>
                         </td>
                         <td className="px-4 md:px-6 py-4 whitespace-nowrap text-right">
-                          <p className="text-[15px] md:text-base font-black text-danger">-₹{Number(exp.amount).toLocaleString()}</p>
+                          <p className="text-[15px] md:text-base font-black text-danger">-{getAccountCurrency(exp.account_id) === 'USD' ? '$' : '₹'}{Number(exp.amount).toLocaleString()}</p>
                         </td>
                         <td className="px-4 md:px-6 py-4 whitespace-nowrap text-right">
                           <button type="button" 
@@ -555,7 +564,7 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
                       </div>
                     </div>
                     <div className="text-right flex flex-col items-end gap-1">
-                      <span className="text-[15px] font-black text-danger">-₹{Number(exp.amount).toLocaleString()}</span>
+                      <span className="text-[15px] font-black text-danger">-{getAccountCurrency(exp.account_id) === 'USD' ? '$' : '₹'}{Number(exp.amount).toLocaleString()}</span>
                       <span className="px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-[0.1em] bg-white/5 border border-white/10" style={{color: theme.color}}>{exp.category}</span>
                     </div>
                   </div>
