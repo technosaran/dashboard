@@ -1,4 +1,5 @@
 "use client";
+import { USD_INR_EXCHANGE_RATE } from "@/lib/constants";
 
 import { useSearchParams } from "next/navigation";
 import { useMemo, useState, useEffect } from "react";
@@ -73,10 +74,18 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
 
   const [formData, setFormData] = useState({
     name: "", symbol: "", quantity: "", buy_price: "", current_price: "",
-    currency: "INR", notes: "", bought_at: new Date().toISOString().split("T")[0],
+    currency: "INR", notes: "", bought_at: "",
     deduct_from_account: "",
     trade_type: "buy" as "buy" | "sell"
   });
+
+  // Set today's date on client mount to prevent SSR/hydration mismatch
+  useEffect(() => {
+    setFormData(prev => ({
+      ...prev,
+      bought_at: new Date().toISOString().split("T")[0]
+    }));
+  }, []);
 
   // Initialize default account when accounts/profile loads or modal is opened
   useEffect(() => {
@@ -84,22 +93,27 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
       const defaultAccId = profile?.settings?.default_accounts?.stocks;
       const defaultAccExists = defaultAccId && accounts.some(a => a.id === defaultAccId);
       if (defaultAccExists) {
-        setTimeout(() => {
-          setFormData(prev => ({ ...prev, deduct_from_account: defaultAccId }));
-        }, 0);
+        setFormData(prev => ({ ...prev, deduct_from_account: defaultAccId }));
       }
     }
   }, [accounts, profile, showForm, formData.deduct_from_account]);
 
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    const t = setTimeout(() => setMounted(true), 0);
-    return () => clearTimeout(t);
-  }, []);
-
   const [activeTab, setActiveTab] = useState<"holdings" | "history">("holdings");
 
-
+  // Handle escape key closure for modals
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        resetForm();
+        setShowDeleteConfirm(false);
+        setDeletingId(null);
+      }
+    };
+    if (showForm || showDeleteConfirm) {
+      window.addEventListener("keydown", handleKeyDown);
+    }
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showForm, showDeleteConfirm]);
 
   async function handleRevert(logId: string | null) {
     if (!logId) return toast.error("No ledger log found for this trade");
@@ -118,19 +132,19 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
     const invested = stocks.reduce((s, i) => {
       const isUSD = i.currency === 'USD';
       const val = Number(i.buy_price || 0) * Number(i.quantity || 0);
-      return s + (isUSD ? val * 83.5 : val);
+      return s + (isUSD ? val * USD_INR_EXCHANGE_RATE : val);
     }, 0);
     const current = stocks.reduce((s, i) => {
       const isUSD = i.currency === 'USD';
       const val = Number(i.current_price || 0) * Number(i.quantity || 0);
-      return s + (isUSD ? val * 83.5 : val);
+      return s + (isUSD ? val * USD_INR_EXCHANGE_RATE : val);
     }, 0);
     const pnl = current - invested;
     const pnlPercent = invested > 0 ? (pnl / invested) * 100 : 0;
     const dayPnL = stocks.reduce((s, i) => {
       const isUSD = i.currency === 'USD';
       const dayChange = Number(i.day_change || 0) * Number(i.quantity || 0);
-      return s + (isUSD ? dayChange * 83.5 : dayChange);
+      return s + (isUSD ? dayChange * USD_INR_EXCHANGE_RATE : dayChange);
     }, 0);
     const prevDay = current - dayPnL;
     const dayPnLPercent = prevDay > 0 ? (dayPnL / prevDay) * 100 : 0;
@@ -463,18 +477,18 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                   <th className="py-4 px-6 font-black transition-colors cursor-pointer hover:text-[--text-primary] group" onClick={() => handleSort("name")}>
                     Instrument <SortIcon col="name" sortKey={sortKey} sortDir={sortDir} />
                   </th>
-                  <th className="py-4 px-4 font-black text-right cursor-pointer hover:text-[--text-primary] group" onClick={() => handleSort("quantity")}>
+                  <th className="py-4 px-4 font-black text-right transition-colors cursor-pointer hover:text-[--text-primary] group" onClick={() => handleSort("quantity")}>
                     Qty. <SortIcon col="quantity" sortKey={sortKey} sortDir={sortDir} />
                   </th>
                   <th className="py-4 px-4 font-black text-right">Avg. cost</th>
                   <th className="py-4 px-4 font-black text-right">LTP</th>
-                  <th className="py-4 px-4 font-black text-right cursor-pointer hover:text-[--text-primary] group" onClick={() => handleSort("current_value")}>
+                  <th className="py-4 px-4 font-black text-right transition-colors cursor-pointer hover:text-[--text-primary] group" onClick={() => handleSort("current_value")}>
                     Cur. val <SortIcon col="current_value" sortKey={sortKey} sortDir={sortDir} />
                   </th>
-                  <th className="py-4 px-4 font-black text-right cursor-pointer hover:text-[--text-primary] group" onClick={() => handleSort("pnl")}>
+                  <th className="py-4 px-4 font-black text-right transition-colors cursor-pointer hover:text-[--text-primary] group" onClick={() => handleSort("pnl")}>
                     P&L <SortIcon col="pnl" sortKey={sortKey} sortDir={sortDir} />
                   </th>
-                  <th className="py-4 px-4 font-black text-right cursor-pointer hover:text-[--text-primary] group" onClick={() => handleSort("pnlPercent")}>
+                  <th className="py-4 px-4 font-black text-right transition-colors cursor-pointer hover:text-[--text-primary] group" onClick={() => handleSort("pnlPercent")}>
                     Net chg. <SortIcon col="pnlPercent" sortKey={sortKey} sortDir={sortDir} />
                   </th>
                 </tr>
@@ -630,7 +644,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
       ) : null}
 
       {showForm && (
-        <div className="mobile-dialog-shell fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-md animate-fade-in shadow-2xl">
+        <div role="dialog" aria-modal="true" className="mobile-dialog-shell fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-md animate-fade-in shadow-2xl">
           <div className="mobile-dialog-panel glass-card-static !bg-[--bg-surface] w-full max-w-xl p-6 md:p-8 max-h-[90vh] overflow-y-auto custom-scrollbar">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-black">
@@ -647,7 +661,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
               <div className="relative">
                 <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[10px] text-[--text-muted] uppercase tracking-widest font-bold z-10">Symbol</label>
                 <input
-                  required value={formData.symbol}
+                  autoFocus required value={formData.symbol}
                   onChange={e => setFormData({ ...formData, symbol: e.target.value.toUpperCase() })}
                   className="w-full h-12 px-4 bg-transparent border border-[--border-default] rounded-md text-[13px] text-[--text-primary] focus:border-[--accent-primary] outline-none font-bold uppercase placeholder:text-[--text-disabled]"
                   placeholder="e.g. SBIN, RELIANCE, AAPL"
@@ -668,7 +682,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="relative">
-                  <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[10px] text-[--text-muted] uppercase tracking-widest font-bold z-10">Qty.</label>
+                  <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[10px] text-[--text-muted] uppercase tracking-widest font-bold z-10">Units Traded</label>
                   <input
                     required type="number" step="any"
                     value={formData.quantity}
@@ -679,8 +693,9 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                     inputMode="decimal"
                   />
                 </div>
+
                 <div className="relative">
-                  <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[10px] text-[--text-muted] uppercase tracking-widest font-bold z-10">Avg. Price</label>
+                  <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[10px] text-[--text-muted] uppercase tracking-widest font-bold z-10">Avg Price ({formData.currency})</label>
                   <input
                     required type="number" step="0.01"
                     value={formData.buy_price}
@@ -693,9 +708,9 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="relative">
-                  <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[10px] text-[--text-muted] uppercase tracking-widest font-bold z-10">Market LTP</label>
+                  <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[10px] text-[--text-muted] uppercase tracking-widest font-bold z-10">Current Price (LTP)</label>
                   <input
                     required type="number" step="0.01"
                     value={formData.current_price}
@@ -707,25 +722,40 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                   />
                 </div>
 
-                <div className="space-y-1">
-                  <div className="relative">
-                    <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[10px] text-[--text-muted] uppercase tracking-widest font-bold z-10">
-                      {formData.trade_type === 'buy' ? 'Deduct From' : 'Deposit To'}
-                    </label>
+                <div className="relative">
+                  <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[10px] text-[--text-muted] uppercase tracking-widest font-bold z-10">Currency</label>
+                  <div className="relative w-full">
                     <select
-                      aria-label="Select account"
-                      id="stock-account"
-                      name="account_id"
-                      value={formData.deduct_from_account || ""}
-                      onChange={e => setFormData({ ...formData, deduct_from_account: e.target.value })}
-                      className="w-full h-12 px-4 pr-10 bg-transparent border border-[--border-default] rounded-md text-[12px] text-[--text-primary] outline-none focus:border-[--accent-primary] appearance-none font-bold"
-                      disabled={!!editingId}
+                      value={formData.currency}
+                      onChange={e => setFormData({ ...formData, currency: e.target.value })}
+                      className="w-full h-12 px-4 bg-transparent border border-[--border-default] rounded-md text-[13px] text-[--text-primary] outline-none appearance-none cursor-pointer focus:border-[--accent-primary] font-bold"
                     >
-                      <option value="" className="bg-[--bg-surface]">N/A (Historical)</option>
+                      <option value="INR" className="bg-[--bg-surface]">INR (₹)</option>
+                      <option value="USD" className="bg-[--bg-surface]">USD ($)</option>
+                    </select>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[--text-muted]">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                        <path d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="relative">
+                  <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[10px] text-[--text-muted] uppercase tracking-widest font-bold z-10">
+                    {formData.trade_type === 'buy' ? 'Deduct From Account' : 'Deposit To Account'}
+                  </label>
+                  <div className="relative w-full">
+                    <select
+                      value={formData.deduct_from_account}
+                      onChange={e => setFormData({ ...formData, deduct_from_account: e.target.value })}
+                      className="w-full h-12 px-4 bg-transparent border border-[--border-default] rounded-md text-[13px] text-[--text-primary] outline-none appearance-none cursor-pointer focus:border-[--accent-primary] font-bold"
+                    >
+                      <option value="" className="bg-[--bg-surface]">No Transaction Link (Track only)</option>
                       {accounts.map(acc => (
-                        <option key={acc.id} value={acc.id} className="bg-[--bg-surface]">
-                          {acc.name} (₹{formatNum(acc.balance)})
-                        </option>
+                        <option key={acc.id} value={acc.id} className="bg-[--bg-surface]">{acc.name} ({acc.currency})</option>
                       ))}
                     </select>
                     <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[--text-muted]">
@@ -753,7 +783,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                   <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[10px] text-[--text-muted] uppercase tracking-widest font-bold z-10">Transaction Date</label>
                   <input
                     required type="date"
-                    value={mounted ? formData.bought_at : ""}
+                    value={formData.bought_at}
                     onChange={e => setFormData({ ...formData, bought_at: e.target.value })}
                     className="w-full h-12 px-4 bg-transparent border border-[--border-default] rounded-md text-[13px] text-[--text-primary] outline-none focus:border-[--accent-primary] font-bold"
                     autoComplete="new-password"
@@ -798,7 +828,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
       )}
 
       {showDeleteConfirm && (
-        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div role="dialog" aria-modal="true" className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
            <div className="w-full max-w-xs bg-[--bg-surface] border border-[--border-default] rounded-sm p-6 text-center shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
               <h3 className="text-base font-medium text-[--text-primary] mb-2">Delete holding?</h3>
               <p className="text-[12px] text-[--text-muted] mb-6">This action cannot be undone.</p>

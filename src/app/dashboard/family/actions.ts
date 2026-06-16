@@ -26,9 +26,9 @@ export async function createRecipient(data: Omit<TablesInsert<"recipients">, "us
 
     revalidatePath("/dashboard/family");
     return { success: true };
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error in createRecipient:", err);
-    return { error: err?.message || "An unexpected error occurred" };
+    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
   }
 }
 
@@ -52,9 +52,9 @@ export async function updateRecipient(id: string, data: { name: string; relation
 
     revalidatePath("/dashboard/family");
     return { success: true };
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error in updateRecipient:", err);
-    return { error: err?.message || "An unexpected error occurred" };
+    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
   }
 }
 
@@ -79,9 +79,9 @@ export async function deleteRecipient(id: string) {
     revalidatePath("/dashboard/ledger");
     revalidatePath("/dashboard/accounts");
     return { success: true };
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error in deleteRecipient:", err);
-    return { error: err?.message || "An unexpected error occurred" };
+    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
   }
 }
 
@@ -137,8 +137,8 @@ export async function sendMoneyToFamily(payload: {
     revalidatePath("/dashboard");
 
     return { success: true };
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error in sendMoneyToFamily:", err);
-    return { error: err?.message || "An unexpected error occurred" };
+    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
   }
 }

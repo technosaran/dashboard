@@ -7,6 +7,8 @@ import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { format } from "date-fns";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { Plus, Edit2, Trash2, X, Send, History, ArrowUpRight, CheckCircle2 } from "lucide-react";
+import type { Tables } from "@/lib/database.types";
+import { USD_INR_EXCHANGE_RATE } from "@/lib/constants";
 
 const QUICK_AMOUNTS = [500, 1000, 2000, 5000, 10000];
 
@@ -25,13 +27,13 @@ export default function FamilyClient({
   };
   const [isAddingRecipient, setIsAddingRecipient] = useState(false);
   const [isSendingMoney, setIsSendingMoney] = useState(false);
-  const [selectedRecipient, setSelectedRecipient] = useState<any | null>(null);
+  const [selectedRecipient, setSelectedRecipient] = useState<Tables<"recipients"> | null>(null);
   const [submitting, withLock] = useSubmitLock();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<"contacts" | "history">("contacts");
   const [isEditingRecipient, setIsEditingRecipient] = useState(false);
-  const [editingRecipient, setEditingRecipient] = useState<any | null>(null);
+  const [editingRecipient, setEditingRecipient] = useState<Tables<"recipients"> | null>(null);
   
   // Member specific history
   const [selectedHistoryRecipient, setSelectedHistoryRecipient] = useState<string | null>(null);
@@ -103,7 +105,22 @@ export default function FamilyClient({
     setDeletingId(null);
   };
 
-  const startEdit = (person: any) => {
+  // Close modals on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        closeModals();
+      }
+    };
+    if (isAddingRecipient || isSendingMoney || showDeleteConfirm) {
+      window.addEventListener("keydown", handleKeyDown);
+    }
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isAddingRecipient, isSendingMoney, showDeleteConfirm]);
+
+  const startEdit = (person: Tables<"recipients">) => {
     setEditingRecipient(person);
     setNewName(person.name);
     setNewRelationship(person.relationship || "Family");
@@ -166,10 +183,13 @@ export default function FamilyClient({
   };
 
   // Analytics
-  const getRecipientId = useCallback((log: any) => {
-    if (log.metadata?.recipient_id) return log.metadata.recipient_id;
+  const getRecipientId = useCallback((log: Tables<"ledger_logs">) => {
+    const metadata = log.metadata as Record<string, unknown> | null;
+    if (metadata && typeof metadata === "object" && metadata.recipient_id) {
+      return metadata.recipient_id as string;
+    }
     if (log.details) {
-      const match = recipients.find(r => log.details.startsWith(`Sent money to ${r.name}`));
+      const match = recipients.find(r => log.details!.startsWith(`Sent money to ${r.name}`));
       if (match) return match.id;
     }
     return null;
@@ -183,14 +203,12 @@ export default function FamilyClient({
         const recId = getRecipientId(log);
         if (recId && totals[recId] !== undefined) {
           const isUSD = getAccountCurrency(log.account_id) === 'USD';
-          totals[recId] += Number(log.amount || 0) * (isUSD ? 83.5 : 1);
+          totals[recId] += Number(log.amount || 0) * (isUSD ? USD_INR_EXCHANGE_RATE : 1);
         }
       }
     });
     return totals;
   }, [ledgerLogs, recipients, getRecipientId, accounts]);
-
-
 
   const recentSends = ledgerLogs
     .filter((log) => {
@@ -202,7 +220,7 @@ export default function FamilyClient({
 
   const totalSent = recentSends.reduce((sum, s) => {
     const isUSD = getAccountCurrency(s.account_id) === 'USD';
-    return sum + Number(s.amount || 0) * (isUSD ? 83.5 : 1);
+    return sum + Number(s.amount || 0) * (isUSD ? USD_INR_EXCHANGE_RATE : 1);
   }, 0);
 
   return (
@@ -397,7 +415,7 @@ export default function FamilyClient({
           
           {/* DELETE MODAL */}
           {showDeleteConfirm && (
-            <div className="bg-[#111111] border border-white/10 rounded-md w-full max-w-sm p-6 shadow-2xl">
+            <div role="dialog" aria-modal="true" className="bg-[#111111] border border-white/10 rounded-md w-full max-w-sm p-6 shadow-2xl">
               <h3 className="text-lg font-bold text-white mb-2">Delete Contact</h3>
               <p className="text-sm text-[--text-secondary] mb-6">
                 Are you sure you want to remove <span className="text-white font-medium">{recipients.find(r => r.id === deletingId)?.name}</span>? This action cannot be undone.
@@ -413,7 +431,7 @@ export default function FamilyClient({
 
           {/* ADD/EDIT MODAL */}
           {isAddingRecipient && !showDeleteConfirm && (
-            <div className="bg-[#111111] border border-white/10 rounded-md w-full max-w-md shadow-2xl">
+            <div role="dialog" aria-modal="true" className="bg-[#111111] border border-white/10 rounded-md w-full max-w-md shadow-2xl">
               <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
                 <h2 className="text-lg font-bold text-white">
                   {isEditingRecipient ? "Edit Contact" : "Add New Contact"}
@@ -443,7 +461,7 @@ export default function FamilyClient({
 
           {/* SEND MONEY MODAL */}
           {isSendingMoney && !showDeleteConfirm && selectedRecipient && (
-            <div className="bg-[#111111] border border-white/10 rounded-md w-full max-w-md shadow-2xl max-h-[90vh] flex flex-col">
+            <div role="dialog" aria-modal="true" className="bg-[#111111] border border-white/10 rounded-md w-full max-w-md shadow-2xl max-h-[90vh] flex flex-col">
               <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between shrink-0">
                 <h2 className="text-lg font-bold text-white">Transfer Funds</h2>
                 <button onClick={closeModals} className="text-[--text-muted] hover:text-white transition-colors">

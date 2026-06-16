@@ -1,4 +1,5 @@
 "use client";
+import { USD_INR_EXCHANGE_RATE } from "@/lib/constants";
 
 import { useMemo, useState, Fragment } from "react";
 import { endOfDay, format, isWithinInterval, startOfDay } from "date-fns";
@@ -256,7 +257,7 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
     return logs.reduce((sum, log) => {
       if (!isCreditLog(log)) return sum;
       const isUSD = getLogCurrency(log.account_id) === 'USD';
-      return sum + (log.amount || 0) * (isUSD ? 83.5 : 1);
+      return sum + (log.amount || 0) * (isUSD ? USD_INR_EXCHANGE_RATE : 1);
     }, 0);
   }, [logs, accounts]);
 
@@ -264,7 +265,7 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
     return logs.reduce((sum, log) => {
       if (!isDebitLog(log)) return sum;
       const isUSD = getLogCurrency(log.account_id) === 'USD';
-      return sum + (log.amount || 0) * (isUSD ? 83.5 : 1);
+      return sum + (log.amount || 0) * (isUSD ? USD_INR_EXCHANGE_RATE : 1);
     }, 0);
   }, [logs, accounts]);
 

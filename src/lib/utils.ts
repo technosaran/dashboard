@@ -58,3 +58,8 @@ export function parseToISODate(dateStr: string | null | undefined): string {
   return new Date().toISOString().split("T")[0];
 }
 
+export function getCurrencySymbol(currency?: string | null): string {
+  if (!currency) return "₹";
+  return currency.toUpperCase() === "USD" ? "$" : "₹";
+}
+

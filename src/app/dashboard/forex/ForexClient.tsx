@@ -1,4 +1,5 @@
 "use client";
+import { USD_INR_EXCHANGE_RATE } from "@/lib/constants";
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
@@ -77,6 +78,22 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
     }
   }, [accounts, fundsForm.bank_account_id, profile]);
 
+  // Close modals on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setShowTradeModal(false);
+        setShowEditTradeModal(false);
+        setShowFundsModal(false);
+        setShowAccountModal(false);
+      }
+    };
+    if (showTradeModal || showEditTradeModal || showFundsModal || showAccountModal) {
+      window.addEventListener("keydown", handleKeyDown);
+    }
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showTradeModal, showEditTradeModal, showFundsModal, showAccountModal]);
+
   // Broker Account form
   const [accountForm, setAccountForm] = useState({
     broker_name: "",
@@ -91,22 +108,22 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
     const totalBalance = forexAccounts.reduce((s, a) => {
       const isINR = a.currency !== 'USD';
       const bal = Number(a.balance);
-      return s + (isINR ? bal / 83.5 : bal);
+      return s + (isINR ? bal / USD_INR_EXCHANGE_RATE : bal);
     }, 0);
     const totalPnL = forexAccounts.reduce((s, a) => {
       const isINR = a.currency !== 'USD';
       const pnl = Number(a.total_pnl);
-      return s + (isINR ? pnl / 83.5 : pnl);
+      return s + (isINR ? pnl / USD_INR_EXCHANGE_RATE : pnl);
     }, 0);
     const totalDeposited = forexAccounts.reduce((s, a) => {
       const isINR = a.currency !== 'USD';
       const dep = Number(a.total_deposited);
-      return s + (isINR ? dep / 83.5 : dep);
+      return s + (isINR ? dep / USD_INR_EXCHANGE_RATE : dep);
     }, 0);
     const totalWithdrawn = forexAccounts.reduce((s, a) => {
       const isINR = a.currency !== 'USD';
       const wd = Number(a.total_withdrawn);
-      return s + (isINR ? wd / 83.5 : wd);
+      return s + (isINR ? wd / USD_INR_EXCHANGE_RATE : wd);
     }, 0);
     return { totalBalance, totalPnL, totalDeposited, totalWithdrawn };
   }, [forexAccounts]);
@@ -864,7 +881,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
 
       {/* Log Trade Modal */}
       {showTradeModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+        <div role="dialog" aria-modal="true" className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
           <div className="glass-card-static w-full max-w-md p-6 my-auto animate-in zoom-in duration-300 relative max-h-[90vh] overflow-y-auto custom-scrollbar flex flex-col">
             <h2 className="text-xl font-black mb-4 text-white text-left uppercase italic tracking-wide">Log Daily Profit/Loss</h2>
 
@@ -881,7 +898,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                       first.
                     </div>
                   ) : (
-                    <select aria-label="Select forex account" id="forex-trade-account" name="forex_account_id" required className="input-premium !h-10 text-xs" value={tradeForm.forex_account_id} onChange={e => setTradeForm({...tradeForm, forex_account_id: e.target.value})}>
+                    <select autoFocus aria-label="Select forex account" id="forex-trade-account" name="forex_account_id" required className="input-premium !h-10 text-xs" value={tradeForm.forex_account_id} onChange={e => setTradeForm({...tradeForm, forex_account_id: e.target.value})}>
                       <option value="" className="bg-[--bg-surface]">Select Account</option>
                       {forexAccounts.map(a => <option key={a.id} value={a.id} className="bg-[--bg-surface]">{a.account_label} ({a.broker_name})</option>)}
                     </select>
@@ -958,7 +975,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
 
       {/* Edit Trade Modal */}
       {showEditTradeModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+        <div role="dialog" aria-modal="true" className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
           <div className="glass-card-static w-full max-w-md p-6 my-auto animate-in zoom-in duration-300 relative max-h-[90vh] overflow-y-auto custom-scrollbar flex flex-col">
             <h2 className="text-xl font-black mb-4 text-white text-left uppercase italic tracking-wide">Edit Daily Profit/Loss</h2>
 
@@ -966,7 +983,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Select Broker</label>
-                  <select aria-label="Select forex account" id="forex-edit-trade-account" name="forex_account_id" required className="input-premium !h-10 text-xs" value={editTradeForm.forex_account_id} onChange={e => setEditTradeForm({...editTradeForm, forex_account_id: e.target.value})}>
+                  <select autoFocus aria-label="Select forex account" id="forex-edit-trade-account" name="forex_account_id" required className="input-premium !h-10 text-xs" value={editTradeForm.forex_account_id} onChange={e => setEditTradeForm({...editTradeForm, forex_account_id: e.target.value})}>
                     <option value="" className="bg-[--bg-surface]">Select Account</option>
                     {forexAccounts.map(a => <option key={a.id} value={a.id} className="bg-[--bg-surface]">{a.account_label} ({a.broker_name})</option>)}
                   </select>
@@ -1042,7 +1059,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
 
       {/* Funds Deposit/Withdraw Modal */}
       {showFundsModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+        <div role="dialog" aria-modal="true" className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
           <div className="glass-card-static w-full max-w-md p-6 my-auto animate-in zoom-in duration-300 relative max-h-[90vh] overflow-y-auto custom-scrollbar flex flex-col">
             <h2 className="text-xl font-black mb-4 text-white uppercase italic tracking-wide">{fundsType === "DEPOSIT" ? "Broker Deposit" : "Broker Withdrawal"}</h2>
             <form onSubmit={handleFunds} className="space-y-3">
@@ -1058,7 +1075,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                       first.
                     </div>
                   ) : (
-                    <select aria-label="Select forex account" id="forex-funds-account" name="forex_account_id" required className="input-premium !h-10 text-xs" value={fundsForm.forex_account_id} onChange={e => setFundsForm({...fundsForm, forex_account_id: e.target.value})}>
+                    <select autoFocus aria-label="Select forex account" id="forex-funds-account" name="forex_account_id" required className="input-premium !h-10 text-xs" value={fundsForm.forex_account_id} onChange={e => setFundsForm({...fundsForm, forex_account_id: e.target.value})}>
                       <option value="" className="bg-[--bg-surface]">Select Broker</option>
                       {forexAccounts.map(a => <option key={a.id} value={a.id} className="bg-[--bg-surface]">{a.account_label} ({a.broker_name})</option>)}
                     </select>
@@ -1114,14 +1131,14 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
 
       {/* Add Broker Account Modal */}
       {showAccountModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+        <div role="dialog" aria-modal="true" className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
           <div className="glass-card-static w-full max-w-md p-6 my-auto animate-in zoom-in duration-300 relative max-h-[90vh] overflow-y-auto custom-scrollbar flex flex-col">
             <h2 className="text-xl font-black mb-4 text-white uppercase italic tracking-wide">Add Broker Account</h2>
             <form onSubmit={handleCreateAccount} className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Broker Name</label>
-                  <input required type="text" className="input-premium !h-10 text-xs" placeholder="e.g. MetaTrader 5" value={accountForm.broker_name} onChange={e => setAccountForm({...accountForm, broker_name: e.target.value})} autoComplete="new-password" />
+                  <input autoFocus required type="text" className="input-premium !h-10 text-xs" placeholder="e.g. MetaTrader 5" value={accountForm.broker_name} onChange={e => setAccountForm({...accountForm, broker_name: e.target.value})} autoComplete="new-password" />
                 </div>
                 <div>
                   <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Account Label</label>

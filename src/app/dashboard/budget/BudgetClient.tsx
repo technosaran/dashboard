@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { toast } from "react-hot-toast";
 import { upsertBudget, deleteBudget } from "./actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { format, parseISO } from "date-fns";
+import { USD_INR_EXCHANGE_RATE } from "@/lib/constants";
 
 const CATEGORIES = [
   { label: "Food", icon: "🍔" },
@@ -23,6 +24,7 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [submitting, withLock] = useSubmitLock();
+  const activeSubmissionsRef = useRef<Record<string, boolean>>({});
 
   const getAccountCurrency = (accountId: string | null) => {
     if (!accountId) return "INR";
@@ -38,7 +40,7 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
       const date = parseISO(e.date);
       if (date.getMonth() + 1 === selectedMonth && date.getFullYear() === selectedYear) {
         const isUSD = getAccountCurrency(e.account_id) === 'USD';
-        const amt = Number(e.amount) * (isUSD ? 83.5 : 1);
+        const amt = Number(e.amount) * (isUSD ? USD_INR_EXCHANGE_RATE : 1);
         spending[e.category] = (spending[e.category] || 0) + amt;
       }
     });
@@ -52,7 +54,7 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
       const date = parseISO(inc.date);
       if (date.getMonth() + 1 === selectedMonth && date.getFullYear() === selectedYear) {
         const isUSD = getAccountCurrency(inc.account_id) === 'USD';
-        return sum + Number(inc.amount) * (isUSD ? 83.5 : 1);
+        return sum + Number(inc.amount) * (isUSD ? USD_INR_EXCHANGE_RATE : 1);
       }
       return sum;
     }, 0);
@@ -66,39 +68,50 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
   const totalSpent = Object.values(actualSpending).reduce((s, v) => s + v, 0);
 
   async function handleBudgetChange(category: string, amount: string) {
-    if (amount.trim() === "") {
-      const budget = currentBudgets.find(b => b.category === category);
-      if (budget) {
-        await withLock(async () => {
-           const res = await deleteBudget(budget.id);
-           if (!res.error) {
-             toast.success(`${category} budget cleared`);
-             mutate();
-           } else {
-             toast.error(res.error);
-           }
-        });
-      }
-      return;
-    }
+    if (activeSubmissionsRef.current[category]) return;
 
-    const val = parseFloat(amount);
-    if (isNaN(val)) return;
-    
-    await withLock(async () => {
-      const res = await upsertBudget({
-        category,
-        amount: val,
-        period_month: selectedMonth,
-        period_year: selectedYear
-      });
-      if (!res.error) {
-        toast.success(`${category} budget updated to ₹${val.toLocaleString()}`);
-        mutate();
-      } else {
-        toast.error(res.error);
+    const budget = currentBudgets.find(b => b.category === category);
+    const limit = Number(budget?.amount || 0);
+    const lastVal = limit ? limit.toString() : "";
+    if (amount === lastVal) return;
+
+    activeSubmissionsRef.current[category] = true;
+    try {
+      if (amount.trim() === "") {
+        if (budget) {
+          await withLock(async () => {
+             const res = await deleteBudget(budget.id);
+             if (!res.error) {
+               toast.success(`${category} budget cleared`);
+               mutate();
+             } else {
+               toast.error(res.error);
+             }
+          });
+        }
+        return;
       }
-    });
+
+      const val = parseFloat(amount);
+      if (isNaN(val)) return;
+      
+      await withLock(async () => {
+        const res = await upsertBudget({
+          category,
+          amount: val,
+          period_month: selectedMonth,
+          period_year: selectedYear
+        });
+        if (!res.error) {
+          toast.success(`${category} budget updated to ₹${val.toLocaleString()}`);
+          mutate();
+        } else {
+          toast.error(res.error);
+        }
+      });
+    } finally {
+      activeSubmissionsRef.current[category] = false;
+    }
   }
 
   return (
@@ -192,7 +205,12 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
                         placeholder="Set Limit"
                         defaultValue={limit || ""}
                         disabled={submitting}
-                        onBlur={(e) => handleBudgetChange(cat.label, e.target.value)}
+                        onBlur={(e) => {
+                          const lastVal = limit ? limit.toString() : "";
+                          if (e.target.value !== lastVal) {
+                            handleBudgetChange(cat.label, e.target.value);
+                          }
+                        }}
                         className="input-premium !h-10 w-32 text-right !bg-white/5 border-transparent focus:border-[--accent-primary] text-sm font-black"
                         autoComplete="new-password"
                         inputMode="decimal"

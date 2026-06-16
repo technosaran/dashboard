@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useFinanceData } from "@/hooks/use-finance-data";
+import { USD_INR_EXCHANGE_RATE } from "@/lib/constants";
 
 export function useNetWorth() {
   const { data } = useFinanceData();
@@ -45,9 +46,9 @@ export function useNetWorth() {
     }, 0);
 
     // 4. Auto-exchanged calculations for legacy compatibility
-    const cashBalance = cashBalanceINR + (cashBalanceUSD * 83.5);
-    const stockBalance = stockBalanceINR + (stockBalanceUSD * 83.5);
-    const forexBalance = forexBalanceINR + (forexBalanceUSD * 83.5);
+    const cashBalance = cashBalanceINR + (cashBalanceUSD * USD_INR_EXCHANGE_RATE);
+    const stockBalance = stockBalanceINR + (stockBalanceUSD * USD_INR_EXCHANGE_RATE);
+    const forexBalance = forexBalanceINR + (forexBalanceUSD * USD_INR_EXCHANGE_RATE);
     
     const mfBalance = mutualFunds.reduce((sum, mf) => sum + (Number(mf.units) * Number(mf.current_nav || 0)), 0);
     const bondBalance = (bonds || []).filter(b => b.status === 'Active').reduce((sum, b) => sum + Number(b.current_value || 0), 0);
@@ -62,7 +63,7 @@ export function useNetWorth() {
     // Calculate consolidated Net Worth metrics in different currencies
     const totalAssetsINR = totalAssets;
     const netWorthINR = netWorth;
-    const netWorthUSD = netWorth / 83.5;
+    const netWorthUSD = netWorth / USD_INR_EXCHANGE_RATE;
 
     return {
       netWorth,

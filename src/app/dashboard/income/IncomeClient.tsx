@@ -1,4 +1,5 @@
 "use client";
+import { USD_INR_EXCHANGE_RATE } from "@/lib/constants";
 
 import dynamic from "next/dynamic";
 import { useMemo, useState, useEffect } from "react";
@@ -40,8 +41,6 @@ const Cell = dynamic(() => import("recharts").then((mod) => mod.Cell), { ssr: fa
 const AreaChart = dynamic(() => import("recharts").then((mod) => mod.AreaChart), { ssr: false });
 const Area = dynamic(() => import("recharts").then((mod) => mod.Area), { ssr: false });
 
-
-
 const INCOME_CATEGORIES = [
   { label: "Salary", icon: "🏢", color: CHART_COLOURS[0] },
   { label: "Work", icon: "💻", color: CHART_COLOURS[1] },
@@ -51,8 +50,6 @@ const INCOME_CATEGORIES = [
   { label: "Refund", icon: "↩️", color: CHART_COLOURS[5] },
   { label: "Others", icon: "📦", color: CHART_COLOURS[6] },
 ];
-
-
 
 export default function IncomeClient({ initialData }: { initialData?: FinanceData }) {
 
@@ -80,9 +77,17 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
     description: "",
     amount: "",
     category: "Salary",
-    date: new Date().toISOString().split("T")[0],
+    date: "",
     account_id: "",
   });
+
+  // Set today's date on client mount to prevent SSR/hydration mismatch
+  useEffect(() => {
+    setFormData(prev => ({
+      ...prev,
+      date: new Date().toISOString().split("T")[0]
+    }));
+  }, []);
 
   // Initialize default account when accounts/profile loads or modal is opened
   useEffect(() => {
@@ -102,6 +107,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
     if (showAddModal) {
       const t = setTimeout(() => {
         setFormData(prev => {
+          if (!prev.date) return prev;
           const today = new Date();
           const [currYear, currMonth] = prev.date.split("-").map(Number);
           
@@ -124,11 +130,20 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
     }
   }, [selectedMonth, selectedYear, showAddModal]);
 
-  const [mounted, setMounted] = useState(false);
+  // Close modals on Escape key
   useEffect(() => {
-    const t = setTimeout(() => setMounted(true), 0);
-    return () => clearTimeout(t);
-  }, []);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setShowDeleteConfirm(false);
+        setDeletingIncomeId(null);
+        setShowAddModal(false);
+      }
+    };
+    if (showDeleteConfirm || showAddModal) {
+      window.addEventListener("keydown", handleKeyDown);
+    }
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showDeleteConfirm, showAddModal]);
 
   async function handleDeleteIncome(id: string) {
     setDeletingIncomeId(id);
@@ -150,8 +165,6 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
     });
   }
 
-
-
   const stats = useMemo(() => {
     const targetDate = new Date(selectedYear, selectedMonth - 1, 1);
     const currentMonth = incomes.filter(i => {
@@ -159,8 +172,8 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
       const d = parseISO(i.date);
       return d.getMonth() + 1 === selectedMonth && d.getFullYear() === selectedYear;
     });
-    const totalIncome = incomes.reduce((s, i) => s + Number(i.amount) * (getAccountCurrency(i.account_id) === 'USD' ? 83.5 : 1), 0);
-    const monthlyTotal = currentMonth.reduce((s, i) => s + Number(i.amount) * (getAccountCurrency(i.account_id) === 'USD' ? 83.5 : 1), 0);
+    const totalIncome = incomes.reduce((s, i) => s + Number(i.amount) * (getAccountCurrency(i.account_id) === 'USD' ? USD_INR_EXCHANGE_RATE : 1), 0);
+    const monthlyTotal = currentMonth.reduce((s, i) => s + Number(i.amount) * (getAccountCurrency(i.account_id) === 'USD' ? USD_INR_EXCHANGE_RATE : 1), 0);
     
     // YoY comparison - same month last year
     const lastYearSameMonth = new Date(selectedYear - 1, selectedMonth - 1, 1);
@@ -169,14 +182,14 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
       const d = parseISO(i.date);
       return d.getMonth() + 1 === lastYearSameMonth.getMonth() + 1 && d.getFullYear() === lastYearSameMonth.getFullYear();
     });
-    const lastYearTotal = lastYearIncomes.reduce((s, i) => s + Number(i.amount) * (getAccountCurrency(i.account_id) === 'USD' ? 83.5 : 1), 0);
+    const lastYearTotal = lastYearIncomes.reduce((s, i) => s + Number(i.amount) * (getAccountCurrency(i.account_id) === 'USD' ? USD_INR_EXCHANGE_RATE : 1), 0);
     const yoyChange = lastYearTotal > 0 ? ((monthlyTotal - lastYearTotal) / lastYearTotal) * 100 : 0;
     const yoyAbsolute = monthlyTotal - lastYearTotal;
     
     const catMap: Record<string, number> = {};
     currentMonth.forEach(i => {
       const isUSD = getAccountCurrency(i.account_id) === 'USD';
-      catMap[i.category] = (catMap[i.category] || 0) + Number(i.amount) * (isUSD ? 83.5 : 1);
+      catMap[i.category] = (catMap[i.category] || 0) + Number(i.amount) * (isUSD ? USD_INR_EXCHANGE_RATE : 1);
     });
     const pieData = Object.entries(catMap)
       .map(([name, value]) => {
@@ -204,7 +217,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
       const m = format(parseISO(i.date), "MMM yy");
       if (trendMap[m] !== undefined) {
         const isUSD = getAccountCurrency(i.account_id) === 'USD';
-        trendMap[m] += Number(i.amount) * (isUSD ? 83.5 : 1);
+        trendMap[m] += Number(i.amount) * (isUSD ? USD_INR_EXCHANGE_RATE : 1);
       }
     });
     const trendData = Object.entries(trendMap).map(([name, value]) => ({ name, value }));
@@ -299,7 +312,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
 
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Transaction Date</label>
-              <input type="date" required className="input-premium" value={mounted ? formData.date : ""} onChange={e => setFormData({ ...formData, date: e.target.value })} autoComplete="off" id="income-date" name="date" />
+              <input type="date" required className="input-premium" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} autoComplete="off" id="income-date" name="date" />
             </div>
 
             <div className="space-y-2">
@@ -661,7 +674,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
       </div>
 
       {showDeleteConfirm && (
-        <div className="mobile-dialog-shell fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-md animate-fade-in">
+        <div role="dialog" aria-modal="true" className="mobile-dialog-shell fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-md animate-fade-in">
           <div className="mobile-dialog-panel glass-card-static w-full max-w-sm p-8 animate-scale-in max-h-[90vh] overflow-y-auto custom-scrollbar">
             <div className="flex flex-col items-center text-center gap-4">
               <div className="w-14 h-14 rounded-2xl bg-rose-500/15 border border-rose-500/25 flex items-center justify-center">
@@ -683,14 +696,14 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
       )}
 
       {showAddModal && (
-        <div className="mobile-dialog-shell fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-xl animate-fade-in shadow-2xl">
+        <div role="dialog" aria-modal="true" className="mobile-dialog-shell fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-xl animate-fade-in shadow-2xl">
           <div className="mobile-dialog-panel glass-card-static w-full max-w-2xl p-6 md:p-10 border-emerald-500/20 shadow-[0_0_100px_rgba(16,185,129,0.1)] max-h-[95vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-8 md:mb-10"><div className="flex items-center gap-3"><div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center"><svg className="w-5 h-5 md:w-6 md:h-6 text-emerald-400" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg></div><h2 className="text-xl md:text-3xl font-black">Declare Revenue</h2></div><button type="button" onClick={() => setShowAddModal(false)} className="text-[--text-muted] hover:text-[--text-primary] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"><svg className="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg></button></div>
             <form onSubmit={handleSubmit} className="space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-3">
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">{formData.category === "Salary" ? "Company / Employer" : "Description / Source"}</label>
-                  <input type="text" required className="input-premium" placeholder={formData.category === "Salary" ? "e.g. Google" : "e.g. Freelance Web Design"} value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} autoComplete="new-password" id="income-description" name="description" />
+                  <input autoFocus type="text" required className="input-premium" placeholder={formData.category === "Salary" ? "e.g. Google" : "e.g. Freelance Web Design"} value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} autoComplete="new-password" id="income-description" name="description" />
                 </div>
                 <div className="space-y-3">
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Amount Received</label>
@@ -704,7 +717,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
                 </div>
                 <div className="space-y-3">
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Transaction Date</label>
-                  <input type="date" required className="input-premium" value={mounted ? formData.date : ""} onChange={e => setFormData({ ...formData, date: e.target.value })} autoComplete="new-password" id="income-date" name="date" />
+                  <input type="date" required className="input-premium" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} autoComplete="new-password" id="income-date" name="date" />
                 </div>
                 <div className="space-y-3 col-span-1 md:col-span-2">
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Deposit into Account</label>

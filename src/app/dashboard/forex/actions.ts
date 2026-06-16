@@ -49,8 +49,8 @@ async function ensureForexAccount(supabase: any, forexAccountId: string, userId:
     }
 
     return { success: true };
-  } catch (err: any) {
-    return { error: err?.message || "Failed to bridge standard account to forex accounts" };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Failed to bridge standard account to forex accounts" };
   }
 }
 
@@ -80,9 +80,9 @@ export async function createForexAccount(data: {
     revalidatePath("/dashboard/forex");
     revalidatePath("/dashboard");
     return { success: true };
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error in createForexAccount:", err);
-    return { error: err?.message || "An unexpected error occurred" };
+    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
   }
 }
 
@@ -137,9 +137,9 @@ export async function forexDeposit(data: {
     revalidatePath("/dashboard/accounts");
     revalidatePath("/dashboard/ledger");
     return { success: true };
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error in forexDeposit:", err);
-    return { error: err?.message || "An unexpected error occurred" };
+    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
   }
 }
 
@@ -194,9 +194,9 @@ export async function forexWithdraw(data: {
     revalidatePath("/dashboard/accounts");
     revalidatePath("/dashboard/ledger");
     return { success: true };
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error in forexWithdraw:", err);
-    return { error: err?.message || "An unexpected error occurred" };
+    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
   }
 }
 
@@ -268,9 +268,9 @@ export async function logForexTrade(data: {
 
     revalidatePath("/dashboard/forex");
     return { success: true };
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error in logForexTrade:", err);
-    return { error: err?.message || "An unexpected error occurred" };
+    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
   }
 }
 
@@ -295,9 +295,9 @@ export async function deleteForexAccount(id: string) {
     revalidatePath("/dashboard/ledger");
     revalidatePath("/dashboard/accounts");
     return { success: true };
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error in deleteForexAccount:", err);
-    return { error: err?.message || "An unexpected error occurred" };
+    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
   }
 }
 
@@ -337,9 +337,9 @@ export async function updateForexAccount(id: string, data: {
     if (error) return { error: error.message };
     revalidatePath("/dashboard/forex");
     return { success: true };
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error in updateForexAccount:", err);
-    return { error: err?.message || "An unexpected error occurred" };
+    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
   }
 }
 
@@ -359,35 +359,76 @@ export async function updateForexTrade(id: string, data: {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Unauthorized" };
 
-    if (data.forex_account_id) {
+    // Fetch existing trade to merge fields
+    const { data: existingTrade, error: fetchError } = await supabase
+      .from("forex_trades")
+      .select("*")
+      .eq("id", id)
+      .eq("user_id", user.id)
+      .single();
+
+    if (fetchError || !existingTrade) {
+      return { error: "Forex trade not found" };
+    }
+
+    const merged = {
+      forex_account_id: data.forex_account_id !== undefined ? data.forex_account_id : existingTrade.forex_account_id,
+      pair: data.pair !== undefined ? data.pair : existingTrade.pair,
+      trade_type: data.trade_type !== undefined ? data.trade_type : existingTrade.trade_type,
+      lot_size: data.lot_size !== undefined ? data.lot_size : existingTrade.lot_size,
+      pnl: data.pnl !== undefined ? data.pnl : existingTrade.pnl,
+      trade_date: data.trade_date !== undefined ? data.trade_date : existingTrade.trade_date,
+      entry_price: data.entry_price !== undefined ? data.entry_price : existingTrade.entry_price,
+      exit_price: data.exit_price !== undefined ? data.exit_price : existingTrade.exit_price,
+      notes: data.notes !== undefined ? data.notes : existingTrade.notes,
+    };
+
+    if (merged.forex_account_id) {
       // Ensure the forex account exists by bridging the standard account if needed
-      const ensureRes = await ensureForexAccount(supabase, data.forex_account_id, user.id);
+      const ensureRes = await ensureForexAccount(supabase, merged.forex_account_id, user.id);
       if (ensureRes.error) return { error: ensureRes.error };
     }
 
-    const { error } = await supabase
-      .from("forex_trades")
-      .update({ 
-        forex_account_id: data.forex_account_id,
-        pair: data.pair,
-        trade_type: data.trade_type,
-        lot_size: data.lot_size,
-        pnl: data.pnl,
-        trade_date: data.trade_date,
-        entry_price: data.entry_price || null,
-        exit_price: data.exit_price || null,
-        notes: data.notes || null
-      })
-      .eq("id", id)
-      .eq("user_id", user.id);
+    const rpc = supabase.rpc.bind(supabase) as unknown as (
+      fn: "update_forex_trade_atomic",
+      args: {
+        p_user_id: string;
+        p_trade_id: string;
+        p_forex_account_id: string;
+        p_pair: string;
+        p_trade_type: string;
+        p_lot_size: number;
+        p_pnl: number;
+        p_trade_date: string;
+        p_entry_price: number | null;
+        p_exit_price: number | null;
+        p_notes: string | null;
+      }
+    ) => Promise<{ data: { success: boolean; error?: string } | null; error: { message: string } | null }>;
 
-    if (error) return { error: error.message };
+    const { data: res, error: rpcError } = await rpc("update_forex_trade_atomic", {
+      p_user_id: user.id,
+      p_trade_id: id,
+      p_forex_account_id: merged.forex_account_id,
+      p_pair: merged.pair,
+      p_trade_type: merged.trade_type,
+      p_lot_size: Number(merged.lot_size),
+      p_pnl: Number(merged.pnl),
+      p_trade_date: merged.trade_date,
+      p_entry_price: merged.entry_price !== null && merged.entry_price !== undefined ? Number(merged.entry_price) : null,
+      p_exit_price: merged.exit_price !== null && merged.exit_price !== undefined ? Number(merged.exit_price) : null,
+      p_notes: merged.notes || null,
+    });
+
+    if (rpcError) return { error: rpcError.message };
+    const result = res as { success: boolean; error?: string } | null;
+    if (!result) return { error: "Failed to communicate with database" };
+    if (!result.success) return { error: result.error || "Failed to update trade atomically" };
+
     revalidatePath("/dashboard/forex");
     return { success: true };
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error in updateForexTrade:", err);
-    return { error: err?.message || "An unexpected error occurred" };
+    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
   }
 }
-
-

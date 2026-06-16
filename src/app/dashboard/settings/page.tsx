@@ -13,8 +13,6 @@ export default function SettingsPage() {
   const { data: { profile, accounts }, mutate } = useFinanceData();
   const [input, setInput] = useState(username);
   const [lastSaved, setLastSaved] = useState<string | null>(null);
-  const [prevUsername, setPrevUsername] = useState(username);
-  const [prevLoading, setPrevLoading] = useState(loading);
   const prevIsSyncingRef = useRef(false);
 
   const defaultAccounts = profile?.settings?.default_accounts || {};
@@ -69,19 +67,12 @@ export default function SettingsPage() {
   const [isResetting, setIsResetting] = useState(false);
 
 
-  // Sync internal input state during render to avoid cascading renders in useEffect
-  if (loading !== prevLoading) {
-    setPrevLoading(loading);
-    if (!loading) {
-      setInput(username);
-      setPrevUsername(username);
-    }
-  } else if (username !== prevUsername) {
-    setPrevUsername(username);
-    if (!isSyncing) {
+  // Sync internal input state when user details load/change
+  useEffect(() => {
+    if (!loading && !isSyncing) {
       setInput(username);
     }
-  }
+  }, [loading, username, isSyncing]);
 
   // Update lastSaved when sync completes
   useEffect(() => {

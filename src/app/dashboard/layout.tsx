@@ -3,6 +3,7 @@ import { UserProvider } from "@/context/user-context";
 import { createClient } from "@/lib/supabase-server";
 import { SWRProvider } from "@/components/swr-provider";
 import type { FinanceData } from "@/hooks/use-finance-data";
+import { ErrorBoundary } from "@/components/error-boundary";
 
 export const dynamic = "force-dynamic";
 
@@ -52,7 +53,9 @@ export default async function DashboardLayout({
                 paddingTop: "calc(var(--page-padding-y) + env(safe-area-inset-top, 0px))"
               }}
             >
-              {children}
+              <ErrorBoundary>
+                {children}
+              </ErrorBoundary>
             </div>
           </main>
         </div>

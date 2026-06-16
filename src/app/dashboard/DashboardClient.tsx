@@ -1,4 +1,5 @@
 "use client";
+import { USD_INR_EXCHANGE_RATE } from "@/lib/constants";
 
 import { useMemo, useState, useEffect } from "react";
 import { format, parseISO, subMonths } from "date-fns";
@@ -114,7 +115,7 @@ export default function DashboardClient() {
       
       const tDate = parseISO(t.date);
       const isUSD = getAccountCurrency(t.account_id) === 'USD';
-      const tAmount = Number(t.amount) * (isUSD ? 83.5 : 1);
+      const tAmount = Number(t.amount) * (isUSD ? USD_INR_EXCHANGE_RATE : 1);
       const tType = t.type;
       
       // Monthly Stats & Category Map - Timezone-robust direct comparison
@@ -153,7 +154,7 @@ export default function DashboardClient() {
     const totalDayPnL = (investments.reduce((sum, inv) => {
       const dayChange = Number(inv.day_change || 0) * Number(inv.quantity || 0);
       const isUSD = inv.currency === 'USD';
-      return sum + (isUSD ? dayChange * 83.5 : dayChange);
+      return sum + (isUSD ? dayChange * USD_INR_EXCHANGE_RATE : dayChange);
     }, 0)) +
     (mutualFunds.reduce((sum, mf) => sum + (Number(mf.day_change || 0) * Number(mf.units || 0)), 0));
     const prevDayNetWorth = netWorth - totalDayPnL;

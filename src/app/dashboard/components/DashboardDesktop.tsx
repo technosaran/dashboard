@@ -1,4 +1,5 @@
 "use client";
+import { USD_INR_EXCHANGE_RATE } from "@/lib/constants";
 
 import Link from "next/link";
 import { format } from "date-fns";
@@ -210,7 +211,7 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                     <span className="text-[9px] font-black uppercase tracking-widest text-[--text-muted]">Liquid Assets</span>
                     <span className="text-sm sm:text-base font-black text-emerald-400">
                       {showUSD 
-                        ? `+$${(stats.totalAssets / 83.5).toLocaleString(undefined, { maximumFractionDigits: 0 })}` 
+                        ? `+$${(stats.totalAssets / USD_INR_EXCHANGE_RATE).toLocaleString(undefined, { maximumFractionDigits: 0 })}` 
                         : `+₹${stats.totalAssets.toLocaleString()}`
                       }
                     </span>
@@ -222,7 +223,7 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                     <span className="text-[9px] font-black uppercase tracking-widest text-[--text-muted]">Outstanding Debt</span>
                     <span className="text-sm sm:text-base font-black text-rose-500">
                       {showUSD 
-                        ? `-$${(stats.debtBalance / 83.5).toLocaleString(undefined, { maximumFractionDigits: 0 })}` 
+                        ? `-$${(stats.debtBalance / USD_INR_EXCHANGE_RATE).toLocaleString(undefined, { maximumFractionDigits: 0 })}` 
                         : `-₹${stats.debtBalance.toLocaleString()}`
                       }
                     </span>
@@ -250,7 +251,7 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                             <span className="text-[9px] font-bold text-[--text-muted]">{item.percentage}%</span>
                             <span className="text-[11px] font-black tabular-nums whitespace-nowrap" style={{ color: item.color }}>
                               {showUSD 
-                                ? `$${(item.value / 83.5).toLocaleString(undefined, { maximumFractionDigits: 0 })}` 
+                                ? `$${(item.value / USD_INR_EXCHANGE_RATE).toLocaleString(undefined, { maximumFractionDigits: 0 })}` 
                                 : `₹${item.value > 10000000 ? Intl.NumberFormat('en-IN', { notation: 'compact', maximumFractionDigits: 2 }).format(item.value) : item.value.toLocaleString()}`
                               }
                             </span>
@@ -276,7 +277,7 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                           </Pie>
                           <Tooltip 
                             contentStyle={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "12px" }}
-                            formatter={(value) => showUSD ? `$${(Number(value || 0) / 83.5).toLocaleString(undefined, { maximumFractionDigits: 0 })}` : `₹${Number(value || 0).toLocaleString()}`}
+                            formatter={(value) => showUSD ? `$${(Number(value || 0) / USD_INR_EXCHANGE_RATE).toLocaleString(undefined, { maximumFractionDigits: 0 })}` : `₹${Number(value || 0).toLocaleString()}`}
                           />
                         </PieChart>
                       </ResponsiveContainer>
@@ -284,7 +285,7 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                         <span className="text-[8px] uppercase font-black tracking-widest text-[--text-muted]">Assets</span>
                         <span className="text-[12px] font-black text-white mt-0.5">
                           {showUSD 
-                            ? `$${Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(stats.totalAssets / 83.5)}` 
+                            ? `$${Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(stats.totalAssets / USD_INR_EXCHANGE_RATE)}` 
                             : `₹${Intl.NumberFormat('en-IN', { notation: 'compact', maximumFractionDigits: 1 }).format(stats.totalAssets)}`
                           }
                         </span>

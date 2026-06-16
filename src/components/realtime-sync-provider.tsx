@@ -20,9 +20,10 @@ export function RealtimeSyncProvider({ children }: { children: React.ReactNode }
     }
     
     debounceTimerRef.current = setTimeout(() => {
-      // Mutate the single unified overview cache key for instant update of all components
-      void mutate(OVERVIEW_KEY);
-      
+      // Mutate only the specific SWR keys that were queued
+      updateQueueRef.current.forEach((key) => {
+        void mutate(key);
+      });
       updateQueueRef.current.clear();
       debounceTimerRef.current = null;
     }, 100); // Debounce duration reduced to 100ms for instant real-time response
@@ -30,7 +31,20 @@ export function RealtimeSyncProvider({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     const handleChange = (table: string) => {
-      updateQueueRef.current.add(table);
+      let key = "finance_summary";
+      if (["investments", "mutual_funds", "bonds", "alternative_assets", "stock_trades", "mutual_fund_trades", "bond_transactions", "fno_trades"].includes(table)) {
+        key = "finance_investments";
+      } else if (["incomes", "expenses", "budgets", "goals", "liabilities"].includes(table)) {
+        key = "finance_cashflow";
+      } else if (["forex_accounts", "forex_trades", "forex_transactions"].includes(table)) {
+        key = "finance_forex";
+      } else if (["recipients"].includes(table)) {
+        key = "finance_family";
+      } else if (table === "transfers") {
+        key = "finance_summary";
+      }
+      
+      updateQueueRef.current.add(key);
       debouncedMutate();
     };
 

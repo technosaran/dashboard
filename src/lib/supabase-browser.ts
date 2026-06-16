@@ -5,10 +5,20 @@ let client: ReturnType<typeof createBrowserClient<Database>> | null = null;
 
 export function createClient() {
   if (client) return client;
+
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+  if (!url) {
+    throw new Error("Missing environment variable: NEXT_PUBLIC_SUPABASE_URL is required to initialize Supabase Browser Client.");
+  }
+  if (!anonKey) {
+    throw new Error("Missing environment variable: NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY is required to initialize Supabase Browser Client.");
+  }
   
   client = createBrowserClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    url,
+    anonKey,
     {
       realtime: {
         params: {

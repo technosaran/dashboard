@@ -1,4 +1,5 @@
 "use client";
+import { USD_INR_EXCHANGE_RATE } from "@/lib/constants";
 import { useMemo, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
@@ -40,8 +41,6 @@ const CATEGORIES = [
   { label: "Others", icon: "📦", color: getCategoryColour("Others") },
 ];
 
-
-
 export default function ExpensesClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { expenses, accounts, profile }, isValidating, mutate } = useFinanceData(initialData);
   const isMobile = useMediaQuery('(max-width: 767px)');
@@ -67,9 +66,17 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
     description: "",
     amount: "",
     category: "Food",
-    date: new Date().toISOString().split("T")[0],
+    date: "",
     account_id: "",
   });
+
+  // Set today's date on client mount to prevent SSR/hydration mismatch
+  useEffect(() => {
+    setFormData(prev => ({
+      ...prev,
+      date: new Date().toISOString().split("T")[0]
+    }));
+  }, []);
 
   // Initialize default account when accounts/profile loads or modal is opened
   useEffect(() => {
@@ -89,6 +96,7 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
     if (showAddModal) {
       const t = setTimeout(() => {
         setFormData(prev => {
+          if (!prev.date) return prev;
           const today = new Date();
           const [currYear, currMonth] = prev.date.split("-").map(Number);
           
@@ -111,11 +119,20 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
     }
   }, [selectedMonth, selectedYear, showAddModal]);
 
-  const [mounted, setMounted] = useState(false);
+  // Handle escape key closure for modals
   useEffect(() => {
-    const t = setTimeout(() => setMounted(true), 0);
-    return () => clearTimeout(t);
-  }, []);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setShowDeleteConfirm(false);
+        setDeletingExpenseId(null);
+        setShowAddModal(false);
+      }
+    };
+    if (showDeleteConfirm || showAddModal) {
+      window.addEventListener("keydown", handleKeyDown);
+    }
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showDeleteConfirm, showAddModal]);
 
   async function handleDeleteExpense(id: string) {
     setDeletingExpenseId(id);
@@ -137,9 +154,6 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
     });
   }
 
-
-
-
   const stats = useMemo(() => {
     const targetDate = new Date(selectedYear, selectedMonth - 1, 1);
     const currentMonth = expenses.filter(e => {
@@ -147,13 +161,13 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
       const d = parseISO(e.date);
       return d.getMonth() + 1 === selectedMonth && d.getFullYear() === selectedYear;
     });
-    const totalSpent = expenses.reduce((s, e) => s + Number(e.amount) * (getAccountCurrency(e.account_id) === 'USD' ? 83.5 : 1), 0);
-    const monthlyTotal = currentMonth.reduce((s, e) => s + Number(e.amount) * (getAccountCurrency(e.account_id) === 'USD' ? 83.5 : 1), 0);
+    const totalSpent = expenses.reduce((s, e) => s + Number(e.amount) * (getAccountCurrency(e.account_id) === 'USD' ? USD_INR_EXCHANGE_RATE : 1), 0);
+    const monthlyTotal = currentMonth.reduce((s, e) => s + Number(e.amount) * (getAccountCurrency(e.account_id) === 'USD' ? USD_INR_EXCHANGE_RATE : 1), 0);
     
     const catMap: Record<string, number> = {};
     currentMonth.forEach(e => {
       const isUSD = getAccountCurrency(e.account_id) === 'USD';
-      catMap[e.category] = (catMap[e.category] || 0) + Number(e.amount) * (isUSD ? 83.5 : 1);
+      catMap[e.category] = (catMap[e.category] || 0) + Number(e.amount) * (isUSD ? USD_INR_EXCHANGE_RATE : 1);
     });
     const pieData = Object.entries(catMap).map(([name, value]) => {
       const color = CATEGORIES.find(c => c.label === name)?.color || getCategoryColour("Others");
@@ -175,7 +189,7 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
       const m = format(parseISO(e.date), "MMM yy");
       if (trendMap[m] !== undefined) {
         const isUSD = getAccountCurrency(e.account_id) === 'USD';
-        trendMap[m] += Number(e.amount) * (isUSD ? 83.5 : 1);
+        trendMap[m] += Number(e.amount) * (isUSD ? USD_INR_EXCHANGE_RATE : 1);
       }
     });
     const trendData = Object.entries(trendMap).map(([name, value]) => ({ name, value }));
@@ -274,7 +288,7 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
 
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Transaction Date</label>
-              <input type="date" required className="input-premium" value={mounted ? formData.date : ""} onChange={e => setFormData({ ...formData, date: e.target.value })} autoComplete="off" id="expense-date" name="date" />
+              <input type="date" required className="input-premium" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} autoComplete="off" id="expense-date" name="date" />
             </div>
 
             <div className="space-y-2">
@@ -379,7 +393,6 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
         </div>
       </div>
 
-
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
         <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between group">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Net Consumption</p>
@@ -450,7 +463,6 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
           <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2">{stats.pieData.slice(0, 4).map((item) => (<div key={item.name} className="flex items-center gap-2"><div className="w-2 h-2 rounded-full" style={{background: item.color}} /><span className="text-[10px] font-bold text-[--text-secondary] truncate">{item.name}</span></div>))}</div>
         </div>
       </div>
-
 
       <div className="glass-card-static overflow-hidden border-white/5">
         <div className="p-5 border-b border-white/5 bg-white/[0.01] flex flex-col md:flex-row items-center justify-between gap-4">
@@ -635,7 +647,7 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
       </div>
 
       {showDeleteConfirm && (
-        <div className="mobile-dialog-shell fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-md animate-fade-in">
+        <div role="dialog" aria-modal="true" className="mobile-dialog-shell fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-md animate-fade-in">
           <div className="mobile-dialog-panel glass-card-static w-full max-w-sm p-8 animate-scale-in max-h-[90vh] overflow-y-auto custom-scrollbar">
             <div className="flex flex-col items-center text-center gap-4">
               <div className="w-14 h-14 rounded-2xl bg-rose-500/15 border border-rose-500/25 flex items-center justify-center">
@@ -657,10 +669,10 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
       )}
 
       {showAddModal && (
-        <div className="mobile-dialog-shell fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-xl animate-fade-in shadow-2xl">
+        <div role="dialog" aria-modal="true" className="mobile-dialog-shell fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-xl animate-fade-in shadow-2xl">
           <div className="mobile-dialog-panel glass-card-static w-full max-w-2xl p-6 md:p-10 border-[--accent-primary]/20 shadow-[0_0_100px_rgba(108,92,231,0.15)] max-h-[95vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-8 md:mb-10"><div className="flex items-center gap-3"><div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-[--accent-primary]/20 flex items-center justify-center"><svg className="w-5 h-5 md:w-6 md:h-6 text-[--accent-primary]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></div><h2 className="text-xl md:text-3xl font-black">Record Transaction</h2></div><button type="button" onClick={() => setShowAddModal(false)} className="text-[--text-muted] hover:text-[--text-primary] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"><svg className="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg></button></div>
-            <form onSubmit={handleSubmit} className="space-y-8"><div className="grid grid-cols-1 md:grid-cols-2 gap-8"><div className="space-y-3"><label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">{["Food", "Shopping", "Entertainment"].includes(formData.category) ? "Merchant / Store" : "Description / Purpose"}</label><input type="text" required className="input-premium" placeholder="e.g. Starbucks" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} autoComplete="new-password" id="expense-description" name="description" /></div><div className="space-y-3"><label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Debit Amount</label><input type="number" required className="input-premium" placeholder="0.00" value={formData.amount} onChange={e => setFormData({ ...formData, amount: e.target.value })} autoComplete="new-password" inputMode="decimal" id="expense-amount" name="amount" /></div><div className="space-y-3"><label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Expenditure Sector</label><select className="input-premium" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} aria-label="Select expenditure category" id="expense-category" name="category">{CATEGORIES.map(c => <option key={c.label} value={c.label}>{c.label}</option>)}</select></div><div className="space-y-3"><label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Transaction Date</label><input type="date" required className="input-premium" value={mounted ? formData.date : ""} onChange={e => setFormData({ ...formData, date: e.target.value })} autoComplete="new-password" id="expense-date" name="date" /></div><div className="space-y-3">
+            <form onSubmit={handleSubmit} className="space-y-8"><div className="grid grid-cols-1 md:grid-cols-2 gap-8"><div className="space-y-3"><label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">{["Food", "Shopping", "Entertainment"].includes(formData.category) ? "Merchant / Store" : "Description / Purpose"}</label><input autoFocus type="text" required className="input-premium" placeholder="e.g. Starbucks" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} autoComplete="new-password" id="expense-description" name="description" /></div><div className="space-y-3"><label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Debit Amount</label><input type="number" required className="input-premium" placeholder="0.00" value={formData.amount} onChange={e => setFormData({ ...formData, amount: e.target.value })} autoComplete="new-password" inputMode="decimal" id="expense-amount" name="amount" /></div><div className="space-y-3"><label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Expenditure Sector</label><select className="input-premium" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} aria-label="Select expenditure category" id="expense-category" name="category">{CATEGORIES.map(c => <option key={c.label} value={c.label}>{c.label}</option>)}</select></div><div className="space-y-3"><label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Transaction Date</label><input type="date" required className="input-premium" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} autoComplete="new-password" id="expense-date" name="date" /></div><div className="space-y-3">
                       <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Deduct from Account</label>
                       <select className="input-premium" value={formData.account_id} onChange={e => setFormData({ ...formData, account_id: e.target.value })} aria-label="Select debit account" id="expense-account" name="account_id">
                         <option value="">No Deduction (Track only)</option>

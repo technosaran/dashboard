@@ -56,77 +56,173 @@ type FinanceData = {
 export type { FinanceData };
 export const OVERVIEW_KEY = "finance_overview";
 
-async function fetchOverview(): Promise<FinanceData> {
-  const { data, error } = await supabase.rpc("get_finance_overview_v2");
+// Granular Fetcher functions corresponding to database vertical functions
+async function fetchSummary() {
+  const { data, error } = await supabase.rpc("get_summary_v1");
   if (error) throw error;
-  return data as unknown as FinanceData;
+  return data as any;
+}
+
+async function fetchInvestments() {
+  const { data, error } = await supabase.rpc("get_investments_v1");
+  if (error) throw error;
+  return data as any;
+}
+
+async function fetchCashflow() {
+  const { data, error } = await supabase.rpc("get_cashflow_v1");
+  if (error) throw error;
+  return data as any;
+}
+
+async function fetchForex() {
+  const { data, error } = await supabase.rpc("get_forex_v1");
+  if (error) throw error;
+  return data as any;
+}
+
+async function fetchFamily() {
+  const { data, error } = await supabase.rpc("get_family_v1");
+  if (error) throw error;
+  return data as any;
 }
 
 export function useFinanceData(initialData?: FinanceData) {
-  const fallback: FinanceData = initialData || {
-    profile: null,
-    accounts: [],
-    transactions: [],
-    ledgerLogs: [],
-    investments: [],
-    mutualFunds: [],
-    goals: [],
-    recipients: [],
-    incomes: [],
-    expenses: [],
-    stockTrades: [],
-    mutualFundTrades: [],
-    bonds: [],
-    bondTransactions: [],
-    forexAccounts: [],
-    forexTrades: [],
-    forexTransactions: [],
-    budgets: [],
-    alternativeAssets: [],
-    liabilities: [],
-    fnoTrades: [],
+  const summarySWR = useSWR("finance_summary", fetchSummary, {
+    fallbackData: initialData
+      ? {
+          profile: initialData.profile,
+          accounts: initialData.accounts,
+          transactions: initialData.transactions,
+          ledgerLogs: initialData.ledgerLogs,
+        }
+      : undefined,
+    dedupingInterval: 2000,
+    revalidateOnFocus: true,
+    revalidateOnReconnect: true,
+  });
+
+  const investmentsSWR = useSWR("finance_investments", fetchInvestments, {
+    fallbackData: initialData
+      ? {
+          investments: initialData.investments,
+          mutualFunds: initialData.mutualFunds,
+          bonds: initialData.bonds,
+          alternativeAssets: initialData.alternativeAssets,
+          stockTrades: initialData.stockTrades,
+          mutualFundTrades: initialData.mutualFundTrades,
+          bondTransactions: initialData.bondTransactions,
+          fnoTrades: initialData.fnoTrades,
+        }
+      : undefined,
+    dedupingInterval: 2000,
+    revalidateOnFocus: true,
+    revalidateOnReconnect: true,
+  });
+
+  const cashflowSWR = useSWR("finance_cashflow", fetchCashflow, {
+    fallbackData: initialData
+      ? {
+          incomes: initialData.incomes,
+          expenses: initialData.expenses,
+          budgets: initialData.budgets,
+          goals: initialData.goals,
+          liabilities: initialData.liabilities,
+        }
+      : undefined,
+    dedupingInterval: 2000,
+    revalidateOnFocus: true,
+    revalidateOnReconnect: true,
+  });
+
+  const forexSWR = useSWR("finance_forex", fetchForex, {
+    fallbackData: initialData
+      ? {
+          forexAccounts: initialData.forexAccounts,
+          forexTrades: initialData.forexTrades,
+          forexTransactions: initialData.forexTransactions,
+        }
+      : undefined,
+    dedupingInterval: 2000,
+    revalidateOnFocus: true,
+    revalidateOnReconnect: true,
+  });
+
+  const familySWR = useSWR("finance_family", fetchFamily, {
+    fallbackData: initialData
+      ? {
+          recipients: initialData.recipients,
+        }
+      : undefined,
+    dedupingInterval: 2000,
+    revalidateOnFocus: true,
+    revalidateOnReconnect: true,
+  });
+
+  const data: FinanceData = {
+    profile: summarySWR.data?.profile ?? null,
+    accounts: summarySWR.data?.accounts ?? [],
+    transactions: summarySWR.data?.transactions ?? [],
+    ledgerLogs: summarySWR.data?.ledgerLogs ?? [],
+    investments: investmentsSWR.data?.investments ?? [],
+    mutualFunds: investmentsSWR.data?.mutualFunds ?? [],
+    bonds: investmentsSWR.data?.bonds ?? [],
+    alternativeAssets: investmentsSWR.data?.alternativeAssets ?? [],
+    stockTrades: investmentsSWR.data?.stockTrades ?? [],
+    mutualFundTrades: investmentsSWR.data?.mutualFundTrades ?? [],
+    bondTransactions: investmentsSWR.data?.bondTransactions ?? [],
+    fnoTrades: investmentsSWR.data?.fnoTrades ?? [],
+    incomes: cashflowSWR.data?.incomes ?? [],
+    expenses: cashflowSWR.data?.expenses ?? [],
+    budgets: cashflowSWR.data?.budgets ?? [],
+    goals: cashflowSWR.data?.goals ?? [],
+    liabilities: cashflowSWR.data?.liabilities ?? [],
+    forexAccounts: forexSWR.data?.forexAccounts ?? [],
+    forexTrades: forexSWR.data?.forexTrades ?? [],
+    forexTransactions: forexSWR.data?.forexTransactions ?? [],
+    recipients: familySWR.data?.recipients ?? [],
   };
 
-  const { data, error, isValidating, mutate } = useSWR<FinanceData>(
-    OVERVIEW_KEY,
-    fetchOverview,
-    {
-      revalidateOnFocus: true,
-      revalidateOnReconnect: true,
-      dedupingInterval: 2000, // Reduced to 2 seconds for instant UI response
-      fallbackData: initialData
-    }
-  );
+  const isLoading =
+    (!summarySWR.data && !summarySWR.error) ||
+    (!investmentsSWR.data && !investmentsSWR.error) ||
+    (!cashflowSWR.data && !cashflowSWR.error) ||
+    (!forexSWR.data && !forexSWR.error) ||
+    (!familySWR.data && !familySWR.error);
 
-  const mergedData: FinanceData = {
-    profile: data?.profile || fallback.profile,
-    accounts: data?.accounts || fallback.accounts,
-    transactions: data?.transactions || fallback.transactions,
-    ledgerLogs: data?.ledgerLogs || fallback.ledgerLogs,
-    investments: data?.investments || fallback.investments,
-    mutualFunds: data?.mutualFunds || fallback.mutualFunds,
-    bonds: data?.bonds || fallback.bonds,
-    alternativeAssets: data?.alternativeAssets || fallback.alternativeAssets,
-    stockTrades: data?.stockTrades || fallback.stockTrades,
-    mutualFundTrades: data?.mutualFundTrades || fallback.mutualFundTrades,
-    bondTransactions: data?.bondTransactions || fallback.bondTransactions,
-    incomes: data?.incomes || fallback.incomes,
-    expenses: data?.expenses || fallback.expenses,
-    budgets: data?.budgets || fallback.budgets,
-    goals: data?.goals || fallback.goals,
-    liabilities: data?.liabilities || fallback.liabilities,
-    forexAccounts: data?.forexAccounts || fallback.forexAccounts,
-    forexTrades: data?.forexTrades || fallback.forexTrades,
-    forexTransactions: data?.forexTransactions || fallback.forexTransactions,
-    fnoTrades: data?.fnoTrades || fallback.fnoTrades,
-    recipients: data?.recipients || fallback.recipients,
+  const error =
+    summarySWR.error ||
+    investmentsSWR.error ||
+    cashflowSWR.error ||
+    forexSWR.error ||
+    familySWR.error;
+
+  const isValidating =
+    summarySWR.isValidating ||
+    investmentsSWR.isValidating ||
+    cashflowSWR.isValidating ||
+    forexSWR.isValidating ||
+    familySWR.isValidating;
+
+  const mutate = async (data?: any, options?: any) => {
+    if (data !== undefined) {
+      await summarySWR.mutate(data, options);
+    } else {
+      await Promise.all([
+        summarySWR.mutate(),
+        investmentsSWR.mutate(),
+        cashflowSWR.mutate(),
+        forexSWR.mutate(),
+        familySWR.mutate(),
+      ]);
+    }
   };
 
   return {
-    data: mergedData,
-    isLoading: !data && !error,
+    data,
+    isLoading,
     isValidating,
     error,
-    mutate
+    mutate,
   };
 }

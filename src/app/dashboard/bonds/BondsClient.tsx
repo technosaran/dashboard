@@ -10,6 +10,7 @@ import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { format, differenceInDays, parseISO } from "date-fns";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import Link from "next/link";
+import { EmptyState } from "@/components/empty-state";
 
 const formatNum = (num: number | string) => {
   return Number(num || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -438,12 +439,14 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
       {activeTab === "holdings" && (
         <div className="mx-4">
           {bonds.length === 0 ? (
-            <div className="glass-card-static p-24 text-center">
-              <div className="text-6xl mb-4">📜</div>
-              <h3 className="text-2xl font-black text-[--text-primary] mb-2">No Bonds in Portfolio</h3>
-              <p className="text-sm text-[--text-muted] mb-8">Start building your fixed income portfolio with government and corporate bonds</p>
-              <button type="button" onClick={() => setShowAddModal(true)} className="btn-primary shadow-2xl shadow-[--accent-primary]/20">Add Your First Bond</button>
-            </div>
+            <EmptyState
+              title="No Bonds in Portfolio"
+              description="Start building your fixed income portfolio with government and corporate bonds"
+              icon={<span className="text-6xl mb-4 block">📜</span>}
+              action={
+                <button type="button" onClick={() => setShowAddModal(true)} className="btn-primary shadow-2xl shadow-[--accent-primary]/20">Add Your First Bond</button>
+              }
+            />
           ) : (
             <>
               {/* Desktop Table */}

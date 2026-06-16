@@ -15,6 +15,7 @@ import BankLogo from "@/components/bank-logo";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { getChartColour } from "@/lib/chart-colours";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
+import { getCurrencySymbol } from "@/lib/utils";
 
 // Dynamic imports for chart performance
 const PieChart = dynamic(() => import("recharts").then(mod => mod.PieChart), { ssr: false });
@@ -52,10 +53,7 @@ const TYPE_STYLES: Record<string, { gradient: string; badge: string; badgeBorder
 const ACCOUNT_HISTORY_ACTIONS = new Set(["CREATE", "UPDATE", "DELETE", "TRANSFER_IN", "TRANSFER_OUT", "ADJUST_UP", "ADJUST_DOWN"]);
 const DEBIT_ACCOUNT_ACTIONS = new Set(["ADJUST_DOWN", "TRANSFER_OUT", "DELETE"]);
 
-function getCurrencySymbol(currency: string): string {
-  const symbols: Record<string, string> = { INR: "₹", USD: "$" };
-  return symbols[currency] || currency;
-}
+
 
 function hexToRgba(hex: string, alpha: number): string {
   const normalized = hex.replace("#", "");
