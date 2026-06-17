@@ -494,7 +494,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
         <div className="flex items-center gap-3 w-full md:w-auto">
           <button type="button" 
             onClick={() => setShowLogForm(true)} 
-            className="btn-primary !h-12 md:!h-11 !px-8 w-full md:w-auto text-[13px] md:text-[11px] font-black uppercase tracking-widest shadow-[0_4px_20px_rgba(var(--accent-primary-rgb),0.3)]"
+            className="btn-primary !h-11 px-6 w-full md:w-auto text-xs font-bold uppercase tracking-wider shadow-[0_4px_20px_rgba(var(--accent-primary-rgb),0.3)]"
           >
             Log New Trade
           </button>
@@ -616,7 +616,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
               action={
                 <button type="button"
                   onClick={() => setShowLogForm(true)}
-                  className="btn-primary !h-11 !px-8 text-[11px] font-black uppercase tracking-widest shadow-[0_4px_20px_rgba(var(--accent-primary-rgb),0.3)]"
+                  className="btn-primary !h-11 px-6 text-xs font-bold uppercase tracking-wider shadow-[0_4px_20px_rgba(var(--accent-primary-rgb),0.3)]"
                 >
                   Log First Contract
                 </button>

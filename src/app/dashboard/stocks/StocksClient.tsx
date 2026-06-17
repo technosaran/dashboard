@@ -423,7 +423,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
             </button>
             <button type="button" 
               onClick={() => setShowForm(true)} 
-              className="btn-primary !h-12 md:!h-11 !px-8 w-full md:w-auto text-[13px] md:text-[11px] font-black uppercase tracking-widest shadow-[0_4px_20px_rgba(var(--accent-primary-rgb),0.3)] order-first md:order-last"
+              className="btn-primary !h-11 px-6 w-full md:w-auto text-xs font-bold uppercase tracking-wider shadow-[0_4px_20px_rgba(var(--accent-primary-rgb),0.3)] order-first md:order-last"
             >
                 Add Stock
             </button>

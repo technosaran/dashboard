@@ -570,10 +570,10 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
           glowColor="sky"
           action={
             <div className="flex flex-wrap gap-3 justify-center">
-              <button type="button" onClick={() => setShowAccountModal(true)} className="btn-secondary h-13 px-8 rounded-xl font-bold uppercase tracking-wider text-[11px]">
+              <button type="button" onClick={() => setShowAccountModal(true)} className="btn-secondary">
                 Add Broker Account
               </button>
-              <button type="button" onClick={() => setShowTradeModal(true)} className="btn-primary h-13 px-8 rounded-xl font-bold uppercase tracking-wider text-[11px] shadow-xl shadow-[--accent-primary]/20 flex items-center gap-2">
+              <button type="button" onClick={() => setShowTradeModal(true)} className="btn-primary shadow-xl shadow-[--accent-primary]/20 flex items-center gap-2">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
                 Log First P&L Entry
               </button>

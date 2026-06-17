@@ -323,7 +323,7 @@ input, textarea, [contenteditable="true"] {
 /* Premium Buttons - Professional Financial Actions */
 .btn-primary, .btn-secondary, .btn-danger, .btn-success {
   padding: 0 1.75rem;
-  height: 3rem;
+  height: 2.75rem;
   min-height: 44px;
   display: inline-flex;
   align-items: center;
@@ -370,8 +370,8 @@ input, textarea, [contenteditable="true"] {
 
 @media (max-width: 768px) {
   .btn-primary, .btn-secondary, .btn-danger, .btn-success {
-    height: 3rem;
-    min-height: 48px;
+    height: 2.75rem;
+    min-height: 44px;
   }
 }
 
@@ -915,6 +915,17 @@ select:focus {
 .theme-google :not(aside):not(aside *) textarea,
 .theme-google :not(aside):not(aside *).input-premium {
   border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.theme-google :not(aside):not(aside *) select.btn-secondary {
+  border-color: var(--border-default) !important;
+}
+.theme-google :not(aside):not(aside *) select.btn-primary,
+.theme-google :not(aside):not(aside *) select.btn-success {
+  border-color: transparent !important;
+}
+.theme-google :not(aside):not(aside *) select.btn-danger {
+  border-color: rgba(239, 68, 68, 0.2) !important;
 }
 
 

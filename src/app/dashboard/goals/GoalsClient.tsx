@@ -346,7 +346,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
               </div>
               <h3 className="text-2xl md:text-3xl font-black text-[--text-primary] tracking-tight">No Active Objectives</h3>
               <p className="text-sm text-[--text-muted] mt-3 max-w-lg mx-auto font-medium leading-relaxed">Initialize a new financial milestone to begin tracking your progress toward your goals.</p>
-              <button type="button" onClick={() => setShowAddModal(true)} className="btn-primary h-13 px-8 rounded-xl font-bold uppercase tracking-wider text-[11px] shadow-xl shadow-amber-500/20 !bg-amber-500 hover:!bg-amber-600 mt-8 flex items-center gap-2">
+              <button type="button" onClick={() => setShowAddModal(true)} className="btn-primary shadow-xl shadow-amber-500/20 !bg-amber-500 hover:!bg-amber-600 mt-8 flex items-center gap-2">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
                 Set Your First Goal
               </button>

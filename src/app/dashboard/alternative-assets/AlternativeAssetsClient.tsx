@@ -195,7 +195,7 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
               History
             </button>
           </div>
-          <button type="button" onClick={() => setShowAddModal(true)} disabled={submitting} className="btn-primary !h-12 !px-8 shadow-[0_0_30px_rgba(var(--accent-primary-rgb),0.3)] !rounded-2xl text-[11px] font-black tracking-widest uppercase hidden md:block">{submitting ? "Working..." : "Record New Asset"}</button>
+          <button type="button" onClick={() => setShowAddModal(true)} disabled={submitting} className="btn-primary !h-11 px-6 shadow-[0_0_30px_rgba(var(--accent-primary-rgb),0.3)] text-xs font-bold uppercase tracking-wider hidden md:block">{submitting ? "Working..." : "Record New Asset"}</button>
         </div>
       </div>
 
@@ -210,7 +210,7 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
               }
               glowColor="indigo"
               action={
-                <button type="button" onClick={() => setShowAddModal(true)} disabled={submitting} className="btn-primary h-13 px-8 rounded-xl font-bold uppercase tracking-wider text-[11px] shadow-xl shadow-[--accent-primary]/20 mt-8 flex items-center gap-2">
+                <button type="button" onClick={() => setShowAddModal(true)} disabled={submitting} className="btn-primary shadow-xl shadow-[--accent-primary]/20 mt-8 flex items-center gap-2">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
                   Record New Asset
                 </button>

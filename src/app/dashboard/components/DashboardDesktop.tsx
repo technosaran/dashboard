@@ -196,7 +196,7 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
             <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto flex-shrink-0">
               <Link 
                 href="/dashboard/accounts?action=new" 
-                className="btn-primary !h-12 !px-8 text-[11px] font-black uppercase tracking-widest bg-gradient-to-r from-[--accent-primary] to-indigo-500 shadow-[0_4px_20px_rgba(99,102,241,0.25)] hover:shadow-[0_4px_25px_rgba(99,102,241,0.35)] active:scale-[0.98] transition-all rounded-xl flex items-center justify-center no-underline"
+                className="btn-primary !h-11 px-6 text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-[--accent-primary] to-indigo-500 shadow-[0_4px_20px_rgba(99,102,241,0.25)] hover:shadow-[0_4px_25px_rgba(99,102,241,0.35)] active:scale-[0.98] transition-all flex items-center justify-center no-underline"
               >
                 Create First Account
               </Link>

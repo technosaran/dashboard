@@ -380,7 +380,7 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
           </div>
           <div className={`status-dot scale-90 ${isValidating ? 'animate-pulse bg-yellow-400' : 'bg-emerald-400 opacity-50'}`} />
         </div>
-        <button type="button" onClick={() => setShowAddModal(true)} className="btn-primary !h-11 !px-8">
+        <button type="button" onClick={() => setShowAddModal(true)} className="btn-primary !h-11 px-6 text-xs font-bold uppercase tracking-wider">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
           Add Bond
         </button>
