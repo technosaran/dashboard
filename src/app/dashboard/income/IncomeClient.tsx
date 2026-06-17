@@ -83,10 +83,13 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
 
   // Set today's date on client mount to prevent SSR/hydration mismatch
   useEffect(() => {
-    setFormData(prev => ({
-      ...prev,
-      date: new Date().toISOString().split("T")[0]
-    }));
+    const timer = setTimeout(() => {
+      setFormData(prev => ({
+        ...prev,
+        date: new Date().toISOString().split("T")[0]
+      }));
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   // Initialize default account when accounts/profile loads or modal is opened

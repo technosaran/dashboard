@@ -81,10 +81,13 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
 
   // Set today's date on client mount to prevent SSR/hydration mismatch
   useEffect(() => {
-    setFormData(prev => ({
-      ...prev,
-      bought_at: new Date().toISOString().split("T")[0]
-    }));
+    const timer = setTimeout(() => {
+      setFormData(prev => ({
+        ...prev,
+        bought_at: new Date().toISOString().split("T")[0]
+      }));
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   // Initialize default account when accounts/profile loads or modal is opened
@@ -93,12 +96,27 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
       const defaultAccId = profile?.settings?.default_accounts?.stocks;
       const defaultAccExists = defaultAccId && accounts.some(a => a.id === defaultAccId);
       if (defaultAccExists) {
-        setFormData(prev => ({ ...prev, deduct_from_account: defaultAccId }));
+        const timer = setTimeout(() => {
+          setFormData(prev => ({ ...prev, deduct_from_account: defaultAccId }));
+        }, 0);
+        return () => clearTimeout(timer);
       }
     }
   }, [accounts, profile, showForm, formData.deduct_from_account]);
 
   const [activeTab, setActiveTab] = useState<"holdings" | "history">("holdings");
+
+  function resetForm() {
+    setFormData({
+      name: "", symbol: "", quantity: "", buy_price: "", current_price: "",
+      currency: "INR", notes: "", bought_at: new Date().toISOString().split("T")[0],
+      deduct_from_account: "",
+      trade_type: "buy"
+    });
+    setCharges("0");
+    setShowForm(false);
+    setEditingId(null);
+  }
 
   // Handle escape key closure for modals
   useEffect(() => {
@@ -128,7 +146,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
 
 
   // --- Computed ---
-  const { totalInvested, totalCurrent, totalPnL, totalPnLPercent, totalDayPnL, totalDayPnLPercent } = useMemo(() => {
+  const { totalInvested, totalCurrent, totalPnL, totalPnLPercent } = useMemo(() => {
     const invested = stocks.reduce((s, i) => {
       const val = Number(i.buy_price || 0) * Number(i.quantity || 0);
       return s + val;
@@ -139,13 +157,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
     }, 0);
     const pnl = current - invested;
     const pnlPercent = invested > 0 ? (pnl / invested) * 100 : 0;
-    const dayPnL = stocks.reduce((s, i) => {
-      const dayChange = Number(i.day_change || 0) * Number(i.quantity || 0);
-      return s + dayChange;
-    }, 0);
-    const prevDay = current - dayPnL;
-    const dayPnLPercent = prevDay > 0 ? (dayPnL / prevDay) * 100 : 0;
-    return { totalInvested: invested, totalCurrent: current, totalPnL: pnl, totalPnLPercent: pnlPercent, totalDayPnL: dayPnL, totalDayPnLPercent: dayPnLPercent };
+    return { totalInvested: invested, totalCurrent: current, totalPnL: pnl, totalPnLPercent: pnlPercent };
   }, [stocks]);
 
   const filtered = useMemo(() => {
@@ -176,17 +188,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
     else { setSortKey(key); setSortDir("desc"); }
   }
 
-  function resetForm() {
-    setFormData({
-      name: "", symbol: "", quantity: "", buy_price: "", current_price: "",
-      currency: "INR", notes: "", bought_at: new Date().toISOString().split("T")[0],
-      deduct_from_account: "",
-      trade_type: "buy"
-    });
-    setCharges("0");
-    setShowForm(false);
-    setEditingId(null);
-  }
+
 
   function startEdit(inv: Stock) {
     setFormData({

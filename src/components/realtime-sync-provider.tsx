@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useCallback, useState } from "react";
 import { useSWRConfig } from "swr";
 import { createClient } from "@/lib/supabase-browser";
 import { useUser } from "@/context/user-context";
-import { OVERVIEW_KEY } from "@/hooks/use-finance-data";
+
 
 export function RealtimeSyncProvider({ children }: { children: React.ReactNode }) {
   const [supabase] = useState(() => createClient());

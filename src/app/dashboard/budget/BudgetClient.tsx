@@ -25,11 +25,7 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
   const [submitting, withLock] = useSubmitLock();
   const activeSubmissionsRef = useRef<Record<string, boolean>>({});
 
-  const getAccountCurrency = (accountId: string | null) => {
-    if (!accountId) return "INR";
-    const acc = accounts.find(a => a.id === accountId);
-    return acc ? acc.currency : "INR";
-  };
+
 
   // Calculate actual spending for selected period
   const actualSpending = useMemo(() => {
