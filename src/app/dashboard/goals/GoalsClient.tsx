@@ -543,8 +543,8 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
                 <p className="text-sm text-[--text-secondary] mt-2">Are you sure you want to delete this financial goal? This action cannot be undone.</p>
               </div>
               <div className="flex gap-3 w-full mt-2">
-                <button type="button" onClick={() => { setShowDeleteConfirm(false); setDeletingGoalId(null); }} className="btn-secondary flex-1 h-12 font-bold rounded-xl">Cancel</button>
-                <button type="button" onClick={confirmDeleteGoal} className="btn-danger flex-1 h-12 font-bold rounded-xl" disabled={submitting}>Delete</button>
+                <button type="button" onClick={() => { setShowDeleteConfirm(false); setDeletingGoalId(null); }} className="btn-secondary flex-1 h-11 font-bold rounded-xl">Cancel</button>
+                <button type="button" onClick={confirmDeleteGoal} className="btn-danger flex-1 h-11 font-bold rounded-xl" disabled={submitting}>Delete</button>
               </div>
             </div>
           </div>

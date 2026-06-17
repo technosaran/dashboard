@@ -660,8 +660,8 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
                 <p className="text-sm text-[--text-secondary] mt-2">Are you sure you want to revert this expense? Your account balance will be refunded.</p>
               </div>
               <div className="flex gap-3 w-full mt-2">
-                <button type="button" onClick={() => { setShowDeleteConfirm(false); setDeletingExpenseId(null); }} className="btn-secondary flex-1 h-12 font-bold rounded-xl">Cancel</button>
-                <button type="button" onClick={confirmDeleteExpense} className="btn-danger flex-1 h-12 font-bold rounded-xl" disabled={submitting}>Revert</button>
+                <button type="button" onClick={() => { setShowDeleteConfirm(false); setDeletingExpenseId(null); }} className="btn-secondary flex-1 h-11 font-bold rounded-xl">Cancel</button>
+                <button type="button" onClick={confirmDeleteExpense} className="btn-danger flex-1 h-11 font-bold rounded-xl" disabled={submitting}>Revert</button>
               </div>
             </div>
           </div>
