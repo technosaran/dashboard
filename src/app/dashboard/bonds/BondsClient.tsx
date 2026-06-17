@@ -782,7 +782,7 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
       {showAddModal && (
         <div className="mobile-dialog-shell fixed inset-0 z-[200] overflow-y-auto custom-scrollbar bg-[--bg-base]/80 backdrop-blur-xl">
           <div className="flex min-h-full items-center justify-center p-4 py-12">
-            <div className="mobile-dialog-panel glass-card-static w-full max-w-3xl p-8">
+            <div className="mobile-dialog-panel glass-card-static w-full max-w-3xl p-8 max-h-[90vh] overflow-y-auto custom-scrollbar">
             <div className="flex justify-between items-center mb-8">
               <h2 className="text-2xl font-black">{editingId ? 'Edit Bond Holding' : 'Add Bond Investment'}</h2>
               <button type="button" onClick={() => { setShowAddModal(false); setEditingId(null); }} className="text-[--text-muted] hover:text-white">

@@ -422,15 +422,15 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
                   name="bank_name"
                 />
                 {bankResults.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-[--bg-surface] border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden">
-                    {bankResults.slice(0, 5).map(b => (
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-[--bg-elevated] border border-white/10 rounded-xl shadow-2xl z-50 overflow-y-auto max-h-48 custom-scrollbar">
+                    {bankResults.slice(0, 10).map(b => (
                       <button
                         key={b.name}
                         type="button"
                         onClick={() => selectBank(b)}
-                        className="w-full p-4 flex items-center gap-3 hover:bg-white/5 text-left border-b border-white/5 last:border-0"
+                        className="w-full p-3.5 flex items-center gap-3 hover:bg-white/5 text-left border-b border-white/5 last:border-0"
                       >
-                        <BankLogo bankName={b.name} size={32} />
+                        <BankLogo bankName={b.name} size={28} />
                         <div>
                           <p className="font-bold text-sm text-white">{b.name}</p>
                           <p className="text-[10px] text-[--text-muted]">{b.domain}</p>
@@ -852,7 +852,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
 
       {showForm && (
         <div className="mobile-dialog-shell fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-xl animate-fade-in">
-           <div className="mobile-dialog-panel glass-card-static w-full max-w-xl p-8 animate-scale-in max-h-[90vh] overflow-y-auto">
+           <div className="mobile-dialog-panel glass-card-static w-full max-w-xl p-8 animate-scale-in max-h-[90vh] overflow-y-auto custom-scrollbar">
               <div className="flex justify-between items-center mb-8"><div><h2 className="text-2xl font-black">{editingId ? "Update Account" : "Open New Account"}</h2><p className="text-xs text-[--text-muted] mt-1 uppercase tracking-widest font-bold">Financial Entity Register</p></div><button type="button" onClick={resetForm} className="p-2 rounded-xl bg-white/5 text-[--text-muted]"><svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg></button></div>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div><label className="block text-[10px] font-black uppercase tracking-widest text-[--text-muted] mb-2 ml-1">Account Label</label><input required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="input-premium" placeholder="e.g. Primary Savings" autoComplete="new-password" /></div>
@@ -864,7 +864,24 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
                 <div className="relative">
                   <label className="block text-[10px] font-black uppercase tracking-widest text-[--text-muted] mb-2 ml-1">Bank Institution</label>
                   <input value={bankSearch} onChange={e => handleBankSearch(e.target.value)} className="input-premium" placeholder="Search Banks..." autoComplete="new-password" />
-                  {bankResults.length > 0 && <div className="absolute top-full left-0 right-0 mt-2 bg-[--bg-surface] border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden">{bankResults.slice(0, 5).map(b => <button key={b.name} type="button" onClick={() => selectBank(b)} className="w-full p-4 flex items-center gap-3 hover:bg-white/5 text-left border-b border-white/5 last:border-0"><BankLogo bankName={b.name} size={32} /><div><p className="font-bold text-sm">{b.name}</p><p className="text-[10px] text-[--text-muted]">{b.domain}</p></div></button>)}</div>}
+                  {bankResults.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 mt-2 bg-[--bg-elevated] border border-white/10 rounded-xl shadow-2xl z-50 overflow-y-auto max-h-48 custom-scrollbar">
+                      {bankResults.slice(0, 10).map(b => (
+                        <button
+                          key={b.name}
+                          type="button"
+                          onClick={() => selectBank(b)}
+                          className="w-full p-3.5 flex items-center gap-3 hover:bg-white/5 text-left border-b border-white/5 last:border-0"
+                        >
+                          <BankLogo bankName={b.name} size={28} />
+                          <div>
+                            <p className="font-bold text-sm text-white">{b.name}</p>
+                            <p className="text-[10px] text-[--text-muted]">{b.domain}</p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <button type="submit" disabled={submitting} className="btn-primary w-full shadow-xl shadow-[--accent-primary]/20 transition-all mt-4">{submitting ? "Processing Registry..." : (editingId ? "Update Portfolio" : "Activate Account")}</button>
               </form>

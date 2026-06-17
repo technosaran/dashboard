@@ -413,7 +413,7 @@ export default function LiabilitiesClient({ initialData }: { initialData?: Finan
       {showAddModal && (
         <div className="mobile-dialog-shell fixed inset-0 z-[200] overflow-y-auto custom-scrollbar bg-[--bg-base]/90 backdrop-blur-xl animate-fade-in shadow-2xl">
           <div className="flex min-h-full items-center justify-center p-4 py-12">
-            <div className="mobile-dialog-panel glass-card-static w-full max-w-2xl p-6 md:p-10 border-rose-500/20 shadow-[0_0_100px_rgba(244,63,94,0.1)]">
+            <div className="mobile-dialog-panel glass-card-static w-full max-w-2xl p-6 md:p-10 border-rose-500/20 shadow-[0_0_100px_rgba(244,63,94,0.1)] max-h-[90vh] overflow-y-auto custom-scrollbar">
             <div className="flex items-center justify-between mb-10">
               <h2 className="text-3xl font-black">{editingId ? "Update Liability" : "Record Liability"}</h2>
               <button type="button" onClick={() => { setShowAddModal(false); setEditingId(null); }} className="text-[--text-muted] hover:text-white transition-colors"><svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg></button>
