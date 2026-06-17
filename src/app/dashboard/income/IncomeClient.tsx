@@ -54,7 +54,7 @@ const INCOME_CATEGORIES = [
 export default function IncomeClient({ initialData }: { initialData?: FinanceData }) {
 
   const { data: { incomes, accounts, profile }, isValidating, mutate } = useFinanceData(initialData);
-  const isMobile = useMediaQuery('(max-width: 767px)');
+  const isMobile = useMediaQuery('(max-width: 767.98px)');
   const getAccountCurrency = (accountId: string | null) => {
     if (!accountId) return "INR";
     const acc = accounts.find(a => a.id === accountId);

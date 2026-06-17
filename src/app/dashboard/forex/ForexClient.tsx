@@ -26,7 +26,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
   const searchParams = useSearchParams();
   const action = searchParams.get("action");
   
-  const isMobile = useMediaQuery('(max-width: 767px)');
+  const isMobile = useMediaQuery('(max-width: 767.98px)');
   const [mobileTab, setMobileTab] = useState<"pnl" | "funds" | "account">(() => {
     if (action === "account") return "account";
     if (action === "deposit" || action === "withdraw") return "funds";

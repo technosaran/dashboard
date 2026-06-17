@@ -47,7 +47,7 @@ const INTEREST_FREQUENCIES = ["Monthly", "Quarterly", "Semi-Annual", "Annual"];
 
 export default function BondsClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { accounts, bonds: bondsData, bondTransactions, ledgerLogs, profile }, isValidating, mutate } = useFinanceData(initialData);
-  const isMobile = useMediaQuery('(max-width: 767px)');
+  const isMobile = useMediaQuery('(max-width: 767.98px)');
   const bonds = useMemo(() => (bondsData || []).filter(b => b.status === 'Active') as Bond[], [bondsData]);
   const searchParams = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(searchParams.get("action") === "new");

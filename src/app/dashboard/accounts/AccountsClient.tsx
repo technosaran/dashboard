@@ -75,7 +75,7 @@ function hexToRgba(hex: string, alpha: number): string {
 
 export default function AccountsClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { accounts, ledgerLogs }, isValidating, mutate } = useFinanceData(initialData);
-  const isMobile = useMediaQuery('(max-width: 767px)');
+  const isMobile = useMediaQuery('(max-width: 767.98px)');
   const searchParams = useSearchParams();
   const [showForm, setShowForm] = useState(searchParams.get("action") === "new");
   const [activeTab, setActiveTab] = useState<"accounts" | "history">(searchParams.get("tab") === "history" ? "history" : "accounts");

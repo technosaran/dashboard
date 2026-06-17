@@ -43,7 +43,7 @@ const CATEGORIES = [
 
 export default function ExpensesClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { expenses, accounts, profile }, isValidating, mutate } = useFinanceData(initialData);
-  const isMobile = useMediaQuery('(max-width: 767px)');
+  const isMobile = useMediaQuery('(max-width: 767.98px)');
   const getAccountCurrency = (accountId: string | null) => {
     if (!accountId) return "INR";
     const acc = accounts.find(a => a.id === accountId);

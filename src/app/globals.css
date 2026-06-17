@@ -151,7 +151,7 @@
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767.98px) {
   :root {
     --section-gap: 1.5rem;
     --page-padding-x: 1rem;
@@ -198,7 +198,7 @@ input, textarea, [contenteditable="true"] {
 }
 
 /* Global Mobile Form Zoom Prevention (Prevents annoying iOS Safari auto-zoom on focus) */
-@media (max-width: 768px) {
+@media (max-width: 767.98px) {
   input, select, textarea, [contenteditable="true"] {
     font-size: 16px !important;
   }
@@ -230,7 +230,7 @@ input, textarea, [contenteditable="true"] {
   pointer-events: none;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767.98px) {
   .glass-card,
   .glass-card-static {
     backdrop-filter: none;
@@ -302,7 +302,7 @@ input, textarea, [contenteditable="true"] {
   font-feature-settings: "tnum" 1;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767.98px) {
   .input-premium {
     height: 3.25rem;
     font-size: 1rem;
@@ -368,7 +368,7 @@ input, textarea, [contenteditable="true"] {
   outline-offset: 2px;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767.98px) {
   .btn-primary, .btn-secondary, .btn-danger, .btn-success {
     height: 2.75rem;
     min-height: 44px;
@@ -512,7 +512,7 @@ body {
   scrollbar-color: var(--border-default) transparent;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767.98px) {
   .pb-safe {
     padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem) !important;
   }

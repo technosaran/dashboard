@@ -38,7 +38,7 @@ const SortIcon = ({ col, sortKey, sortDir }: { col: SortKey; sortKey: SortKey; s
 
 export default function StocksClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { investments, accounts, stockTrades: trades, profile }, isValidating, mutate } = useFinanceData(initialData);
-  const isMobile = useMediaQuery('(max-width: 767px)');
+  const isMobile = useMediaQuery('(max-width: 767.98px)');
   const getTradeCurrency = (trade: (typeof trades)[number]) => {
     const inv = investments.find(i => i.id === trade.investment_id);
     if (inv) return inv.currency;

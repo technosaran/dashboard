@@ -59,7 +59,7 @@ const formatNum = (num: number | string) => {
 
 export default function MutualFundsClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { mutualFunds: rawMfs, accounts, mutualFundTrades: trades, profile }, isValidating, mutate } = useFinanceData(initialData);
-  const isMobile = useMediaQuery('(max-width: 767px)');
+  const isMobile = useMediaQuery('(max-width: 767.98px)');
   const mutualFunds = useMemo(() => {
     return rawMfs.filter(mf => Number(mf.units) > 0).map(mf => {
       const currentNav = Number(mf.current_nav || 0);

@@ -40,7 +40,7 @@ export default function DashboardClient() {
     goals = []
   } = financeData || {};
 
-  const isMobile = useMediaQuery('(max-width: 767px)');
+  const isMobile = useMediaQuery('(max-width: 767.98px)');
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   // Check if onboarding should be shown

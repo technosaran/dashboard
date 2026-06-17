@@ -23,7 +23,7 @@ function formatNum(val: number, decimals = 2): string {
 
 export default function FnoClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { fnoTrades, accounts, profile }, isValidating, mutate } = useFinanceData(initialData);
-  const isMobile = useMediaQuery('(max-width: 767px)');
+  const isMobile = useMediaQuery('(max-width: 767.98px)');
   const searchParams = useSearchParams();
   
   const [showLogForm, setShowLogForm] = useState(searchParams?.get("action") === "new");

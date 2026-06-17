@@ -24,7 +24,7 @@ const CATEGORIES = [
 
 export default function LiabilitiesClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { liabilities, ledgerLogs, accounts }, mutate } = useFinanceData(initialData);
-  const isMobile = useMediaQuery('(max-width: 767px)');
+  const isMobile = useMediaQuery('(max-width: 767.98px)');
   const searchParams = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(searchParams.get("action") === "new");
   const [submitting, withLock] = useSubmitLock();
