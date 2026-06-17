@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { format } from "date-fns";
-import { useMemo, memo } from "react";
+import { useMemo, memo, useState } from "react";
 import Greeting from "@/components/greeting";
 import type { FinanceData } from "@/hooks/use-finance-data";
 import dynamic from "next/dynamic";
@@ -70,6 +70,12 @@ type DashboardStats = {
   totalAssetsINR: number;
   totalAssetsUSD: number;
   cashBalance: number;
+  cashBalanceINR: number;
+  cashBalanceUSD: number;
+  stockBalanceINR: number;
+  stockBalanceUSD: number;
+  forexBalanceINR: number;
+  forexBalanceUSD: number;
 };
 
 type Props = {
@@ -82,6 +88,7 @@ type Props = {
 };
 
 const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goals, accounts, isLoading }: Props) {
+  const [showUSD, setShowUSD] = useState(false);
   const getAccountCurrency = (accountId: string | null) => {
     if (!accountId) return "INR";
     const acc = accounts.find(a => a.id === accountId);
@@ -89,46 +96,80 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
   };
   // Extract portfolio data computation into a single useMemo
   const portfolioData = useMemo<PieEntry[]>(() => {
-    if (stats.totalAssets <= 0) return [];
+    const totalAssets = showUSD ? stats.totalAssetsUSD : stats.totalAssetsINR;
+    if (totalAssets <= 0) return [];
     
-    return [
+    const rawData = showUSD ? [
         { 
           name: 'Cash', 
-          value: stats.cashBalance, 
+          value: stats.cashBalanceUSD, 
           fill: getChartColour(0),
           color: getChartColour(0),
-          percentage: ((stats.cashBalance / stats.totalAssets) * 100).toFixed(1)
         },
         { 
           name: 'Stocks', 
-          value: stats.stockBalance, 
+          value: stats.stockBalanceUSD, 
           fill: getChartColour(1),
           color: getChartColour(1),
-          percentage: ((stats.stockBalance / stats.totalAssets) * 100).toFixed(1)
+        },
+        { 
+          name: 'Forex', 
+          value: stats.forexBalanceUSD, 
+          fill: getChartColour(3),
+          color: getChartColour(3),
+        }
+    ] : [
+        { 
+          name: 'Cash', 
+          value: stats.cashBalanceINR, 
+          fill: getChartColour(0),
+          color: getChartColour(0),
+        },
+        { 
+          name: 'Stocks', 
+          value: stats.stockBalanceINR, 
+          fill: getChartColour(1),
+          color: getChartColour(1),
         },
         { 
           name: 'Mutual Funds', 
           value: stats.mfBalance, 
           fill: getChartColour(2),
           color: getChartColour(2),
-          percentage: ((stats.mfBalance / stats.totalAssets) * 100).toFixed(1)
         },
         { 
           name: 'Assets', 
           value: stats.altBalance, 
           fill: getChartColour(3),
           color: getChartColour(3),
-          percentage: ((stats.altBalance / stats.totalAssets) * 100).toFixed(1)
         },
         { 
           name: 'Bonds', 
           value: stats.bondBalance, 
           fill: getChartColour(4),
           color: getChartColour(4),
-          percentage: ((stats.bondBalance / stats.totalAssets) * 100).toFixed(1)
         }
-    ].filter(item => item.value > 0);
-  }, [stats.totalAssets, stats.cashBalance, stats.stockBalance, stats.mfBalance, stats.altBalance, stats.bondBalance]);
+    ];
+
+    return rawData
+      .filter(item => item.value > 0)
+      .map(item => ({
+        ...item,
+        percentage: ((item.value / totalAssets) * 100).toFixed(1)
+      }));
+  }, [
+    showUSD,
+    stats.totalAssetsUSD,
+    stats.totalAssetsINR,
+    stats.cashBalanceUSD,
+    stats.stockBalanceUSD,
+    stats.forexBalanceUSD,
+    stats.cashBalanceINR,
+    stats.stockBalanceINR,
+    stats.mfBalance,
+    stats.altBalance,
+    stats.bondBalance
+  ]);
 
   return (
     <div className="hidden md:flex flex-col gap-8 animate-fade-in relative z-20 pb-10">
@@ -176,46 +217,58 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                 </span>
               </div>
               <div className="flex flex-col md:flex-row md:items-center gap-12 flex-wrap max-w-full">
-                {/* INR Portfolio */}
-                <div className="flex flex-col select-none">
+                <div 
+                  className="flex flex-col cursor-pointer group/nw select-none" 
+                  onClick={() => setShowUSD(!showUSD)}
+                  title="Click to toggle currency"
+                >
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[10px] font-black tracking-widest text-[--text-muted] uppercase">Rupees (INR)</span>
+                    <span className="text-[10px] font-black tracking-widest text-[--text-muted] uppercase transition-colors group-hover/nw:text-white">
+                      {showUSD ? 'Dollars (USD)' : 'Rupees (INR)'}
+                    </span>
+                    <svg className="w-3 h-3 text-[--text-muted] opacity-50 group-hover/nw:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                    </svg>
                   </div>
-                  <h2 className="bg-clip-text bg-gradient-to-r text-[clamp(2.0rem,4.5vw,2.8rem)] font-[950] leading-none tracking-[-0.04em] text-transparent [font-family:'Outfit',sans-serif] whitespace-nowrap from-white via-white to-slate-300 drop-shadow-[0_10px_35px_rgba(14,165,233,0.3)]">
-                    ₹{stats.netWorthINR.toLocaleString(undefined, { minimumFractionDigits: 0 })}
+                  <h2 
+                    key={showUSD ? 'usd' : 'inr'} 
+                    className={`animate-fade-in bg-clip-text bg-gradient-to-r text-[clamp(2.2rem,5vw,3.5rem)] font-[950] leading-none tracking-[-0.04em] text-transparent [font-family:'Outfit',sans-serif] whitespace-nowrap overflow-x-auto no-scrollbar transition-all duration-500 ${
+                    showUSD 
+                      ? "from-white via-sky-200 to-indigo-300 drop-shadow-[0_10px_35px_rgba(99,102,241,0.3)]" 
+                      : "from-white via-white to-slate-300 drop-shadow-[0_10px_35px_rgba(14,165,233,0.3)]"
+                  }`}>
+                    {showUSD 
+                      ? `$${stats.netWorthUSD.toLocaleString(undefined, { minimumFractionDigits: 0 })}` 
+                      : `₹${stats.netWorthINR.toLocaleString(undefined, { minimumFractionDigits: 0 })}`
+                    }
                   </h2>
-                  <div className="mt-4 flex flex-wrap items-center gap-3">
-                    <div className="flex items-center gap-2 bg-emerald-500/5 border border-emerald-500/10 px-3 py-1.5 rounded-xl">
-                      <span className="text-[9px] font-black uppercase tracking-widest text-[--text-muted]">Assets</span>
-                      <span className="text-[11px] font-black text-emerald-400">₹{stats.totalAssetsINR.toLocaleString()}</span>
-                    </div>
-                    {stats.debtBalance > 0 && (
-                      <div className="flex items-center gap-2 bg-rose-500/5 border border-rose-500/10 px-3 py-1.5 rounded-xl">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-[--text-muted]">Debt</span>
-                        <span className="text-[11px] font-black text-rose-500">₹{stats.debtBalance.toLocaleString()}</span>
-                      </div>
-                    )}
+                </div>
+              </div>
+
+              <div className="mt-8 flex flex-wrap items-center gap-4 sm:gap-6">
+                <div className="flex items-center gap-3 bg-emerald-500/5 border border-emerald-500/10 px-5 py-3.5 rounded-2xl transition-all hover:bg-emerald-500/10">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 text-base shadow-inner">📈</div>
+                  <div className="flex flex-col">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-[--text-muted]">Liquid Assets</span>
+                    <span className="text-sm sm:text-base font-black text-emerald-400">
+                      {showUSD 
+                        ? `+$${stats.totalAssetsUSD.toLocaleString()}` 
+                        : `+₹${stats.totalAssetsINR.toLocaleString()}`
+                      }
+                    </span>
                   </div>
                 </div>
-
-                {/* Vertical Divider */}
-                <div className="hidden lg:block w-px h-16 bg-white/10" />
-
-                {/* USD Portfolio */}
-                <div className="flex flex-col select-none">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[10px] font-black tracking-widest text-[--text-muted] uppercase">Dollars (USD)</span>
-                  </div>
-                  <h2 className="bg-clip-text bg-gradient-to-r text-[clamp(2.0rem,4.5vw,2.8rem)] font-[950] leading-none tracking-[-0.04em] text-transparent [font-family:'Outfit',sans-serif] whitespace-nowrap from-white via-sky-200 to-indigo-300 drop-shadow-[0_10px_35px_rgba(99,102,241,0.3)]">
-                    ${stats.netWorthUSD.toLocaleString(undefined, { minimumFractionDigits: 0 })}
-                  </h2>
-                  <div className="mt-4 flex flex-wrap items-center gap-3">
-                    <div className="flex items-center gap-2 bg-emerald-500/5 border border-emerald-500/10 px-3 py-1.5 rounded-xl">
-                      <span className="text-[9px] font-black uppercase tracking-widest text-[--text-muted]">Assets</span>
-                      <span className="text-[11px] font-black text-emerald-400">${stats.totalAssetsUSD.toLocaleString()}</span>
+                {!showUSD && stats.debtBalance > 0 && (
+                  <div className="flex items-center gap-3 bg-rose-500/5 border border-rose-500/10 px-5 py-3.5 rounded-2xl transition-all hover:bg-rose-500/10">
+                    <div className="w-9 h-9 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-400 text-base shadow-inner">📉</div>
+                    <div className="flex flex-col">
+                      <span className="text-[9px] font-black uppercase tracking-widest text-[--text-muted]">Outstanding Debt</span>
+                      <span className="text-sm sm:text-base font-black text-rose-500">
+                        -₹{stats.debtBalance.toLocaleString()}
+                      </span>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
 
@@ -237,7 +290,7 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                           <div className="flex items-center gap-2 flex-shrink-0 text-right">
                             <span className="text-[9px] font-bold text-[--text-muted]">{item.percentage}%</span>
                             <span className="text-[11px] font-black tabular-nums whitespace-nowrap" style={{ color: item.color }}>
-                              ₹{item.value > 10000000 ? Intl.NumberFormat('en-IN', { notation: 'compact', maximumFractionDigits: 2 }).format(item.value) : item.value.toLocaleString()}
+                              {showUSD ? '$' : '₹'}{item.value > 10000000 ? Intl.NumberFormat(showUSD ? 'en-US' : 'en-IN', { notation: 'compact', maximumFractionDigits: 2 }).format(item.value) : item.value.toLocaleString()}
                             </span>
                           </div>
                         </div>
@@ -253,14 +306,17 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                           </Pie>
                           <Tooltip 
                             contentStyle={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "12px" }}
-                            formatter={(value) => `₹${Number(value || 0).toLocaleString()}`}
+                            formatter={(value) => showUSD ? `$${Number(value || 0).toLocaleString()}` : `₹${Number(value || 0).toLocaleString()}`}
                           />
                         </PieChart>
                       </ResponsiveContainer>
                       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
                         <span className="text-[8px] uppercase font-black tracking-widest text-[--text-muted]">Assets</span>
                         <span className="text-[12px] font-black text-white mt-0.5">
-                          ₹{Intl.NumberFormat('en-IN', { notation: 'compact', maximumFractionDigits: 1 }).format(stats.totalAssets)}
+                          {showUSD 
+                            ? `$${Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(stats.totalAssetsUSD)}`
+                            : `₹${Intl.NumberFormat('en-IN', { notation: 'compact', maximumFractionDigits: 1 }).format(stats.totalAssetsINR)}`
+                          }
                         </span>
                       </div>
                     </div>
