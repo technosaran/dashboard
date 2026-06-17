@@ -15,6 +15,7 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import Link from "next/link";
 import PnLValue from "@/components/pnl-value";
 import { exportToCSV } from "@/lib/export-csv";
+import { EmptyState } from "@/components/empty-state";
 
 type MF = Tables<"mutual_funds"> & { scheme_code?: string | null; fund_symbol?: string | null; pnlPercent?: number };
 
@@ -463,23 +464,34 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
           History ({trades.length})
         </button>
       </div>      {activeTab === "holdings" ? (
-        <>
-          {/* Desktop Table View */}
-          <div className="hidden md:block mx-4 border border-white/5 rounded-2xl overflow-x-auto custom-scrollbar bg-white/[0.01]">
-            <table className="w-full text-left border-collapse min-w-[900px]">
-              <thead>
-                <tr className="border-b border-white/5 bg-white/[0.02]">
-                  <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest">Growth Scheme</th>
-                  <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">Volume</th>
-                  <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">Avg NAV</th>
-                  <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">Live NAV</th>
-                  <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">P&L</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/10">
-                {mfs.length === 0 ? (
-                    <tr><td colSpan={6} className="px-6 py-24 text-center text-[#666] italic text-sm">Synchronize with Zerodha Coin or manual entry to view portfolio.</td></tr>
-                ) : mfs.map((mf) => {
+        mfs.length === 0 ? (
+          <div className="mx-4">
+            <EmptyState
+              title="Initialize Mutual Funds"
+              description="Synchronize with Zerodha Coin or manual entry to view portfolio."
+              icon="🏦"
+              glowColor="purple"
+              action={
+                <button type="button" onClick={() => setShowAddModal(true)} className="btn-primary shadow-2xl shadow-[--accent-primary]/20">Record Mutual Fund</button>
+              }
+            />
+          </div>
+        ) : (
+          <>
+            {/* Desktop Table View */}
+            <div className="hidden md:block mx-4 border border-white/5 rounded-2xl overflow-x-auto custom-scrollbar bg-white/[0.01]">
+              <table className="w-full text-left border-collapse min-w-[900px]">
+                <thead>
+                  <tr className="border-b border-white/5 bg-white/[0.02]">
+                    <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest">Growth Scheme</th>
+                    <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">Volume</th>
+                    <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">Avg NAV</th>
+                    <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">Live NAV</th>
+                    <th className="px-6 py-4 text-[9px] font-black text-[--text-muted] uppercase tracking-widest text-right">P&L</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/10">
+                  {mfs.map((mf) => {
                     const investment = Number(mf.units) * Number(mf.avg_nav);
                     const currentVal = Number(mf.units) * Number(mf.current_nav);
                     const pnl = currentVal - investment;
@@ -556,9 +568,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
 
           {/* Mobile Cards View */}
           <div className="md:hidden space-y-4 px-4">
-            {mfs.length === 0 ? (
-              <div className="p-8 text-center text-[#666] italic text-sm">No holdings recorded yet.</div>
-            ) : mfs.map((mf) => {
+            {mfs.map((mf) => {
               const investment = Number(mf.units) * Number(mf.avg_nav);
               const currentVal = Number(mf.units) * Number(mf.current_nav);
               const pnl = currentVal - investment;
@@ -666,8 +676,19 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
             })}
           </div>
         </>
+        )
       ) : (
-        <>
+        trades.length === 0 ? (
+          <div className="mx-4">
+            <EmptyState
+              title="No Transaction History"
+              description="No transaction history recorded yet for mutual funds."
+              icon="📜"
+              glowColor="purple"
+            />
+          </div>
+        ) : (
+          <>
           {/* Desktop History Table View */}
           <div className="hidden md:block mx-4 border border-white/5 rounded-2xl overflow-x-auto custom-scrollbar bg-white/[0.01]">
             <table className="w-full text-left border-collapse min-w-[700px]">
@@ -683,9 +704,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/10">
-                {trades.length === 0 ? (
-                  <tr><td colSpan={7} className="px-6 py-12 text-center text-[#666] italic text-sm">No transaction history recorded yet.</td></tr>
-                ) : trades.map((trade) => {
+                {trades.map((trade) => {
                   const isBuy = trade.trade_type?.toLowerCase() === 'buy';
                   return (
                     <tr key={trade.id} className="hover:bg-white/[0.01] transition-colors group">
@@ -721,9 +740,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
 
           {/* Mobile History Cards View */}
           <div className="md:hidden space-y-4 px-4">
-            {trades.length === 0 ? (
-              <div className="p-8 text-center text-[#666] italic text-sm">No transaction history recorded yet.</div>
-            ) : trades.map((trade) => {
+            {trades.map((trade) => {
               const isBuy = trade.trade_type?.toLowerCase() === 'buy';
               return (
                 <div key={trade.id} className="glass-card-static p-4 border-white/5">
@@ -764,6 +781,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
             })}
           </div>
         </>
+        )
       )}
 
       {/* Record Investment Modal */}

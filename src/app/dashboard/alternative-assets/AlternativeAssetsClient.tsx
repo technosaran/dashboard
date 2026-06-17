@@ -9,6 +9,7 @@ import { format, parseISO } from "date-fns";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import Link from "next/link";
+import { EmptyState } from "@/components/empty-state";
 
 const CATEGORIES = [
   { label: "Real Estate", icon: "🏙️" },
@@ -201,21 +202,20 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
       {activeTab === "inventory" ? (
         <>
           {alternativeAssets.length === 0 ? (
-            <div className="glass-card-static relative overflow-hidden p-8 md:p-16 text-center flex flex-col items-center justify-center min-h-[450px] mx-4">
-              <div className="absolute -top-24 -left-24 w-96 h-96 bg-[--accent-primary]/10 rounded-full blur-[100px] pointer-events-none" />
-              <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-purple-500/10 rounded-full blur-[100px] pointer-events-none" />
-              <div className="relative mb-6 p-6 rounded-3xl bg-white/[0.02] border border-white/5 shadow-2xl">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[--accent-primary]/15 to-purple-500/15 border border-[--accent-primary]/25 flex items-center justify-center shadow-[0_0_30px_-5px_rgba(14,165,233,0.3)] animate-pulse">
-                  <svg className="w-8 h-8 text-[--accent-primary-light]" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
-                </div>
-              </div>
-              <h3 className="text-2xl md:text-3xl font-black text-[--text-primary] tracking-tight">Register Your First Asset</h3>
-              <p className="text-sm text-[--text-muted] mt-3 max-w-lg mx-auto font-medium leading-relaxed">Track real estate, gold, collectibles, and other tangible holdings. Build a complete picture of your alternative wealth portfolio.</p>
-              <button type="button" onClick={() => setShowAddModal(true)} disabled={submitting} className="btn-primary h-13 px-8 rounded-xl font-bold uppercase tracking-wider text-[11px] shadow-xl shadow-[--accent-primary]/20 mt-8 flex items-center gap-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
-                Record New Asset
-              </button>
-            </div>
+            <EmptyState
+              title="Register Your First Asset"
+              description="Track real estate, gold, collectibles, and other tangible holdings. Build a complete picture of your alternative wealth portfolio."
+              icon={
+                <svg className="w-8 h-8 text-[--accent-primary-light]" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+              }
+              glowColor="indigo"
+              action={
+                <button type="button" onClick={() => setShowAddModal(true)} disabled={submitting} className="btn-primary h-13 px-8 rounded-xl font-bold uppercase tracking-wider text-[11px] shadow-xl shadow-[--accent-primary]/20 mt-8 flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
+                  Record New Asset
+                </button>
+              }
+            />
           ) : (
           <>
           {/* Stats Cards */}

@@ -6,6 +6,7 @@ import { format } from "date-fns";
 import { toast } from "react-hot-toast";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import Link from "next/link";
+import { EmptyState } from "@/components/empty-state";
 
 import { 
   logFnoTrade, 
@@ -603,37 +604,24 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
               </table>
             </div>
           ) : (
-            <div className="glass-card-static relative overflow-hidden rounded-2xl border border-white/10 p-8 md:p-12 flex flex-col items-center justify-center text-center min-h-[320px]">
-              {/* Background glow blurs */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-cyan-500/10 rounded-full blur-[100px] pointer-events-none" />
-              <div className="absolute top-1/3 right-1/4 w-48 h-48 bg-purple-500/8 rounded-full blur-[80px] pointer-events-none" />
-
-              {/* Icon container with pulse animation */}
-              <div className="relative mb-6">
-                <div className="absolute inset-0 bg-cyan-500/20 rounded-2xl blur-xl animate-pulse" />
-                <div className="relative w-16 h-16 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-center">
-                  <svg className="w-8 h-8 text-cyan-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
-                  </svg>
-                </div>
-              </div>
-
-              {/* Heading */}
-              <h3 className="text-xl md:text-2xl font-black text-[--text-primary] mb-3">Initialize Your Derivatives Desk</h3>
-
-              {/* Description */}
-              <p className="text-sm text-[--text-muted] max-w-md leading-relaxed mb-8">
-                Your F&O trading board is clear. Log your first futures or options contract to begin tracking positions, premiums, and realized P&L across your portfolio.
-              </p>
-
-              {/* CTA button */}
-              <button type="button"
-                onClick={() => setShowLogForm(true)}
-                className="btn-primary !h-11 !px-8 text-[11px] font-black uppercase tracking-widest shadow-[0_4px_20px_rgba(var(--accent-primary-rgb),0.3)]"
-              >
-                Log First Contract
-              </button>
-            </div>
+            <EmptyState
+              title="Initialize Your Derivatives Desk"
+              description="Your F&O trading board is clear. Log your first futures or options contract to begin tracking positions, premiums, and realized P&L across your portfolio."
+              icon={
+                <svg className="w-8 h-8 text-cyan-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+                </svg>
+              }
+              glowColor="cyan"
+              action={
+                <button type="button"
+                  onClick={() => setShowLogForm(true)}
+                  className="btn-primary !h-11 !px-8 text-[11px] font-black uppercase tracking-widest shadow-[0_4px_20px_rgba(var(--accent-primary-rgb),0.3)]"
+                >
+                  Log First Contract
+                </button>
+              }
+            />
           )
         ) : (
           closedHistory.length > 0 ? (

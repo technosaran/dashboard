@@ -442,7 +442,8 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
             <EmptyState
               title="No Bonds in Portfolio"
               description="Start building your fixed income portfolio with government and corporate bonds"
-              icon={<span className="text-6xl mb-4 block">📜</span>}
+              icon="📜"
+              glowColor="indigo"
               action={
                 <button type="button" onClick={() => setShowAddModal(true)} className="btn-primary shadow-2xl shadow-[--accent-primary]/20">Add Your First Bond</button>
               }
@@ -645,10 +646,12 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
       {activeTab === "history" && (
         <div className="mx-4">
           {(bondTransactions || []).length === 0 ? (
-            <div className="glass-card-static p-24 text-center">
-              <h3 className="text-xl font-black text-[--text-primary] mb-2">No Transactions Yet</h3>
-              <p className="text-sm text-[--text-muted]">Bond transactions will appear here after your first purchase or interest payment.</p>
-            </div>
+            <EmptyState
+              title="No Transactions Yet"
+              description="Bond transactions will appear here after your first purchase or interest payment."
+              icon="📜"
+              glowColor="indigo"
+            />
           ) : (
             <>
               {/* Desktop Table View */}

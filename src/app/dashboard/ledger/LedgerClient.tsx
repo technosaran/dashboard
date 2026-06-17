@@ -3,6 +3,7 @@
 import { useMemo, useState, Fragment } from "react";
 import { endOfDay, format, isWithinInterval, startOfDay } from "date-fns";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
+import { EmptyState } from "@/components/empty-state";
 
 type LedgerLog = {
   id: string;
@@ -464,22 +465,23 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
             ))}
           </div>
         ) : filteredLogs.length === 0 ? (
-          <div className="py-24 text-center flex flex-col items-center justify-center gap-4">
-            <div className="text-5xl">🛡️</div>
-            <div>
-              <p className="text-lg font-black text-white">No Ledger Entries Located</p>
-              <p className="text-sm text-[--text-muted] mt-1 max-w-sm">No transaction matches the current date filters.</p>
-            </div>
-            <button type="button"
-              onClick={() => {
-                resetRange();
-                setCurrentPage(1);
-              }}
-              className="btn-secondary !h-10 !px-6 mt-2 text-[10px] font-black uppercase tracking-widest rounded-xl"
-            >
-              Restore Audit Stream
-            </button>
-          </div>
+          <EmptyState
+            title="No Ledger Entries Located"
+            description="No transaction matches the current date filters."
+            icon="🛡️"
+            glowColor="indigo"
+            action={
+              <button type="button"
+                onClick={() => {
+                  resetRange();
+                  setCurrentPage(1);
+                }}
+                className="btn-secondary !h-10 !px-6 text-[10px] font-black uppercase tracking-widest rounded-xl"
+              >
+                Restore Audit Stream
+              </button>
+            }
+          />
         ) : (
           <div className="w-full">
             {/* Desktop Table View */}

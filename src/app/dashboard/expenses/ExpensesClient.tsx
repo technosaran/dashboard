@@ -9,6 +9,7 @@ import { format, parseISO, subMonths } from "date-fns";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import Link from "next/link";
+import { EmptyState } from "@/components/empty-state";
 
 import dynamic from "next/dynamic";
 
@@ -471,21 +472,20 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
 
         <div className="hidden overflow-x-auto w-full custom-scrollbar md:block">
           {expenses.length === 0 ? (
-            <div className="relative overflow-hidden p-8 md:p-16 flex flex-col items-center text-center min-h-[400px] justify-center">
-              <div className="absolute -top-24 -left-24 w-96 h-96 bg-red-500/10 rounded-full blur-[100px] pointer-events-none" />
-              <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-orange-500/10 rounded-full blur-[100px] pointer-events-none" />
-              <div className="relative mb-6 p-6 rounded-3xl bg-white/[0.02] border border-white/5 shadow-2xl">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-red-500/15 to-orange-500/15 border border-red-500/25 flex items-center justify-center shadow-[0_0_30px_-5px_rgba(239,68,68,0.3)] animate-pulse">
-                  <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" /></svg>
-                </div>
-              </div>
-              <h3 className="text-2xl md:text-3xl font-black text-[--text-primary] tracking-tight">Initialize Your Financial Ledger</h3>
-              <p className="text-sm text-[--text-muted] mt-3 max-w-lg mx-auto font-medium leading-relaxed">Start by adding your first expense. Track every rupee to gain total control over your capital outflow.</p>
-              <button type="button" onClick={() => setShowAddModal(true)} className="btn-primary h-13 px-8 rounded-xl font-bold uppercase tracking-wider text-[11px] shadow-xl shadow-[--accent-primary]/20 mt-8 flex items-center gap-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
-                Add Your First Expense
-              </button>
-            </div>
+            <EmptyState
+              title="Initialize Your Financial Ledger"
+              description="Start by adding your first expense. Track every rupee to gain total control over your capital outflow."
+              icon={
+                <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" /></svg>
+              }
+              glowColor="rose"
+              action={
+                <button type="button" onClick={() => setShowAddModal(true)} className="btn-primary h-13 px-8 rounded-xl font-bold uppercase tracking-wider text-[11px] shadow-xl shadow-[--accent-primary]/20 flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
+                  Add Your First Expense
+                </button>
+              }
+            />
           ) : (
             <table className="w-full text-left border-collapse min-w-[800px]">
               <thead>

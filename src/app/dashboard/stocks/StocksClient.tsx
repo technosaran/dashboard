@@ -13,6 +13,7 @@ import {
 } from "./actions";
 import { revertLedgerLog } from "../alternative-assets/actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
+import { EmptyState } from "@/components/empty-state";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import Link from "next/link";
@@ -581,10 +582,15 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-32 border border-dashed border-[--border-default] rounded-sm bg-[--bg-surface]/50">
-            <p className="text-[--text-muted] text-sm mb-4">You don&apos;t have any holdings yet.</p>
-            <button type="button" onClick={() => setShowForm(true)} className="text-[--accent-primary-light] text-xs font-medium hover:underline">Add your first stock</button>
-          </div>
+          <EmptyState
+            title="No Holdings Yet"
+            description="You don't have any stock holdings in your portfolio yet. Add your first transaction to begin tracking."
+            icon="📈"
+            glowColor="purple"
+            action={
+              <button type="button" onClick={() => setShowForm(true)} className="btn-primary shadow-2xl shadow-[--accent-primary]/20">Add your first stock</button>
+            }
+          />
         )
       ) : activeTab === "history" ? (
         /* ── History Table ── */
@@ -633,9 +639,12 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
             </table>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-32 border border-dashed border-[--border-default] rounded-sm bg-[--bg-surface]/50">
-            <p className="text-[--text-muted] text-sm">No transaction history found.</p>
-          </div>
+          <EmptyState
+            title="No Transaction History"
+            description="No transaction history found for your stock investments."
+            icon="📜"
+            glowColor="purple"
+          />
         )
       ) : null}
 
