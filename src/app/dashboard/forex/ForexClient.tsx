@@ -1,5 +1,4 @@
 "use client";
-import { USD_INR_EXCHANGE_RATE } from "@/lib/constants";
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
@@ -105,26 +104,10 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
 
   // Stats computed from Forex Account aggregates
   const stats = useMemo(() => {
-    const totalBalance = forexAccounts.reduce((s, a) => {
-      const isINR = a.currency !== 'USD';
-      const bal = Number(a.balance);
-      return s + (isINR ? bal / USD_INR_EXCHANGE_RATE : bal);
-    }, 0);
-    const totalPnL = forexAccounts.reduce((s, a) => {
-      const isINR = a.currency !== 'USD';
-      const pnl = Number(a.total_pnl);
-      return s + (isINR ? pnl / USD_INR_EXCHANGE_RATE : pnl);
-    }, 0);
-    const totalDeposited = forexAccounts.reduce((s, a) => {
-      const isINR = a.currency !== 'USD';
-      const dep = Number(a.total_deposited);
-      return s + (isINR ? dep / USD_INR_EXCHANGE_RATE : dep);
-    }, 0);
-    const totalWithdrawn = forexAccounts.reduce((s, a) => {
-      const isINR = a.currency !== 'USD';
-      const wd = Number(a.total_withdrawn);
-      return s + (isINR ? wd / USD_INR_EXCHANGE_RATE : wd);
-    }, 0);
+    const totalBalance = forexAccounts.reduce((s, a) => s + Number(a.balance), 0);
+    const totalPnL = forexAccounts.reduce((s, a) => s + Number(a.total_pnl), 0);
+    const totalDeposited = forexAccounts.reduce((s, a) => s + Number(a.total_deposited), 0);
+    const totalWithdrawn = forexAccounts.reduce((s, a) => s + Number(a.total_withdrawn), 0);
     return { totalBalance, totalPnL, totalDeposited, totalWithdrawn };
   }, [forexAccounts]);
 

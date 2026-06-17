@@ -8,7 +8,6 @@ import { format } from "date-fns";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { Plus, Edit2, Trash2, X, Send, History, ArrowUpRight, CheckCircle2 } from "lucide-react";
 import type { Tables } from "@/lib/database.types";
-import { USD_INR_EXCHANGE_RATE } from "@/lib/constants";
 
 const QUICK_AMOUNTS = [500, 1000, 2000, 5000, 10000];
 
@@ -202,8 +201,7 @@ export default function FamilyClient({
       if (log.action_type === "SEND_MONEY") {
         const recId = getRecipientId(log);
         if (recId && totals[recId] !== undefined) {
-          const isUSD = getAccountCurrency(log.account_id) === 'USD';
-          totals[recId] += Number(log.amount || 0) * (isUSD ? USD_INR_EXCHANGE_RATE : 1);
+          totals[recId] += Number(log.amount || 0);
         }
       }
     });
@@ -219,8 +217,7 @@ export default function FamilyClient({
     .slice(0, 20);
 
   const totalSent = recentSends.reduce((sum, s) => {
-    const isUSD = getAccountCurrency(s.account_id) === 'USD';
-    return sum + Number(s.amount || 0) * (isUSD ? USD_INR_EXCHANGE_RATE : 1);
+    return sum + Number(s.amount || 0);
   }, 0);
 
   return (
@@ -298,7 +295,6 @@ export default function FamilyClient({
                            <div className="w-12 h-12 rounded-xl border border-white/5 shadow-inner bg-[rgba(14,165,233,0.05)] text-[--accent-primary] flex items-center justify-center text-xl font-bold">
                              {person.name.charAt(0).toUpperCase()}
                            </div>
-                           <span className="text-base font-bold text-[--text-secondary]">Contact</span>
                          </div>
                        </div>
                        <button type="button" onClick={() => startEdit(person)} className="p-2 rounded-xl bg-white/5 border border-white/10 text-[--text-muted] hover:text-[--accent-primary-light] hover:border-[--accent-primary]/30 transition-all">

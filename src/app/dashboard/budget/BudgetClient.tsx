@@ -6,7 +6,6 @@ import { upsertBudget, deleteBudget } from "./actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { format, parseISO } from "date-fns";
-import { USD_INR_EXCHANGE_RATE } from "@/lib/constants";
 
 const CATEGORIES = [
   { label: "Food", icon: "🍔" },
@@ -39,8 +38,7 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
       if (!e.date) return;
       const date = parseISO(e.date);
       if (date.getMonth() + 1 === selectedMonth && date.getFullYear() === selectedYear) {
-        const isUSD = getAccountCurrency(e.account_id) === 'USD';
-        const amt = Number(e.amount) * (isUSD ? USD_INR_EXCHANGE_RATE : 1);
+        const amt = Number(e.amount);
         spending[e.category] = (spending[e.category] || 0) + amt;
       }
     });
@@ -53,8 +51,7 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
       if (!inc.date) return sum;
       const date = parseISO(inc.date);
       if (date.getMonth() + 1 === selectedMonth && date.getFullYear() === selectedYear) {
-        const isUSD = getAccountCurrency(inc.account_id) === 'USD';
-        return sum + Number(inc.amount) * (isUSD ? USD_INR_EXCHANGE_RATE : 1);
+        return sum + Number(inc.amount);
       }
       return sum;
     }, 0);

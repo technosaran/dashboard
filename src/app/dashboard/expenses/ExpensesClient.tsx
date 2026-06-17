@@ -1,5 +1,4 @@
 "use client";
-import { USD_INR_EXCHANGE_RATE } from "@/lib/constants";
 import { useMemo, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
@@ -161,13 +160,12 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
       const d = parseISO(e.date);
       return d.getMonth() + 1 === selectedMonth && d.getFullYear() === selectedYear;
     });
-    const totalSpent = expenses.reduce((s, e) => s + Number(e.amount) * (getAccountCurrency(e.account_id) === 'USD' ? USD_INR_EXCHANGE_RATE : 1), 0);
-    const monthlyTotal = currentMonth.reduce((s, e) => s + Number(e.amount) * (getAccountCurrency(e.account_id) === 'USD' ? USD_INR_EXCHANGE_RATE : 1), 0);
+    const totalSpent = expenses.reduce((s, e) => s + Number(e.amount), 0);
+    const monthlyTotal = currentMonth.reduce((s, e) => s + Number(e.amount), 0);
     
     const catMap: Record<string, number> = {};
     currentMonth.forEach(e => {
-      const isUSD = getAccountCurrency(e.account_id) === 'USD';
-      catMap[e.category] = (catMap[e.category] || 0) + Number(e.amount) * (isUSD ? USD_INR_EXCHANGE_RATE : 1);
+      catMap[e.category] = (catMap[e.category] || 0) + Number(e.amount);
     });
     const pieData = Object.entries(catMap).map(([name, value]) => {
       const color = CATEGORIES.find(c => c.label === name)?.color || getCategoryColour("Others");
@@ -188,8 +186,7 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
       if (!e.date) return;
       const m = format(parseISO(e.date), "MMM yy");
       if (trendMap[m] !== undefined) {
-        const isUSD = getAccountCurrency(e.account_id) === 'USD';
-        trendMap[m] += Number(e.amount) * (isUSD ? USD_INR_EXCHANGE_RATE : 1);
+        trendMap[m] += Number(e.amount);
       }
     });
     const trendData = Object.entries(trendMap).map(([name, value]) => ({ name, value }));

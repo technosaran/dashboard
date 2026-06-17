@@ -1,5 +1,4 @@
 "use client";
-import { USD_INR_EXCHANGE_RATE } from "@/lib/constants";
 
 import { useSearchParams } from "next/navigation";
 import { useMemo, useState, useEffect } from "react";
@@ -130,21 +129,18 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
   // --- Computed ---
   const { totalInvested, totalCurrent, totalPnL, totalPnLPercent, totalDayPnL, totalDayPnLPercent } = useMemo(() => {
     const invested = stocks.reduce((s, i) => {
-      const isUSD = i.currency === 'USD';
       const val = Number(i.buy_price || 0) * Number(i.quantity || 0);
-      return s + (isUSD ? val * USD_INR_EXCHANGE_RATE : val);
+      return s + val;
     }, 0);
     const current = stocks.reduce((s, i) => {
-      const isUSD = i.currency === 'USD';
       const val = Number(i.current_price || 0) * Number(i.quantity || 0);
-      return s + (isUSD ? val * USD_INR_EXCHANGE_RATE : val);
+      return s + val;
     }, 0);
     const pnl = current - invested;
     const pnlPercent = invested > 0 ? (pnl / invested) * 100 : 0;
     const dayPnL = stocks.reduce((s, i) => {
-      const isUSD = i.currency === 'USD';
       const dayChange = Number(i.day_change || 0) * Number(i.quantity || 0);
-      return s + (isUSD ? dayChange * USD_INR_EXCHANGE_RATE : dayChange);
+      return s + dayChange;
     }, 0);
     const prevDay = current - dayPnL;
     const dayPnLPercent = prevDay > 0 ? (dayPnL / prevDay) * 100 : 0;

@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import { useFinanceData } from "@/hooks/use-finance-data";
-import { USD_INR_EXCHANGE_RATE } from "@/lib/constants";
 
 export function useNetWorth() {
   const { data } = useFinanceData();
@@ -45,10 +44,10 @@ export function useNetWorth() {
       return sum + (acc.currency === 'USD' ? balance : 0);
     }, 0);
 
-    // 4. Auto-exchanged calculations for legacy compatibility
-    const cashBalance = cashBalanceINR + (cashBalanceUSD * USD_INR_EXCHANGE_RATE);
-    const stockBalance = stockBalanceINR + (stockBalanceUSD * USD_INR_EXCHANGE_RATE);
-    const forexBalance = forexBalanceINR + (forexBalanceUSD * USD_INR_EXCHANGE_RATE);
+    // 4. Separate calculations without conversion
+    const cashBalance = cashBalanceINR; // legacy compatibility mapping to INR
+    const stockBalance = stockBalanceINR;
+    const forexBalance = forexBalanceINR;
     
     const mfBalance = mutualFunds.reduce((sum, mf) => sum + (Number(mf.units) * Number(mf.current_nav || 0)), 0);
     const bondBalance = (bonds || []).filter(b => b.status === 'Active').reduce((sum, b) => sum + Number(b.current_value || 0), 0);
@@ -60,10 +59,11 @@ export function useNetWorth() {
     const totalAssets = liquidBalance + altBalance;
     const netWorth = totalAssets - debtBalance;
 
-    // Calculate consolidated Net Worth metrics in different currencies
+    // Calculate consolidated Net Worth metrics in different currencies without conversion
     const totalAssetsINR = totalAssets;
+    const totalAssetsUSD = cashBalanceUSD + stockBalanceUSD + forexBalanceUSD;
     const netWorthINR = netWorth;
-    const netWorthUSD = netWorth / USD_INR_EXCHANGE_RATE;
+    const netWorthUSD = totalAssetsUSD;
 
     return {
       netWorth,
@@ -84,7 +84,8 @@ export function useNetWorth() {
       debtBalance,
       liquidBalance,
       totalAssets,
-      totalAssetsINR
+      totalAssetsINR,
+      totalAssetsUSD
     };
   }, [accounts, investments, forexAccounts, mutualFunds, bonds, alternativeAssets, liabilities]);
 }

@@ -1,5 +1,4 @@
 "use client";
-import { USD_INR_EXCHANGE_RATE } from "@/lib/constants";
 
 import dynamic from "next/dynamic";
 import { useMemo, useState, useEffect } from "react";
@@ -172,8 +171,8 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
       const d = parseISO(i.date);
       return d.getMonth() + 1 === selectedMonth && d.getFullYear() === selectedYear;
     });
-    const totalIncome = incomes.reduce((s, i) => s + Number(i.amount) * (getAccountCurrency(i.account_id) === 'USD' ? USD_INR_EXCHANGE_RATE : 1), 0);
-    const monthlyTotal = currentMonth.reduce((s, i) => s + Number(i.amount) * (getAccountCurrency(i.account_id) === 'USD' ? USD_INR_EXCHANGE_RATE : 1), 0);
+    const totalIncome = incomes.reduce((s, i) => s + Number(i.amount), 0);
+    const monthlyTotal = currentMonth.reduce((s, i) => s + Number(i.amount), 0);
     
     // YoY comparison - same month last year
     const lastYearSameMonth = new Date(selectedYear - 1, selectedMonth - 1, 1);
@@ -182,14 +181,13 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
       const d = parseISO(i.date);
       return d.getMonth() + 1 === lastYearSameMonth.getMonth() + 1 && d.getFullYear() === lastYearSameMonth.getFullYear();
     });
-    const lastYearTotal = lastYearIncomes.reduce((s, i) => s + Number(i.amount) * (getAccountCurrency(i.account_id) === 'USD' ? USD_INR_EXCHANGE_RATE : 1), 0);
+    const lastYearTotal = lastYearIncomes.reduce((s, i) => s + Number(i.amount), 0);
     const yoyChange = lastYearTotal > 0 ? ((monthlyTotal - lastYearTotal) / lastYearTotal) * 100 : 0;
     const yoyAbsolute = monthlyTotal - lastYearTotal;
     
     const catMap: Record<string, number> = {};
     currentMonth.forEach(i => {
-      const isUSD = getAccountCurrency(i.account_id) === 'USD';
-      catMap[i.category] = (catMap[i.category] || 0) + Number(i.amount) * (isUSD ? USD_INR_EXCHANGE_RATE : 1);
+      catMap[i.category] = (catMap[i.category] || 0) + Number(i.amount);
     });
     const pieData = Object.entries(catMap)
       .map(([name, value]) => {
@@ -216,8 +214,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
       if (!i.date) return;
       const m = format(parseISO(i.date), "MMM yy");
       if (trendMap[m] !== undefined) {
-        const isUSD = getAccountCurrency(i.account_id) === 'USD';
-        trendMap[m] += Number(i.amount) * (isUSD ? USD_INR_EXCHANGE_RATE : 1);
+        trendMap[m] += Number(i.amount);
       }
     });
     const trendData = Object.entries(trendMap).map(([name, value]) => ({ name, value }));

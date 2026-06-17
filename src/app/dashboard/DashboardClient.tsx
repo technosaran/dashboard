@@ -1,5 +1,5 @@
 "use client";
-import { USD_INR_EXCHANGE_RATE } from "@/lib/constants";
+
 
 import { useMemo, useState, useEffect } from "react";
 import { format, parseISO, subMonths } from "date-fns";
@@ -79,7 +79,9 @@ export default function DashboardClient() {
       altBalance,
       debtBalance,
       liquidBalance,
-      totalAssets
+      totalAssets,
+      totalAssetsINR,
+      totalAssetsUSD
     } = netWorthData;
 
     const stockCount = investments.filter((inv) => Number(inv.quantity) > 0).length;
@@ -103,19 +105,13 @@ export default function DashboardClient() {
       trendMap[m] = { name: m, income: 0, expense: 0 };
     }
 
-    const getAccountCurrency = (accountId: string) => {
-      const acc = accounts.find(a => a.id === accountId);
-      return acc ? acc.currency : "INR";
-    };
-
     // Single pass over transactions
     for (let i = 0; i < transactions.length; i++) {
       const t = transactions[i];
       if (!t.date) continue;
       
       const tDate = parseISO(t.date);
-      const isUSD = getAccountCurrency(t.account_id) === 'USD';
-      const tAmount = Number(t.amount) * (isUSD ? USD_INR_EXCHANGE_RATE : 1);
+      const tAmount = Number(t.amount);
       const tType = t.type;
       
       // Monthly Stats & Category Map - Timezone-robust direct comparison
@@ -153,8 +149,7 @@ export default function DashboardClient() {
 
     const totalDayPnL = (investments.reduce((sum, inv) => {
       const dayChange = Number(inv.day_change || 0) * Number(inv.quantity || 0);
-      const isUSD = inv.currency === 'USD';
-      return sum + (isUSD ? dayChange * USD_INR_EXCHANGE_RATE : dayChange);
+      return sum + dayChange;
     }, 0)) +
     (mutualFunds.reduce((sum, mf) => sum + (Number(mf.day_change || 0) * Number(mf.units || 0)), 0));
     const prevDayNetWorth = netWorth - totalDayPnL;
@@ -171,6 +166,8 @@ export default function DashboardClient() {
       bondBalance,
       debtBalance,
       totalAssets,
+      totalAssetsINR,
+      totalAssetsUSD,
       cashBalance,
       monthlySpend, 
       monthlyIncome, 
