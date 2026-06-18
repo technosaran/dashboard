@@ -523,8 +523,18 @@ body {
   width: 8px; 
   height: 8px; 
   border-radius: 50%; 
-  background: var(--success); 
+  background-color: var(--success); 
   box-shadow: 0 0 12px var(--success); 
+}
+
+.status-dot.bg-yellow-400 {
+  background-color: #facc15 !important;
+  box-shadow: 0 0 12px #facc15 !important;
+}
+
+.status-dot.bg-emerald-400 {
+  background-color: #34d399 !important;
+  box-shadow: 0 0 12px #34d399 !important;
 }
 
 /* Skeleton Loading - Premium Shimmer */
@@ -866,6 +876,18 @@ select:focus {
   box-shadow: 0 8px 24px rgba(16, 185, 129, 0.35);
 }
 
+.theme-google .btn-danger {
+  background: rgba(244, 63, 94, 0.12);
+  color: var(--danger);
+  border-color: rgba(244, 63, 94, 0.2);
+}
+
+.theme-google .btn-danger:hover {
+  background: rgba(244, 63, 94, 0.2);
+  border-color: rgba(244, 63, 94, 0.3);
+  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.2);
+}
+
 .theme-google select, .theme-google select option {
   background-color: var(--bg-surface) !important;
 }
@@ -881,24 +903,15 @@ select:focus {
 }
 
 /* White Grids and Border Layout Overrides, Scoped to Exclude the Sidebar Aside */
-.theme-google :not(aside):not(aside *).border,
-.theme-google :not(aside):not(aside *).border-t,
-.theme-google :not(aside):not(aside *).border-b,
-.theme-google :not(aside):not(aside *).border-l,
-.theme-google :not(aside):not(aside *).border-r,
-.theme-google :not(aside):not(aside *).border-x,
-.theme-google :not(aside):not(aside *).border-y,
-.theme-google :not(aside):not(aside *).border-white\/5,
-.theme-google :not(aside):not(aside *).border-white\/10,
-.theme-google :not(aside):not(aside *).border-white\/20,
-.theme-google :not(aside):not(aside *).border-white\/\[0\.03\],
-.theme-google :not(aside):not(aside *).border-white\/\[0\.05\],
-.theme-google :not(aside):not(aside *).border-white\/\[0\.06\],
-.theme-google :not(aside):not(aside *).border-white\/\[0\.08\],
-.theme-google :not(aside):not(aside *).border-white\/\[0\.1\],
-.theme-google :not(aside):not(aside *).border-white\/\[0\.2\],
-.theme-google :not(aside):not(aside *) .divide-y > *,
-.theme-google :not(aside):not(aside *) .divide-x > *,
+.theme-google :not(aside):not(aside *).border:not([class*="border-"]),
+.theme-google :not(aside):not(aside *).border-t:not([class*="border-"]),
+.theme-google :not(aside):not(aside *).border-b:not([class*="border-"]),
+.theme-google :not(aside):not(aside *).border-l:not([class*="border-"]),
+.theme-google :not(aside):not(aside *).border-r:not([class*="border-"]),
+.theme-google :not(aside):not(aside *).border-x:not([class*="border-"]),
+.theme-google :not(aside):not(aside *).border-y:not([class*="border-"]),
+.theme-google :not(aside):not(aside *) .divide-y > *:not([class*="border-"]),
+.theme-google :not(aside):not(aside *) .divide-x > *:not([class*="border-"]),
 .theme-google :not(aside):not(aside *).glass-card,
 .theme-google :not(aside):not(aside *).glass-card-static,
 .theme-google :not(aside):not(aside *) th,

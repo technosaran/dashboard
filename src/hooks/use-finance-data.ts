@@ -1,8 +1,11 @@
 "use client";
 
 import useSWR from "swr";
+import { useMemo } from "react";
 import { createClient } from "@/lib/supabase-browser";
 import type { Tables } from "@/lib/database.types";
+
+const EMPTY_ARRAY: any[] = [];
 
 export interface FnoTrade {
   id: string;
@@ -159,29 +162,35 @@ export function useFinanceData(initialData?: FinanceData) {
     revalidateOnReconnect: true,
   });
 
-  const data: FinanceData = {
+  const data: FinanceData = useMemo(() => ({
     profile: summarySWR.data?.profile ?? null,
-    accounts: summarySWR.data?.accounts ?? [],
-    transactions: summarySWR.data?.transactions ?? [],
-    ledgerLogs: summarySWR.data?.ledgerLogs ?? [],
-    investments: investmentsSWR.data?.investments ?? [],
-    mutualFunds: investmentsSWR.data?.mutualFunds ?? [],
-    bonds: investmentsSWR.data?.bonds ?? [],
-    alternativeAssets: investmentsSWR.data?.alternativeAssets ?? [],
-    stockTrades: investmentsSWR.data?.stockTrades ?? [],
-    mutualFundTrades: investmentsSWR.data?.mutualFundTrades ?? [],
-    bondTransactions: investmentsSWR.data?.bondTransactions ?? [],
-    fnoTrades: investmentsSWR.data?.fnoTrades ?? [],
-    incomes: cashflowSWR.data?.incomes ?? [],
-    expenses: cashflowSWR.data?.expenses ?? [],
-    budgets: cashflowSWR.data?.budgets ?? [],
-    goals: cashflowSWR.data?.goals ?? [],
-    liabilities: cashflowSWR.data?.liabilities ?? [],
-    forexAccounts: forexSWR.data?.forexAccounts ?? [],
-    forexTrades: forexSWR.data?.forexTrades ?? [],
-    forexTransactions: forexSWR.data?.forexTransactions ?? [],
-    recipients: familySWR.data?.recipients ?? [],
-  };
+    accounts: summarySWR.data?.accounts ?? EMPTY_ARRAY,
+    transactions: summarySWR.data?.transactions ?? EMPTY_ARRAY,
+    ledgerLogs: summarySWR.data?.ledgerLogs ?? EMPTY_ARRAY,
+    investments: investmentsSWR.data?.investments ?? EMPTY_ARRAY,
+    mutualFunds: investmentsSWR.data?.mutualFunds ?? EMPTY_ARRAY,
+    bonds: investmentsSWR.data?.bonds ?? EMPTY_ARRAY,
+    alternativeAssets: investmentsSWR.data?.alternativeAssets ?? EMPTY_ARRAY,
+    stockTrades: investmentsSWR.data?.stockTrades ?? EMPTY_ARRAY,
+    mutualFundTrades: investmentsSWR.data?.mutualFundTrades ?? EMPTY_ARRAY,
+    bondTransactions: investmentsSWR.data?.bondTransactions ?? EMPTY_ARRAY,
+    fnoTrades: investmentsSWR.data?.fnoTrades ?? EMPTY_ARRAY,
+    incomes: cashflowSWR.data?.incomes ?? EMPTY_ARRAY,
+    expenses: cashflowSWR.data?.expenses ?? EMPTY_ARRAY,
+    budgets: cashflowSWR.data?.budgets ?? EMPTY_ARRAY,
+    goals: cashflowSWR.data?.goals ?? EMPTY_ARRAY,
+    liabilities: cashflowSWR.data?.liabilities ?? EMPTY_ARRAY,
+    forexAccounts: forexSWR.data?.forexAccounts ?? EMPTY_ARRAY,
+    forexTrades: forexSWR.data?.forexTrades ?? EMPTY_ARRAY,
+    forexTransactions: forexSWR.data?.forexTransactions ?? EMPTY_ARRAY,
+    recipients: familySWR.data?.recipients ?? EMPTY_ARRAY,
+  }), [
+    summarySWR.data,
+    investmentsSWR.data,
+    cashflowSWR.data,
+    forexSWR.data,
+    familySWR.data
+  ]);
 
   const isLoading =
     (!summarySWR.data && !summarySWR.error) ||

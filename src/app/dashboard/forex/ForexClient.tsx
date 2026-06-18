@@ -328,7 +328,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
 
   if (isMobile) {
     return (
-      <div className="flex flex-col gap-6 animate-fade-in pb-[calc(var(--mobile-bottom-nav-height)+2rem)]">
+      <div className="flex flex-col gap-6 animate-fade-in">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-black text-[--text-primary]">Forex Record</h1>
@@ -617,7 +617,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
         {activeTab === "trades" && (
           <>
             {/* Desktop Trades Table */}
-            <div className="hidden md:block glass-card-static overflow-x-auto custom-scrollbar border-white/5">
+            <div className="hidden md:block glass-card-static table-responsive-wrapper border-white/5">
               <table className="w-full text-left border-collapse min-w-[700px]">
                 <thead>
                   <tr className="bg-white/5 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">
@@ -699,7 +699,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
         {activeTab === "transactions" && (
           <>
             {/* Desktop Transactions Table */}
-            <div className="hidden md:block glass-card-static overflow-x-auto custom-scrollbar border-white/5">
+            <div className="hidden md:block glass-card-static table-responsive-wrapper border-white/5">
               <table className="w-full text-left border-collapse min-w-[700px]">
                 <thead>
                   <tr className="bg-white/5 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">
@@ -946,8 +946,8 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
               </div>
 
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowTradeModal(false)} className="btn-secondary flex-1 !h-10 text-xs">Cancel</button>
-                <button type="submit" disabled={submitting || forexAccounts.length === 0} className="btn-primary flex-1 !h-10 text-xs">
+                <button type="button" onClick={() => setShowTradeModal(false)} className="btn-secondary flex-1 !h-12 text-xs">Cancel</button>
+                <button type="submit" disabled={submitting || forexAccounts.length === 0} className="btn-primary flex-1 !h-12 text-xs">
                   {submitting ? "Logging..." : "Log P&L"}
                 </button>
               </div>
@@ -1030,8 +1030,8 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
               </div>
 
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowEditTradeModal(false)} className="btn-secondary flex-1 !h-10 text-xs">Cancel</button>
-                <button type="submit" disabled={submitting} className="btn-primary flex-1 !h-10 text-xs">
+                <button type="button" onClick={() => setShowEditTradeModal(false)} className="btn-secondary flex-1 !h-12 text-xs">Cancel</button>
+                <button type="submit" disabled={submitting} className="btn-primary flex-1 !h-12 text-xs">
                   {submitting ? "Updating..." : "Save Changes"}
                 </button>
               </div>
@@ -1102,8 +1102,8 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                 <textarea className="input-premium min-h-[50px] !h-12 py-1.5 text-xs" placeholder="Transaction notes..." value={fundsForm.notes} onChange={e => setFundsForm({...fundsForm, notes: e.target.value})} autoComplete="new-password" />
               </div>
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowFundsModal(false)} className="btn-secondary flex-1 !h-10 text-xs">Cancel</button>
-                <button type="submit" disabled={submitting || forexAccounts.length === 0} className="btn-primary flex-1 !h-10 text-xs">
+                <button type="button" onClick={() => setShowFundsModal(false)} className="btn-secondary flex-1 !h-12 text-xs">Cancel</button>
+                <button type="submit" disabled={submitting || forexAccounts.length === 0} className="btn-primary flex-1 !h-12 text-xs">
                   {submitting ? "Processing..." : fundsType === "DEPOSIT" ? "Complete Deposit" : "Complete Withdrawal"}
                 </button>
               </div>
@@ -1148,8 +1148,8 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                 <textarea className="input-premium min-h-[50px] !h-12 py-1.5 text-xs" placeholder="Broker details, leverage, etc..." value={accountForm.notes} onChange={e => setAccountForm({...accountForm, notes: e.target.value})} autoComplete="new-password" />
               </div>
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowAccountModal(false)} className="btn-secondary flex-1 !h-10 text-xs">Cancel</button>
-                <button type="submit" disabled={submitting} className="btn-primary flex-1 !h-10 text-xs">
+                <button type="button" onClick={() => setShowAccountModal(false)} className="btn-secondary flex-1 !h-12 text-xs">Cancel</button>
+                <button type="submit" disabled={submitting} className="btn-primary flex-1 !h-12 text-xs">
                   {submitting ? "Creating..." : "Create Account"}
                 </button>
               </div>

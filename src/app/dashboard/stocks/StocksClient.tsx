@@ -321,7 +321,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
 
   if (isMobile) {
     return (
-      <div className="flex flex-col gap-6 animate-fade-in pb-[calc(var(--mobile-bottom-nav-height)+2rem)]">
+      <div className="flex flex-col gap-6 animate-fade-in">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-black text-[--text-primary]">Record Stock Trade</h1>
@@ -468,7 +468,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
       {/* ── Content View ── */}
       {activeTab === "holdings" ? (
         filtered.length > 0 ? (
-          <div className="w-full mt-4 overflow-x-auto custom-scrollbar">
+          <div className="w-full mt-4 table-responsive-wrapper">
             {/* Desktop Table */}
             <table className="hidden md:table w-full text-left border-collapse min-w-[1000px]">
               <thead>
@@ -597,7 +597,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
       ) : activeTab === "history" ? (
         /* ── History Table ── */
         trades.length > 0 ? (
-          <div className="w-full mt-4 overflow-x-auto custom-scrollbar bg-white/[0.01] border border-white/5 rounded-2xl">
+          <div className="w-full mt-4 table-responsive-wrapper bg-white/[0.01] border border-white/5 rounded-2xl">
             <table className="w-full text-left border-collapse min-w-[700px]">
               <thead>
                 <tr className="border-b border-[--border-default] text-[11px] text-[--text-secondary] uppercase font-medium">
@@ -825,7 +825,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
 
               <button
                 type="submit" disabled={submitting}
-                className="btn-primary w-full shadow-2xl mt-4"
+                className="btn-primary w-full h-12 shadow-2xl mt-4"
               >
                 {submitting ? "Processing Transaction..." : (editingId ? "Finalize Updates" : (formData.trade_type === 'buy' ? "Authorize Buy Order" : "Authorize Sell Order"))}
               </button>

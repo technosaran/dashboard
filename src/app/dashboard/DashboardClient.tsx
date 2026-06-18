@@ -191,7 +191,7 @@ export default function DashboardClient() {
       mfBalance, 
       trendData: Object.values(trendMap) 
     };
-  }, [transactions, netWorthData, investments, mutualFunds, accounts]);
+  }, [transactions, netWorthData, investments, mutualFunds]);
 
   // Conditionally render only one view based on screen size
   if (isMobile) {

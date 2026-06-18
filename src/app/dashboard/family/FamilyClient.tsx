@@ -206,7 +206,7 @@ export default function FamilyClient({
       }
     });
     return totals;
-  }, [ledgerLogs, recipients, getRecipientId, accounts]);
+  }, [ledgerLogs, recipients, getRecipientId]);
 
   const recentSends = ledgerLogs
     .filter((log) => {

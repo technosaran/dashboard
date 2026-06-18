@@ -55,7 +55,7 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, accou
   ];
 
   return (
-    <div className="relative z-20 flex min-h-screen flex-col gap-6 pb-[calc(var(--mobile-bottom-nav-height)+1.5rem)] md:hidden animate-fade-in">
+    <div className="relative z-20 flex min-h-screen flex-col gap-6 md:hidden animate-fade-in">
       
       {/* Portfolio Net Worth Mini Card */}
       <div className="glass-card-static rich-border relative flex flex-col items-center justify-center overflow-hidden border border-white/5 p-4 text-center shadow-lg">

@@ -112,7 +112,7 @@ export default function LiabilitiesClient({ initialData }: { initialData?: Finan
 
   if (isMobile) {
     return (
-      <div className="flex flex-col gap-6 animate-fade-in pb-[calc(var(--mobile-bottom-nav-height)+2rem)]">
+      <div className="flex flex-col gap-6 animate-fade-in">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-black text-[--text-primary]">Record Liability</h1>
@@ -350,7 +350,7 @@ export default function LiabilitiesClient({ initialData }: { initialData?: Finan
             <h3 className="text-sm font-black uppercase tracking-widest text-white">Repayment History</h3>
             <p className="text-[10px] font-black text-[--text-muted] uppercase tracking-widest">{liabilityLogs.length} Records Found</p>
           </div>
-          <div className="overflow-x-auto">
+          <div className="table-responsive-wrapper">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-white/5 text-[9px] text-[--text-muted] uppercase font-black tracking-widest bg-white/[0.01]">
@@ -464,7 +464,7 @@ export default function LiabilitiesClient({ initialData }: { initialData?: Finan
                   <textarea className="input-premium min-h-[100px] py-4" value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} autoComplete="new-password" />
                 </div>
               </div>
-              <button type="submit" disabled={submitting} className="btn-primary w-full shadow-xl shadow-[--danger]/20 !bg-danger hover:!bg-rose-600 mt-4">
+              <button type="submit" disabled={submitting} className="btn-primary w-full h-12 shadow-xl shadow-[--danger]/20 !bg-danger hover:!bg-rose-600 mt-4">
                 {submitting ? "Processing..." : editingId ? "Update Record" : "Establish Liability"}
               </button>
             </form>

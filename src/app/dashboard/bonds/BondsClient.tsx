@@ -274,7 +274,7 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
 
   if (isMobile) {
     return (
-      <div className="flex flex-col gap-6 animate-fade-in pb-[calc(var(--mobile-bottom-nav-height)+2rem)]">
+      <div className="flex flex-col gap-6 animate-fade-in">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-black text-[--text-primary]">Record Bond</h1>
@@ -451,7 +451,7 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
           ) : (
             <>
               {/* Desktop Table */}
-              <div className="hidden md:block glass-card-static overflow-x-auto custom-scrollbar">
+              <div className="hidden md:block glass-card-static table-responsive-wrapper">
                 <table className="w-full text-left border-collapse min-w-[900px]">
                   <thead>
                     <tr className="border-b border-white/5 bg-white/[0.02]">
@@ -655,7 +655,7 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
           ) : (
             <>
               {/* Desktop Table View */}
-              <div className="hidden md:block glass-card-static overflow-x-auto custom-scrollbar">
+              <div className="hidden md:block glass-card-static table-responsive-wrapper">
                 <table className="w-full text-left border-collapse min-w-[600px]">
                   <thead>
                     <tr className="border-b border-white/5 bg-white/[0.02]">
@@ -920,7 +920,7 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
                 </div>
               </div>
 
-              <button type="submit" disabled={submitting} className="btn-primary w-full">
+              <button type="submit" disabled={submitting} className="btn-primary w-full h-12">
                 {editingId ? "Update Bond Details" : submitting ? "Adding..." : "Add Bond"}
               </button>
             </form>

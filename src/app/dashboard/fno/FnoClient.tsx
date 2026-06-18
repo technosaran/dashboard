@@ -216,7 +216,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
 
   if (isMobile) {
     return (
-      <div className="flex flex-col gap-6 animate-fade-in pb-[calc(var(--mobile-bottom-nav-height)+2rem)]">
+      <div className="flex flex-col gap-6 animate-fade-in">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-black text-[--text-primary]">F&O Desk</h1>
@@ -543,7 +543,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
       <div className="px-4">
         {activeTab === "positions" ? (
           activePositions.length > 0 ? (
-            <div className="w-full overflow-x-auto custom-scrollbar border border-white/10 rounded-2xl bg-white/[0.01]">
+            <div className="w-full table-responsive-wrapper border border-white/10 rounded-2xl bg-white/[0.01]">
               <table className="w-full text-left border-collapse min-w-[900px]">
                 <thead>
                   <tr className="border-b border-white/10 bg-white/[0.02] text-[9px] text-[--text-muted] uppercase font-black tracking-widest">
@@ -625,7 +625,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
           )
         ) : (
           closedHistory.length > 0 ? (
-            <div className="w-full overflow-x-auto custom-scrollbar border border-white/10 rounded-2xl bg-white/[0.01]">
+            <div className="w-full table-responsive-wrapper border border-white/10 rounded-2xl bg-white/[0.01]">
               <table className="w-full text-left border-collapse min-w-[1000px]">
                 <thead>
                   <tr className="border-b border-white/10 bg-white/[0.02] text-[9px] text-[--text-muted] uppercase font-black tracking-widest">

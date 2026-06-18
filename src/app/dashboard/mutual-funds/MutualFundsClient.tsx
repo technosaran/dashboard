@@ -293,7 +293,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
 
   if (isMobile) {
     return (
-      <div className="flex flex-col gap-6 animate-fade-in pb-[calc(var(--mobile-bottom-nav-height)+2rem)]">
+      <div className="flex flex-col gap-6 animate-fade-in">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-black text-[--text-primary]">Record Mutual Fund</h1>
@@ -479,7 +479,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
         ) : (
           <>
             {/* Desktop Table View */}
-            <div className="hidden md:block mx-4 border border-white/5 rounded-2xl overflow-x-auto custom-scrollbar bg-white/[0.01]">
+            <div className="hidden md:block mx-4 border border-white/5 rounded-2xl table-responsive-wrapper bg-white/[0.01]">
               <table className="w-full text-left border-collapse min-w-[900px]">
                 <thead>
                   <tr className="border-b border-white/5 bg-white/[0.02]">
@@ -690,7 +690,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
         ) : (
           <>
           {/* Desktop History Table View */}
-          <div className="hidden md:block mx-4 border border-white/5 rounded-2xl overflow-x-auto custom-scrollbar bg-white/[0.01]">
+          <div className="hidden md:block mx-4 border border-white/5 rounded-2xl table-responsive-wrapper bg-white/[0.01]">
             <table className="w-full text-left border-collapse min-w-[700px]">
               <thead>
                 <tr className="border-b border-white/5 bg-white/[0.02] text-[9px] text-[--text-muted] uppercase font-black tracking-widest">
@@ -916,7 +916,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                 </div>
               ) : null}
 
-              <button type="submit" disabled={submitting} className="btn-primary w-full shadow-2xl mt-4">
+              <button type="submit" disabled={submitting} className="btn-primary w-full h-12 shadow-2xl mt-4">
                  {editingId ? "Update Mutual Fund Holding" : submitting ? (formData.trade_type === 'buy' ? "Deploying Capital..." : "Liquidating...") : (formData.trade_type === 'buy' ? "Authorize Investment" : "Authorize Redemption")}
               </button>
             </form>

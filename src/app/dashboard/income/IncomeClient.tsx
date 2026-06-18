@@ -224,7 +224,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
     const trendData = Object.entries(trendMap).map(([name, value]) => ({ name, value }));
 
     return { totalIncome, monthlyTotal, pieData, trendData, yoyChange, yoyAbsolute, lastYearTotal };
-  }, [incomes, selectedMonth, selectedYear, accounts]);
+  }, [incomes, selectedMonth, selectedYear]);
 
   const filteredIncomes = useMemo(() => {
     const filtered = incomes.filter(i => {
@@ -281,7 +281,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
 
   if (isMobile) {
     return (
-      <div className="flex flex-col gap-6 animate-fade-in pb-[calc(var(--mobile-bottom-nav-height)+2rem)]">
+      <div className="flex flex-col gap-6 animate-fade-in">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-black text-[--text-primary]">Record Income</h1>
@@ -488,7 +488,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
             </ResponsiveContainer>
           </div>
         </div>
-        <div className="glass-card-static p-5 md:p-8"><h3 className="text-sm font-bold uppercase tracking-[0.2em] text-[--text-muted] mb-8">Source Distribution</h3><div className="h-[240px] w-full"><ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={stats.pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={8} dataKey="value">{stats.pieData.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} stroke="none" />))}</Pie><Tooltip /></PieChart></ResponsiveContainer></div><div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2">{stats.pieData.slice(0, 4).map((item) => (<div key={item.name} className="flex items-center gap-2"><div className="w-2 h-2 rounded-full" style={{background: item.color}} /><span className="text-[10px] font-bold text-[--text-secondary] truncate">{item.name}</span></div>))}</div></div>
+        <div className="glass-card-static p-5 md:p-8"><h3 className="text-sm font-bold uppercase tracking-[0.2em] text-[--text-muted] mb-8">Source Distribution</h3><div className="h-[240px] w-full"><ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={stats.pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={8} dataKey="value">{stats.pieData.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} stroke="none" />))}</Pie><Tooltip contentStyle={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "12px" }} /></PieChart></ResponsiveContainer></div><div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2">{stats.pieData.slice(0, 4).map((item) => (<div key={item.name} className="flex items-center gap-2"><div className="w-2 h-2 rounded-full" style={{background: item.color}} /><span className="text-[10px] font-bold text-[--text-secondary] truncate">{item.name}</span></div>))}</div></div>
       </div>
 
       <div className="glass-card-static overflow-hidden border-white/5">
@@ -499,7 +499,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
           </div>
         </div>
 
-        <div className="hidden overflow-x-auto w-full custom-scrollbar md:block">
+        <div className="hidden table-responsive-wrapper md:block">
           {incomes.length === 0 ? (
             <EmptyState
               title="Track Your Wealth Inflow"
@@ -738,7 +738,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
                   })()}
                 </div>
               </div>
-              <button type="submit" disabled={submitting} className="btn-primary w-full shadow-xl shadow-[--accent-primary]/20 mt-4">{submitting ? "Deploying..." : "Finalize Entry"}</button>
+              <button type="submit" disabled={submitting} className="btn-primary w-full h-12 shadow-xl shadow-[--accent-primary]/20 mt-4">{submitting ? "Deploying..." : "Finalize Entry"}</button>
             </form>
           </div>
         </div>

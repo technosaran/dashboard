@@ -470,7 +470,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
                  </div>
                )}
 
-               <button type="submit" disabled={submitting} className="btn-primary w-full shadow-2xl mt-4">
+                <button type="submit" disabled={submitting} className="btn-primary w-full h-12 shadow-2xl mt-4">
                  {submitting ? (editingGoalId ? "Updating..." : "Establishing...") : (editingGoalId ? "Update Goal" : "Commit Goal")}
                </button>
              </form>
@@ -521,8 +521,8 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
                  </div>
                </div>
                <div className="flex gap-3 pt-2">
-                 <button type="button" onClick={() => setShowContributeModal(false)} className="btn-secondary h-11 text-[10px]">Cancel</button>
-                 <button type="submit" disabled={submitting} className="btn-primary flex-[1.5] h-11 text-[10px] shadow-xl shadow-[--accent-primary]/20">Confirm</button>
+                  <button type="button" onClick={() => setShowContributeModal(false)} className="btn-secondary h-12 text-[10px]">Cancel</button>
+                  <button type="submit" disabled={submitting} className="btn-primary flex-[1.5] h-12 text-[10px] shadow-xl shadow-[--accent-primary]/20">Confirm</button>
                </div>
              </form>
           </div>

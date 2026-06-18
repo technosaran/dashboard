@@ -19,7 +19,7 @@ const CATEGORIES = [
 ];
 
 export default function BudgetClient({ initialData }: { initialData?: FinanceData }) {
-  const { data: { budgets, expenses, incomes, accounts }, mutate } = useFinanceData(initialData);
+  const { data: { budgets, expenses, incomes }, mutate } = useFinanceData(initialData);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [submitting, withLock] = useSubmitLock();
@@ -39,7 +39,7 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
       }
     });
     return spending;
-  }, [expenses, accounts, selectedMonth, selectedYear]);
+  }, [expenses, selectedMonth, selectedYear]);
 
   // Calculate total income for selected period
   const totalIncome = useMemo(() => {
@@ -51,7 +51,7 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
       }
       return sum;
     }, 0);
-  }, [incomes, accounts, selectedMonth, selectedYear]);
+  }, [incomes, selectedMonth, selectedYear]);
 
   const currentBudgets = useMemo(() => {
     return budgets.filter(b => b.period_month === selectedMonth && b.period_year === selectedYear);

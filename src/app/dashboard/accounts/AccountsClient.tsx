@@ -233,7 +233,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
 
   if (isMobile) {
     return (
-      <div className="flex flex-col gap-6 animate-fade-in pb-[calc(var(--mobile-bottom-nav-height)+2rem)]">
+      <div className="flex flex-col gap-6 animate-fade-in">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-black text-[--text-primary]">Accounts</h1>
@@ -883,7 +883,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
                     </div>
                   )}
                 </div>
-                <button type="submit" disabled={submitting} className="btn-primary w-full shadow-xl shadow-[--accent-primary]/20 transition-all mt-4">{submitting ? "Processing Registry..." : (editingId ? "Update Portfolio" : "Activate Account")}</button>
+                <button type="submit" disabled={submitting} className="btn-primary w-full h-12 shadow-xl shadow-[--accent-primary]/20 transition-all mt-4">{submitting ? "Processing Registry..." : (editingId ? "Update Portfolio" : "Activate Account")}</button>
               </form>
            </div>
         </div>
@@ -911,7 +911,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
             </div>
             <div><label className="block text-[10px] font-black text-[--text-muted] mb-2 uppercase tracking-widest">Amount</label><input required type="number" step="0.01" value={adjustData.amount} onChange={e => setAdjustData({...adjustData, amount: e.target.value})} className="input-premium !h-14 text-xl font-black" placeholder="0.00" autoComplete="new-password" inputMode="decimal" /></div>
             <div><label className="block text-[10px] font-black text-[--text-muted] mb-2 uppercase tracking-widest">Reason / Note</label><input value={adjustData.note} onChange={e => setAdjustData({...adjustData, note: e.target.value})} className="input-premium" placeholder="Why the change?" autoComplete="new-password" /></div>
-            <button type="submit" className="btn-primary w-full h-14 font-black mt-2">Finalize Adjustment</button>
+            <button type="submit" className="btn-primary w-full h-12 font-black mt-2">Finalize Adjustment</button>
           </form>
         </div></div>
       )}
@@ -924,7 +924,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
                 <div><label className="block text-[10px] font-black text-[--text-muted] mb-2 ml-1">SOURCE ACCOUNT</label><select aria-label="Select source account" id="transfer-source" name="from_account" required value={transferFromId || ""} onChange={e => setTransferFromId(e.target.value)} className="input-premium h-14"><option value="">Select source</option>{accounts.map(a => <option key={a.id} value={a.id} style={{background: "var(--bg-surface)"}}>{a.name} ({getCurrencySymbol(a.currency)}{a.balance.toLocaleString()})</option>)}</select></div>
                 <div><label className="block text-[10px] font-black text-[--text-muted] mb-2 ml-1">DESTINATION ACCOUNT</label><select aria-label="Select destination account" id="transfer-destination" name="to_account" required value={transferData.to_account_id} onChange={e => setTransferData({...transferData, to_account_id: e.target.value})} className="input-premium h-14"><option value="">Select target</option>{accounts.map(a => a.id !== transferFromId && <option key={a.id} value={a.id} style={{background: "var(--bg-surface)"}}>{a.name} ({getCurrencySymbol(a.currency)}{a.balance.toLocaleString()})</option>)}</select></div>
                 <div><label className="block text-[10px] font-black text-[--text-muted] mb-2 ml-1">AMOUNT</label><input required type="number" step="0.01" value={transferData.amount} onChange={e => setTransferData({...transferData, amount: e.target.value})} className="input-premium !h-14 text-xl font-black" placeholder="0.00" autoComplete="new-password" inputMode="decimal" /></div>
-                <button type="submit" className="btn-primary w-full shadow-xl shadow-[--accent-primary]/20 mt-4">Execute Transfer</button>
+                <button type="submit" className="btn-primary w-full h-12 shadow-xl shadow-[--accent-primary]/20 mt-4">Execute Transfer</button>
               </form>
            </div>
         </div>
