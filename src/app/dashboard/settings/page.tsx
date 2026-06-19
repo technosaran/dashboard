@@ -33,7 +33,7 @@ export default function SettingsPage() {
       username: profile?.username || "", 
       settings: updatedSettings 
     };
-    mutate((prev: any) => prev ? { ...prev, profile: optimisticProfile } : prev, false);
+    mutate((prev: FinanceData | undefined) => prev ? { ...prev, profile: optimisticProfile } : prev, false);
 
     const res = await updateSettings(updatedSettings);
     if (res.error) {

@@ -67,9 +67,9 @@ export async function addExpense(formData: {
     revalidatePath("/dashboard/ledger");
     
     return { success: true };
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error in addExpense:", err);
-    return { error: err?.message || "An unexpected error occurred" };
+    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
   }
 }
 
@@ -135,8 +135,8 @@ export async function deleteExpense(id: string) {
     revalidatePath("/dashboard/ledger");
 
     return { success: true };
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error in deleteExpense:", err);
-    return { error: err?.message || "An unexpected error occurred" };
+    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
   }
 }

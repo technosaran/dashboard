@@ -5,7 +5,7 @@ import { useMemo } from "react";
 import { createClient } from "@/lib/supabase-browser";
 import type { Tables } from "@/lib/database.types";
 
-const EMPTY_ARRAY: any[] = [];
+const EMPTY_ARRAY: never[] = [];
 
 export interface FnoTrade {
   id: string;
@@ -63,31 +63,40 @@ export const OVERVIEW_KEY = "finance_overview";
 async function fetchSummary() {
   const { data, error } = await supabase.rpc("get_summary_v1");
   if (error) throw error;
-  return data as any;
+  return data;
 }
 
 async function fetchInvestments() {
   const { data, error } = await supabase.rpc("get_investments_v1");
   if (error) throw error;
-  return data as any;
+  return data as {
+    investments: Tables<"investments">[];
+    mutualFunds: Tables<"mutual_funds">[];
+    bonds: Tables<"bonds">[];
+    alternativeAssets: Tables<"alternative_assets">[];
+    stockTrades: Tables<"stock_trades">[];
+    mutualFundTrades: Tables<"mutual_fund_trades">[];
+    bondTransactions: Tables<"bond_transactions">[];
+    fnoTrades: FnoTrade[];
+  };
 }
 
 async function fetchCashflow() {
   const { data, error } = await supabase.rpc("get_cashflow_v1");
   if (error) throw error;
-  return data as any;
+  return data;
 }
 
 async function fetchForex() {
   const { data, error } = await supabase.rpc("get_forex_v1");
   if (error) throw error;
-  return data as any;
+  return data;
 }
 
 async function fetchFamily() {
   const { data, error } = await supabase.rpc("get_family_v1");
   if (error) throw error;
-  return data as any;
+  return data;
 }
 
 export function useFinanceData(initialData?: FinanceData) {
@@ -213,9 +222,15 @@ export function useFinanceData(initialData?: FinanceData) {
     forexSWR.isValidating ||
     familySWR.isValidating;
 
-  const mutate = async (data?: any, options?: any) => {
+  const mutate = async (
+    data?: unknown,
+    options?: unknown
+  ) => {
     if (data !== undefined) {
-      await summarySWR.mutate(data, options);
+      await summarySWR.mutate(
+        data as Parameters<typeof summarySWR.mutate>[0],
+        options as Parameters<typeof summarySWR.mutate>[1]
+      );
     } else {
       await Promise.all([
         summarySWR.mutate(),

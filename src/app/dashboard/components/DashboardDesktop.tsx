@@ -84,7 +84,6 @@ type Props = {
   goals: Tables<"goals">[];
   accounts: FinanceData["accounts"];
   isLoading: boolean;
-  isValidating: boolean;
 };
 
 const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goals, accounts, isLoading }: Props) {

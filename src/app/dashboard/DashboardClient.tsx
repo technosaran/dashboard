@@ -206,7 +206,7 @@ export default function DashboardClient() {
   return (
     <>
       {showOnboarding && <OnboardingWizard onComplete={handleOnboardingComplete} />}
-      <DashboardDesktop stats={stats} recentLogs={recentLogs} goals={goals} accounts={accounts} isLoading={isLoading} isValidating={isValidating} />
+      <DashboardDesktop stats={stats} recentLogs={recentLogs} goals={goals} accounts={accounts} isLoading={isLoading} />
     </>
   );
 }

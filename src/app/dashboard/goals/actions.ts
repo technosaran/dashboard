@@ -70,9 +70,9 @@ export async function createGoal(data: {
         revalidatePath("/dashboard/ledger");
         revalidatePath("/dashboard/accounts");
         return { success: true };
-    } catch (err: any) {
+    } catch (err) {
         console.error("Error in createGoal:", err);
-        return { error: err?.message || "An unexpected error occurred" };
+        return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
     }
 }
 
@@ -105,9 +105,9 @@ export async function updateGoalAmount(goalId: string, amount: number, accountId
         revalidatePath("/dashboard/ledger");
         revalidatePath("/dashboard/accounts");
         return { success: true };
-    } catch (err: any) {
+    } catch (err) {
         console.error("Error in updateGoalAmount:", err);
-        return { error: err?.message || "An unexpected error occurred" };
+        return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
     }
 }
 
@@ -131,9 +131,9 @@ export async function deleteGoal(id: string) {
         revalidatePath("/dashboard/ledger");
         revalidatePath("/dashboard/accounts");
         return { success: true };
-    } catch (err: any) {
+    } catch (err) {
         console.error("Error in deleteGoal:", err);
-        return { error: err?.message || "An unexpected error occurred" };
+        return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
     }
 }
 
@@ -153,8 +153,8 @@ export async function updateGoal(id: string, data: { name: string; target_amount
         if (error) return { error: error.message };
         revalidatePath("/dashboard/goals");
         return { success: true };
-    } catch (err: any) {
+    } catch (err) {
         console.error("Error in updateGoal:", err);
-        return { error: err?.message || "An unexpected error occurred" };
+        return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
     }
 }

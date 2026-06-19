@@ -23,9 +23,9 @@ export async function upsertBudget(formData: {
     if (error) return { error: error.message };
     revalidatePath("/dashboard/budget");
     return { success: true };
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error in upsertBudget:", err);
-    return { error: err?.message || "An unexpected error occurred" };
+    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
   }
 }
 
@@ -47,8 +47,8 @@ export async function deleteBudget(id: string) {
 
     revalidatePath("/dashboard/budget");
     return { success: true };
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error in deleteBudget:", err);
-    return { error: err?.message || "An unexpected error occurred" };
+    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
   }
 }

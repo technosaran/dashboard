@@ -27,7 +27,7 @@ export async function logFnoTrade(data: {
   const cleanAccountId = data.account_id && data.account_id !== "null" && data.account_id !== "" ? data.account_id : null;
   const cleanStrike = data.instrument_type === "FUT" ? null : (data.strike_price || null);
 
-  const { data: res, error } = await (supabase.rpc as any)("fno_log_trade", {
+  const { data: res, error } = await (supabase.rpc as unknown as <T>(fn: string, args: Record<string, unknown>) => Promise<{ data: T; error: { message: string } | null }>)("fno_log_trade", {
     p_user_id: user.id,
     p_symbol: data.symbol.toUpperCase().trim(),
     p_instrument_type: data.instrument_type,
@@ -65,7 +65,7 @@ export async function closeFnoTrade(
 
   if (data.exit_price < 0) return { error: "Exit price cannot be negative" };
 
-  const { data: res, error } = await (supabase.rpc as any)("fno_close_position", {
+  const { data: res, error } = await (supabase.rpc as unknown as <T>(fn: string, args: Record<string, unknown>) => Promise<{ data: T; error: { message: string } | null }>)("fno_close_position", {
     p_user_id: user.id,
     p_trade_id: tradeId,
     p_exit_price: data.exit_price,
@@ -88,7 +88,7 @@ export async function deleteFnoTrade(tradeId: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
-  const { data: res, error } = await (supabase.rpc as any)("fno_delete_trade", {
+  const { data: res, error } = await (supabase.rpc as unknown as <T>(fn: string, args: Record<string, unknown>) => Promise<{ data: T; error: { message: string } | null }>)("fno_delete_trade", {
     p_user_id: user.id,
     p_trade_id: tradeId
   });

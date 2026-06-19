@@ -2,9 +2,11 @@
 
 import { createClient } from "@/lib/supabase-server";
 import { revalidatePath } from "next/cache";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/database.types";
 
 // Self-healing bridge: automatically create a forex_accounts entry matching a standard account ID if it is missing
-async function ensureForexAccount(supabase: any, forexAccountId: string, userId: string) {
+async function ensureForexAccount(supabase: SupabaseClient<Database>, forexAccountId: string, userId: string) {
   try {
     // Check if forex account exists
     const { data: existing } = await supabase
@@ -19,7 +21,7 @@ async function ensureForexAccount(supabase: any, forexAccountId: string, userId:
     // If not, fetch standard account details
     const { data: stdAcc, error: fetchErr } = await supabase
       .from("accounts")
-      .select("name, broker_name, currency, balance")
+      .select("name, institution, currency, balance")
       .eq("id", forexAccountId)
       .eq("user_id", userId)
       .maybeSingle();
@@ -34,7 +36,7 @@ async function ensureForexAccount(supabase: any, forexAccountId: string, userId:
       .insert({
         id: forexAccountId,
         user_id: userId,
-        broker_name: stdAcc.broker_name || "Standard Broker",
+        broker_name: stdAcc.institution || "Standard Broker",
         account_label: stdAcc.name,
         currency: stdAcc.currency || "USD",
         balance: stdAcc.balance || 0,

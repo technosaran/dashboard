@@ -1,0 +1,30 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Profile {
+  id        String   @id @db.Uuid
+  username  String?
+  settings  String?  // JSON string
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("profiles")
+}
+
+model Account {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  name       String
+  type       String
+  balance    Decimal  @default(0) @db.Decimal
+  currency   String   @default("INR")
+  bankName   String?  @map("bank_name")
+  brokerName String?  @map("broker_name")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@map("accounts")
+}

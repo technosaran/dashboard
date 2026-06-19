@@ -61,8 +61,10 @@ export async function resetUserData() {
 type ProfileSettings = {
   enabled_modules?: string[];
   default_accounts?: Record<string, string | null>;
-  [key: string]: any;
+  [key: string]: unknown;
 };
+
+type SafeJson = string | number | boolean | null | { [key: string]: SafeJson | undefined } | SafeJson[];
 
 export async function updateSettings(settings: ProfileSettings) {
   const supabase = await createClient();
@@ -71,7 +73,7 @@ export async function updateSettings(settings: ProfileSettings) {
 
   const { error } = await supabase
     .from("profiles")
-    .update({ settings })
+    .update({ settings: settings as unknown as SafeJson })
     .eq("id", user.id);
 
   if (error) return { error: error.message };

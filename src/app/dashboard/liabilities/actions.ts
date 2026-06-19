@@ -51,9 +51,9 @@ export async function addLiability(formData: {
     revalidatePath("/dashboard/ledger");
     revalidatePath("/dashboard/accounts");
     return { success: true };
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error in addLiability:", err);
-    return { error: err?.message || "An unexpected error occurred" };
+    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
   }
 }
 
@@ -90,9 +90,9 @@ export async function updateLiability(id: string, formData: LiabilityUpdate) {
     if (error) return { error: error.message };
     revalidatePath("/dashboard/liabilities");
     return { success: true };
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error in updateLiability:", err);
-    return { error: err?.message || "An unexpected error occurred" };
+    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
   }
 }
 
@@ -116,8 +116,8 @@ export async function deleteLiability(id: string) {
     revalidatePath("/dashboard/ledger");
     revalidatePath("/dashboard/accounts");
     return { success: true };
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error in deleteLiability:", err);
-    return { error: err?.message || "An unexpected error occurred" };
+    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
   }
 }

@@ -62,9 +62,9 @@ export async function addIncome(formData: {
     revalidatePath("/dashboard", "layout");
     
     return { success: true };
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error in addIncome:", err);
-    return { error: err?.message || "An unexpected error occurred" };
+    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
   }
 }
 
@@ -130,8 +130,8 @@ export async function deleteIncome(id: string) {
     revalidatePath("/dashboard/ledger");
 
     return { success: true };
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error in deleteIncome:", err);
-    return { error: err?.message || "An unexpected error occurred" };
+    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
   }
 }

@@ -258,8 +258,8 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
         } else {
           toast.error(result.error);
         }
-      } catch (err: any) {
-        toast.error(err?.message || "Failed to process stock transaction. Please try again.");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to process stock transaction. Please try again.");
       }
     });
   }

@@ -50,9 +50,9 @@ export async function addAlternativeAsset(formData: {
     revalidatePath("/dashboard/ledger");
     revalidatePath("/dashboard/accounts");
     return { success: true };
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error in addAlternativeAsset:", err);
-    return { error: err?.message || "An unexpected error occurred" };
+    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
   }
 }
 
@@ -83,9 +83,9 @@ export async function updateAlternativeAsset(id: string, formData: AlternativeAs
     if (error) return { error: error.message };
     revalidatePath("/dashboard/alternative-assets");
     return { success: true };
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error in updateAlternativeAsset:", err);
-    return { error: err?.message || "An unexpected error occurred" };
+    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
   }
 }
 
@@ -110,9 +110,9 @@ export async function deleteAlternativeAsset(id: string) {
     revalidatePath("/dashboard/accounts");
     revalidatePath("/dashboard");
     return { success: true };
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error in deleteAlternativeAsset:", err);
-    return { error: err?.message || "An unexpected error occurred" };
+    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
   }
 }
 
@@ -138,8 +138,8 @@ export async function revertLedgerLog(logId: string) {
     revalidatePath("/dashboard");
     
     return { success: true };
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error in revertLedgerLog:", err);
-    return { error: err?.message || "An unexpected error occurred" };
+    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
   }
 }

@@ -218,7 +218,6 @@ input, textarea, [contenteditable="true"] {
   overflow: hidden;
   /* Hardware acceleration */
   transform: translateZ(0);
-  will-change: backdrop-filter;
 }
 
 .glass-card::before,

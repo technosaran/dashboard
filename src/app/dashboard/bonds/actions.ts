@@ -121,9 +121,9 @@ export async function createBond(data: BondFormData) {
     revalidatePath("/dashboard/ledger");
     revalidatePath("/dashboard");
     return { success: true };
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error in createBond:", err);
-    return { error: err?.message || "An unexpected error occurred" };
+    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
   }
 }
 
@@ -190,9 +190,9 @@ export async function updateBond(id: string, data: {
 
     revalidatePath("/dashboard/bonds");
     return { success: true };
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error in updateBond:", err);
-    return { error: err?.message || "An unexpected error occurred" };
+    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
   }
 }
 

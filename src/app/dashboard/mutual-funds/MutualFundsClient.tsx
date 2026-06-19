@@ -284,8 +284,8 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
             toast.error(res.error);
           }
         }
-      } catch (err: any) {
-        toast.error(err?.message || "Failed to process mutual fund investment. Please try again.");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to process mutual fund investment. Please try again.");
       }
     });
   }

@@ -160,8 +160,8 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
         } else {
           toast.error(res.error);
         }
-      } catch (err: any) {
-        toast.error(err?.message || "Failed to log trade.");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to log trade.");
       }
     });
   }
@@ -190,8 +190,8 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
         } else {
           toast.error(res.error);
         }
-      } catch (err: any) {
-        toast.error(err?.message || "Failed to close position.");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to close position.");
       }
     });
   }
@@ -208,8 +208,8 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
         } else {
           toast.error(res.error);
         }
-      } catch (err: any) {
-        toast.error(err?.message || "Failed to delete trade.");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to delete trade.");
       }
     });
   }

@@ -31,9 +31,9 @@ export async function createAccount(data: {
 
     revalidatePath("/dashboard", "layout");
     return { success: true };
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error in createAccount:", err);
-    return { error: err?.message || "An unexpected error occurred" };
+    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
   }
 }
 
@@ -77,9 +77,9 @@ export async function updateAccount(id: string, data: Record<string, unknown>) {
 
     revalidatePath("/dashboard", "layout");
     return { success: true };
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error in updateAccount:", err);
-    return { error: err?.message || "An unexpected error occurred" };
+    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
   }
 }
 
@@ -109,9 +109,9 @@ export async function deleteAccount(id: string) {
 
     revalidatePath("/dashboard", "layout");
     return { success: true };
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error in deleteAccount:", err);
-    return { error: err?.message || "An unexpected error occurred" };
+    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
   }
 }
 
@@ -129,9 +129,9 @@ export async function getAccounts() {
 
     if (error) return { data: null, error: error.message };
     return { data, error: null };
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error in getAccounts:", err);
-    return { data: null, error: err?.message || "An unexpected error occurred" };
+    return { data: null, error: err instanceof Error ? err.message : "An unexpected error occurred" };
   }
 }
 
@@ -174,9 +174,9 @@ export async function createTransfer(data: TransferData) {
 
     revalidatePath("/dashboard", "layout");
     return { success: true };
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error in createTransfer:", err);
-    return { error: err?.message || "An unexpected error occurred" };
+    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
   }
 }
 
@@ -209,8 +209,8 @@ export async function adjustBalance(id: string, amount: number, note: string) {
 
     revalidatePath("/dashboard", "layout");
     return { success: true };
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error in adjustBalance:", err);
-    return { error: err?.message || "An unexpected error occurred" };
+    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
   }
 }
