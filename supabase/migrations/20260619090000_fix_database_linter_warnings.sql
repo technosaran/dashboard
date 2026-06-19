@@ -3,13 +3,14 @@
 -- Purpose: Convert read-only overview functions to SECURITY INVOKER and revoke public execute rights on SECURITY DEFINER functions.
 
 -- 1. Switch read-only overview functions to SECURITY INVOKER
-ALTER FUNCTION IF EXISTS public.get_summary_v1() SECURITY INVOKER;
-ALTER FUNCTION IF EXISTS public.get_investments_v1() SECURITY INVOKER;
-ALTER FUNCTION IF EXISTS public.get_cashflow_v1() SECURITY INVOKER;
-ALTER FUNCTION IF EXISTS public.get_forex_v1() SECURITY INVOKER;
-ALTER FUNCTION IF EXISTS public.get_family_v1() SECURITY INVOKER;
-ALTER FUNCTION IF EXISTS public.get_finance_overview_v2() SECURITY INVOKER;
-ALTER FUNCTION IF EXISTS public.get_finance_overview() SECURITY INVOKER;
+ALTER FUNCTION public.get_summary_v1() SECURITY INVOKER;
+ALTER FUNCTION public.get_investments_v1() SECURITY INVOKER;
+ALTER FUNCTION public.get_cashflow_v1() SECURITY INVOKER;
+ALTER FUNCTION public.get_forex_v1() SECURITY INVOKER;
+ALTER FUNCTION public.get_family_v1() SECURITY INVOKER;
+ALTER FUNCTION public.get_finance_overview_v2() SECURITY INVOKER;
+ALTER FUNCTION public.get_finance_overview() SECURITY INVOKER;
+
 
 -- 2. Revoke execute on trigger functions from all roles (they only run via trigger context)
 REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM public, anon, authenticated;
