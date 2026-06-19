@@ -26,15 +26,27 @@ BEGIN
         JOIN pg_type t ON p.prorettype = t.oid
         WHERE p.pronamespace = 'public'::regnamespace
           AND p.prosecdef = true
+          AND NOT EXISTS (
+              SELECT 1 
+              FROM pg_depend d 
+              WHERE d.objid = p.oid 
+                AND d.deptype = 'e'
+          )
     ) LOOP
-        IF r.return_type = 'trigger' THEN
-            -- Revoke execute from everyone for trigger functions
-            EXECUTE 'REVOKE EXECUTE ON FUNCTION ' || r.sig || ' FROM public, anon, authenticated;';
-        ELSE
-            -- Revoke execute from public/anon for regular security definer functions
-            EXECUTE 'REVOKE EXECUTE ON FUNCTION ' || r.sig || ' FROM public;';
-            EXECUTE 'REVOKE EXECUTE ON FUNCTION ' || r.sig || ' FROM anon;';
-            EXECUTE 'GRANT EXECUTE ON FUNCTION ' || r.sig || ' TO authenticated, service_role;';
-        END IF;
+        BEGIN
+            IF r.return_type = 'trigger' THEN
+                -- Revoke execute from everyone for trigger functions
+                EXECUTE 'REVOKE EXECUTE ON FUNCTION ' || r.sig || ' FROM public, anon, authenticated;';
+            ELSE
+                -- Revoke execute from public/anon for regular security definer functions
+                EXECUTE 'REVOKE EXECUTE ON FUNCTION ' || r.sig || ' FROM public;';
+                EXECUTE 'REVOKE EXECUTE ON FUNCTION ' || r.sig || ' FROM anon;';
+                EXECUTE 'GRANT EXECUTE ON FUNCTION ' || r.sig || ' TO authenticated, service_role;';
+            END IF;
+        EXCEPTION WHEN OTHERS THEN
+            -- Safely skip functions we cannot modify (e.g. system or extension owned)
+            RAISE NOTICE 'Skipping function % due to error: %', r.sig, SQLERRM;
+        END;
     END LOOP;
 END $$;
+
