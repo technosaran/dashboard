@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase-server";
 import ForexClient from "./ForexClient";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
+import { ModuleGuard } from "@/components/module-guard";
 
 export const metadata: Metadata = {
   title: "Forex",
@@ -20,7 +21,10 @@ export default async function ForexPage() {
 
   return (
     <Suspense fallback={null}>
-      <ForexClient />
+      <ModuleGuard moduleKey="Forex">
+        <ForexClient />
+      </ModuleGuard>
     </Suspense>
   );
 }
+

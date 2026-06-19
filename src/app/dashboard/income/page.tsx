@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase-server";
 import IncomeClient from "./IncomeClient";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
+import { ModuleGuard } from "@/components/module-guard";
 
 export const metadata: Metadata = {
   title: "Income Tracking",
@@ -24,7 +25,10 @@ export default async function IncomePage() {
   }
   return (
     <Suspense fallback={null}>
-      <IncomeClient />
+      <ModuleGuard moduleKey="Income">
+        <IncomeClient />
+      </ModuleGuard>
     </Suspense>
   );
 }
+

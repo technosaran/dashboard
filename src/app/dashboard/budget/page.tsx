@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import BudgetClient from "./BudgetClient";
+import { ModuleGuard } from "@/components/module-guard";
 
 export const metadata = {
   title: "Budget Planner | FinanceOS",
@@ -9,7 +10,10 @@ export const metadata = {
 export default async function BudgetPage() {
   return (
     <Suspense fallback={<div className="animate-pulse bg-white/5 h-screen rounded-2xl" />}>
-      <BudgetClient />
+      <ModuleGuard moduleKey="Budget">
+        <BudgetClient />
+      </ModuleGuard>
     </Suspense>
   );
 }
+

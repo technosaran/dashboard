@@ -5,6 +5,7 @@ import StocksClient from "./StocksClient";
 import { redirect } from "next/navigation";
 import type { Tables } from "@/lib/database.types";
 import type { Metadata } from "next";
+import { ModuleGuard } from "@/components/module-guard";
 
 export const metadata: Metadata = {
   title: "Stocks",
@@ -26,7 +27,10 @@ export default async function StocksPage() {
   }
   return (
     <Suspense fallback={null}>
-      <StocksClient />
+      <ModuleGuard moduleKey="Stocks">
+        <StocksClient />
+      </ModuleGuard>
     </Suspense>
   );
 }
+

@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase-server";
 import LedgerClient from "./LedgerClient";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
+import { ModuleGuard } from "@/components/module-guard";
 
 export const metadata: Metadata = {
   title: "Ledger",
@@ -24,7 +25,10 @@ export default async function LedgerPage() {
 
   return (
     <Suspense fallback={null}>
-      <LedgerClient />
+      <ModuleGuard moduleKey="Ledger">
+        <LedgerClient />
+      </ModuleGuard>
     </Suspense>
   );
 }
+

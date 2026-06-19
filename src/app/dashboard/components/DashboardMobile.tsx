@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { format } from "date-fns";
-import { memo, useState } from "react";
-import type { FinanceData } from "@/hooks/use-finance-data";
+import { memo, useState, useMemo } from "react";
+import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
+import { MODULE_KEYS } from "@/lib/modules";
 
 type DashboardStats = {
   totalBalance: number;
@@ -33,7 +34,25 @@ type Props = {
   isValidating: boolean;
 };
 
+const quickActions = [
+  { label: "Expense", href: "/dashboard/expenses?action=new", icon: "🔴", color: "var(--danger)", desc: "Deduct money", module: "Expenses" },
+  { label: "Income", href: "/dashboard/income?action=new", icon: "🟢", color: "var(--success)", desc: "Add earnings", module: "Income" },
+  { label: "Transfer", href: "/dashboard/accounts?action=transfer", icon: "🔄", color: "#6366f1", desc: "Between accounts" },
+  { label: "Stock Trade", href: "/dashboard/stocks?action=new", icon: "📈", color: "#3b82f6", desc: "Equities market", module: "Stocks" },
+  { label: "Mutual Fund", href: "/dashboard/mutual-funds?action=new", icon: "🏦", color: "#a855f7", desc: "SIP & Lumpsum", module: "Mutual Funds" },
+  { label: "FnO Trade", href: "/dashboard/fno?action=new", icon: "📊", color: "#10b981", desc: "Derivatives", module: "FnO" },
+  { label: "Bonds", href: "/dashboard/bonds?action=new", icon: "🔏", color: "#eab308", desc: "Fixed income", module: "Bonds" },
+  { label: "Forex", href: "/dashboard/forex?action=new", icon: "💱", color: "#fbbf24", desc: "Currencies", module: "Forex" },
+  { label: "Liability", href: "/dashboard/liabilities?action=new", icon: "💸", color: "#ec4899", desc: "Loans & EMIs", module: "Liabilities" },
+  { label: "Alt Asset", href: "/dashboard/alternative-assets?action=new", icon: "🏢", color: "#14b8a6", desc: "Gold & Property", module: "Alt Assets" },
+];
+
 const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, accounts, isValidating }: Props) {
+  const { data: { profile } = {} } = useFinanceData();
+  const enabledModules = useMemo(() => {
+    return profile?.settings?.enabled_modules || [...MODULE_KEYS];
+  }, [profile]);
+
   const [showUSD, setShowUSD] = useState(false);
   const getAccountCurrency = (accountId: string | null) => {
     if (!accountId) return "INR";
@@ -41,18 +60,10 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, accou
     return acc ? acc.currency : "INR";
   };
 
-  const quickActions = [
-    { label: "Expense", href: "/dashboard/expenses?action=new", icon: "🔴", color: "var(--danger)", desc: "Deduct money" },
-    { label: "Income", href: "/dashboard/income?action=new", icon: "🟢", color: "var(--success)", desc: "Add earnings" },
-    { label: "Transfer", href: "/dashboard/accounts?action=transfer", icon: "🔄", color: "#6366f1", desc: "Between accounts" },
-    { label: "Stock Trade", href: "/dashboard/stocks?action=new", icon: "📈", color: "#3b82f6", desc: "Equities market" },
-    { label: "Mutual Fund", href: "/dashboard/mutual-funds?action=new", icon: "🏦", color: "#a855f7", desc: "SIP & Lumpsum" },
-    { label: "FnO Trade", href: "/dashboard/fno?action=new", icon: "📊", color: "#10b981", desc: "Derivatives" },
-    { label: "Bonds", href: "/dashboard/bonds?action=new", icon: "🔏", color: "#eab308", desc: "Fixed income" },
-    { label: "Forex", href: "/dashboard/forex?action=new", icon: "💱", color: "#fbbf24", desc: "Currencies" },
-    { label: "Liability", href: "/dashboard/liabilities?action=new", icon: "💸", color: "#ec4899", desc: "Loans & EMIs" },
-    { label: "Alt Asset", href: "/dashboard/alternative-assets?action=new", icon: "🏢", color: "#14b8a6", desc: "Gold & Property" },
-  ];
+  const filteredQuickActions = useMemo(() => {
+    return quickActions.filter(action => !action.module || enabledModules.includes(action.module));
+  }, [enabledModules]);
+
 
   return (
     <div className="relative z-20 flex min-h-screen flex-col gap-6 md:hidden animate-fade-in">
@@ -87,12 +98,12 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, accou
         </div>
 
         <div className="grid grid-cols-2 gap-2.5">
-          {quickActions.map((action) => (
+          {filteredQuickActions.map((action) => (
             <Link 
               key={action.label} 
               href={action.href} 
               prefetch={true} 
-              className="glass-card-static p-3 flex flex-col items-start gap-1.5 no-underline transition-all active:scale-[0.97] bg-white/[0.01] hover:bg-white/[0.03] border border-white/5 shadow-md rounded-2xl"
+              className="glass-card-static p-3 flex flex-col items-start gap-1.5 no-underline transition-all active:scale-[0.97] bg-white/[0.01] hover:bg-white/[0.03] border border-white/5 shadow-md rounded-2xl animate-fade-in"
               style={{ borderLeft: `3px solid ${action.color}` }}
             >
               <div className="flex items-center gap-2">
@@ -106,39 +117,41 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, accou
       </div>
 
       {/* FINANCIAL PULSE (RECENT CONFIRMATIONS) */}
-      <div className="px-1">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Financial Pulse</h3>
-          <span className={`status-dot scale-50 ${isValidating ? 'animate-pulse bg-yellow-400' : 'bg-emerald-400'}`} />
-        </div>
-        <div className="space-y-1.5">
-          {recentLogs.slice(0, 4).map((log) => {
-             const isOut = ["DELETE", "TRANSFER_OUT", "SEND_MONEY", "ADJUST_DOWN"].includes(log.action_type);
-             const logCurrencySymbol = getAccountCurrency(log.account_id) === 'USD' ? '$' : '₹';
-             return (
-               <div key={log.id} className="glass-card-static flex items-center justify-between gap-3 p-3 bg-white/[0.01] border border-white/5 rounded-xl">
-                 <div className="flex min-w-0 items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-xs shrink-0">
-                      {log.action_type === "CREATE" ? "✨" : isOut ? "📉" : "📈"}
+      {enabledModules.includes("Ledger") && (
+        <div className="px-1 animate-fade-in">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Financial Pulse</h3>
+            <span className={`status-dot scale-50 ${isValidating ? 'animate-pulse bg-yellow-400' : 'bg-emerald-400'}`} />
+          </div>
+          <div className="space-y-1.5">
+            {recentLogs.slice(0, 4).map((log) => {
+               const isOut = ["DELETE", "TRANSFER_OUT", "SEND_MONEY", "ADJUST_DOWN"].includes(log.action_type);
+               const logCurrencySymbol = getAccountCurrency(log.account_id) === 'USD' ? '$' : '₹';
+               return (
+                 <div key={log.id} className="glass-card-static flex items-center justify-between gap-3 p-3 bg-white/[0.01] border border-white/5 rounded-xl">
+                   <div className="flex min-w-0 items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-xs shrink-0">
+                        {log.action_type === "CREATE" ? "✨" : isOut ? "📉" : "📈"}
+                      </div>
+                      <div className="flex min-w-0 flex-col">
+                        <span className="truncate text-[10px] font-bold text-white">{log.details}</span>
+                        <span className="truncate text-[7px] font-black uppercase text-[--text-muted]">{log.created_at ? format(new Date(log.created_at), "HH:mm") : "—"} • {log.account_name}</span>
+                      </div>
                     </div>
-                    <div className="flex min-w-0 flex-col">
-                      <span className="truncate text-[10px] font-bold text-white">{log.details}</span>
-                      <span className="truncate text-[7px] font-black uppercase text-[--text-muted]">{log.created_at ? format(new Date(log.created_at), "HH:mm") : "—"} • {log.account_name}</span>
-                    </div>
-                  </div>
-                 <span className={`shrink-0 text-[11px] font-black tabular-nums ${isOut ? "text-danger" : "text-success"}`}>
-                    {log.amount ? `${isOut ? "-" : "+"}${logCurrencySymbol}${log.amount.toLocaleString()}` : "—"}
-                  </span>
-               </div>
-             );
-          })}
-          {recentLogs.length === 0 && (
-            <div className="py-6 text-center glass-card-static text-[8px] uppercase font-bold text-[--text-muted] border-dashed rounded-xl">
-              Waiting for data entry...
-            </div>
-          )}
+                   <span className={`shrink-0 text-[11px] font-black tabular-nums ${isOut ? "text-danger" : "text-success"}`}>
+                      {log.amount ? `${isOut ? "-" : "+"}${logCurrencySymbol}${log.amount.toLocaleString()}` : "—"}
+                    </span>
+                 </div>
+               );
+            })}
+            {recentLogs.length === 0 && (
+              <div className="py-6 text-center glass-card-static text-[8px] uppercase font-bold text-[--text-muted] border-dashed rounded-xl">
+                Waiting for data entry...
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
     </div>
   );

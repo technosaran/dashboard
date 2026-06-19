@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import AlternativeAssetsClient from "./AlternativeAssetsClient";
+import { ModuleGuard } from "@/components/module-guard";
 
 export const metadata = {
   title: "Alternative Assets | FinanceOS",
@@ -9,7 +10,10 @@ export const metadata = {
 export default async function AlternativeAssetsPage() {
   return (
     <Suspense fallback={<div className="animate-pulse bg-white/5 h-screen rounded-2xl" />}>
-      <AlternativeAssetsClient />
+      <ModuleGuard moduleKey="Alt Assets">
+        <AlternativeAssetsClient />
+      </ModuleGuard>
     </Suspense>
   );
 }
+

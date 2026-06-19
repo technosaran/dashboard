@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
 import BondsClient from "./BondsClient";
 import type { Metadata } from "next";
+import { ModuleGuard } from "@/components/module-guard";
 
 export const metadata: Metadata = {
   title: "Bonds",
@@ -22,7 +23,10 @@ export default async function BondsPage() {
 
   return (
     <Suspense fallback={null}>
-      <BondsClient />
+      <ModuleGuard moduleKey="Bonds">
+        <BondsClient />
+      </ModuleGuard>
     </Suspense>
   );
 }
+

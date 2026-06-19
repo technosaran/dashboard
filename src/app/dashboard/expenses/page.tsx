@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase-server";
 import ExpensesClient from "./ExpensesClient";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
+import { ModuleGuard } from "@/components/module-guard";
 
 export const metadata: Metadata = {
   title: "Expense Management",
@@ -24,7 +25,10 @@ export default async function ExpensesPage() {
   }
   return (
     <Suspense fallback={null}>
-      <ExpensesClient />
+      <ModuleGuard moduleKey="Expenses">
+        <ExpensesClient />
+      </ModuleGuard>
     </Suspense>
   );
 }
+

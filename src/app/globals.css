@@ -285,145 +285,148 @@ input, textarea, [contenteditable="true"] {
   }
 }
 
-/* Premium Input Fields - Financial Data Entry */
-.input-premium {
-  width: 100%;
-  height: 3.5rem;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-default);
-  background: var(--bg-base);
-  padding: 0 1.25rem;
-  color: var(--text-primary);
-  font-size: 0.9375rem;
-  font-weight: 500;
-  outline: none;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  font-feature-settings: "tnum" 1;
-}
-
-@media (max-width: 767.98px) {
+@layer base {
+  /* Premium Input Fields - Financial Data Entry */
   .input-premium {
-    height: 3.25rem;
-    font-size: 1rem;
+    width: 100%;
+    height: 3.5rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-default);
+    background: var(--bg-base);
+    padding: 0 1.25rem;
+    color: var(--text-primary);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    outline: none;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    font-feature-settings: "tnum" 1;
   }
-}
 
-.input-premium:focus {
-  border-color: var(--accent-primary);
-  background: var(--bg-surface);
-  box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.08);
-}
+  @media (max-width: 767.98px) {
+    .input-premium {
+      height: 3.25rem;
+      font-size: 1rem;
+    }
+  }
 
-.input-premium::placeholder {
-  color: var(--text-muted);
-  font-weight: 400;
-}
+  .input-premium:focus {
+    border-color: var(--accent-primary);
+    background: var(--bg-surface);
+    box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.08);
+  }
 
-/* Premium Buttons - Professional Financial Actions */
-.btn-primary, .btn-secondary, .btn-danger, .btn-success {
-  padding: 0 1.75rem;
-  height: 2.75rem;
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  border-radius: var(--radius-md);
-  font-weight: 600;
-  font-size: 0.875rem;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid transparent;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-}
+  .input-premium::placeholder {
+    color: var(--text-muted);
+    font-weight: 400;
+  }
 
-.btn-primary::before,
-.btn-secondary::before,
-.btn-danger::before,
-.btn-success::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.btn-primary:hover::before,
-.btn-secondary:hover::before,
-.btn-danger:hover::before,
-.btn-success:hover::before {
-  opacity: 1;
-}
-
-.btn-primary:focus-visible,
-.btn-secondary:focus-visible,
-.btn-danger:focus-visible,
-.btn-success:focus-visible {
-  outline: 2px solid var(--accent-primary);
-  outline-offset: 2px;
-}
-
-@media (max-width: 767.98px) {
+  /* Premium Buttons - Professional Financial Actions */
   .btn-primary, .btn-secondary, .btn-danger, .btn-success {
+    padding: 0 1.75rem;
     height: 2.75rem;
     min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    font-size: 0.875rem;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid transparent;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-primary::before,
+  .btn-secondary::before,
+  .btn-danger::before,
+  .btn-success::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .btn-primary:hover::before,
+  .btn-secondary:hover::before,
+  .btn-danger:hover::before,
+  .btn-success:hover::before {
+    opacity: 1;
+  }
+
+  .btn-primary:focus-visible,
+  .btn-secondary:focus-visible,
+  .btn-danger:focus-visible,
+  .btn-success:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+  }
+
+  @media (max-width: 767.98px) {
+    .btn-primary, .btn-secondary, .btn-danger, .btn-success {
+      height: 2.75rem;
+      min-height: 44px;
+    }
+  }
+
+  .btn-primary {
+    background: var(--gradient-primary);
+    color: white;
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.2);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(14, 165, 233, 0.3);
+  }
+
+  .btn-success {
+    background: var(--gradient-success);
+    color: white;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+  }
+
+  .btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
+  }
+
+  .btn-secondary {
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    border-color: var(--border-default);
+  }
+
+  .btn-secondary:hover {
+    background: var(--bg-overlay);
+    border-color: var(--border-strong);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .btn-danger {
+    background: rgba(239, 68, 68, 0.12);
+    color: var(--danger);
+    border-color: rgba(239, 68, 68, 0.2);
+  }
+
+  .btn-danger:hover {
+    background: rgba(239, 68, 68, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+  }
+
+  .btn-primary:active, .btn-secondary:active, .btn-danger:active, .btn-success:active {
+    transform: translateY(0) scale(0.98);
   }
 }
 
-.btn-primary {
-  background: var(--gradient-primary);
-  color: white;
-  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.2);
-}
-
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(14, 165, 233, 0.3);
-}
-
-.btn-success {
-  background: var(--gradient-success);
-  color: white;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
-}
-
-.btn-success:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
-}
-
-.btn-secondary {
-  background: var(--bg-elevated);
-  color: var(--text-primary);
-  border-color: var(--border-default);
-}
-
-.btn-secondary:hover {
-  background: var(--bg-overlay);
-  border-color: var(--border-strong);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-}
-
-.btn-danger {
-  background: rgba(239, 68, 68, 0.12);
-  color: var(--danger);
-  border-color: rgba(239, 68, 68, 0.2);
-}
-
-.btn-danger:hover {
-  background: rgba(239, 68, 68, 0.2);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
-}
-
-.btn-primary:active, .btn-secondary:active, .btn-danger:active, .btn-success:active {
-  transform: translateY(0) scale(0.98);
-}
 
 /* Dividers - Subtle Professional Separators */
 .divider-glow {

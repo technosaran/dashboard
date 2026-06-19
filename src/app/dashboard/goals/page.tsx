@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase-server";
 import GoalsClient from "./GoalsClient";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
+import { ModuleGuard } from "@/components/module-guard";
 
 export const metadata: Metadata = {
   title: "Goals",
@@ -21,7 +22,10 @@ export default async function GoalsPage() {
   }
   return (
     <Suspense fallback={null}>
-      <GoalsClient />
+      <ModuleGuard moduleKey="Goals">
+        <GoalsClient />
+      </ModuleGuard>
     </Suspense>
   );
 }
+

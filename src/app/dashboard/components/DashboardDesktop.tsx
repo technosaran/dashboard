@@ -4,7 +4,8 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { useMemo, memo, useState } from "react";
 import Greeting from "@/components/greeting";
-import type { FinanceData } from "@/hooks/use-finance-data";
+import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
+import { MODULE_KEYS } from "@/lib/modules";
 import dynamic from "next/dynamic";
 import { 
   Tooltip, 
@@ -87,12 +88,18 @@ type Props = {
 };
 
 const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goals, accounts, isLoading }: Props) {
+  const { data: { profile } = {} } = useFinanceData();
+  const enabledModules = useMemo(() => {
+    return profile?.settings?.enabled_modules || [...MODULE_KEYS];
+  }, [profile]);
+
   const [showUSD, setShowUSD] = useState(false);
   const getAccountCurrency = (accountId: string | null) => {
     if (!accountId) return "INR";
     const acc = accounts.find(a => a.id === accountId);
     return acc ? acc.currency : "INR";
   };
+
   // Extract portfolio data computation into a single useMemo
   const portfolioData = useMemo<PieEntry[]>(() => {
     const totalAssets = showUSD ? stats.totalAssetsUSD : stats.totalAssetsINR;
@@ -334,97 +341,109 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
         <div className="lg:col-span-2 flex flex-col gap-6">
           
           {/* CASH FLOW VELOCITY AREA CHART */}
-          <div className="glass-card-static rich-border p-6 md:p-8">
-            <div className="flex justify-between items-center mb-8">
-              <div className="flex flex-col">
-                <h3 className="text-xs font-black uppercase tracking-widest text-[--text-muted]">Cash Flow Velocity</h3>
-                <span className="text-[10px] text-[--text-secondary] mt-1">Income streams vs Expense consumption trends</span>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full bg-[--accent-primary]" />
-                  <span className="text-[10px] font-bold text-white/70">Income</span>
+          {(enabledModules.includes("Income") || enabledModules.includes("Expenses")) && (
+            <div className="glass-card-static rich-border p-6 md:p-8 animate-fade-in">
+              <div className="flex justify-between items-center mb-8">
+                <div className="flex flex-col">
+                  <h3 className="text-xs font-black uppercase tracking-widest text-[--text-muted]">Cash Flow Velocity</h3>
+                  <span className="text-[10px] text-[--text-secondary] mt-1">Income streams vs Expense consumption trends</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-                  <span className="text-[10px] font-bold text-white/70">Expenses</span>
+                <div className="flex items-center gap-4">
+                  {enabledModules.includes("Income") && (
+                    <div className="flex items-center gap-2">
+                      <div className="w-2.5 h-2.5 rounded-full bg-[--accent-primary]" />
+                      <span className="text-[10px] font-bold text-white/70">Income</span>
+                    </div>
+                  )}
+                  {enabledModules.includes("Expenses") && (
+                    <div className="flex items-center gap-2">
+                      <div className="w-2.5 h-2.5 rounded-full bg-rose-500" />
+                      <span className="text-[10px] font-bold text-white/70">Expenses</span>
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
 
-            <div className="h-[280px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={stats.trendData} margin={{ left: -10, right: 10, top: 10, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="incomeGlow" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="var(--accent-primary)" stopOpacity={0.2} />
-                      <stop offset="95%" stopColor="var(--accent-primary)" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="expenseGlow" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.2} />
-                      <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 10, fontWeight: 700 }} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 10 }} dx={-10} />
-                  <Tooltip 
-                    contentStyle={{ 
-                      background: 'var(--bg-surface)', 
-                      border: '1px solid var(--border-default)', 
-                      borderRadius: '16px',
-                      boxShadow: 'var(--shadow-lg)',
-                      fontWeight: 700
-                    }} 
-                  />
-                  <Area type="monotone" dataKey="income" stroke="var(--accent-primary)" strokeWidth={3} fillOpacity={1} fill="url(#incomeGlow)" />
-                  <Area type="monotone" dataKey="expense" stroke="#ef4444" strokeWidth={3} fillOpacity={1} fill="url(#expenseGlow)" />
-                </AreaChart>
-              </ResponsiveContainer>
+              <div className="h-[280px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={stats.trendData} margin={{ left: -10, right: 10, top: 10, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="incomeGlow" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="var(--accent-primary)" stopOpacity={0.2} />
+                        <stop offset="95%" stopColor="var(--accent-primary)" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="expenseGlow" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#ef4444" stopOpacity={0.2} />
+                        <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 10, fontWeight: 700 }} dy={10} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 10 }} dx={-10} />
+                    <Tooltip 
+                      contentStyle={{ 
+                        background: 'var(--bg-surface)', 
+                        border: '1px solid var(--border-default)', 
+                        borderRadius: '16px',
+                        boxShadow: 'var(--shadow-lg)',
+                        fontWeight: 700
+                      }} 
+                    />
+                    {enabledModules.includes("Income") && (
+                      <Area type="monotone" dataKey="income" stroke="var(--accent-primary)" strokeWidth={3} fillOpacity={1} fill="url(#incomeGlow)" />
+                    )}
+                    {enabledModules.includes("Expenses") && (
+                      <Area type="monotone" dataKey="expense" stroke="#ef4444" strokeWidth={3} fillOpacity={1} fill="url(#expenseGlow)" />
+                    )}
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* FINANCIAL PULSE - LEDGER ACTIVITY */}
-          <div className="glass-card-static rich-border p-6 md:p-8">
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h3 className="text-xs font-black uppercase tracking-widest text-[--text-muted]">Financial Ledger Pulse</h3>
-                <p className="text-[10px] text-[--text-secondary] mt-1">Real-time cryptographic logging audit trail</p>
+          {enabledModules.includes("Ledger") && (
+            <div className="glass-card-static rich-border p-6 md:p-8 animate-fade-in">
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h3 className="text-xs font-black uppercase tracking-widest text-[--text-muted]">Financial Ledger Pulse</h3>
+                  <p className="text-[10px] text-[--text-secondary] mt-1">Real-time cryptographic logging audit trail</p>
+                </div>
+                <Link href="/dashboard/ledger" className="btn-secondary !h-9 !px-4 text-[10px]">Audit Trail</Link>
               </div>
-              <Link href="/dashboard/ledger" className="btn-secondary !h-9 !px-4 text-[10px]">Audit Trail</Link>
-            </div>
 
-            <div className="divide-y divide-white/5 border border-white/5 rounded-2xl overflow-hidden">
-              {recentLogs.slice(0, 4).map((log) => {
-                const isOut = ["DELETE", "TRANSFER_OUT", "SEND_MONEY", "ADJUST_DOWN"].includes(log.action_type);
-                return (
-                  <div key={log.id} className="flex items-center justify-between gap-4 p-5 hover:bg-white/[0.015] transition-all group">
-                    <div className="flex min-w-0 items-center gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-center text-lg flex-shrink-0 group-hover:scale-105 transition-transform">
-                        {log.action_type === "CREATE" ? "✨" : isOut ? "📉" : "📈"}
+              <div className="divide-y divide-white/5 border border-white/5 rounded-2xl overflow-hidden">
+                {recentLogs.slice(0, 4).map((log) => {
+                  const isOut = ["DELETE", "TRANSFER_OUT", "SEND_MONEY", "ADJUST_DOWN"].includes(log.action_type);
+                  return (
+                    <div key={log.id} className="flex items-center justify-between gap-4 p-5 hover:bg-white/[0.015] transition-all group">
+                      <div className="flex min-w-0 items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-center text-lg flex-shrink-0 group-hover:scale-105 transition-transform">
+                          {log.action_type === "CREATE" ? "✨" : isOut ? "📉" : "📈"}
+                        </div>
+                        <div className="flex min-w-0 flex-col">
+                          <span className="text-[13px] font-bold text-white group-hover:text-[--accent-primary-light] transition-colors truncate">{log.details}</span>
+                          <span className="text-[9px] font-black uppercase text-[--text-muted] tracking-wider mt-1">
+                            {log.created_at ? format(new Date(log.created_at), "MMM d, h:mm a") : "N/A"} • {log.account_name}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex min-w-0 flex-col">
-                        <span className="text-[13px] font-bold text-white group-hover:text-[--accent-primary-light] transition-colors truncate">{log.details}</span>
-                        <span className="text-[9px] font-black uppercase text-[--text-muted] tracking-wider mt-1">
-                          {log.created_at ? format(new Date(log.created_at), "MMM d, h:mm a") : "N/A"} • {log.account_name}
+                      <div className="text-right shrink-0">
+                        <span className={`text-[14px] font-black tabular-nums ${isOut ? "text-danger" : "text-success"}`}>
+                          {log.amount ? `${isOut ? "-" : "+"}${getAccountCurrency(log.account_id) === 'USD' ? '$' : '₹'}${log.amount.toLocaleString()}` : "—"}
                         </span>
                       </div>
                     </div>
-                    <div className="text-right shrink-0">
-                      <span className={`text-[14px] font-black tabular-nums ${isOut ? "text-danger" : "text-success"}`}>
-                        {log.amount ? `${isOut ? "-" : "+"}${getAccountCurrency(log.account_id) === 'USD' ? '$' : '₹'}${log.amount.toLocaleString()}` : "—"}
-                      </span>
-                    </div>
+                  );
+                })}
+                {recentLogs.length === 0 && (
+                  <div className="py-16 text-center text-[11px] font-bold uppercase text-[--text-muted] tracking-widest italic bg-white/[0.01]">
+                    System initialized. Waiting for transaction input logs...
                   </div>
-                );
-              })}
-              {recentLogs.length === 0 && (
-                <div className="py-16 text-center text-[11px] font-bold uppercase text-[--text-muted] tracking-widest italic bg-white/[0.01]">
-                  System initialized. Waiting for transaction input logs...
-                </div>
-              )}
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* RIGHT COLUMN: ACTIONS, STATS & ACTIVE GOALS (Span 1) */}
@@ -434,18 +453,24 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
           <div className="glass-card-static rich-border p-6 md:p-8">
             <h3 className="text-xs font-black uppercase tracking-widest text-[--text-muted] mb-6">Operations Hub</h3>
             <div className="grid grid-cols-2 gap-3">
-              <Link href="/dashboard/expenses?action=new" className="flex flex-col items-center justify-center p-4 bg-rose-500/5 hover:bg-rose-500/10 border border-rose-500/10 rounded-2xl text-center transition-all group hover:-translate-y-1">
-                <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">💸</span>
-                <span className="text-[11px] font-black uppercase tracking-widest text-rose-400">Log Expense</span>
-              </Link>
-              <Link href="/dashboard/income?action=new" className="flex flex-col items-center justify-center p-4 bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/10 rounded-2xl text-center transition-all group hover:-translate-y-1">
-                <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">💼</span>
-                <span className="text-[11px] font-black uppercase tracking-widest text-emerald-400">Log Income</span>
-              </Link>
-              <Link href="/dashboard/stocks?action=new" className="flex flex-col items-center justify-center p-4 bg-blue-500/5 hover:bg-blue-500/10 border border-blue-500/10 rounded-2xl text-center transition-all group hover:-translate-y-1">
-                <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">📈</span>
-                <span className="text-[11px] font-black uppercase tracking-widest text-blue-400">Add Stock</span>
-              </Link>
+              {enabledModules.includes("Expenses") && (
+                <Link href="/dashboard/expenses?action=new" className="flex flex-col items-center justify-center p-4 bg-rose-500/5 hover:bg-rose-500/10 border border-rose-500/10 rounded-2xl text-center transition-all group hover:-translate-y-1">
+                  <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">💸</span>
+                  <span className="text-[11px] font-black uppercase tracking-widest text-rose-400">Log Expense</span>
+                </Link>
+              )}
+              {enabledModules.includes("Income") && (
+                <Link href="/dashboard/income?action=new" className="flex flex-col items-center justify-center p-4 bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/10 rounded-2xl text-center transition-all group hover:-translate-y-1">
+                  <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">💼</span>
+                  <span className="text-[11px] font-black uppercase tracking-widest text-emerald-400">Log Income</span>
+                </Link>
+              )}
+              {enabledModules.includes("Stocks") && (
+                <Link href="/dashboard/stocks?action=new" className="flex flex-col items-center justify-center p-4 bg-blue-500/5 hover:bg-blue-500/10 border border-blue-500/10 rounded-2xl text-center transition-all group hover:-translate-y-1">
+                  <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">📈</span>
+                  <span className="text-[11px] font-black uppercase tracking-widest text-blue-400">Add Stock</span>
+                </Link>
+              )}
               <Link href="/dashboard/accounts?action=new" className="flex flex-col items-center justify-center p-4 bg-sky-500/5 hover:bg-sky-500/10 border border-sky-500/10 rounded-2xl text-center transition-all group hover:-translate-y-1">
                 <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">💳</span>
                 <span className="text-[11px] font-black uppercase tracking-widest text-sky-400">Add Account</span>
@@ -454,52 +479,54 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
           </div>
 
           {/* ACTIVE FINANCIAL GOALS MILestones */}
-          <div className="glass-card-static rich-border p-6 md:p-8 flex-1">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xs font-black uppercase tracking-widest text-[--text-muted]">Wealth Milestones</h3>
-              <Link href="/dashboard/goals" className="text-[10px] font-black uppercase text-[--accent-primary-light] hover:underline">Track</Link>
-            </div>
+          {enabledModules.includes("Goals") && (
+            <div className="glass-card-static rich-border p-6 md:p-8 flex-1 animate-fade-in">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xs font-black uppercase tracking-widest text-[--text-muted]">Wealth Milestones</h3>
+                <Link href="/dashboard/goals" className="text-[10px] font-black uppercase text-[--accent-primary-light] hover:underline">Track</Link>
+              </div>
 
-            <div className="space-y-6">
-              {goals.slice(0, 3).map((goal) => {
-                const saved = Number(goal.current_amount || 0);
-                const target = Number(goal.target_amount || 1);
-                const pct = Math.min((saved / target) * 100, 100);
-                
-                return (
-                  <div key={goal.id} className="p-4 rounded-2xl bg-white/[0.01] border border-white/5 hover:bg-white/[0.03] transition-all">
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex flex-col">
-                        <span className="text-[13px] font-black text-white">{goal.name}</span>
-                        <span className="text-[9px] font-bold text-[--text-muted] tracking-tight uppercase mt-0.5">Target: ₹{target.toLocaleString()}</span>
+              <div className="space-y-6">
+                {goals.slice(0, 3).map((goal) => {
+                  const saved = Number(goal.current_amount || 0);
+                  const target = Number(goal.target_amount || 1);
+                  const pct = Math.min((saved / target) * 100, 100);
+                  
+                  return (
+                    <div key={goal.id} className="p-4 rounded-2xl bg-white/[0.01] border border-white/5 hover:bg-white/[0.03] transition-all">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex flex-col">
+                          <span className="text-[13px] font-black text-white">{goal.name}</span>
+                          <span className="text-[9px] font-bold text-[--text-muted] tracking-tight uppercase mt-0.5">Target: ₹{target.toLocaleString()}</span>
+                        </div>
+                        <span className="text-[11px] font-black text-[--accent-primary-light] tabular-nums">{pct.toFixed(0)}%</span>
                       </div>
-                      <span className="text-[11px] font-black text-[--accent-primary-light] tabular-nums">{pct.toFixed(0)}%</span>
-                    </div>
 
-                    <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden mb-3">
-                      <div 
-                        className="h-full bg-gradient-to-r from-[--accent-primary] to-[--accent-secondary] rounded-full transition-all duration-1000"
-                        style={{ width: `${pct}%` }}
-                      />
+                      <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden mb-3">
+                        <div 
+                          className="h-full bg-gradient-to-r from-[--accent-primary] to-[--accent-secondary] rounded-full transition-all duration-1000"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                      
+                      <div className="flex justify-between items-center text-[10px] font-bold text-[--text-secondary]">
+                        <span>Saved: ₹{saved.toLocaleString()}</span>
+                        <span className="text-[9px] font-black uppercase tracking-wider text-[--text-muted]">
+                          {goal.deadline ? format(new Date(goal.deadline), "MMM yyyy") : "No limit"}
+                        </span>
+                      </div>
                     </div>
-                    
-                    <div className="flex justify-between items-center text-[10px] font-bold text-[--text-secondary]">
-                      <span>Saved: ₹{saved.toLocaleString()}</span>
-                      <span className="text-[9px] font-black uppercase tracking-wider text-[--text-muted]">
-                        {goal.deadline ? format(new Date(goal.deadline), "MMM yyyy") : "No limit"}
-                      </span>
-                    </div>
+                  );
+                })}
+                {goals.length === 0 && (
+                  <div className="py-12 text-center border border-dashed border-white/5 rounded-2xl">
+                    <p className="text-xs text-[--text-secondary] mb-4">No active milestones registered</p>
+                    <Link href="/dashboard/goals?action=new" className="btn-secondary !h-9 text-[10px]">Establish Goal</Link>
                   </div>
-                );
-              })}
-              {goals.length === 0 && (
-                <div className="py-12 text-center border border-dashed border-white/5 rounded-2xl">
-                  <p className="text-xs text-[--text-secondary] mb-4">No active milestones registered</p>
-                  <Link href="/dashboard/goals?action=new" className="btn-secondary !h-9 text-[10px]">Establish Goal</Link>
-                </div>
-              )}
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
         </div>
 
@@ -508,5 +535,6 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
     </div>
   );
 });
+
 
 export default DashboardDesktop;

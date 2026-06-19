@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import LiabilitiesClient from "./LiabilitiesClient";
+import { ModuleGuard } from "@/components/module-guard";
 
 export const metadata = {
   title: "Liabilities & Debt | FinanceOS",
@@ -9,7 +10,10 @@ export const metadata = {
 export default async function LiabilitiesPage() {
   return (
     <Suspense fallback={<div className="animate-pulse bg-white/5 h-screen rounded-2xl" />}>
-      <LiabilitiesClient />
+      <ModuleGuard moduleKey="Liabilities">
+        <LiabilitiesClient />
+      </ModuleGuard>
     </Suspense>
   );
 }
+

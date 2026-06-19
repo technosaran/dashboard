@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase-server";
 import MutualFundsClient from "./MutualFundsClient";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
+import { ModuleGuard } from "@/components/module-guard";
 
 export const metadata: Metadata = {
   title: "Mutual Funds",
@@ -22,7 +23,10 @@ export default async function MutualFundsPage() {
   }
   return (
     <Suspense fallback={null}>
-      <MutualFundsClient />
+      <ModuleGuard moduleKey="Mutual Funds">
+        <MutualFundsClient />
+      </ModuleGuard>
     </Suspense>
   );
 }
+

@@ -187,6 +187,31 @@ function NavItem({ label, href, icon, pathname }: (typeof nav)[0] & { pathname: 
   );
 }
 
+const quickActions = [
+  { label: "Expense", href: "/dashboard/expenses?action=new", icon: "🔴", color: "var(--danger)" },
+  { label: "Income", href: "/dashboard/income?action=new", icon: "🟢", color: "var(--success)" },
+  { label: "Transfer", href: "/dashboard/accounts?action=transfer", icon: "🔄", color: "var(--accent-primary-light)" },
+  { label: "Trade", href: "/dashboard/stocks?action=new", icon: "📈", color: "#3b82f6" },
+  { label: "FnO", href: "/dashboard/fno?action=new", icon: "📊", color: "#10b981" },
+  { label: "Funds", href: "/dashboard/mutual-funds?action=new", icon: "🏦", color: "#a855f7" },
+  { label: "Bonds", href: "/dashboard/bonds?action=new", icon: "🔏", color: "#eab308" },
+  { label: "Forex", href: "/dashboard/forex?action=new", icon: "💱", color: "#fbbf24" },
+  { label: "Liability", href: "/dashboard/liabilities?action=new", icon: "💸", color: "#ec4899" },
+  { label: "Alt Asset", href: "/dashboard/alternative-assets?action=new", icon: "🏢", color: "#14b8a6" },
+];
+
+const actionModuleMap: Record<string, string> = {
+  "Expense": "Expenses",
+  "Income": "Income",
+  "Trade": "Stocks",
+  "FnO": "FnO",
+  "Funds": "Mutual Funds",
+  "Bonds": "Bonds",
+  "Forex": "Forex",
+  "Liability": "Liabilities",
+  "Alt Asset": "Alt Assets",
+};
+
 export default function Sidebar() {
   const { data: { profile } } = useFinanceData();
   const pathname = usePathname();
@@ -218,18 +243,13 @@ export default function Sidebar() {
     window.location.href = "/login";
   }
 
-  const quickActions = [
-    { label: "Expense", href: "/dashboard/expenses?action=new", icon: "🔴", color: "var(--danger)" },
-    { label: "Income", href: "/dashboard/income?action=new", icon: "🟢", color: "var(--success)" },
-    { label: "Transfer", href: "/dashboard/accounts?action=transfer", icon: "🔄", color: "var(--accent-primary-light)" },
-    { label: "Trade", href: "/dashboard/stocks?action=new", icon: "📈", color: "#3b82f6" },
-    { label: "FnO", href: "/dashboard/fno?action=new", icon: "📊", color: "#10b981" },
-    { label: "Funds", href: "/dashboard/mutual-funds?action=new", icon: "🏦", color: "#a855f7" },
-    { label: "Bonds", href: "/dashboard/bonds?action=new", icon: "🔏", color: "#eab308" },
-    { label: "Forex", href: "/dashboard/forex?action=new", icon: "💱", color: "#fbbf24" },
-    { label: "Liability", href: "/dashboard/liabilities?action=new", icon: "💸", color: "#ec4899" },
-    { label: "Alt Asset", href: "/dashboard/alternative-assets?action=new", icon: "🏢", color: "#14b8a6" },
-  ];
+  const filteredQuickActions = useMemo(() => {
+    return quickActions.filter(action => {
+      const mod = actionModuleMap[action.label];
+      return !mod || enabledModules.includes(mod);
+    });
+  }, [enabledModules]);
+
 
   const mobileNavLeft = filteredNav.slice(0, 2); 
   const ledgerItem = filteredNav.find(n => n.label === "Ledger");
@@ -241,8 +261,8 @@ export default function Sidebar() {
       {/* Universal Quick Action Hub */}
       <div className={`md:hidden fixed inset-0 z-[100] bg-black/80 backdrop-blur-md transition-all duration-500 ${isQuickActionOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`} onClick={() => setIsQuickActionOpen(false)}>
         <div className={`absolute bottom-[calc(var(--mobile-bottom-nav-height)+0.5rem)] left-4 right-4 max-h-[75vh] overflow-y-auto no-scrollbar grid grid-cols-2 gap-2.5 sm:gap-3 transition-all duration-500 ${isQuickActionOpen ? "translate-y-0 scale-100" : "translate-y-16 scale-90"}`} onClick={e => e.stopPropagation()}>
-          {quickActions.map((action) => (
-            <Link key={action.label} href={action.href} prefetch={true} onClick={() => setIsQuickActionOpen(false)} aria-label={`Add new ${action.label}`} className="glass-card-static p-4 flex flex-col items-center justify-center gap-2.5 no-underline transition-all active:scale-95 shadow-lg bg-[--bg-surface]" style={{ border: `1px solid ${action.color}30` }}>
+          {filteredQuickActions.map((action) => (
+            <Link key={action.label} href={action.href} prefetch={true} onClick={() => setIsQuickActionOpen(false)} aria-label={`Add new ${action.label}`} className="glass-card-static p-4 flex flex-col items-center justify-center gap-2.5 no-underline transition-all active:scale-95 shadow-lg bg-[--bg-surface] animate-fade-in" style={{ border: `1px solid ${action.color}30` }}>
               <div className="text-2xl filter drop-shadow-[0_4px_10px_rgba(0,0,0,0.1)]" aria-hidden="true">{action.icon}</div>
               <span className="text-[9px] font-black uppercase tracking-[0.2em]" style={{ color: action.color }}>{action.label}</span>
             </Link>

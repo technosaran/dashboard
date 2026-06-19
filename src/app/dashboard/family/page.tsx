@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase-server";
 import FamilyClient from "./FamilyClient";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
+import { ModuleGuard } from "@/components/module-guard";
 
 export const metadata: Metadata = {
   title: "Family",
@@ -24,7 +25,10 @@ export default async function FamilyPage() {
 
   return (
     <Suspense fallback={null}>
-      <FamilyClient />
+      <ModuleGuard moduleKey="Family">
+        <FamilyClient />
+      </ModuleGuard>
     </Suspense>
   );
 }
+

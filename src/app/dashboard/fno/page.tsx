@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase-server";
 import FnoClient from "./FnoClient";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
+import { ModuleGuard } from "@/components/module-guard";
 
 export const metadata: Metadata = {
   title: "FnO Trading",
@@ -20,7 +21,10 @@ export default async function FnoPage() {
 
   return (
     <Suspense fallback={null}>
-      <FnoClient />
+      <ModuleGuard moduleKey="FnO">
+        <FnoClient />
+      </ModuleGuard>
     </Suspense>
   );
 }
+
