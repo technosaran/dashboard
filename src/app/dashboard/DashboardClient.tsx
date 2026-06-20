@@ -193,6 +193,11 @@ export default function DashboardClient() {
     };
   }, [transactions, netWorthData, investments, mutualFunds]);
 
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => setIsMounted(true), []);
+
+  if (!isMounted) return null; // Prevent hydration mismatch
+
   // Conditionally render only one view based on screen size
   if (isMobile) {
     return (

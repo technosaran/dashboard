@@ -664,7 +664,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
 
               {/* Right: Chart - Takes 1/3 of space */}
               <div className="relative h-[280px]">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                   <PieChart>
                     <Pie 
                       data={chartData} 
@@ -713,7 +713,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
 
               {/* Chart below balance on mobile */}
               <div className="relative h-[280px] md:h-[350px] mb-6">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                   <PieChart>
                     <Pie 
                       data={chartData} 

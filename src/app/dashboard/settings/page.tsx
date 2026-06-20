@@ -184,7 +184,6 @@ export default function SettingsPage() {
       <div className="flex overflow-x-auto gap-2 pb-2 custom-scrollbar">
         {[
           { key: "profile", label: "Profile" },
-          { key: "preferences", label: "Preferences" },
           { key: "modules", label: "Modules" },
           { key: "defaults", label: "Defaults" },
           { key: "danger", label: "Danger Zone" },
@@ -249,68 +248,6 @@ export default function SettingsPage() {
                 <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 Your profile name is synchronized across all devices in real-time.
               </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Global Preferences */}
-      {activeTab === "preferences" && (
-        <div className="max-w-2xl animate-fade-in-up">
-          <div className="glass-card-static p-6 md:p-10 relative overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-[3px] bg-emerald-500/70" />
-            <div className="flex items-center gap-3 mb-8">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
-              </div>
-              <div>
-                <h2 className="text-base font-bold text-white">Global Preferences</h2>
-                <p className="text-xs text-[--text-muted]">Configure your application-wide settings.</p>
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider mb-2 text-[--text-muted]">Base Currency</label>
-                <select
-                  value={baseCurrency}
-                  onChange={(e) => saveSetting("base_currency", e.target.value, "Currency preference saved")}
-                  className="input-premium h-12 w-full text-sm font-bold bg-[--bg-surface] text-white"
-                >
-                  <option value="INR">INR (₹) - Indian Rupee</option>
-                  <option value="USD">USD ($) - US Dollar</option>
-                  <option value="EUR">EUR (€) - Euro</option>
-                  <option value="GBP">GBP (£) - British Pound</option>
-                </select>
-                <p className="text-[11px] text-[--text-muted] mt-2">Sets the default currency symbol across your dashboard stats.</p>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider mb-2 text-[--text-muted]">UI Theme</label>
-                <select
-                  value={theme}
-                  onChange={(e) => saveSetting("theme", e.target.value, "Theme preference saved")}
-                  className="input-premium h-12 w-full text-sm font-bold bg-[--bg-surface] text-white"
-                >
-                  <option value="system">System Default</option>
-                  <option value="dark">Dark Mode</option>
-                  <option value="light">Light Mode</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider mb-2 text-[--text-muted]">Timezone</label>
-                <select
-                  value={timezone}
-                  onChange={(e) => saveSetting("timezone", e.target.value, "Timezone saved")}
-                  className="input-premium h-12 w-full text-sm font-bold bg-[--bg-surface] text-white"
-                >
-                  <option value="Asia/Kolkata">India Standard Time (IST)</option>
-                  <option value="America/New_York">Eastern Time (ET)</option>
-                  <option value="Europe/London">London (GMT/BST)</option>
-                  <option value="UTC">Coordinated Universal Time (UTC)</option>
-                </select>
-              </div>
             </div>
           </div>
         </div>

@@ -108,7 +108,8 @@ async function fetchFamily() {
 
 export function useFinanceData(initialData?: FinanceData) {
   const swrOptions = {
-    dedupingInterval: 10000, // 10 seconds (up from 2s)
+    dedupingInterval: 300000, // 5 minutes
+    focusThrottleInterval: 300000,
     revalidateOnFocus: false, // Prevents lag when switching tabs
     revalidateOnReconnect: false,
     keepPreviousData: true, // Smoother UI transitions
