@@ -75,12 +75,10 @@ export default function RootLayout({
     >
       <head />
       <body className="min-h-full flex flex-col overflow-x-hidden bg-[--bg-base] text-[--text-primary] font-sans relative">
-        {/* Background Depth Effects */}
-        <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-          <div className="absolute top-[-5%] left-[-5%] w-[50%] h-[50%] bg-[var(--circle-color-1,rgba(14,165,233,0.15))] blur-[140px] rounded-full animate-pulse-glow" />
-          <div className="absolute bottom-[5%] right-[-5%] w-[45%] h-[45%] bg-[var(--circle-color-2,rgba(56,189,248,0.12))] blur-[120px] rounded-full animate-pulse-glow delay-2" />
-          <div className="absolute top-[25%] right-[5%] w-[35%] h-[35%] bg-[var(--circle-color-3,rgba(186,230,253,0.15))] blur-[100px] rounded-full animate-pulse-glow delay-5" />
-          <div className="absolute inset-0 bg-[url('/noise.svg')] opacity-[0.03] mix-blend-multiply pointer-events-none" />
+        {/* Optimized Static Background (Removed heavy animated blurs) */}
+        <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none bg-[--bg-base]">
+          {/* Subtle static gradient instead of massive animating blurs */}
+          <div className="absolute top-0 left-0 right-0 h-[300px] bg-gradient-to-b from-[rgba(14,165,233,0.05)] to-transparent" />
         </div>
 
         <PwaSecurityManager />
