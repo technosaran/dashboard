@@ -130,9 +130,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
     setEditingId(null);
   }
 
-  function getActionLabel(type: string) {
-    return type.replace(/_/g, " ");
-  }
+
 
   function getActionIcon(action: string) {
     switch (action) {
