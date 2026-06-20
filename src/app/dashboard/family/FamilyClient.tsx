@@ -310,15 +310,15 @@ export default function FamilyClient({
                         <button 
                           type="button" 
                           onClick={() => { setSelectedRecipient(person); setIsSendingMoney(true); }} 
-                          className="flex-1 h-12 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 bg-[--accent-primary]/10 text-[--accent-primary-light] border border-[--accent-primary]/20 hover:bg-[--accent-primary]/20"
+                          className="flex-1 h-11 rounded-xl font-bold text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-2 bg-gradient-to-r from-[--accent-primary] to-indigo-500 text-white shadow-md shadow-[--accent-primary]/20 hover:shadow-lg hover:shadow-[--accent-primary]/30 hover:-translate-y-0.5"
                         >
-                          <Send className="w-4 h-4" /> Send
+                          <Send className="w-4 h-4" /> Send Funds
                         </button>
                         
                         <button 
                           type="button" 
                           onClick={() => { setSelectedHistoryRecipient(person.id); setActiveView("history"); }} 
-                          className="w-12 h-12 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-400 hover:bg-sky-500/20 transition-all flex items-center justify-center"
+                          className="w-11 h-11 rounded-xl bg-white/5 border border-white/10 text-[--text-muted] hover:text-white hover:bg-white/10 transition-all flex items-center justify-center hover:-translate-y-0.5"
                           title="History"
                         >
                           <History className="w-4 h-4" />
@@ -327,7 +327,7 @@ export default function FamilyClient({
                         <button 
                           type="button" 
                           onClick={() => handleDeleteRecipient(person.id)} 
-                          className="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500/20 transition-all flex items-center justify-center"
+                          className="w-11 h-11 rounded-xl bg-danger/10 border border-danger/20 text-danger hover:bg-danger/20 hover:text-white transition-all flex items-center justify-center hover:-translate-y-0.5"
                           title="Remove"
                         >
                           <Trash2 className="w-4 h-4" />

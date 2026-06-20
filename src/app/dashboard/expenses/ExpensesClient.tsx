@@ -157,6 +157,21 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
     });
   }
 
+  const getColorByLabel = (label: string) => {
+    // We already have getChartColour(index) which uses CHART_COLOURS
+    // We can just hash the string
+    let hash = 0;
+    for (let i = 0; i < label.length; i++) {
+      hash = label.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const colors = [
+      "#06B6D4", "#F97316", "#8B5CF6", "#22C55E", "#EC4899", 
+      "#EAB308", "#3B82F6", "#F43F5E", "#14B8A6", "#84CC16", 
+      "#6366F1", "#FB7185"
+    ];
+    return colors[Math.abs(hash) % colors.length];
+  };
+
   const stats = useMemo(() => {
     const targetDate = new Date(selectedYear, selectedMonth - 1, 1);
     const currentMonth = expenses.filter(e => {
@@ -172,12 +187,19 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
       catMap[e.category] = (catMap[e.category] || 0) + Number(e.amount);
     });
     const pieData = Object.entries(catMap).map(([name, value]) => {
-      const color = CATEGORIES.find(c => c.label === name)?.color || getCategoryColour("Others");
+      const categoryColor = CATEGORIES.find(c => c.label === name)?.color;
+      let resolvedColor = categoryColor || getCategoryColour(name);
+      
+      // If it fell back to Others (grey) but the category is not actually "Others", give it a dynamic distinct color
+      if (resolvedColor === getCategoryColour("Others") && name.toLowerCase() !== "others") {
+        resolvedColor = getColorByLabel(name);
+      }
+
       return {
         name, 
         value,
-        fill: color,
-        color: color,
+        fill: resolvedColor,
+        color: resolvedColor,
       };
     }).sort((a, b) => b.value - a.value);
 

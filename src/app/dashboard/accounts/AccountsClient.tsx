@@ -95,8 +95,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
   const [deletingAccountId, setDeletingAccountId] = useState<string | null>(null);
   const [historyAccountId, setHistoryAccountId] = useState("all");
   const [mobileTab, setMobileTab] = useState<"transfer" | "new" | "adjust">("transfer");
-
-
+  const [activeCurrencyIndex, setActiveCurrencyIndex] = useState(0);
 
   function handleBankSearch(query: string) {
     setBankSearch(query);
@@ -129,6 +128,23 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
     setFormData({ name: "", type: "checking", balance: "0", currency: "INR", bank_name: "" });
     setShowForm(false);
     setEditingId(null);
+  }
+
+  function getActionLabel(type: string) {
+    return type.replace(/_/g, " ");
+  }
+
+  function getActionIcon(action: string) {
+    switch (action) {
+      case 'CREATE': return '✨';
+      case 'UPDATE': return '📝';
+      case 'DELETE': return '🗑️';
+      case 'TRANSFER_IN': return '↙️';
+      case 'TRANSFER_OUT': return '↗️';
+      case 'ADJUST_UP': return '📈';
+      case 'ADJUST_DOWN': return '📉';
+      default: return '⚡';
+    }
   }
 
   function startEdit(account: Account) {
@@ -199,15 +215,21 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
     [accounts]
   );
 
+  const availableCurrencies = useMemo(() => Object.keys(balancesByCurrency), [balancesByCurrency]);
+  const displayedCurrency = availableCurrencies.length > 0 ? availableCurrencies[activeCurrencyIndex % availableCurrencies.length] : "INR";
+
   const chartData = useMemo(() => 
-    accounts.map((a, i) => ({ 
-      name: a.name, 
-      value: Math.abs(a.balance), 
-      fill: getChartColour(i),
-      color: getChartColour(i), 
-      currency: a.currency 
-    })),
-    [accounts]
+    accounts
+      .filter(a => a.currency === displayedCurrency)
+      .map((a, i) => ({ 
+        name: a.name, 
+        value: Math.abs(a.balance), 
+        fill: getChartColour(i),
+        color: getChartColour(i), 
+        currency: a.currency,
+        account: a
+      })),
+    [accounts, displayedCurrency]
   );
 
   const accountHistory = useMemo(() => {
@@ -636,12 +658,31 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
             <div className="hidden lg:grid lg:grid-cols-[2fr_1fr] lg:gap-6 lg:items-center mb-8">
               {/* Left: Balance Info - Takes 2/3 of space */}
               <div>
-                <div className="flex flex-wrap items-baseline gap-3 mb-4">
-                  {Object.entries(balancesByCurrency).map(([curr, bal]) => (
-                    <h2 key={curr} className="text-2xl md:text-3xl font-black tracking-tight text-[--text-primary]">
-                      {getCurrencySymbol(curr)}{bal.toLocaleString()}
-                    </h2>
-                  ))}
+                <div 
+                  className="flex flex-col cursor-pointer group/nw select-none mb-6" 
+                  onClick={() => availableCurrencies.length > 1 && setActiveCurrencyIndex(prev => prev + 1)}
+                  title={availableCurrencies.length > 1 ? "Click to toggle currency" : ""}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[10px] font-black tracking-widest text-[--text-muted] uppercase transition-colors group-hover/nw:text-[--text-primary]">
+                      Total Balance ({displayedCurrency})
+                    </span>
+                    {availableCurrencies.length > 1 && (
+                      <svg className="w-3 h-3 text-[--text-muted] opacity-50 group-hover/nw:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                      </svg>
+                    )}
+                  </div>
+                  <h2 
+                    key={displayedCurrency} 
+                    className={`animate-fade-in bg-clip-text bg-gradient-to-r text-[clamp(2.2rem,5vw,3.5rem)] font-[950] leading-none tracking-[-0.04em] text-transparent [font-family:'Outfit',sans-serif] whitespace-nowrap overflow-x-auto no-scrollbar transition-all duration-500 ${
+                      displayedCurrency === 'USD' 
+                        ? "from-white via-sky-200 to-indigo-300 drop-shadow-[0_10px_35px_rgba(99,102,241,0.3)]" 
+                        : "from-[--text-primary] to-[--text-muted]"
+                    }`}
+                  >
+                    {getCurrencySymbol(displayedCurrency)}{(balancesByCurrency[displayedCurrency] || 0).toLocaleString(undefined, { minimumFractionDigits: 0 })}
+                  </h2>
                 </div>
                 <div className="grid grid-cols-3 gap-3">
                   {chartData.map((item, i) => (
@@ -651,7 +692,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
                       style={{ background: hexToRgba(item.color, 0.12), border: `1px solid ${hexToRgba(item.color, 0.28)}` }}
                     >
                       <div className="relative flex-shrink-0">
-                        {accounts[i].bank_name ? <BankLogo bankName={accounts[i].bank_name!} size={32} /> : <CategoryIcon type={accounts[i].type} className="w-8 h-8" />}
+                        {item.account.bank_name ? <BankLogo bankName={item.account.bank_name!} size={32} /> : <CategoryIcon type={item.account.type} className="w-8 h-8" />}
                       </div>
                       <div className="flex flex-col min-w-0 flex-1 text-left">
                         <p className="font-bold text-[10px] text-[--text-secondary] truncate">{item.name}</p>
@@ -691,11 +732,9 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
                   <p className="text-[8px] uppercase font-black text-[--text-muted] mb-1 tracking-widest">Net Value</p>
                   <div className="flex flex-col gap-2">
-                    {Object.entries(balancesByCurrency).map(([c,b]) => (
-                      <p key={c} className="text-base font-black text-[--text-primary] leading-tight">
-                        {getCurrencySymbol(c)}{b.toLocaleString()}
-                      </p>
-                    ))}
+                    <p key={displayedCurrency} className="text-base font-black text-[--text-primary] leading-tight">
+                      {getCurrencySymbol(displayedCurrency)}{(balancesByCurrency[displayedCurrency] || 0).toLocaleString()}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -703,12 +742,30 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
 
             {/* Mobile/Tablet: Stacked layout */}
             <div className="lg:hidden">
-              <div className="flex flex-wrap items-baseline justify-center gap-4 md:gap-6 mb-6">
-                {Object.entries(balancesByCurrency).map(([curr, bal]) => (
-                  <h2 key={curr} className="text-3xl md:text-5xl font-black tracking-tight text-[--text-primary]">
-                    {getCurrencySymbol(curr)}{bal.toLocaleString()}
-                  </h2>
-                ))}
+              <div 
+                className="flex flex-col items-center cursor-pointer group/nw select-none mb-6" 
+                onClick={() => availableCurrencies.length > 1 && setActiveCurrencyIndex(prev => prev + 1)}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[10px] font-black tracking-widest text-[--text-muted] uppercase transition-colors group-hover/nw:text-[--text-primary]">
+                    Total Balance ({displayedCurrency})
+                  </span>
+                  {availableCurrencies.length > 1 && (
+                    <svg className="w-3 h-3 text-[--text-muted] opacity-50 group-hover/nw:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                    </svg>
+                  )}
+                </div>
+                <h2 
+                  key={displayedCurrency} 
+                  className={`animate-fade-in bg-clip-text bg-gradient-to-r text-3xl sm:text-5xl font-[950] tracking-tight text-transparent transition-all duration-500 ${
+                    displayedCurrency === 'USD' 
+                      ? "from-white via-sky-200 to-indigo-300 drop-shadow-[0_10px_35px_rgba(99,102,241,0.3)]" 
+                      : "from-[--text-primary] to-[--text-muted]"
+                  }`}
+                >
+                  {getCurrencySymbol(displayedCurrency)}{(balancesByCurrency[displayedCurrency] || 0).toLocaleString(undefined, { minimumFractionDigits: 0 })}
+                </h2>
               </div>
 
               {/* Chart below balance on mobile */}
@@ -740,11 +797,9 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
                   <p className="text-[9px] md:text-[11px] uppercase font-black text-[--text-muted] mb-1 tracking-widest">Net Value</p>
                   <div className="flex flex-col gap-2">
-                    {Object.entries(balancesByCurrency).map(([c,b]) => (
-                      <p key={c} className="text-lg md:text-2xl font-black text-[--text-primary] leading-tight">
-                        {getCurrencySymbol(c)}{b.toLocaleString()}
-                      </p>
-                    ))}
+                    <p key={displayedCurrency} className="text-lg md:text-2xl font-black text-[--text-primary] leading-tight">
+                      {getCurrencySymbol(displayedCurrency)}{(balancesByCurrency[displayedCurrency] || 0).toLocaleString()}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -758,7 +813,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
                     style={{ background: hexToRgba(item.color, 0.12), border: `1px solid ${hexToRgba(item.color, 0.28)}` }}
                   >
                     <div className="relative flex-shrink-0">
-                      {accounts[i].bank_name ? <BankLogo bankName={accounts[i].bank_name!} size={40} /> : <CategoryIcon type={accounts[i].type} className="w-10 h-10" />}
+                      {item.account.bank_name ? <BankLogo bankName={item.account.bank_name!} size={40} /> : <CategoryIcon type={item.account.type} className="w-10 h-10" />}
                     </div>
                     <div className="flex flex-col min-w-0 flex-1 text-left">
                       <p className="font-bold text-[11px] md:text-xs text-[--text-secondary] truncate">{item.name}</p>
@@ -817,29 +872,44 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
             <p className="text-sm text-[--text-muted] mt-1">Try another account filter or create activity.</p>
           </div>
         ) : (
-          <div className="divide-y divide-white/10">
+          <div className="p-4 md:p-6 space-y-3">
             {accountHistory.map((log) => {
               const account = accounts.find((a) => a.id === log.account_id);
               const isDebit = log.new_balance !== null && log.previous_balance !== null
                 ? log.new_balance < log.previous_balance
                 : DEBIT_ACCOUNT_ACTIONS.has(log.action_type);
 
+              const ActionIcon = getActionIcon(log.action_type);
+
               return (
-                <div key={log.id} className="px-6 py-5 hover:bg-white/[0.02] transition-colors">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-white/5 border border-white/10 text-[--text-secondary]">{getActionLabel(log.action_type)}</span>
-                        <span className="text-sm font-bold text-[--text-primary]">{account?.name || log.account_name || "Account"}</span>
+                <div key={log.id} className="group relative overflow-hidden rounded-2xl bg-white/[0.02] border border-white/5 p-4 hover:bg-white/[0.04] hover:border-white/10 transition-all duration-300">
+                  <div className="absolute top-0 left-0 w-1 h-full" style={{ background: isDebit ? "var(--danger)" : "var(--success)", opacity: 0.5 }} />
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pl-3">
+                    <div className="flex items-start gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-xl flex-shrink-0 group-hover:scale-110 transition-transform">
+                        {ActionIcon}
                       </div>
-                      <p className="text-xs mt-2 text-[--text-secondary]">{log.details}</p>
-                      <p className="text-[10px] mt-1 text-[--text-muted] font-medium">{log.created_at ? format(new Date(log.created_at), "MMM d, yyyy • h:mm a") : "N/A"}</p>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <span className="text-sm font-black text-[--text-primary] tracking-tight">{account?.name || log.account_name || "Account"}</span>
+                          <span className="px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-widest bg-white/5 border border-white/10 text-[--text-muted]">{getActionLabel(log.action_type)}</span>
+                        </div>
+                        <p className="text-xs text-[--text-secondary] leading-relaxed">{log.details}</p>
+                        <p className="text-[10px] mt-2 text-[--text-muted] font-bold uppercase tracking-widest opacity-60 flex items-center gap-1">
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                          {log.created_at ? format(new Date(log.created_at), "MMM d, yyyy • h:mm a") : "N/A"}
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-left sm:text-right">
-                      <p className="text-lg font-black" style={{ color: isDebit ? "var(--danger)" : "var(--success)" }}>
+                    <div className="text-left sm:text-right mt-2 sm:mt-0">
+                      <p className={`text-xl font-black drop-shadow-md ${isDebit ? "text-danger" : "text-success"}`}>
                         {log.amount === null ? "—" : `${isDebit ? "-" : "+"}${getCurrencySymbol(account?.currency || "INR")}${Math.abs(log.amount).toLocaleString()}`}
                       </p>
-                      <p className="text-[10px] font-black text-[--text-muted] mt-0.5">Balance: {getCurrencySymbol(account?.currency || "INR")}{(log.new_balance || 0).toLocaleString()}</p>
+                      {log.new_balance !== null && (
+                        <p className="text-[10px] font-black text-[--text-muted] mt-1 uppercase tracking-widest">
+                          Balance: <span className="text-[--text-secondary]">{getCurrencySymbol(account?.currency || "INR")}{log.new_balance.toLocaleString()}</span>
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>

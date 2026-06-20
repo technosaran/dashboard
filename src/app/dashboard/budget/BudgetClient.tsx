@@ -5,18 +5,7 @@ import { toast } from "react-hot-toast";
 import { upsertBudget, deleteBudget } from "./actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
-import { format, parseISO } from "date-fns";
-
-const CATEGORIES = [
-  { label: "Food", icon: "🍔" },
-  { label: "Rent", icon: "🏠" },
-  { label: "Travel", icon: "✈️" },
-  { label: "Utilities", icon: "⚡" },
-  { label: "Investment", icon: "📈" },
-  { label: "Shopping", icon: "🛍️" },
-  { label: "Entertainment", icon: "🎬" },
-  { label: "Others", icon: "📦" },
-];
+import { format, parseISO, getDaysInMonth, isSameMonth } from "date-fns";
 
 export default function BudgetClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { budgets, expenses, incomes }, mutate } = useFinanceData(initialData);
@@ -59,6 +48,65 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
 
   const totalBudgeted = currentBudgets.reduce((s, b) => s + Number(b.amount), 0);
   const totalSpent = Object.values(actualSpending).reduce((s, v) => s + v, 0);
+
+  const { daysInMonth, daysPassed } = useMemo(() => {
+    const date = new Date(selectedYear, selectedMonth - 1, 1);
+    const total = getDaysInMonth(date);
+    const now = new Date();
+    let passed = total;
+    if (isSameMonth(now, date)) {
+      passed = now.getDate();
+    } else if (now < date) {
+      passed = 0;
+    }
+    return { daysInMonth: total, daysPassed: passed };
+  }, [selectedMonth, selectedYear]);
+
+  const monthProgressPercent = daysInMonth > 0 ? (daysPassed / daysInMonth) * 100 : 0;
+  const budgetBurnRatePercent = totalBudgeted > 0 ? (totalSpent / totalBudgeted) * 100 : 0;
+  const isBurningFast = budgetBurnRatePercent > monthProgressPercent;
+
+  const dynamicCategories = useMemo(() => {
+    const cats = new Set<string>();
+    Object.keys(actualSpending).forEach(c => cats.add(c));
+    currentBudgets.forEach(b => cats.add(b.category));
+    
+    return Array.from(cats).map(name => {
+      let icon = "📦";
+      switch(name.toLowerCase()) {
+        case "food": case "food & dining": icon = "🍔"; break;
+        case "rent": case "housing": icon = "🏠"; break;
+        case "travel": icon = "✈️"; break;
+        case "utilities": case "bills & utilities": icon = "⚡"; break;
+        case "investment": icon = "📈"; break;
+        case "shopping": icon = "🛍️"; break;
+        case "entertainment": icon = "🎬"; break;
+        case "healthcare": icon = "⚕️"; break;
+        case "education": icon = "📚"; break;
+        case "transportation": case "transport": icon = "🚗"; break;
+        case "groceries": icon = "🛒"; break;
+        case "personal care": icon = "🧴"; break;
+        case "subscription": icon = "💳"; break;
+      }
+      return { label: name, icon };
+    }).sort((a, b) => {
+      const aSpent = actualSpending[a.label] || 0;
+      const bSpent = actualSpending[b.label] || 0;
+      if (bSpent !== aSpent) return bSpent - aSpent;
+      const aBudget = Number(currentBudgets.find(bg => bg.category === a.label)?.amount || 0);
+      const bBudget = Number(currentBudgets.find(bg => bg.category === b.label)?.amount || 0);
+      return bBudget - aBudget;
+    });
+  }, [actualSpending, currentBudgets]);
+
+  const overBudgetCategories = useMemo(() => {
+    return dynamicCategories.filter(cat => {
+      const budget = currentBudgets.find(b => b.category === cat.label);
+      const limit = Number(budget?.amount || 0);
+      const spent = actualSpending[cat.label] || 0;
+      return limit > 0 && spent > limit;
+    });
+  }, [dynamicCategories, currentBudgets, actualSpending]);
 
   async function handleBudgetChange(category: string, amount: string) {
     if (activeSubmissionsRef.current[category]) return;
@@ -174,7 +222,7 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
         <div className="glass-card-static p-8 space-y-8">
           <h3 className="text-sm font-black uppercase tracking-[0.3em] text-[--text-muted]">Allocation by Segment</h3>
           <div className="space-y-6">
-            {CATEGORIES.map(cat => {
+            {dynamicCategories.map(cat => {
               const budget = currentBudgets.find(b => b.category === cat.label);
               const spent = actualSpending[cat.label] || 0;
               const limit = Number(budget?.amount || 0);
@@ -186,7 +234,10 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
                     <div className="flex items-center gap-3">
                       <span className="text-2xl opacity-80 group-hover:opacity-100 transition-opacity">{cat.icon}</span>
                       <div>
-                        <p className="text-sm font-bold text-white">{cat.label}</p>
+                        <p className="text-sm font-bold text-white flex items-center gap-2">
+                          {cat.label}
+                          {percent > 100 && <span className="w-2 h-2 rounded-full bg-danger animate-pulse" title="Over budget!" />}
+                        </p>
                         <p className="text-[10px] font-black text-[--text-muted] uppercase tracking-widest">
                           Spent: ₹{spent.toLocaleString()}
                         </p>
@@ -213,10 +264,16 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
                     </div>
                   </div>
                   {limit > 0 && (
-                    <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                    <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden flex relative">
                       <div 
-                        className={`h-full transition-all duration-1000 ${percent > 100 ? "bg-danger" : percent > 80 ? "bg-warning" : "bg-success"}`} 
+                        className={`h-full transition-all duration-1000 ${percent > 100 ? "bg-danger" : percent > 80 ? "bg-warning" : "bg-gradient-to-r from-[--accent-primary] to-emerald-400"}`} 
                         style={{ width: `${Math.min(percent, 100)}%` }} 
+                      />
+                      {/* Pacing Marker */}
+                      <div 
+                        className="absolute top-0 bottom-0 w-0.5 bg-white/50 shadow-[0_0_8px_rgba(255,255,255,0.8)] z-10" 
+                        style={{ left: `${monthProgressPercent}%` }}
+                        title={`Month Progress: ${monthProgressPercent.toFixed(0)}%`}
                       />
                     </div>
                   )}
@@ -226,11 +283,75 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
           </div>
         </div>
 
-        {/* Fiscal Analysis */}
         <div className="space-y-6">
+          <div className="glass-card-static p-8 relative overflow-hidden">
+            <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-[80px] pointer-events-none ${isBurningFast && totalBudgeted > 0 ? 'bg-danger/20' : 'bg-success/20'}`} />
+            <h3 className="text-sm font-black uppercase tracking-[0.3em] text-[--text-muted] mb-8">Pacing & Trajectory</h3>
+            <div className="grid grid-cols-2 gap-8 mb-8">
+              <div>
+                <p className="text-4xl font-black text-white">{daysInMonth - daysPassed}</p>
+                <p className="text-[9px] font-bold uppercase tracking-widest text-[--text-muted] mt-1">Days Remaining</p>
+              </div>
+              <div>
+                <p className={`text-4xl font-black ${isBurningFast && totalBudgeted > 0 ? 'text-danger' : 'text-success'}`}>{budgetBurnRatePercent.toFixed(0)}%</p>
+                <p className="text-[9px] font-bold uppercase tracking-widest text-[--text-muted] mt-1">Budget Burned</p>
+              </div>
+            </div>
+            {totalBudgeted > 0 && (
+              <div className="p-4 rounded-xl bg-white/5 border border-white/10 flex items-start gap-4">
+                <div className={`mt-1 p-1.5 rounded-lg ${isBurningFast ? 'bg-danger/20 text-danger' : 'bg-success/20 text-success'}`}>
+                  {isBurningFast ? (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                  ) : (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-[--text-primary]">
+                    {isBurningFast ? "Spending too fast" : "Pacing well"}
+                  </p>
+                  <p className="text-xs text-[--text-secondary] mt-1">
+                    {isBurningFast 
+                      ? `You've spent ${budgetBurnRatePercent.toFixed(0)}% of your budget, but only ${monthProgressPercent.toFixed(0)}% of the month has passed.`
+                      : `You are spending slower than the month is passing (${monthProgressPercent.toFixed(0)}% passed). Great job!`
+                    }
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {overBudgetCategories.length > 0 && (
+            <div className="glass-card-static p-8 border-danger/30 bg-gradient-to-br from-danger/5 to-transparent">
+              <h3 className="text-sm font-black uppercase tracking-[0.3em] text-danger mb-4 flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                Over Budget Alerts
+              </h3>
+              <div className="space-y-4">
+                {overBudgetCategories.map(cat => {
+                  const budget = currentBudgets.find(b => b.category === cat.label);
+                  const limit = Number(budget?.amount || 0);
+                  const spent = actualSpending[cat.label] || 0;
+                  const overage = spent - limit;
+                  return (
+                    <div key={cat.label} className="flex justify-between items-center bg-danger/10 p-3 rounded-xl border border-danger/20">
+                      <div className="flex items-center gap-2">
+                        <span>{cat.icon}</span>
+                        <span className="text-sm font-bold text-white">{cat.label}</span>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-black text-danger">₹{overage.toLocaleString()} over</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           <div className="glass-card-static p-8">
             <h3 className="text-sm font-black uppercase tracking-[0.3em] text-[--text-muted] mb-8">Savings Potential</h3>
-            <div className="flex flex-col items-center justify-center py-10 text-center">
+            <div className="flex flex-col items-center justify-center py-6 text-center">
                <p className="text-5xl font-black text-white mb-2">₹{(totalIncome - totalSpent).toLocaleString()}</p>
                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[--accent-primary-light]">Theoretical Surplus</p>
                <div className="mt-8 grid grid-cols-2 gap-8 w-full border-t border-white/5 pt-8">
@@ -248,17 +369,6 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
                   </div>
                </div>
             </div>
-          </div>
-          
-          <div className="glass-card-static p-8 bg-gradient-to-br from-indigo-500/10 to-transparent">
-            <h3 className="text-sm font-black uppercase tracking-[0.3em] text-[--text-muted] mb-4">Strategic Advisory</h3>
-            <p className="text-sm text-[--text-secondary] leading-relaxed italic">
-              {totalSpent > totalIncome 
-                ? "Warning: Your consumption exceeds revenue for this period. Liquidate underperforming assets or reduce discretionary spending immediately."
-                : totalSpent > totalBudgeted 
-                ? "Caution: You have breached your set budgetary limits. Fiscal discipline is required to maintain long-term milestones."
-                : "Operational Efficiency: Your spending is within parameters. Consider allocating the surplus to your 'Financial Milestones' section."}
-            </p>
           </div>
         </div>
       </div>
