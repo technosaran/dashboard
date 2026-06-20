@@ -100,6 +100,13 @@ async function fetchFamily() {
 }
 
 export function useFinanceData(initialData?: FinanceData) {
+  const swrOptions = {
+    dedupingInterval: 10000, // 10 seconds (up from 2s)
+    revalidateOnFocus: false, // Prevents lag when switching tabs
+    revalidateOnReconnect: false,
+    keepPreviousData: true, // Smoother UI transitions
+  };
+
   const summarySWR = useSWR("finance_summary", fetchSummary, {
     fallbackData: initialData
       ? {
@@ -109,9 +116,7 @@ export function useFinanceData(initialData?: FinanceData) {
           ledgerLogs: initialData.ledgerLogs,
         }
       : undefined,
-    dedupingInterval: 2000,
-    revalidateOnFocus: true,
-    revalidateOnReconnect: true,
+    ...swrOptions,
   });
 
   const investmentsSWR = useSWR("finance_investments", fetchInvestments, {
@@ -127,9 +132,7 @@ export function useFinanceData(initialData?: FinanceData) {
           fnoTrades: initialData.fnoTrades,
         }
       : undefined,
-    dedupingInterval: 2000,
-    revalidateOnFocus: true,
-    revalidateOnReconnect: true,
+    ...swrOptions,
   });
 
   const cashflowSWR = useSWR("finance_cashflow", fetchCashflow, {
@@ -142,9 +145,7 @@ export function useFinanceData(initialData?: FinanceData) {
           liabilities: initialData.liabilities,
         }
       : undefined,
-    dedupingInterval: 2000,
-    revalidateOnFocus: true,
-    revalidateOnReconnect: true,
+    ...swrOptions,
   });
 
   const forexSWR = useSWR("finance_forex", fetchForex, {
@@ -155,9 +156,7 @@ export function useFinanceData(initialData?: FinanceData) {
           forexTransactions: initialData.forexTransactions,
         }
       : undefined,
-    dedupingInterval: 2000,
-    revalidateOnFocus: true,
-    revalidateOnReconnect: true,
+    ...swrOptions,
   });
 
   const familySWR = useSWR("finance_family", fetchFamily, {
@@ -166,9 +165,7 @@ export function useFinanceData(initialData?: FinanceData) {
           recipients: initialData.recipients,
         }
       : undefined,
-    dedupingInterval: 2000,
-    revalidateOnFocus: true,
-    revalidateOnReconnect: true,
+    ...swrOptions,
   });
 
   const data: FinanceData = useMemo(() => ({
