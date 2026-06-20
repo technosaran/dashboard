@@ -19,6 +19,7 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import Link from "next/link";
 import PnLValue from "@/components/pnl-value";
 import { exportToCSV } from "@/lib/export-csv";
+import { Drawer } from "@/components/ui/drawer";
 
 type Stock = Tables<"investments"> & { total_charges?: number; pnlPercent?: number };
 
@@ -651,187 +652,164 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
       ) : null}
 
       {showForm && (
-        <div role="dialog" aria-modal="true" className="mobile-dialog-shell fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-md animate-fade-in shadow-2xl">
-          <div className="mobile-dialog-panel glass-card-static !bg-[--bg-surface] w-full max-w-xl p-6 md:p-8 max-h-[90vh] overflow-y-auto custom-scrollbar">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-black">
-                {editingId ? "Modify Portfolio" : (formData.trade_type === 'buy' ? 'Asset Acquisition' : 'Asset Disposal')}
-              </h2>
-              <button type="button" onClick={resetForm} className="p-2 hover:bg-white/5 rounded-full transition-colors">
-                <svg className="w-8 h-8 text-[--text-muted]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                  <path d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+        <Drawer
+          isOpen={showForm}
+          onClose={resetForm}
+          title={editingId ? "Modify Portfolio" : (formData.trade_type === 'buy' ? 'Asset Acquisition' : 'Asset Disposal')}
+        >
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Symbol</label>
+              <input
+                autoFocus required value={formData.symbol}
+                onChange={e => setFormData({ ...formData, symbol: e.target.value.toUpperCase() })}
+                className="input-premium uppercase placeholder:text-[--text-disabled]"
+                placeholder="e.g. SBIN, RELIANCE, AAPL"
+                autoComplete="new-password"
+              />
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="relative">
-                <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[10px] text-[--text-muted] uppercase tracking-widest font-bold z-10">Symbol</label>
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Company Name</label>
+              <input
+                required value={formData.name}
+                onChange={e => setFormData({ ...formData, name: e.target.value })}
+                className="input-premium placeholder:text-[--text-disabled]"
+                placeholder="State Bank of India"
+                autoComplete="new-password"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Units Traded</label>
                 <input
-                  autoFocus required value={formData.symbol}
-                  onChange={e => setFormData({ ...formData, symbol: e.target.value.toUpperCase() })}
-                  className="w-full h-12 px-4 bg-transparent border border-[--border-default] rounded-md text-[13px] text-[--text-primary] focus:border-[--accent-primary] outline-none font-bold uppercase placeholder:text-[--text-disabled]"
-                  placeholder="e.g. SBIN, RELIANCE, AAPL"
+                  required type="number" step="any"
+                  value={formData.quantity}
+                  onChange={e => setFormData({ ...formData, quantity: e.target.value })}
+                  className="input-premium tabular-nums"
+                  placeholder="0"
                   autoComplete="new-password"
+                  inputMode="decimal"
                 />
               </div>
 
-              <div className="relative">
-                <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[10px] text-[--text-muted] uppercase tracking-widest font-bold z-10">Company Name</label>
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Avg Price ({formData.currency})</label>
                 <input
-                  required value={formData.name}
-                  onChange={e => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full h-12 px-4 bg-transparent border border-[--border-default] rounded-md text-[13px] text-[--text-primary] focus:border-[--accent-primary] outline-none font-medium placeholder:text-[--text-disabled]"
-                  placeholder="State Bank of India"
+                  required type="number" step="0.01"
+                  value={formData.buy_price}
+                  onChange={e => setFormData({ ...formData, buy_price: e.target.value })}
+                  className="input-premium tabular-nums"
+                  placeholder="0.00"
                   autoComplete="new-password"
+                  inputMode="decimal"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Current Price (LTP)</label>
+                <input
+                  required type="number" step="0.01"
+                  value={formData.current_price}
+                  onChange={e => setFormData({ ...formData, current_price: e.target.value })}
+                  className="input-premium tabular-nums"
+                  placeholder="0.00"
+                  autoComplete="new-password"
+                  inputMode="decimal"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="relative">
-                  <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[10px] text-[--text-muted] uppercase tracking-widest font-bold z-10">Units Traded</label>
-                  <input
-                    required type="number" step="any"
-                    value={formData.quantity}
-                    onChange={e => setFormData({ ...formData, quantity: e.target.value })}
-                    className="w-full h-12 px-4 bg-transparent border border-[--border-default] rounded-md text-[13px] text-[--text-primary] tabular-nums outline-none focus:border-[--accent-primary] font-bold"
-                    placeholder="0"
-                    autoComplete="new-password"
-                    inputMode="decimal"
-                  />
-                </div>
-
-                <div className="relative">
-                  <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[10px] text-[--text-muted] uppercase tracking-widest font-bold z-10">Avg Price ({formData.currency})</label>
-                  <input
-                    required type="number" step="0.01"
-                    value={formData.buy_price}
-                    onChange={e => setFormData({ ...formData, buy_price: e.target.value })}
-                    className="w-full h-12 px-4 bg-transparent border border-[--border-default] rounded-md text-[13px] text-[--text-primary] tabular-nums outline-none focus:border-[--accent-primary] font-bold"
-                    placeholder="0.00"
-                    autoComplete="new-password"
-                    inputMode="decimal"
-                  />
-                </div>
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Currency</label>
+                <select
+                  value={formData.currency}
+                  onChange={e => setFormData({ ...formData, currency: e.target.value })}
+                  className="input-premium"
+                >
+                  <option value="INR" className="bg-[--bg-surface]">INR (₹)</option>
+                  <option value="USD" className="bg-[--bg-surface]">USD ($)</option>
+                </select>
               </div>
+            </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="relative">
-                  <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[10px] text-[--text-muted] uppercase tracking-widest font-bold z-10">Current Price (LTP)</label>
-                  <input
-                    required type="number" step="0.01"
-                    value={formData.current_price}
-                    onChange={e => setFormData({ ...formData, current_price: e.target.value })}
-                    className="w-full h-12 px-4 bg-transparent border border-[--border-default] rounded-md text-[13px] text-[--text-primary] tabular-nums outline-none focus:border-[--accent-primary] font-bold"
-                    placeholder="0.00"
-                    autoComplete="new-password"
-                    inputMode="decimal"
-                  />
-                </div>
-
-                <div className="relative">
-                  <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[10px] text-[--text-muted] uppercase tracking-widest font-bold z-10">Currency</label>
-                  <div className="relative w-full">
-                    <select
-                      value={formData.currency}
-                      onChange={e => setFormData({ ...formData, currency: e.target.value })}
-                      className="w-full h-12 px-4 bg-transparent border border-[--border-default] rounded-md text-[13px] text-[--text-primary] outline-none appearance-none cursor-pointer focus:border-[--accent-primary] font-bold"
-                    >
-                      <option value="INR" className="bg-[--bg-surface]">INR (₹)</option>
-                      <option value="USD" className="bg-[--bg-surface]">USD ($)</option>
-                    </select>
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[--text-muted]">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                        <path d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </div>
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">
+                {formData.trade_type === 'buy' ? 'Deduct From Account' : 'Deposit To Account'}
+              </label>
+              <select
+                value={formData.deduct_from_account}
+                onChange={e => setFormData({ ...formData, deduct_from_account: e.target.value })}
+                className="input-premium"
+              >
+                <option value="" className="bg-[--bg-surface]">No Transaction Link (Track only)</option>
+                {accounts.map(acc => (
+                  <option key={acc.id} value={acc.id} className="bg-[--bg-surface]">{acc.name} ({acc.currency})</option>
+                ))}
+              </select>
+              {formData.deduct_from_account && (() => {
+                const selectedAcc = accounts.find(a => a.id === formData.deduct_from_account);
+                return selectedAcc ? (
+                  <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between text-xs text-[--text-secondary] animate-fade-in mt-2">
+                    <span className="font-medium">Selected Balance</span>
+                    <span className="font-bold text-white">
+                      {selectedAcc.currency === 'USD' ? '$' : '₹'}{selectedAcc.balance.toLocaleString()}
+                    </span>
                   </div>
-                </div>
-              </div>
+                ) : null;
+              })()}
+            </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="relative">
-                  <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[10px] text-[--text-muted] uppercase tracking-widest font-bold z-10">
-                    {formData.trade_type === 'buy' ? 'Deduct From Account' : 'Deposit To Account'}
-                  </label>
-                  <div className="relative w-full">
-                    <select
-                      value={formData.deduct_from_account}
-                      onChange={e => setFormData({ ...formData, deduct_from_account: e.target.value })}
-                      className="w-full h-12 px-4 bg-transparent border border-[--border-default] rounded-md text-[13px] text-[--text-primary] outline-none appearance-none cursor-pointer focus:border-[--accent-primary] font-bold"
-                    >
-                      <option value="" className="bg-[--bg-surface]">No Transaction Link (Track only)</option>
-                      {accounts.map(acc => (
-                        <option key={acc.id} value={acc.id} className="bg-[--bg-surface]">{acc.name} ({acc.currency})</option>
-                      ))}
-                    </select>
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[--text-muted]">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                        <path d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </div>
-                  </div>
-                  {formData.deduct_from_account && (() => {
-                    const selectedAcc = accounts.find(a => a.id === formData.deduct_from_account);
-                    return selectedAcc ? (
-                      <div className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between text-xs text-[--text-secondary] animate-fade-in">
-                        <span className="font-medium">Selected Balance</span>
-                        <span className="font-bold text-white">
-                          {selectedAcc.currency === 'USD' ? '$' : '₹'}{selectedAcc.balance.toLocaleString()}
-                        </span>
-                      </div>
-                    ) : null;
-                  })()}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="relative">
-                  <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[10px] text-[--text-muted] uppercase tracking-widest font-bold z-10">Transaction Date</label>
-                  <input
-                    required type="date"
-                    value={formData.bought_at}
-                    onChange={e => setFormData({ ...formData, bought_at: e.target.value })}
-                    className="w-full h-12 px-4 bg-transparent border border-[--border-default] rounded-md text-[13px] text-[--text-primary] outline-none focus:border-[--accent-primary] font-bold"
-                    autoComplete="new-password"
-                  />
-                </div>
-
-                <div className="relative">
-                  <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[10px] text-[--text-muted] uppercase tracking-widest font-bold z-10">Brokerage Charges (₹)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={charges}
-                    onChange={e => setCharges(e.target.value)}
-                    className="w-full h-12 px-4 bg-transparent border border-[--border-default] rounded-md text-[13px] text-[--text-primary] tabular-nums outline-none focus:border-[--accent-primary] font-bold"
-                    placeholder="0.00"
-                    autoComplete="new-password"
-                    inputMode="decimal"
-                  />
-                </div>
-              </div>
-
-              <div className="relative">
-                <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[10px] text-[--text-muted] uppercase tracking-widest font-bold z-10">Notes</label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Transaction Date</label>
                 <input
-                  value={formData.notes}
-                  onChange={e => setFormData({ ...formData, notes: e.target.value })}
-                  className="w-full h-12 px-4 bg-transparent border border-[--border-default] rounded-md text-[13px] text-[--text-primary] outline-none focus:border-[--accent-primary] font-medium"
-                  placeholder="Optional notes"
+                  required type="date"
+                  value={formData.bought_at}
+                  onChange={e => setFormData({ ...formData, bought_at: e.target.value })}
+                  className="input-premium"
                   autoComplete="new-password"
                 />
               </div>
 
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Brokerage Charges (₹)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={charges}
+                  onChange={e => setCharges(e.target.value)}
+                  className="input-premium tabular-nums"
+                  placeholder="0.00"
+                  autoComplete="new-password"
+                  inputMode="decimal"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Notes</label>
+              <input
+                value={formData.notes}
+                onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                className="input-premium"
+                placeholder="Optional notes"
+                autoComplete="new-password"
+              />
+            </div>
+
+            <div className="pt-4 mt-8">
               <button
                 type="submit" disabled={submitting}
-                className="btn-primary w-full h-12 shadow-2xl mt-4"
+                className="btn-primary w-full h-12 shadow-xl shadow-[--accent-primary]/20 text-[11px] font-black uppercase tracking-widest"
               >
                 {submitting ? "Processing Transaction..." : (editingId ? "Finalize Updates" : (formData.trade_type === 'buy' ? "Authorize Buy Order" : "Authorize Sell Order"))}
               </button>
-            </form>
-          </div>
-        </div>
+            </div>
+          </form>
+        </Drawer>
       )}
 
       {showDeleteConfirm && (

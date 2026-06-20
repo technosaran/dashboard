@@ -10,6 +10,7 @@ import { format, parseISO, subMonths } from "date-fns";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { Drawer } from "@/components/ui/drawer";
 import Link from "next/link";
 import { EmptyState } from "@/components/empty-state";
 
@@ -696,52 +697,62 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
       )}
 
       {showAddModal && (
-        <div role="dialog" aria-modal="true" className="mobile-dialog-shell fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-xl animate-fade-in shadow-2xl">
-          <div className="mobile-dialog-panel glass-card-static w-full max-w-2xl p-6 md:p-10 border-emerald-500/20 shadow-[0_0_100px_rgba(16,185,129,0.1)] max-h-[95vh] overflow-y-auto custom-scrollbar">
-            <div className="flex items-center justify-between mb-8 md:mb-10"><div className="flex items-center gap-3"><div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center"><svg className="w-5 h-5 md:w-6 md:h-6 text-emerald-400" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg></div><h2 className="text-xl md:text-3xl font-black">Declare Revenue</h2></div><button type="button" onClick={() => setShowAddModal(false)} className="text-[--text-muted] hover:text-[--text-primary] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"><svg className="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg></button></div>
-            <form onSubmit={handleSubmit} className="space-y-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-3">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">{formData.category === "Salary" ? "Company / Employer" : "Description / Source"}</label>
-                  <input autoFocus type="text" required className="input-premium" placeholder={formData.category === "Salary" ? "e.g. Google" : "e.g. Freelance Web Design"} value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} autoComplete="new-password" id="income-description" name="description" />
-                </div>
-                <div className="space-y-3">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Amount Received</label>
-                  <input type="number" required className="input-premium" placeholder="0.00" value={formData.amount} onChange={e => setFormData({ ...formData, amount: e.target.value })} autoComplete="new-password" inputMode="decimal" id="income-amount" name="amount" />
-                </div>
-                <div className="space-y-3">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Income Stream</label>
-                  <select className="input-premium" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} aria-label="Select income stream" id="income-category" name="category">
-                    {INCOME_CATEGORIES.map(c => <option key={c.label} value={c.label} className="bg-[--bg-surface]">{c.label}</option>)}
-                  </select>
-                </div>
-                <div className="space-y-3">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Transaction Date</label>
-                  <input type="date" required className="input-premium" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} autoComplete="new-password" id="income-date" name="date" />
-                </div>
-                <div className="space-y-3 col-span-1 md:col-span-2">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Deposit into Account</label>
-                  <select className="input-premium" value={formData.account_id} onChange={e => setFormData({ ...formData, account_id: e.target.value })} aria-label="Select deposit account" id="income-account" name="account_id">
-                    <option value="" className="bg-[--bg-surface]">Suspense (No Account)</option>
-                    {accounts.map(acc => <option key={acc.id} value={acc.id} className="bg-[--bg-surface]">{acc.name}</option>)}
-                  </select>
-                  {formData.account_id && (() => {
-                    const selectedAcc = accounts.find(a => a.id === formData.account_id);
-                    return selectedAcc ? (
-                      <div className="mt-2 p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between text-xs text-[--text-secondary] animate-fade-in">
-                        <span className="font-medium">Selected Balance</span>
-                        <span className="font-bold text-white">
-                          {selectedAcc.currency === 'USD' ? '$' : '₹'}{selectedAcc.balance.toLocaleString()}
-                        </span>
-                      </div>
-                    ) : null;
-                  })()}
-                </div>
-              </div>
-              <button type="submit" disabled={submitting} className="btn-primary w-full h-12 shadow-xl shadow-[--accent-primary]/20 mt-4">{submitting ? "Deploying..." : "Finalize Entry"}</button>
-            </form>
-          </div>
-        </div>
+        <Drawer
+          isOpen={showAddModal}
+          onClose={() => setShowAddModal(false)}
+          title="Declare Revenue"
+        >
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">
+                {formData.category === "Salary" ? "Company / Employer" : "Description / Source"}
+              </label>
+              <input autoFocus type="text" required className="input-premium" placeholder={formData.category === "Salary" ? "e.g. Google" : "e.g. Freelance Web Design"} value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} autoComplete="new-password" id="income-description" name="description" />
+            </div>
+            
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Amount Received</label>
+              <input type="number" required className="input-premium" placeholder="0.00" value={formData.amount} onChange={e => setFormData({ ...formData, amount: e.target.value })} autoComplete="new-password" inputMode="decimal" id="income-amount" name="amount" />
+            </div>
+            
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Income Stream</label>
+              <select className="input-premium" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} aria-label="Select income stream" id="income-category" name="category">
+                {INCOME_CATEGORIES.map(c => <option key={c.label} value={c.label} className="bg-[--bg-surface]">{c.label}</option>)}
+              </select>
+            </div>
+            
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Transaction Date</label>
+              <input type="date" required className="input-premium" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} autoComplete="new-password" id="income-date" name="date" />
+            </div>
+            
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Deposit into Account</label>
+              <select className="input-premium" value={formData.account_id} onChange={e => setFormData({ ...formData, account_id: e.target.value })} aria-label="Select deposit account" id="income-account" name="account_id">
+                <option value="" className="bg-[--bg-surface]">Suspense (No Account)</option>
+                {accounts.map(acc => <option key={acc.id} value={acc.id} className="bg-[--bg-surface]">{acc.name}</option>)}
+              </select>
+              {formData.account_id && (() => {
+                const selectedAcc = accounts.find(a => a.id === formData.account_id);
+                return selectedAcc ? (
+                  <div className="mt-2 p-3 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between text-xs text-[--text-secondary] animate-fade-in">
+                    <span className="font-medium">Selected Balance</span>
+                    <span className="font-bold text-white">
+                      {selectedAcc.currency === 'USD' ? '$' : '₹'}{selectedAcc.balance.toLocaleString()}
+                    </span>
+                  </div>
+                ) : null;
+              })()}
+            </div>
+            
+            <div className="pt-4 mt-8">
+              <button type="submit" disabled={submitting} className="btn-primary w-full h-12 shadow-xl shadow-[--accent-primary]/20 text-[11px] font-black uppercase tracking-widest">
+                {submitting ? "Deploying..." : "Finalize Entry"}
+              </button>
+            </div>
+          </form>
+        </Drawer>
       )}
     </div>
   );

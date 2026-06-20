@@ -8,7 +8,7 @@ import { revertLedgerLog } from "../alternative-assets/actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { format, differenceInDays, parseISO } from "date-fns";
-import { useMediaQuery } from "@/hooks/use-media-query";
+import { Drawer } from "@/components/ui/drawer";
 import Link from "next/link";
 import { EmptyState } from "@/components/empty-state";
 
@@ -47,7 +47,6 @@ const INTEREST_FREQUENCIES = ["Monthly", "Quarterly", "Semi-Annual", "Annual"];
 
 export default function BondsClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { accounts, bonds: bondsData, bondTransactions, ledgerLogs, profile }, isValidating, mutate } = useFinanceData(initialData);
-  const isMobile = useMediaQuery('(max-width: 767.98px)');
   const bonds = useMemo(() => (bondsData || []).filter(b => b.status === 'Active') as Bond[], [bondsData]);
   const searchParams = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(searchParams.get("action") === "new");
@@ -272,100 +271,6 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
     return { bg: "rgba(239, 68, 68, 0.1)", text: "#ef4444" };
   };
 
-  if (isMobile) {
-    return (
-      <div className="flex flex-col gap-6 animate-fade-in">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-black text-[--text-primary]">Record Bond</h1>
-            <div className={`status-dot scale-70 ${submitting ? 'animate-pulse bg-yellow-400' : 'bg-emerald-400'}`} />
-          </div>
-          <Link href="/dashboard" className="text-[10px] font-black uppercase text-[--text-muted] no-underline bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg active:scale-95 transition-all">
-            Back
-          </Link>
-        </div>
-        
-        <div className="glass-card-static p-5 border border-white/5 bg-white/[0.01]">
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Bond Name</label>
-              <input required className="input-premium" value={formData.bond_name} onChange={e => setFormData({...formData, bond_name: e.target.value})} placeholder="e.g., 7.18% GOI 2033" autoComplete="off" id="bond-name" name="bond_name" />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">ISIN</label>
-              <input required className="input-premium" value={formData.isin} onChange={e => setFormData({...formData, isin: e.target.value})} placeholder="INE123A01012" autoComplete="off" id="bond-isin" name="isin" />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Issuer</label>
-              <input required className="input-premium" value={formData.issuer} onChange={e => setFormData({...formData, issuer: e.target.value})} placeholder="Government of India" autoComplete="off" id="bond-issuer" name="issuer" />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Bond Type</label>
-              <select aria-label="Select bond type" id="bond-type-mobile" name="bond_type" className="input-premium" value={formData.bond_type} onChange={e => setFormData({...formData, bond_type: e.target.value})}>
-                {BOND_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Face Value</label>
-              <input required type="number" className="input-premium" value={formData.face_value} onChange={e => setFormData({...formData, face_value: e.target.value})} autoComplete="off" inputMode="decimal" id="bond-face-value" name="face_value" />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Quantity</label>
-              <input required type="number" className="input-premium" value={formData.quantity} onChange={e => setFormData({...formData, quantity: e.target.value})} autoComplete="off" inputMode="decimal" id="bond-quantity" name="quantity" />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Purchase Price</label>
-              <input required type="number" step="0.01" className="input-premium" value={formData.purchase_price} onChange={e => setFormData({...formData, purchase_price: e.target.value})} autoComplete="off" inputMode="decimal" id="bond-purchase-price" name="purchase_price" />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Current Price</label>
-              <input required type="number" step="0.01" className="input-premium" value={formData.current_price} onChange={e => setFormData({...formData, current_price: e.target.value})} autoComplete="off" inputMode="decimal" id="bond-current-price" name="current_price" />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Coupon Rate (%)</label>
-              <input required type="number" step="0.01" className="input-premium" value={formData.coupon_rate} onChange={e => setFormData({...formData, coupon_rate: e.target.value})} autoComplete="off" inputMode="decimal" id="bond-coupon-rate" name="coupon_rate" />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Interest Frequency</label>
-              <select aria-label="Select interest frequency" id="bond-interest-freq-mobile" name="interest_frequency" className="input-premium" value={formData.interest_frequency} onChange={e => setFormData({...formData, interest_frequency: e.target.value})}>
-                {INTEREST_FREQUENCIES.map(f => <option key={f} value={f}>{f}</option>)}
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Purchase Date</label>
-              <input required type="date" className="input-premium" value={formData.purchase_date} onChange={e => setFormData({...formData, purchase_date: e.target.value})} autoComplete="off" id="bond-purchase-date" name="purchase_date" />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Maturity Date</label>
-              <input required type="date" className="input-premium" value={formData.maturity_date} onChange={e => setFormData({...formData, maturity_date: e.target.value})} autoComplete="off" id="bond-maturity-date" name="maturity_date" />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Deduct from Account</label>
-              <select aria-label="Select account" id="bond-account-mobile" name="account_id" className="input-premium" value={formData.account_id} onChange={e => setFormData({...formData, account_id: e.target.value})}>
-                <option value="">No Deduction</option>
-                {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
-              </select>
-            </div>
-
-            <button type="submit" disabled={submitting} className="btn-primary w-full h-12 shadow-md mt-6">
-              {submitting ? "Processing..." : "Add Bond Holding"}
-            </button>
-          </form>
-        </div>
-      </div>
-    );
   }
 
   return (
@@ -778,155 +683,163 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
         </div>
       )}
 
-      {/* Add Bond Modal */}
       {showAddModal && (
-        <div className="mobile-dialog-shell fixed inset-0 z-[200] overflow-y-auto custom-scrollbar bg-[--bg-base]/80 backdrop-blur-xl">
-          <div className="flex min-h-full items-center justify-center p-4 py-12">
-            <div className="mobile-dialog-panel glass-card-static w-full max-w-3xl p-8 max-h-[90vh] overflow-y-auto custom-scrollbar">
-            <div className="flex justify-between items-center mb-8">
-              <h2 className="text-2xl font-black">{editingId ? 'Edit Bond Holding' : 'Add Bond Investment'}</h2>
-              <button type="button" onClick={() => { setShowAddModal(false); setEditingId(null); }} className="text-[--text-muted] hover:text-white">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                  <path d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="md:col-span-2">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Bond Name</label>
-                  <input required className="input-premium" value={formData.bond_name} onChange={e => setFormData({...formData, bond_name: e.target.value})} placeholder="e.g., 7.18% Govt of India 2033" autoComplete="new-password" />
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">ISIN</label>
-                  <input required className="input-premium" value={formData.isin} onChange={e => setFormData({...formData, isin: e.target.value})} placeholder="INE123A01012" autoComplete="new-password" />
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Issuer</label>
-                  <input required className="input-premium" value={formData.issuer} onChange={e => setFormData({...formData, issuer: e.target.value})} placeholder="Government of India" autoComplete="new-password" />
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Bond Type</label>
-                  <select aria-label="Select bond type" id="bond-type" name="bond_type" className="input-premium" value={formData.bond_type} onChange={e => setFormData({...formData, bond_type: e.target.value})}>
-                    {BOND_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Credit Rating</label>
-                  <input className="input-premium" value={formData.credit_rating} onChange={e => setFormData({...formData, credit_rating: e.target.value})} placeholder="e.g. CRISIL AAA" autoComplete="new-password" />
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Face Value</label>
-                  <input required type="number" className="input-premium" value={formData.face_value} onChange={e => setFormData({...formData, face_value: e.target.value})} autoComplete="new-password" inputMode="decimal" />
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Quantity</label>
-                  <input required type="number" className="input-premium" value={formData.quantity} onChange={e => setFormData({...formData, quantity: e.target.value})} autoComplete="new-password" inputMode="decimal" />
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Purchase Price</label>
-                  <input required type="number" step="0.01" className="input-premium" value={formData.purchase_price} onChange={e => setFormData({...formData, purchase_price: e.target.value})} autoComplete="new-password" inputMode="decimal" />
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Current Price (Market LTP)</label>
-                  <input required type="number" step="0.01" className="input-premium" value={formData.current_price} onChange={e => setFormData({...formData, current_price: e.target.value})} autoComplete="new-password" inputMode="decimal" />
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Current Total Value</label>
-                  <input required type="number" step="0.01" className="input-premium" value={formData.current_value} onChange={e => setFormData({...formData, current_value: e.target.value})} placeholder="Leave blank to auto-calculate" autoComplete="new-password" inputMode="decimal" />
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Coupon Rate (%)</label>
-                  <input required type="number" step="0.01" className="input-premium" value={formData.coupon_rate} onChange={e => setFormData({...formData, coupon_rate: e.target.value})} autoComplete="new-password" inputMode="decimal" />
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Yield to Maturity (YTM %)</label>
-                  <input type="number" step="0.01" className="input-premium" value={formData.ytm} onChange={e => setFormData({...formData, ytm: e.target.value})} placeholder="7.25" autoComplete="new-password" inputMode="decimal" />
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Interest Frequency</label>
-                  <select aria-label="Select interest frequency" id="bond-interest-freq" name="interest_frequency" className="input-premium" value={formData.interest_frequency} onChange={e => setFormData({...formData, interest_frequency: e.target.value})}>
-                    {INTEREST_FREQUENCIES.map(f => <option key={f} value={f}>{f}</option>)}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Purchase Date</label>
-                  <input required type="date" className="input-premium" value={formData.purchase_date} onChange={e => setFormData({...formData, purchase_date: e.target.value})} autoComplete="new-password" />
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Maturity Date</label>
-                  <input required type="date" className="input-premium" value={formData.maturity_date} onChange={e => setFormData({...formData, maturity_date: e.target.value})} autoComplete="new-password" />
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Next Interest Payment Date</label>
-                  <input type="date" className="input-premium" value={formData.next_interest_date} onChange={e => setFormData({...formData, next_interest_date: e.target.value})} autoComplete="new-password" />
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Platform</label>
-                  <input className="input-premium" value={formData.platform} onChange={e => setFormData({...formData, platform: e.target.value})} placeholder="Wint" autoComplete="new-password" />
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Accrued Interest</label>
-                  <input required type="number" step="0.01" className="input-premium" value={formData.accrued_interest} onChange={e => setFormData({...formData, accrued_interest: e.target.value})} autoComplete="new-password" inputMode="decimal" />
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Total Interest Earned</label>
-                  <input required type="number" step="0.01" className="input-premium" value={formData.total_interest_earned} onChange={e => setFormData({...formData, total_interest_earned: e.target.value})} autoComplete="new-password" inputMode="decimal" />
-                </div>
-
-                {!editingId ? (
-                  <div>
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Deduct from Account</label>
-                    <select aria-label="Select account" id="bond-account" name="account_id" className="input-premium" value={formData.account_id} onChange={e => setFormData({...formData, account_id: e.target.value})}>
-                      <option value="">No Deduction</option>
-                      {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
-                    </select>
-                    {formData.account_id && (() => {
-                      const selectedAcc = accounts.find(a => a.id === formData.account_id);
-                      return selectedAcc ? (
-                        <div className="mt-2 p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between text-xs text-[--text-secondary] animate-fade-in">
-                          <span className="font-medium">Selected Balance</span>
-                          <span className="font-bold text-white">
-                            {selectedAcc.currency === 'USD' ? '$' : '₹'}{selectedAcc.balance.toLocaleString()}
-                          </span>
-                        </div>
-                      ) : null;
-                    })()}
-                  </div>
-                ) : null}
-
-                <div className={editingId ? "md:col-span-2" : ""}>
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2 block">Notes</label>
-                  <textarea className="input-premium min-h-[80px]" value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} placeholder="Optional notes" />
-                </div>
+        <Drawer
+          isOpen={showAddModal}
+          onClose={() => { setShowAddModal(false); setEditingId(null); }}
+          title={editingId ? 'Edit Bond Holding' : 'Add Bond Investment'}
+        >
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2 space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Bond Name</label>
+                <input required className="input-premium" value={formData.bond_name} onChange={e => setFormData({...formData, bond_name: e.target.value})} placeholder="e.g., 7.18% Govt of India 2033" autoComplete="new-password" />
               </div>
 
-              <button type="submit" disabled={submitting} className="btn-primary w-full h-12">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">ISIN</label>
+                <input required className="input-premium" value={formData.isin} onChange={e => setFormData({...formData, isin: e.target.value})} placeholder="INE123A01012" autoComplete="new-password" />
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Issuer</label>
+                <input required className="input-premium" value={formData.issuer} onChange={e => setFormData({...formData, issuer: e.target.value})} placeholder="Government of India" autoComplete="new-password" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Bond Type</label>
+                <select aria-label="Select bond type" id="bond-type" name="bond_type" className="input-premium" value={formData.bond_type} onChange={e => setFormData({...formData, bond_type: e.target.value})}>
+                  {BOND_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Credit Rating</label>
+                <input className="input-premium" value={formData.credit_rating} onChange={e => setFormData({...formData, credit_rating: e.target.value})} placeholder="e.g. CRISIL AAA" autoComplete="new-password" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Face Value</label>
+                <input required type="number" className="input-premium tabular-nums" value={formData.face_value} onChange={e => setFormData({...formData, face_value: e.target.value})} autoComplete="new-password" inputMode="decimal" />
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Quantity</label>
+                <input required type="number" className="input-premium tabular-nums" value={formData.quantity} onChange={e => setFormData({...formData, quantity: e.target.value})} autoComplete="new-password" inputMode="decimal" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Purchase Price</label>
+                <input required type="number" step="0.01" className="input-premium tabular-nums" value={formData.purchase_price} onChange={e => setFormData({...formData, purchase_price: e.target.value})} autoComplete="new-password" inputMode="decimal" />
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Current Price (Market LTP)</label>
+                <input required type="number" step="0.01" className="input-premium tabular-nums" value={formData.current_price} onChange={e => setFormData({...formData, current_price: e.target.value})} autoComplete="new-password" inputMode="decimal" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Current Total Value</label>
+                <input required type="number" step="0.01" className="input-premium tabular-nums" value={formData.current_value} onChange={e => setFormData({...formData, current_value: e.target.value})} placeholder="Leave blank to auto-calculate" autoComplete="new-password" inputMode="decimal" />
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Coupon Rate (%)</label>
+                <input required type="number" step="0.01" className="input-premium tabular-nums" value={formData.coupon_rate} onChange={e => setFormData({...formData, coupon_rate: e.target.value})} autoComplete="new-password" inputMode="decimal" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Yield to Maturity (YTM %)</label>
+                <input type="number" step="0.01" className="input-premium tabular-nums" value={formData.ytm} onChange={e => setFormData({...formData, ytm: e.target.value})} placeholder="7.25" autoComplete="new-password" inputMode="decimal" />
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Interest Frequency</label>
+                <select aria-label="Select interest frequency" id="bond-interest-freq" name="interest_frequency" className="input-premium" value={formData.interest_frequency} onChange={e => setFormData({...formData, interest_frequency: e.target.value})}>
+                  {INTEREST_FREQUENCIES.map(f => <option key={f} value={f}>{f}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Purchase Date</label>
+                <input required type="date" className="input-premium" value={formData.purchase_date} onChange={e => setFormData({...formData, purchase_date: e.target.value})} autoComplete="new-password" />
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Maturity Date</label>
+                <input required type="date" className="input-premium" value={formData.maturity_date} onChange={e => setFormData({...formData, maturity_date: e.target.value})} autoComplete="new-password" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Next Interest Payment Date</label>
+                <input type="date" className="input-premium" value={formData.next_interest_date} onChange={e => setFormData({...formData, next_interest_date: e.target.value})} autoComplete="new-password" />
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Platform</label>
+                <input className="input-premium" value={formData.platform} onChange={e => setFormData({...formData, platform: e.target.value})} placeholder="Wint" autoComplete="new-password" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Accrued Interest</label>
+                <input required type="number" step="0.01" className="input-premium tabular-nums" value={formData.accrued_interest} onChange={e => setFormData({...formData, accrued_interest: e.target.value})} autoComplete="new-password" inputMode="decimal" />
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Total Interest Earned</label>
+                <input required type="number" step="0.01" className="input-premium tabular-nums" value={formData.total_interest_earned} onChange={e => setFormData({...formData, total_interest_earned: e.target.value})} autoComplete="new-password" inputMode="decimal" />
+              </div>
+            </div>
+
+            {!editingId ? (
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Deduct from Account</label>
+                <select aria-label="Select account" id="bond-account" name="account_id" className="input-premium" value={formData.account_id} onChange={e => setFormData({...formData, account_id: e.target.value})}>
+                  <option value="">No Deduction</option>
+                  {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
+                </select>
+                {formData.account_id && (() => {
+                  const selectedAcc = accounts.find(a => a.id === formData.account_id);
+                  return selectedAcc ? (
+                    <div className="mt-2 p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between text-xs text-[--text-secondary] animate-fade-in">
+                      <span className="font-medium">Selected Balance</span>
+                      <span className="font-bold text-white tabular-nums">
+                        {selectedAcc.currency === 'USD' ? '$' : '₹'}{selectedAcc.balance.toLocaleString()}
+                      </span>
+                    </div>
+                  ) : null;
+                })()}
+              </div>
+            ) : null}
+
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Notes</label>
+              <textarea className="input-premium min-h-[80px] resize-none" value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} placeholder="Optional notes" />
+            </div>
+
+            <div className="pt-4 mt-8">
+              <button type="submit" disabled={submitting} className="btn-primary w-full h-12 text-[11px] font-black uppercase tracking-widest shadow-xl shadow-[--accent-primary]/20">
                 {editingId ? "Update Bond Details" : submitting ? "Adding..." : "Add Bond"}
               </button>
-            </form>
-          </div>
-          </div>
-        </div>
+            </div>
+          </form>
+        </Drawer>
       )}
     </div>
   );

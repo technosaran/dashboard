@@ -8,6 +8,15 @@ import { format } from "date-fns";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { Plus, Edit2, Trash2, X, Send, History, ArrowUpRight, CheckCircle2 } from "lucide-react";
 import type { Tables } from "@/lib/database.types";
+import { Drawer } from "@/components/ui/drawer";
+import dynamic from "next/dynamic";
+import { getChartColour } from "@/lib/chart-colours";
+
+const PieChart = dynamic(() => import("recharts").then(mod => mod.PieChart), { ssr: false });
+const Pie = dynamic(() => import("recharts").then(mod => mod.Pie), { ssr: false });
+const Cell = dynamic(() => import("recharts").then(mod => mod.Cell), { ssr: false });
+const ResponsiveContainer = dynamic(() => import("recharts").then(mod => mod.ResponsiveContainer), { ssr: false });
+const Tooltip = dynamic(() => import("recharts").then(mod => mod.Tooltip), { ssr: false });
 
 const QUICK_AMOUNTS = [500, 1000, 2000, 5000, 10000];
 
@@ -240,14 +249,55 @@ export default function FamilyClient({
       </div>
 
       {/* STATS STRIP */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-[#111111] border border-white/10 p-5 rounded-md flex flex-col gap-1">
-          <span className="text-xs uppercase tracking-wider text-[--text-muted] font-semibold">Total Contacts</span>
-          <span className="text-2xl font-bold text-white">{recipients.length}</span>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="bg-[#111111] border border-white/10 p-5 rounded-md flex flex-col gap-1">
+            <span className="text-xs uppercase tracking-wider text-[--text-muted] font-semibold">Total Contacts</span>
+            <span className="text-3xl font-black text-white mt-1">{recipients.length}</span>
+          </div>
+          <div className="bg-[#111111] border border-white/10 p-5 rounded-md flex flex-col gap-1">
+            <span className="text-xs uppercase tracking-wider text-[--text-muted] font-semibold">Recent Volume (INR)</span>
+            <span className="text-3xl font-black text-white mt-1">₹{totalSent.toLocaleString()}</span>
+          </div>
         </div>
-        <div className="bg-[#111111] border border-white/10 p-5 rounded-md flex flex-col gap-1">
-          <span className="text-xs uppercase tracking-wider text-[--text-muted] font-semibold">Recent Volume (INR)</span>
-          <span className="text-2xl font-bold text-white">₹{totalSent.toLocaleString()}</span>
+
+        {/* PIE CHART FOR DISTRIBUTION */}
+        <div className="bg-[#111111] border border-white/10 p-5 rounded-md flex flex-col min-h-[160px]">
+          <span className="text-xs uppercase tracking-wider text-[--text-muted] font-semibold mb-2">Distribution</span>
+          {Object.keys(recipientTotals).length > 0 && Object.values(recipientTotals).some(v => v > 0) ? (
+            <div className="h-[120px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
+                    itemStyle={{ color: '#fff', fontSize: '12px', fontWeight: 'bold' }}
+                    formatter={(value: number) => [`₹${value.toLocaleString()}`, 'Total Sent']}
+                  />
+                  <Pie
+                    data={Object.entries(recipientTotals).map(([id, value], i) => ({
+                      name: recipients.find(r => r.id === id)?.name || "Unknown",
+                      value
+                    })).filter(d => d.value > 0)}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={35}
+                    outerRadius={55}
+                    paddingAngle={5}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {Object.keys(recipientTotals).map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={getChartColour(index)} />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+             <div className="flex-1 flex items-center justify-center text-[10px] uppercase font-bold text-[--text-muted] tracking-widest text-center">
+               No data to display
+             </div>
+          )}
         </div>
       </div>
 
@@ -401,12 +451,10 @@ export default function FamilyClient({
         )}
       </div>
 
-      {/* MODALS */}
-      {(isAddingRecipient || isSendingMoney || showDeleteConfirm) && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80">
-          
-          {/* DELETE MODAL */}
-          {showDeleteConfirm && (
+        {/* MODALS & DRAWERS */}
+        {/* DELETE MODAL (Kept as centered modal for destructive actions) */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 animate-fade-in">
             <div role="dialog" aria-modal="true" className="bg-[#111111] border border-white/10 rounded-md w-full max-w-sm p-6 shadow-2xl">
               <h3 className="text-lg font-bold text-white mb-2">Delete Contact</h3>
               <p className="text-sm text-[--text-secondary] mb-6">
@@ -419,106 +467,95 @@ export default function FamilyClient({
                 </button>
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* ADD/EDIT MODAL */}
-          {isAddingRecipient && !showDeleteConfirm && (
-            <div role="dialog" aria-modal="true" className="bg-[#111111] border border-white/10 rounded-md w-full max-w-md shadow-2xl">
-              <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
-                <h2 className="text-lg font-bold text-white">
-                  {isEditingRecipient ? "Edit Contact" : "Add New Contact"}
-                </h2>
-                <button onClick={closeModals} className="text-[--text-muted] hover:text-white transition-colors">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              <form onSubmit={handleAddRecipient} className="p-6 space-y-5">
-                <div>
-                  <label className="block text-sm font-medium text-[--text-secondary] mb-1.5">Full Name</label>
-                  <input autoFocus required type="text" value={newName} onChange={(e) => setNewName(e.target.value)} className="w-full bg-[#1a1a1a] border border-white/10 rounded-md px-3 py-2 text-white focus:border-[--accent-primary] outline-none text-sm" placeholder="Enter contact name" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-[--text-secondary] mb-1.5">Relationship</label>
-                  <input required type="text" value={newRelationship} onChange={(e) => setNewRelationship(e.target.value)} className="w-full bg-[#1a1a1a] border border-white/10 rounded-md px-3 py-2 text-white focus:border-[--accent-primary] outline-none text-sm" placeholder="e.g. Brother, Friend" />
-                </div>
-                 <div className="flex justify-end gap-3 pt-4">
-                   <button type="button" onClick={closeModals} className="btn-secondary !h-11 !px-5 text-xs font-black uppercase tracking-widest">Cancel</button>
-                   <button type="submit" disabled={submitting || !newName.trim()} className="btn-primary !h-11 !px-5 text-xs font-black uppercase tracking-widest disabled:opacity-50">
-                     {submitting ? "Saving..." : "Save Details"}
-                   </button>
-                 </div>
-              </form>
+        {/* ADD/EDIT DRAWER */}
+        <Drawer
+          isOpen={isAddingRecipient && !showDeleteConfirm}
+          onClose={closeModals}
+          title={isEditingRecipient ? "Edit Contact" : "Add New Contact"}
+        >
+          <form onSubmit={handleAddRecipient} className="space-y-6">
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Full Name</label>
+              <input autoFocus required type="text" value={newName} onChange={(e) => setNewName(e.target.value)} className="input-premium" placeholder="Enter contact name" />
             </div>
-          )}
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Relationship</label>
+              <input required type="text" value={newRelationship} onChange={(e) => setNewRelationship(e.target.value)} className="input-premium" placeholder="e.g. Brother, Friend" />
+            </div>
+            <div className="pt-4 mt-8">
+              <button type="submit" disabled={submitting || !newName.trim()} className="btn-primary w-full h-12 shadow-xl shadow-[--accent-primary]/20">
+                {submitting ? "Saving..." : "Save Details"}
+              </button>
+            </div>
+          </form>
+        </Drawer>
 
-          {/* SEND MONEY MODAL */}
-          {isSendingMoney && !showDeleteConfirm && selectedRecipient && (
-            <div role="dialog" aria-modal="true" className="bg-[#111111] border border-white/10 rounded-md w-full max-w-md shadow-2xl max-h-[90vh] flex flex-col">
-              <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between shrink-0">
-                <h2 className="text-lg font-bold text-white">Transfer Funds</h2>
-                <button onClick={closeModals} className="text-[--text-muted] hover:text-white transition-colors">
-                  <X className="w-5 h-5" />
-                </button>
+        {/* SEND MONEY DRAWER */}
+        <Drawer
+          isOpen={isSendingMoney && !showDeleteConfirm && !!selectedRecipient}
+          onClose={closeModals}
+          title="Transfer Funds"
+        >
+          {selectedRecipient && (
+            <form onSubmit={handleSendMoney} className="space-y-6">
+              <div className="bg-white/[0.02] border border-white/5 p-4 rounded-xl flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-[--accent-primary]/20 text-[--accent-primary] flex items-center justify-center font-bold text-lg">
+                  {selectedRecipient.name.charAt(0)}
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Recipient</p>
+                  <p className="text-base font-bold text-white mt-1">{selectedRecipient.name}</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Source Account</label>
+                <select required value={sendAccountId} onChange={(e) => setSendAccountId(e.target.value)} className="input-premium">
+                  {accounts.map((acc) => (<option key={acc.id} value={acc.id}>{acc.name} ({acc.currency} {acc.balance.toLocaleString()})</option>))}
+                </select>
+                {sendAccountId && accounts.find(a => a.id === sendAccountId) && (
+                  <div className="mt-2 p-3 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between text-xs text-[--text-secondary] animate-fade-in">
+                    <span className="font-medium">Available Balance</span>
+                    <span className="font-bold text-white">
+                      {accounts.find(a => a.id === sendAccountId)?.currency === 'USD' ? '$' : '₹'}{accounts.find(a => a.id === sendAccountId)?.balance.toLocaleString()}
+                    </span>
+                  </div>
+                )}
               </div>
               
-              <form onSubmit={handleSendMoney} className="p-6 space-y-6 overflow-y-auto custom-scrollbar">
-                <div className="bg-[#1a1a1a] border border-white/5 p-4 rounded-md flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-[--accent-primary]/20 text-[--accent-primary] flex items-center justify-center font-bold">
-                    {selectedRecipient.name.charAt(0)}
-                  </div>
-                  <div>
-                    <p className="text-xs text-[--text-muted] uppercase tracking-wider font-semibold">Recipient</p>
-                    <p className="text-sm font-bold text-white">{selectedRecipient.name}</p>
-                  </div>
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Transfer Amount</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white font-bold text-lg">
+                    {accounts.find(a => a.id === sendAccountId)?.currency === 'USD' ? '$' : '₹'}
+                  </span>
+                  <input required type="number" step="0.01" min="1" value={sendAmount} onChange={(e) => setSendAmount(e.target.value)} className="input-premium !pl-9 text-lg font-black" placeholder="0.00" />
                 </div>
+                <div className="flex gap-2 mt-3 flex-wrap">
+                  {QUICK_AMOUNTS.map((amt) => (
+                    <button key={amt} type="button" onClick={() => setSendAmount(amt.toString())} className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors border ${sendAmount === amt.toString() ? 'bg-[--accent-primary] text-white border-[--accent-primary]' : 'bg-white/5 border-white/10 text-[--text-muted] hover:text-white hover:border-white/20'}`}>
+                      +{amt.toLocaleString()}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-[--text-secondary] mb-1.5">Source Account</label>
-                  <select required value={sendAccountId} onChange={(e) => setSendAccountId(e.target.value)} className="w-full bg-[#1a1a1a] border border-white/10 rounded-md px-3 py-2 text-white focus:border-[--accent-primary] outline-none text-sm appearance-none cursor-pointer">
-                    {accounts.map((acc) => (<option key={acc.id} value={acc.id} className="bg-[#1a1a1a]">{acc.name} ({acc.currency} {acc.balance.toLocaleString()})</option>))}
-                  </select>
-                  {sendAccountId && accounts.find(a => a.id === sendAccountId) && (
-                    <p className="text-xs text-[--text-muted] mt-2">
-                      Available: <span className="font-semibold text-white">{accounts.find(a => a.id === sendAccountId)?.currency === 'USD' ? '$' : '₹'}{accounts.find(a => a.id === sendAccountId)?.balance.toLocaleString()}</span>
-                    </p>
-                  )}
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-[--text-secondary] mb-1.5">Amount</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[--text-muted]">
-                      {accounts.find(a => a.id === sendAccountId)?.currency === 'USD' ? '$' : '₹'}
-                    </span>
-                    <input autoFocus required type="number" step="0.01" min="1" value={sendAmount} onChange={(e) => setSendAmount(e.target.value)} className="w-full bg-[#1a1a1a] border border-white/10 rounded-md pl-8 pr-3 py-2 text-lg font-semibold text-white focus:border-[--accent-primary] outline-none text-sm" placeholder="0.00" />
-                  </div>
-                  <div className="flex gap-2 mt-3 flex-wrap">
-                    {QUICK_AMOUNTS.map((amt) => (
-                      <button key={amt} type="button" onClick={() => setSendAmount(amt.toString())} className={`px-3 py-1.5 rounded-sm text-xs font-medium transition-colors ${sendAmount === amt.toString() ? 'bg-[--accent-primary] text-white' : 'bg-[#1a1a1a] border border-white/10 text-[--text-muted] hover:text-white'}`}>
-                        +{amt.toLocaleString()}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Note (Optional)</label>
+                <input value={sendNote} onChange={(e) => setSendNote(e.target.value)} className="input-premium" placeholder="e.g. Birthday gift" />
+              </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-[--text-secondary] mb-1.5">Note (Optional)</label>
-                  <input value={sendNote} onChange={(e) => setSendNote(e.target.value)} className="w-full bg-[#1a1a1a] border border-white/10 rounded-md px-3 py-2 text-white focus:border-[--accent-primary] outline-none text-sm" placeholder="Description" />
-                </div>
-
-                 <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
-                   <button type="button" onClick={closeModals} className="btn-secondary !h-11 !px-5 text-xs font-black uppercase tracking-widest">
-                     Cancel
-                   </button>
-                   <button type="submit" disabled={submitting || !sendAmount} className="btn-primary !h-11 !px-6 text-xs font-black uppercase tracking-widest flex items-center gap-2 disabled:opacity-50">
-                     {submitting ? "Processing..." : <><ArrowUpRight className="w-4 h-4" /> Transfer</>}
-                   </button>
-                 </div>
-              </form>
-            </div>
+              <div className="pt-4 mt-8">
+                <button type="submit" disabled={submitting || !sendAmount} className="btn-primary w-full h-12 shadow-xl shadow-[--accent-primary]/20 text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2">
+                  {submitting ? "Processing..." : <><ArrowUpRight className="w-4 h-4" /> Execute Transfer</>}
+                </button>
+              </div>
+            </form>
           )}
-        </div>
-      )}
+        </Drawer>
     </div>
   );
 }

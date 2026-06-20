@@ -14,6 +14,7 @@ import { revertLedgerLog } from "../alternative-assets/actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { format } from "date-fns";
+import { Drawer } from "@/components/ui/drawer";
 import PnLValue from "@/components/pnl-value";
 import type { Tables } from "@/lib/database.types";
 import { useMediaQuery } from "@/hooks/use-media-query";
@@ -77,22 +78,6 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
       }, 0);
     }
   }, [accounts, fundsForm.bank_account_id, profile]);
-
-  // Close modals on Escape key
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setShowTradeModal(false);
-        setShowEditTradeModal(false);
-        setShowFundsModal(false);
-        setShowAccountModal(false);
-      }
-    };
-    if (showTradeModal || showEditTradeModal || showFundsModal || showAccountModal) {
-      window.addEventListener("keydown", handleKeyDown);
-    }
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [showTradeModal, showEditTradeModal, showFundsModal, showAccountModal]);
 
   // Broker Account form
   const [accountForm, setAccountForm] = useState({
@@ -864,298 +849,259 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
 
       {/* Log Trade Modal */}
       {showTradeModal && (
-        <div role="dialog" aria-modal="true" className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
-          <div className="glass-card-static w-full max-w-md p-6 my-auto animate-in zoom-in duration-300 relative max-h-[90vh] overflow-y-auto custom-scrollbar flex flex-col">
-            <h2 className="text-xl font-black mb-4 text-white text-left uppercase italic tracking-wide">Log Daily Profit/Loss</h2>
-
-            <form onSubmit={handleLogTrade} className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Select Broker</label>
-                  {forexAccounts.length === 0 ? (
-                    <div className="text-[10px] text-rose-400 font-bold p-2.5 bg-rose-500/10 border border-rose-500/20 rounded-xl leading-snug">
-                      No broker accounts found. Create one under the{" "}
-                      <button type="button" onClick={() => { setShowTradeModal(false); setActiveTab("accounts"); }} className="underline text-sky-400 hover:text-sky-300 font-extrabold">
-                        Accounts tab
-                      </button>{" "}
-                      first.
-                    </div>
-                  ) : (
-                    <select autoFocus aria-label="Select forex account" id="forex-trade-account" name="forex_account_id" required className="input-premium !h-10 text-xs" value={tradeForm.forex_account_id} onChange={e => setTradeForm({...tradeForm, forex_account_id: e.target.value})}>
-                      <option value="" className="bg-[--bg-surface]">Select Account</option>
-                      {forexAccounts.map(a => <option key={a.id} value={a.id} className="bg-[--bg-surface]">{a.account_label} ({a.broker_name})</option>)}
-                    </select>
-                  )}
-                </div>
-
-                <div>
-                  <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Date</label>
-                  <input required type="date" className="input-premium text-white !h-10 text-xs" value={tradeForm.trade_date} onChange={e => setTradeForm({...tradeForm, trade_date: e.target.value})} autoComplete="new-password" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Entry Type</label>
-                  <div className="flex bg-white/5 p-0.5 rounded-xl border border-white/5 gap-1 h-10">
-                    <button
-                      type="button"
-                      onClick={() => setTradePnlType("profit")}
-                      className={`flex-1 text-[9px] font-black uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-0.5 ${tradePnlType === "profit" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "text-[--text-muted] hover:text-white"}`}
-                    >
-                      + Profit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setTradePnlType("loss")}
-                      className={`flex-1 text-[9px] font-black uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-0.5 ${tradePnlType === "loss" ? "bg-rose-500/20 text-rose-400 border border-rose-500/30" : "text-[--text-muted] hover:text-white"}`}
-                    >
-                      - Loss
-                    </button>
+        <Drawer
+          isOpen={showTradeModal}
+          onClose={() => setShowTradeModal(false)}
+          title="Log Daily Profit/Loss"
+        >
+          <form onSubmit={handleLogTrade} className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Select Broker</label>
+                {forexAccounts.length === 0 ? (
+                  <div className="text-[10px] text-rose-400 font-bold p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl leading-snug">
+                    No broker accounts found. Create one under the{" "}
+                    <button type="button" onClick={() => { setShowTradeModal(false); setActiveTab("accounts"); }} className="underline text-sky-400 hover:text-sky-300 font-extrabold">
+                      Accounts tab
+                    </button>{" "}
+                    first.
                   </div>
-                </div>
-
-                <div>
-                  <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">P&L Amount ($)</label>
-                  <input 
-                    required 
-                    type="number" 
-                    step="0.01" 
-                    min="0.01"
-                    className="input-premium font-bold text-white !h-10 text-xs" 
-                    placeholder="0.00" 
-                    value={tradeAmount} 
-                    onChange={e => setTradeAmount(e.target.value)} 
-                    autoComplete="new-password"
-                    inputMode="decimal"
-                  />
-                </div>
-              </div>
-
-              {/* Foolproof calculation preview block */}
-              {parseFloat(tradeAmount) > 0 && (
-                <div className={`p-2.5 rounded-xl border flex justify-between items-center transition-all animate-in slide-in-from-top-2 duration-300 ${tradePnlType === "profit" ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-400" : "bg-rose-500/5 border-rose-500/20 text-rose-400"}`}>
-                  <span className="text-[9px] font-black uppercase tracking-widest">Calculation Preview</span>
-                  <span className="text-sm font-black tabular-nums">{parsedPreviewTrade}</span>
-                </div>
-              )}
-
-              <div>
-                <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Notes (Optional)</label>
-                <textarea className="input-premium min-h-[50px] !h-12 py-1.5 text-xs" placeholder="Trading notes..." value={tradeForm.notes} onChange={e => setTradeForm({...tradeForm, notes: e.target.value})} autoComplete="new-password" />
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowTradeModal(false)} className="btn-secondary flex-1 !h-12 text-xs">Cancel</button>
-                <button type="submit" disabled={submitting || forexAccounts.length === 0} className="btn-primary flex-1 !h-12 text-xs">
-                  {submitting ? "Logging..." : "Log P&L"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Trade Modal */}
-      {showEditTradeModal && (
-        <div role="dialog" aria-modal="true" className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
-          <div className="glass-card-static w-full max-w-md p-6 my-auto animate-in zoom-in duration-300 relative max-h-[90vh] overflow-y-auto custom-scrollbar flex flex-col">
-            <h2 className="text-xl font-black mb-4 text-white text-left uppercase italic tracking-wide">Edit Daily Profit/Loss</h2>
-
-            <form onSubmit={handleUpdateTrade} className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Select Broker</label>
-                  <select autoFocus aria-label="Select forex account" id="forex-edit-trade-account" name="forex_account_id" required className="input-premium !h-10 text-xs" value={editTradeForm.forex_account_id} onChange={e => setEditTradeForm({...editTradeForm, forex_account_id: e.target.value})}>
+                ) : (
+                  <select autoFocus aria-label="Select forex account" id="forex-trade-account" name="forex_account_id" required className="input-premium" value={tradeForm.forex_account_id} onChange={e => setTradeForm({...tradeForm, forex_account_id: e.target.value})}>
                     <option value="" className="bg-[--bg-surface]">Select Account</option>
                     {forexAccounts.map(a => <option key={a.id} value={a.id} className="bg-[--bg-surface]">{a.account_label} ({a.broker_name})</option>)}
                   </select>
-                </div>
+                )}
+              </div>
 
-                <div>
-                  <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Date</label>
-                  <input required type="date" className="input-premium text-white !h-10 text-xs" value={editTradeForm.trade_date} onChange={e => setEditTradeForm({...editTradeForm, trade_date: e.target.value})} autoComplete="new-password" />
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Date</label>
+                <input required type="date" className="input-premium" value={tradeForm.trade_date} onChange={e => setTradeForm({...tradeForm, trade_date: e.target.value})} autoComplete="new-password" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Entry Type</label>
+                <div className="flex bg-white/5 p-1 rounded-xl border border-white/5 gap-1">
+                  <button type="button" onClick={() => setTradePnlType("profit")} className={`flex-1 h-10 text-[10px] font-black rounded-lg transition-all ${tradePnlType === "profit" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "text-[--text-muted] hover:text-[--text-primary]"}`}>
+                    Profit
+                  </button>
+                  <button type="button" onClick={() => setTradePnlType("loss")} className={`flex-1 h-10 text-[10px] font-black rounded-lg transition-all ${tradePnlType === "loss" ? "bg-rose-500/20 text-rose-400 border border-rose-500/30" : "text-[--text-muted] hover:text-[--text-primary]"}`}>
+                    Loss
+                  </button>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Entry Type</label>
-                  <div className="flex bg-white/5 p-0.5 rounded-xl border border-white/5 gap-1 h-10">
-                    <button
-                      type="button"
-                      onClick={() => setEditTradePnlType("profit")}
-                      className={`flex-1 text-[9px] font-black uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-0.5 ${editTradePnlType === "profit" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "text-[--text-muted] hover:text-white"}`}
-                    >
-                      + Profit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditTradePnlType("loss")}
-                      className={`flex-1 text-[9px] font-black uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-0.5 ${editTradePnlType === "loss" ? "bg-rose-500/20 text-rose-400 border border-rose-500/30" : "text-[--text-muted] hover:text-white"}`}
-                    >
-                      - Loss
-                    </button>
-                  </div>
-                </div>
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">P&L Amount ($)</label>
+                <input required type="number" step="0.01" min="0.01" className="input-premium tabular-nums" placeholder="0.00" value={tradeAmount} onChange={e => setTradeAmount(e.target.value)} autoComplete="new-password" inputMode="decimal" />
+              </div>
+            </div>
 
-                <div>
-                  <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">P&L Amount ($)</label>
-                  <input 
-                    required 
-                    type="number" 
-                    step="0.01" 
-                    min="0.01"
-                    className="input-premium font-bold text-white !h-10 text-xs" 
-                    placeholder="0.00" 
-                    value={editTradeAmount} 
-                    onChange={e => setEditTradeAmount(e.target.value)} 
-                    autoComplete="new-password"
-                    inputMode="decimal"
-                  />
+            {parseFloat(tradeAmount) > 0 && (
+              <div className={`p-3 rounded-xl border flex justify-between items-center transition-all animate-in slide-in-from-top-2 duration-300 ${tradePnlType === "profit" ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-400" : "bg-rose-500/5 border-rose-500/20 text-rose-400"}`}>
+                <span className="text-[10px] font-black uppercase tracking-widest">Calculation Preview</span>
+                <span className="text-sm font-black tabular-nums">{parsedPreviewTrade}</span>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Notes (Optional)</label>
+              <textarea className="input-premium min-h-[80px] py-3 resize-none" placeholder="Trade notes..." value={tradeForm.notes} onChange={e => setTradeForm({...tradeForm, notes: e.target.value})} autoComplete="new-password" />
+            </div>
+
+            <div className="pt-4 mt-8">
+              <button type="submit" disabled={submitting || forexAccounts.length === 0} className="btn-primary w-full h-12 shadow-xl shadow-[--accent-primary]/20 text-[11px] font-black uppercase tracking-widest">
+                {submitting ? "Logging..." : "Log Profit/Loss"}
+              </button>
+            </div>
+          </form>
+        </Drawer>
+      )}
+
+      {/* Edit Trade Modal */}
+      {showEditTradeModal && editingTrade && (
+        <Drawer
+          isOpen={showEditTradeModal}
+          onClose={() => setShowEditTradeModal(false)}
+          title="Edit Profit/Loss Entry"
+        >
+          <form onSubmit={handleUpdateTrade} className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Broker</label>
+                <select aria-label="Select forex account" id="forex-edit-account" name="forex_account_id" required className="input-premium" value={editTradeForm.forex_account_id} onChange={e => setEditTradeForm({...editTradeForm, forex_account_id: e.target.value})}>
+                  {forexAccounts.map(a => <option key={a.id} value={a.id} className="bg-[--bg-surface]">{a.account_label} ({a.broker_name})</option>)}
+                </select>
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Date</label>
+                <input required type="date" className="input-premium" value={editTradeForm.trade_date} onChange={e => setEditTradeForm({...editTradeForm, trade_date: e.target.value})} autoComplete="new-password" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Entry Type</label>
+                <div className="flex bg-white/5 p-1 rounded-xl border border-white/5 gap-1">
+                  <button type="button" onClick={() => setEditTradePnlType("profit")} className={`flex-1 h-10 text-[10px] font-black rounded-lg transition-all ${editTradePnlType === "profit" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "text-[--text-muted] hover:text-[--text-primary]"}`}>
+                    Profit
+                  </button>
+                  <button type="button" onClick={() => setEditTradePnlType("loss")} className={`flex-1 h-10 text-[10px] font-black rounded-lg transition-all ${editTradePnlType === "loss" ? "bg-rose-500/20 text-rose-400 border border-rose-500/30" : "text-[--text-muted] hover:text-[--text-primary]"}`}>
+                    Loss
+                  </button>
                 </div>
               </div>
 
-              {/* Foolproof calculation preview block */}
-              {parseFloat(editTradeAmount) > 0 && (
-                <div className={`p-2.5 rounded-xl border flex justify-between items-center transition-all animate-in slide-in-from-top-2 duration-300 ${editTradePnlType === "profit" ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-400" : "bg-rose-500/5 border-rose-500/20 text-rose-400"}`}>
-                  <span className="text-[9px] font-black uppercase tracking-widest">Calculation Preview</span>
-                  <span className="text-sm font-black tabular-nums">{parsedPreviewEdit}</span>
-                </div>
-              )}
-
-              <div>
-                <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Notes (Optional)</label>
-                <textarea className="input-premium min-h-[50px] !h-12 py-1.5 text-xs" placeholder="Trade notes..." value={editTradeForm.notes} onChange={e => setEditTradeForm({...editTradeForm, notes: e.target.value})} autoComplete="new-password" />
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">P&L Amount ($)</label>
+                <input required type="number" step="0.01" min="0.01" className="input-premium tabular-nums" placeholder="0.00" value={editTradeAmount} onChange={e => setEditTradeAmount(e.target.value)} autoComplete="new-password" inputMode="decimal" />
               </div>
+            </div>
 
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowEditTradeModal(false)} className="btn-secondary flex-1 !h-12 text-xs">Cancel</button>
-                <button type="submit" disabled={submitting} className="btn-primary flex-1 !h-12 text-xs">
-                  {submitting ? "Updating..." : "Save Changes"}
-                </button>
+            {parseFloat(editTradeAmount) > 0 && (
+              <div className={`p-3 rounded-xl border flex justify-between items-center transition-all animate-in slide-in-from-top-2 duration-300 ${editTradePnlType === "profit" ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-400" : "bg-rose-500/5 border-rose-500/20 text-rose-400"}`}>
+                <span className="text-[10px] font-black uppercase tracking-widest">Calculation Preview</span>
+                <span className="text-sm font-black tabular-nums">{parsedPreviewEdit}</span>
               </div>
-            </form>
-          </div>
-        </div>
+            )}
+
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Notes (Optional)</label>
+              <textarea className="input-premium min-h-[80px] py-3 resize-none" placeholder="Trade notes..." value={editTradeForm.notes} onChange={e => setEditTradeForm({...editTradeForm, notes: e.target.value})} autoComplete="new-password" />
+            </div>
+
+            <div className="pt-4 mt-8">
+              <button type="submit" disabled={submitting} className="btn-primary w-full h-12 shadow-xl shadow-[--accent-primary]/20 text-[11px] font-black uppercase tracking-widest">
+                {submitting ? "Updating..." : "Save Changes"}
+              </button>
+            </div>
+          </form>
+        </Drawer>
       )}
 
       {/* Funds Deposit/Withdraw Modal */}
       {showFundsModal && (
-        <div role="dialog" aria-modal="true" className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
-          <div className="glass-card-static w-full max-w-md p-6 my-auto animate-in zoom-in duration-300 relative max-h-[90vh] overflow-y-auto custom-scrollbar flex flex-col">
-            <h2 className="text-xl font-black mb-4 text-white uppercase italic tracking-wide">{fundsType === "DEPOSIT" ? "Broker Deposit" : "Broker Withdrawal"}</h2>
-            <form onSubmit={handleFunds} className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Broker Account</label>
-                  {forexAccounts.length === 0 ? (
-                    <div className="text-[10px] text-rose-400 font-bold p-2.5 bg-rose-500/10 border border-rose-500/20 rounded-xl leading-snug">
-                      No broker accounts found. Create one under the{" "}
-                      <button type="button" onClick={() => { setShowFundsModal(false); setActiveTab("accounts"); }} className="underline text-sky-400 hover:text-sky-300 font-extrabold">
-                        Accounts tab
-                      </button>{" "}
-                      first.
-                    </div>
-                  ) : (
-                    <select autoFocus aria-label="Select forex account" id="forex-funds-account" name="forex_account_id" required className="input-premium !h-10 text-xs" value={fundsForm.forex_account_id} onChange={e => setFundsForm({...fundsForm, forex_account_id: e.target.value})}>
-                      <option value="" className="bg-[--bg-surface]">Select Broker</option>
-                      {forexAccounts.map(a => <option key={a.id} value={a.id} className="bg-[--bg-surface]">{a.account_label} ({a.broker_name})</option>)}
+        <Drawer
+          isOpen={showFundsModal}
+          onClose={() => setShowFundsModal(false)}
+          title={fundsType === "DEPOSIT" ? "Broker Deposit" : "Broker Withdrawal"}
+        >
+          <form onSubmit={handleFunds} className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Broker Account</label>
+                {forexAccounts.length === 0 ? (
+                  <div className="text-[10px] text-rose-400 font-bold p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl leading-snug">
+                    No broker accounts found. Create one under the{" "}
+                    <button type="button" onClick={() => { setShowFundsModal(false); setActiveTab("accounts"); }} className="underline text-sky-400 hover:text-sky-300 font-extrabold">
+                      Accounts tab
+                    </button>{" "}
+                    first.
+                  </div>
+                ) : (
+                  <select autoFocus aria-label="Select forex account" id="forex-funds-account" name="forex_account_id" required className="input-premium" value={fundsForm.forex_account_id} onChange={e => setFundsForm({...fundsForm, forex_account_id: e.target.value})}>
+                    <option value="" className="bg-[--bg-surface]">Select Broker</option>
+                    {forexAccounts.map(a => <option key={a.id} value={a.id} className="bg-[--bg-surface]">{a.account_label} ({a.broker_name})</option>)}
+                  </select>
+                )}
+              </div>
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Funding Account</label>
+                {accounts.length === 0 ? (
+                  <div className="text-[10px] text-rose-400 font-bold p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl leading-snug">
+                    No bank accounts found in the global standard Accounts.
+                  </div>
+                ) : (
+                  <>
+                    <select aria-label="Select bank account" id="forex-bank-account" name="bank_account_id" required className="input-premium" value={fundsForm.bank_account_id} onChange={e => setFundsForm({...fundsForm, bank_account_id: e.target.value})}>
+                      <option value="" className="bg-[--bg-surface]">Select Funding</option>
+                      {accounts.map(a => <option key={a.id} value={a.id} className="bg-[--bg-surface]">{a.name} ({a.currency})</option>)}
                     </select>
-                  )}
-                </div>
-                <div>
-                  <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Funding Account</label>
-                  {accounts.length === 0 ? (
-                    <div className="text-[10px] text-rose-400 font-bold p-2.5 bg-rose-500/10 border border-rose-500/20 rounded-xl leading-snug">
-                      No bank accounts found in the global standard Accounts.
-                    </div>
-                  ) : (
-                    <>
-                      <select aria-label="Select bank account" id="forex-bank-account" name="bank_account_id" required className="input-premium !h-10 text-xs" value={fundsForm.bank_account_id} onChange={e => setFundsForm({...fundsForm, bank_account_id: e.target.value})}>
-                        <option value="" className="bg-[--bg-surface]">Select Funding</option>
-                        {accounts.map(a => <option key={a.id} value={a.id} className="bg-[--bg-surface]">{a.name} ({a.currency})</option>)}
-                      </select>
-                      {fundsForm.bank_account_id && (() => {
-                        const selectedAcc = accounts.find(a => a.id === fundsForm.bank_account_id);
-                        return selectedAcc ? (
-                          <div className="mt-2 p-2 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between text-[11px] text-[--text-secondary] animate-fade-in">
-                            <span className="font-medium">Selected Balance</span>
-                            <span className="font-bold text-white">
-                              {selectedAcc.currency === 'USD' ? '$' : '₹'}{selectedAcc.balance.toLocaleString()}
-                            </span>
-                          </div>
-                        ) : null;
-                      })()}
-                    </>
-                  )}
-                </div>
+                    {fundsForm.bank_account_id && (() => {
+                      const selectedAcc = accounts.find(a => a.id === fundsForm.bank_account_id);
+                      return selectedAcc ? (
+                        <div className="mt-2 p-3 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between text-xs text-[--text-secondary] animate-fade-in">
+                          <span className="font-medium">Selected Balance</span>
+                          <span className="font-bold text-white">
+                            {selectedAcc.currency === 'USD' ? '$' : '₹'}{selectedAcc.balance.toLocaleString()}
+                          </span>
+                        </div>
+                      ) : null;
+                    })()}
+                  </>
+                )}
               </div>
-              <div className="grid grid-cols-1 gap-3">
-                <div>
-                  <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Amount ($)</label>
-                  <input required type="number" step="0.01" className="input-premium !h-10 text-xs" placeholder="0.00" value={fundsForm.amount} onChange={e => setFundsForm({...fundsForm, amount: e.target.value})} autoComplete="new-password" inputMode="decimal" />
-                </div>
-              </div>
-              <div>
-                <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Notes (Optional)</label>
-                <textarea className="input-premium min-h-[50px] !h-12 py-1.5 text-xs" placeholder="Transaction notes..." value={fundsForm.notes} onChange={e => setFundsForm({...fundsForm, notes: e.target.value})} autoComplete="new-password" />
-              </div>
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowFundsModal(false)} className="btn-secondary flex-1 !h-12 text-xs">Cancel</button>
-                <button type="submit" disabled={submitting || forexAccounts.length === 0} className="btn-primary flex-1 !h-12 text-xs">
-                  {submitting ? "Processing..." : fundsType === "DEPOSIT" ? "Complete Deposit" : "Complete Withdrawal"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+            </div>
+            
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Amount ($)</label>
+              <input required type="number" step="0.01" className="input-premium tabular-nums" placeholder="0.00" value={fundsForm.amount} onChange={e => setFundsForm({...fundsForm, amount: e.target.value})} autoComplete="new-password" inputMode="decimal" />
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Notes (Optional)</label>
+              <textarea className="input-premium min-h-[80px] py-3 resize-none" placeholder="Transaction notes..." value={fundsForm.notes} onChange={e => setFundsForm({...fundsForm, notes: e.target.value})} autoComplete="new-password" />
+            </div>
+            
+            <div className="pt-4 mt-8">
+              <button type="submit" disabled={submitting || forexAccounts.length === 0} className="btn-primary w-full h-12 shadow-xl shadow-[--accent-primary]/20 text-[11px] font-black uppercase tracking-widest">
+                {submitting ? "Processing..." : fundsType === "DEPOSIT" ? "Complete Deposit" : "Complete Withdrawal"}
+              </button>
+            </div>
+          </form>
+        </Drawer>
       )}
 
       {/* Add Broker Account Modal */}
       {showAccountModal && (
-        <div role="dialog" aria-modal="true" className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
-          <div className="glass-card-static w-full max-w-md p-6 my-auto animate-in zoom-in duration-300 relative max-h-[90vh] overflow-y-auto custom-scrollbar flex flex-col">
-            <h2 className="text-xl font-black mb-4 text-white uppercase italic tracking-wide">Add Broker Account</h2>
-            <form onSubmit={handleCreateAccount} className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Broker Name</label>
-                  <input autoFocus required type="text" className="input-premium !h-10 text-xs" placeholder="e.g. MetaTrader 5" value={accountForm.broker_name} onChange={e => setAccountForm({...accountForm, broker_name: e.target.value})} autoComplete="new-password" />
-                </div>
-                <div>
-                  <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Account Label</label>
-                  <input required type="text" className="input-premium !h-10 text-xs" placeholder="e.g. Live Account" value={accountForm.account_label} onChange={e => setAccountForm({...accountForm, account_label: e.target.value})} autoComplete="new-password" />
-                </div>
+        <Drawer
+          isOpen={showAccountModal}
+          onClose={() => setShowAccountModal(false)}
+          title="Add Broker Account"
+        >
+          <form onSubmit={handleCreateAccount} className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Broker Name</label>
+                <input autoFocus required type="text" className="input-premium" placeholder="e.g. MetaTrader 5" value={accountForm.broker_name} onChange={e => setAccountForm({...accountForm, broker_name: e.target.value})} autoComplete="new-password" />
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Account Number (Opt)</label>
-                  <input type="text" className="input-premium !h-10 text-xs" placeholder="e.g. 104859" value={accountForm.account_number} onChange={e => setAccountForm({...accountForm, account_number: e.target.value})} autoComplete="new-password" />
-                </div>
-                <div>
-                  <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Currency</label>
-                  <select aria-label="Select currency" id="forex-currency" name="currency" required className="input-premium !h-10 text-xs" value={accountForm.currency} onChange={e => setAccountForm({...accountForm, currency: e.target.value})}>
-                    <option value="USD" className="bg-[--bg-surface]">USD</option>
-                    <option value="EUR" className="bg-[--bg-surface]">EUR</option>
-                    <option value="GBP" className="bg-[--bg-surface]">GBP</option>
-                    <option value="INR" className="bg-[--bg-surface]">INR</option>
-                  </select>
-                </div>
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Account Label</label>
+                <input required type="text" className="input-premium" placeholder="e.g. Live Account" value={accountForm.account_label} onChange={e => setAccountForm({...accountForm, account_label: e.target.value})} autoComplete="new-password" />
               </div>
-              <div>
-                <label className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] block mb-1">Notes (Optional)</label>
-                <textarea className="input-premium min-h-[50px] !h-12 py-1.5 text-xs" placeholder="Broker details, leverage, etc..." value={accountForm.notes} onChange={e => setAccountForm({...accountForm, notes: e.target.value})} autoComplete="new-password" />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Account Number (Opt)</label>
+                <input type="text" className="input-premium" placeholder="e.g. 104859" value={accountForm.account_number} onChange={e => setAccountForm({...accountForm, account_number: e.target.value})} autoComplete="new-password" />
               </div>
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowAccountModal(false)} className="btn-secondary flex-1 !h-12 text-xs">Cancel</button>
-                <button type="submit" disabled={submitting} className="btn-primary flex-1 !h-12 text-xs">
-                  {submitting ? "Creating..." : "Create Account"}
-                </button>
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Currency</label>
+                <select aria-label="Select currency" id="forex-currency" name="currency" required className="input-premium" value={accountForm.currency} onChange={e => setAccountForm({...accountForm, currency: e.target.value})}>
+                  <option value="USD" className="bg-[--bg-surface]">USD</option>
+                  <option value="EUR" className="bg-[--bg-surface]">EUR</option>
+                  <option value="GBP" className="bg-[--bg-surface]">GBP</option>
+                  <option value="INR" className="bg-[--bg-surface]">INR</option>
+                </select>
               </div>
-            </form>
-          </div>
-        </div>
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Notes (Optional)</label>
+              <textarea className="input-premium min-h-[80px] py-3 resize-none" placeholder="Broker details, leverage, etc..." value={accountForm.notes} onChange={e => setAccountForm({...accountForm, notes: e.target.value})} autoComplete="new-password" />
+            </div>
+
+            <div className="pt-4 mt-8">
+              <button type="submit" disabled={submitting} className="btn-primary w-full h-12 shadow-xl shadow-[--accent-primary]/20 text-[11px] font-black uppercase tracking-widest">
+                {submitting ? "Creating..." : "Create Account"}
+              </button>
+            </div>
+          </form>
+        </Drawer>
       )}
     </div>
   );

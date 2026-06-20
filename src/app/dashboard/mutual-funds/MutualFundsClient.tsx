@@ -16,6 +16,7 @@ import Link from "next/link";
 import PnLValue from "@/components/pnl-value";
 import { exportToCSV } from "@/lib/export-csv";
 import { EmptyState } from "@/components/empty-state";
+import { Drawer } from "@/components/ui/drawer";
 
 type MF = Tables<"mutual_funds"> & { scheme_code?: string | null; fund_symbol?: string | null; pnlPercent?: number };
 
@@ -502,13 +503,22 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                                 <div className="flex items-center gap-4">
                                     <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center flex-shrink-0 overflow-hidden border border-white/20 p-0.5 shadow-md relative">
                                       {getAMCLogoUrl(mf.amc_name || '') ? (
-                                        <Image 
-                                          src={getAMCLogoUrl(mf.amc_name || '')} 
-                                          alt={`${mf.amc_name || 'AMC'} logo`} 
-                                          fill
-                                          className="object-contain rounded-full p-1"
-                                          sizes="40px"
-                                        />
+                                        <>
+                                          <img 
+                                            src={getAMCLogoUrl(mf.amc_name || '')} 
+                                            alt={`${mf.amc_name || 'AMC'} logo`} 
+                                            className="w-full h-full object-contain rounded-full p-1"
+                                            onError={(e) => {
+                                              e.currentTarget.style.display = 'none';
+                                              if (e.currentTarget.nextElementSibling) {
+                                                e.currentTarget.nextElementSibling.classList.remove('hidden');
+                                              }
+                                            }}
+                                          />
+                                          <span className="hidden text-[15px] font-black text-slate-800">
+                                            {mf.amc_name ? mf.amc_name.substring(0, 1).toUpperCase() : 'M'}
+                                          </span>
+                                        </>
                                       ) : (
                                         <span className="text-[15px] font-black text-slate-800">
                                           {mf.amc_name ? mf.amc_name.substring(0, 1).toUpperCase() : 'M'}
@@ -581,13 +591,22 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center flex-shrink-0 overflow-hidden border border-white/20 p-0.5 relative">
                         {getAMCLogoUrl(mf.amc_name || '') ? (
-                          <Image 
-                            src={getAMCLogoUrl(mf.amc_name || '')} 
-                            alt="logo" 
-                            fill
-                            className="object-contain rounded-full p-1"
-                            sizes="40px"
-                          />
+                          <>
+                            <img 
+                              src={getAMCLogoUrl(mf.amc_name || '')} 
+                              alt={`${mf.amc_name || 'AMC'} logo`} 
+                              className="w-full h-full object-contain rounded-full p-1.5"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                if (e.currentTarget.nextElementSibling) {
+                                  e.currentTarget.nextElementSibling.classList.remove('hidden');
+                                }
+                              }}
+                            />
+                            <span className="hidden text-[15px] font-black text-slate-800">
+                              {mf.amc_name ? mf.amc_name.substring(0, 1).toUpperCase() : 'M'}
+                            </span>
+                          </>
                         ) : (
                           <span className="text-[15px] font-black text-slate-800">
                             {mf.amc_name ? mf.amc_name.substring(0, 1).toUpperCase() : 'M'}
@@ -784,146 +803,138 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
         )
       )}
 
-      {/* Record Investment Modal */}
-      {showAddModal && (
-        <div className="mobile-dialog-shell fixed inset-0 z-[200] overflow-y-auto custom-scrollbar bg-[--bg-base]/80 backdrop-blur-xl animate-fade-in px-4">
-          <div className="flex min-h-full items-center justify-center p-4 py-12">
-            <div className="mobile-dialog-panel glass-card-static w-full max-w-3xl p-8 md:p-12 rounded-3xl max-h-[90vh] overflow-y-auto custom-scrollbar">
-            <div className="flex justify-between items-center mb-12">
-              <h2 className="text-3xl font-black tracking-tight">{editingId ? 'Edit Mutual Fund Holding' : formData.trade_type === 'buy' ? 'Investment Log' : 'Asset Redemption'}</h2>
-              <button type="button" onClick={() => setShowAddModal(false)} className="text-[--text-muted] hover:text-[--text-primary] transition-colors p-2">
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
+      {/* Record Investment Drawer */}
+      <Drawer
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        title={editingId ? 'Edit Mutual Fund Holding' : formData.trade_type === 'buy' ? 'Investment Log' : 'Asset Redemption'}
+      >
+        <form onSubmit={handleAddMF} className="space-y-6">
+          
+          {/* Scheme Details */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2 lg:col-span-2">
+              <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">Fund Name</label>
+              <input
+                required
+                className="input-premium h-12"
+                placeholder="e.g. Axis Bluechip Fund"
+                value={formData.fund_name}
+                onChange={e => setFormData({ ...formData, fund_name: e.target.value })}
+                autoComplete="new-password"
+              />
             </div>
-            <form onSubmit={handleAddMF} className="space-y-6">
-              
-              {/* Scheme Details */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="space-y-2">
-                  <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">Fund Name</label>
-                  <input
-                    required
-                    className="input-premium h-12"
-                    placeholder="e.g. Axis Bluechip Fund"
-                    value={formData.fund_name}
-                    onChange={e => setFormData({ ...formData, fund_name: e.target.value })}
-                    autoComplete="new-password"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">AMC Name</label>
-                  <input
-                    required
-                    className="input-premium h-12"
-                    placeholder="e.g. Axis Mutual Fund"
-                    value={formData.amc_name}
-                    onChange={e => setFormData({ ...formData, amc_name: e.target.value })}
-                    autoComplete="new-password"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">Scheme Code / Symbol</label>
-                  <input
-                    required
-                    className="input-premium h-12"
-                    placeholder="e.g. INF846K01DP8"
-                    value={formData.scheme_code}
-                    onChange={e => setFormData({ ...formData, scheme_code: e.target.value })}
-                    autoComplete="new-password"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-6 pt-2">
-                <div className="space-y-2">
-                  <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">Allocated Units</label>
-                  <input required type="number" step="0.001" className="input-premium h-12" placeholder="0.000" value={formData.units} onChange={e => setFormData({...formData, units: e.target.value})} autoComplete="new-password" inputMode="decimal" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">Avg. Buy Price (NAV)</label>
-                  <input required type="number" step="0.0001" className="input-premium h-12" placeholder="0.0000" value={formData.nav} onChange={e => setFormData({...formData, nav: e.target.value})} autoComplete="new-password" inputMode="decimal" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">Current NAV (Live)</label>
-                  <input required type="number" step="0.0001" className="input-premium h-12" placeholder="0.0000" value={formData.current_nav} onChange={e => setFormData({...formData, current_nav: e.target.value})} autoComplete="new-password" inputMode="decimal" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
-                <div className="space-y-2">
-                  <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">Investment Model</label>
-                  <select aria-label="Select investment type" id="mf-investment-type" name="investment_type" className="input-premium h-12" value={formData.investment_type} onChange={e => setFormData({...formData, investment_type: e.target.value})}>
-                    <option value="SIP">SIP Engine</option>
-                    <option value="LUMPSUM">One-Time Capital</option>
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">Asset Sector</label>
-                  <select aria-label="Select fund category" id="mf-category" name="category" className="input-premium h-12" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
-                    {["Equity", "Debt", "Hybrid", "Index", "Liquid", "ELSS"].map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">Trade Date</label>
-                  <input type="date" className="input-premium h-12" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} autoComplete="new-password" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-                {!editingId ? (
-                  <div className="space-y-2">
-                    <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">{formData.trade_type === 'buy' ? 'Capital Source' : 'Deposit To'}</label>
-                    <select aria-label="Select account" id="mf-account" name="account_id" required={!editingId} className="input-premium h-12" value={formData.account_id} onChange={e => setFormData({...formData, account_id: e.target.value})}>
-                        <option value="">{formData.trade_type === 'buy' ? 'Fund Account' : 'Dest. Account'}</option>
-                        {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name} (₹{acc.balance.toLocaleString()})</option>)}
-                    </select>
-                    {formData.account_id && (() => {
-                      const selectedAcc = accounts.find(a => a.id === formData.account_id);
-                      return selectedAcc ? (
-                        <div className="mt-2 p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between text-xs text-[--text-secondary] animate-fade-in">
-                          <span className="font-medium">Selected Balance</span>
-                          <span className="font-bold text-white">
-                            {selectedAcc.currency === 'USD' ? '$' : '₹'}{selectedAcc.balance.toLocaleString()}
-                          </span>
-                        </div>
-                      ) : null;
-                    })()}
-                  </div>
-                ) : null}
-
-                <div className="space-y-2">
-                  <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">Stamp Duty / Charges (₹)</label>
-                  <input
-                    type="number"
-                    step="0.0001"
-                    className="input-premium h-12"
-                    placeholder="0.0000"
-                    value={charges}
-                    onChange={e => setCharges(e.target.value)}
-                    autoComplete="new-password"
-                    inputMode="decimal"
-                  />
-                </div>
-              </div>
-
-              {/* Charge Summary Box */}
-              {!editingId ? (
-                <div className="bg-[--bg-surface] border border-[--border-strong] rounded-2xl p-5 space-y-4 shadow-lg animate-fade-in">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[11px] font-black text-[--text-muted] uppercase tracking-widest">{formData.trade_type === 'buy' ? 'Net Payable' : 'Net Receivable'}</span>
-                    <span className="text-base font-black text-[--accent-primary-light]">₹{totalDeduction.toLocaleString()}</span>
-                  </div>
-                </div>
-              ) : null}
-
-              <button type="submit" disabled={submitting} className="btn-primary w-full h-12 shadow-2xl mt-4">
-                 {editingId ? "Update Mutual Fund Holding" : submitting ? (formData.trade_type === 'buy' ? "Deploying Capital..." : "Liquidating...") : (formData.trade_type === 'buy' ? "Authorize Investment" : "Authorize Redemption")}
-              </button>
-            </form>
+            <div className="space-y-2">
+              <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">AMC Name</label>
+              <input
+                required
+                className="input-premium h-12"
+                placeholder="e.g. Axis Mutual Fund"
+                value={formData.amc_name}
+                onChange={e => setFormData({ ...formData, amc_name: e.target.value })}
+                autoComplete="new-password"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">Scheme Code / Symbol</label>
+              <input
+                required
+                className="input-premium h-12"
+                placeholder="e.g. INF846K01DP8"
+                value={formData.scheme_code}
+                onChange={e => setFormData({ ...formData, scheme_code: e.target.value })}
+                autoComplete="new-password"
+              />
+            </div>
           </div>
+
+          <div className="grid grid-cols-2 gap-6 pt-2">
+            <div className="space-y-2">
+              <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">Allocated Units</label>
+              <input required type="number" step="0.001" className="input-premium h-12" placeholder="0.000" value={formData.units} onChange={e => setFormData({...formData, units: e.target.value})} autoComplete="new-password" inputMode="decimal" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">Avg. Buy Price (NAV)</label>
+              <input required type="number" step="0.0001" className="input-premium h-12" placeholder="0.0000" value={formData.nav} onChange={e => setFormData({...formData, nav: e.target.value})} autoComplete="new-password" inputMode="decimal" />
+            </div>
+            <div className="space-y-2 col-span-2">
+              <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">Current NAV (Live)</label>
+              <input required type="number" step="0.0001" className="input-premium h-12" placeholder="0.0000" value={formData.current_nav} onChange={e => setFormData({...formData, current_nav: e.target.value})} autoComplete="new-password" inputMode="decimal" />
+            </div>
           </div>
-        </div>
-      )}
+
+          <div className="grid grid-cols-2 gap-6 pt-2">
+            <div className="space-y-2">
+              <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">Investment Model</label>
+              <select aria-label="Select investment type" id="mf-investment-type" name="investment_type" className="input-premium h-12" value={formData.investment_type} onChange={e => setFormData({...formData, investment_type: e.target.value})}>
+                <option value="SIP">SIP Engine</option>
+                <option value="LUMPSUM">One-Time Capital</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">Asset Sector</label>
+              <select aria-label="Select fund category" id="mf-category" name="category" className="input-premium h-12" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
+                {["Equity", "Debt", "Hybrid", "Index", "Liquid", "ELSS"].map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div className="space-y-2 col-span-2">
+              <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">Trade Date</label>
+              <input type="date" className="input-premium h-12" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} autoComplete="new-password" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 pt-2">
+            {!editingId ? (
+              <div className="space-y-2">
+                <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">{formData.trade_type === 'buy' ? 'Capital Source' : 'Deposit To'}</label>
+                <select aria-label="Select account" id="mf-account" name="account_id" required={!editingId} className="input-premium h-12" value={formData.account_id} onChange={e => setFormData({...formData, account_id: e.target.value})}>
+                    <option value="">{formData.trade_type === 'buy' ? 'Fund Account' : 'Dest. Account'}</option>
+                    {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name} (₹{acc.balance.toLocaleString()})</option>)}
+                </select>
+                {formData.account_id && (() => {
+                  const selectedAcc = accounts.find(a => a.id === formData.account_id);
+                  return selectedAcc ? (
+                    <div className="mt-2 p-3 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between text-xs text-[--text-secondary] animate-fade-in">
+                      <span className="font-medium">Selected Balance</span>
+                      <span className="font-bold text-white">
+                        {selectedAcc.currency === 'USD' ? '$' : '₹'}{selectedAcc.balance.toLocaleString()}
+                      </span>
+                    </div>
+                  ) : null;
+                })()}
+              </div>
+            ) : null}
+
+            <div className="space-y-2">
+              <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#666] ml-1">Stamp Duty / Charges (₹)</label>
+              <input
+                type="number"
+                step="0.0001"
+                className="input-premium h-12"
+                placeholder="0.0000"
+                value={charges}
+                onChange={e => setCharges(e.target.value)}
+                autoComplete="new-password"
+                inputMode="decimal"
+              />
+            </div>
+          </div>
+
+          {/* Charge Summary Box */}
+          {!editingId ? (
+            <div className="bg-[--bg-surface] border border-[--border-strong] rounded-2xl p-5 space-y-4 shadow-lg animate-fade-in">
+              <div className="flex justify-between items-center">
+                <span className="text-[11px] font-black text-[--text-muted] uppercase tracking-widest">{formData.trade_type === 'buy' ? 'Net Payable' : 'Net Receivable'}</span>
+                <span className="text-base font-black text-[--accent-primary-light]">₹{totalDeduction.toLocaleString()}</span>
+              </div>
+            </div>
+          ) : null}
+
+          <button type="submit" disabled={submitting} className="btn-primary w-full h-12 shadow-2xl mt-4">
+             {editingId ? "Update Mutual Fund Holding" : submitting ? (formData.trade_type === 'buy' ? "Deploying Capital..." : "Liquidating...") : (formData.trade_type === 'buy' ? "Authorize Investment" : "Authorize Redemption")}
+          </button>
+        </form>
+      </Drawer>
 
     </div>
   );

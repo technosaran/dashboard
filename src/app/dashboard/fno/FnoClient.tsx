@@ -5,6 +5,7 @@ import { useMemo, useState, useEffect } from "react";
 import { format } from "date-fns";
 import { toast } from "react-hot-toast";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 import Link from "next/link";
 import { EmptyState } from "@/components/empty-state";
 
@@ -712,32 +713,27 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
 
       {/* ── Log Trade Modal ── */}
       {showLogForm && (
-        <div className="fixed inset-0 z-[200] overflow-y-auto custom-scrollbar bg-black/80 backdrop-blur-md animate-fade-in">
-          <div className="flex min-h-full items-center justify-center p-4 py-12">
-            <div className="glass-card-static w-full max-w-xl p-8 border border-white/20 bg-[--bg-surface]">
-            <div className="flex justify-between items-center mb-8 pb-2 border-b border-white/5">
-              <h2 className="text-2xl font-black text-white">Log FnO Trade</h2>
-              <button type="button" onClick={resetLogForm} className="p-2 hover:bg-white/5 rounded-full transition-colors">
-                <svg className="w-8 h-8 text-[--text-muted]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                  <path d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
+        <Drawer
+          isOpen={showLogForm}
+          onClose={resetLogForm}
+          title="Log FnO Trade"
+        >
+          <form onSubmit={handleLogSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Underlying Symbol</label>
+                <input
+                  required value={logFormData.symbol}
+                  onChange={e => setLogFormData({ ...logFormData, symbol: e.target.value.toUpperCase() })}
+                  className="input-premium uppercase placeholder:text-[--text-disabled]"
+                  placeholder="e.g. NIFTY, SBIN"
+                  autoComplete="new-password"
+                />
+              </div>
 
-            <form onSubmit={handleLogSubmit} className="space-y-5">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="relative">
-                  <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[9px] text-[--text-muted] uppercase tracking-widest font-black z-10">Underlying Symbol</label>
-                  <input
-                    required value={logFormData.symbol}
-                    onChange={e => setLogFormData({ ...logFormData, symbol: e.target.value.toUpperCase() })}
-                    className="w-full h-12 px-4 bg-transparent border border-white/15 focus:border-[--accent-primary] rounded-xl text-[13px] text-white outline-none font-bold placeholder:text-[--text-disabled] uppercase"
-                    placeholder="e.g. NIFTY, SBIN"
-                    autoComplete="new-password"
-                  />
-                </div>
-
-                <div className="flex gap-1 p-1 bg-[--bg-base] rounded-xl border border-white/15">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Instrument</label>
+                <div className="flex gap-1 p-1 bg-[--bg-base] rounded-xl border border-white/5">
                   {(["FUT", "CE", "PE"] as const).map(type => (
                     <button
                       key={type}
@@ -750,218 +746,205 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
                   ))}
                 </div>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="relative">
-                  <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[9px] text-[--text-muted] uppercase tracking-widest font-black z-10">Strike Price</label>
-                  <input
-                    type="number"
-                    step="any"
-                    disabled={logFormData.instrument_type === "FUT"}
-                    value={logFormData.strike_price}
-                    onChange={e => setLogFormData({ ...logFormData, strike_price: e.target.value })}
-                    className="w-full h-12 px-4 bg-transparent border border-white/15 focus:border-[--accent-primary] disabled:opacity-40 disabled:border-white/5 disabled:placeholder-transparent rounded-xl text-[13px] text-white outline-none font-bold"
-                    placeholder="e.g. 18500"
-                    autoComplete="new-password"
-                    inputMode="decimal"
-                  />
-                </div>
-
-                <div className="relative">
-                  <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[9px] text-[--text-muted] uppercase tracking-widest font-black z-10">Contract Expiry</label>
-                  <input
-                    required type="date"
-                    value={logFormData.expiry_date}
-                    onChange={e => setLogFormData({ ...logFormData, expiry_date: e.target.value })}
-                    className="w-full h-12 px-4 bg-transparent border border-white/15 focus:border-[--accent-primary] rounded-xl text-[13px] text-white outline-none font-bold"
-                    autoComplete="new-password"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="relative">
-                  <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[9px] text-[--text-muted] uppercase tracking-widest font-black z-10">Order Action</label>
-                  <select
-                    aria-label="Select option type"
-                    id="fno-option-type"
-                    name="option_type"
-                    value={logFormData.trade_type}
-                    onChange={e => setLogFormData({ ...logFormData, trade_type: e.target.value as "BUY" | "SELL" })}
-                    className="w-full h-12 px-4 bg-transparent border border-white/15 focus:border-[--accent-primary] rounded-xl text-[12px] text-white outline-none font-black appearance-none"
-                  >
-                    <option value="BUY" className="bg-[--bg-surface] text-emerald-400">BUY (Long / Pay Premium)</option>
-                    <option value="SELL" className="bg-[--bg-surface] text-rose-400">SELL (Short / Collect Premium)</option>
-                  </select>
-                </div>
-
-                <div className="relative">
-                  <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[9px] text-[--text-muted] uppercase tracking-widest font-black z-10">Contract Date</label>
-                  <input
-                    required type="date"
-                    value={logFormData.trade_date}
-                    onChange={e => setLogFormData({ ...logFormData, trade_date: e.target.value })}
-                    className="w-full h-12 px-4 bg-transparent border border-white/15 focus:border-[--accent-primary] rounded-xl text-[13px] text-white outline-none font-bold"
-                    autoComplete="new-password"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="relative">
-                  <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[9px] text-[--text-muted] uppercase tracking-widest font-black z-10">Lot Quantity</label>
-                  <input
-                    required type="number"
-                    value={logFormData.quantity}
-                    onChange={e => setLogFormData({ ...logFormData, quantity: e.target.value })}
-                    className="w-full h-12 px-4 bg-transparent border border-white/15 focus:border-[--accent-primary] rounded-xl text-[13px] text-white outline-none font-bold"
-                    placeholder="e.g. 50"
-                    autoComplete="new-password"
-                    inputMode="decimal"
-                  />
-                </div>
-
-                <div className="relative">
-                  <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[9px] text-[--text-muted] uppercase tracking-widest font-black z-10">Avg Entry Premium</label>
-                  <input
-                    required type="number"
-                    step="any"
-                    value={logFormData.entry_price}
-                    onChange={e => setLogFormData({ ...logFormData, entry_price: e.target.value })}
-                    className="w-full h-12 px-4 bg-transparent border border-white/15 focus:border-[--accent-primary] rounded-xl text-[13px] text-white outline-none font-bold"
-                    placeholder="e.g. 124.50"
-                    autoComplete="new-password"
-                    inputMode="decimal"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <div className="relative">
-                  <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[9px] text-[--text-muted] uppercase tracking-widest font-black z-10">Linked Bank/Broker Account (Premium Flow)</label>
-                  <select
-                    aria-label="Select account"
-                    id="fno-account"
-                    name="account_id"
-                    value={logFormData.account_id}
-                    onChange={e => setLogFormData({ ...logFormData, account_id: e.target.value })}
-                    className="w-full h-12 px-4 pr-10 bg-transparent border border-white/15 focus:border-[--accent-primary] rounded-xl text-[12px] text-white outline-none font-bold appearance-none"
-                  >
-                    <option value="" className="bg-[--bg-surface] text-slate-400">N/A (Historical / Unlinked)</option>
-                    {accounts.map(acc => (
-                      <option key={acc.id} value={acc.id} className="bg-[--bg-surface] text-white">
-                        {acc.name} (₹{formatNum(acc.balance)})
-                      </option>
-                    ))}
-                  </select>
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                      <path d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                </div>
-                {logFormData.account_id && (() => {
-                  const selectedAcc = accounts.find(a => a.id === logFormData.account_id);
-                  return selectedAcc ? (
-                    <div className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between text-xs text-[--text-secondary] animate-fade-in">
-                      <span className="font-medium">Selected Balance</span>
-                      <span className="font-bold text-white">
-                        {selectedAcc.currency === 'USD' ? '$' : '₹'}{selectedAcc.balance.toLocaleString()}
-                      </span>
-                    </div>
-                  ) : null;
-                })()}
-              </div>
-
-              <div className="relative">
-                <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[9px] text-[--text-muted] uppercase tracking-widest font-black z-10">Auditing Notes</label>
-                <textarea
-                  value={logFormData.notes}
-                  onChange={e => setLogFormData({ ...logFormData, notes: e.target.value })}
-                  className="w-full min-h-[60px] py-3 px-4 bg-transparent border border-white/15 focus:border-[--accent-primary] rounded-xl text-[13px] text-white outline-none font-medium placeholder:text-[--text-disabled]"
-                  placeholder="Optional annotations for this derivative trade"
-                  autoComplete="new-password"
-                />
-              </div>
-
-              <button
-                type="submit" disabled={submitting}
-                className="btn-primary w-full h-12 uppercase tracking-widest font-black text-[11px] shadow-lg rounded-xl mt-4"
-              >
-                {submitting ? "Opening Contract Position..." : "Authorize Derivative Position"}
-              </button>
-            </form>
-          </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Close Position Modal ── */}
-      {showCloseForm && selectedTrade && (
-        <div className="fixed inset-0 z-[200] overflow-y-auto custom-scrollbar bg-black/80 backdrop-blur-md animate-fade-in">
-          <div className="flex min-h-full items-center justify-center p-4 py-12">
-            <div className="glass-card-static w-full max-w-md p-8 border border-white/20 bg-[--bg-surface] rounded-2xl shadow-2xl">
-            <div className="flex justify-between items-center mb-6 pb-2 border-b border-white/5">
-              <h2 className="text-xl font-black text-white">Close Position</h2>
-              <button type="button" onClick={resetCloseForm} className="p-2 hover:bg-white/5 rounded-full transition-colors">
-                <svg className="w-8 h-8 text-[--text-muted]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                  <path d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
             </div>
 
-            <div className="mb-6 p-4 bg-white/[0.02] border border-white/10 rounded-xl space-y-2">
-              <p className="text-[10px] text-[--text-muted] font-black uppercase tracking-widest">Active Position Details</p>
-              <p className="text-sm font-bold text-white">
-                {selectedTrade.symbol} {selectedTrade.instrument_type} {selectedTrade.strike_price && `₹${Number(selectedTrade.strike_price)}`}
-              </p>
-              <div className="grid grid-cols-2 gap-4 text-xs pt-2">
-                <div>
-                  <span className="text-[--text-muted]">Holding Size:</span> <span className="font-mono font-bold text-white">{selectedTrade.quantity}</span>
-                </div>
-                <div>
-                  <span className="text-[--text-muted]">Avg Entry:</span> <span className="font-bold text-white">₹{formatNum(selectedTrade.entry_price)}</span>
-                </div>
-              </div>
-            </div>
-
-            <form onSubmit={handleCloseSubmit} className="space-y-5">
-              <div className="relative">
-                <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[9px] text-[--text-muted] uppercase tracking-widest font-black z-10">Avg Exit Premium</label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Strike Price</label>
                 <input
-                  required type="number"
+                  type="number"
                   step="any"
-                  value={closeFormData.exit_price}
-                  onChange={e => setCloseFormData({ ...closeFormData, exit_price: e.target.value })}
-                  className="w-full h-12 px-4 bg-transparent border border-white/15 focus:border-[--accent-primary] rounded-xl text-[13px] text-white outline-none font-bold"
-                  placeholder="e.g. 148.30"
-                  autoFocus
+                  disabled={logFormData.instrument_type === "FUT"}
+                  value={logFormData.strike_price}
+                  onChange={e => setLogFormData({ ...logFormData, strike_price: e.target.value })}
+                  className="input-premium disabled:opacity-40"
+                  placeholder="e.g. 18500"
                   autoComplete="new-password"
                   inputMode="decimal"
                 />
               </div>
 
-              <div className="relative">
-                <label className="absolute -top-2 left-2 px-1 bg-[--bg-surface] text-[9px] text-[--text-muted] uppercase tracking-widest font-black z-10">Settlement Date</label>
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Contract Expiry</label>
                 <input
                   required type="date"
-                  value={closeFormData.close_date}
-                  onChange={e => setCloseFormData({ ...closeFormData, close_date: e.target.value })}
-                  className="w-full h-12 px-4 bg-transparent border border-white/15 focus:border-[--accent-primary] rounded-xl text-[13px] text-white outline-none font-bold"
+                  value={logFormData.expiry_date}
+                  onChange={e => setLogFormData({ ...logFormData, expiry_date: e.target.value })}
+                  className="input-premium"
                   autoComplete="new-password"
                 />
               </div>
+            </div>
 
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Order Action</label>
+                <select
+                  aria-label="Select option type"
+                  id="fno-option-type"
+                  name="option_type"
+                  value={logFormData.trade_type}
+                  onChange={e => setLogFormData({ ...logFormData, trade_type: e.target.value as "BUY" | "SELL" })}
+                  className="input-premium"
+                >
+                  <option value="BUY" className="bg-[--bg-surface] text-emerald-400">BUY (Long / Pay Premium)</option>
+                  <option value="SELL" className="bg-[--bg-surface] text-rose-400">SELL (Short / Collect Premium)</option>
+                </select>
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Contract Date</label>
+                <input
+                  required type="date"
+                  value={logFormData.trade_date}
+                  onChange={e => setLogFormData({ ...logFormData, trade_date: e.target.value })}
+                  className="input-premium"
+                  autoComplete="new-password"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Lot Quantity</label>
+                <input
+                  required type="number"
+                  value={logFormData.quantity}
+                  onChange={e => setLogFormData({ ...logFormData, quantity: e.target.value })}
+                  className="input-premium"
+                  placeholder="e.g. 50"
+                  autoComplete="new-password"
+                  inputMode="decimal"
+                />
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Avg Entry Premium</label>
+                <input
+                  required type="number"
+                  step="any"
+                  value={logFormData.entry_price}
+                  onChange={e => setLogFormData({ ...logFormData, entry_price: e.target.value })}
+                  className="input-premium"
+                  placeholder="e.g. 124.50"
+                  autoComplete="new-password"
+                  inputMode="decimal"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Linked Bank/Broker Account (Premium Flow)</label>
+              <select
+                aria-label="Select account"
+                id="fno-account"
+                name="account_id"
+                value={logFormData.account_id}
+                onChange={e => setLogFormData({ ...logFormData, account_id: e.target.value })}
+                className="input-premium"
+              >
+                <option value="" className="bg-[--bg-surface] text-[--text-muted]">N/A (Historical / Unlinked)</option>
+                {accounts.map(acc => (
+                  <option key={acc.id} value={acc.id} className="bg-[--bg-surface] text-[--text-primary]">
+                    {acc.name} (₹{formatNum(acc.balance)})
+                  </option>
+                ))}
+              </select>
+              {logFormData.account_id && (() => {
+                const selectedAcc = accounts.find(a => a.id === logFormData.account_id);
+                return selectedAcc ? (
+                  <div className="mt-2 p-3 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between text-xs text-[--text-secondary] animate-fade-in">
+                    <span className="font-medium">Selected Balance</span>
+                    <span className="font-bold text-white">
+                      {selectedAcc.currency === 'USD' ? '$' : '₹'}{selectedAcc.balance.toLocaleString()}
+                    </span>
+                  </div>
+                ) : null;
+              })()}
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Auditing Notes</label>
+              <textarea
+                value={logFormData.notes}
+                onChange={e => setLogFormData({ ...logFormData, notes: e.target.value })}
+                className="input-premium min-h-[80px] py-3 resize-none"
+                placeholder="Optional annotations for this derivative trade"
+                autoComplete="new-password"
+              />
+            </div>
+
+            <div className="pt-4 mt-8">
               <button
                 type="submit" disabled={submitting}
-                className="btn-primary w-full h-12 uppercase tracking-widest font-black text-[11px] shadow-lg rounded-xl mt-4"
+                className="btn-primary w-full h-12 text-[11px] font-black uppercase tracking-widest shadow-xl shadow-[--accent-primary]/20"
+              >
+                {submitting ? "Opening Contract Position..." : "Authorize Derivative Position"}
+              </button>
+            </div>
+          </form>
+        </Drawer>
+      )}
+
+      {/* ── Close Position Modal ── */}
+      {showCloseForm && selectedTrade && (
+        <Drawer
+          isOpen={showCloseForm}
+          onClose={resetCloseForm}
+          title="Close Position"
+        >
+          <div className="mb-6 p-4 bg-white/[0.02] border border-white/5 rounded-xl space-y-2 shadow-inner">
+            <p className="text-[10px] text-[--text-muted] font-black uppercase tracking-widest">Active Position Details</p>
+            <p className="text-sm font-bold text-white">
+              {selectedTrade.symbol} {selectedTrade.instrument_type} {selectedTrade.strike_price && `₹${Number(selectedTrade.strike_price)}`}
+            </p>
+            <div className="grid grid-cols-2 gap-4 text-xs pt-2">
+              <div>
+                <span className="text-[--text-muted] font-medium">Holding Size:</span> <span className="font-mono font-bold text-[--text-primary] ml-1">{selectedTrade.quantity}</span>
+              </div>
+              <div>
+                <span className="text-[--text-muted] font-medium">Avg Entry:</span> <span className="font-bold text-[--text-primary] ml-1">₹{formatNum(selectedTrade.entry_price)}</span>
+              </div>
+            </div>
+          </div>
+
+          <form onSubmit={handleCloseSubmit} className="space-y-6">
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Avg Exit Premium</label>
+              <input
+                required type="number"
+                step="any"
+                value={closeFormData.exit_price}
+                onChange={e => setCloseFormData({ ...closeFormData, exit_price: e.target.value })}
+                className="input-premium tabular-nums"
+                placeholder="e.g. 148.30"
+                autoFocus
+                autoComplete="new-password"
+                inputMode="decimal"
+              />
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Settlement Date</label>
+              <input
+                required type="date"
+                value={closeFormData.close_date}
+                onChange={e => setCloseFormData({ ...closeFormData, close_date: e.target.value })}
+                className="input-premium"
+                autoComplete="new-password"
+              />
+            </div>
+
+            <div className="pt-4 mt-8">
+              <button
+                type="submit" disabled={submitting}
+                className="btn-primary w-full h-12 text-[11px] font-black uppercase tracking-widest shadow-xl shadow-[--accent-primary]/20"
               >
                 {submitting ? "Settling Position..." : "Finalize Position & Settle P&L"}
               </button>
-            </form>
-          </div>
-          </div>
-        </div>
+            </div>
+          </form>
+        </Drawer>
       )}
 
     </div>

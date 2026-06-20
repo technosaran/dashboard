@@ -8,7 +8,7 @@ import { revertLedgerLog } from "../alternative-assets/actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { format, parseISO } from "date-fns";
-import { useMediaQuery } from "@/hooks/use-media-query";
+import { Drawer } from "@/components/ui/drawer";
 import Link from "next/link";
 import { EmptyState } from "@/components/empty-state";
 
@@ -24,7 +24,6 @@ const CATEGORIES = [
 
 export default function LiabilitiesClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { liabilities, ledgerLogs, accounts }, mutate } = useFinanceData(initialData);
-  const isMobile = useMediaQuery('(max-width: 767.98px)');
   const searchParams = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(searchParams.get("action") === "new");
   const [submitting, withLock] = useSubmitLock();
@@ -110,80 +109,6 @@ export default function LiabilitiesClient({ initialData }: { initialData?: Finan
     });
   }
 
-  if (isMobile) {
-    return (
-      <div className="flex flex-col gap-6 animate-fade-in">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-black text-[--text-primary]">Record Liability</h1>
-            <div className={`status-dot scale-70 ${submitting ? 'animate-pulse bg-yellow-400' : 'bg-emerald-400'}`} />
-          </div>
-          <Link href="/dashboard" className="text-[10px] font-black uppercase text-[--text-muted] no-underline bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg active:scale-95 transition-all">
-            Back
-          </Link>
-        </div>
-        
-        <div className="glass-card-static p-5 border border-white/5 bg-white/[0.01]">
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Liability Name</label>
-              <input required className="input-premium" placeholder="e.g. HDFC Home Loan" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} autoComplete="off" id="liability-name" name="name" />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Category</label>
-              <select className="input-premium" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} aria-label="Select category" id="liability-category-mobile" name="category">
-                {CATEGORIES.map(c => <option key={c.label} value={c.label}>{c.label}</option>)}
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Total Principal (₹)</label>
-              <input required type="number" className="input-premium" value={formData.total_amount} onChange={e => setFormData({...formData, total_amount: e.target.value})} autoComplete="off" inputMode="decimal" id="liability-total-amount" name="total_amount" />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Remaining Balance (₹)</label>
-              <input required type="number" className="input-premium" value={formData.remaining_amount} onChange={e => setFormData({...formData, remaining_amount: e.target.value})} autoComplete="off" inputMode="decimal" id="liability-remaining-amount" name="remaining_amount" />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Interest Rate (%)</label>
-              <input type="number" step="0.01" className="input-premium" value={formData.interest_rate} onChange={e => setFormData({...formData, interest_rate: e.target.value})} autoComplete="off" inputMode="decimal" id="liability-interest-rate" name="interest_rate" />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Monthly EMI (₹)</label>
-              <input type="number" className="input-premium" value={formData.monthly_payment} onChange={e => setFormData({...formData, monthly_payment: e.target.value})} autoComplete="off" inputMode="decimal" id="liability-monthly-payment" name="monthly_payment" />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Next Due Date</label>
-              <input type="date" className="input-premium" value={formData.due_date} onChange={e => setFormData({...formData, due_date: e.target.value})} autoComplete="off" id="liability-due-date" name="due_date" />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Destination Account (Optional)</label>
-              <select className="input-premium" value={formData.account_id} onChange={e => setFormData({...formData, account_id: e.target.value})} aria-label="Select account" id="liability-account-mobile" name="account_id">
-                <option value="">No Transaction</option>
-                {accounts.map(acc => (
-                  <option key={acc.id} value={acc.id}>{acc.name} (₹{acc.balance.toLocaleString()})</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Notes / Account Number</label>
-              <textarea className="input-premium min-h-[80px] py-3" value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} autoComplete="off" id="liability-notes" name="notes" />
-            </div>
-
-            <button type="submit" disabled={submitting} className="btn-primary w-full h-12 shadow-md mt-6 !bg-danger hover:!bg-rose-600">
-              {submitting ? "Processing..." : "Establish Liability"}
-            </button>
-          </form>
-        </div>
-      </div>
-    );
   }
 
   return (
@@ -411,66 +336,75 @@ export default function LiabilitiesClient({ initialData }: { initialData?: Finan
       )}
 
       {showAddModal && (
-        <div className="mobile-dialog-shell fixed inset-0 z-[200] overflow-y-auto custom-scrollbar bg-[--bg-base]/90 backdrop-blur-xl animate-fade-in shadow-2xl">
-          <div className="flex min-h-full items-center justify-center p-4 py-12">
-            <div className="mobile-dialog-panel glass-card-static w-full max-w-2xl p-6 md:p-10 border-rose-500/20 shadow-[0_0_100px_rgba(244,63,94,0.1)] max-h-[90vh] overflow-y-auto custom-scrollbar">
-            <div className="flex items-center justify-between mb-10">
-              <h2 className="text-3xl font-black">{editingId ? "Update Liability" : "Record Liability"}</h2>
-              <button type="button" onClick={() => { setShowAddModal(false); setEditingId(null); }} className="text-[--text-muted] hover:text-white transition-colors"><svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg></button>
-            </div>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Liability Name</label>
-                  <input required className="input-premium" placeholder="e.g. HDFC Home Loan" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} autoComplete="new-password" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Category</label>
-                  <select aria-label="Select liability category" id="liability-category" name="category" className="input-premium" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
-                    {CATEGORIES.map(c => <option key={c.label} value={c.label}>{c.label}</option>)}
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Total Principal (₹)</label>
-                  <input required type="number" className="input-premium" value={formData.total_amount} onChange={e => setFormData({...formData, total_amount: e.target.value})} autoComplete="new-password" inputMode="decimal" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Remaining Balance (₹)</label>
-                  <input required type="number" className="input-premium" value={formData.remaining_amount} onChange={e => setFormData({...formData, remaining_amount: e.target.value})} autoComplete="new-password" inputMode="decimal" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Interest Rate (%)</label>
-                  <input type="number" step="0.01" className="input-premium" value={formData.interest_rate} onChange={e => setFormData({...formData, interest_rate: e.target.value})} autoComplete="new-password" inputMode="decimal" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Monthly EMI (₹)</label>
-                  <input type="number" className="input-premium" value={formData.monthly_payment} onChange={e => setFormData({...formData, monthly_payment: e.target.value})} autoComplete="new-password" inputMode="decimal" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Next Due Date</label>
-                  <input type="date" className="input-premium" value={formData.due_date} onChange={e => setFormData({...formData, due_date: e.target.value})} autoComplete="new-password" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Destination Account (Optional)</label>
-                  <select aria-label="Select account" id="liability-account" name="account_id" className="input-premium" value={formData.account_id} onChange={e => setFormData({...formData, account_id: e.target.value})}>
-                    <option value="">No Transaction</option>
-                    {accounts.map(acc => (
-                      <option key={acc.id} value={acc.id}>{acc.name} (₹{acc.balance.toLocaleString()})</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-2 md:col-span-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Notes / Account Number</label>
-                  <textarea className="input-premium min-h-[100px] py-4" value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} autoComplete="new-password" />
-                </div>
+        <Drawer
+          isOpen={showAddModal}
+          onClose={() => { setShowAddModal(false); setEditingId(null); }}
+          title={editingId ? "Update Liability" : "Record Liability"}
+        >
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Liability Name</label>
+                <input required className="input-premium" placeholder="e.g. HDFC Home Loan" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} autoComplete="new-password" />
               </div>
-              <button type="submit" disabled={submitting} className="btn-primary w-full h-12 shadow-xl shadow-[--danger]/20 !bg-danger hover:!bg-rose-600 mt-4">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Category</label>
+                <select aria-label="Select liability category" id="liability-category" name="category" className="input-premium" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
+                  {CATEGORIES.map(c => <option key={c.label} value={c.label}>{c.label}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Total Principal (₹)</label>
+                <input required type="number" className="input-premium tabular-nums" value={formData.total_amount} onChange={e => setFormData({...formData, total_amount: e.target.value})} autoComplete="new-password" inputMode="decimal" />
+              </div>
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Remaining Balance (₹)</label>
+                <input required type="number" className="input-premium tabular-nums" value={formData.remaining_amount} onChange={e => setFormData({...formData, remaining_amount: e.target.value})} autoComplete="new-password" inputMode="decimal" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Interest Rate (%)</label>
+                <input type="number" step="0.01" className="input-premium tabular-nums" value={formData.interest_rate} onChange={e => setFormData({...formData, interest_rate: e.target.value})} autoComplete="new-password" inputMode="decimal" />
+              </div>
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Monthly EMI (₹)</label>
+                <input type="number" className="input-premium tabular-nums" value={formData.monthly_payment} onChange={e => setFormData({...formData, monthly_payment: e.target.value})} autoComplete="new-password" inputMode="decimal" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Next Due Date</label>
+                <input type="date" className="input-premium" value={formData.due_date} onChange={e => setFormData({...formData, due_date: e.target.value})} autoComplete="new-password" />
+              </div>
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Destination Account (Optional)</label>
+                <select aria-label="Select account" id="liability-account" name="account_id" className="input-premium" value={formData.account_id} onChange={e => setFormData({...formData, account_id: e.target.value})}>
+                  <option value="">No Transaction</option>
+                  {accounts.map(acc => (
+                    <option key={acc.id} value={acc.id}>{acc.name} (₹{acc.balance.toLocaleString()})</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Notes / Account Number</label>
+              <textarea className="input-premium min-h-[100px] py-4 resize-none" value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} autoComplete="new-password" />
+            </div>
+
+            <div className="pt-4 mt-8">
+              <button type="submit" disabled={submitting} className="btn-primary w-full h-12 shadow-xl shadow-[--danger]/20 !bg-danger hover:!bg-rose-600 text-[11px] font-black uppercase tracking-widest">
                 {submitting ? "Processing..." : editingId ? "Update Record" : "Establish Liability"}
               </button>
-            </form>
-          </div>
-          </div>
-        </div>
+            </div>
+          </form>
+        </Drawer>
       )}
     </div>
   );

@@ -11,6 +11,7 @@ import type { Tables } from "@/lib/database.types";
 import { searchBanks, type Bank } from "@/lib/banks";
 import { createAccount, updateAccount, deleteAccount, createTransfer, adjustBalance } from "./actions";
 import BankLogo from "@/components/bank-logo";
+import { Drawer } from "@/components/ui/drawer";
 
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { getChartColour } from "@/lib/chart-colours";
@@ -75,7 +76,6 @@ function hexToRgba(hex: string, alpha: number): string {
 
 export default function AccountsClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { accounts, ledgerLogs }, isValidating, mutate } = useFinanceData(initialData);
-  const isMobile = useMediaQuery('(max-width: 767.98px)');
   const searchParams = useSearchParams();
   const [showForm, setShowForm] = useState(searchParams.get("action") === "new");
   const [activeTab, setActiveTab] = useState<"accounts" | "history">(searchParams.get("tab") === "history" ? "history" : "accounts");
@@ -94,7 +94,6 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingAccountId, setDeletingAccountId] = useState<string | null>(null);
   const [historyAccountId, setHistoryAccountId] = useState("all");
-  const [mobileTab, setMobileTab] = useState<"transfer" | "new" | "adjust">("transfer");
   const [showUSD, setShowUSD] = useState(false);
 
   function handleBankSearch(query: string) {
@@ -251,310 +250,6 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
       ADJUST_DOWN: "Adjusted -",
     };
     return labels[type] || type;
-  }
-
-  if (isMobile) {
-    return (
-      <div className="flex flex-col gap-6 animate-fade-in">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-black text-[--text-primary]">Accounts</h1>
-            <div className={`status-dot scale-70 ${submitting ? 'animate-pulse bg-yellow-400' : 'bg-emerald-400'}`} />
-          </div>
-          <Link href="/dashboard" className="text-[10px] font-black uppercase text-[--text-muted] no-underline bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg active:scale-95 transition-all">
-            Back
-          </Link>
-        </div>
-
-        <div className="flex bg-white/5 p-1 rounded-2xl border border-white/10 w-full">
-          <button type="button"
-            onClick={() => setMobileTab("transfer")}
-            className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${mobileTab === "transfer" ? "bg-[--accent-primary] text-white shadow-lg" : "text-[--text-muted]"}`}
-          >
-            Transfer
-          </button>
-          <button type="button"
-            onClick={() => setMobileTab("new")}
-            className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${mobileTab === "new" ? "bg-[--accent-primary] text-white shadow-lg" : "text-[--text-muted]"}`}
-          >
-            New Account
-          </button>
-          <button type="button"
-            onClick={() => setMobileTab("adjust")}
-            className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${mobileTab === "adjust" ? "bg-[--accent-primary] text-white shadow-lg" : "text-[--text-muted]"}`}
-          >
-            Adjust Balance
-          </button>
-        </div>
-
-        {mobileTab === "transfer" && (
-          <div className="glass-card-static p-5 border border-white/5 bg-white/[0.01]">
-            <form onSubmit={handleTransfer} className="space-y-5">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Source Account</label>
-                <select
-                  required
-                  className="input-premium"
-                  value={transferFromId || ""}
-                  onChange={e => setTransferFromId(e.target.value)}
-                  aria-label="Select source account"
-                  id="mobile-transfer-source"
-                  name="from_account_id"
-                >
-                  <option value="">Select source</option>
-                  {accounts.map(a => (
-                    <option key={a.id} value={a.id} style={{ background: "var(--bg-surface)" }}>
-                      {a.name} ({getCurrencySymbol(a.currency)}{a.balance.toLocaleString()})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Destination Account</label>
-                <select
-                  required
-                  className="input-premium"
-                  value={transferData.to_account_id}
-                  onChange={e => setTransferData({ ...transferData, to_account_id: e.target.value })}
-                  aria-label="Select destination account"
-                  id="mobile-transfer-destination"
-                  name="to_account_id"
-                >
-                  <option value="">Select target</option>
-                  {accounts.map(a => a.id !== transferFromId && (
-                    <option key={a.id} value={a.id} style={{ background: "var(--bg-surface)" }}>
-                      {a.name} ({getCurrencySymbol(a.currency)}{a.balance.toLocaleString()})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Amount</label>
-                <input
-                  required
-                  type="number"
-                  step="0.01"
-                  className="input-premium"
-                  placeholder="0.00"
-                  value={transferData.amount}
-                  onChange={e => setTransferData({ ...transferData, amount: e.target.value })}
-                  inputMode="decimal"
-                  id="mobile-transfer-amount"
-                  name="amount"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Note / Description</label>
-                <input
-                  className="input-premium"
-                  placeholder="Transfer note (optional)"
-                  value={transferData.note}
-                  onChange={e => setTransferData({ ...transferData, note: e.target.value })}
-                  autoComplete="off"
-                  id="mobile-transfer-note"
-                  name="note"
-                />
-              </div>
-
-              <button type="submit" disabled={submitting} className="btn-primary w-full h-12 shadow-md mt-6">
-                {submitting ? "Processing..." : "Execute Transfer"}
-              </button>
-            </form>
-          </div>
-        )}
-
-        {mobileTab === "new" && (
-          <div className="glass-card-static p-5 border border-white/5 bg-white/[0.01]">
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Account Label</label>
-                <input
-                  required
-                  className="input-premium"
-                  placeholder="e.g. Primary Savings"
-                  value={formData.name}
-                  onChange={e => setFormData({ ...formData, name: e.target.value })}
-                  autoComplete="off"
-                  id="mobile-account-name"
-                  name="name"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Asset Category</label>
-                <select
-                  required
-                  className="input-premium"
-                  value={formData.type}
-                  onChange={e => setFormData({ ...formData, type: e.target.value })}
-                  aria-label="Select asset category"
-                  id="mobile-account-type"
-                  name="type"
-                >
-                  {Object.keys(TYPE_STYLES).map(t => (
-                    <option key={t} value={t} style={{ background: "var(--bg-surface)" }}>
-                      {t.toUpperCase()}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Currency</label>
-                <select
-                  required
-                  className="input-premium"
-                  value={formData.currency}
-                  onChange={e => setFormData({ ...formData, currency: e.target.value })}
-                  aria-label="Select currency"
-                  id="mobile-account-currency"
-                  name="currency"
-                >
-                  <option value="INR" style={{ background: "var(--bg-surface)" }}>INR (₹)</option>
-                  <option value="USD" style={{ background: "var(--bg-surface)" }}>USD ($)</option>
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Opening Balance</label>
-                <input
-                  type="number"
-                  className="input-premium"
-                  placeholder="0.00"
-                  value={formData.balance}
-                  onChange={e => setFormData({ ...formData, balance: e.target.value })}
-                  inputMode="decimal"
-                  id="mobile-account-balance"
-                  name="balance"
-                />
-              </div>
-
-              <div className="space-y-2 relative">
-                <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Bank Institution</label>
-                <input
-                  className="input-premium"
-                  placeholder="Search Banks..."
-                  value={bankSearch}
-                  onChange={e => handleBankSearch(e.target.value)}
-                  autoComplete="off"
-                  id="mobile-account-bank"
-                  name="bank_name"
-                />
-                {bankResults.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-[--bg-elevated] border border-white/10 rounded-xl shadow-2xl z-50 overflow-y-auto max-h-48 custom-scrollbar">
-                    {bankResults.slice(0, 10).map(b => (
-                      <button
-                        key={b.name}
-                        type="button"
-                        onClick={() => selectBank(b)}
-                        className="w-full p-3.5 flex items-center gap-3 hover:bg-white/5 text-left border-b border-white/5 last:border-0"
-                      >
-                        <BankLogo bankName={b.name} size={28} />
-                        <div>
-                          <p className="font-bold text-sm text-white">{b.name}</p>
-                          <p className="text-[10px] text-[--text-muted]">{b.domain}</p>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <button type="submit" disabled={submitting} className="btn-primary w-full h-12 shadow-md mt-6">
-                {submitting ? "Processing..." : "Activate Account"}
-              </button>
-            </form>
-          </div>
-        )}
-
-        {mobileTab === "adjust" && (
-          <div className="glass-card-static p-5 border border-white/5 bg-white/[0.01]">
-            <form onSubmit={handleAdjust} className="space-y-5">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Select Account</label>
-                <select
-                  required
-                  className="input-premium"
-                  value={adjustingAccountId || ""}
-                  onChange={e => setAdjustingAccountId(e.target.value)}
-                  aria-label="Select account to adjust"
-                  id="mobile-adjust-account"
-                  name="account_id"
-                >
-                  <option value="">Select account</option>
-                  {accounts.map(a => (
-                    <option key={a.id} value={a.id} style={{ background: "var(--bg-surface)" }}>
-                      {a.name} ({getCurrencySymbol(a.currency)}{a.balance.toLocaleString()})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {adjustingAccountId && (
-                <>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Adjustment Action</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setAdjustData({ ...adjustData, type: 'add' })}
-                        className={`py-3 rounded-xl font-black text-xs transition-all border ${adjustData.type === 'add' ? 'bg-emerald-500 border-emerald-400 text-white shadow-lg shadow-emerald-500/20' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'}`}
-                      >
-                        INCREMENT
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setAdjustData({ ...adjustData, type: 'subtract' })}
-                        className={`py-3 rounded-xl font-black text-xs transition-all border ${adjustData.type === 'subtract' ? 'bg-rose-500 border-rose-400 text-white shadow-lg shadow-rose-500/20' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'}`}
-                      >
-                        DECREMENT
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Amount</label>
-                    <input
-                      required
-                      type="number"
-                      step="0.01"
-                      className="input-premium"
-                      placeholder="0.00"
-                      value={adjustData.amount}
-                      onChange={e => setAdjustData({ ...adjustData, amount: e.target.value })}
-                      inputMode="decimal"
-                      id="mobile-adjust-amount"
-                      name="amount"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Reason / Note</label>
-                    <input
-                      required
-                      className="input-premium"
-                      placeholder="Why the change?"
-                      value={adjustData.note}
-                      onChange={e => setAdjustData({ ...adjustData, note: e.target.value })}
-                      autoComplete="off"
-                      id="mobile-adjust-note"
-                      name="note"
-                    />
-                  </div>
-
-                  <button type="submit" disabled={submitting} className="btn-primary w-full h-12 shadow-md mt-6">
-                    {submitting ? "Processing..." : "Finalize Adjustment"}
-                  </button>
-                </>
-              )}
-            </form>
-          </div>
-        )}
-      </div>
-    );
   }
 
   return (
@@ -921,85 +616,137 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
       </div>
       )}
 
-      {showForm && (
-        <div className="mobile-dialog-shell fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-xl animate-fade-in">
-           <div className="mobile-dialog-panel glass-card-static w-full max-w-xl p-8 animate-scale-in max-h-[90vh] overflow-y-auto custom-scrollbar">
-              <div className="flex justify-between items-center mb-8"><div><h2 className="text-2xl font-black">{editingId ? "Update Account" : "Open New Account"}</h2><p className="text-xs text-[--text-muted] mt-1 uppercase tracking-widest font-bold">Financial Entity Register</p></div><button type="button" onClick={resetForm} className="p-2 rounded-xl bg-white/5 text-[--text-muted]"><svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg></button></div>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div><label className="block text-[10px] font-black uppercase tracking-widest text-[--text-muted] mb-2 ml-1">Account Label</label><input required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="input-premium" placeholder="e.g. Primary Savings" autoComplete="new-password" /></div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div><label className="block text-[10px] font-black uppercase tracking-widest text-[--text-muted] mb-2 ml-1">Asset Category</label><select aria-label="Select asset category" id="account-type" name="type" value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})} className="input-premium">{Object.keys(TYPE_STYLES).map(t => <option key={t} value={t} style={{background: "var(--bg-surface)"}}>{t.toUpperCase()}</option>)}</select></div>
-                  <div><label className="block text-[10px] font-black uppercase tracking-widest text-[--text-muted] mb-2 ml-1">Currency</label><select aria-label="Select currency" id="account-currency" name="currency" value={formData.currency} onChange={e => setFormData({...formData, currency: e.target.value})} className="input-premium"><option value="INR" style={{background: "var(--bg-surface)"}}>INR (₹)</option><option value="USD" style={{background: "var(--bg-surface)"}}>USD ($)</option></select></div>
-                </div>
-                {!editingId && <div><label className="block text-[10px] font-black uppercase tracking-widest text-[--text-muted] mb-2 ml-1">Opening Balance</label><input type="number" value={formData.balance} onChange={e => setFormData({...formData, balance: e.target.value})} className="input-premium" placeholder="0.00" autoComplete="new-password" inputMode="decimal" /></div>}
-                <div className="relative">
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-[--text-muted] mb-2 ml-1">Bank Institution</label>
-                  <input value={bankSearch} onChange={e => handleBankSearch(e.target.value)} className="input-premium" placeholder="Search Banks..." autoComplete="new-password" />
-                  {bankResults.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 mt-2 bg-[--bg-elevated] border border-white/10 rounded-xl shadow-2xl z-50 overflow-y-auto max-h-48 custom-scrollbar">
-                      {bankResults.slice(0, 10).map(b => (
-                        <button
-                          key={b.name}
-                          type="button"
-                          onClick={() => selectBank(b)}
-                          className="w-full p-3.5 flex items-center gap-3 hover:bg-white/5 text-left border-b border-white/5 last:border-0"
-                        >
-                          <BankLogo bankName={b.name} size={28} />
-                          <div>
-                            <p className="font-bold text-sm text-white">{b.name}</p>
-                            <p className="text-[10px] text-[--text-muted]">{b.domain}</p>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <button type="submit" disabled={submitting} className="btn-primary w-full h-12 shadow-xl shadow-[--accent-primary]/20 transition-all mt-4">{submitting ? "Processing Registry..." : (editingId ? "Update Portfolio" : "Activate Account")}</button>
-              </form>
-           </div>
-        </div>
-      )}
-
-      {showAdjustModal && (
-        <div className="mobile-dialog-shell fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-md animate-fade-in"><div className="mobile-dialog-panel glass-card-static w-full max-w-sm p-8 animate-scale-in max-h-[90vh] overflow-y-auto custom-scrollbar">
-          <div className="flex justify-between items-center mb-6"><div><h3 className="text-xl font-black">Adjust Balance</h3><p className="text-[10px] font-bold text-[--text-muted] uppercase tracking-widest">Balance Modification</p></div><button type="button" onClick={() => setShowAdjustModal(false)} className="text-[--text-muted]"><svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg></button></div>
-          <form onSubmit={handleAdjust} className="space-y-6">
-            <div className="grid grid-cols-2 gap-2">
-              <button 
-                type="button" 
-                onClick={() => setAdjustData({...adjustData, type: 'add'})} 
-                className={`py-4 rounded-xl font-black transition-all border shadow-lg ${adjustData.type === 'add' ? 'bg-emerald-500 border-emerald-400 text-white shadow-emerald-500/20' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'}`}
-              >
-                INCREMENT
-              </button>
-              <button 
-                type="button" 
-                onClick={() => setAdjustData({...adjustData, type: 'subtract'})} 
-                className={`py-4 rounded-xl font-black transition-all border shadow-lg ${adjustData.type === 'subtract' ? 'bg-rose-500 border-rose-400 text-white shadow-rose-500/20' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'}`}
-              >
-                DECREMENT
-              </button>
+      {/* DRAWERS */}
+      <Drawer
+        isOpen={showForm}
+        onClose={resetForm}
+        title={editingId ? "Update Account" : "Open New Account"}
+      >
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-3">
+            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Account Label</label>
+            <input required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="input-premium" placeholder="e.g. Primary Savings" autoComplete="new-password" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Asset Category</label>
+              <select aria-label="Select asset category" id="account-type" name="type" value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})} className="input-premium">
+                {Object.keys(TYPE_STYLES).map(t => <option key={t} value={t} style={{background: "var(--bg-surface)"}}>{t.toUpperCase()}</option>)}
+              </select>
             </div>
-            <div><label className="block text-[10px] font-black text-[--text-muted] mb-2 uppercase tracking-widest">Amount</label><input required type="number" step="0.01" value={adjustData.amount} onChange={e => setAdjustData({...adjustData, amount: e.target.value})} className="input-premium !h-14 text-xl font-black" placeholder="0.00" autoComplete="new-password" inputMode="decimal" /></div>
-            <div><label className="block text-[10px] font-black text-[--text-muted] mb-2 uppercase tracking-widest">Reason / Note</label><input value={adjustData.note} onChange={e => setAdjustData({...adjustData, note: e.target.value})} className="input-premium" placeholder="Why the change?" autoComplete="new-password" /></div>
-            <button type="submit" className="btn-primary w-full h-12 font-black mt-2">Finalize Adjustment</button>
-          </form>
-        </div></div>
-      )}
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Currency</label>
+              <select aria-label="Select currency" id="account-currency" name="currency" value={formData.currency} onChange={e => setFormData({...formData, currency: e.target.value})} className="input-premium">
+                <option value="INR" style={{background: "var(--bg-surface)"}}>INR (₹)</option>
+                <option value="USD" style={{background: "var(--bg-surface)"}}>USD ($)</option>
+              </select>
+            </div>
+          </div>
+          {!editingId && (
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Opening Balance</label>
+              <input type="number" value={formData.balance} onChange={e => setFormData({...formData, balance: e.target.value})} className="input-premium" placeholder="0.00" autoComplete="new-password" inputMode="decimal" />
+            </div>
+          )}
+          <div className="relative space-y-3">
+            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Bank Institution</label>
+            <input value={bankSearch} onChange={e => handleBankSearch(e.target.value)} className="input-premium" placeholder="Search Banks..." autoComplete="new-password" />
+            {bankResults.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-[--bg-elevated] border border-white/10 rounded-xl shadow-2xl z-50 overflow-y-auto max-h-48 custom-scrollbar">
+                {bankResults.slice(0, 10).map(b => (
+                  <button
+                    key={b.name}
+                    type="button"
+                    onClick={() => selectBank(b)}
+                    className="w-full p-3.5 flex items-center gap-3 hover:bg-white/5 text-left border-b border-white/5 last:border-0"
+                  >
+                    <BankLogo bankName={b.name} size={28} />
+                    <div>
+                      <p className="font-bold text-sm text-white">{b.name}</p>
+                      <p className="text-[10px] text-[--text-muted]">{b.domain}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="pt-4 mt-8">
+            <button type="submit" disabled={submitting} className="btn-primary w-full h-12 shadow-xl shadow-[--accent-primary]/20 transition-all text-[11px] font-black uppercase tracking-widest">
+              {submitting ? "Processing Registry..." : (editingId ? "Update Portfolio" : "Activate Account")}
+            </button>
+          </div>
+        </form>
+      </Drawer>
 
-      {showTransferModal && (
-        <div className="mobile-dialog-shell fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-md animate-fade-in">
-           <div className="mobile-dialog-panel glass-card-static w-full max-w-md p-8 animate-scale-in max-h-[90vh] overflow-y-auto custom-scrollbar">
-              <div className="flex justify-between items-center mb-8"><div><h3 className="text-xl font-black">Inter-Account Transfer</h3><p className="text-[10px] font-bold text-[--text-muted] uppercase tracking-widest">Financial reallocation</p></div><button type="button" onClick={() => setShowTransferModal(false)} className="text-[--text-muted]"><svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg></button></div>
-              <form onSubmit={handleTransfer} className="space-y-6">
-                <div><label className="block text-[10px] font-black text-[--text-muted] mb-2 ml-1">SOURCE ACCOUNT</label><select aria-label="Select source account" id="transfer-source" name="from_account" required value={transferFromId || ""} onChange={e => setTransferFromId(e.target.value)} className="input-premium h-14"><option value="">Select source</option>{accounts.map(a => <option key={a.id} value={a.id} style={{background: "var(--bg-surface)"}}>{a.name} ({getCurrencySymbol(a.currency)}{a.balance.toLocaleString()})</option>)}</select></div>
-                <div><label className="block text-[10px] font-black text-[--text-muted] mb-2 ml-1">DESTINATION ACCOUNT</label><select aria-label="Select destination account" id="transfer-destination" name="to_account" required value={transferData.to_account_id} onChange={e => setTransferData({...transferData, to_account_id: e.target.value})} className="input-premium h-14"><option value="">Select target</option>{accounts.map(a => a.id !== transferFromId && <option key={a.id} value={a.id} style={{background: "var(--bg-surface)"}}>{a.name} ({getCurrencySymbol(a.currency)}{a.balance.toLocaleString()})</option>)}</select></div>
-                <div><label className="block text-[10px] font-black text-[--text-muted] mb-2 ml-1">AMOUNT</label><input required type="number" step="0.01" value={transferData.amount} onChange={e => setTransferData({...transferData, amount: e.target.value})} className="input-premium !h-14 text-xl font-black" placeholder="0.00" autoComplete="new-password" inputMode="decimal" /></div>
-                <button type="submit" className="btn-primary w-full h-12 shadow-xl shadow-[--accent-primary]/20 mt-4">Execute Transfer</button>
-              </form>
-           </div>
-        </div>
-      )}
+      <Drawer
+        isOpen={showAdjustModal}
+        onClose={() => setShowAdjustModal(false)}
+        title="Adjust Balance"
+      >
+        <form onSubmit={handleAdjust} className="space-y-6">
+          <div className="grid grid-cols-2 gap-3">
+            <button 
+              type="button" 
+              onClick={() => setAdjustData({...adjustData, type: 'add'})} 
+              className={`py-4 rounded-xl font-black transition-all border shadow-lg ${adjustData.type === 'add' ? 'bg-emerald-500 border-emerald-400 text-white shadow-emerald-500/20' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'}`}
+            >
+              INCREMENT
+            </button>
+            <button 
+              type="button" 
+              onClick={() => setAdjustData({...adjustData, type: 'subtract'})} 
+              className={`py-4 rounded-xl font-black transition-all border shadow-lg ${adjustData.type === 'subtract' ? 'bg-rose-500 border-rose-400 text-white shadow-rose-500/20' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'}`}
+            >
+              DECREMENT
+            </button>
+          </div>
+          <div className="space-y-3">
+            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Amount</label>
+            <input required type="number" step="0.01" value={adjustData.amount} onChange={e => setAdjustData({...adjustData, amount: e.target.value})} className="input-premium !h-14 text-xl font-black" placeholder="0.00" autoComplete="new-password" inputMode="decimal" />
+          </div>
+          <div className="space-y-3">
+            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Reason / Note</label>
+            <input value={adjustData.note} onChange={e => setAdjustData({...adjustData, note: e.target.value})} className="input-premium" placeholder="Why the change?" autoComplete="new-password" />
+          </div>
+          <div className="pt-4 mt-8">
+            <button type="submit" disabled={submitting} className="btn-primary w-full h-12 text-[11px] font-black uppercase tracking-widest shadow-xl shadow-[--accent-primary]/20">
+              {submitting ? "Processing..." : "Finalize Adjustment"}
+            </button>
+          </div>
+        </form>
+      </Drawer>
+
+      <Drawer
+        isOpen={showTransferModal}
+        onClose={() => setShowTransferModal(false)}
+        title="Inter-Account Transfer"
+      >
+        <form onSubmit={handleTransfer} className="space-y-6">
+          <div className="space-y-3">
+            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">SOURCE ACCOUNT</label>
+            <select aria-label="Select source account" id="transfer-source" name="from_account" required value={transferFromId || ""} onChange={e => setTransferFromId(e.target.value)} className="input-premium h-14">
+              <option value="">Select source</option>
+              {accounts.map(a => <option key={a.id} value={a.id} style={{background: "var(--bg-surface)"}}>{a.name} ({getCurrencySymbol(a.currency)}{a.balance.toLocaleString()})</option>)}
+            </select>
+          </div>
+          <div className="space-y-3">
+            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">DESTINATION ACCOUNT</label>
+            <select aria-label="Select destination account" id="transfer-destination" name="to_account" required value={transferData.to_account_id} onChange={e => setTransferData({...transferData, to_account_id: e.target.value})} className="input-premium h-14">
+              <option value="">Select target</option>
+              {accounts.map(a => a.id !== transferFromId && <option key={a.id} value={a.id} style={{background: "var(--bg-surface)"}}>{a.name} ({getCurrencySymbol(a.currency)}{a.balance.toLocaleString()})</option>)}
+            </select>
+          </div>
+          <div className="space-y-3">
+            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">AMOUNT</label>
+            <input required type="number" step="0.01" value={transferData.amount} onChange={e => setTransferData({...transferData, amount: e.target.value})} className="input-premium !h-14 text-xl font-black" placeholder="0.00" autoComplete="new-password" inputMode="decimal" />
+          </div>
+          <div className="pt-4 mt-8">
+            <button type="submit" disabled={submitting || !transferFromId || !transferData.to_account_id || !transferData.amount} className="btn-primary w-full h-12 shadow-xl shadow-[--accent-primary]/20 text-[11px] font-black uppercase tracking-widest disabled:opacity-50">
+              {submitting ? "Processing..." : "Execute Transfer"}
+            </button>
+          </div>
+        </form>
+      </Drawer>
 
       {showDeleteConfirm && (
         <div className="mobile-dialog-shell fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-md animate-fade-in">
