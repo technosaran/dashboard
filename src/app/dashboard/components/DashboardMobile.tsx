@@ -69,34 +69,24 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, accou
     <div className="relative z-20 flex min-h-screen flex-col gap-6 md:hidden animate-fade-in">
       
       {/* Portfolio Net Worth Mini Card */}
-      <div className="glass-card-static rich-border relative flex flex-col justify-center overflow-hidden border border-white/5 p-5 shadow-lg">
+      <div className="glass-card-static rich-border relative flex flex-col items-center justify-center overflow-hidden border border-white/5 p-4 text-center shadow-lg">
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[--accent-primary] via-purple-500 to-emerald-500" />
         <div className="absolute -right-10 -top-10 w-28 h-28 bg-[--accent-primary]/5 blur-2xl rounded-full" />
         
-        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] text-center mb-4">Total Net Worth</p>
-        
-        <div className="flex justify-between items-center gap-4 relative z-10 px-2">
-          {/* INR */}
-          <div className="flex flex-col items-center select-none w-1/2">
-            <h2 className="text-[clamp(1.2rem,6vw,1.8rem)] font-[950] leading-none tracking-tight text-white whitespace-nowrap overflow-x-auto no-scrollbar drop-shadow-[0_4px_10px_rgba(14,165,233,0.2)]">
-              ₹{stats.netWorthINR.toLocaleString(undefined, { minimumFractionDigits: 0 })}
-            </h2>
-            <span className="text-[8px] font-black tracking-[0.2em] text-[--text-muted] uppercase mt-1.5">
-              INR
-            </span>
-          </div>
-
-          <div className="w-px h-10 bg-white/10" />
-
-          {/* USD */}
-          <div className="flex flex-col items-center select-none w-1/2">
-            <h2 className="text-[clamp(1.2rem,6vw,1.8rem)] font-[950] leading-none tracking-tight text-white whitespace-nowrap overflow-x-auto no-scrollbar drop-shadow-[0_4px_10px_rgba(99,102,241,0.2)]">
-              ${stats.netWorthUSD.toLocaleString(undefined, { minimumFractionDigits: 0 })}
-            </h2>
-            <span className="text-[8px] font-black tracking-[0.2em] text-[--text-muted] uppercase mt-1.5">
-              USD
-            </span>
-          </div>
+        <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Net Worth</p>
+        <div 
+          className="flex items-center gap-1.5 mt-1 cursor-pointer select-none"
+          onClick={() => setShowUSD(!showUSD)}
+        >
+          <h2 className="text-xl font-[900] leading-none tracking-tight text-white">
+            {showUSD 
+              ? `$${stats.netWorthUSD.toLocaleString(undefined, { minimumFractionDigits: 0 })}`
+              : `₹${stats.netWorthINR.toLocaleString(undefined, { minimumFractionDigits: 0 })}`
+            }
+          </h2>
+          <span className="text-[7px] font-black tracking-widest text-[--text-muted] uppercase">
+            {showUSD ? 'USD' : 'INR'}
+          </span>
         </div>
       </div>
 
