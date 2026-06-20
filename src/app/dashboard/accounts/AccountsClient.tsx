@@ -208,33 +208,28 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
   const USD_TO_INR = 84.0;
   const displayedCurrency = showUSD ? "USD" : "INR";
 
+  const filteredAccounts = useMemo(() => 
+    accounts.filter(a => a.currency === displayedCurrency),
+  [accounts, displayedCurrency]);
+
   const totalBalance = useMemo(() => 
-    accounts.reduce((acc, a) => {
-      let val = a.balance;
-      if (showUSD && a.currency !== "USD") val = a.balance / USD_TO_INR;
-      else if (!showUSD && a.currency === "USD") val = a.balance * USD_TO_INR;
-      return acc + val;
-    }, 0),
-    [accounts, showUSD]
+    filteredAccounts.reduce((acc, a) => acc + a.balance, 0),
+    [filteredAccounts]
   );
 
   const chartData = useMemo(() => 
-    accounts
+    filteredAccounts
       .map((a, i) => { 
-        let displayVal = Math.abs(a.balance);
-        if (showUSD && a.currency !== "USD") displayVal = Math.abs(a.balance) / USD_TO_INR;
-        else if (!showUSD && a.currency === "USD") displayVal = Math.abs(a.balance) * USD_TO_INR;
-        
         return {
           name: a.name, 
-          value: displayVal, 
+          value: Math.abs(a.balance), 
           fill: getChartColour(i),
           color: getChartColour(i), 
           currency: displayedCurrency,
           account: a
         };
       }),
-    [accounts, showUSD, displayedCurrency]
+    [filteredAccounts, displayedCurrency]
   );
 
   const accountHistory = useMemo(() => {
@@ -827,7 +822,12 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {accounts.map((a) => {
+            {filteredAccounts.length === 0 && (
+              <div className="col-span-full py-12 text-center text-[--text-muted] bg-white/5 rounded-2xl border border-white/10 border-dashed">
+                <p className="text-sm font-bold uppercase tracking-widest">No {displayedCurrency} accounts found.</p>
+              </div>
+            )}
+            {filteredAccounts.map((a) => {
               const style = TYPE_STYLES[a.type] || TYPE_STYLES.checking;
               return (
                 <div key={a.id} className="glass-card rich-border flex flex-col min-h-[260px] p-6 relative overflow-hidden transition-transform hover:-translate-y-1">

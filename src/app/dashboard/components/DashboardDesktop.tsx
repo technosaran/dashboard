@@ -223,30 +223,33 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                 </span>
               </div>
               <div className="flex flex-col md:flex-row md:items-center gap-12 flex-wrap max-w-full">
-                <div 
-                  className="flex flex-col cursor-pointer group/nw select-none" 
-                  onClick={() => setShowUSD(!showUSD)}
-                  title="Click to toggle currency"
-                >
+                {/* INR Net Worth Block */}
+                <div className="flex flex-col select-none">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[10px] font-black tracking-widest text-[--text-muted] uppercase transition-colors group-hover/nw:text-white">
-                      {showUSD ? 'Dollars (USD)' : 'Rupees (INR)'}
+                    <span className="text-[10px] font-black tracking-widest text-[--text-muted] uppercase">
+                      Rupees (INR)
                     </span>
-                    <svg className="w-3 h-3 text-[--text-muted] opacity-50 group-hover/nw:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                    </svg>
                   </div>
                   <h2 
-                    key={showUSD ? 'usd' : 'inr'} 
-                    className={`animate-fade-in bg-clip-text bg-gradient-to-r text-[clamp(2.2rem,5vw,3.5rem)] font-[950] leading-none tracking-[-0.04em] text-transparent [font-family:'Outfit',sans-serif] whitespace-nowrap overflow-x-auto no-scrollbar transition-all duration-500 ${
-                    showUSD 
-                      ? "from-white via-sky-200 to-indigo-300 drop-shadow-[0_10px_35px_rgba(99,102,241,0.3)]" 
-                      : "from-white via-white to-slate-300 drop-shadow-[0_10px_35px_rgba(14,165,233,0.3)]"
-                  }`}>
-                    {showUSD 
-                      ? `$${stats.netWorthUSD.toLocaleString(undefined, { minimumFractionDigits: 0 })}` 
-                      : `₹${stats.netWorthINR.toLocaleString(undefined, { minimumFractionDigits: 0 })}`
-                    }
+                    className="bg-clip-text bg-gradient-to-r text-[clamp(2.2rem,5vw,3.5rem)] font-[950] leading-none tracking-[-0.04em] text-transparent [font-family:'Outfit',sans-serif] whitespace-nowrap overflow-x-auto no-scrollbar from-white via-white to-slate-300 drop-shadow-[0_10px_35px_rgba(14,165,233,0.3)]">
+                    ₹{stats.netWorthINR.toLocaleString(undefined, { minimumFractionDigits: 0 })}
+                  </h2>
+                </div>
+
+                {/* Vertical Divider (desktop) / Horizontal Divider (mobile) */}
+                <div className="hidden md:block w-px h-16 bg-white/10" />
+                <div className="md:hidden h-px w-full bg-white/10 -my-6" />
+
+                {/* USD Net Worth Block */}
+                <div className="flex flex-col select-none">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[10px] font-black tracking-widest text-[--text-muted] uppercase">
+                      Dollars (USD)
+                    </span>
+                  </div>
+                  <h2 
+                    className="bg-clip-text bg-gradient-to-r text-[clamp(2.2rem,5vw,3.5rem)] font-[950] leading-none tracking-[-0.04em] text-transparent [font-family:'Outfit',sans-serif] whitespace-nowrap overflow-x-auto no-scrollbar from-white via-sky-200 to-indigo-300 drop-shadow-[0_10px_35px_rgba(99,102,241,0.3)]">
+                    ${stats.netWorthUSD.toLocaleString(undefined, { minimumFractionDigits: 0 })}
                   </h2>
                 </div>
               </div>
