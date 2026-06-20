@@ -95,7 +95,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
   const [deletingAccountId, setDeletingAccountId] = useState<string | null>(null);
   const [historyAccountId, setHistoryAccountId] = useState("all");
   const [mobileTab, setMobileTab] = useState<"transfer" | "new" | "adjust">("transfer");
-  const [activeCurrencyIndex, setActiveCurrencyIndex] = useState(0);
+  const [showUSD, setShowUSD] = useState(false);
 
   function handleBankSearch(query: string) {
     setBankSearch(query);
@@ -205,29 +205,36 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
     });
   }
 
-  const balancesByCurrency = useMemo(() => 
-    accounts.reduce((acc, a) => { 
-      acc[a.currency] = (acc[a.currency] || 0) + a.balance; 
-      return acc; 
-    }, {} as Record<string, number>),
-    [accounts]
-  );
+  const USD_TO_INR = 84.0;
+  const displayedCurrency = showUSD ? "USD" : "INR";
 
-  const availableCurrencies = useMemo(() => Object.keys(balancesByCurrency), [balancesByCurrency]);
-  const displayedCurrency = availableCurrencies.length > 0 ? availableCurrencies[activeCurrencyIndex % availableCurrencies.length] : "INR";
+  const totalBalance = useMemo(() => 
+    accounts.reduce((acc, a) => {
+      let val = a.balance;
+      if (showUSD && a.currency !== "USD") val = a.balance / USD_TO_INR;
+      else if (!showUSD && a.currency === "USD") val = a.balance * USD_TO_INR;
+      return acc + val;
+    }, 0),
+    [accounts, showUSD]
+  );
 
   const chartData = useMemo(() => 
     accounts
-      .filter(a => a.currency === displayedCurrency)
-      .map((a, i) => ({ 
-        name: a.name, 
-        value: Math.abs(a.balance), 
-        fill: getChartColour(i),
-        color: getChartColour(i), 
-        currency: a.currency,
-        account: a
-      })),
-    [accounts, displayedCurrency]
+      .map((a, i) => { 
+        let displayVal = Math.abs(a.balance);
+        if (showUSD && a.currency !== "USD") displayVal = Math.abs(a.balance) / USD_TO_INR;
+        else if (!showUSD && a.currency === "USD") displayVal = Math.abs(a.balance) * USD_TO_INR;
+        
+        return {
+          name: a.name, 
+          value: displayVal, 
+          fill: getChartColour(i),
+          color: getChartColour(i), 
+          currency: displayedCurrency,
+          account: a
+        };
+      }),
+    [accounts, showUSD, displayedCurrency]
   );
 
   const accountHistory = useMemo(() => {
@@ -658,18 +665,16 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
               <div>
                 <div 
                   className="flex flex-col cursor-pointer group/nw select-none mb-6" 
-                  onClick={() => availableCurrencies.length > 1 && setActiveCurrencyIndex(prev => prev + 1)}
-                  title={availableCurrencies.length > 1 ? "Click to toggle currency" : ""}
+                  onClick={() => setShowUSD(!showUSD)}
+                  title="Click to toggle currency"
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-[10px] font-black tracking-widest text-[--text-muted] uppercase transition-colors group-hover/nw:text-[--text-primary]">
                       Total Balance ({displayedCurrency})
                     </span>
-                    {availableCurrencies.length > 1 && (
-                      <svg className="w-3 h-3 text-[--text-muted] opacity-50 group-hover/nw:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                      </svg>
-                    )}
+                    <svg className="w-3 h-3 text-[--text-muted] opacity-50 group-hover/nw:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                    </svg>
                   </div>
                   <h2 
                     key={displayedCurrency} 
@@ -679,7 +684,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
                         : "from-white via-white to-slate-300 drop-shadow-[0_10px_35px_rgba(14,165,233,0.3)]"
                     }`}
                   >
-                    {getCurrencySymbol(displayedCurrency)}{(balancesByCurrency[displayedCurrency] || 0).toLocaleString(undefined, { minimumFractionDigits: 0 })}
+                    {getCurrencySymbol(displayedCurrency)}{totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                   </h2>
                 </div>
                 <div className="grid grid-cols-3 gap-3">
@@ -731,7 +736,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
                   <p className="text-[8px] uppercase font-black text-[--text-muted] mb-1 tracking-widest">Net Value</p>
                   <div className="flex flex-col gap-2">
                     <p key={displayedCurrency} className="text-base font-black text-[--text-primary] leading-tight">
-                      {getCurrencySymbol(displayedCurrency)}{(balancesByCurrency[displayedCurrency] || 0).toLocaleString()}
+                      {getCurrencySymbol(displayedCurrency)}{totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                     </p>
                   </div>
                 </div>
@@ -742,17 +747,15 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
             <div className="lg:hidden">
               <div 
                 className="flex flex-col items-center cursor-pointer group/nw select-none mb-6" 
-                onClick={() => availableCurrencies.length > 1 && setActiveCurrencyIndex(prev => prev + 1)}
+                onClick={() => setShowUSD(!showUSD)}
               >
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-[10px] font-black tracking-widest text-[--text-muted] uppercase transition-colors group-hover/nw:text-[--text-primary]">
                     Total Balance ({displayedCurrency})
                   </span>
-                  {availableCurrencies.length > 1 && (
-                    <svg className="w-3 h-3 text-[--text-muted] opacity-50 group-hover/nw:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                    </svg>
-                  )}
+                  <svg className="w-3 h-3 text-[--text-muted] opacity-50 group-hover/nw:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                  </svg>
                 </div>
                 <h2 
                   key={displayedCurrency} 
@@ -762,7 +765,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
                       : "from-white via-white to-slate-300 drop-shadow-[0_10px_35px_rgba(14,165,233,0.3)]"
                   }`}
                 >
-                  {getCurrencySymbol(displayedCurrency)}{(balancesByCurrency[displayedCurrency] || 0).toLocaleString(undefined, { minimumFractionDigits: 0 })}
+                  {getCurrencySymbol(displayedCurrency)}{totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                 </h2>
               </div>
 
@@ -796,7 +799,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
                   <p className="text-[9px] md:text-[11px] uppercase font-black text-[--text-muted] mb-1 tracking-widest">Net Value</p>
                   <div className="flex flex-col gap-2">
                     <p key={displayedCurrency} className="text-lg md:text-2xl font-black text-[--text-primary] leading-tight">
-                      {getCurrencySymbol(displayedCurrency)}{(balancesByCurrency[displayedCurrency] || 0).toLocaleString()}
+                      {getCurrencySymbol(displayedCurrency)}{totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                     </p>
                   </div>
                 </div>
