@@ -67,13 +67,14 @@ export async function updateAccount(id: string, data: Record<string, unknown>) {
     // Log update - awaited for integrity
     const allowedLogKeys = ["name", "type", "currency", "bank_name", "institution", "color", "account_number"];
     const changedFields = Object.keys(safeData).filter(k => allowedLogKeys.includes(k));
-    await supabase.from("ledger_logs").insert({
+    const { error: logError } = await supabase.from("ledger_logs").insert({
       user_id: user.id,
       account_id: id,
       account_name: account?.name || "Account",
       action_type: "UPDATE",
       details: `Updated settings for ${account?.name || 'account'}: ${changedFields.join(", ") || "metadata"}`,
     });
+    if (logError) console.error("Failed to log account update:", logError);
 
     revalidatePath("/dashboard", "layout");
     return { success: true };
@@ -91,11 +92,16 @@ export async function deleteAccount(id: string) {
 
     // Unlink any transactions that reference this account to prevent foreign key constraint violations
     // We set the account_id to null instead of deleting the trades, preserving the user's portfolio history
-    await Promise.all([
+    const unlinkResults = await Promise.all([
       supabase.from("forex_transactions").update({ bank_account_id: null }).eq("bank_account_id", id),
       supabase.from("bond_transactions").update({ account_id: null }).eq("account_id", id),
       supabase.from("mutual_fund_trades").update({ account_id: null }).eq("account_id", id),
     ]);
+    const unlinkError = unlinkResults.find(r => r.error);
+    if (unlinkError?.error) {
+      console.error("Failed to unlink references:", unlinkError.error);
+      return { error: `Failed to unlink references: ${unlinkError.error.message}` };
+    }
 
     const { data: rpcData, error } = await supabase.rpc("delete_account_atomic_v2", {
       p_user_id: user.id,

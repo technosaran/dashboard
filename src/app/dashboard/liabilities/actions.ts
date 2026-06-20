@@ -19,37 +19,45 @@ export async function addLiability(formData: {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Not authenticated" };
 
-    const { account_id, ...liabilityData } = formData;
-
-    const { data: liability, error: libErr } = await supabase
-      .from("liabilities")
-      .insert([{ ...liabilityData, user_id: user.id }])
-      .select()
-      .single();
-
-    if (libErr) return { error: libErr.message };
-
-    // Handle fund receipt if account provided
-    if (account_id && formData.total_amount > 0) {
-      const { error: accErr } = await supabase.rpc("adjust_account_balance", {
-        p_account_id: account_id,
-        p_amount: formData.total_amount, // Positive because it's a loan received
-        p_note: `Loan Disbursement: ${formData.name}`,
-        p_user_id: user.id,
-        p_source_id: liability.id,
-        p_source_type: "liability"
-      });
-      if (accErr) {
-        console.error("Balance adjustment failed:", accErr);
-        // Rollback: delete the liability record we just inserted to maintain ACID transactional integrity
-        await supabase.from("liabilities").delete().eq("id", liability.id);
-        return { error: `Failed to adjust account balance: ${accErr.message}` };
+    // Use typed RPC cast for new atomic function (types will be auto-generated after migration deploys)
+    type AtomicResult = { success: boolean; error?: string } | null;
+    const rpc = supabase.rpc.bind(supabase) as unknown as (
+      fn: "add_liability_atomic",
+      args: {
+        p_user_id: string;
+        p_name: string;
+        p_category: string;
+        p_total_amount: number;
+        p_remaining_amount: number;
+        p_interest_rate: number | null;
+        p_monthly_payment: number | null;
+        p_due_date: string | null;
+        p_notes: string | null;
+        p_account_id: string | null;
       }
-    }
+    ) => Promise<{ data: AtomicResult; error: { message: string } | null }>;
+
+    // Use atomic RPC that handles insert + balance adjustment in a single transaction
+    const { data: rpcData, error } = await rpc("add_liability_atomic", {
+      p_user_id: user.id,
+      p_name: formData.name,
+      p_category: formData.category,
+      p_total_amount: formData.total_amount,
+      p_remaining_amount: formData.remaining_amount,
+      p_interest_rate: formData.interest_rate || null,
+      p_monthly_payment: formData.monthly_payment || null,
+      p_due_date: formData.due_date || null,
+      p_notes: formData.notes || null,
+      p_account_id: formData.account_id || null
+    });
+
+    if (error) return { error: error.message };
+    if (!rpcData?.success) return { error: rpcData?.error || "Failed to add liability" };
 
     revalidatePath("/dashboard/liabilities");
     revalidatePath("/dashboard/ledger");
     revalidatePath("/dashboard/accounts");
+    revalidatePath("/dashboard");
     return { success: true };
   } catch (err) {
     console.error("Error in addLiability:", err);

@@ -17,38 +17,41 @@ export async function addAlternativeAsset(formData: {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Not authenticated" };
 
-    const { account_id, ...assetData } = formData;
-
-    // Insert the asset
-    const { data: asset, error: assetErr } = await supabase
-      .from("alternative_assets")
-      .insert([{ ...assetData, user_id: user.id }])
-      .select()
-      .single();
-
-    if (assetErr) return { error: assetErr.message };
-
-    // Handle account deduction if provided
-    if (account_id && formData.purchase_price > 0) {
-      const { error: accErr } = await supabase.rpc("adjust_account_balance", {
-        p_account_id: account_id,
-        p_amount: -formData.purchase_price,
-        p_note: `Asset Purchase: ${formData.name}`,
-        p_user_id: user.id,
-        p_source_id: asset.id,
-        p_source_type: "alternative_asset"
-      });
-      if (accErr) {
-        console.error("Balance adjustment failed:", accErr);
-        // Rollback: delete the asset record we just inserted to maintain ACID transactional integrity
-        await supabase.from("alternative_assets").delete().eq("id", asset.id);
-        return { error: `Failed to adjust account balance: ${accErr.message}` };
+    // Use typed RPC cast for new atomic function (types will be auto-generated after migration deploys)
+    type AtomicResult = { success: boolean; error?: string } | null;
+    const rpc = supabase.rpc.bind(supabase) as unknown as (
+      fn: "add_alternative_asset_atomic",
+      args: {
+        p_user_id: string;
+        p_name: string;
+        p_category: string;
+        p_purchase_price: number;
+        p_current_value: number;
+        p_purchase_date: string | null;
+        p_notes: string | null;
+        p_account_id: string | null;
       }
-    }
+    ) => Promise<{ data: AtomicResult; error: { message: string } | null }>;
+
+    // Use atomic RPC that handles insert + balance adjustment in a single transaction
+    const { data: rpcData, error } = await rpc("add_alternative_asset_atomic", {
+      p_user_id: user.id,
+      p_name: formData.name,
+      p_category: formData.category,
+      p_purchase_price: formData.purchase_price,
+      p_current_value: formData.current_value,
+      p_purchase_date: formData.purchase_date || null,
+      p_notes: formData.notes || null,
+      p_account_id: formData.account_id || null
+    });
+
+    if (error) return { error: error.message };
+    if (!rpcData?.success) return { error: rpcData?.error || "Failed to add alternative asset" };
 
     revalidatePath("/dashboard/alternative-assets");
     revalidatePath("/dashboard/ledger");
     revalidatePath("/dashboard/accounts");
+    revalidatePath("/dashboard");
     return { success: true };
   } catch (err) {
     console.error("Error in addAlternativeAsset:", err);

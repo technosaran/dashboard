@@ -67,19 +67,24 @@ type ProfileSettings = {
 type SafeJson = string | number | boolean | null | { [key: string]: SafeJson | undefined } | SafeJson[];
 
 export async function updateSettings(settings: ProfileSettings) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Unauthorized" };
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Unauthorized" };
 
-  const { error } = await supabase
-    .from("profiles")
-    .update({ settings: settings as unknown as SafeJson })
-    .eq("id", user.id);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ settings: settings as unknown as SafeJson })
+      .eq("id", user.id);
 
-  if (error) return { error: error.message };
-  
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/settings");
-  return { success: true };
+    if (error) return { error: error.message };
+    
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/settings");
+    return { success: true };
+  } catch (err) {
+    console.error("Error in updateSettings:", err);
+    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+  }
 }
 
