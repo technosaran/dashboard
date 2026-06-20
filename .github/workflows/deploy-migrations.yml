@@ -19,5 +19,7 @@ jobs:
           version: latest
 
       - name: Deploy Migrations to Production
+        env:
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         run: |
           supabase db push --db-url "${{ secrets.SUPABASE_DB_URL }}"
