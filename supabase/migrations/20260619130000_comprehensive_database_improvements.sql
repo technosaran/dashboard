@@ -377,26 +377,50 @@ $$ LANGUAGE plpgsql SECURITY INVOKER SET search_path = public;
 -- 7. CLEANUP: Drop old function overloads + permission hardening
 -- ============================================================================
 
--- 7a. Drop old 4-param adjust_account_balance overload
-DROP FUNCTION IF EXISTS public.adjust_account_balance(UUID, UUID, NUMERIC, TEXT);
+-- 7a. Drop old 4-param adjust_account_balance overload (only if 6-param version exists)
+DO $$ 
+BEGIN
+    -- Only drop 4-param if the 6-param version exists (to avoid breaking things)
+    IF EXISTS (
+        SELECT 1 FROM pg_proc p 
+        WHERE p.proname = 'adjust_account_balance' 
+        AND p.pronamespace = 'public'::regnamespace 
+        AND p.pronargs = 6
+    ) THEN
+        DROP FUNCTION IF EXISTS public.adjust_account_balance(UUID, UUID, NUMERIC, TEXT);
+    END IF;
+END $$;
 
--- 7b. Permission hardening for update_forex_trade_atomic
-REVOKE EXECUTE ON FUNCTION public.update_forex_trade_atomic(UUID, UUID, UUID, TEXT, TEXT, DECIMAL, DECIMAL, DATE, DECIMAL, DECIMAL, TEXT) FROM public, anon;
-GRANT EXECUTE ON FUNCTION public.update_forex_trade_atomic(UUID, UUID, UUID, TEXT, TEXT, DECIMAL, DECIMAL, DATE, DECIMAL, DECIMAL, TEXT) TO authenticated, service_role;
+-- 7b. Dynamic permission hardening for all public schema functions
+DO $$ 
+DECLARE 
+    r RECORD;
+BEGIN
+    FOR r IN (
+        SELECT p.oid::regprocedure AS sig
+        FROM pg_proc p
+        WHERE p.pronamespace = 'public'::regnamespace
+          AND p.proname IN (
+              'update_forex_trade_atomic',
+              'add_alternative_asset_atomic',
+              'add_liability_atomic',
+              'fno_log_trade',
+              'fno_close_position',
+              'fno_delete_trade',
+              'set_updated_at',
+              'get_investments_v1'
+          )
+          AND NOT EXISTS (
+              SELECT 1 FROM pg_depend d WHERE d.objid = p.oid AND d.deptype = 'e'
+          )
+    ) LOOP
+        BEGIN
+            EXECUTE 'REVOKE EXECUTE ON FUNCTION ' || r.sig || ' FROM public;';
+            EXECUTE 'REVOKE EXECUTE ON FUNCTION ' || r.sig || ' FROM anon;';
+            EXECUTE 'GRANT EXECUTE ON FUNCTION ' || r.sig || ' TO authenticated, service_role;';
+        EXCEPTION WHEN OTHERS THEN
+            RAISE NOTICE 'Skipping permission for %: %', r.sig, SQLERRM;
+        END;
+    END LOOP;
+END $$;
 
--- 7c. Permission hardening for new atomic RPCs
-REVOKE EXECUTE ON FUNCTION public.add_alternative_asset_atomic(UUID, TEXT, TEXT, NUMERIC, NUMERIC, DATE, TEXT, UUID) FROM public, anon;
-GRANT EXECUTE ON FUNCTION public.add_alternative_asset_atomic(UUID, TEXT, TEXT, NUMERIC, NUMERIC, DATE, TEXT, UUID) TO authenticated, service_role;
-
-REVOKE EXECUTE ON FUNCTION public.add_liability_atomic(UUID, TEXT, TEXT, NUMERIC, NUMERIC, NUMERIC, NUMERIC, DATE, TEXT, UUID) FROM public, anon;
-GRANT EXECUTE ON FUNCTION public.add_liability_atomic(UUID, TEXT, TEXT, NUMERIC, NUMERIC, NUMERIC, NUMERIC, DATE, TEXT, UUID) TO authenticated, service_role;
-
--- 7d. Permission hardening for fno functions
-REVOKE EXECUTE ON FUNCTION public.fno_log_trade(UUID, TEXT, TEXT, NUMERIC, DATE, TEXT, NUMERIC, NUMERIC, UUID, TEXT, DATE) FROM public, anon;
-GRANT EXECUTE ON FUNCTION public.fno_log_trade(UUID, TEXT, TEXT, NUMERIC, DATE, TEXT, NUMERIC, NUMERIC, UUID, TEXT, DATE) TO authenticated, service_role;
-
--- 7e. Grants for updated overview function
-GRANT EXECUTE ON FUNCTION public.get_investments_v1() TO authenticated, service_role;
-
--- 7f. Grant set_updated_at to service_role for trigger execution
-GRANT EXECUTE ON FUNCTION public.set_updated_at() TO authenticated, service_role;
