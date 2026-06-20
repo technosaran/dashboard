@@ -192,7 +192,11 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
       
       // If it fell back to Others (grey) but the category is not actually "Others", give it a dynamic distinct color
       if (resolvedColor === getCategoryColour("Others") && name.toLowerCase() !== "others") {
-        resolvedColor = getColorByLabel(name);
+        resolvedColor = getColorByLabel(name) || getChartColour(Math.abs(name.charCodeAt(0)) % 10);
+      }
+
+      if (!resolvedColor || resolvedColor === "undefined") {
+        resolvedColor = getChartColour(Math.abs(name.charCodeAt(0)) % 10);
       }
 
       return {
