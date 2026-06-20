@@ -16,7 +16,7 @@ export function useNetWorth() {
   } = data || {};
 
   return useMemo(() => {
-    const enabledModules = profile?.settings?.enabled_modules || [...MODULE_KEYS];
+    const enabledModules = profile?.enabled_modules || [...MODULE_KEYS];
     
     const hasStocks = enabledModules.includes("Stocks");
     const hasForex = enabledModules.includes("Forex");

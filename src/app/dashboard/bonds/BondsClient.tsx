@@ -83,7 +83,7 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
   // Initialize default account when accounts/profile loads or modal is opened
   useEffect(() => {
     if (accounts.length > 0 && showAddModal && !formData.account_id) {
-      const defaultAccId = profile?.settings?.default_accounts?.bonds;
+      const defaultAccId = profile?.default_accounts?.bonds;
       const defaultAccExists = defaultAccId && accounts.some(a => a.id === defaultAccId);
       if (defaultAccExists) {
         setTimeout(() => {

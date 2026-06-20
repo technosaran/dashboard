@@ -104,7 +104,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
   // Initialize default account when accounts/profile loads or modal is opened
   useEffect(() => {
     if (accounts.length > 0 && showAddModal && !formData.account_id) {
-      const defaultAccId = profile?.settings?.default_accounts?.mutual_funds;
+      const defaultAccId = profile?.default_accounts?.mutual_funds;
       const defaultAccExists = defaultAccId && accounts.some(a => a.id === defaultAccId);
       if (defaultAccExists) {
         setTimeout(() => {

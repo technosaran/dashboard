@@ -90,7 +90,7 @@ type Props = {
 const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goals, accounts, isLoading }: Props) {
   const { data: { profile } = {} } = useFinanceData();
   const enabledModules = useMemo(() => {
-    return profile?.settings?.enabled_modules || [...MODULE_KEYS];
+    return profile?.enabled_modules || [...MODULE_KEYS];
   }, [profile]);
 
   const [showUSD, setShowUSD] = useState(false);

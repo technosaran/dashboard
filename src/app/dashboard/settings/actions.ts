@@ -61,7 +61,10 @@ export async function resetUserData() {
 type ProfileSettings = {
   enabled_modules?: string[];
   default_accounts?: Record<string, string | null>;
-  [key: string]: unknown;
+  base_currency?: string;
+  theme?: string;
+  timezone?: string;
+  username?: string;
 };
 
 type SafeJson = string | number | boolean | null | { [key: string]: SafeJson | undefined } | SafeJson[];
@@ -72,9 +75,20 @@ export async function updateSettings(settings: ProfileSettings) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Unauthorized" };
 
+    // Build the update payload dynamically based on what was passed
+    const payload: Record<string, unknown> = {};
+    if (settings.enabled_modules !== undefined) payload.enabled_modules = settings.enabled_modules as unknown as SafeJson;
+    if (settings.default_accounts !== undefined) payload.default_accounts = settings.default_accounts as unknown as SafeJson;
+    if (settings.base_currency !== undefined) payload.base_currency = settings.base_currency;
+    if (settings.theme !== undefined) payload.theme = settings.theme;
+    if (settings.timezone !== undefined) payload.timezone = settings.timezone;
+    if (settings.username !== undefined) payload.username = settings.username;
+
+    if (Object.keys(payload).length === 0) return { success: true };
+
     const { error } = await supabase
       .from("profiles")
-      .update({ settings: settings as unknown as SafeJson })
+      .update(payload)
       .eq("id", user.id);
 
     if (error) return { error: error.message };

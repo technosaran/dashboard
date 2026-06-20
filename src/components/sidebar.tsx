@@ -219,7 +219,7 @@ export default function Sidebar() {
   const [isQuickActionOpen, setIsQuickActionOpen] = useState(false);
 
   const enabledModules = useMemo(() => {
-    return profile?.settings?.enabled_modules || [...MODULE_KEYS];
+    return profile?.enabled_modules || [...MODULE_KEYS];
   }, [profile]);
 
   const filteredNav = useMemo(() => {

@@ -47,7 +47,7 @@ export default function FamilyClient({
 
   useEffect(() => {
     if (accounts.length > 0 && !sendAccountId) {
-      const defaultAccId = profile?.settings?.default_accounts?.family;
+      const defaultAccId = profile?.default_accounts?.family;
       const defaultAccExists = defaultAccId && accounts.some(a => a.id === defaultAccId);
       setTimeout(() => {
         setSendAccountId(defaultAccExists ? defaultAccId : accounts[0].id);

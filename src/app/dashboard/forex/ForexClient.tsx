@@ -70,7 +70,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
   // Initialize default bank account for deposits/withdrawals
   useEffect(() => {
     if (accounts.length > 0 && !fundsForm.bank_account_id) {
-      const defaultAccId = profile?.settings?.default_accounts?.forex;
+      const defaultAccId = profile?.default_accounts?.forex;
       const defaultAccExists = defaultAccId && accounts.some(a => a.id === defaultAccId);
       setTimeout(() => {
         setFundsForm(prev => ({ ...prev, bank_account_id: defaultAccExists ? defaultAccId : accounts[0].id }));

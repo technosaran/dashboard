@@ -93,7 +93,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
   // Initialize default account when accounts/profile loads or modal is opened
   useEffect(() => {
     if (accounts.length > 0 && showForm && !formData.deduct_from_account) {
-      const defaultAccId = profile?.settings?.default_accounts?.stocks;
+      const defaultAccId = profile?.default_accounts?.stocks;
       const defaultAccExists = defaultAccId && accounts.some(a => a.id === defaultAccId);
       if (defaultAccExists) {
         const timer = setTimeout(() => {

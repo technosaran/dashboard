@@ -51,7 +51,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
   // Initialize default account when accounts/profile loads or modal is opened
   useEffect(() => {
     if (accounts.length > 0 && showLogForm && !logFormData.account_id) {
-      const defaultAccId = profile?.settings?.default_accounts?.fno;
+      const defaultAccId = profile?.default_accounts?.fno;
       const defaultAccExists = defaultAccId && accounts.some(a => a.id === defaultAccId);
       if (defaultAccExists) {
         setTimeout(() => {

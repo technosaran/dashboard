@@ -62,7 +62,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
   // Initialize selectedAccountId / default account selection
   useEffect(() => {
     if (accounts.length > 0 && !selectedAccountId) {
-      const defaultAccId = profile?.settings?.default_accounts?.goals;
+      const defaultAccId = profile?.default_accounts?.goals;
       const defaultAccExists = defaultAccId && accounts.some(a => a.id === defaultAccId);
       setTimeout(() => {
         setSelectedAccountId(defaultAccExists ? defaultAccId : accounts[0].id);
@@ -72,7 +72,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
 
   useEffect(() => {
     if (accounts.length > 0 && !formData.account_id) {
-      const defaultAccId = profile?.settings?.default_accounts?.goals;
+      const defaultAccId = profile?.default_accounts?.goals;
       const defaultAccExists = defaultAccId && accounts.some(a => a.id === defaultAccId);
       setTimeout(() => {
         setFormData(prev => ({ ...prev, account_id: defaultAccExists ? defaultAccId : "" }));

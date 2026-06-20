@@ -761,21 +761,33 @@ export type Database = {
           id: string
           updated_at: string | null
           username: string | null
-          settings: Json | null
+          base_currency: string
+          theme: string
+          timezone: string
+          enabled_modules: Json
+          default_accounts: Json
         }
         Insert: {
           created_at?: string | null
           id: string
           updated_at?: string | null
           username?: string | null
-          settings?: Json | null
+          base_currency?: string
+          theme?: string
+          timezone?: string
+          enabled_modules?: Json
+          default_accounts?: Json
         }
         Update: {
           created_at?: string | null
           id?: string
           updated_at?: string | null
           username?: string | null
-          settings?: Json | null
+          base_currency?: string
+          theme?: string
+          timezone?: string
+          enabled_modules?: Json
+          default_accounts?: Json
         }
         Relationships: []
       }
@@ -1389,7 +1401,7 @@ export type Database = {
       get_summary_v1: {
         Args: Record<PropertyKey, never>
         Returns: {
-          profile: { username: string; settings: { enabled_modules: string[] } } | null
+          profile: { username: string; base_currency: string; theme: string; timezone: string; enabled_modules: string[]; default_accounts?: Record<string, string | null>; } | null
           accounts: Database["public"]["Tables"]["accounts"]["Row"][]
           transactions: Database["public"]["Tables"]["transactions"]["Row"][]
           ledgerLogs: Database["public"]["Tables"]["ledger_logs"]["Row"][]
@@ -1434,7 +1446,7 @@ export type Database = {
       get_finance_overview_v2: {
         Args: Record<PropertyKey, never>
         Returns: {
-          profile: { username: string; settings: { enabled_modules: string[] } } | null
+          profile: { username: string; base_currency: string; theme: string; timezone: string; enabled_modules: string[]; default_accounts?: Record<string, string | null>; } | null
           accounts: Database["public"]["Tables"]["accounts"]["Row"][]
           transactions: Database["public"]["Tables"]["transactions"]["Row"][]
           ledgerLogs: Database["public"]["Tables"]["ledger_logs"]["Row"][]

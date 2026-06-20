@@ -33,7 +33,14 @@ export interface FnoTrade {
 const supabase = createClient();
 
 type FinanceData = {
-  profile: { username: string; settings: { enabled_modules: string[]; default_accounts?: Record<string, string | null> } } | null;
+  profile: { 
+    username: string; 
+    base_currency: string;
+    theme: string;
+    timezone: string;
+    enabled_modules: string[]; 
+    default_accounts?: Record<string, string | null>;
+  } | null;
   accounts: Tables<"accounts">[];
   transactions: Tables<"transactions">[];
   ledgerLogs: Tables<"ledger_logs">[];

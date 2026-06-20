@@ -19,7 +19,7 @@ export function ModuleGuard({ moduleKey, children }: ModuleGuardProps) {
     return null; 
   }
 
-  const enabledModules = profile?.settings?.enabled_modules;
+  const enabledModules = profile?.enabled_modules;
   const isEnabled = !enabledModules || enabledModules.includes(moduleKey);
 
   if (!isEnabled) {
