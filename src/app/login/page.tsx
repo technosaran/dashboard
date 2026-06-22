@@ -209,12 +209,6 @@ export default function LoginPage() {
                   <div className="login-submit-shimmer" />
                 </button>
 
-                <div style={{ textAlign: "center", marginTop: "1.5rem", fontSize: "14px", color: "var(--text-muted)" }}>
-                  {"Don't have an account? "}
-                  <Link href="/signup" style={{ color: "var(--accent-primary-light, #0ea5e9)", textDecoration: "none", fontWeight: 600 }}>
-                    Sign up
-                  </Link>
-                </div>
 
 
               </form>

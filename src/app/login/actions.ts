@@ -23,7 +23,8 @@ export async function login(formData: FormData) {
   });
 
   if (error) {
-    return { error: "Invalid email or password." };
+    console.error("Login error:", error);
+    return { error: error.message || "Invalid email or password." };
   }
 
   redirect("/dashboard");

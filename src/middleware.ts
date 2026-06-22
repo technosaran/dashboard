@@ -38,7 +38,7 @@ export default async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
 
   // Public routes that don't need auth
-  const isPublicRoute = pathname === "/login" || pathname === "/" || pathname === "/signup" || pathname === "/reset-password" || pathname.startsWith("/auth/");
+  const isPublicRoute = pathname === "/login" || pathname === "/" || pathname === "/reset-password" || pathname.startsWith("/auth/");
 
   // Redirect unauthenticated users to login
   if (!user && !isPublicRoute) {
