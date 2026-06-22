@@ -209,7 +209,9 @@ export default function LoginPage() {
                   <div className="login-submit-shimmer" />
                 </button>
 
-
+                <p style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '11px', color: 'var(--text-muted)' }}>
+                  This is a private site. For access, please mail <a href="mailto:saransci2006@gmail.com" style={{ color: 'var(--accent-primary)', textDecoration: 'none', fontWeight: 'bold' }}>saransci2006@gmail.com</a>
+                </p>
 
               </form>
             </div>

@@ -51,15 +51,17 @@ export default function SettingsPage() {
     setInput(e.target.value);
   };
 
-  useEffect(() => {
-    if (loading) return;
-    const t = setTimeout(() => {
-      if (input !== username) {
-        setUsername(input);
-      }
-    }, 400);
-    return () => clearTimeout(t);
-  }, [input, username, setUsername, loading]);
+  const handleBlur = () => {
+    if (input !== username) {
+      setUsername(input);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.currentTarget.blur();
+    }
+  };
 
   // General optimistic update helper
   const saveSetting = async (key: string, value: any, successMessage: string) => {
@@ -240,6 +242,8 @@ export default function SettingsPage() {
                 type="text"
                 value={input}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                onKeyDown={handleKeyDown}
                 maxLength={30}
                 className="input-premium h-14 md:h-12 text-[16px] md:text-sm font-bold w-full"
                 placeholder="Enter your name"
