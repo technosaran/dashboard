@@ -271,7 +271,7 @@ export default function FamilyClient({
                   <Tooltip 
                     contentStyle={{ backgroundColor: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
                     itemStyle={{ color: '#fff', fontSize: '12px', fontWeight: 'bold' }}
-                    formatter={(value: number) => [`₹${value.toLocaleString()}`, 'Total Sent']}
+                    formatter={(value: any) => [`₹${Number(value).toLocaleString()}`, 'Total Spent']}
                   />
                   <Pie
                     data={Object.entries(recipientTotals).map(([id, value], i) => ({

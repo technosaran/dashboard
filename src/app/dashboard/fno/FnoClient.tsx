@@ -5,7 +5,7 @@ import { useMemo, useState, useEffect } from "react";
 import { format } from "date-fns";
 import { toast } from "react-hot-toast";
 import { useMediaQuery } from "@/hooks/use-media-query";
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
+import { Drawer } from "@/components/ui/drawer";
 import Link from "next/link";
 import { EmptyState } from "@/components/empty-state";
 

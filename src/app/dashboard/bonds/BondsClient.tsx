@@ -271,8 +271,6 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
     return { bg: "rgba(239, 68, 68, 0.1)", text: "#ef4444" };
   };
 
-  }
-
   return (
     <div className="flex flex-col gap-[var(--section-gap)] animate-fade-in">
       
