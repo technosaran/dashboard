@@ -32,11 +32,15 @@ export default async function middleware(request: NextRequest) {
 
   const cspHeader = cspHeaderParts.join("; ");
 
-  // Next.js needs the nonce and CSP in the request headers to render them in the HTML
-  request.headers.set("x-nonce", nonce);
-  request.headers.set("Content-Security-Policy", cspHeader);
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set("Content-Security-Policy", cspHeader);
 
-  let supabaseResponse = NextResponse.next({ request });
+  let supabaseResponse = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

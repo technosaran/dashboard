@@ -62,16 +62,21 @@ import ProgressBar from "@/components/progress-bar";
 import { cn } from "@/lib/utils";
 import PwaSecurityManager from "@/components/pwa-security-manager";
 
+import { headers } from "next/headers";
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const headerStore = await headers();
+  const nonce = headerStore.get("x-nonce") || "";
+
   return (
     <html
       lang="en"
       className={cn("h-full", "antialiased", "dark", "font-sans", "theme-google")}
+      nonce={nonce}
     >
       <head />
       <body className="min-h-full flex flex-col overflow-x-hidden bg-[--bg-base] text-[--text-primary] font-sans relative">
