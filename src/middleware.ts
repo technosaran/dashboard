@@ -10,6 +10,32 @@ export default async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
+  const isDev = process.env.NODE_ENV === "development";
+  const cspHeaderParts = [
+    "default-src 'self'",
+    isDev
+      ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
+      : `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+    `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
+    "font-src 'self' https://fonts.gstatic.com",
+    "img-src 'self' data: blob: https://logos.hunter.io https://companyenrich.com https://www.google.com https://icons.duckduckgo.com https://*.yahoo.com https://*.yahooapis.com https://logo.clearbit.com",
+    `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.yahoo.com https://*.yahooapis.com https://api.mfapi.in https://www.alphavantage.co`,
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+  ];
+
+  if (!isDev) {
+    cspHeaderParts.push("upgrade-insecure-requests");
+  }
+
+  const cspHeader = cspHeaderParts.join("; ");
+
+  // Next.js needs the nonce and CSP in the request headers to render them in the HTML
+  request.headers.set("x-nonce", nonce);
+  request.headers.set("Content-Security-Policy", cspHeader);
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -49,29 +75,6 @@ export default async function middleware(request: NextRequest) {
   if (user && pathname === "/login") {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
-
-  // ── Dynamic CSP with Nonce ───────────────────────────────
-  const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
-  const isDev = process.env.NODE_ENV === "development";
-  const cspHeaderParts = [
-    "default-src 'self'",
-    isDev
-      ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
-      : `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
-    `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`, // unsafe-inline for Tailwind/CSS-in-JS if needed
-    "font-src 'self' https://fonts.gstatic.com",
-    "img-src 'self' data: blob: https://logos.hunter.io https://companyenrich.com https://www.google.com https://icons.duckduckgo.com https://*.yahoo.com https://*.yahooapis.com https://logo.clearbit.com",
-    `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.yahoo.com https://*.yahooapis.com https://api.mfapi.in https://www.alphavantage.co`,
-    "frame-ancestors 'none'",
-    "base-uri 'self'",
-    "form-action 'self'",
-  ];
-
-  if (process.env.NODE_ENV === 'production') {
-    cspHeaderParts.push("upgrade-insecure-requests");
-  }
-
-  const cspHeader = cspHeaderParts.join("; ");
 
   const response = supabaseResponse;
   response.headers.set("Content-Security-Policy", cspHeader);
