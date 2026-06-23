@@ -276,10 +276,10 @@ export default function FamilyClient({
                       data={Object.entries(recipientTotals)
                         .filter(([_, value]) => value > 0)
                         .map(([id, value], i) => ({
-                        name: recipients.find(r => r.id === id)?.name || "Unknown",
-                        value,
-                        color: getChartColour(i)
-                      }))}
+                          name: recipients.find(r => r.id === id)?.name || "Unknown",
+                          value: Number(value),
+                          fill: getChartColour(i)
+                        }))}
                       cx="50%"
                       cy="50%"
                       innerRadius={45}
@@ -287,13 +287,7 @@ export default function FamilyClient({
                       paddingAngle={5}
                       dataKey="value"
                       stroke="none"
-                    >
-                      {Object.entries(recipientTotals)
-                        .filter(([_, value]) => value > 0)
-                        .map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={getChartColour(index)} />
-                      ))}
-                    </Pie>
+                    />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
