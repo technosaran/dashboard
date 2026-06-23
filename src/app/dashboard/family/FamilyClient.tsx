@@ -12,11 +12,9 @@ import { Drawer } from "@/components/ui/drawer";
 import dynamic from "next/dynamic";
 import { getChartColour } from "@/lib/chart-colours";
 
-const PieChart = dynamic(() => import("recharts").then(mod => mod.PieChart), { ssr: false });
-const Pie = dynamic(() => import("recharts").then(mod => mod.Pie), { ssr: false });
-const Cell = dynamic(() => import("recharts").then(mod => mod.Cell), { ssr: false });
+import { PieChart, Pie, Cell, Tooltip } from "recharts";
+
 const ResponsiveContainer = dynamic(() => import("recharts").then(mod => mod.ResponsiveContainer), { ssr: false });
-const Tooltip = dynamic(() => import("recharts").then(mod => mod.Tooltip), { ssr: false });
 
 const QUICK_AMOUNTS = [500, 1000, 2000, 5000, 10000];
 
