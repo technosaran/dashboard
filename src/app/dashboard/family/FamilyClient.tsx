@@ -228,10 +228,10 @@ export default function FamilyClient({
   }, 0);
 
   return (
-    <div className="flex flex-col gap-8 max-w-[1200px] mx-auto w-full pb-10">
+    <div className="flex flex-col gap-8 max-w-[1200px] mx-auto w-full pb-10 min-w-0 overflow-x-hidden md:overflow-visible">
       {/* HEADER */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-6">
-        <div>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-6 min-w-0">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold text-white tracking-tight">Transfers & Contacts</h1>
           <p className="text-sm text-[--text-muted] mt-1">Manage family members and execute secure transfers.</p>
         </div>
@@ -247,20 +247,20 @@ export default function FamilyClient({
       </div>
 
       {/* STATS STRIP */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="bg-[#111111] border border-white/10 p-5 rounded-md flex flex-col gap-1">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-w-0 w-full">
+        <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 min-w-0">
+          <div className="bg-[#111111] border border-white/10 p-5 rounded-md flex flex-col gap-1 min-w-0">
             <span className="text-xs uppercase tracking-wider text-[--text-muted] font-semibold">Total Contacts</span>
             <span className="text-3xl font-black text-white mt-1">{recipients.length}</span>
           </div>
-          <div className="bg-[#111111] border border-white/10 p-5 rounded-md flex flex-col gap-1">
+          <div className="bg-[#111111] border border-white/10 p-5 rounded-md flex flex-col gap-1 min-w-0">
             <span className="text-xs uppercase tracking-wider text-[--text-muted] font-semibold">Recent Volume (INR)</span>
             <span className="text-3xl font-black text-white mt-1">₹{totalSent.toLocaleString()}</span>
           </div>
         </div>
 
         {/* PIE CHART FOR DISTRIBUTION */}
-        <div className="bg-[#111111] border border-white/10 p-5 rounded-md flex flex-col min-h-[220px]">
+        <div className="bg-[#111111] border border-white/10 p-5 rounded-md flex flex-col min-h-[220px] min-w-0 overflow-hidden">
           <span className="text-xs uppercase tracking-wider text-[--text-muted] font-semibold mb-2">Distribution</span>
           {Object.keys(recipientTotals).length > 0 && Object.values(recipientTotals).some(v => v > 0) ? (
             <div className="flex flex-col sm:flex-row items-center gap-6 h-full mt-2 min-w-0">
@@ -317,9 +317,9 @@ export default function FamilyClient({
       </div>
 
       {/* MAIN CONTENT AREA */}
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-6 min-w-0 w-full">
         {/* TAB NAVIGATION */}
-        <div className="flex items-center gap-6 border-b border-white/10">
+        <div className="flex items-center gap-6 border-b border-white/10 min-w-0 overflow-x-auto no-scrollbar">
           <button
             onClick={() => setActiveView("contacts")}
             className={`pb-3 text-sm font-medium transition-colors border-b-2 ${activeView === "contacts" ? "border-[--accent-primary] text-[--accent-primary]" : "border-transparent text-[--text-muted] hover:text-white"}`}
@@ -336,8 +336,8 @@ export default function FamilyClient({
 
         {/* TAB: CONTACTS */}
         {activeView === "contacts" && (
-          <div className="flex flex-col gap-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="flex flex-col gap-6 min-w-0">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 min-w-0">
               {isLoading ? (
                 Array.from({ length: 6 }).map((_, i) => (
                   <div key={i} className="glass-card rich-border min-h-[260px] p-6 animate-pulse" />
@@ -368,16 +368,16 @@ export default function FamilyClient({
                     </div>
                     
                     <div className="mt-auto">
-                      <h3 className="text-lg font-bold truncate">{person.name}</h3>
-                      <p className="text-2xl font-black mt-1 text-[--accent-primary]">₹{(recipientTotals[person.id] || 0).toLocaleString()}</p>
+                      <h3 className="text-lg font-bold truncate min-w-0">{person.name}</h3>
+                      <p className="text-2xl font-black mt-1 text-[--accent-primary] truncate min-w-0">₹{(recipientTotals[person.id] || 0).toLocaleString()}</p>
                       
-                      <div className="flex items-center gap-2 mt-6">
+                      <div className="flex items-center gap-2 mt-6 min-w-0">
                         <button 
                           type="button" 
                           onClick={() => { setSelectedRecipient(person); setIsSendingMoney(true); }} 
-                          className="flex-1 h-11 rounded-xl font-bold text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-2 bg-gradient-to-r from-[--accent-primary] to-indigo-500 text-white shadow-md shadow-[--accent-primary]/20 hover:shadow-lg hover:shadow-[--accent-primary]/30 hover:-translate-y-0.5 px-2"
+                          className="flex-1 min-w-0 h-11 rounded-xl font-bold text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-2 bg-gradient-to-r from-[--accent-primary] to-indigo-500 text-white shadow-md shadow-[--accent-primary]/20 hover:shadow-lg hover:shadow-[--accent-primary]/30 hover:-translate-y-0.5 px-2"
                         >
-                          <Send className="w-4 h-4 shrink-0" /> <span className="truncate">Send Funds</span>
+                          <Send className="w-4 h-4 shrink-0" /> <span className="truncate min-w-0">Send Funds</span>
                         </button>
                         
                         <button 
