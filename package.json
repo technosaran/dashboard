@@ -13,7 +13,6 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
-    "@prisma/client": "^7.8.0",
     "@react-pdf/renderer": "^4.5.1",
     "@supabase/ssr": "^0.10.0",
     "@supabase/supabase-js": "^2.101.1",
@@ -52,7 +51,6 @@
     "eslint": "^9",
     "eslint-config-next": "^16.2.3",
     "jsdom": "^29.1.1",
-    "prisma": "^7.8.0",
     "shadcn": "^4.7.0",
     "tailwindcss": "^4",
     "typescript": "^5",

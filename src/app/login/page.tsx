@@ -99,7 +99,7 @@ export default function LoginPage() {
                 Sign in to access your financial dashboard
               </p>
 
-              <form onSubmit={handleSubmit} className="login-form">
+              <form method="post" onSubmit={handleSubmit} className="login-form">
                 {/* Email field */}
                 <div className={`login-field ${focused === "email" ? "login-field--focused" : ""}`}>
                   <label className="login-label" htmlFor="login-email">

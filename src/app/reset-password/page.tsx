@@ -70,7 +70,7 @@ export default function ResetPasswordPage() {
                   </Link>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} className="login-form">
+                <form method="post" onSubmit={handleSubmit} className="login-form">
                   <div className={`login-field ${focused === "email" ? "login-field--focused" : ""}`}>
                     <label className="login-label" htmlFor="reset-email">Email</label>
                     <div className="login-input-wrap">

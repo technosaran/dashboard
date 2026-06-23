@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { format } from "date-fns";
 import { memo, useState, useMemo } from "react";
+import ReportDownloadButton from "./ReportDownloadButton";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { MODULE_KEYS } from "@/lib/modules";
 
@@ -69,24 +70,29 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, accou
     <div className="relative z-20 flex min-h-screen flex-col gap-6 md:hidden animate-fade-in">
       
       {/* Portfolio Net Worth Mini Card */}
-      <div className="glass-card-static rich-border relative flex flex-col items-center justify-center overflow-hidden border border-white/5 p-4 text-center shadow-lg">
-        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[--accent-primary] via-purple-500 to-emerald-500" />
-        <div className="absolute -right-10 -top-10 w-28 h-28 bg-[--accent-primary]/5 blur-2xl rounded-full" />
-        
-        <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Net Worth</p>
-        <div 
-          className="flex items-center gap-1.5 mt-1 cursor-pointer select-none"
-          onClick={() => setShowUSD(!showUSD)}
-        >
-          <h2 className="text-xl font-[900] leading-none tracking-tight text-white">
-            {showUSD 
-              ? `$${stats.netWorthUSD.toLocaleString(undefined, { minimumFractionDigits: 0 })}`
-              : `₹${stats.netWorthINR.toLocaleString(undefined, { minimumFractionDigits: 0 })}`
-            }
-          </h2>
-          <span className="text-[7px] font-black tracking-widest text-[--text-muted] uppercase">
-            {showUSD ? 'USD' : 'INR'}
-          </span>
+      <div className="flex flex-col gap-4">
+        <div className="glass-card-static rich-border relative flex flex-col items-center justify-center overflow-hidden border border-white/5 p-4 text-center shadow-lg">
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[--accent-primary] via-purple-500 to-emerald-500" />
+          <div className="absolute -right-10 -top-10 w-28 h-28 bg-[--accent-primary]/5 blur-2xl rounded-full" />
+          
+          <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Net Worth</p>
+          <div 
+            className="flex items-center gap-1.5 mt-1 cursor-pointer select-none"
+            onClick={() => setShowUSD(!showUSD)}
+          >
+            <h2 className="text-xl font-[900] leading-none tracking-tight text-white">
+              {showUSD 
+                ? `$${stats.netWorthUSD.toLocaleString(undefined, { minimumFractionDigits: 0 })}`
+                : `₹${stats.netWorthINR.toLocaleString(undefined, { minimumFractionDigits: 0 })}`
+              }
+            </h2>
+            <span className="text-[7px] font-black tracking-widest text-[--text-muted] uppercase">
+              {showUSD ? 'USD' : 'INR'}
+            </span>
+          </div>
+        </div>
+        <div className="flex justify-center">
+          <ReportDownloadButton stats={stats as any} />
         </div>
       </div>
 

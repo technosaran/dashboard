@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useState, Fragment } from "react";
+import { useMemo, useState } from "react";
 import { endOfDay, format, isWithinInterval, startOfDay } from "date-fns";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
-import { EmptyState } from "@/components/empty-state";
+import LedgerDataTable from "./components/LedgerDataTable";
 
 type LedgerLog = {
   id: string;
@@ -18,25 +18,12 @@ type LedgerLog = {
 };
 
 const MONTHS = [
-  "All Months",
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
+  "All Months", "January", "February", "March", "April", "May", "June", 
+  "July", "August", "September", "October", "November", "December",
 ];
 
 const DEBIT_ACTIONS = new Set(["ADJUST_DOWN", "TRANSFER_OUT", "DELETE", "SEND_MONEY"]);
 const CREDIT_ACTIONS = new Set(["ADJUST_UP", "TRANSFER_IN", "CREATE"]);
-
-
 
 const ACTION_CONFIG: Record<string, { label: string; icon: string; bg: string; text: string; ring: string }> = {
   CREATE: { label: "Created", icon: "✨", bg: "rgba(16, 185, 129, 0.1)", text: "#10b981", ring: "rgba(16, 185, 129, 0.2)" },
@@ -73,7 +60,6 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
   const {
     data: { ledgerLogs: logs, accounts },
     isValidating,
-    isLoading,
   } = useFinanceData(initialData);
 
   const getLogCurrency = (accountId: string | null) => {
@@ -84,36 +70,25 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
 
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
   
   // Calendar states
   const [showCalendar, setShowCalendar] = useState(false);
   const [currentCalendarMonth, setCurrentCalendarMonth] = useState(new Date().getMonth());
   const [currentCalendarYear, setCurrentCalendarYear] = useState(new Date().getFullYear());
 
-  const itemsPerPage = 50;
-
   const calendarDays = useMemo(() => {
     const days = [];
     const daysInMonth = new Date(currentCalendarYear, currentCalendarMonth + 1, 0).getDate();
     const firstDayIndex = new Date(currentCalendarYear, currentCalendarMonth, 1).getDay();
 
-    // Padding for days of previous month
-    for (let i = 0; i < firstDayIndex; i++) {
-      days.push(null);
-    }
-
-    // Days of current month
-    for (let i = 1; i <= daysInMonth; i++) {
-      days.push(new Date(currentCalendarYear, currentCalendarMonth, i));
-    }
+    for (let i = 0; i < firstDayIndex; i++) days.push(null);
+    for (let i = 1; i <= daysInMonth; i++) days.push(new Date(currentCalendarYear, currentCalendarMonth, i));
 
     return days;
   }, [currentCalendarMonth, currentCalendarYear]);
 
   const handleDayClick = (day: Date) => {
     const formattedDate = format(day, "yyyy-MM-dd");
-    
     if (!startDate || (startDate && endDate)) {
       setStartDate(formattedDate);
       setEndDate("");
@@ -126,7 +101,6 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
         setShowCalendar(false);
       }
     }
-    setCurrentPage(1);
   };
 
   const handlePrevMonth = () => {
@@ -174,71 +148,22 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
       setStartDate("");
       setEndDate("");
     }
-    setCurrentPage(1);
     setShowCalendar(false);
   };
 
   const allFilteredLogs = useMemo(() => {
     return logs.filter((log) => {
       if (!log.created_at) return false;
-
       const date = new Date(log.created_at);
 
-      // Date Range Filter
       if (startDate || endDate) {
         const start = startDate ? startOfDay(new Date(startDate)) : new Date(0);
         const end = endDate ? endOfDay(new Date(endDate)) : new Date();
         return isWithinInterval(date, { start, end });
       }
-
       return true;
     });
   }, [endDate, logs, startDate]);
-
-  const sortedFilteredLogs = useMemo(() => {
-    return [...allFilteredLogs].sort((a, b) => {
-      const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
-      const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
-      return bTime - aTime;
-    });
-  }, [allFilteredLogs]);
-
-  const totalFilteredCount = allFilteredLogs.length;
-  const totalPages = Math.max(1, Math.ceil(totalFilteredCount / itemsPerPage));
-  const activePage = Math.min(currentPage, totalPages);
-
-  const filteredLogs = useMemo(() => {
-    const startIndex = (activePage - 1) * itemsPerPage;
-    return sortedFilteredLogs.slice(startIndex, startIndex + itemsPerPage);
-  }, [sortedFilteredLogs, activePage]);
-
-  const groupedLogs = useMemo(() => {
-    const groups: Record<string, LedgerLog[]> = {};
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-
-    filteredLogs.forEach((log) => {
-      if (!log.created_at) return;
-
-      const logDate = new Date(log.created_at);
-      const logDateKey = format(logDate, "yyyy-MM-dd");
-      const todayKey = format(today, "yyyy-MM-dd");
-      const yesterdayKey = format(yesterday, "yyyy-MM-dd");
-
-      let dateLabel = format(logDate, "MMMM d, yyyy");
-      if (logDateKey === todayKey) dateLabel = "Today";
-      if (logDateKey === yesterdayKey) dateLabel = "Yesterday";
-
-      if (!groups[dateLabel]) {
-        groups[dateLabel] = [];
-      }
-
-      groups[dateLabel].push(log);
-    });
-
-    return groups;
-  }, [filteredLogs]);
 
   const totalInflow = useMemo(() => {
     return logs.reduce((sum, log) => {
@@ -284,7 +209,6 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
 
   return (
     <div className="flex flex-col gap-[var(--section-gap)] max-w-7xl mx-auto w-full px-2">
-      {/* Header */}
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 px-2">
         <div className="flex items-center gap-4">
           <div>
@@ -297,20 +221,19 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
         </div>
       </header>
 
-      {/* Analytics Summary */}
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { label: "Total Capital Inflow", value: totalInflow, sub: "Revenue & Adjustments", color: "text-success", bg: "from-emerald-500/10", border: "hover:border-emerald-500/20", icon: "📈", sign: "+" },
           { label: "Total Capital Outflow", value: totalOutflow, sub: "Expenses & Transfers", color: "text-danger", bg: "from-rose-500/10", border: "hover:border-rose-500/20", icon: "📉", sign: "-" },
           { label: "Total Audit Logs", value: logs.length, sub: "Uncompromised Records", color: "text-white", bg: "from-indigo-500/10", border: "hover:border-indigo-500/20", icon: "🛡️", raw: true },
-          { label: "Filtered Records", value: totalFilteredCount, sub: "Date Range Filter", color: "text-[--accent-primary-light]", bg: "from-sky-500/10", border: "hover:border-sky-500/20", icon: "🔍", raw: true },
+          { label: "Filtered Records", value: allFilteredLogs.length, sub: "Date Range Filter", color: "text-[--accent-primary-light]", bg: "from-sky-500/10", border: "hover:border-sky-500/20", icon: "🔍", raw: true },
         ].map((s, i) => (
           <div key={i} className={`glass-card-static p-6 flex flex-col justify-between min-h-[140px] rounded-[24px] border border-white/5 bg-gradient-to-br ${s.bg} to-transparent ${s.border} transition-all duration-300 relative group overflow-hidden`}>
             <div className="absolute right-4 top-4 text-3xl opacity-5 group-hover:opacity-10 group-hover:scale-110 transition-all duration-300">{s.icon}</div>
             <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-4">{s.label}</p>
             <div>
               <p className={`text-2xl font-black tabular-nums tracking-tight ${s.color}`}>
-                {s.raw ? s.value.toLocaleString() : `${s.sign}${formatMoney(s.value as number)}`}
+                {s.raw ? s.value.toLocaleString() : `${s.sign}${formatMoney(s.value as number, "INR")}`}
               </p>
               <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-widest mt-1 opacity-60">{s.sub}</p>
             </div>
@@ -318,11 +241,7 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
         ))}
       </section>
 
-      {/* Modern Filter toolbar */}
       <section className="flex flex-col md:flex-row gap-4 items-center px-2">
-
-
-        {/* Date Range Calendar Picker */}
         <div className="relative w-full md:w-[320px] shrink-0">
           <button
             type="button"
@@ -345,7 +264,6 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
                 onClick={(e) => {
                   e.stopPropagation();
                   resetRange();
-                  setCurrentPage(1);
                 }}
                 aria-label="Clear selected date range"
                 className="text-[9px] font-black uppercase tracking-widest text-rose-400 hover:text-rose-500 bg-rose-500/10 border border-rose-500/20 px-2 py-1 rounded"
@@ -359,90 +277,43 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
 
           {showCalendar && (
             <>
-              {/* Click outside overlay */}
               <div className="fixed inset-0 z-40" onClick={() => setShowCalendar(false)} />
-              
-              {/* Calendar Card Dropdown */}
               <div 
-                className="absolute right-0 top-[calc(100%+0.5rem)] z-50 glass-card-static !p-4 border border-white/10 rounded-2xl w-[320px] shadow-2xl flex flex-col gap-4 animate-scale-in"
+                className="absolute left-0 md:right-0 top-[calc(100%+0.5rem)] z-50 glass-card-static !p-4 border border-white/10 rounded-2xl w-[320px] shadow-2xl flex flex-col gap-4 animate-scale-in"
                 style={{ background: "rgba(10, 14, 28, 0.95)", backdropFilter: "blur(20px)" }}
               >
-                {/* Calendar Header */}
                 <div className="flex items-center justify-between border-b border-white/5 pb-3">
-                  <button 
-                    type="button" 
-                    onClick={handlePrevMonth}
-                    className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 transition-colors flex items-center justify-center font-bold text-xs text-white"
-                  >
-                    ◀
-                  </button>
-                  <span className="text-xs font-black uppercase tracking-wider text-white">
-                    {MONTHS[currentCalendarMonth + 1]} {currentCalendarYear}
-                  </span>
-                  <button 
-                    type="button" 
-                    onClick={handleNextMonth}
-                    className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 transition-colors flex items-center justify-center font-bold text-xs text-white"
-                  >
-                    ▶
-                  </button>
+                  <button type="button" onClick={handlePrevMonth} className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 transition-colors flex items-center justify-center font-bold text-xs text-white">◀</button>
+                  <span className="text-xs font-black uppercase tracking-wider text-white">{MONTHS[currentCalendarMonth + 1]} {currentCalendarYear}</span>
+                  <button type="button" onClick={handleNextMonth} className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 transition-colors flex items-center justify-center font-bold text-xs text-white">▶</button>
                 </div>
-
-                {/* Day of Week Headers */}
                 <div className="grid grid-cols-7 gap-1 text-center">
-                  {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => (
-                    <span key={d} className="text-[9px] font-black uppercase text-[--text-muted]">{d}</span>
-                  ))}
+                  {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => <span key={d} className="text-[9px] font-black uppercase text-[--text-muted]">{d}</span>)}
                 </div>
-
-                {/* Days Grid */}
                 <div className="grid grid-cols-7 gap-1 text-center">
                   {calendarDays.map((day, idx) => {
                     if (!day) return <div key={`empty-${idx}`} />;
-                    
                     const formatted = format(day, "yyyy-MM-dd");
                     const isSelectedStart = startDate === formatted;
                     const isSelectedEnd = endDate === formatted;
                     const isWithinRange = startDate && endDate && formatted >= startDate && formatted <= endDate;
-                    
                     return (
                       <button
                         key={formatted}
                         type="button"
                         onClick={() => handleDayClick(day)}
-                        className={`w-9 h-9 rounded-xl text-[11px] font-black transition-all flex items-center justify-center ${
-                          isSelectedStart || isSelectedEnd
-                            ? "bg-[--accent-primary] text-white shadow-lg shadow-[--accent-primary]/25"
-                            : isWithinRange
-                            ? "bg-[--accent-primary]/15 text-[--accent-primary-light] border border-[--accent-primary]/10"
-                            : "hover:bg-white/5 text-white/70 hover:text-white"
-                        }`}
+                        className={`w-9 h-9 rounded-xl text-[11px] font-black transition-all flex items-center justify-center ${isSelectedStart || isSelectedEnd ? "bg-[--accent-primary] text-white shadow-lg shadow-[--accent-primary]/25" : isWithinRange ? "bg-[--accent-primary]/15 text-[--accent-primary-light] border border-[--accent-primary]/10" : "hover:bg-white/5 text-white/70 hover:text-white"}`}
                       >
                         {day.getDate()}
                       </button>
                     );
                   })}
                 </div>
-
-                {/* Quick Selection Shortcuts */}
                 <div className="border-t border-white/5 pt-3 grid grid-cols-2 gap-2">
                   {["Today", "Yesterday", "This Month", "Last 30 Days"].map((range) => (
-                    <button
-                      key={range}
-                      type="button"
-                      onClick={() => selectQuickRange(range)}
-                      className="py-2 bg-white/5 hover:bg-white/10 transition-colors text-[9px] font-black uppercase tracking-wider text-white/80 hover:text-white rounded-lg border border-white/5"
-                    >
-                      {range}
-                    </button>
+                    <button key={range} type="button" onClick={() => selectQuickRange(range)} className="py-2 bg-white/5 hover:bg-white/10 transition-colors text-[9px] font-black uppercase tracking-wider text-white/80 hover:text-white rounded-lg border border-white/5">{range}</button>
                   ))}
-                  <button
-                    type="button"
-                    onClick={() => selectQuickRange("All Time")}
-                    className="col-span-2 py-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-400 hover:text-rose-300 text-[9px] font-black uppercase tracking-wider transition-colors rounded-lg"
-                  >
-                    Reset Date Range
-                  </button>
+                  <button type="button" onClick={() => selectQuickRange("All Time")} className="col-span-2 py-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-400 hover:text-rose-300 text-[9px] font-black uppercase tracking-wider transition-colors rounded-lg">Reset Date Range</button>
                 </div>
               </div>
             </>
@@ -450,203 +321,14 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
         </div>
       </section>
 
-      {/* Main Ledger Event Trail (Crisp Financial Grid Table) */}
-      <section className="glass-card-static p-0 min-h-[400px] rounded-[24px] border border-white/10 overflow-hidden bg-white/[0.01] shadow-lg shadow-black/25">
-        {isLoading ? (
-          <div className="space-y-4 p-8">
-            {Array.from({ length: 5 }).map((_, index) => (
-              <div key={index} className="flex gap-4 items-center animate-pulse">
-                <div className="w-12 h-12 rounded-2xl bg-white/5" />
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-white/5 rounded w-1/4" />
-                  <div className="h-3 bg-white/5 rounded w-1/2" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : filteredLogs.length === 0 ? (
-          <EmptyState
-            title="No Ledger Entries Located"
-            description="No transaction matches the current date filters."
-            icon="🛡️"
-            glowColor="indigo"
-            action={
-              <button type="button"
-                onClick={() => {
-                  resetRange();
-                  setCurrentPage(1);
-                }}
-                className="btn-secondary !h-10 !px-6 text-[10px] font-black uppercase tracking-widest rounded-xl"
-              >
-                Restore Audit Stream
-              </button>
-            }
-          />
-        ) : (
-          <div className="w-full">
-            {/* Desktop Table View */}
-            <div className="overflow-x-auto hidden md:block">
-              <table className="min-w-full divide-y divide-white/10 table-fixed">
-                <thead className="bg-white/[0.02]">
-                  <tr className="border-b border-white/10">
-                    <th scope="col" className="w-[18%] px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Timestamp</th>
-                    <th scope="col" className="w-[15%] px-4 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Action type</th>
-                    <th scope="col" className="w-[17%] px-4 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Registry Account</th>
-                    <th scope="col" className="w-[35%] px-4 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Audit details</th>
-                    <th scope="col" className="w-[15%] px-4 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Amount Flow</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/10">
-                  {Object.entries(groupedLogs).map(([dateLabel, logsInGroup]) => (
-                    <Fragment key={dateLabel}>
-                      {/* Sticky Date Row Section */}
-                      <tr className="sticky top-0 z-10 border-y border-white/10 bg-[#0d121f]">
-                        <td colSpan={6} className="px-6 py-3 text-[11px] font-black uppercase tracking-[0.25em] text-[--accent-primary-light]">
-                          🗓️ {dateLabel}
-                        </td>
-                      </tr>
-
-                      {/* Entries within this Date Group */}
-                      {logsInGroup.map((log) => {
-                        const isDebit = isDebitLog(log);
-                        return (
-                          <tr key={log.id} className="transition-colors hover:bg-white/[0.02] border-b border-white/5">
-                            {/* Timestamp */}
-                            <td className="px-6 py-4.5 whitespace-nowrap">
-                              <p className="text-xs font-bold text-white tracking-tight">
-                                {log.created_at ? format(new Date(log.created_at), "MMM d, yyyy") : "—"}
-                              </p>
-                              <p className="text-[10px] font-mono text-[--text-muted] mt-1 tracking-widest uppercase">
-                                {log.created_at ? format(new Date(log.created_at), "hh:mm:ss a") : "—"}
-                              </p>
-                            </td>
-
-                            {/* Action Badge */}
-                            <td className="px-4 py-4.5 whitespace-nowrap">
-                              {getActionBadge(log.action_type)}
-                            </td>
-
-                            {/* Account Name */}
-                            <td className="px-4 py-4.5 whitespace-nowrap">
-                              <span className="text-xs font-bold text-white tracking-tight px-2 py-1 rounded bg-white/5 border border-white/10">
-                                {log.account_name || "System"}
-                              </span>
-                            </td>
-
-                            {/* Details */}
-                            <td className="px-4 py-4.5 text-xs text-[--text-secondary] leading-relaxed break-words" style={{ wordBreak: "break-word" }}>
-                              {log.details || "No transactional details provided"}
-                            </td>
-
-                            {/* Amount Flow */}
-                            <td className="px-4 py-4.5 whitespace-nowrap text-right">
-                              <p className={`text-base font-black tabular-nums tracking-tight ${isDebit ? "text-danger" : "text-success"}`}>
-                                {log.amount !== null ? `${isDebit ? "-" : "+"}${formatMoney(log.amount, getLogCurrency(log.account_id))}` : "—"}
-                              </p>
-                              {log.new_balance !== null && (
-                                <p className="text-[10px] font-bold text-[--text-muted] mt-1.5 uppercase tracking-widest opacity-60">
-                                  Bal: {formatMoney(log.new_balance, getLogCurrency(log.account_id))}
-                                </p>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </Fragment>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Mobile Cards View */}
-            <div className="divide-y divide-white/10 md:hidden">
-              {Object.entries(groupedLogs).map(([dateLabel, logsInGroup]) => (
-                <div key={dateLabel} className="flex flex-col">
-                  {/* Date section header on mobile */}
-                  <div className="sticky top-0 z-10 px-4 py-2.5 bg-[#0d121f] border-y border-white/10 flex items-center justify-between">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-[--accent-primary-light]">{dateLabel}</span>
-                    <span className="px-2 py-0.5 rounded-full text-[8px] font-black bg-white/5 text-[--text-muted] uppercase border border-white/5">
-                      {logsInGroup.length} logs
-                    </span>
-                  </div>
-
-                  {/* Individual Mobile Log Cards */}
-                  <div className="divide-y divide-white/5 bg-[#0a0e1c]/40">
-                    {logsInGroup.map((log) => {
-                      const isDebit = isDebitLog(log);
-                      return (
-                        <article key={log.id} className="p-4 flex flex-col gap-3">
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <p className="text-[10px] font-mono text-[--text-muted] tracking-wider uppercase">
-                                {log.created_at ? format(new Date(log.created_at), "hh:mm:ss a") : "—"}
-                              </p>
-                              <div className="flex items-center gap-2 mt-1">
-                                <span className="text-xs font-black text-white tracking-tight px-1.5 py-0.5 rounded bg-white/5 border border-white/10">
-                                  {log.account_name || "System"}
-                                </span>
-                              </div>
-                            </div>
-                            {getActionBadge(log.action_type)}
-                          </div>
-
-                          <p className="text-xs text-[--text-secondary] leading-relaxed break-words">{log.details || "No transactional details provided"}</p>
-
-                          <div className="flex items-end justify-between mt-1">
-                            <div>
-                              <p className={`text-base font-black tabular-nums tracking-tight ${isDebit ? "text-danger" : "text-success"}`}>
-                                {log.amount !== null ? `${isDebit ? "-" : "+"}${formatMoney(log.amount, getLogCurrency(log.account_id))}` : "—"}
-                              </p>
-                              {log.new_balance !== null && (
-                                <p className="text-[9px] font-bold text-[--text-muted] mt-0.5 uppercase tracking-widest opacity-60">
-                                  Bal: {formatMoney(log.new_balance, getLogCurrency(log.account_id))}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        </article>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Pagination controls */}
-        {totalFilteredCount > 0 && (
-          <div className="flex items-center justify-between border-t border-white/10 p-5 bg-white/[0.01]">
-            <button
-              type="button"
-              onClick={() => {
-                setCurrentPage((page) => Math.max(1, Math.min(totalPages, page) - 1));
-                window.scrollTo({ top: 0, behavior: "smooth" });
-              }}
-              disabled={activePage === 1}
-              className="btn-secondary !h-10 !px-4 text-[10px] font-black uppercase tracking-widest rounded-xl disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              Previous
-            </button>
-
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">
-              Page {activePage} of {totalPages}
-            </span>
-
-            <button
-              type="button"
-              onClick={() => {
-                setCurrentPage((page) => Math.min(totalPages, Math.min(totalPages, page) + 1));
-                window.scrollTo({ top: 0, behavior: "smooth" });
-              }}
-              disabled={activePage === totalPages}
-              className="btn-secondary !h-10 !px-4 text-[10px] font-black uppercase tracking-widest rounded-xl disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              Next
-            </button>
-          </div>
-        )}
-      </section>
+      <LedgerDataTable
+        logs={allFilteredLogs}
+        getLogCurrency={getLogCurrency}
+        isDebitLog={isDebitLog}
+        getActionBadge={getActionBadge}
+        formatMoney={formatMoney}
+        onReset={resetRange}
+      />
     </div>
   );
 }

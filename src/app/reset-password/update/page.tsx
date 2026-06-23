@@ -57,7 +57,7 @@ export default function UpdatePasswordPage() {
                 Enter your new secure password below
               </p>
 
-              <form onSubmit={handleSubmit} className="login-form">
+              <form method="post" onSubmit={handleSubmit} className="login-form">
                 <div className={`login-field ${focused === "password" ? "login-field--focused" : ""}`}>
                   <label className="login-label" htmlFor="update-password">New Password</label>
                   <div className="login-input-wrap">

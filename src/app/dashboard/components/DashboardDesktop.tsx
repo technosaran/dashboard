@@ -4,6 +4,7 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { useMemo, memo, useState } from "react";
 import Greeting from "@/components/greeting";
+import ReportDownloadButton from "./ReportDownloadButton";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { MODULE_KEYS } from "@/lib/modules";
 import dynamic from "next/dynamic";
@@ -183,6 +184,7 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
       {/* HEADER SECTION */}
       <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between px-2">
         <Greeting />
+        <ReportDownloadButton stats={stats} />
       </div>
 
       {/* INITIALIZATION PLAYGROUND BANNER */}
