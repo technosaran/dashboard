@@ -264,7 +264,7 @@ export default function FamilyClient({
           <span className="text-xs uppercase tracking-wider text-[--text-muted] font-semibold mb-2">Distribution</span>
           {Object.keys(recipientTotals).length > 0 && Object.values(recipientTotals).some(v => v > 0) ? (
             <div className="flex flex-col sm:flex-row items-center gap-6 h-full mt-2">
-              <div className="h-[140px] w-[140px] shrink-0">
+              <div className="h-[140px] w-[140px] sm:h-[160px] sm:w-[160px] shrink-0">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Tooltip 
@@ -377,11 +377,11 @@ export default function FamilyClient({
                       <h3 className="text-lg font-bold truncate">{person.name}</h3>
                       <p className="text-2xl font-black mt-1 text-[--accent-primary]">₹{(recipientTotals[person.id] || 0).toLocaleString()}</p>
                       
-                      <div className="flex flex-wrap sm:grid sm:grid-cols-[1fr_auto_auto] gap-2 mt-6">
+                      <div className="flex items-center gap-2 mt-6">
                         <button 
                           type="button" 
                           onClick={() => { setSelectedRecipient(person); setIsSendingMoney(true); }} 
-                          className="flex-1 min-w-[120px] h-11 rounded-xl font-bold text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-2 bg-gradient-to-r from-[--accent-primary] to-indigo-500 text-white shadow-md shadow-[--accent-primary]/20 hover:shadow-lg hover:shadow-[--accent-primary]/30 hover:-translate-y-0.5 whitespace-nowrap px-2"
+                          className="flex-1 h-11 rounded-xl font-bold text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-2 bg-gradient-to-r from-[--accent-primary] to-indigo-500 text-white shadow-md shadow-[--accent-primary]/20 hover:shadow-lg hover:shadow-[--accent-primary]/30 hover:-translate-y-0.5 px-2"
                         >
                           <Send className="w-4 h-4 shrink-0" /> <span className="truncate">Send Funds</span>
                         </button>
