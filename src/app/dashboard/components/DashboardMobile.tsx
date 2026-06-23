@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { format } from "date-fns";
 import { memo, useState, useMemo } from "react";
-import ReportDownloadButton from "./ReportDownloadButton";
+
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { MODULE_KEYS } from "@/lib/modules";
 
@@ -92,7 +92,7 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, accou
           </div>
         </div>
         <div className="flex justify-center">
-          <ReportDownloadButton stats={stats as any} />
+
         </div>
       </div>
 

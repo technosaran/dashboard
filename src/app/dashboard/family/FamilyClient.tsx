@@ -262,36 +262,59 @@ export default function FamilyClient({
         </div>
 
         {/* PIE CHART FOR DISTRIBUTION */}
-        <div className="bg-[#111111] border border-white/10 p-5 rounded-md flex flex-col min-h-[160px]">
+        <div className="bg-[#111111] border border-white/10 p-5 rounded-md flex flex-col min-h-[220px]">
           <span className="text-xs uppercase tracking-wider text-[--text-muted] font-semibold mb-2">Distribution</span>
           {Object.keys(recipientTotals).length > 0 && Object.values(recipientTotals).some(v => v > 0) ? (
-            <div className="h-[120px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
-                    itemStyle={{ color: '#fff', fontSize: '12px', fontWeight: 'bold' }}
-                    formatter={(value: any) => [`₹${Number(value).toLocaleString()}`, 'Total Spent']}
-                  />
-                  <Pie
-                    data={Object.entries(recipientTotals).map(([id, value], i) => ({
-                      name: recipients.find(r => r.id === id)?.name || "Unknown",
-                      value
-                    })).filter(d => d.value > 0)}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={35}
-                    outerRadius={55}
-                    paddingAngle={5}
-                    dataKey="value"
-                    stroke="none"
-                  >
-                    {Object.keys(recipientTotals).map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={getChartColour(index)} />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
+            <div className="flex flex-col sm:flex-row items-center gap-6 h-full mt-2">
+              <div className="h-[140px] w-[140px] shrink-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
+                      itemStyle={{ color: '#fff', fontSize: '12px', fontWeight: 'bold' }}
+                      formatter={(value: any) => [`₹${Number(value).toLocaleString()}`, 'Total Spent']}
+                    />
+                    <Pie
+                      data={Object.entries(recipientTotals)
+                        .filter(([_, value]) => value > 0)
+                        .map(([id, value], i) => ({
+                        name: recipients.find(r => r.id === id)?.name || "Unknown",
+                        value,
+                        color: getChartColour(i)
+                      }))}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={45}
+                      outerRadius={65}
+                      paddingAngle={5}
+                      dataKey="value"
+                      stroke="none"
+                    >
+                      {Object.entries(recipientTotals)
+                        .filter(([_, value]) => value > 0)
+                        .map((_, index) => (
+                        <Cell key={`cell-${index}`} fill={getChartColour(index)} />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex-1 grid grid-cols-1 gap-2 overflow-y-auto max-h-[140px] w-full pr-2 custom-scrollbar">
+                {Object.entries(recipientTotals)
+                  .filter(([_, value]) => value > 0)
+                  .map(([id, value], i) => {
+                    const recipientName = recipients.find(r => r.id === id)?.name || "Unknown";
+                    return (
+                      <div key={id} className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 truncate">
+                          <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: getChartColour(i) }} />
+                          <span className="text-xs text-[--text-secondary] truncate">{recipientName}</span>
+                        </div>
+                        <span className="text-xs font-bold text-white shrink-0">₹{value.toLocaleString()}</span>
+                      </div>
+                    );
+                })}
+              </div>
             </div>
           ) : (
              <div className="flex-1 flex items-center justify-center text-[10px] uppercase font-bold text-[--text-muted] tracking-widest text-center">
@@ -356,19 +379,19 @@ export default function FamilyClient({
                       <h3 className="text-lg font-bold truncate">{person.name}</h3>
                       <p className="text-2xl font-black mt-1 text-[--accent-primary]">₹{(recipientTotals[person.id] || 0).toLocaleString()}</p>
                       
-                      <div className="flex gap-2 mt-6">
+                      <div className="flex flex-wrap sm:grid sm:grid-cols-[1fr_auto_auto] gap-2 mt-6">
                         <button 
                           type="button" 
                           onClick={() => { setSelectedRecipient(person); setIsSendingMoney(true); }} 
-                          className="flex-1 h-11 rounded-xl font-bold text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-2 bg-gradient-to-r from-[--accent-primary] to-indigo-500 text-white shadow-md shadow-[--accent-primary]/20 hover:shadow-lg hover:shadow-[--accent-primary]/30 hover:-translate-y-0.5"
+                          className="flex-1 min-w-[120px] h-11 rounded-xl font-bold text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-2 bg-gradient-to-r from-[--accent-primary] to-indigo-500 text-white shadow-md shadow-[--accent-primary]/20 hover:shadow-lg hover:shadow-[--accent-primary]/30 hover:-translate-y-0.5 whitespace-nowrap px-2"
                         >
-                          <Send className="w-4 h-4" /> Send Funds
+                          <Send className="w-4 h-4 shrink-0" /> <span className="truncate">Send Funds</span>
                         </button>
                         
                         <button 
                           type="button" 
                           onClick={() => { setSelectedHistoryRecipient(person.id); setActiveView("history"); }} 
-                          className="w-11 h-11 rounded-xl bg-white/5 border border-white/10 text-[--text-muted] hover:text-white hover:bg-white/10 transition-all flex items-center justify-center hover:-translate-y-0.5"
+                          className="w-11 h-11 shrink-0 rounded-xl bg-white/5 border border-white/10 text-[--text-muted] hover:text-white hover:bg-white/10 transition-all flex items-center justify-center hover:-translate-y-0.5"
                           title="History"
                         >
                           <History className="w-4 h-4" />
@@ -377,7 +400,7 @@ export default function FamilyClient({
                         <button 
                           type="button" 
                           onClick={() => handleDeleteRecipient(person.id)} 
-                          className="w-11 h-11 rounded-xl bg-danger/10 border border-danger/20 text-danger hover:bg-danger/20 hover:text-white transition-all flex items-center justify-center hover:-translate-y-0.5"
+                          className="w-11 h-11 shrink-0 rounded-xl bg-danger/10 border border-danger/20 text-danger hover:bg-danger/20 hover:text-white transition-all flex items-center justify-center hover:-translate-y-0.5"
                           title="Remove"
                         >
                           <Trash2 className="w-4 h-4" />

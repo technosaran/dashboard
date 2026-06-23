@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { format } from "date-fns";
-import type { DashboardStats } from "./DashboardDesktop";
+import { useNetWorth } from "@/hooks/use-net-worth";
+import { useFinanceData } from "@/hooks/use-finance-data";
 
 // We must dynamically import @react-pdf/renderer to avoid SSR issues
 const PDFDownloadLink = dynamic(
@@ -14,7 +15,7 @@ const PDFDownloadLink = dynamic(
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 
 // We define the PDF document component
-const FinanceReportPDF = ({ stats }: { stats: DashboardStats }) => {
+const FinanceReportPDF = ({ stats }: { stats: any }) => {
 
   const styles = StyleSheet.create({
     page: { padding: 40, backgroundColor: "#ffffff", fontFamily: "Helvetica" },
@@ -114,8 +115,35 @@ const FinanceReportPDF = ({ stats }: { stats: DashboardStats }) => {
   );
 };
 
-export default function ReportDownloadButton({ stats }: { stats: any }) {
+export default function ReportDownloadButton() {
   const [mounted, setMounted] = useState(false);
+  const netWorthData = useNetWorth();
+  const { data } = useFinanceData();
+  const transactions = data?.transactions || [];
+
+  const stats = useMemo(() => {
+    let monthlySpend = 0;
+    let monthlyIncome = 0;
+    const now = new Date();
+    const currentMonthNum = now.getMonth();
+    const currentYearNum = now.getFullYear();
+
+    for (let i = 0; i < transactions.length; i++) {
+      const t = transactions[i];
+      if (!t.date) continue;
+      const tDate = new Date(t.date);
+      if (tDate.getMonth() === currentMonthNum && tDate.getFullYear() === currentYearNum) {
+        if (t.type === "income") monthlyIncome += Number(t.amount);
+        if (t.type === "expense") monthlySpend += Number(t.amount);
+      }
+    }
+
+    return {
+      ...netWorthData,
+      monthlyIncome,
+      monthlySpend,
+    };
+  }, [netWorthData, transactions]);
 
   useEffect(() => {
     setMounted(true);

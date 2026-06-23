@@ -7,6 +7,7 @@ import { toast } from "react-hot-toast";
 import { useFinanceData } from "@/hooks/use-finance-data";
 import type { FinanceData } from "@/hooks/use-finance-data";
 import { MODULE_KEYS, MODULE_DISPLAY_LABELS } from "@/lib/modules";
+import ReportDownloadButton from "../components/ReportDownloadButton";
 
 type TabKey = "profile" | "preferences" | "modules" | "defaults" | "danger";
 
@@ -173,13 +174,18 @@ export default function SettingsPage() {
   return (
     <div className="flex flex-col gap-[var(--section-gap)] animate-fade-in">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[--text-primary]">
-          Settings
-        </h1>
-        <p className="mt-1 text-[13px] md:text-sm text-[--text-secondary]">
-          Manage your account preferences, modules, and database defaults.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[--text-primary]">
+            Settings
+          </h1>
+          <p className="mt-1 text-[13px] md:text-sm text-[--text-secondary]">
+            Manage your account preferences, modules, and database defaults.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <ReportDownloadButton />
+        </div>
       </div>
 
       {/* Tabs */}
