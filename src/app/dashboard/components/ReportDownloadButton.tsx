@@ -11,10 +11,10 @@ const PDFDownloadLink = dynamic(
   { ssr: false }
 );
 
+import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+
 // We define the PDF document component
 const FinanceReportPDF = ({ stats }: { stats: DashboardStats }) => {
-  // Safe import for the components used inside the PDF
-  const { Document, Page, Text, View, StyleSheet } = require("@react-pdf/renderer");
 
   const styles = StyleSheet.create({
     page: { padding: 40, backgroundColor: "#ffffff", fontFamily: "Helvetica" },

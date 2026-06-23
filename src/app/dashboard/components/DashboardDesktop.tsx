@@ -49,7 +49,7 @@ type TrendDataEntry = {
   expense: number;
 };
 
-type DashboardStats = {
+export type DashboardStats = {
   totalBalance: number;
   netWorthINR: number;
   netWorthUSD: number;
