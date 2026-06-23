@@ -263,9 +263,9 @@ export default function FamilyClient({
         <div className="bg-[#111111] border border-white/10 p-5 rounded-md flex flex-col min-h-[220px]">
           <span className="text-xs uppercase tracking-wider text-[--text-muted] font-semibold mb-2">Distribution</span>
           {Object.keys(recipientTotals).length > 0 && Object.values(recipientTotals).some(v => v > 0) ? (
-            <div className="flex flex-col sm:flex-row items-center gap-6 h-full mt-2">
-              <div className="h-[140px] w-[140px] sm:h-[160px] sm:w-[160px] shrink-0">
-                <ResponsiveContainer width="100%" height="100%">
+            <div className="flex flex-col sm:flex-row items-center gap-6 h-full mt-2 min-w-0">
+              <div className="h-[140px] w-[140px] sm:h-[160px] sm:w-[160px] shrink-0 min-w-0 min-h-0">
+                <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                   <PieChart>
                     <Tooltip 
                       contentStyle={{ backgroundColor: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
