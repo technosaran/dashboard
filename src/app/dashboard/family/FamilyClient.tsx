@@ -228,10 +228,10 @@ export default function FamilyClient({
   }, 0);
 
   return (
-    <div className="flex flex-col gap-8 w-full max-w-none px-6 pb-10 min-w-0 overflow-x-hidden md:overflow-visible">
+    <div className="flex flex-col gap-[var(--section-gap)] animate-fade-in">
       {/* HEADER */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-6 min-w-0">
-        <div className="min-w-0">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-6">
+        <div>
           <h1 className="text-2xl font-bold text-white tracking-tight">Transfers & Contacts</h1>
           <p className="text-sm text-[--text-muted] mt-1">Manage family members and execute secure transfers.</p>
         </div>
@@ -247,9 +247,9 @@ export default function FamilyClient({
       </div>
 
       {/* STATS STRIP */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-w-0 w-full">
-        <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 min-w-0">
-          <div className="bg-[#111111] border border-white/10 p-5 rounded-md flex flex-col gap-1 min-w-0">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="bg-[#111111] border border-white/10 p-5 rounded-md flex flex-col gap-1">
             <span className="text-xs uppercase tracking-wider text-[--text-muted] font-semibold">Total Contacts</span>
             <span className="text-3xl font-black text-white mt-1">{recipients.length}</span>
           </div>
@@ -260,11 +260,11 @@ export default function FamilyClient({
         </div>
 
         {/* PIE CHART FOR DISTRIBUTION */}
-        <div className="bg-[#111111] border border-white/10 p-5 rounded-md flex flex-col min-h-[220px] min-w-0 overflow-hidden">
+        <div className="bg-[#111111] border border-white/10 p-5 rounded-md flex flex-col min-h-[220px] overflow-hidden">
           <span className="text-xs uppercase tracking-wider text-[--text-muted] font-semibold mb-2">Distribution</span>
           {Object.keys(recipientTotals).length > 0 && Object.values(recipientTotals).some(v => v > 0) ? (
-            <div className="flex flex-col sm:flex-row items-center gap-6 h-full mt-2 min-w-0">
-              <div className="h-[140px] w-[140px] sm:h-[160px] sm:w-[160px] shrink-0 min-w-0 min-h-0">
+            <div className="flex flex-col sm:flex-row items-center gap-6 h-full mt-2">
+              <div className="h-[140px] w-[140px] sm:h-[160px] sm:w-[160px] shrink-0">
                 <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                   <PieChart>
                     <Tooltip 
@@ -317,9 +317,9 @@ export default function FamilyClient({
       </div>
 
       {/* MAIN CONTENT AREA */}
-      <div className="flex flex-col gap-6 min-w-0 w-full">
+      <div className="flex flex-col gap-6">
         {/* TAB NAVIGATION */}
-        <div className="flex items-center gap-6 border-b border-white/10 min-w-0 overflow-x-auto no-scrollbar">
+        <div className="flex items-center gap-6 border-b border-white/10 overflow-x-auto no-scrollbar">
           <button
             onClick={() => setActiveView("contacts")}
             className={`pb-3 text-sm font-medium transition-colors border-b-2 ${activeView === "contacts" ? "border-[--accent-primary] text-[--accent-primary]" : "border-transparent text-[--text-muted] hover:text-white"}`}
@@ -336,8 +336,8 @@ export default function FamilyClient({
 
         {/* TAB: CONTACTS */}
         {activeView === "contacts" && (
-          <div className="flex flex-col gap-6 min-w-0">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 min-w-0">
+          <div className="flex flex-col gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {isLoading ? (
                 Array.from({ length: 6 }).map((_, i) => (
                   <div key={i} className="glass-card rich-border min-h-[260px] p-6 animate-pulse" />

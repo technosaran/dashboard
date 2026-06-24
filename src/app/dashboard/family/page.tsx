@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import { createClient } from "@/lib/supabase-server";
 import FamilyClient from "./FamilyClient";
 import { redirect } from "next/navigation";
@@ -15,6 +14,7 @@ export const dynamic = "force-dynamic";
 
 export default async function FamilyPage() {
   const supabase = await createClient();
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -24,11 +24,8 @@ export default async function FamilyPage() {
   }
 
   return (
-    <Suspense fallback={null}>
-      <ModuleGuard moduleKey="Family">
-        <FamilyClient />
-      </ModuleGuard>
-    </Suspense>
+    <ModuleGuard moduleKey="Family">
+      <FamilyClient />
+    </ModuleGuard>
   );
 }
-
