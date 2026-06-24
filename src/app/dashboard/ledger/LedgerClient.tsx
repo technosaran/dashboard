@@ -15,6 +15,8 @@ type LedgerLog = {
   previous_balance: number | null;
   new_balance: number | null;
   details: string | null;
+  source_type: string | null;
+  source_id: string | null;
 };
 
 const MONTHS = [
@@ -328,6 +330,16 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
         getActionBadge={getActionBadge}
         formatMoney={formatMoney}
         onReset={resetRange}
+        onRevert={async (logId) => {
+          const { revertLedgerTransaction } = await import("./actions");
+          const { toast } = await import("react-hot-toast");
+          const res = await revertLedgerTransaction(logId);
+          if (res.success) {
+            toast.success("Transaction reverted successfully");
+          } else {
+            toast.error(res.error || "Failed to revert transaction");
+          }
+        }}
       />
     </div>
   );

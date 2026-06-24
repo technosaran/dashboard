@@ -24,6 +24,8 @@ type LedgerLog = {
   previous_balance: number | null;
   new_balance: number | null;
   details: string | null;
+  source_type: string | null;
+  source_id: string | null;
 };
 
 interface LedgerDataTableProps {
@@ -33,6 +35,7 @@ interface LedgerDataTableProps {
   getActionBadge: (type: string) => React.ReactNode;
   formatMoney: (val: number | null, currency: string) => string;
   onReset: () => void;
+  onRevert: (logId: string) => void;
 }
 
 const columnHelper = createColumnHelper<LedgerLog>();
@@ -44,7 +47,9 @@ export default function LedgerDataTable({
   getActionBadge,
   formatMoney,
   onReset,
+  onRevert,
 }: LedgerDataTableProps) {
+  const [isReverting, setIsReverting] = useState<string | null>(null);
   const [sorting, setSorting] = useState<SortingState>([]);
 
   const columns = useMemo(
@@ -115,8 +120,32 @@ export default function LedgerDataTable({
           );
         },
       }),
+      columnHelper.display({
+        id: "actions",
+        header: "",
+        cell: (info) => {
+          const log = info.row.original;
+          if (!log.source_type || log.source_type === "account") return null;
+          return (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={async () => {
+                  setIsReverting(log.id);
+                  await onRevert(log.id);
+                  setIsReverting(null);
+                }}
+                disabled={isReverting === log.id}
+                className="text-[10px] font-black uppercase tracking-widest text-danger hover:text-white bg-danger/10 hover:bg-danger/20 border border-danger/20 px-3 py-1.5 rounded-lg transition-all disabled:opacity-50"
+              >
+                {isReverting === log.id ? "..." : "Revert"}
+              </button>
+            </div>
+          );
+        },
+      }),
     ],
-    [getLogCurrency, isDebitLog, getActionBadge, formatMoney]
+    [getLogCurrency, isDebitLog, getActionBadge, formatMoney, onRevert, isReverting]
   );
 
   const table = useReactTable({
@@ -218,6 +247,20 @@ export default function LedgerDataTable({
                     </p>
                   )}
                 </div>
+                {log.source_type && log.source_type !== "account" && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setIsReverting(log.id);
+                      await onRevert(log.id);
+                      setIsReverting(null);
+                    }}
+                    disabled={isReverting === log.id}
+                    className="text-[9px] font-black uppercase tracking-widest text-danger hover:text-white bg-danger/10 hover:bg-danger/20 border border-danger/20 px-2 py-1 rounded transition-all disabled:opacity-50"
+                  >
+                    {isReverting === log.id ? "..." : "Revert"}
+                  </button>
+                )}
               </div>
             </article>
           );
