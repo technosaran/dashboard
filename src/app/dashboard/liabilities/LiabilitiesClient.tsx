@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { addLiability, updateLiability, deleteLiability } from "./actions";
@@ -9,8 +9,12 @@ import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { format, parseISO } from "date-fns";
 import { Drawer } from "@/components/ui/drawer";
-import Link from "next/link";
-import { EmptyState } from "@/components/empty-state";
+
+import dynamic from "next/dynamic";
+const ResponsiveContainer = dynamic(() => import("recharts").then((mod) => mod.ResponsiveContainer), { ssr: false });
+import { PieChart, Pie, Cell, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip as RechartsTooltip, Legend } from "recharts";
+
+import LiabilitiesDataTable from "./components/LiabilitiesDataTable";
 
 const CATEGORIES = [
   { label: "Personal Loan", icon: "👤" },
@@ -22,19 +26,29 @@ const CATEGORIES = [
   { label: "Others", icon: "📄" },
 ];
 
+const getColorByLabel = (label: string) => {
+  let hash = 0;
+  for (let i = 0; i < label.length; i++) {
+    hash = label.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const colors = [
+    "#06B6D4", "#F97316", "#8B5CF6", "#22C55E", "#EC4899", 
+    "#EAB308", "#3B82F6", "#F43F5E", "#14B8A6", "#84CC16", 
+    "#6366F1", "#FB7185"
+  ];
+  return colors[Math.abs(hash) % colors.length];
+};
+
 export default function LiabilitiesClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { liabilities, ledgerLogs, accounts }, mutate } = useFinanceData(initialData);
   const searchParams = useSearchParams();
-  const [showAddModal, setShowAddModal] = useState(searchParams.get("action") === "new");
+  const [showAddModal, setShowAddModal] = useState(searchParams?.get("action") === "new");
   const [submitting, withLock] = useSubmitLock();
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"loans" | "history">("loans");
+  const [activeView, setActiveView] = useState<"overview" | "records">("overview");
 
-  const liabilityLogs = useMemo(() => {
-    return ledgerLogs
-      .filter(log => log.details?.toLowerCase().includes("liability") || log.details?.toLowerCase().includes("loan") || log.details?.toLowerCase().includes("debt"))
-      .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
-  }, [ledgerLogs]);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -50,9 +64,39 @@ export default function LiabilitiesClient({ initialData }: { initialData?: Finan
 
   const stats = useMemo(() => {
     const totalDebt = liabilities.reduce((s, l) => s + Number(l.remaining_amount), 0);
+    const totalPrincipal = liabilities.reduce((s, l) => s + Number(l.total_amount), 0);
     const monthlyEMI = liabilities.reduce((s, l) => s + Number(l.monthly_payment || 0), 0);
     const highestInterest = liabilities.reduce((max, l) => Math.max(max, Number(l.interest_rate || 0)), 0);
-    return { totalDebt, monthlyEMI, highestInterest };
+    const totalPaid = totalPrincipal - totalDebt;
+    const payoffPct = totalPrincipal > 0 ? (totalPaid / totalPrincipal) * 100 : 0;
+    
+    return { totalDebt, monthlyEMI, highestInterest, totalPrincipal, totalPaid, payoffPct };
+  }, [liabilities]);
+
+  const pieChartData = useMemo(() => {
+    const catMap: Record<string, number> = {};
+    liabilities.forEach(l => {
+      const cat = l.category || "Others";
+      catMap[cat] = (catMap[cat] || 0) + Number(l.remaining_amount);
+    });
+    return Object.entries(catMap).map(([name, value]) => ({
+      name,
+      value,
+      fill: getColorByLabel(name)
+    })).sort((a, b) => b.value - a.value);
+  }, [liabilities]);
+
+  const barChartData = useMemo(() => {
+    return liabilities.map(l => {
+      const remaining = Number(l.remaining_amount);
+      const paid = Math.max(0, Number(l.total_amount) - remaining);
+      return {
+        name: l.name.substring(0, 10) + (l.name.length > 10 ? "..." : ""),
+        Paid: paid,
+        Remaining: remaining,
+        Total: Number(l.total_amount)
+      };
+    }).sort((a, b) => b.Remaining - a.Remaining).slice(0, 10);
   }, [liabilities]);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -82,20 +126,6 @@ export default function LiabilitiesClient({ initialData }: { initialData?: Finan
     });
   }
 
-  async function handleRevert(logId: string) {
-    if (!confirm("Revert this action? This will undo the ledger entry and any associated balance changes.")) return;
-    await withLock(async () => {
-      // Note: revertLedgerLog is imported from alternative-assets/actions.ts or a shared location
-      const res = await revertLedgerLog(logId);
-      if (!res.error) {
-        toast.success("Action reverted successfully");
-        mutate();
-      } else {
-        toast.error(res.error);
-      }
-    });
-  }
-
   async function handleDeleteLiability(id: string) {
     if (!confirm("Permanently purge this debt record?")) return;
     await withLock(async () => {
@@ -109,6 +139,13 @@ export default function LiabilitiesClient({ initialData }: { initialData?: Finan
     });
   }
 
+  const formatCurrency = (value: number) => {
+    if (value >= 10000000) return `₹${(value / 10000000).toFixed(2)}Cr`;
+    if (value >= 100000) return `₹${(value / 100000).toFixed(2)}L`;
+    if (value >= 1000) return `₹${(value / 1000).toFixed(1)}k`;
+    return `₹${value.toLocaleString()}`;
+  };
+
   return (
     <div className="flex flex-col gap-8 animate-in fade-in duration-700">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
@@ -116,230 +153,192 @@ export default function LiabilitiesClient({ initialData }: { initialData?: Finan
           <h1 className="text-4xl font-black tracking-tight text-white uppercase italic">Loans & Debts</h1>
           <p className="text-[10px] text-[--text-muted] font-black uppercase tracking-[0.4em] mt-2 ml-1">Liability Management Terminal</p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex bg-white/5 p-1 rounded-2xl border border-white/10">
-            <button type="button" 
-              disabled={submitting}
-              onClick={() => setActiveTab("loans")}
-              className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === "loans" ? "bg-rose-500 text-white shadow-lg" : "text-[--text-muted] hover:text-white"}`}
-            >
-              Active Loans
-            </button>
-            <button type="button" 
-              disabled={submitting}
-              onClick={() => setActiveTab("history")}
-              className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === "history" ? "bg-rose-500 text-white shadow-lg" : "text-[--text-muted] hover:text-white"}`}
-            >
-              History
-            </button>
-          </div>
-          <button type="button" onClick={() => setShowAddModal(true)} disabled={submitting} className="btn-primary !h-11 px-6 !bg-rose-500 hover:!bg-rose-600 shadow-[0_0_30px_rgba(244,63,94,0.3)] text-xs font-bold uppercase tracking-wider">{submitting ? "Working..." : "Record Liability"}</button>
-        </div>
+        <button type="button" onClick={() => setShowAddModal(true)} disabled={submitting} className="btn-primary !h-11 px-6 !bg-rose-500 hover:!bg-rose-600 shadow-[0_0_30px_rgba(244,63,94,0.3)] text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
+          Record Liability
+        </button>
       </div>
 
-      {activeTab === "loans" ? (
-        <>
-          {liabilities.length === 0 ? (
-            <EmptyState
-              title="No Active Liabilities"
-              description="Track loans, EMIs, credit cards, and other debt obligations. Monitor repayment progress and stay on top of your financial commitments."
-              icon={
-                <svg className="w-8 h-8 text-rose-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" /></svg>
-              }
-              glowColor="rose"
-              action={
-                <button type="button" onClick={() => setShowAddModal(true)} disabled={submitting} className="btn-primary !bg-rose-500 hover:!bg-rose-600 shadow-xl shadow-rose-500/20 mt-8 flex items-center gap-2">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
-                  Record First Liability
-                </button>
-              }
-            />
-          ) : (
-          <>
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              { label: "Total Exposure", value: stats.totalDebt, sub: "Outstanding Principal", color: "text-rose-500", icon: "📉" },
-              { label: "Monthly Commitment", value: stats.monthlyEMI, sub: "Combined EMIs", color: "text-orange-400", icon: "💸" },
-              { label: "Weighted Interest", value: stats.highestInterest, sub: "Max APR %", color: "text-white", icon: "🔥", isPercent: true },
-            ].map((s, i) => (
-              <div key={i} className="glass-card-static p-8 border-white/5 hover:border-white/10 transition-all group relative overflow-hidden rounded-[32px]">
-                <div className="absolute -right-6 -top-6 text-6xl opacity-[0.03] group-hover:opacity-[0.08] transition-opacity rotate-12 grayscale">{s.icon}</div>
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-4 opacity-60">{s.label}</p>
-                <p className={`text-3xl font-black tabular-nums ${s.color} tracking-tight`}>
-                  {s.isPercent ? `${s.value.toFixed(2)}%` : `₹${s.value.toLocaleString()}`}
-                </p>
-                <div className="flex items-center gap-2 mt-3">
-                   <div className="w-1 h-1 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)]" />
-                   <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-widest opacity-40">{s.sub}</p>
-                </div>
-              </div>
-            ))}
+      {liabilities.length === 0 ? (
+        <div className="glass-card-static relative overflow-hidden p-8 md:p-16 text-center flex flex-col items-center justify-center min-h-[450px]">
+          <div className="absolute -top-24 -left-24 w-96 h-96 bg-rose-500/10 rounded-full blur-[100px] pointer-events-none" />
+          <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-orange-500/10 rounded-full blur-[100px] pointer-events-none" />
+          <div className="relative mb-6 p-6 rounded-3xl bg-white/[0.02] border border-white/5 shadow-2xl">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-rose-500/15 to-orange-500/15 border border-rose-500/25 flex items-center justify-center shadow-[0_0_30px_-5px_rgba(244,63,94,0.3)] animate-pulse">
+              <span className="text-3xl">📉</span>
+            </div>
           </div>
-
-          {/* Liabilities Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {liabilities.map((l) => {
-              const category = CATEGORIES.find(c => c.label === l.category) || CATEGORIES[6];
-              const progress = (Number(l.total_amount) - Number(l.remaining_amount)) / Number(l.total_amount) * 100;
-              
-              return (
-                <div key={l.id} className="glass-card-static flex flex-col min-h-[340px] p-8 relative overflow-hidden transition-all hover:scale-[1.02] group border-white/5 bg-gradient-to-br from-rose-500/[0.02] to-transparent rounded-[40px]">
-                  <div className="absolute top-0 left-0 right-0 h-[4px] bg-gradient-to-r from-rose-500 via-orange-500 to-rose-500 opacity-40 group-hover:opacity-100 transition-opacity" />
-                  
-                  <div className="flex justify-between items-start mb-10">
-                    <div className="flex items-center gap-5">
-                      <div className="w-14 h-14 rounded-3xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-2xl shadow-2xl group-hover:scale-110 transition-transform">
-                        {category.icon}
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <h3 className="text-xl font-black text-white group-hover:text-rose-400 transition-colors leading-tight">{l.name}</h3>
-                        <div className="flex items-center gap-2">
-                           <span className="text-[9px] font-black text-rose-400 uppercase tracking-widest bg-rose-500/10 px-2 py-0.5 rounded-md border border-rose-500/20">{l.category}</span>
-                           {l.interest_rate && (
-                            <span className="text-[9px] font-black text-white uppercase tracking-widest bg-white/5 px-2 py-0.5 rounded-md border border-white/10">
-                              {l.interest_rate}% APR
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                       <button type="button" onClick={() => {
-                         setEditingId(l.id);
-                         setFormData({
-                           name: l.name,
-                           category: l.category,
-                           total_amount: l.total_amount.toString(),
-                           remaining_amount: l.remaining_amount.toString(),
-                           interest_rate: (l.interest_rate || "").toString(),
-                           monthly_payment: (l.monthly_payment || "").toString(),
-                           due_date: l.due_date || "",
-                           notes: l.notes || "", account_id: "",
-                         });
-                         setShowAddModal(true);
-                       }} className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 text-[--text-muted] flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all shadow-lg">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                       </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-8 mt-auto">
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-baseline">
-                        <span className="text-[10px] font-black text-[--text-muted] uppercase tracking-[0.2em] opacity-50">Repayment Progress</span>
-                        <span className="text-[10px] font-black text-white tabular-nums">{progress.toFixed(1)}%</span>
-                      </div>
-                      <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
-                        <div className="h-full bg-gradient-to-r from-rose-500 to-orange-400 transition-all duration-1000 relative" style={{ width: `${Math.min(progress, 100)}%` }}>
-                           <div className="absolute inset-0 bg-[length:20px_20px] bg-[linear-gradient(45deg,rgba(255,255,255,0.15)_25%,transparent_25%,transparent_50%,rgba(255,255,255,0.15)_50%,rgba(255,255,255,0.15)_75%,transparent_75%,transparent)] animate-[shimmer_2s_linear_infinite]" />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="p-4 rounded-3xl bg-white/[0.02] border border-white/5 backdrop-blur-md">
-                        <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-widest mb-1 opacity-50">Outstanding</p>
-                        <p className="text-[15px] font-black text-white tabular-nums">₹{l.remaining_amount.toLocaleString()}</p>
-                      </div>
-                      <div className="p-4 rounded-3xl bg-white/[0.02] border border-white/5 text-right backdrop-blur-md">
-                        <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-widest mb-1 opacity-50">Monthly EMI</p>
-                        <p className="text-[15px] font-black text-orange-400 tabular-nums">₹{(l.monthly_payment || 0).toLocaleString()}</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center justify-between pt-4 border-t border-white/5">
-                       {l.due_date ? (
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse shadow-[0_0_8px_rgba(249,115,22,0.5)]" />
-                          <span className="text-[10px] font-black text-[--text-muted] uppercase tracking-widest opacity-60">Due: {format(parseISO(l.due_date), "MMM d, yyyy")}</span>
-                        </div>
-                      ) : <div />}
-                      <button type="button" disabled={submitting} onClick={() => handleDeleteLiability(l.id)} className="text-rose-500 hover:text-rose-400 transition-colors disabled:opacity-50">
-                         <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          </>
-          )}
-        </>
-      ) : (
-        <div className="glass-card-static rounded-[40px] overflow-hidden border-white/5">
-          <div className="p-8 border-b border-white/5 flex items-center justify-between">
-            <h3 className="text-sm font-black uppercase tracking-widest text-white">Repayment History</h3>
-            <p className="text-[10px] font-black text-[--text-muted] uppercase tracking-widest">{liabilityLogs.length} Records Found</p>
-          </div>
-          <div className="table-responsive-wrapper">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-white/5 text-[9px] text-[--text-muted] uppercase font-black tracking-widest bg-white/[0.01]">
-                  <th className="py-4 px-8">Timestamp</th>
-                  <th className="py-4 px-8">Action</th>
-                  <th className="py-4 px-8">Details</th>
-                  <th className="py-4 px-8 text-right">Balance Change</th>
-                  <th className="py-4 px-8 text-right">Ops</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {liabilityLogs.map((log) => {
-                  const isOut = log.action_type === "CREATE" || log.action_type === "ADJUST_UP";
-                  return (
-                    <tr key={log.id} className="hover:bg-white/[0.02] transition-colors group">
-                      <td className="py-5 px-8">
-                        <p className="text-[11px] font-bold text-white/80">{log.created_at ? format(new Date(log.created_at), "MMM d, yyyy") : "N/A"}</p>
-                        <p className="text-[9px] font-bold text-[--text-muted] mt-0.5">{log.created_at ? format(new Date(log.created_at), "HH:mm:ss") : ""}</p>
-                      </td>
-                      <td className="py-5 px-8">
-                        <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest ${
-                          log.action_type === "CREATE" ? "bg-rose-500/10 text-rose-400 border border-rose-500/20" :
-                          log.action_type === "DELETE" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
-                          "bg-orange-500/10 text-orange-400 border border-orange-500/20"
-                        }`}>
-                          {log.action_type}
-                        </span>
-                      </td>
-                      <td className="py-5 px-8">
-                        <p className="text-[12px] font-bold text-white group-hover:text-rose-400 transition-colors">{log.details}</p>
-                      </td>
-                      <td className="py-5 px-8 text-right tabular-nums">
-                        <p className={`text-[12px] font-black ${isOut ? "text-rose-400" : "text-emerald-400"}`}>
-                          {log.amount ? `${isOut ? "+" : "-"}₹${log.amount.toLocaleString()}` : "—"}
-                        </p>
-                      </td>
-                      <td className="py-5 px-8 text-right">
-                         <button type="button" 
-                           onClick={() => handleRevert(log.id)}
-                           disabled={submitting}
-                           className="text-[9px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-all bg-rose-500/5 px-3 py-1 rounded-lg border border-rose-500/10"
-                         >
-                           Revert
-                         </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-                {liabilityLogs.length === 0 && (
-                  <tr>
-                    <td colSpan={4} className="py-20 text-center text-[11px] font-bold text-[--text-muted] uppercase tracking-[0.3em]">No historical records detected</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+          <h3 className="text-2xl md:text-3xl font-black text-[--text-primary] tracking-tight">No Active Liabilities</h3>
+          <p className="text-sm text-[--text-muted] mt-3 max-w-lg mx-auto font-medium leading-relaxed">Track loans, EMIs, credit cards, and other debt obligations. Monitor repayment progress and stay on top of your financial commitments.</p>
+          <div className="mt-8 flex justify-center">
+             <button onClick={() => setShowAddModal(true)} className="btn-primary !bg-rose-500 hover:!bg-rose-600">Record First Liability</button>
           </div>
         </div>
+      ) : (
+      <>
+        {/* Top Stats Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="glass-card-static p-6 border-white/5">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Total Exposure</p>
+            <p className="text-2xl md:text-3xl font-black text-rose-500">₹{stats.totalDebt.toLocaleString()}</p>
+            <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Outstanding Principal</p>
+          </div>
+          <div className="glass-card-static p-6 border-white/5">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Monthly Commitment</p>
+            <p className="text-2xl md:text-3xl font-black text-orange-400">₹{stats.monthlyEMI.toLocaleString()}</p>
+            <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Combined EMIs</p>
+          </div>
+          <div className="glass-card-static p-6 border-white/5">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Weighted Interest</p>
+            <p className="text-2xl md:text-3xl font-black text-white">{stats.highestInterest.toFixed(1)}%</p>
+            <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Max APR %</p>
+          </div>
+          <div className="glass-card-static p-6 border-white/5">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Total Paid</p>
+            <p className="text-2xl md:text-3xl font-black text-white">₹{stats.totalPaid.toLocaleString()}</p>
+            <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Cleared Debt</p>
+          </div>
+          <div className="glass-card-static p-6 border-white/5 bg-gradient-to-br from-rose-500/10 to-transparent">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Payoff Est</p>
+            <p className={`text-2xl md:text-3xl font-black text-white`}>
+              {stats.payoffPct.toFixed(1)}%
+            </p>
+            <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Global Progress</p>
+          </div>
+        </div>
+
+        {/* Tab Switcher */}
+        <div className="flex border-b border-white/10">
+          <button
+            onClick={() => setActiveView("overview")}
+            className={`px-6 py-3 text-sm font-bold transition-colors border-b-2 ${
+              activeView === "overview"
+                ? "border-rose-500 text-rose-500"
+                : "border-transparent text-[--text-muted] hover:text-white"
+            }`}
+          >
+            Overview
+          </button>
+          <button
+            onClick={() => setActiveView("records")}
+            className={`px-6 py-3 text-sm font-bold transition-colors border-b-2 flex items-center gap-2 ${
+              activeView === "records"
+                ? "border-rose-500 text-rose-500"
+                : "border-transparent text-[--text-muted] hover:text-white"
+            }`}
+          >
+            Debt Records
+            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white/10 text-[9px] text-white">
+              {liabilities.length}
+            </span>
+          </button>
+        </div>
+
+        {/* View Content */}
+        {activeView === "overview" ? (
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Paydown Bar Chart */}
+              <div className="glass-card-static p-6 lg:col-span-2 min-h-[400px] flex flex-col">
+                <div className="flex justify-between items-start mb-6">
+                  <div>
+                    <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[--text-muted]">Debt vs Paid (Top 10)</h3>
+                    <p className="text-2xl font-black mt-2 text-white">Paydown Analysis</p>
+                  </div>
+                </div>
+                <div className="flex-1 min-h-[250px] w-full mt-4 -ml-4">
+                  {mounted && (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={barChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }} layout="vertical">
+                        <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="rgba(255,255,255,0.05)" />
+                        <XAxis type="number" tickFormatter={formatCurrency} axisLine={false} tickLine={false} tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 12 }} />
+                        <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 12 }} width={100} />
+                        <RechartsTooltip 
+                          contentStyle={{ backgroundColor: "rgba(10,10,10,0.9)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px", boxShadow: "0 10px 25px rgba(0,0,0,0.5)" }}
+                          itemStyle={{ color: "#fff", fontWeight: "bold" }}
+                          formatter={(value: any) => [`₹${Number(value).toLocaleString()}`, ""]}
+                        />
+                        <Legend wrapperStyle={{ paddingTop: "20px" }} />
+                        <Bar dataKey="Paid" stackId="a" fill="#10B981" radius={[0, 0, 0, 0]} />
+                        <Bar dataKey="Remaining" stackId="a" fill="#F43F5E" radius={[0, 4, 4, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+              </div>
+
+              {/* Allocation Pie Chart */}
+              <div className="glass-card-static p-6 flex flex-col items-center justify-center relative min-h-[400px]">
+                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[--text-muted] absolute top-6 left-6">Debt Exposure</h3>
+                <div className="w-full h-[250px] mt-8">
+                  {mounted && pieChartData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={pieChartData} cx="50%" cy="50%" innerRadius={60} outerRadius={85} paddingAngle={5} dataKey="value">
+                          {pieChartData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} stroke="rgba(255,255,255,0.05)" strokeWidth={2} />)}
+                        </Pie>
+                        <RechartsTooltip 
+                          contentStyle={{ backgroundColor: "rgba(10,10,10,0.9)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px" }}
+                          itemStyle={{ color: "#fff", fontWeight: "bold" }}
+                          formatter={(value: any) => [`₹${Number(value).toLocaleString()}`, "Debt"]}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center text-[--text-muted]">
+                       <span className="text-3xl mb-2">📊</span>
+                       <span className="text-xs uppercase tracking-widest font-black">No Category Data</span>
+                    </div>
+                  )}
+                </div>
+                {pieChartData.length > 0 && (
+                  <div className="flex flex-wrap justify-center gap-3 mt-4 w-full">
+                    {pieChartData.slice(0, 5).map((entry, index) => (
+                      <div key={index} className="flex items-center gap-1.5 text-xs">
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: entry.fill }} />
+                        <span className="text-[--text-secondary] font-medium">{entry.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <LiabilitiesDataTable 
+              liabilities={liabilities} 
+              onEdit={(l) => {
+                setEditingId(l.id);
+                setFormData({
+                  name: l.name,
+                  category: l.category || "Personal Loan",
+                  total_amount: l.total_amount.toString(),
+                  remaining_amount: l.remaining_amount.toString(),
+                  interest_rate: (l.interest_rate || "").toString(),
+                  monthly_payment: (l.monthly_payment || "").toString(),
+                  due_date: l.due_date || "",
+                  notes: l.notes || "", 
+                  account_id: "",
+                });
+                setShowAddModal(true);
+              }} 
+              onDelete={handleDeleteLiability} 
+              onAdd={() => setShowAddModal(true)} 
+            />
+          </div>
+        )}
+      </>
       )}
 
+      {/* Add / Edit Modal */}
       {showAddModal && (
         <Drawer
           isOpen={showAddModal}
           onClose={() => { setShowAddModal(false); setEditingId(null); }}
           title={editingId ? "Update Liability" : "Record Liability"}
         >
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6 p-2">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-3">
                 <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Liability Name</label>
@@ -398,7 +397,7 @@ export default function LiabilitiesClient({ initialData }: { initialData?: Finan
 
             <div className="pt-4 mt-8">
               <button type="submit" disabled={submitting} className="btn-primary w-full h-12 shadow-xl shadow-[--danger]/20 !bg-danger hover:!bg-rose-600 text-[11px] font-black uppercase tracking-widest">
-                {submitting ? "Processing..." : editingId ? "Update Record" : "Establish Liability"}
+                {submitting ? "Processing..." : (editingId ? "Update Record" : "Register Liability")}
               </button>
             </div>
           </form>

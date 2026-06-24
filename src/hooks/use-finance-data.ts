@@ -232,10 +232,40 @@ export function useFinanceData(initialData?: FinanceData) {
     options?: unknown
   ) => {
     if (data !== undefined) {
-      await summarySWR.mutate(
-        data as Parameters<typeof summarySWR.mutate>[0],
-        options as Parameters<typeof summarySWR.mutate>[1]
-      );
+      const d = data as FinanceData;
+      await Promise.all([
+        summarySWR.mutate({
+          profile: d.profile,
+          accounts: d.accounts,
+          transactions: d.transactions,
+          ledgerLogs: d.ledgerLogs,
+        }, options as Parameters<typeof summarySWR.mutate>[1]),
+        investmentsSWR.mutate({
+          investments: d.investments,
+          mutualFunds: d.mutualFunds,
+          bonds: d.bonds,
+          alternativeAssets: d.alternativeAssets,
+          stockTrades: d.stockTrades,
+          mutualFundTrades: d.mutualFundTrades,
+          bondTransactions: d.bondTransactions,
+          fnoTrades: d.fnoTrades,
+        }, options as Parameters<typeof investmentsSWR.mutate>[1]),
+        cashflowSWR.mutate({
+          incomes: d.incomes,
+          expenses: d.expenses,
+          budgets: d.budgets,
+          goals: d.goals,
+          liabilities: d.liabilities,
+        }, options as Parameters<typeof cashflowSWR.mutate>[1]),
+        forexSWR.mutate({
+          forexAccounts: d.forexAccounts,
+          forexTrades: d.forexTrades,
+          forexTransactions: d.forexTransactions,
+        }, options as Parameters<typeof forexSWR.mutate>[1]),
+        familySWR.mutate({
+          recipients: d.recipients,
+        }, options as Parameters<typeof familySWR.mutate>[1]),
+      ]);
     } else {
       await Promise.all([
         summarySWR.mutate(),

@@ -156,6 +156,32 @@ export default function SettingsPage() {
         toast.error(`Reset failed: ${result.error}`, { id: toastId });
       } else {
         toast.success("All data erased successfully", { id: toastId });
+        
+        // Clear local SWR cache instantly to prevent stale data flashing
+        mutate({
+          profile: profile || null, // keep profile settings like theme
+          accounts: [],
+          transactions: [],
+          ledgerLogs: [],
+          investments: [],
+          mutualFunds: [],
+          bonds: [],
+          alternativeAssets: [],
+          stockTrades: [],
+          mutualFundTrades: [],
+          bondTransactions: [],
+          fnoTrades: [],
+          incomes: [],
+          expenses: [],
+          budgets: [],
+          goals: [],
+          liabilities: [],
+          forexAccounts: [],
+          forexTrades: [],
+          forexTransactions: [],
+          recipients: [],
+        }, { revalidate: false });
+
         setTimeout(() => {
           window.location.href = "/dashboard?reset=success";
         }, 1500);

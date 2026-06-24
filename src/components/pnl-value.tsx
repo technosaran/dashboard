@@ -1,26 +1,36 @@
 "use client";
 
 interface PnLValueProps {
-  value: number;
+  value?: number;
+  amount?: number;
   percentage?: number;
   prefix?: string;
+  currency?: string;
   suffix?: string;
   className?: string;
   showSign?: boolean;
+  showIcon?: boolean;
   size?: "sm" | "md" | "lg";
 }
 
 export default function PnLValue({ 
-  value, 
+  value,
+  amount,
   percentage, 
-  prefix = "₹", 
+  prefix,
+  currency,
   suffix = "",
   className = "", 
   showSign = true,
+  showIcon,
   size = "md"
 }: PnLValueProps) {
-  const isPositive = value > 0;
-  const isNegative = value < 0;
+  const finalValue = value !== undefined ? value : (amount || 0);
+  const finalPrefix = prefix !== undefined ? prefix : (currency === 'USD' ? '$' : '₹');
+  const finalShowSign = showIcon !== undefined ? showIcon : showSign;
+
+  const isPositive = finalValue > 0;
+  const isNegative = finalValue < 0;
   
   const colorClass = isPositive 
     ? "text-success" 
@@ -37,7 +47,7 @@ export default function PnLValue({
   return (
     <div className={`flex flex-col items-end ${className}`}>
       <span className={`${sizeClasses[size]} tabular-nums ${colorClass}`}>
-        {showSign && isPositive ? "+" : ""}{isNegative ? "-" : ""}{prefix}{Math.abs(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{suffix}
+        {finalShowSign && isPositive ? "+" : ""}{isNegative ? "-" : ""}{finalPrefix}{Math.abs(finalValue).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{suffix}
       </span>
       {percentage !== undefined && (
         <span className={`text-[10px] font-black opacity-60 tabular-nums ${colorClass}`}>

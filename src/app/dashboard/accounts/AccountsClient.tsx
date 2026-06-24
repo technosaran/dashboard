@@ -568,49 +568,77 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
             <p className="text-sm text-[--text-muted] mt-1">Try another account filter or create activity.</p>
           </div>
         ) : (
-          <div className="p-4 md:p-6 space-y-3">
-            {accountHistory.map((log) => {
-              const account = accounts.find((a) => a.id === log.account_id);
-              const isDebit = log.new_balance !== null && log.previous_balance !== null
-                ? log.new_balance < log.previous_balance
-                : DEBIT_ACCOUNT_ACTIONS.has(log.action_type);
+          <div className="w-full overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[800px]">
+              <thead>
+                <tr className="border-b border-white/10 bg-white/5">
+                  <th className="p-4 text-[10px] font-black uppercase tracking-widest text-[--text-muted] whitespace-nowrap">Timestamp</th>
+                  <th className="p-4 text-[10px] font-black uppercase tracking-widest text-[--text-muted] whitespace-nowrap">Account</th>
+                  <th className="p-4 text-[10px] font-black uppercase tracking-widest text-[--text-muted] whitespace-nowrap">Action</th>
+                  <th className="p-4 text-[10px] font-black uppercase tracking-widest text-[--text-muted] w-full">Details</th>
+                  <th className="p-4 text-[10px] font-black uppercase tracking-widest text-[--text-muted] text-right whitespace-nowrap">Amount</th>
+                  <th className="p-4 text-[10px] font-black uppercase tracking-widest text-[--text-muted] text-right whitespace-nowrap">Balance</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {accountHistory.map((log) => {
+                  const account = accounts.find((a) => a.id === log.account_id);
+                  const isDebit = log.new_balance !== null && log.previous_balance !== null
+                    ? log.new_balance < log.previous_balance
+                    : DEBIT_ACCOUNT_ACTIONS.has(log.action_type);
 
-              const ActionIcon = getActionIcon(log.action_type);
+                  const ActionIcon = getActionIcon(log.action_type);
+                  const currency = account?.currency || "INR";
 
-              return (
-                <div key={log.id} className="group relative overflow-hidden rounded-3xl bg-gradient-to-r from-white/[0.03] to-transparent border border-white/5 p-5 md:p-6 hover:bg-white/[0.06] hover:border-white/20 transition-all duration-500 hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)]">
-                  <div className={`absolute top-0 left-0 w-1.5 h-full transition-all duration-500 group-hover:w-2 ${isDebit ? 'bg-gradient-to-b from-rose-500 to-rose-600' : 'bg-gradient-to-b from-emerald-400 to-emerald-600'}`} />
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pl-4 md:pl-6">
-                    <div className="flex items-start gap-4 md:gap-5">
-                      <div className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl border flex items-center justify-center text-2xl flex-shrink-0 group-hover:scale-110 transition-transform duration-500 shadow-inner ${isDebit ? 'bg-rose-500/10 border-rose-500/20 text-rose-400' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'}`}>
-                        {ActionIcon}
-                      </div>
-                      <div className="pt-0.5">
-                        <div className="flex items-center gap-3 flex-wrap mb-1.5">
-                          <span className="text-[15px] md:text-[17px] font-[900] text-white tracking-tight">{account?.name || log.account_name || "Account"}</span>
-                          <span className="px-2.5 py-1 rounded-md text-[9px] font-black uppercase tracking-[0.2em] bg-white/10 border border-white/20 text-white shadow-sm">{getActionLabel(log.action_type)}</span>
+                  return (
+                    <tr key={log.id} className="hover:bg-white/[0.02] transition-colors group">
+                      <td className="p-4 whitespace-nowrap">
+                        <p className="text-xs font-bold text-white tracking-tight">
+                          {log.created_at ? format(new Date(log.created_at), "MMM d, yyyy") : "—"}
+                        </p>
+                        <p className="text-[10px] font-mono text-[--text-muted] mt-0.5 tracking-widest uppercase">
+                          {log.created_at ? format(new Date(log.created_at), "hh:mm a") : ""}
+                        </p>
+                      </td>
+                      <td className="p-4 whitespace-nowrap">
+                        <span className="text-xs font-bold text-white tracking-tight px-2 py-1 rounded bg-white/5 border border-white/10">
+                          {account?.name || log.account_name || "System"}
+                        </span>
+                      </td>
+                      <td className="p-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <span className={`w-6 h-6 rounded-md flex items-center justify-center text-xs ${isDebit ? 'bg-rose-500/10 text-rose-400' : 'bg-emerald-500/10 text-emerald-400'}`}>
+                            {ActionIcon}
+                          </span>
+                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-300">
+                            {getActionLabel(log.action_type)}
+                          </span>
                         </div>
-                        <p className="text-[13px] md:text-[14px] text-slate-400 font-medium leading-relaxed max-w-lg">{log.details}</p>
-                        <p className="text-[10px] mt-2.5 text-slate-500 font-black uppercase tracking-[0.2em] flex items-center gap-1.5">
-                          <svg className="w-3.5 h-3.5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                          {log.created_at ? format(new Date(log.created_at), "MMM d, yyyy • h:mm a") : "N/A"}
+                      </td>
+                      <td className="p-4">
+                        <p className="text-xs text-[--text-secondary] truncate max-w-[250px] lg:max-w-[400px]" title={log.details || ""}>
+                          {log.details || "—"}
                         </p>
-                      </div>
-                    </div>
-                    <div className="text-left sm:text-right mt-3 sm:mt-0 flex flex-col justify-center border-t sm:border-t-0 border-white/10 pt-4 sm:pt-0">
-                      <p className={`text-2xl md:text-3xl font-[900] drop-shadow-lg tracking-tight ${isDebit ? "text-rose-400" : "text-emerald-400"}`}>
-                        {log.amount === null ? "—" : `${isDebit ? "-" : "+"}${getCurrencySymbol(account?.currency || "INR")}${Math.abs(log.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                      </p>
-                      {log.new_balance !== null && (
-                        <p className="text-[10px] font-black text-slate-500 mt-2 uppercase tracking-[0.2em] flex items-center sm:justify-end gap-1.5">
-                          <span className="opacity-60">Balance:</span> <span className="text-white bg-white/5 px-2 py-1 rounded-md border border-white/10 shadow-inner">{getCurrencySymbol(account?.currency || "INR")}{log.new_balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      </td>
+                      <td className="p-4 text-right whitespace-nowrap">
+                        <p className={`text-sm font-black tracking-tight ${isDebit ? "text-rose-400" : "text-emerald-400"}`}>
+                          {log.amount === null ? "—" : `${isDebit ? "-" : "+"}${getCurrencySymbol(currency)}${Math.abs(log.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                         </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+                      </td>
+                      <td className="p-4 text-right whitespace-nowrap">
+                        {log.new_balance !== null ? (
+                          <span className="text-xs font-bold text-white bg-white/5 px-2 py-1 rounded-md border border-white/10 shadow-inner">
+                            {getCurrencySymbol(currency)}{log.new_balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-[--text-muted]">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         )}
       </div>

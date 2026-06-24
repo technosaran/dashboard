@@ -1,51 +1,76 @@
 "use client";
 
+import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { useMemo, useState, useEffect } from "react";
-import { format } from "date-fns";
-import type { Tables } from "@/lib/database.types";
 import { toast } from "react-hot-toast";
 
-import { 
-  createInvestment, 
-  updateInvestment, 
-  deleteInvestment
-} from "./actions";
-import { revertLedgerLog } from "../alternative-assets/actions";
+import type { Tables } from "@/lib/database.types";
+import { createInvestment, updateInvestment } from "./actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
-import { EmptyState } from "@/components/empty-state";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
-import { useMediaQuery } from "@/hooks/use-media-query";
-import Link from "next/link";
-import PnLValue from "@/components/pnl-value";
-import { exportToCSV } from "@/lib/export-csv";
 import { Drawer } from "@/components/ui/drawer";
 
-type Stock = Tables<"investments"> & { total_charges?: number; pnlPercent?: number };
+import dynamic from "next/dynamic";
+const ResponsiveContainer = dynamic(() => import("recharts").then((mod) => mod.ResponsiveContainer), { ssr: false });
+import { PieChart, Pie, Cell, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip as RechartsTooltip, Legend } from "recharts";
 
+import StocksDataTable from "./components/StocksDataTable";
+import PnLValue from "@/components/pnl-value";
 
-type SortKey = "name" | "pnl" | "pnlPercent" | "current_value" | "quantity";
-type SortDir = "asc" | "desc";
+type Stock = Tables<"investments"> & { day_change?: number; day_change_percent?: number };
 
-function formatNum(val: number, decimals = 2): string {
-  return val.toLocaleString("en-IN", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
-}
-
-const SortIcon = ({ col, sortKey, sortDir }: { col: SortKey; sortKey: SortKey; sortDir: SortDir }) => (
-  <span className="inline-flex ml-1 opacity-40 text-[9px] group-hover:opacity-100 transition-opacity">
-    {sortKey === col ? (sortDir === "asc" ? "▲" : "▼") : "⇅"}
-  </span>
-);
+const getColorByLabel = (label: string) => {
+  let hash = 0;
+  for (let i = 0; i < label.length; i++) {
+    hash = label.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const colors = [
+    "#06B6D4", "#F97316", "#8B5CF6", "#22C55E", "#EC4899", 
+    "#EAB308", "#3B82F6", "#F43F5E", "#14B8A6", "#84CC16", 
+    "#6366F1", "#FB7185"
+  ];
+  return colors[Math.abs(hash) % colors.length];
+};
 
 export default function StocksClient({ initialData }: { initialData?: FinanceData }) {
-  const { data: { investments, accounts, stockTrades: trades, profile }, isValidating, mutate } = useFinanceData(initialData);
-  const isMobile = useMediaQuery('(max-width: 767.98px)');
-  const getTradeCurrency = (trade: (typeof trades)[number]) => {
-    const inv = investments.find(i => i.id === trade.investment_id);
-    if (inv) return inv.currency;
-    const invBySym = investments.find(i => i.symbol === trade.symbol);
-    return invBySym ? invBySym.currency : "INR";
-  };
+  const { data: { investments, accounts, stockTrades: trades, profile }, mutate } = useFinanceData(initialData);
+  const searchParams = useSearchParams();
+  const [showAddModal, setShowAddModal] = useState(searchParams?.get("action") === "new");
+  const [submitting, withLock] = useSubmitLock();
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [activeView, setActiveView] = useState<"overview" | "holdings">("overview");
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  const [charges, setCharges] = useState("0");
+
+  const [formData, setFormData] = useState({
+    name: "", symbol: "", quantity: "", buy_price: "", current_price: "",
+    currency: "INR", notes: "", bought_at: "",
+    deduct_from_account: "",
+    trade_type: "buy" as "buy" | "sell"
+  });
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setFormData(prev => ({ ...prev, bought_at: new Date().toISOString().split("T")[0] }));
+    }, 0);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (accounts.length > 0 && showAddModal && !formData.deduct_from_account) {
+      const defaultAccId = profile?.default_accounts?.stocks;
+      const defaultAccExists = defaultAccId && accounts.some(a => a.id === defaultAccId);
+      if (defaultAccExists) {
+        setTimeout(() => {
+          setFormData(prev => ({ ...prev, deduct_from_account: defaultAccId }));
+        }, 0);
+      }
+    }
+  }, [accounts, profile, showAddModal, formData.deduct_from_account]);
+
   const stocks = useMemo(() => {
     return investments.filter(i => i.type === "stock").map(i => {
       const currentPrice = Number(i.current_price || 0);
@@ -61,137 +86,79 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
       return { ...i, day_change, day_change_percent } as Stock;
     });
   }, [investments]);
-  const searchParams = useSearchParams();
-  const [showForm, setShowForm] = useState(searchParams?.get("action") === "new");
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [submitting, withLock] = useSubmitLock();
 
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [sortKey, setSortKey] = useState<SortKey>("name");
-  const [sortDir, setSortDir] = useState<SortDir>("asc");
-  const [charges, setCharges] = useState("0");
+  const activeStocks = useMemo(() => stocks.filter(s => Number(s.quantity) > 0), [stocks]);
 
+  const stats = useMemo(() => {
+    const totalInvested = activeStocks.reduce((s, i) => s + (Number(i.quantity) * Number(i.buy_price)), 0);
+    const totalCurrent = activeStocks.reduce((s, i) => s + (Number(i.quantity) * Number(i.current_price)), 0);
+    const totalPnL = totalCurrent - totalInvested;
+    const totalPnLPercent = totalInvested > 0 ? (totalPnL / totalInvested) * 100 : 0;
+    
+    const dayPnL = activeStocks.reduce((s, i) => s + (Number(i.day_change || 0) * Number(i.quantity || 0)), 0);
+    const prevDayValue = totalCurrent - dayPnL;
+    const dayPnLPercent = prevDayValue > 0 ? (dayPnL / prevDayValue) * 100 : 0;
 
-  const [formData, setFormData] = useState({
-    name: "", symbol: "", quantity: "", buy_price: "", current_price: "",
-    currency: "INR", notes: "", bought_at: "",
-    deduct_from_account: "",
-    trade_type: "buy" as "buy" | "sell"
-  });
-
-  // Set today's date on client mount to prevent SSR/hydration mismatch
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setFormData(prev => ({
-        ...prev,
-        bought_at: new Date().toISOString().split("T")[0]
-      }));
-    }, 0);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Initialize default account when accounts/profile loads or modal is opened
-  useEffect(() => {
-    if (accounts.length > 0 && showForm && !formData.deduct_from_account) {
-      const defaultAccId = profile?.default_accounts?.stocks;
-      const defaultAccExists = defaultAccId && accounts.some(a => a.id === defaultAccId);
-      if (defaultAccExists) {
-        const timer = setTimeout(() => {
-          setFormData(prev => ({ ...prev, deduct_from_account: defaultAccId }));
-        }, 0);
-        return () => clearTimeout(timer);
+    let bestStock = null;
+    let bestPnL = -Infinity;
+    activeStocks.forEach(s => {
+      const inv = Number(s.quantity) * Number(s.buy_price);
+      const cur = Number(s.quantity) * Number(s.current_price);
+      const p = inv > 0 ? ((cur - inv) / inv) * 100 : 0;
+      if (p > bestPnL) {
+        bestPnL = p;
+        bestStock = s.symbol || s.name;
       }
-    }
-  }, [accounts, profile, showForm, formData.deduct_from_account]);
+    });
 
-  const [activeTab, setActiveTab] = useState<"holdings" | "history">("holdings");
+    return { totalInvested, totalCurrent, totalPnL, totalPnLPercent, dayPnL, dayPnLPercent, bestStock, bestPnL };
+  }, [activeStocks]);
 
-  function resetForm() {
+  const pieChartData = useMemo(() => {
+    const map: Record<string, number> = {};
+    activeStocks.forEach(s => {
+      const name = s.symbol || s.name;
+      map[name] = (map[name] || 0) + (Number(s.quantity) * Number(s.current_price));
+    });
+    return Object.entries(map).map(([name, value]) => ({
+      name,
+      value,
+      fill: getColorByLabel(name)
+    })).sort((a, b) => b.value - a.value).slice(0, 10); // Top 10 for pie
+  }, [activeStocks]);
+
+  const barChartData = useMemo(() => {
+    return activeStocks.map(s => {
+      const invested = Number(s.quantity) * Number(s.buy_price);
+      const current = Number(s.quantity) * Number(s.current_price);
+      return {
+        name: s.symbol || s.name.substring(0, 10),
+        Invested: invested,
+        Current: current,
+        PnL: current - invested
+      };
+    }).sort((a, b) => b.Current - a.Current).slice(0, 10);
+  }, [activeStocks]);
+
+  const startSell = (inv: Stock) => {
     setFormData({
-      name: "", symbol: "", quantity: "", buy_price: "", current_price: "",
-      currency: "INR", notes: "", bought_at: new Date().toISOString().split("T")[0],
-      deduct_from_account: "",
-      trade_type: "buy"
+      name: inv.name, 
+      symbol: inv.symbol || "",
+      quantity: inv.quantity.toString(), 
+      buy_price: inv.current_price.toString(), 
+      current_price: inv.current_price.toString(), 
+      currency: inv.currency,
+      notes: "", 
+      bought_at: new Date().toISOString().split("T")[0],
+      deduct_from_account: "", 
+      trade_type: "sell"
     });
+    setEditingId(null); 
     setCharges("0");
-    setShowForm(false);
-    setEditingId(null);
-  }
+    setShowAddModal(true);
+  };
 
-  // Handle escape key closure for modals
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        resetForm();
-        setShowDeleteConfirm(false);
-        setDeletingId(null);
-      }
-    };
-    if (showForm || showDeleteConfirm) {
-      window.addEventListener("keydown", handleKeyDown);
-    }
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [showForm, showDeleteConfirm]);
-
-  async function handleRevert(logId: string | null) {
-    if (!logId) return toast.error("No ledger log found for this trade");
-    if (!confirm("Revert this trade? This will undo the portfolio change and reverse any account transactions.")) return;
-    const res = await revertLedgerLog(logId);
-    if (!res.error) {
-      toast.success("Trade reverted");
-      mutate();
-    } else toast.error(res.error);
-  }
-
-
-
-  // --- Computed ---
-  const { totalInvested, totalCurrent, totalPnL, totalPnLPercent } = useMemo(() => {
-    const invested = stocks.reduce((s, i) => {
-      const val = Number(i.buy_price || 0) * Number(i.quantity || 0);
-      return s + val;
-    }, 0);
-    const current = stocks.reduce((s, i) => {
-      const val = Number(i.current_price || 0) * Number(i.quantity || 0);
-      return s + val;
-    }, 0);
-    const pnl = current - invested;
-    const pnlPercent = invested > 0 ? (pnl / invested) * 100 : 0;
-    return { totalInvested: invested, totalCurrent: current, totalPnL: pnl, totalPnLPercent: pnlPercent };
-  }, [stocks]);
-
-  const filtered = useMemo(() => {
-    const list = stocks.filter(i => Number(i.quantity) > 0);
-    return [...list].sort((a, b) => {
-      let cmp = 0;
-      const aq = Number(a.quantity);
-      const bq = Number(b.quantity);
-      const abp = Number(a.buy_price);
-      const bbp = Number(b.buy_price);
-      const acp = Number(a.current_price);
-      const bcp = Number(b.current_price);
-
-      if (sortKey === "name") cmp = a.name.localeCompare(b.name);
-      else if (sortKey === "pnl") cmp = ((acp - abp) * aq) - ((bcp - bbp) * bq);
-      else if (sortKey === "pnlPercent") {
-        const pa = abp > 0 ? ((acp - abp) / abp) * 100 : 0;
-        const pb = bbp > 0 ? ((bcp - bbp) / bbp) * 100 : 0;
-        cmp = pa - pb;
-      } else if (sortKey === "current_value") cmp = (acp * aq) - (bcp * bq);
-      else if (sortKey === "quantity") cmp = aq - bq;
-      return sortDir === "asc" ? cmp : -cmp;
-    });
-  }, [stocks, sortKey, sortDir]);
-
-  function handleSort(key: SortKey) {
-    if (sortKey === key) setSortDir(d => d === "asc" ? "desc" : "asc");
-    else { setSortKey(key); setSortDir("desc"); }
-  }
-
-
-
-  function startEdit(inv: Stock) {
+  const startEdit = (inv: Stock) => {
     setFormData({
       name: inv.name, 
       symbol: inv.symbol || "",
@@ -205,32 +172,15 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
       trade_type: "buy"
     });
     setEditingId(inv.id);
-    setShowForm(true);
-  }
-
-  function startSell(inv: Stock) {
-    setFormData({
-      name: inv.name, 
-      symbol: inv.symbol || "",
-      quantity: inv.quantity.toString(), 
-      buy_price: inv.current_price.toString(), // Default to LTP for sell
-      current_price: inv.current_price.toString(), 
-      currency: inv.currency,
-      notes: "", 
-      bought_at: new Date().toISOString().split("T")[0],
-      deduct_from_account: "", 
-      trade_type: "sell"
-    });
-    setEditingId(null); // Selling is a new "transaction" record usually, or we could handle it as a specific sell logic
-    setShowForm(true);
-  }
+    setCharges("0");
+    setShowAddModal(true);
+  };
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     await withLock(async () => {
       try {
         const fullSymbol = formData.symbol ? formData.symbol.trim().toUpperCase() : undefined;
-
         const qty = parseFloat(formData.quantity);
         const price = parseFloat(formData.buy_price);
         const manualChargesValue = parseFloat(charges) || 0;
@@ -249,590 +199,333 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
           total_cost_with_charges: !editingId ? finalNetAmount : undefined,
           trade_type: formData.trade_type
         };
-        const result = editingId
-          ? await updateInvestment(editingId, payload)
-          : await createInvestment(payload);
-        if (!result?.error) {
-          toast.success(editingId ? "Equity position updated successfully" : "New equity position registered in portfolio");
-          resetForm();
-          mutate();
+
+        if (editingId) {
+          const res = await updateInvestment(editingId, { 
+            name: payload.name, symbol: payload.symbol, quantity: payload.quantity, buy_price: payload.buy_price, 
+            current_price: payload.current_price, currency: payload.currency, notes: payload.notes, bought_at: payload.bought_at 
+          });
+          if (!res?.error) {
+            toast.success("Stock holding updated successfully");
+            setShowAddModal(false);
+            setEditingId(null);
+            mutate();
+          } else {
+            toast.error(res.error);
+          }
         } else {
-          toast.error(result.error);
+          if (!formData.deduct_from_account) {
+            toast.error("Please select a channeling account");
+            return;
+          }
+          const res = await createInvestment(payload);
+          if (!res?.error) {
+            toast.success(formData.trade_type === 'buy' ? "Stock purchased" : "Stock sold");
+            setShowAddModal(false);
+            mutate();
+          } else {
+            toast.error(res.error);
+          }
         }
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Failed to process stock transaction. Please try again.");
+        toast.error(err instanceof Error ? err.message : "Failed to process stock trade.");
       }
     });
   }
 
-  async function confirmDelete() {
-    if (!deletingId) return;
-    const res = await deleteInvestment(deletingId);
-    if (!res?.error) { 
-      toast.success("Investment record purged from architecture"); 
-      mutate();
-    } else toast.error(res.error);
-    setShowDeleteConfirm(false);
-    setDeletingId(null);
-  }
-
-
-
-  // Export holdings to CSV
-  function exportHoldings() {
-    const csvData = filtered.map(inv => {
-      const invested = inv.buy_price * inv.quantity;
-      const currentVal = inv.current_price * inv.quantity;
-      const pnl = currentVal - invested;
-      const pnlPct = invested > 0 ? (pnl / invested) * 100 : 0;
-      return {
-        symbol: inv.symbol?.split('.')[0] || '',
-        name: inv.name,
-        quantity: inv.quantity,
-        avgCost: inv.buy_price.toFixed(2),
-        ltp: inv.current_price.toFixed(2),
-        currentValue: currentVal.toFixed(2),
-        pnl: pnl.toFixed(2),
-        pnlPct: pnlPct.toFixed(2),
-        dayChange: inv.day_change || 0,
-        dayChangePercent: inv.day_change_percent || 0
-      };
-    });
-    
-    exportToCSV(
-      csvData,
-      "holdings",
-      [
-        { key: "symbol", label: "Symbol" },
-        { key: "name", label: "Name" },
-        { key: "quantity", label: "Quantity" },
-        { key: "avgCost", label: "Avg Cost" },
-        { key: "ltp", label: "LTP" },
-        { key: "currentValue", label: "Current Value" },
-        { key: "pnl", label: "P&L" },
-        { key: "pnlPct", label: "P&L %" },
-        { key: "dayChange", label: "Day Change" },
-        { key: "dayChangePercent", label: "Day Change %" }
-      ]
-    );
-    toast.success('Holdings exported successfully');
-  }
-
-
-
-  if (isMobile) {
-    return (
-      <div className="flex flex-col gap-6 animate-fade-in">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-black text-[--text-primary]">Record Stock Trade</h1>
-            <div className={`status-dot scale-70 ${isValidating ? 'animate-pulse bg-yellow-400' : 'bg-emerald-400'}`} />
-          </div>
-          <Link href="/dashboard" className="text-[10px] font-black uppercase text-[--text-muted] no-underline bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg active:scale-95 transition-all">
-            Back
-          </Link>
-        </div>
-
-        <div className="flex bg-white/5 rounded-xl p-1 border border-white/5">
-          <button 
-            type="button"
-            onClick={() => setFormData({ ...formData, trade_type: "buy" })}
-            className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
-              formData.trade_type === "buy" ? "bg-[--accent-primary] text-white shadow-md" : "text-[--text-muted]"
-            }`}
-          >
-            Buy Position
-          </button>
-          <button 
-            type="button"
-            onClick={() => setFormData({ ...formData, trade_type: "sell" })}
-            className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
-              formData.trade_type === "sell" ? "bg-rose-500 text-white shadow-md" : "text-[--text-muted]"
-            }`}
-          >
-            Sell Position
-          </button>
-        </div>
-
-        <div className="glass-card-static p-5 border border-white/5 bg-white/[0.01]">
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Symbol</label>
-              <input type="text" required className="input-premium" placeholder="e.g. SBIN, RELIANCE, AAPL" value={formData.symbol} onChange={e => setFormData({ ...formData, symbol: e.target.value.toUpperCase() })} autoComplete="off" id="stock-symbol" name="symbol" />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Company Name</label>
-              <input type="text" required className="input-premium" placeholder="e.g. State Bank of India" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} autoComplete="off" id="stock-name" name="name" />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Quantity</label>
-                <input type="number" required step="any" className="input-premium" placeholder="0" value={formData.quantity} onChange={e => setFormData({ ...formData, quantity: e.target.value })} autoComplete="off" inputMode="decimal" id="stock-quantity" name="quantity" />
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Avg Price</label>
-                <input type="number" required step="0.01" className="input-premium" placeholder="0.00" value={formData.buy_price} onChange={e => setFormData({ ...formData, buy_price: e.target.value })} autoComplete="off" inputMode="decimal" id="stock-price" name="price" />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Current Price (LTP)</label>
-              <input type="number" required step="0.01" className="input-premium" placeholder="0.00" value={formData.current_price} onChange={e => setFormData({ ...formData, current_price: e.target.value })} autoComplete="off" inputMode="decimal" id="stock-current-price" name="current_price" />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">
-                {formData.trade_type === 'buy' ? 'Deduct From Account' : 'Deposit To Account'}
-              </label>
-              <select className="input-premium" value={formData.deduct_from_account || ""} onChange={e => setFormData({ ...formData, deduct_from_account: e.target.value })} aria-label="Select account" id="stock-account" name="deduct_from_account">
-                <option value="">No Deduction (Track only)</option>
-                {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
-              </select>
-            </div>
-
-            <button type="submit" disabled={submitting} className="btn-primary w-full h-12 shadow-md mt-6">
-              {submitting ? "Processing..." : "Confirm Record"}
-            </button>
-          </form>
-        </div>
-      </div>
-    );
-  }
+  const formatCurrency = (value: number) => {
+    if (value >= 10000000) return `₹${(value / 10000000).toFixed(2)}Cr`;
+    if (value >= 100000) return `₹${(value / 100000).toFixed(2)}L`;
+    if (value >= 1000) return `₹${(value / 1000).toFixed(1)}k`;
+    return `₹${value.toLocaleString()}`;
+  };
 
   return (
-    <div className="flex flex-col gap-[var(--section-gap)] animate-fade-in">
-      
-      {/* ── Portfolio Overview Header ── */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 px-4 mb-8">
-        <div className="flex items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-black tracking-tight text-[--text-primary]">Stocks Portfolio</h1>
-            <p className="text-[10px] text-[--text-muted] font-black uppercase tracking-[0.2em] mt-1">Manual Asset Tracking</p>
-          </div>
-          <div className={`status-dot scale-90 ${isValidating ? 'animate-pulse bg-yellow-400' : 'bg-emerald-400 opacity-50'}`} />
+    <div className="flex flex-col gap-8 animate-in fade-in duration-700">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div>
+          <h1 className="text-4xl font-black tracking-tight text-white uppercase italic">Stocks</h1>
+          <p className="text-[10px] text-[--text-muted] font-black uppercase tracking-[0.4em] mt-2 ml-1">Equity Portfolio</p>
         </div>
-        <div className="flex flex-wrap md:flex-nowrap items-center gap-3 w-full md:w-auto">
-            <button type="button" 
-              onClick={exportHoldings} 
-              className="btn-secondary !h-11 !px-6 flex items-center justify-center gap-2 hidden md:flex"
-              title="Export Holdings"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-              Export
-            </button>
-            <button type="button" 
-              onClick={() => setShowForm(true)} 
-              className="btn-primary !h-11 px-6 w-full md:w-auto text-xs font-bold uppercase tracking-wider shadow-[0_4px_20px_rgba(var(--accent-primary-rgb),0.3)] order-first md:order-last"
-            >
-                Add Stock
-            </button>
-        </div>
+        <button type="button" onClick={() => { 
+          setFormData({
+            name: "", symbol: "", quantity: "", buy_price: "", current_price: "",
+            currency: "INR", notes: "", bought_at: new Date().toISOString().split("T")[0],
+            deduct_from_account: "", trade_type: "buy"
+          });
+          setEditingId(null);
+          setShowAddModal(true); 
+        }} disabled={submitting} className="btn-primary !h-11 px-6 shadow-[0_0_30px_rgba(14,165,233,0.3)] text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
+          Record Trade
+        </button>
       </div>
 
-      {/* Summary Cards Grid */}
-      <div className="hidden md:grid grid-cols-2 md:grid-cols-3 gap-4 px-4 mb-4">
-        <div className="glass-card-static p-6 flex flex-col gap-2">
-          <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Total Invested</span>
-          <span className="text-xl md:text-2xl font-black tabular-nums">+₹{totalInvested.toLocaleString()}</span>
-        </div>
-        <div className="glass-card-static p-6 flex flex-col gap-2">
-          <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Current Value</span>
-          <span className="text-xl md:text-2xl font-black tabular-nums">+₹{totalCurrent.toLocaleString()}</span>
-        </div>
-        <div className="glass-card-static p-6 flex flex-col gap-2">
-          <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.2em]">Unrealized P&L</span>
-          <PnLValue value={totalPnL} percentage={totalPnLPercent} size="lg" className="items-start" />
-        </div>
-      </div>
-
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 border-b border-white/5 gap-4 px-4">
-        <div className="flex items-center gap-8">
-           <button type="button" 
-             onClick={() => setActiveTab("holdings")}
-             className={`text-xs font-black uppercase tracking-widest pb-3 px-1 transition-all ${activeTab === 'holdings' ? 'text-[--accent-primary-light] border-b-2 border-[--accent-primary-light]' : 'text-[--text-muted] hover:text-[--text-primary]'}`}
-           >
-             Holdings ({stocks.filter(s => Number(s.quantity) > 0).length})
-           </button>
-           <button type="button" 
-             onClick={() => setActiveTab("history")}
-             className={`text-xs font-black uppercase tracking-widest pb-3 px-1 transition-all ${activeTab === 'history' ? 'text-[--accent-primary-light] border-b-2 border-[--accent-primary-light]' : 'text-[--text-muted] hover:text-[--text-primary]'}`}
-           >
-             History
-           </button>
-        </div>
-      </div>
-
-      {/* ── Content View ── */}
-      {activeTab === "holdings" ? (
-        filtered.length > 0 ? (
-          <div className="w-full mt-4 table-responsive-wrapper">
-            {/* Desktop Table */}
-            <table className="hidden md:table w-full text-left border-collapse min-w-[1000px]">
-              <thead>
-                <tr className="border-b border-white/5 bg-white/[0.01] text-[9px] text-[--text-muted] uppercase font-black tracking-widest">
-                  <th className="py-4 px-6 font-black transition-colors cursor-pointer hover:text-[--text-primary] group" onClick={() => handleSort("name")}>
-                    Instrument <SortIcon col="name" sortKey={sortKey} sortDir={sortDir} />
-                  </th>
-                  <th className="py-4 px-4 font-black text-right transition-colors cursor-pointer hover:text-[--text-primary] group" onClick={() => handleSort("quantity")}>
-                    Qty. <SortIcon col="quantity" sortKey={sortKey} sortDir={sortDir} />
-                  </th>
-                  <th className="py-4 px-4 font-black text-right">Avg. cost</th>
-                  <th className="py-4 px-4 font-black text-right">LTP</th>
-                  <th className="py-4 px-4 font-black text-right transition-colors cursor-pointer hover:text-[--text-primary] group" onClick={() => handleSort("current_value")}>
-                    Cur. val <SortIcon col="current_value" sortKey={sortKey} sortDir={sortDir} />
-                  </th>
-                  <th className="py-4 px-4 font-black text-right transition-colors cursor-pointer hover:text-[--text-primary] group" onClick={() => handleSort("pnl")}>
-                    P&L <SortIcon col="pnl" sortKey={sortKey} sortDir={sortDir} />
-                  </th>
-                  <th className="py-4 px-4 font-black text-right transition-colors cursor-pointer hover:text-[--text-primary] group" onClick={() => handleSort("pnlPercent")}>
-                    Net chg. <SortIcon col="pnlPercent" sortKey={sortKey} sortDir={sortDir} />
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/10">
-                {filtered.map((inv) => {
-                  const invested = inv.buy_price * inv.quantity;
-                  const currentVal = inv.current_price * inv.quantity;
-                  const pnl = currentVal - invested;
-                  const pnlPct = invested > 0 ? (pnl / invested) * 100 : 0;
-
-                  return (
-                    <tr 
-                      key={inv.id} 
-                      className="hover:bg-white/[0.015] transition-all group relative cursor-default"
-                    >
-                      <td className="py-4 px-4">
-                        <div className="flex flex-col">
-                          <div className="flex items-center gap-2">
-                             <span className="text-[13px] font-medium text-[--text-primary]">{inv.symbol?.split('.')[0] || inv.name}</span>
-                          </div>
-                          <span className="text-[10px] text-[--text-muted] font-normal">{inv.name}</span>
-                        </div>
-                      </td>
-                      <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[--text-secondary]">{inv.quantity}</td>
-                      <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[--text-secondary]">
-                        {inv.currency === 'USD' ? '$' : '₹'}{formatNum(inv.buy_price)}
-                      </td>
-                      <td className="py-4 px-4 text-right tabular-nums text-[13px] text-[--text-primary] font-normal">
-                        {inv.currency === 'USD' ? '$' : '₹'}{formatNum(inv.current_price)}
-                      </td>
-                      <td className="py-4 px-4 text-right tabular-nums">
-                        {inv.currency === 'USD' ? '$' : '₹'}{formatNum(currentVal)}
-                      </td>
-                      <td className="py-4 px-4 text-right tabular-nums text-[13px] font-medium">
-                        <PnLValue value={pnl} showSign={true} prefix={inv.currency === 'USD' ? '$' : '₹'} size="sm" />
-                      </td>
-                      <td className="py-4 px-4 text-right tabular-nums text-[13px] font-medium relative">
-                        <PnLValue value={pnlPct} showSign={true} prefix="" suffix="%" size="sm" />
-                        <div className="absolute inset-0 flex items-center justify-end pr-4 gap-2 opacity-0 group-hover:opacity-100 transition-all pointer-events-none group-hover:pointer-events-auto bg-[--bg-base] backdrop-blur-md">
-                          <button type="button" onClick={(e) => { e.stopPropagation(); startSell(inv); }} className="h-7 px-4 bg-rose-500 hover:bg-rose-600 text-white text-[11px] font-black rounded shadow-[0_4px_10px_rgba(244,63,94,0.2)] transition-colors uppercase tracking-tight">SELL</button>
-                          <button type="button" onClick={(e) => { e.stopPropagation(); startEdit(inv); }} className="h-7 px-4 bg-sky-500 hover:bg-sky-600 text-white text-[11px] font-black rounded shadow-[0_4px_10px_rgba(14,165,233,0.2)] transition-colors uppercase tracking-tight">EDIT</button>
-                          <button type="button" onClick={(e) => { e.stopPropagation(); setDeletingId(inv.id); setShowDeleteConfirm(true); }} className="h-7 px-4 bg-red-600 hover:bg-red-700 text-white text-[11px] font-black rounded shadow-[0_4px_10px_rgba(220,38,38,0.2)] transition-colors uppercase tracking-tight">DELETE</button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-
-            {/* Mobile Cards */}
-            <div className="md:hidden space-y-4 px-1">
-               {filtered.map((inv) => {
-                  const invested = inv.buy_price * inv.quantity;
-                  const currentVal = inv.current_price * inv.quantity;
-                  const pnl = currentVal - invested;
-                  const pnlPct = invested > 0 ? (pnl / invested) * 100 : 0;
-                  const isProfit = pnl >= 0;
-                  return (
-                    <div key={inv.id} className="glass-card-static p-4 active:bg-white/[0.04] transition-all">
-                       <div className="flex justify-between items-start mb-3">
-                          <div onClick={() => startEdit(inv)} className="flex flex-col">
-                             <span className="text-sm font-black text-white">{inv.symbol?.split('.')[0]}</span>
-                             <span className="text-[10px] text-[--text-muted] uppercase font-bold">{inv.name}</span>
-                          </div>
-                          <div className="text-right">
-                             <div className={`text-[15px] font-black ${isProfit ? "text-success" : "text-danger"}`}>
-                                {isProfit ? "+" : ""}{inv.currency === 'USD' ? '$' : '₹'}{formatNum(pnl)}
-                             </div>
-                             <div className={`text-[10px] font-bold opacity-60 ${isProfit ? "text-success" : "text-danger"}`}>
-                                {isProfit ? "+" : ""}{pnlPct.toFixed(2)}%
-                             </div>
-                          </div>
-                       </div>
-                       <div className="grid grid-cols-3 gap-x-2 gap-y-4 border-t border-white/5 pt-4 mb-4 overflow-hidden">
-                           <div className="overflow-hidden"><p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-1">Holding</p><p className="text-[13px] font-black truncate">{inv.quantity} <span className="opacity-40 font-bold ml-1">@ {inv.currency === 'USD' ? '$' : '₹'}{formatNum(inv.buy_price)}</span></p></div>
-                           <div className="overflow-hidden"><p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-1">LTP</p><p className="text-[13px] font-black truncate">{inv.currency === 'USD' ? '$' : '₹'}{formatNum(inv.current_price)}</p></div>
-                           <div className="text-right overflow-hidden"><p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-1">Current Value</p><p className="text-[13px] font-black truncate">{inv.currency === 'USD' ? '$' : '₹'}{formatNum(currentVal)}</p></div>
-                        </div>
-                       <div className="flex gap-2">
-                          <button type="button" onClick={() => { setEditingId(null); setFormData({ symbol: inv.symbol || "", name: inv.name, quantity: "", buy_price: inv.current_price.toString(), current_price: inv.current_price.toString(), trade_type: "buy", deduct_from_account: "", currency: "INR", notes: "", bought_at: new Date().toISOString().split("T")[0] }); setShowForm(true); }} className="flex-1 py-3 bg-success/20 hover:bg-success/30 text-success border border-success/30 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-success/5">Buy</button>
-                          <button type="button" onClick={() => startSell(inv)} className="flex-1 py-3 bg-danger/20 hover:bg-danger/30 text-danger border border-danger/30 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-danger/5">Sell</button>
-                          <button type="button" onClick={() => startEdit(inv)} className="w-12 py-3 bg-white/10 hover:bg-white/20 text-white border border-white/20 text-[10px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center transition-all shadow-lg">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                          </button>
-                          <button type="button" onClick={() => { setDeletingId(inv.id); setShowDeleteConfirm(true); }} className="w-12 py-3 bg-danger/20 hover:bg-danger/30 text-danger border border-danger/30 text-[10px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center transition-all shadow-lg shadow-danger/5">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                          </button>
-                       </div>
-                    </div>
-                  );
-               })}
+      {activeStocks.length === 0 ? (
+        <div className="glass-card-static relative overflow-hidden p-8 md:p-16 text-center flex flex-col items-center justify-center min-h-[450px]">
+          <div className="absolute -top-24 -left-24 w-96 h-96 bg-[--accent-primary]/10 rounded-full blur-[100px] pointer-events-none" />
+          <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-emerald-500/10 rounded-full blur-[100px] pointer-events-none" />
+          <div className="relative mb-6 p-6 rounded-3xl bg-white/[0.02] border border-white/5 shadow-2xl">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[--accent-primary]/15 to-emerald-500/15 border border-[--accent-primary]/25 flex items-center justify-center shadow-[0_0_30px_-5px_rgba(14,165,233,0.3)] animate-pulse">
+              <span className="text-3xl">🏢</span>
             </div>
           </div>
-        ) : (
-          <EmptyState
-            title="No Holdings Yet"
-            description="You don't have any stock holdings in your portfolio yet. Add your first transaction to begin tracking."
-            icon="📈"
-            glowColor="purple"
-            action={
-              <button type="button" onClick={() => setShowForm(true)} className="btn-primary shadow-2xl shadow-[--accent-primary]/20">Add your first stock</button>
-            }
-          />
-        )
-      ) : activeTab === "history" ? (
-        /* ── History Table ── */
-        trades.length > 0 ? (
-          <div className="w-full mt-4 table-responsive-wrapper bg-white/[0.01] border border-white/5 rounded-2xl">
-            <table className="w-full text-left border-collapse min-w-[700px]">
-              <thead>
-                <tr className="border-b border-[--border-default] text-[11px] text-[--text-secondary] uppercase font-medium">
-                  <th className="py-3 px-4">Date</th>
-                  <th className="py-3 px-4">Type</th>
-                  <th className="py-3 px-4">Instrument</th>
-                  <th className="py-3 px-4 text-right">Qty.</th>
-                  <th className="py-3 px-4 text-right">Price</th>
-                  <th className="py-3 px-4 text-right">Charges</th>
-                  <th className="py-3 px-4 text-right">Total</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {trades.map((trade) => (
-                  <tr key={trade.id} className="hover:bg-white/[0.02] transition-colors group">
-                    <td className="py-4 px-4 text-[11px] text-[--text-muted]">{trade.trade_date ? format(new Date(trade.trade_date), "MMM d, yyyy") : "N/A"}</td>
-                    <td className="py-4 px-4">
-                      <span className={`text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-widest ${trade.trade_type === 'buy' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}`}>
-                        {trade.trade_type}
-                      </span>
-                    </td>
-                    <td className="py-4 px-4 text-[13px] font-bold text-white group-hover:text-[--accent-primary-light] transition-colors">{trade.symbol.split('.')[0]}</td>
-                    <td className="py-4 px-4 text-right tabular-nums text-[13px] text-white/80">{trade.quantity}</td>
-                    <td className="py-4 px-4 text-right tabular-nums text-[13px] text-white/80">{getTradeCurrency(trade) === 'USD' ? '$' : '₹'}{formatNum(trade.price)}</td>
-                    <td className="py-4 px-4 text-right tabular-nums text-[11px] text-rose-500/80">{getTradeCurrency(trade) === 'USD' ? '$' : '₹'}{formatNum(trade.charges ?? 0)}</td>
-                    <td className="py-4 px-4 text-right tabular-nums text-[13px] font-black flex items-center justify-end gap-4">
-                       <span className={trade.trade_type === 'buy' ? 'text-rose-400' : 'text-emerald-400'}>
-                         {trade.trade_type === 'buy' ? '-' : '+'}{getTradeCurrency(trade) === 'USD' ? '$' : '₹'}{formatNum(trade.total_amount)}
-                       </span>
-                       <button type="button" 
-                         onClick={() => handleRevert(trade.ledger_log_id)}
-                         disabled={submitting}
-                         className="text-[9px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-all bg-rose-500/5 px-2 py-1 rounded-lg border border-rose-500/10"
-                       >
-                         Revert
-                       </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <h3 className="text-2xl md:text-3xl font-black text-[--text-primary] tracking-tight">No Stocks</h3>
+          <p className="text-sm text-[--text-muted] mt-3 max-w-lg mx-auto font-medium leading-relaxed">You haven't invested in any stocks yet. Add your holdings to track performance.</p>
+          <div className="mt-8 flex justify-center">
+             <button onClick={() => setShowAddModal(true)} className="btn-primary">Record First Trade</button>
           </div>
-        ) : (
-          <EmptyState
-            title="No Transaction History"
-            description="No transaction history found for your stock investments."
-            icon="📜"
-            glowColor="purple"
-          />
-        )
-      ) : null}
+        </div>
+      ) : (
+      <>
+        {/* Top Stats Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="glass-card-static p-6 border-white/5">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Total Invested</p>
+            <p className="text-2xl md:text-3xl font-black text-white">₹{stats.totalInvested.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+            <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Capital Deployed</p>
+          </div>
+          <div className="glass-card-static p-6 border-white/5">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Current Value</p>
+            <p className="text-2xl md:text-3xl font-black text-[--accent-primary-light]">₹{stats.totalCurrent.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+            <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Market Value</p>
+          </div>
+          <div className="glass-card-static p-6 border-white/5">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Total Returns</p>
+            <PnLValue amount={stats.totalPnL} percentage={stats.totalPnLPercent} size="lg" showIcon />
+            <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Unrealized P&L</p>
+          </div>
+          <div className="glass-card-static p-6 border-white/5">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">1D Returns</p>
+            <PnLValue amount={stats.dayPnL} percentage={stats.dayPnLPercent} size="lg" showIcon />
+            <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Daily Change</p>
+          </div>
+          <div className="glass-card-static p-6 border-white/5 bg-gradient-to-br from-[--accent-primary]/10 to-transparent">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Top Gainer</p>
+            <p className="text-xl md:text-2xl font-black text-emerald-400 truncate" title={stats.bestStock || ""}>
+              {stats.bestPnL > -Infinity ? `${stats.bestPnL.toFixed(1)}%` : "N/A"}
+            </p>
+            <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60 truncate" title={stats.bestStock || ""}>
+              {stats.bestStock ? stats.bestStock : "No Data"}
+            </p>
+          </div>
+        </div>
 
-      {showForm && (
-        <Drawer
-          isOpen={showForm}
-          onClose={resetForm}
-          title={editingId ? "Modify Portfolio" : (formData.trade_type === 'buy' ? 'Asset Acquisition' : 'Asset Disposal')}
-        >
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Symbol</label>
-              <input
-                autoFocus required value={formData.symbol}
-                onChange={e => setFormData({ ...formData, symbol: e.target.value.toUpperCase() })}
-                className="input-premium uppercase placeholder:text-[--text-disabled]"
-                placeholder="e.g. SBIN, RELIANCE, AAPL"
-                autoComplete="new-password"
-              />
-            </div>
+        {/* Tab Switcher */}
+        <div className="flex border-b border-white/10">
+          <button
+            onClick={() => setActiveView("overview")}
+            className={`px-6 py-3 text-sm font-bold transition-colors border-b-2 ${
+              activeView === "overview"
+                ? "border-[--accent-primary] text-[--accent-primary]"
+                : "border-transparent text-[--text-muted] hover:text-white"
+            }`}
+          >
+            Overview
+          </button>
+          <button
+            onClick={() => setActiveView("holdings")}
+            className={`px-6 py-3 text-sm font-bold transition-colors border-b-2 flex items-center gap-2 ${
+              activeView === "holdings"
+                ? "border-[--accent-primary] text-[--accent-primary]"
+                : "border-transparent text-[--text-muted] hover:text-white"
+            }`}
+          >
+            Portfolio
+            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white/10 text-[9px] text-white">
+              {activeStocks.length}
+            </span>
+          </button>
+        </div>
 
-            <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Company Name</label>
-              <input
-                required value={formData.name}
-                onChange={e => setFormData({ ...formData, name: e.target.value })}
-                className="input-premium placeholder:text-[--text-disabled]"
-                placeholder="State Bank of India"
-                autoComplete="new-password"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Units Traded</label>
-                <input
-                  required type="number" step="any"
-                  value={formData.quantity}
-                  onChange={e => setFormData({ ...formData, quantity: e.target.value })}
-                  className="input-premium tabular-nums"
-                  placeholder="0"
-                  autoComplete="new-password"
-                  inputMode="decimal"
-                />
-              </div>
-
-              <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Avg Price ({formData.currency})</label>
-                <input
-                  required type="number" step="0.01"
-                  value={formData.buy_price}
-                  onChange={e => setFormData({ ...formData, buy_price: e.target.value })}
-                  className="input-premium tabular-nums"
-                  placeholder="0.00"
-                  autoComplete="new-password"
-                  inputMode="decimal"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Current Price (LTP)</label>
-                <input
-                  required type="number" step="0.01"
-                  value={formData.current_price}
-                  onChange={e => setFormData({ ...formData, current_price: e.target.value })}
-                  className="input-premium tabular-nums"
-                  placeholder="0.00"
-                  autoComplete="new-password"
-                  inputMode="decimal"
-                />
-              </div>
-
-              <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Currency</label>
-                <select
-                  value={formData.currency}
-                  onChange={e => setFormData({ ...formData, currency: e.target.value })}
-                  className="input-premium"
-                >
-                  <option value="INR" className="bg-[--bg-surface]">INR (₹)</option>
-                  <option value="USD" className="bg-[--bg-surface]">USD ($)</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">
-                {formData.trade_type === 'buy' ? 'Deduct From Account' : 'Deposit To Account'}
-              </label>
-              <select
-                value={formData.deduct_from_account}
-                onChange={e => setFormData({ ...formData, deduct_from_account: e.target.value })}
-                className="input-premium"
-              >
-                <option value="" className="bg-[--bg-surface]">No Transaction Link (Track only)</option>
-                {accounts.map(acc => (
-                  <option key={acc.id} value={acc.id} className="bg-[--bg-surface]">{acc.name} ({acc.currency})</option>
-                ))}
-              </select>
-              {formData.deduct_from_account && (() => {
-                const selectedAcc = accounts.find(a => a.id === formData.deduct_from_account);
-                return selectedAcc ? (
-                  <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between text-xs text-[--text-secondary] animate-fade-in mt-2">
-                    <span className="font-medium">Selected Balance</span>
-                    <span className="font-bold text-white">
-                      {selectedAcc.currency === 'USD' ? '$' : '₹'}{selectedAcc.balance.toLocaleString()}
-                    </span>
+        {/* View Content */}
+        {activeView === "overview" ? (
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Invested vs Current Bar Chart */}
+              <div className="glass-card-static p-6 lg:col-span-2 min-h-[400px] flex flex-col">
+                <div className="flex justify-between items-start mb-6">
+                  <div>
+                    <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[--text-muted]">Stock Performance (Top 10)</h3>
+                    <p className="text-2xl font-black mt-2 text-white">Invested vs Current</p>
                   </div>
-                ) : null;
-              })()}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Transaction Date</label>
-                <input
-                  required type="date"
-                  value={formData.bought_at}
-                  onChange={e => setFormData({ ...formData, bought_at: e.target.value })}
-                  className="input-premium"
-                  autoComplete="new-password"
-                />
+                </div>
+                <div className="flex-1 min-h-[250px] w-full mt-4 -ml-4">
+                  {mounted && (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={barChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }} layout="vertical">
+                        <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="rgba(255,255,255,0.05)" />
+                        <XAxis type="number" tickFormatter={formatCurrency} axisLine={false} tickLine={false} tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 12 }} />
+                        <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 12 }} width={100} />
+                        <RechartsTooltip 
+                          contentStyle={{ backgroundColor: "rgba(10,10,10,0.9)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px", boxShadow: "0 10px 25px rgba(0,0,0,0.5)" }}
+                          itemStyle={{ color: "#fff", fontWeight: "bold" }}
+                          formatter={(value: any) => [`₹${Number(value).toLocaleString()}`, ""]}
+                        />
+                        <Legend wrapperStyle={{ paddingTop: "20px" }} />
+                        <Bar dataKey="Invested" fill="#8B5CF6" radius={[0, 4, 4, 0]} />
+                        <Bar dataKey="Current" fill="var(--accent-primary)" radius={[0, 4, 4, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
               </div>
 
-              <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Brokerage Charges (₹)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={charges}
-                  onChange={e => setCharges(e.target.value)}
-                  className="input-premium tabular-nums"
-                  placeholder="0.00"
-                  autoComplete="new-password"
-                  inputMode="decimal"
-                />
+              {/* Allocation Pie Chart */}
+              <div className="glass-card-static p-6 flex flex-col items-center justify-center relative min-h-[400px]">
+                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[--text-muted] absolute top-6 left-6">Top Holdings Allocation</h3>
+                <div className="w-full h-[250px] mt-8">
+                  {mounted && pieChartData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={pieChartData} cx="50%" cy="50%" innerRadius={60} outerRadius={85} paddingAngle={5} dataKey="value">
+                          {pieChartData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} stroke="rgba(255,255,255,0.05)" strokeWidth={2} />)}
+                        </Pie>
+                        <RechartsTooltip 
+                          contentStyle={{ backgroundColor: "rgba(10,10,10,0.9)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px" }}
+                          itemStyle={{ color: "#fff", fontWeight: "bold" }}
+                          formatter={(value: any) => [`₹${Number(value).toLocaleString()}`, "Value"]}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center text-[--text-muted]">
+                       <span className="text-3xl mb-2">📊</span>
+                       <span className="text-xs uppercase tracking-widest font-black">No Data</span>
+                    </div>
+                  )}
+                </div>
+                {pieChartData.length > 0 && (
+                  <div className="flex flex-wrap justify-center gap-3 mt-4 w-full">
+                    {pieChartData.slice(0, 5).map((entry, index) => (
+                      <div key={index} className="flex items-center gap-1.5 text-xs">
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: entry.fill }} />
+                        <span className="text-[--text-secondary] font-medium">{entry.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
-
-            <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Notes</label>
-              <input
-                value={formData.notes}
-                onChange={e => setFormData({ ...formData, notes: e.target.value })}
-                className="input-premium"
-                placeholder="Optional notes"
-                autoComplete="new-password"
-              />
-            </div>
-
-            <div className="pt-4 mt-8">
-              <button
-                type="submit" disabled={submitting}
-                className="btn-primary w-full h-12 shadow-xl shadow-[--accent-primary]/20 text-[11px] font-black uppercase tracking-widest"
-              >
-                {submitting ? "Processing Transaction..." : (editingId ? "Finalize Updates" : (formData.trade_type === 'buy' ? "Authorize Buy Order" : "Authorize Sell Order"))}
-              </button>
-            </div>
-          </form>
-        </Drawer>
+          </div>
+        ) : (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <StocksDataTable 
+              stocks={activeStocks} 
+              onEdit={startEdit} 
+              onSell={startSell}
+              onAdd={() => setShowAddModal(true)} 
+            />
+          </div>
+        )}
+      </>
       )}
 
-      {showDeleteConfirm && (
-        <div role="dialog" aria-modal="true" className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-           <div className="w-full max-w-xs bg-[--bg-surface] border border-[--border-default] rounded-sm p-6 text-center shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
-              <h3 className="text-base font-medium text-[--text-primary] mb-2">Delete holding?</h3>
-              <p className="text-[12px] text-[--text-muted] mb-6">This action cannot be undone.</p>
-              <div className="flex gap-3">
-                <button type="button" 
-                  onClick={() => { setShowDeleteConfirm(false); setDeletingId(null); }}
-                  className="flex-1 h-10 border border-[--border-default] text-[--text-primary] text-xs font-medium rounded-sm hover:bg-[--bg-elevated] transition-colors"
+      {/* Add / Edit Modal */}
+      {showAddModal && (
+        <Drawer
+          isOpen={showAddModal}
+          onClose={() => { setShowAddModal(false); setEditingId(null); }}
+          title={editingId ? "Update Stock Holding" : "Record Stock Trade"}
+        >
+          <div className="p-2 max-w-lg mx-auto w-full">
+            {!editingId && (
+              <div className="flex bg-white/5 rounded-xl p-1 border border-white/5 mb-6">
+                <button 
+                  type="button"
+                  onClick={() => setFormData({ ...formData, trade_type: "buy" })}
+                  className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
+                    formData.trade_type === "buy" ? "bg-[--accent-primary] text-white shadow-md" : "text-[--text-muted]"
+                  }`}
                 >
-                  CANCEL
+                  Buy Stock
                 </button>
-                <button type="button" 
-                  onClick={confirmDelete}
-                  className="flex-1 h-10 bg-danger text-white text-xs font-medium rounded-sm hover:opacity-90 transition-colors"
+                <button 
+                  type="button"
+                  onClick={() => setFormData({ ...formData, trade_type: "sell" })}
+                  className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
+                    formData.trade_type === "sell" ? "bg-rose-500 text-white shadow-md" : "text-[--text-muted]"
+                  }`}
                 >
-                  DELETE
+                  Sell Stock
                 </button>
               </div>
-           </div>
-        </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Stock Name</label>
+                  <input required className="input-premium" placeholder="e.g. Apple Inc" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                </div>
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Symbol / Ticker</label>
+                  <input className="input-premium uppercase" placeholder="e.g. AAPL" value={formData.symbol} onChange={e => setFormData({...formData, symbol: e.target.value})} />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Quantity</label>
+                  <input required type="number" step="any" className="input-premium tabular-nums" value={formData.quantity} onChange={e => setFormData({...formData, quantity: e.target.value})} inputMode="decimal" />
+                </div>
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">{formData.trade_type === 'buy' ? 'Buy Price' : 'Sell Price'}</label>
+                  <input required type="number" step="any" className="input-premium tabular-nums" value={formData.buy_price} onChange={e => setFormData({...formData, buy_price: e.target.value})} inputMode="decimal" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Current Market Price (LTP)</label>
+                  <input required type="number" step="any" className="input-premium tabular-nums" value={formData.current_price} onChange={e => setFormData({...formData, current_price: e.target.value})} inputMode="decimal" />
+                </div>
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Currency</label>
+                  <select className="input-premium" value={formData.currency} onChange={e => setFormData({...formData, currency: e.target.value})}>
+                    <option value="INR">INR (₹)</option>
+                    <option value="USD">USD ($)</option>
+                    <option value="EUR">EUR (€)</option>
+                    <option value="GBP">GBP (£)</option>
+                  </select>
+                </div>
+              </div>
+
+              {!editingId && (
+                <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Transaction Date</label>
+                    <input type="date" className="input-premium" value={formData.bought_at} onChange={e => setFormData({...formData, bought_at: e.target.value})} />
+                  </div>
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">
+                      {formData.trade_type === 'buy' ? 'Deduct From Account' : 'Deposit To Account'}
+                    </label>
+                    <select className="input-premium" value={formData.deduct_from_account} onChange={e => setFormData({...formData, deduct_from_account: e.target.value})}>
+                      <option value="">No Transaction (Track Only)</option>
+                      {accounts.map(acc => (
+                        <option key={acc.id} value={acc.id}>{acc.name} (₹{acc.balance.toLocaleString()})</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Brokerage / STT / Charges (₹)</label>
+                  <input type="number" step="any" className="input-premium tabular-nums" value={charges} onChange={e => setCharges(e.target.value)} />
+                </div>
+                </>
+              )}
+
+              <div className="pt-4 mt-8">
+                <button type="submit" disabled={submitting} className={`btn-primary w-full h-12 shadow-xl text-[11px] font-black uppercase tracking-widest ${!editingId && formData.trade_type === 'sell' ? '!bg-rose-500 hover:!bg-rose-600 shadow-[--danger]/20' : 'shadow-[--accent-primary]/20'}`}>
+                  {submitting ? "Processing..." : (editingId ? "Update Stock" : formData.trade_type === 'buy' ? "Purchase Stock" : "Sell Stock")}
+                </button>
+              </div>
+            </form>
+          </div>
+        </Drawer>
       )}
     </div>
   );

@@ -36,19 +36,8 @@ export async function resetUserData() {
     
     console.log("Database reset completed successfully. Revalidating Next.js cache paths...");
     
-    // Revalidate all major paths
-    revalidatePath("/dashboard");
-    revalidatePath("/dashboard/accounts");
-    revalidatePath("/dashboard/ledger");
-    revalidatePath("/dashboard/stocks");
-    revalidatePath("/dashboard/mutual-funds");
-    revalidatePath("/dashboard/goals");
-    revalidatePath("/dashboard/family");
-    revalidatePath("/dashboard/bonds");
-    revalidatePath("/dashboard/alternative-assets");
-    revalidatePath("/dashboard/liabilities");
-    revalidatePath("/dashboard/forex");
-    revalidatePath("/dashboard/budget");
+    // Revalidate all major paths to ensure no stale data from layout or nested routes
+    revalidatePath("/", "layout");
     
     return { success: true };
   } catch (error: unknown) {
