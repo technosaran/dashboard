@@ -70,13 +70,12 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const headerStore = await headers();
-  const nonce = headerStore.get("x-nonce") || "";
 
   return (
     <html
       lang="en"
       className={cn("h-full", "antialiased", "dark", "font-sans", "theme-google")}
-      nonce={nonce}
+      suppressHydrationWarning
     >
       <head />
       <body className="min-h-full flex flex-col overflow-x-hidden bg-[--bg-base] text-[--text-primary] font-sans relative">

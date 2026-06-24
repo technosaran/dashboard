@@ -228,7 +228,7 @@ export default function FamilyClient({
   }, 0);
 
   return (
-    <div className="flex flex-col gap-8 max-w-[1200px] mx-auto w-full pb-10 min-w-0 overflow-x-hidden md:overflow-visible">
+    <div className="flex flex-col gap-8 w-full max-w-none px-6 pb-10 min-w-0 overflow-x-hidden md:overflow-visible">
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-6 min-w-0">
         <div className="min-w-0">
