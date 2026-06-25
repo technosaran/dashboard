@@ -190,12 +190,11 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
             scheme_code: formData.scheme_code,
             units: qty,
             nav: price,
-            current_nav: parseFloat(formData.current_nav || formData.nav),
             category: formData.category,
             investment_type: formData.investment_type,
             account_id: formData.account_id,
             date: formData.date,
-            total_cost: finalNet,
+            stamp_duty: chargeAmt,
             trade_type: formData.trade_type
           });
           
