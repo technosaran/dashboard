@@ -62,6 +62,7 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
   const {
     data: { ledgerLogs: logs, accounts },
     isValidating,
+    mutate,
   } = useFinanceData(initialData);
 
   const getLogCurrency = (accountId: string | null) => {
@@ -336,6 +337,7 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
           const res = await revertLedgerTransaction(logId);
           if (res.success) {
             toast.success("Transaction reverted successfully");
+            mutate();
           } else {
             toast.error(res.error || "Failed to revert transaction");
           }

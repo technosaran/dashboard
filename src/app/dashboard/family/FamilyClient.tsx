@@ -460,13 +460,54 @@ export default function FamilyClient({ initialData }: FamilyClientProps) {
             </div>
           </div>
 
+          {recipients.length > 0 && (
+            <div className="flex flex-col gap-4 mt-2">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-[--text-muted]">Quick Transfer</h3>
+                <button onClick={() => setActiveView("contacts")} className="text-[10px] font-bold text-[--text-primary] hover:text-[--accent-primary] transition-colors uppercase tracking-widest">
+                  View All
+                </button>
+              </div>
+              <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
+                {recipients.map((person) => {
+                  const totalSentToPerson = ledgerLogs
+                    .filter(log => log.action_type === "SEND_MONEY" && getRecipientId(log) === person.id)
+                    .reduce((sum, log) => sum + Number(log.amount || 0), 0);
+
+                  return (
+                    <div key={person.id} className="min-w-[280px] w-[280px] shrink-0">
+                      <ContactCard
+                        person={person}
+                        totalSent={totalSentToPerson}
+                        onEdit={startEdit}
+                        onSend={(p) => {
+                          setSelectedRecipient(p);
+                          setIsSendingMoney(true);
+                        }}
+                        onHistory={() => {}}
+                        onDelete={handleDeleteRecipient}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           <FamilyDataTable
             recentSends={stats.currentMonth}
             accounts={accounts}
             recipients={recipients}
             getRecipientId={getRecipientId}
             onRevert={handleRevertTransfer}
-            onAdd={() => setIsSendingMoney(true)}
+            onAdd={() => {
+              setActiveView("contacts");
+              if (recipients.length === 0) {
+                setIsAddingRecipient(true);
+              } else {
+                toast.success("Select a contact to send money");
+              }
+            }}
           />
         </div>
       )}

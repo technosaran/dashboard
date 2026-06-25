@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { format, parseISO } from "date-fns";
 import {
   useReactTable,
   getCoreRowModel,
@@ -12,9 +11,8 @@ import {
   SortingState,
 } from "@tanstack/react-table";
 import { EmptyState } from "@/components/empty-state";
-import { ArrowUpDown, ArrowUp, ArrowDown, Edit, TrendingDown } from "lucide-react";
+import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import type { Tables } from "@/lib/database.types";
-import PnLValue from "@/components/pnl-value";
 
 type Stock = Tables<"investments"> & { day_change?: number; day_change_percent?: number };
 
@@ -31,85 +29,111 @@ export default function StocksDataTable({ stocks, onEdit, onSell, onAdd }: Stock
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
 
+  const formatMoney = (val: number) => val.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
   const columns = useMemo(
     () => [
       columnHelper.accessor("name", {
-        header: "Stock",
+        header: "Instrument",
         cell: (info) => (
-          <div className="flex flex-col max-w-[200px]">
-            <p className="text-[13px] font-bold text-white truncate hover:text-clip hover:absolute hover:bg-black hover:z-10 hover:p-1 hover:rounded-md hover:border hover:border-white/10" title={info.getValue()}>{info.getValue()}</p>
-            <p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] truncate">{info.row.original.symbol || "N/A"}</p>
+          <div className="flex flex-col">
+            <span className="text-sm font-medium text-[--text-primary]" title={info.getValue()}>{info.row.original.symbol || info.getValue()}</span>
           </div>
         ),
       }),
-      columnHelper.display({
-        id: "investment",
+      columnHelper.accessor("quantity", {
         header: ({ column }) => (
-          <button onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="flex items-center gap-1 uppercase tracking-[0.2em] hover:text-white transition-colors">
-            Investment
-            {column.getIsSorted() === "asc" ? <ArrowUp className="w-3 h-3" /> : column.getIsSorted() === "desc" ? <ArrowDown className="w-3 h-3" /> : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+          <button onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="flex items-center justify-end w-full gap-1 hover:text-[--text-primary] transition-colors">
+            Qty.
+            {column.getIsSorted() === "asc" ? <ArrowUp className="w-3 h-3" /> : column.getIsSorted() === "desc" ? <ArrowDown className="w-3 h-3" /> : <ArrowUpDown className="w-3 h-3 opacity-30" />}
+          </button>
+        ),
+        cell: (info) => <div className="text-right text-sm text-[--text-secondary]">{Number(info.getValue()).toString()}</div>,
+      }),
+      columnHelper.accessor("buy_price", {
+        header: ({ column }) => (
+          <button onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="flex items-center justify-end w-full gap-1 hover:text-[--text-primary] transition-colors">
+            Avg. cost
+            {column.getIsSorted() === "asc" ? <ArrowUp className="w-3 h-3" /> : column.getIsSorted() === "desc" ? <ArrowDown className="w-3 h-3" /> : <ArrowUpDown className="w-3 h-3 opacity-30" />}
+          </button>
+        ),
+        cell: (info) => <div className="text-right text-sm text-[--text-secondary]">{formatMoney(Number(info.getValue()))}</div>,
+      }),
+      columnHelper.accessor("current_price", {
+        header: ({ column }) => (
+          <button onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="flex items-center justify-end w-full gap-1 hover:text-[--text-primary] transition-colors">
+            LTP
+            {column.getIsSorted() === "asc" ? <ArrowUp className="w-3 h-3" /> : column.getIsSorted() === "desc" ? <ArrowDown className="w-3 h-3" /> : <ArrowUpDown className="w-3 h-3 opacity-30" />}
           </button>
         ),
         cell: (info) => {
-          const invested = Number(info.row.original.quantity) * Number(info.row.original.buy_price);
+          const ltp = Number(info.getValue());
+          const prev = Number(info.row.original.previous_close || ltp);
+          const isUp = ltp >= prev;
+          return <div className={`text-right text-sm font-medium ${isUp ? 'text-emerald-500' : 'text-rose-500'}`}>{formatMoney(ltp)}</div>;
+        },
+      }),
+      columnHelper.display({
+        id: "curVal",
+        header: ({ column }) => (
+          <button onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="flex items-center justify-end w-full gap-1 hover:text-[--text-primary] transition-colors">
+            Cur. val
+            {column.getIsSorted() === "asc" ? <ArrowUp className="w-3 h-3" /> : column.getIsSorted() === "desc" ? <ArrowDown className="w-3 h-3" /> : <ArrowUpDown className="w-3 h-3 opacity-30" />}
+          </button>
+        ),
+        cell: (info) => {
+          const val = Number(info.row.original.quantity) * Number(info.row.original.current_price);
+          return <div className="text-right text-sm text-[--text-secondary]">{formatMoney(val)}</div>;
+        },
+        sortingFn: (rowA, rowB) => {
+          return (Number(rowA.original.quantity) * Number(rowA.original.current_price)) - (Number(rowB.original.quantity) * Number(rowB.original.current_price));
+        }
+      }),
+      columnHelper.display({
+        id: "pnl",
+        header: ({ column }) => (
+          <button onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="flex items-center justify-end w-full gap-1 hover:text-[--text-primary] transition-colors">
+            P&L
+            {column.getIsSorted() === "asc" ? <ArrowUp className="w-3 h-3" /> : column.getIsSorted() === "desc" ? <ArrowDown className="w-3 h-3" /> : <ArrowUpDown className="w-3 h-3 opacity-30" />}
+          </button>
+        ),
+        cell: (info) => {
+          const inv = Number(info.row.original.quantity) * Number(info.row.original.buy_price);
+          const cur = Number(info.row.original.quantity) * Number(info.row.original.current_price);
+          const pnl = cur - inv;
+          const pct = inv > 0 ? (pnl / inv) * 100 : 0;
+          const isPositive = pnl >= 0;
           return (
-            <div className="flex flex-col">
-              <span className="text-[12px] font-bold text-white">
-                {info.row.original.currency === 'USD' ? '$' : '₹'}{invested.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </span>
-              <span className="text-[9px] text-[--text-muted]">{Number(info.row.original.quantity).toFixed(2)} qty</span>
+            <div className={`text-right text-sm ${isPositive ? 'text-emerald-500' : 'text-rose-500'}`}>
+              <div>{isPositive ? '+' : ''}{formatMoney(pnl)}</div>
+              <div className="text-xs opacity-80">{isPositive ? '+' : ''}{pct.toFixed(2)}%</div>
             </div>
           );
         },
         sortingFn: (rowA, rowB) => {
           const invA = Number(rowA.original.quantity) * Number(rowA.original.buy_price);
+          const curA = Number(rowA.original.quantity) * Number(rowA.original.current_price);
           const invB = Number(rowB.original.quantity) * Number(rowB.original.buy_price);
-          return invA - invB;
+          const curB = Number(rowB.original.quantity) * Number(rowB.original.current_price);
+          return (curA - invA) - (curB - invB);
         }
       }),
       columnHelper.display({
-        id: "currentValue",
+        id: "netChg",
         header: ({ column }) => (
-          <button onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="flex items-center gap-1 uppercase tracking-[0.2em] hover:text-white transition-colors">
-            Current Value
-            {column.getIsSorted() === "asc" ? <ArrowUp className="w-3 h-3" /> : column.getIsSorted() === "desc" ? <ArrowDown className="w-3 h-3" /> : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+          <button onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="flex items-center justify-end w-full gap-1 hover:text-[--text-primary] transition-colors">
+            Net chg.
+            {column.getIsSorted() === "asc" ? <ArrowUp className="w-3 h-3" /> : column.getIsSorted() === "desc" ? <ArrowDown className="w-3 h-3" /> : <ArrowUpDown className="w-3 h-3 opacity-30" />}
           </button>
         ),
         cell: (info) => {
-          const current = Number(info.row.original.quantity) * Number(info.row.original.current_price);
+          const pct = Number(info.row.original.day_change_percent || 0);
+          const isPositive = pct >= 0;
           return (
-            <div className="flex flex-col">
-              <span className="text-[12px] font-bold text-white">
-                {info.row.original.currency === 'USD' ? '$' : '₹'}{current.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </span>
-              <span className="text-[9px] text-[--text-muted]">LTP: {info.row.original.currency === 'USD' ? '$' : '₹'}{Number(info.row.original.current_price).toFixed(2)}</span>
+            <div className={`text-right text-sm ${isPositive ? 'text-emerald-500' : 'text-rose-500'}`}>
+              {isPositive ? '+' : ''}{pct.toFixed(2)}%
             </div>
           );
-        },
-        sortingFn: (rowA, rowB) => {
-          const valA = Number(rowA.original.quantity) * Number(rowA.original.current_price);
-          const valB = Number(rowB.original.quantity) * Number(rowB.original.current_price);
-          return valA - valB;
-        }
-      }),
-      columnHelper.display({
-        id: "pnl",
-        header: "Returns",
-        cell: (info) => {
-          const invested = Number(info.row.original.quantity) * Number(info.row.original.buy_price);
-          const current = Number(info.row.original.quantity) * Number(info.row.original.current_price);
-          const pnl = current - invested;
-          const pct = invested > 0 ? (pnl / invested) * 100 : 0;
-          return <PnLValue amount={pnl} percentage={pct} showIcon currency={info.row.original.currency} />;
-        },
-      }),
-      columnHelper.display({
-        id: "dayChange",
-        header: "1D Change",
-        cell: (info) => {
-          const dayPnl = Number(info.row.original.day_change || 0) * Number(info.row.original.quantity);
-          const pct = Number(info.row.original.day_change_percent || 0);
-          return <PnLValue amount={dayPnl} percentage={pct} currency={info.row.original.currency} />;
         },
       }),
       columnHelper.display({
@@ -118,18 +142,16 @@ export default function StocksDataTable({ stocks, onEdit, onSell, onAdd }: Stock
         cell: (info) => (
           <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
             <button
-              onClick={() => onSell(info.row.original)}
-              className="p-2 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-colors"
-              title="Sell Position"
+              onClick={(e) => { e.stopPropagation(); onEdit(info.row.original); }}
+              className="px-3 py-1 rounded bg-blue-500/10 text-blue-500 hover:bg-blue-500 hover:text-white transition-colors text-xs font-semibold"
             >
-              <TrendingDown className="w-4 h-4" />
+              Add
             </button>
             <button
-              onClick={() => onEdit(info.row.original)}
-              className="p-2 rounded-lg bg-white/5 text-[--text-muted] hover:bg-[--accent-primary] hover:text-white transition-colors"
-              title="Edit Stock"
+              onClick={(e) => { e.stopPropagation(); onSell(info.row.original); }}
+              className="px-3 py-1 rounded bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-colors text-xs font-semibold"
             >
-              <Edit className="w-4 h-4" />
+              Exit
             </button>
           </div>
         ),
@@ -156,7 +178,7 @@ export default function StocksDataTable({ stocks, onEdit, onSell, onAdd }: Stock
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     initialState: {
-      pagination: { pageSize: 15 },
+      pagination: { pageSize: 50 },
     },
   });
 
@@ -164,11 +186,11 @@ export default function StocksDataTable({ stocks, onEdit, onSell, onAdd }: Stock
     return (
       <EmptyState 
         icon="🏢"
-        title="No Stock Holdings"
+        title="No holdings"
         description="You have no active stock investments."
         action={
           <button onClick={onAdd} className="btn-primary">
-            Record Trade
+            Add Trade
           </button>
         }
       />
@@ -176,27 +198,24 @@ export default function StocksDataTable({ stocks, onEdit, onSell, onAdd }: Stock
   }
 
   return (
-    <div className="glass-card-static rounded-2xl overflow-hidden flex flex-col border border-white/5">
-      <div className="p-4 md:p-5 border-b border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/[0.02]">
-        <div className="relative">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[--text-muted]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-          <input
-            type="text"
-            placeholder="Search stocks..."
-            value={globalFilter}
-            onChange={(e) => setGlobalFilter(e.target.value)}
-            className="input-premium pl-9 py-2 text-sm w-full sm:w-64 !bg-black/20"
-          />
-        </div>
+    <div className="bg-[#0a0a0a] rounded-md border border-white/10 flex flex-col">
+      <div className="p-3 border-b border-white/10 flex items-center justify-between">
+        <input
+          type="text"
+          placeholder="Search eg: infy bse, nifty fut"
+          value={globalFilter}
+          onChange={(e) => setGlobalFilter(e.target.value)}
+          className="bg-transparent border-none outline-none text-sm text-[--text-primary] placeholder-[--text-muted] w-full max-w-xs px-2"
+        />
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse min-w-[900px]">
+        <table className="w-full text-left border-collapse min-w-[800px]">
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id} className="border-b border-white/5 bg-black/40">
+              <tr key={headerGroup.id} className="border-b border-white/10">
                 {headerGroup.headers.map((header) => (
-                  <th key={header.id} className="px-5 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] whitespace-nowrap">
+                  <th key={header.id} className="px-4 py-3 text-xs font-normal text-[--text-muted] whitespace-nowrap bg-white/[0.02]">
                     {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                   </th>
                 ))}
@@ -205,44 +224,37 @@ export default function StocksDataTable({ stocks, onEdit, onSell, onAdd }: Stock
           </thead>
           <tbody className="divide-y divide-white/5">
             {table.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="group hover:bg-white/[0.02] transition-colors">
+              <tr key={row.id} className="group hover:bg-white/[0.02] transition-colors cursor-pointer">
                 {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="px-5 py-3.5 align-middle">
+                  <td key={cell.id} className="px-4 py-3 align-middle">
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>
                 ))}
               </tr>
             ))}
-            {table.getRowModel().rows.length === 0 && (
-              <tr>
-                <td colSpan={columns.length} className="px-5 py-12 text-center text-[--text-muted] text-sm">
-                  No stocks match your search.
-                </td>
-              </tr>
-            )}
           </tbody>
         </table>
       </div>
-
+      
       {table.getPageCount() > 1 && (
-        <div className="p-4 border-t border-white/5 flex items-center justify-between bg-white/[0.02]">
-          <span className="text-xs font-bold text-[--text-muted]">
-            Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
-          </span>
-          <div className="flex items-center gap-2">
+        <div className="p-3 border-t border-white/10 flex items-center justify-between text-xs text-[--text-muted]">
+          <div>
+            Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to {Math.min((table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize, filteredStocks.length)} of {filteredStocks.length} entries
+          </div>
+          <div className="flex gap-2">
             <button
               onClick={() => table.previousPage()}
               disabled={!table.getCanPreviousPage()}
-              className="p-2 rounded-lg hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent transition-colors text-white"
+              className="px-2 py-1 disabled:opacity-30 hover:text-white"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+              Previous
             </button>
             <button
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage()}
-              className="p-2 rounded-lg hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent transition-colors text-white"
+              className="px-2 py-1 disabled:opacity-30 hover:text-white"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+              Next
             </button>
           </div>
         </div>
