@@ -61,6 +61,8 @@ export default function FamilyClient({ initialData }: FamilyClientProps) {
   const [newName, setNewName] = useState("");
   const [newRelationship, setNewRelationship] = useState("Family");
 
+  const [historyRecipientId, setHistoryRecipientId] = useState<string | null>(null);
+
   const [sendAmount, setSendAmount] = useState("");
   const [sendAccountId, setSendAccountId] = useState("");
   const [sendNote, setSendNote] = useState("");
@@ -94,6 +96,7 @@ export default function FamilyClient({ initialData }: FamilyClientProps) {
     setDeletingId(null);
     setIsRevertingTransfer(false);
     setRevertingLogId(null);
+    setHistoryRecipientId(null);
   };
 
   useEffect(() => {
@@ -484,7 +487,7 @@ export default function FamilyClient({ initialData }: FamilyClientProps) {
                           setSelectedRecipient(p);
                           setIsSendingMoney(true);
                         }}
-                        onHistory={() => {}}
+                        onHistory={(id) => setHistoryRecipientId(id)}
                         onDelete={handleDeleteRecipient}
                       />
                     </div>
@@ -546,9 +549,7 @@ export default function FamilyClient({ initialData }: FamilyClientProps) {
                       setSelectedRecipient(p);
                       setIsSendingMoney(true);
                     }}
-                    onHistory={() => {
-                      // Removed onHistory to switch to old table view
-                    }}
+                    onHistory={(id) => setHistoryRecipientId(id)}
                     onDelete={handleDeleteRecipient}
                   />
                 );
@@ -597,6 +598,29 @@ export default function FamilyClient({ initialData }: FamilyClientProps) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* History Drawer */}
+      {historyRecipientId && (
+        <Drawer isOpen={!!historyRecipientId} onClose={closeModals} title={`${recipients.find(r => r.id === historyRecipientId)?.name}'s Transfer History`}>
+          <div className="p-4">
+            <FamilyDataTable
+              recentSends={ledgerLogs.filter(log => log.action_type === "SEND_MONEY" && getRecipientId(log) === historyRecipientId)}
+              accounts={accounts}
+              recipients={recipients}
+              getRecipientId={getRecipientId}
+              onRevert={handleRevertTransfer}
+              onAdd={() => {
+                closeModals();
+                const recipient = recipients.find(r => r.id === historyRecipientId);
+                if (recipient) {
+                  setSelectedRecipient(recipient);
+                  setIsSendingMoney(true);
+                }
+              }}
+            />
+          </div>
+        </Drawer>
       )}
 
       {isAddingRecipient && !showDeleteConfirm && (
