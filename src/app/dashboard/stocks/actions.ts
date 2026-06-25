@@ -12,24 +12,49 @@ type RecordInvestmentResult = {
 export async function searchStocks(query: string, exchange: string = "NSE") {
   if (!query || query.length < 2) return [];
   try {
-    const url = `https://api.tickertape.in/search?text=${encodeURIComponent(query)}`;
-    const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" }, cache: "no-store" });
+    let stocks = [];
     
-    if (!res.ok) return [];
-    const data = await res.json();
-    
-    interface TickertapeStock {
-      ticker: string;
-      name: string;
-      type: string;
+    // 1. Try Tickertape
+    try {
+      const url = `https://api.tickertape.in/search?text=${encodeURIComponent(query)}`;
+      const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" }, cache: "no-store" });
+      
+      if (res.ok) {
+        const data = await res.json();
+        interface TickertapeStock {
+          ticker: string;
+          name: string;
+          type: string;
+        }
+        stocks = (data?.data?.stocks as TickertapeStock[] || []).filter((q) => q.type === "stock" && q.ticker);
+      }
+    } catch (e) {
+      console.error("Tickertape search failed", e);
     }
 
-    const stocks = data?.data?.stocks as TickertapeStock[] || [];
+    // 2. Fallback to Yahoo Finance if Tickertape failed (e.g. Vercel IP blocked)
+    if (stocks.length === 0) {
+      try {
+        const url = `https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(query)}&quotesCount=15&newsCount=0`;
+        const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" }, cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          stocks = (data?.quotes || [])
+            .filter((q: any) => q.quoteType === "EQUITY" && (q.symbol.endsWith(".NS") || q.symbol.endsWith(".BO")))
+            .map((q: any) => ({
+              ticker: q.symbol.replace(".NS", "").replace(".BO", ""),
+              name: q.shortname || q.longname,
+              type: "stock"
+            }));
+        }
+      } catch (e) {
+        console.error("Yahoo search failed", e);
+      }
+    }
 
     return stocks
-      .filter((q) => q.type === "stock" && q.ticker)
       .slice(0, 10)
-      .map((q) => {
+      .map((q: any) => {
         const fullSymbol = exchange === "BSE" ? `${q.ticker}.BO` : `${q.ticker}.NS`;
         return {
           symbol: q.ticker,

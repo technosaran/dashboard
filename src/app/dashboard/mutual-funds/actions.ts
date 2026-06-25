@@ -20,7 +20,7 @@ const USER_AGENTS = [
 ];
 
 export async function searchMFSchemes(query: string) {
-  if (!query || query.length < 3) return [];
+  if (!query || query.length < 2) return [];
   try {
     const userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)";
     const res = await fetch(`https://api.mfapi.in/mf/search?q=${encodeURIComponent(query)}`, {
@@ -40,7 +40,11 @@ export async function searchMFSchemes(query: string) {
 
   // Fallback
   try {
-    const fallbackRes = await fetch("https://www.amfiindia.com/spages/NAVAll.txt", { cache: "no-store" });
+    const userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)";
+    const fallbackRes = await fetch("https://www.amfiindia.com/spages/NAVAll.txt", { 
+      cache: "no-store",
+      headers: { "User-Agent": userAgent } 
+    });
     if (fallbackRes.ok) {
       const text = await fallbackRes.text();
       const lines = text.split("\n");
@@ -62,8 +66,12 @@ export async function searchMFSchemes(query: string) {
 }
 
 export async function fetchLiveMFNAV(schemeCode: string) {
+  const userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)";
   try {
-    const res = await fetch(`https://api.mfapi.in/mf/${schemeCode}`, { cache: "no-store" });
+    const res = await fetch(`https://api.mfapi.in/mf/${schemeCode}`, { 
+      cache: "no-store",
+      headers: { "User-Agent": userAgent }
+    });
     if (res.ok) {
       const data = await res.json();
       if (data && data.data && data.data.length > 0) {
@@ -78,7 +86,10 @@ export async function fetchLiveMFNAV(schemeCode: string) {
   
   // Fallback
   try {
-    const fallbackRes = await fetch("https://www.amfiindia.com/spages/NAVAll.txt", { cache: "no-store" });
+    const fallbackRes = await fetch("https://www.amfiindia.com/spages/NAVAll.txt", { 
+      cache: "no-store",
+      headers: { "User-Agent": userAgent }
+    });
     if (fallbackRes.ok) {
       const text = await fallbackRes.text();
       const lines = text.split("\n");
