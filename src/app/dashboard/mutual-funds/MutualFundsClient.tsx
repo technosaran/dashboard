@@ -15,6 +15,7 @@ const ResponsiveContainer = dynamic(() => import("recharts").then((mod) => mod.R
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip } from "recharts";
 
 import MutualFundsDataTable from "./components/MutualFundsDataTable";
+import MFHistoryTable from "./components/MFHistoryTable";
 
 type MF = Tables<"mutual_funds"> & { scheme_code?: string | null; fund_symbol?: string | null; pnlPercent?: number; day_change?: number; day_change_percent?: number };
 
@@ -31,14 +32,14 @@ const getColorByLabel = (label: string) => {
 };
 
 export default function MutualFundsClient({ initialData }: { initialData?: FinanceData }) {
-  const { data: { mutualFunds: rawMfs, accounts, profile }, mutate } = useFinanceData(initialData);
+  const { data: { mutualFunds: rawMfs, accounts, profile, mutualFundTrades }, mutate } = useFinanceData(initialData);
   const searchParams = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(searchParams?.get("action") === "new");
   const [submitting, withLock] = useSubmitLock();
   const [editingId, setEditingId] = useState<string | null>(null);
   
   // Coin uses Dashboard, Mutual Funds (Holdings, Orders)
-  const [activeTab, setActiveTab] = useState<"dashboard" | "holdings">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "holdings" | "history">("dashboard");
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -179,9 +180,11 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
     try {
       for (const mf of rawMfs) {
         if (!mf.scheme_code) continue;
-        const liveNAV = await fetchLiveMFNAV(mf.scheme_code);
-        if (liveNAV && liveNAV !== mf.current_nav) {
-          await updateMFHolding(mf.id, { current_nav: liveNAV });
+        const liveData = await fetchLiveMFNAV(mf.scheme_code);
+        if (liveData && (liveData.nav !== mf.current_nav || liveData.previousNav !== mf.previous_nav)) {
+          const updatePayload: any = { current_nav: liveData.nav };
+          if (liveData.previousNav) updatePayload.previous_nav = liveData.previousNav;
+          await updateMFHolding(mf.id, updatePayload);
           updated++;
         }
       }
@@ -276,6 +279,12 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
             className={`text-2xl font-normal transition-colors ${activeTab === "holdings" ? "text-black dark:text-white" : "text-gray-400 hover:text-black dark:hover:text-white"}`}
           >
             Mutual Funds
+          </button>
+          <button 
+            onClick={() => setActiveTab("history")} 
+            className={`text-2xl font-normal transition-colors ${activeTab === "history" ? "text-black dark:text-white" : "text-gray-400 hover:text-black dark:hover:text-white"}`}
+          >
+            History
           </button>
         </div>
         <div className="flex items-center gap-3">
@@ -396,6 +405,12 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
             />
           </div>
         )}
+
+        {activeTab === "history" && (
+          <div className="animate-in fade-in">
+            <MFHistoryTable trades={mutualFundTrades} />
+          </div>
+        )}
       </div>
 
       {/* Add / Edit Modal */}
@@ -461,9 +476,9 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                             setShowSearchDropdown(false);
                             // Auto fetch current NAV
                             if (res.schemeCode) {
-                              const liveNAV = await fetchLiveMFNAV(res.schemeCode);
-                              if (liveNAV) {
-                                setFormData(prev => ({...prev, current_nav: liveNAV.toString()}));
+                              const liveData = await fetchLiveMFNAV(res.schemeCode);
+                              if (liveData) {
+                                setFormData(prev => ({...prev, current_nav: liveData.nav.toString()}));
                               }
                             }
                           }}

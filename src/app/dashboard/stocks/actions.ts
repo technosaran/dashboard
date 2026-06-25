@@ -12,29 +12,32 @@ type RecordInvestmentResult = {
 export async function searchStocks(query: string, exchange: string = "NSE") {
   if (!query || query.length < 2) return [];
   try {
-    const suffix = exchange === "BSE" ? ".BO" : ".NS";
-    const url = `https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(query)}&quotesCount=10`;
+    const url = `https://api.tickertape.in/search?text=${encodeURIComponent(query)}`;
     const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" }, cache: "no-store" });
+    
     if (!res.ok) return [];
     const data = await res.json();
     
-    interface YahooQuote {
-      quoteType: string;
-      symbol: string;
-      shortname?: string;
-      longname?: string;
-      name?: string;
-      exchange: string;
+    interface TickertapeStock {
+      ticker: string;
+      name: string;
+      type: string;
     }
 
-    return (data.quotes as YahooQuote[] || [])
-      .filter((q) => q.quoteType === "EQUITY" && q.symbol.endsWith(suffix))
-      .map((q) => ({
-        symbol: q.symbol.split(".")[0],
-        fullSymbol: q.symbol,
-        name: q.shortname || q.longname || q.name,
-        exchange: q.exchange
-      }));
+    const stocks = data?.data?.stocks as TickertapeStock[] || [];
+
+    return stocks
+      .filter((q) => q.type === "stock" && q.ticker)
+      .slice(0, 10)
+      .map((q) => {
+        const fullSymbol = exchange === "BSE" ? `${q.ticker}.BO` : `${q.ticker}.NS`;
+        return {
+          symbol: q.ticker,
+          fullSymbol: fullSymbol,
+          name: q.name,
+          exchange: exchange
+        };
+      });
   } catch {
     return [];
   }
@@ -42,12 +45,21 @@ export async function searchStocks(query: string, exchange: string = "NSE") {
 
 export async function fetchLiveStockPrice(symbol: string) {
   try {
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}`;
-    const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" }, cache: "no-store" });
+    let url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}`;
+    let res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" }, cache: "no-store" });
+    
+    // Fallback if query1 fails
+    if (!res.ok) {
+      url = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}`;
+      res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" }, cache: "no-store" });
+    }
+
     if (!res.ok) return null;
     const data = await res.json();
-    const price = data?.chart?.result?.[0]?.meta?.regularMarketPrice;
-    return price ? parseFloat(price) : null;
+    const meta = data?.chart?.result?.[0]?.meta;
+    const price = meta?.regularMarketPrice;
+    const previousClose = meta?.chartPreviousClose || meta?.previousClose;
+    return price ? { price: parseFloat(price), previousClose: previousClose ? parseFloat(previousClose) : undefined } : null;
   } catch {
     return null;
   }
@@ -153,6 +165,7 @@ export async function updateInvestment(id: string, data: {
   quantity?: number;
   buy_price?: number;
   current_price?: number;
+  previous_close?: number;
   currency?: string;
   notes?: string;
   bought_at?: string;
@@ -170,6 +183,7 @@ export async function updateInvestment(id: string, data: {
         quantity: data.quantity,
         buy_price: data.buy_price,
         current_price: data.current_price,
+        previous_close: data.previous_close,
         currency: data.currency,
         notes: data.notes,
         bought_at: data.bought_at,

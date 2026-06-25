@@ -56,6 +56,26 @@ function getAMCLogoUrl(amcName: string): string {
   return '';
 }
 
+function AMCAvatar({ amcName, logoUrl }: { amcName: string; logoUrl: string }) {
+  const [error, setError] = useState(false);
+  const initials = amcName.substring(0, 2).toUpperCase();
+  if (logoUrl && !error) {
+    return (
+      <img 
+        src={logoUrl} 
+        alt={amcName} 
+        className="w-8 h-8 rounded-full bg-white object-contain flex-shrink-0 border border-[#eee] dark:border-white/10"
+        onError={() => setError(true)}
+      />
+    );
+  }
+  return (
+    <div className="w-8 h-8 rounded-full bg-white dark:bg-[#1e1e1e] border border-[#ddd] dark:border-white/10 flex items-center justify-center text-xs font-semibold text-[#555] dark:text-[--text-muted] flex-shrink-0">
+      {initials}
+    </div>
+  );
+}
+
 export default function MutualFundsDataTable({ funds, onEdit, onSell, onAdd }: MutualFundsDataTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
@@ -71,13 +91,7 @@ export default function MutualFundsDataTable({ funds, onEdit, onSell, onAdd }: M
           const logo = getAMCLogoUrl(amc);
           return (
             <div className="flex items-center gap-3">
-              {logo ? (
-                <img src={logo} alt={amc} className="w-8 h-8 rounded-full bg-white object-contain flex-shrink-0" />
-              ) : (
-                <div className="w-8 h-8 rounded-full bg-[#1e1e1e] border border-white/10 flex items-center justify-center text-xs font-semibold text-[--text-muted] flex-shrink-0">
-                  {amc.substring(0, 2).toUpperCase()}
-                </div>
-              )}
+              <AMCAvatar amcName={amc} logoUrl={logo} />
               <div className="flex flex-col">
                 <p className="text-sm font-medium text-[--text-primary]" title={info.getValue()}>{info.getValue()}</p>
                 <div className="flex items-center gap-2 mt-0.5">

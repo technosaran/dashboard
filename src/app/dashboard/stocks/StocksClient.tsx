@@ -15,6 +15,7 @@ const ResponsiveContainer = dynamic(() => import("recharts").then((mod) => mod.R
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip } from "recharts";
 
 import StocksDataTable from "./components/StocksDataTable";
+import StocksHistoryTable from "./components/StocksHistoryTable";
 
 type Stock = Tables<"investments"> & { day_change?: number; day_change_percent?: number };
 
@@ -32,7 +33,7 @@ const getColorByLabel = (label: string) => {
 };
 
 export default function StocksClient({ initialData }: { initialData?: FinanceData }) {
-  const { data: { investments, accounts, profile }, mutate } = useFinanceData(initialData);
+  const { data: { investments, accounts, profile, stockTrades }, mutate } = useFinanceData(initialData);
   const searchParams = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(searchParams?.get("action") === "new");
   const [submitting, withLock] = useSubmitLock();
@@ -178,9 +179,11 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
     try {
       for (const stock of activeStocks) {
         if (!stock.symbol) continue;
-        const livePrice = await fetchLiveStockPrice(stock.symbol);
-        if (livePrice && livePrice !== stock.current_price) {
-          await updateInvestment(stock.id, { current_price: livePrice });
+        const liveData = await fetchLiveStockPrice(stock.symbol);
+        if (liveData && (liveData.price !== stock.current_price || liveData.previousClose !== stock.previous_close)) {
+          const updatePayload: any = { current_price: liveData.price };
+          if (liveData.previousClose) updatePayload.previous_close = liveData.previousClose;
+          await updateInvestment(stock.id, updatePayload);
           updated++;
         }
       }
@@ -254,6 +257,8 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
     });
   }
 
+  const [activeTab, setActiveTab] = useState<"holdings" | "history">("holdings");
+
   const formatMoney = (val: number) => val.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   return (
@@ -261,7 +266,20 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
       {/* Kite-style Top Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-[#0a0a0a]">
         <div className="flex items-center gap-6">
-          <h1 className="text-xl font-semibold text-[--text-primary]">Holdings ({activeStocks.length})</h1>
+          <div className="flex gap-4">
+            <button 
+              onClick={() => setActiveTab("holdings")}
+              className={`text-xl font-semibold transition-colors ${activeTab === 'holdings' ? 'text-[--text-primary]' : 'text-[--text-muted] hover:text-[--text-secondary]'}`}
+            >
+              Holdings ({activeStocks.length})
+            </button>
+            <button 
+              onClick={() => setActiveTab("history")}
+              className={`text-xl font-semibold transition-colors ${activeTab === 'history' ? 'text-[--text-primary]' : 'text-[--text-muted] hover:text-[--text-secondary]'}`}
+            >
+              History
+            </button>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <button 
@@ -294,13 +312,16 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
       </div>
 
       <div className="p-6">
-        {/* Holdings Table */}
-        <StocksDataTable 
-          stocks={activeStocks} 
-          onEdit={startEdit} 
-          onSell={startSell}
-          onAdd={() => setShowAddModal(true)} 
-        />
+        {activeTab === "holdings" ? (
+          <StocksDataTable 
+            stocks={activeStocks} 
+            onEdit={startEdit} 
+            onSell={startSell} 
+            onAdd={() => setShowAddModal(true)} 
+          />
+        ) : (
+          <StocksHistoryTable trades={stockTrades} />
+        )}
 
         {/* Kite-style Summary Bar */}
         {activeStocks.length > 0 && (
@@ -424,9 +445,9 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                             setSearchQuery("");
                             setShowSearchDropdown(false);
                             // Auto fetch current price
-                            const livePrice = await fetchLiveStockPrice(res.symbol);
-                            if (livePrice) {
-                              setFormData(prev => ({...prev, current_price: livePrice.toString()}));
+                            const liveData = await fetchLiveStockPrice(res.symbol);
+                            if (liveData) {
+                              setFormData(prev => ({...prev, current_price: liveData.price.toString()}));
                             }
                           }}
                         >

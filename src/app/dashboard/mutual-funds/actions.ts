@@ -20,34 +20,77 @@ const USER_AGENTS = [
 ];
 
 export async function searchMFSchemes(query: string) {
-    if (query.length < 3) return [];
-    try {
-        const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
-        const res = await fetch(`https://api.mfapi.in/mf/search?q=${encodeURIComponent(query)}`, {
-            headers: { "User-Agent": userAgent }
-        });
-        const data = await res.json();
-    return (data || []).map((s: any) => ({
-      schemeCode: s.schemeCode?.toString(),
-      schemeName: s.schemeName
-    }));
-  } catch {
-    return [];
+  if (!query || query.length < 3) return [];
+  try {
+    const userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)";
+    const res = await fetch(`https://api.mfapi.in/mf/search?q=${encodeURIComponent(query)}`, {
+        cache: "no-store",
+        headers: { "User-Agent": userAgent }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return (data || []).map((s: any) => ({
+        schemeCode: s.schemeCode?.toString(),
+        schemeName: s.schemeName
+      }));
+    }
+  } catch (err) {
+    console.error("MFAPI Search failed, trying fallback", err);
   }
+
+  // Fallback
+  try {
+    const fallbackRes = await fetch("https://www.amfiindia.com/spages/NAVAll.txt", { cache: "no-store" });
+    if (fallbackRes.ok) {
+      const text = await fallbackRes.text();
+      const lines = text.split("\n");
+      const qLower = query.toLowerCase();
+      const results = [];
+      for (const line of lines) {
+        if (line.includes(";")) {
+          const parts = line.split(";");
+          if (parts.length >= 4 && parts[3].toLowerCase().includes(qLower)) {
+            results.push({ schemeCode: parts[0], schemeName: parts[3] });
+            if (results.length >= 10) break;
+          }
+        }
+      }
+      return results;
+    }
+  } catch {}
+  return [];
 }
 
 export async function fetchLiveMFNAV(schemeCode: string) {
   try {
     const res = await fetch(`https://api.mfapi.in/mf/${schemeCode}`, { cache: "no-store" });
-    if (!res.ok) return null;
-    const data = await res.json();
-    if (data && data.data && data.data.length > 0) {
-      return parseFloat(data.data[0].nav);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.data && data.data.length > 0) {
+        const currentNav = parseFloat(data.data[0].nav);
+        const previousNav = data.data.length > 1 ? parseFloat(data.data[1].nav) : undefined;
+        return { nav: currentNav, previousNav };
+      }
     }
-    return null;
-  } catch {
-    return null;
+  } catch (err) {
+    console.error("MFAPI NAV failed, trying fallback", err);
   }
+  
+  // Fallback
+  try {
+    const fallbackRes = await fetch("https://www.amfiindia.com/spages/NAVAll.txt", { cache: "no-store" });
+    if (fallbackRes.ok) {
+      const text = await fallbackRes.text();
+      const lines = text.split("\n");
+      for (const line of lines) {
+        if (line.startsWith(`${schemeCode};`)) {
+          const parts = line.split(";");
+          return { nav: parseFloat(parts[4]) };
+        }
+      }
+    }
+  } catch {}
+  return null;
 }
 
 export async function recordMFInvestment(data: {
@@ -141,6 +184,7 @@ export async function updateMFHolding(id: string, data: {
   units?: number;
   avg_nav?: number;
   current_nav?: number;
+  previous_nav?: number;
   category?: string;
   investment_type?: string;
 }) {
@@ -159,6 +203,7 @@ export async function updateMFHolding(id: string, data: {
         units: data.units,
         avg_nav: data.avg_nav,
         current_nav: data.current_nav,
+        previous_nav: data.previous_nav,
         category: data.category,
         investment_type: data.investment_type,
         updated_at: new Date().toISOString() 
