@@ -30,16 +30,6 @@ export default function ExpenseForm({ isOpen, onClose, onSubmit, submitting, acc
     account_id: defaultAccountId || "",
   });
 
-  useEffect(() => {
-    if (isOpen) {
-      setFormData((prev) => ({
-        ...prev,
-        date: defaultDate,
-        account_id: defaultAccountId || "",
-      }));
-    }
-  }, [isOpen, defaultDate, defaultAccountId]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await onSubmit({ ...formData, amount: parseFloat(formData.amount), account_id: formData.account_id || undefined });

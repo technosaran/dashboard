@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
+import { useHasMounted } from "@/hooks/use-has-mounted";
 import { X } from "lucide-react";
 
 interface DrawerProps {
@@ -12,11 +13,7 @@ interface DrawerProps {
 }
 
 export function Drawer({ isOpen, onClose, title, children, width = "max-w-md" }: DrawerProps) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useHasMounted();
 
   useEffect(() => {
     if (isOpen) {

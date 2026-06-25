@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { useHasMounted } from "@/hooks/use-has-mounted";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 
@@ -26,8 +27,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
   // Kite uses tabs: Positions (Open), History (Closed)
   const [activeTab, setActiveTab] = useState<"positions" | "history">("positions");
 
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const mounted = useHasMounted();
 
   const [logFormData, setLogFormData] = useState({
     symbol: "", instrument_type: "FUT" as "FUT" | "CE" | "PE", strike_price: "",

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { useHasMounted } from "@/hooks/use-has-mounted";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 
@@ -35,8 +36,7 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
   const [editingId, setEditingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"overview" | "inventory" | "history">("overview");
 
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const mounted = useHasMounted();
 
   const assetLogs = useMemo(() => {
     return ledgerLogs

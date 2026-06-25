@@ -161,7 +161,7 @@ const nav = [
 ];
 
 function NavItem({ label, href, icon, pathname }: (typeof nav)[0] & { pathname: string }) {
-  const active = pathname === href;
+  const active = pathname === href || (href !== "/dashboard" && pathname.startsWith(href + "/"));
   return (
     <Link
       href={href}
@@ -320,7 +320,7 @@ export default function Sidebar() {
       >
         {/* Left Side */}
         {mobileNavLeft.map((item) => {
-          const active = pathname === item.href;
+          const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href + "/"));
           return (
             <Link key={item.label} href={item.href} prefetch={true} className={`flex-1 flex flex-col items-center justify-center h-full relative transition-all active:scale-90 ${active ? "text-[--accent-primary-light]" : "text-[--text-muted]"}`}>
               <div className={`${active ? "scale-110 -translate-y-1" : "opacity-40"} transition-all duration-300`}>{item.icon}</div>
@@ -344,7 +344,7 @@ export default function Sidebar() {
 
         {/* Right Side */}
         {mobileNavRight.map((item) => {
-          const active = pathname === item.href;
+          const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href + "/"));
           return (
             <Link key={item.label} href={item.href} prefetch={true} className={`flex-1 flex flex-col items-center justify-center h-full relative transition-all active:scale-90 ${active ? "text-[--accent-primary-light]" : "text-[--text-muted]"}`}>
               <div className={`${active ? "scale-110 -translate-y-1" : "opacity-40"} transition-all duration-300`}>{item.icon}</div>

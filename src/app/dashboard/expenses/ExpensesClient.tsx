@@ -46,31 +46,27 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingExpenseId, setDeletingExpenseId] = useState<string | null>(null);
 
-  const [defaultDate, setDefaultDate] = useState("");
-  const [defaultAccountId, setDefaultAccountId] = useState("");
-
-  // Setup default date
-  useEffect(() => {
+  const defaultDate = useMemo(() => {
     const today = new Date();
     const yyyy = selectedYear;
     const mm = String(selectedMonth).padStart(2, '0');
     if (today.getMonth() + 1 === selectedMonth && today.getFullYear() === selectedYear) {
       const dd = String(today.getDate()).padStart(2, '0');
-      setDefaultDate(`${yyyy}-${mm}-${dd}`);
+      return `${yyyy}-${mm}-${dd}`;
     } else {
-      setDefaultDate(`${yyyy}-${mm}-01`);
+      return `${yyyy}-${mm}-01`;
     }
   }, [selectedMonth, selectedYear]);
 
-  // Setup default account
-  useEffect(() => {
-    if (accounts.length > 0 && !defaultAccountId) {
+  const defaultAccountId = useMemo(() => {
+    if (accounts.length > 0) {
       const defaultAccId = profile?.default_accounts?.expenses;
       if (defaultAccId && accounts.some(a => a.id === defaultAccId)) {
-        setDefaultAccountId(defaultAccId);
+        return defaultAccId;
       }
     }
-  }, [accounts, profile, defaultAccountId]);
+    return "";
+  }, [accounts, profile]);
 
   // Handle escape key
   useEffect(() => {
@@ -205,6 +201,7 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
         
         <div className="glass-card-static p-5 border border-white/5 bg-white/[0.01]">
           <ExpenseForm
+            key={`mobile-${defaultDate}-${defaultAccountId}`}
             isOpen={true}
             onClose={() => {}}
             onSubmit={handleSubmitForm}
@@ -388,6 +385,7 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
       {showAddModal && (
         <Drawer isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Record Transaction">
           <ExpenseForm
+            key={`drawer-${defaultDate}-${defaultAccountId}-${showAddModal}`}
             isOpen={showAddModal}
             onClose={() => setShowAddModal(false)}
             onSubmit={handleSubmitForm}

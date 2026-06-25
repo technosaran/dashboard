@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { useHasMounted } from "@/hooks/use-has-mounted";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { addLiability, updateLiability, deleteLiability } from "./actions";
@@ -47,8 +48,7 @@ export default function LiabilitiesClient({ initialData }: { initialData?: Finan
   const [editingId, setEditingId] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<"overview" | "records">("overview");
 
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const mounted = useHasMounted();
 
   const [formData, setFormData] = useState({
     name: "",

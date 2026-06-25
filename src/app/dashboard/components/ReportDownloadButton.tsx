@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useHasMounted } from "@/hooks/use-has-mounted";
 import dynamic from "next/dynamic";
 import { format } from "date-fns";
 import { useNetWorth } from "@/hooks/use-net-worth";
@@ -116,7 +117,7 @@ const FinanceReportPDF = ({ stats }: { stats: any }) => {
 };
 
 export default function ReportDownloadButton() {
-  const [mounted, setMounted] = useState(false);
+  const mounted = useHasMounted();
   const netWorthData = useNetWorth();
   const { data } = useFinanceData();
   const transactions = data?.transactions || [];
@@ -145,9 +146,7 @@ export default function ReportDownloadButton() {
     };
   }, [netWorthData, transactions]);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+
 
   if (!mounted) return null;
 

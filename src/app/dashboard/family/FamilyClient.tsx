@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useMemo, useCallback } from "react";
+import { useHasMounted } from "@/hooks/use-has-mounted";
 import { useSearchParams } from "next/navigation";
 import { createRecipient, deleteRecipient, sendMoneyToFamily, updateRecipient } from "./actions";
 import { revertLedgerTransaction } from "@/app/dashboard/ledger/actions";
@@ -67,10 +68,7 @@ export default function FamilyClient({ initialData }: FamilyClientProps) {
   const [sendAccountId, setSendAccountId] = useState("");
   const [sendNote, setSendNote] = useState("");
 
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useHasMounted();
 
   useEffect(() => {
     if (accounts.length > 0 && !sendAccountId) {

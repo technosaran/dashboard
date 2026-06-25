@@ -2,6 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { useState, useMemo, useEffect } from "react";
+import { useHasMounted } from "@/hooks/use-has-mounted";
 import { differenceInDays, parseISO, format } from "date-fns";
 import { toast } from "react-hot-toast";
 
@@ -57,8 +58,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
   
   const [activeView, setActiveView] = useState<"overview" | "trackers">("overview");
 
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const mounted = useHasMounted();
   
   const [formData, setFormData] = useState({
     name: "",

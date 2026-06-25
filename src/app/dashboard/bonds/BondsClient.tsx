@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { useHasMounted } from "@/hooks/use-has-mounted";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 
@@ -41,8 +42,7 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
   const [selectedBond, setSelectedBond] = useState<any | null>(null);
   const [activeView, setActiveView] = useState<"overview" | "holdings">("overview");
 
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const mounted = useHasMounted();
 
   const bonds = useMemo(() => (bondsData || []).filter(b => b.status === 'Active') as Bond[], [bondsData]);
 

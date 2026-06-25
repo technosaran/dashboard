@@ -335,7 +335,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
               <p className="text-xl font-normal text-[--text-primary]">₹{formatMoney(stats.totalCurrent)}</p>
             </div>
             <div>
-              <p className="text-xs text-[--text-muted] mb-1">Day's P&L</p>
+              <p className="text-xs text-[--text-muted] mb-1">Day&apos;s P&amp;L</p>
               <p className={`text-xl font-medium ${stats.dayPnL >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                 {stats.dayPnL >= 0 ? '+' : ''}{formatMoney(stats.dayPnL)} <span className="text-xs">({stats.dayPnL >= 0 ? '+' : ''}{stats.dayPnLPercent.toFixed(2)}%)</span>
               </p>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { useHasMounted } from "@/hooks/use-has-mounted";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 
@@ -32,8 +33,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
   const action = searchParams?.get("action");
   const [activeTab, setActiveTab] = useState<"overview" | "accounts" | "pnl" | "transactions">("overview");
 
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const mounted = useHasMounted();
 
   const [showTradeModal, setShowTradeModal] = useState(action === "new");
   const [showEditTradeModal, setShowEditTradeModal] = useState(false);
@@ -299,7 +299,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
             <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Trading Performance</p>
           </div>
           <div className="glass-card-static p-6 border-white/5">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Today's P&L</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Today&apos;s P&amp;L</p>
             <PnLValue amount={stats.dailyPnlSum} size="lg" showIcon />
             <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Daily Return</p>
           </div>

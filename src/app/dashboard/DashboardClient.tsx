@@ -2,6 +2,7 @@
 
 
 import { useMemo, useState, useEffect } from "react";
+import { useHasMounted } from "@/hooks/use-has-mounted";
 import { format, parseISO, subMonths } from "date-fns";
 import { useFinanceData } from "@/hooks/use-finance-data";
 import { useNetWorth } from "@/hooks/use-net-worth";
@@ -193,8 +194,7 @@ export default function DashboardClient() {
     };
   }, [transactions, netWorthData, investments, mutualFunds]);
 
-  const [isMounted, setIsMounted] = useState(false);
-  useEffect(() => setIsMounted(true), []);
+  const isMounted = useHasMounted();
 
   if (!isMounted) return null; // Prevent hydration mismatch
 
