@@ -40,6 +40,19 @@ export async function searchStocks(query: string, exchange: string = "NSE") {
   }
 }
 
+export async function fetchLiveStockPrice(symbol: string) {
+  try {
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}`;
+    const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" }, cache: "no-store" });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const price = data?.chart?.result?.[0]?.meta?.regularMarketPrice;
+    return price ? parseFloat(price) : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function createInvestment(data: {
   name: string; symbol?: string; quantity: number;
   buy_price: number; current_price: number; currency?: string;

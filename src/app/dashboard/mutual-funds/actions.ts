@@ -27,10 +27,27 @@ export async function searchMFSchemes(query: string) {
             headers: { "User-Agent": userAgent }
         });
         const data = await res.json();
-        return data.slice(0, 10);
-    } catch {
-        return [];
+    return (data || []).map((s: any) => ({
+      schemeCode: s.schemeCode?.toString(),
+      schemeName: s.schemeName
+    }));
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchLiveMFNAV(schemeCode: string) {
+  try {
+    const res = await fetch(`https://api.mfapi.in/mf/${schemeCode}`, { cache: "no-store" });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data && data.data && data.data.length > 0) {
+      return parseFloat(data.data[0].nav);
     }
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 export async function recordMFInvestment(data: {

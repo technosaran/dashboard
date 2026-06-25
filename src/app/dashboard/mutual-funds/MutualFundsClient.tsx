@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 
 import type { Tables } from "@/lib/database.types";
-import { recordMFInvestment, updateMFHolding } from "./actions";
+import { recordMFInvestment, updateMFHolding, searchMFSchemes, fetchLiveMFNAV } from "./actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { Drawer } from "@/components/ui/drawer";
@@ -58,6 +58,27 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
     account_id: "",
     trade_type: "buy" as "buy" | "sell"
   });
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+
+  useEffect(() => {
+    if (searchQuery.length > 2) {
+      setIsSearching(true);
+      setShowSearchDropdown(true);
+      const timeoutId = setTimeout(async () => {
+        const results = await searchMFSchemes(searchQuery);
+        setSearchResults(results);
+        setIsSearching(false);
+      }, 500);
+      return () => clearTimeout(timeoutId);
+    } else {
+      setSearchResults([]);
+      setShowSearchDropdown(false);
+    }
+  }, [searchQuery]);
 
   useEffect(() => {
     if (accounts.length > 0 && showAddModal && !formData.account_id) {
@@ -150,6 +171,33 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
     setShowAddModal(true);
   };
 
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefreshNAV = async () => {
+    setIsRefreshing(true);
+    let updated = 0;
+    try {
+      for (const mf of rawMfs) {
+        if (!mf.scheme_code) continue;
+        const liveNAV = await fetchLiveMFNAV(mf.scheme_code);
+        if (liveNAV && liveNAV !== mf.current_nav) {
+          await updateMFHolding(mf.id, { current_nav: liveNAV });
+          updated++;
+        }
+      }
+      if (updated > 0) {
+        mutate();
+        toast.success(`Refreshed live NAVs for ${updated} funds!`);
+      } else {
+        toast.success("NAVs are already up to date.");
+      }
+    } catch (e) {
+      toast.error("Failed to refresh some NAVs");
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   async function handleAddMF(e: React.FormEvent) {
     e.preventDefault();
     await withLock(async () => {
@@ -230,20 +278,34 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
             Mutual Funds
           </button>
         </div>
-        <button 
-          onClick={() => { 
-            setFormData({
-              fund_name: "", scheme_code: "", units: "", nav: "", current_nav: "",
-              investment_type: "SIP", category: "Equity", amc_name: "HDFC",
-              date: new Date().toISOString().split("T")[0], account_id: "", trade_type: "buy"
-            });
-            setEditingId(null);
-            setShowAddModal(true); 
-          }} 
-          className="bg-[#2185d0] hover:bg-[#1678c2] text-white px-5 py-2 rounded-md text-sm font-medium transition-colors"
-        >
-          Invest
-        </button>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={handleRefreshNAV} 
+            disabled={isRefreshing || rawMfs.length === 0}
+            className="bg-transparent border border-[#ccc] dark:border-white/20 hover:bg-black/5 dark:hover:bg-white/5 text-[#444] dark:text-white px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50 flex items-center gap-2"
+          >
+            {isRefreshing ? (
+              <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" strokeDasharray="32" className="opacity-25"></circle><path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" className="opacity-75"></path></svg>
+            ) : (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+            )}
+            Refresh NAV
+          </button>
+          <button 
+            onClick={() => { 
+              setFormData({
+                fund_name: "", scheme_code: "", units: "", nav: "", current_nav: "",
+                investment_type: "SIP", category: "Equity", amc_name: "HDFC",
+                date: new Date().toISOString().split("T")[0], account_id: "", trade_type: "buy"
+              });
+              setEditingId(null);
+              setShowAddModal(true); 
+            }} 
+            className="bg-[#2185d0] hover:bg-[#1678c2] text-white px-5 py-2 rounded-md text-sm font-medium transition-colors"
+          >
+            Invest
+          </button>
+        </div>
       </div>
 
       <div className="p-8 max-w-7xl mx-auto w-full">
@@ -368,14 +430,62 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
             )}
 
             <form onSubmit={handleAddMF} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-medium text-gray-500 dark:text-[--text-muted]">Fund Name</label>
-                  <input required className="w-full bg-white dark:bg-[#1e1e1e] border border-gray-300 dark:border-white/10 rounded px-3 py-2 text-sm text-black dark:text-white focus:border-[#2185d0] outline-none" placeholder="e.g. Parag Parikh Flexi Cap" value={formData.fund_name} onChange={e => setFormData({...formData, fund_name: e.target.value})} />
+              <div className="grid grid-cols-1 gap-4">
+                <div className="space-y-2 relative">
+                  <label className="text-xs font-medium text-gray-500 dark:text-[--text-muted]">Search Fund</label>
+                  <div className="relative">
+                    <input 
+                      className="w-full bg-white dark:bg-[#1e1e1e] border border-gray-300 dark:border-white/10 rounded px-3 py-2 text-sm text-black dark:text-white focus:border-[#2185d0] outline-none" 
+                      placeholder="e.g. Parag Parikh Flexi Cap" 
+                      value={searchQuery || formData.fund_name} 
+                      onChange={e => {
+                        setSearchQuery(e.target.value);
+                        setFormData({...formData, fund_name: e.target.value});
+                      }} 
+                    />
+                    {isSearching && (
+                      <div className="absolute right-3 top-2.5">
+                        <svg className="w-4 h-4 animate-spin text-gray-400 dark:text-[--text-muted]" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" strokeDasharray="32" className="opacity-25"></circle><path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" className="opacity-75"></path></svg>
+                      </div>
+                    )}
+                  </div>
+                  {showSearchDropdown && searchResults.length > 0 && (
+                    <div className="absolute z-50 left-0 right-0 top-[100%] mt-1 bg-white dark:bg-[#2a2a2a] border border-gray-200 dark:border-white/10 rounded-md shadow-xl overflow-hidden max-h-48 overflow-y-auto custom-scrollbar">
+                      {searchResults.map((res, i) => (
+                        <div 
+                          key={i} 
+                          className="px-3 py-2 hover:bg-gray-50 dark:hover:bg-white/5 cursor-pointer transition-colors border-b border-gray-100 dark:border-white/5 last:border-0"
+                          onClick={async () => {
+                            setFormData({...formData, fund_name: res.schemeName, scheme_code: res.schemeCode});
+                            setSearchQuery("");
+                            setShowSearchDropdown(false);
+                            // Auto fetch current NAV
+                            if (res.schemeCode) {
+                              const liveNAV = await fetchLiveMFNAV(res.schemeCode);
+                              if (liveNAV) {
+                                setFormData(prev => ({...prev, current_nav: liveNAV.toString()}));
+                              }
+                            }
+                          }}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-gray-800 dark:text-white truncate max-w-[80%]">{res.schemeName}</span>
+                            <span className="text-xs font-bold text-[#2185d0]">{res.schemeCode}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-xs font-medium text-gray-500 dark:text-[--text-muted]">AMC Name</label>
                   <input required className="w-full bg-white dark:bg-[#1e1e1e] border border-gray-300 dark:border-white/10 rounded px-3 py-2 text-sm text-black dark:text-white focus:border-[#2185d0] outline-none" placeholder="e.g. PPFAS" value={formData.amc_name} onChange={e => setFormData({...formData, amc_name: e.target.value})} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-gray-500 dark:text-[--text-muted]">Scheme Code</label>
+                  <input className="w-full bg-white dark:bg-[#1e1e1e] border border-gray-300 dark:border-white/10 rounded px-3 py-2 text-sm text-black dark:text-white focus:border-[#2185d0] outline-none" placeholder="e.g. 122639" value={formData.scheme_code} onChange={e => setFormData({...formData, scheme_code: e.target.value})} />
                 </div>
               </div>
 
