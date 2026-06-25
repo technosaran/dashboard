@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 
@@ -200,6 +200,15 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
       setIsRefreshing(false);
     }
   };
+
+  const refreshedRef = useRef(false);
+  useEffect(() => {
+    if (rawMfs.length > 0 && !refreshedRef.current) {
+      refreshedRef.current = true;
+      handleRefreshNAV();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rawMfs]);
 
   async function handleAddMF(e: React.FormEvent) {
     e.preventDefault();

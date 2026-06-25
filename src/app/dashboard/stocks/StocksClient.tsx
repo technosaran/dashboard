@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 
@@ -200,6 +200,15 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
     }
   };
 
+  const refreshedRef = useRef(false);
+  useEffect(() => {
+    if (activeStocks.length > 0 && !refreshedRef.current) {
+      refreshedRef.current = true;
+      handleRefreshPrices();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeStocks]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     await withLock(async () => {
@@ -312,20 +321,9 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
       </div>
 
       <div className="p-6">
-        {activeTab === "holdings" ? (
-          <StocksDataTable 
-            stocks={activeStocks} 
-            onEdit={startEdit} 
-            onSell={startSell} 
-            onAdd={() => setShowAddModal(true)} 
-          />
-        ) : (
-          <StocksHistoryTable trades={stockTrades} />
-        )}
-
         {/* Kite-style Summary Bar */}
         {activeStocks.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 bg-[#0a0a0a] p-4 border border-white/10 rounded-md">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 bg-[#0a0a0a] p-4 border border-white/10 rounded-md">
             <div>
               <p className="text-xs text-[--text-muted] mb-1">Total investment</p>
               <p className="text-xl font-normal text-[--text-primary]">₹{formatMoney(stats.totalInvested)}</p>
@@ -347,6 +345,17 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
               </p>
             </div>
           </div>
+        )}
+
+        {activeTab === "holdings" ? (
+          <StocksDataTable 
+            stocks={activeStocks} 
+            onEdit={startEdit} 
+            onSell={startSell} 
+            onAdd={() => setShowAddModal(true)} 
+          />
+        ) : (
+          <StocksHistoryTable trades={stockTrades} />
         )}
 
         {/* Allocation Donut (optional below the table like Kite's overview) */}
@@ -441,11 +450,11 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                           key={i} 
                           className="px-3 py-2 hover:bg-white/5 cursor-pointer transition-colors border-b border-white/5 last:border-0"
                           onClick={async () => {
-                            setFormData({...formData, name: res.name, symbol: res.symbol});
+                            setFormData({...formData, name: res.name, symbol: res.fullSymbol});
                             setSearchQuery("");
                             setShowSearchDropdown(false);
                             // Auto fetch current price
-                            const liveData = await fetchLiveStockPrice(res.symbol);
+                            const liveData = await fetchLiveStockPrice(res.fullSymbol);
                             if (liveData) {
                               setFormData(prev => ({...prev, current_price: liveData.price.toString()}));
                             }
@@ -482,13 +491,6 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                 <div className="space-y-2">
                   <label className="text-xs font-medium text-[--text-muted]">Current Price (LTP)</label>
                   <input required type="number" step="any" className="w-full bg-[#1e1e1e] border border-white/10 rounded px-3 py-2 text-sm text-white focus:border-[#2185d0] outline-none" value={formData.current_price} onChange={e => setFormData({...formData, current_price: e.target.value})} inputMode="decimal" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-medium text-[--text-muted]">Currency</label>
-                  <select className="w-full bg-[#1e1e1e] border border-white/10 rounded px-3 py-2 text-sm text-white focus:border-[#2185d0] outline-none" value={formData.currency} onChange={e => setFormData({...formData, currency: e.target.value})}>
-                    <option value="INR">INR (₹)</option>
-                    <option value="USD">USD ($)</option>
-                  </select>
                 </div>
               </div>
 

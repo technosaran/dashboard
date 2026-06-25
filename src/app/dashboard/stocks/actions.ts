@@ -70,7 +70,11 @@ export async function searchStocks(query: string, exchange: string = "NSE") {
 
 export async function fetchLiveStockPrice(symbol: string) {
   try {
-    let url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}`;
+    let querySymbol = symbol;
+    if (querySymbol && !querySymbol.includes(".")) {
+      querySymbol = `${querySymbol}.NS`;
+    }
+    let url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(querySymbol)}`;
     let res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" }, cache: "no-store" });
     
     // Fallback if query1 fails
