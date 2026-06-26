@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 
@@ -66,6 +66,64 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
       setShowSearchDropdown(false);
     }
   }, [searchQuery]);
+
+  // Watchlist states
+  const [watchlist, setWatchlist] = useState<string[]>([]);
+  const [watchlistPrices, setWatchlistPrices] = useState<Record<string, { price: number; prevClose?: number }>>({});
+  const [watchlistSearchQuery, setWatchlistSearchQuery] = useState("");
+  const [watchlistSearchResults, setWatchlistSearchResults] = useState<{ symbol: string, name: string, fullSymbol?: string, exchange?: string }[]>([]);
+  const [isWatchlistSearching, setIsWatchlistSearching] = useState(false);
+  const [showWatchlistDropdown, setShowWatchlistDropdown] = useState(false);
+
+  // Load watchlist on mount
+  useEffect(() => {
+    const saved = localStorage.getItem("stocks_watchlist");
+    if (saved) {
+      setWatchlist(JSON.parse(saved));
+    } else {
+      const defaultWatchlist = ["RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK"];
+      setWatchlist(defaultWatchlist);
+      localStorage.setItem("stocks_watchlist", JSON.stringify(defaultWatchlist));
+    }
+  }, []);
+
+  // Fetch prices for watchlist
+  const fetchWatchlistPrices = useCallback(async (symbols: string[]) => {
+    if (symbols.length === 0) return;
+    const prices: Record<string, { price: number; prevClose?: number }> = {};
+    await Promise.all(symbols.map(async (sym) => {
+      try {
+        const data = await fetchLiveStockPrice(sym);
+        if (data) prices[sym] = data;
+      } catch (e) {
+        console.error("Failed to fetch price for", sym, e);
+      }
+    }));
+    setWatchlistPrices(prev => ({ ...prev, ...prices }));
+  }, []);
+
+  useEffect(() => {
+    if (watchlist.length > 0) {
+      fetchWatchlistPrices(watchlist);
+    }
+  }, [watchlist, fetchWatchlistPrices]);
+
+  // Watchlist Search
+  useEffect(() => {
+    if (watchlistSearchQuery.length > 2) {
+      setIsWatchlistSearching(true);
+      setShowWatchlistDropdown(true);
+      const timeoutId = setTimeout(async () => {
+        const results = await searchStocks(watchlistSearchQuery);
+        setWatchlistSearchResults(results);
+        setIsWatchlistSearching(false);
+      }, 500);
+      return () => clearTimeout(timeoutId);
+    } else {
+      setWatchlistSearchResults([]);
+      setShowWatchlistDropdown(false);
+    }
+  }, [watchlistSearchQuery]);
 
   useEffect(() => {
     if (accounts.length > 0 && showAddModal && !formData.deduct_from_account) {
@@ -259,262 +317,474 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
   const formatMoney = (val: number) => val.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   return (
-    <div className="flex flex-col animate-in fade-in duration-700 w-full bg-[#121212] min-h-screen">
-      {/* Kite-style Top Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-[#0a0a0a]">
-        <div className="flex items-center gap-6">
-          <div className="flex gap-4">
-            <button 
-              onClick={() => setActiveTab("holdings")}
-              className={`text-xl font-semibold transition-colors ${activeTab === 'holdings' ? 'text-[--text-primary]' : 'text-[--text-muted] hover:text-[--text-secondary]'}`}
-            >
-              Holdings ({activeStocks.length})
-            </button>
-            <button 
-              onClick={() => setActiveTab("history")}
-              className={`text-xl font-semibold transition-colors ${activeTab === 'history' ? 'text-[--text-primary]' : 'text-[--text-muted] hover:text-[--text-secondary]'}`}
-            >
-              History
-            </button>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={handleRefreshPrices} 
-            disabled={isRefreshing || activeStocks.length === 0}
-            className="bg-transparent border border-white/20 hover:bg-white/5 text-white px-4 py-1.5 rounded text-sm font-medium transition-colors disabled:opacity-50 flex items-center gap-2"
-          >
-            {isRefreshing ? (
-              <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" strokeDasharray="32" className="opacity-25"></circle><path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" className="opacity-75"></path></svg>
-            ) : (
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+    <div className="flex w-full bg-[#121212] min-h-screen">
+      {/* Zerodha Watchlist Sidebar (Left Column, hidden on small screens) */}
+      <div className="hidden lg:flex flex-col w-[340px] shrink-0 border-r border-white/10 bg-[#151515] select-none h-screen sticky top-0 overflow-y-auto custom-scrollbar">
+        {/* Watchlist Search Bar */}
+        <div className="p-3 border-b border-white/5 relative">
+          <div className="relative">
+            <input 
+              className="w-full bg-[#1e1e1e] border border-white/10 rounded px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:border-[#2185d0] outline-none" 
+              placeholder="Search eg: infy, reliance, bo" 
+              value={watchlistSearchQuery} 
+              onChange={e => setWatchlistSearchQuery(e.target.value)} 
+            />
+            {isWatchlistSearching && (
+              <div className="absolute right-3 top-2">
+                <svg className="w-3.5 h-3.5 animate-spin text-gray-500" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" strokeDasharray="32" className="opacity-25"></circle><path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" className="opacity-75"></path></svg>
+              </div>
             )}
-            Refresh Prices
-          </button>
-          <button 
-            onClick={() => { 
-              setFormData({
-                name: "", symbol: "", quantity: "", buy_price: "", current_price: "",
-                currency: "INR", notes: "", bought_at: new Date().toISOString().split("T")[0],
-                deduct_from_account: "", trade_type: "buy"
-              });
-              setEditingId(null);
-              setShowAddModal(true); 
-            }} 
-            className="bg-[#2185d0] hover:bg-[#1678c2] text-white px-4 py-1.5 rounded text-sm font-medium transition-colors"
-          >
-            Add Trade
-          </button>
+          </div>
+
+          {/* Watchlist Search Results Dropdown */}
+          {showWatchlistDropdown && watchlistSearchResults.length > 0 && (
+            <div className="absolute z-50 left-3 right-3 top-[100%] mt-1 bg-[#202020] border border-white/10 rounded shadow-xl overflow-hidden max-h-56 overflow-y-auto custom-scrollbar">
+              {watchlistSearchResults.map((res, i) => (
+                <div 
+                  key={i} 
+                  className="px-3 py-2 hover:bg-white/5 cursor-pointer transition-colors border-b border-white/5 last:border-0 flex items-center justify-between"
+                  onClick={() => {
+                    if (!watchlist.includes(res.symbol)) {
+                      const updated = [...watchlist, res.symbol];
+                      setWatchlist(updated);
+                      localStorage.setItem("stocks_watchlist", JSON.stringify(updated));
+                    }
+                    setWatchlistSearchQuery("");
+                    setShowWatchlistDropdown(false);
+                  }}
+                >
+                  <div>
+                    <div className="text-xs font-bold text-white">{res.symbol}</div>
+                    <div className="text-[10px] text-gray-400 truncate max-w-[180px]">{res.name}</div>
+                  </div>
+                  <button className="text-[10px] bg-[#2185d0]/20 text-[#2185d0] hover:bg-[#2185d0] hover:text-white px-2 py-0.5 rounded transition-all font-semibold">
+                    + Add
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Watchlist Items */}
+        <div className="flex-1 divide-y divide-white/5">
+          {watchlist.map((sym) => {
+            const data = watchlistPrices[sym];
+            const price = data?.price ?? 0;
+            const prevClose = data?.prevClose ?? price;
+            const change = price - prevClose;
+            const pctChange = prevClose > 0 ? (change / prevClose) * 100 : 0;
+            const isUp = change >= 0;
+
+            return (
+              <div 
+                key={sym} 
+                className="group relative px-4 py-3.5 flex items-center justify-between hover:bg-white/[0.02] transition-colors cursor-pointer"
+              >
+                <div>
+                  <div className="text-xs font-bold text-white tracking-wide">{sym}</div>
+                  <div className="text-[9px] text-gray-500 font-semibold tracking-wider uppercase">NSE</div>
+                </div>
+
+                {/* Normal view: price and percentage */}
+                <div className="flex items-center gap-4 group-hover:opacity-0 transition-opacity duration-150">
+                  <div className="text-right">
+                    <div className="text-xs font-semibold text-white">
+                      {price > 0 ? `₹${formatMoney(price)}` : "—"}
+                    </div>
+                    <div className={`text-[10px] font-medium ${isUp ? "text-emerald-500" : "text-rose-500"}`}>
+                      {price > 0 ? `${isUp ? "+" : ""}${pctChange.toFixed(2)}%` : ""}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Hover view: floating action shortcuts */}
+                <div className="absolute inset-0 bg-[#151515] px-4 items-center justify-end gap-2 hidden group-hover:flex">
+                  <button 
+                    onClick={() => {
+                      setFormData({
+                        name: sym, symbol: sym, quantity: "1", buy_price: price.toString(), current_price: price.toString(),
+                        currency: "INR", notes: "", bought_at: new Date().toISOString().split("T")[0],
+                        deduct_from_account: "", trade_type: "buy"
+                      });
+                      setEditingId(null);
+                      setCharges("0");
+                      setShowAddModal(true);
+                    }}
+                    className="w-7 h-7 rounded bg-[#4185f4] hover:bg-[#3574d3] text-white flex items-center justify-center text-[10px] font-bold shadow-md transition-transform active:scale-95"
+                  >
+                    B
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setFormData({
+                        name: sym, symbol: sym, quantity: "1", buy_price: price.toString(), current_price: price.toString(),
+                        currency: "INR", notes: "", bought_at: new Date().toISOString().split("T")[0],
+                        deduct_from_account: "", trade_type: "sell"
+                      });
+                      setEditingId(null);
+                      setCharges("0");
+                      setShowAddModal(true);
+                    }}
+                    className="w-7 h-7 rounded bg-[#ff5722] hover:bg-[#e64a19] text-white flex items-center justify-center text-[10px] font-bold shadow-md transition-transform active:scale-95"
+                  >
+                    S
+                  </button>
+                  <button 
+                    onClick={() => {
+                      const updated = watchlist.filter(s => s !== sym);
+                      setWatchlist(updated);
+                      localStorage.setItem("stocks_watchlist", JSON.stringify(updated));
+                    }}
+                    className="w-7 h-7 rounded bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white flex items-center justify-center text-[11px] transition-colors"
+                  >
+                    🗑️
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+
+          {watchlist.length === 0 && (
+            <div className="p-8 text-center text-xs text-gray-500">
+              Watchlist is empty. Search and add symbols above.
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="p-6">
-        {/* Kite-style Summary Bar */}
-        {activeStocks.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 bg-[#0a0a0a] p-4 border border-white/10 rounded-md">
-            <div>
-              <p className="text-xs text-[--text-muted] mb-1">Total investment</p>
-              <p className="text-xl font-normal text-[--text-primary]">₹{formatMoney(stats.totalInvested)}</p>
-            </div>
-            <div>
-              <p className="text-xs text-[--text-muted] mb-1">Current value</p>
-              <p className="text-xl font-normal text-[--text-primary]">₹{formatMoney(stats.totalCurrent)}</p>
-            </div>
-            <div>
-              <p className="text-xs text-[--text-muted] mb-1">Day&apos;s P&amp;L</p>
-              <p className={`text-xl font-medium ${stats.dayPnL >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                {stats.dayPnL >= 0 ? '+' : ''}{formatMoney(stats.dayPnL)} <span className="text-xs">({stats.dayPnL >= 0 ? '+' : ''}{stats.dayPnLPercent.toFixed(2)}%)</span>
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-[--text-muted] mb-1">Total P&L</p>
-              <p className={`text-xl font-medium ${stats.totalPnL >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                {stats.totalPnL >= 0 ? '+' : ''}{formatMoney(stats.totalPnL)} <span className="text-xs">({stats.totalPnL >= 0 ? '+' : ''}{stats.totalPnLPercent.toFixed(2)}%)</span>
-              </p>
+      {/* Main Panel */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+        {/* Kite-style Top Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-[#151515]">
+          <div className="flex items-center gap-6">
+            <div className="flex gap-4">
+              <button 
+                onClick={() => setActiveTab("holdings")}
+                className={`text-sm font-semibold transition-colors tracking-wide ${activeTab === 'holdings' ? 'text-[#ff5722]' : 'text-gray-400 hover:text-white'}`}
+              >
+                Holdings ({activeStocks.length})
+              </button>
+              <button 
+                onClick={() => setActiveTab("history")}
+                className={`text-sm font-semibold transition-colors tracking-wide ${activeTab === 'history' ? 'text-[#ff5722]' : 'text-gray-400 hover:text-white'}`}
+              >
+                Trade History
+              </button>
             </div>
           </div>
-        )}
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={handleRefreshPrices} 
+              disabled={isRefreshing || activeStocks.length === 0}
+              className="bg-transparent border border-white/10 hover:bg-white/5 text-white px-3 py-1.5 rounded text-xs font-semibold transition-colors disabled:opacity-50 flex items-center gap-2"
+            >
+              {isRefreshing ? (
+                <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" strokeDasharray="32" className="opacity-25"></circle><path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" className="opacity-75"></path></svg>
+              ) : (
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+              )}
+              Refresh Prices
+            </button>
+            <button 
+              onClick={() => { 
+                setFormData({
+                  name: "", symbol: "", quantity: "", buy_price: "", current_price: "",
+                  currency: "INR", notes: "", bought_at: new Date().toISOString().split("T")[0],
+                  deduct_from_account: "", trade_type: "buy"
+                });
+                setEditingId(null);
+                setShowAddModal(true); 
+              }} 
+              className="bg-[#2185d0] hover:bg-[#1678c2] text-white px-4 py-1.5 rounded text-xs font-bold transition-colors"
+            >
+              Add Trade
+            </button>
+          </div>
+        </div>
 
-        {activeTab === "holdings" ? (
-          <StocksDataTable 
-            stocks={activeStocks} 
-            onEdit={startEdit} 
-            onSell={startSell} 
-            onAdd={() => setShowAddModal(true)} 
-          />
-        ) : (
-          <StocksHistoryTable trades={stockTrades} />
-        )}
-
-        {/* Allocation Donut (optional below the table like Kite's overview) */}
-        {activeStocks.length > 0 && (
-          <div className="mt-8 bg-[#0a0a0a] border border-white/10 rounded-md p-6 max-w-md">
-            <h3 className="text-sm font-medium text-[--text-primary] mb-4">Portfolio Allocation</h3>
-            <div className="flex items-center">
-              <div className="w-[160px] h-[160px]">
-                {mounted && pieChartData.length > 0 && (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie data={pieChartData} cx="50%" cy="50%" innerRadius={50} outerRadius={70} paddingAngle={2} dataKey="value" stroke="none">
-                        {pieChartData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} />)}
-                      </Pie>
-                      <RechartsTooltip 
-                        contentStyle={{ backgroundColor: "#1e1e1e", border: "1px solid #333", borderRadius: "4px" }}
-                        itemStyle={{ color: "#fff", fontSize: "12px" }}
-                        formatter={(value) => [`₹${formatMoney(Number(value))}`, "Value"]}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                )}
+        <div className="p-6 max-w-6xl w-full mx-auto">
+          {/* Kite-style Summary Bar */}
+          {activeStocks.length > 0 && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6 bg-[#151515] p-5 border border-white/5 rounded">
+              <div>
+                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Total investment</p>
+                <p className="text-xl font-normal text-white">₹{formatMoney(stats.totalInvested)}</p>
               </div>
-              <div className="ml-6 flex-1 flex flex-col gap-2">
-                {pieChartData.slice(0, 5).map((entry, index) => (
-                  <div key={index} className="flex items-center gap-2 text-xs">
-                    <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: entry.fill }} />
-                    <span className="text-[--text-secondary] font-medium truncate max-w-[100px]">{entry.name}</span>
-                  </div>
-                ))}
+              <div>
+                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Current value</p>
+                <p className="text-xl font-normal text-white">₹{formatMoney(stats.totalCurrent)}</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Day&apos;s P&amp;L</p>
+                <p className={`text-xl font-medium ${stats.dayPnL >= 0 ? 'text-[#4caf50]' : 'text-[#f44336]'}`}>
+                  {stats.dayPnL >= 0 ? '+' : ''}{formatMoney(stats.dayPnL)} <span className="text-xs font-semibold ml-1">({stats.dayPnL >= 0 ? '+' : ''}{stats.dayPnLPercent.toFixed(2)}%)</span>
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Total P&L</p>
+                <p className={`text-xl font-medium ${stats.totalPnL >= 0 ? 'text-[#4caf50]' : 'text-[#f44336]'}`}>
+                  {stats.totalPnL >= 0 ? '+' : ''}{formatMoney(stats.totalPnL)} <span className="text-xs font-semibold ml-1">({stats.totalPnL >= 0 ? '+' : ''}{stats.totalPnLPercent.toFixed(2)}%)</span>
+                </p>
               </div>
             </div>
-          </div>
-        )}
+          )}
+
+          {activeTab === "holdings" ? (
+            <StocksDataTable 
+              stocks={activeStocks} 
+              onEdit={startEdit} 
+              onSell={startSell} 
+              onAdd={() => setShowAddModal(true)} 
+            />
+          ) : (
+            <StocksHistoryTable trades={stockTrades} />
+          )}
+
+          {/* Allocation Donut */}
+          {activeStocks.length > 0 && (
+            <div className="mt-8 bg-[#151515] border border-white/5 rounded p-6 max-w-md">
+              <h3 className="text-xs font-bold text-white tracking-wider uppercase mb-4">Portfolio Allocation</h3>
+              <div className="flex items-center">
+                <div className="w-[150px] h-[150px]">
+                  {mounted && pieChartData.length > 0 && (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={pieChartData} cx="50%" cy="50%" innerRadius={45} outerRadius={60} paddingAngle={2} dataKey="value" stroke="none">
+                          {pieChartData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} />)}
+                        </Pie>
+                        <RechartsTooltip 
+                          contentStyle={{ backgroundColor: "#1e1e1e", border: "1px solid #333", borderRadius: "4px" }}
+                          itemStyle={{ color: "#fff", fontSize: "11px" }}
+                          formatter={(value) => [`₹${formatMoney(Number(value))}`, "Value"]}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+                <div className="ml-6 flex-1 flex flex-col gap-2">
+                  {pieChartData.slice(0, 5).map((entry, index) => (
+                    <div key={index} className="flex items-center gap-2 text-xs">
+                      <div className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: entry.fill }} />
+                      <span className="text-gray-400 font-semibold truncate max-w-[120px]">{entry.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Add / Edit Modal */}
+      {/* High-Fidelity Zerodha Kite Order Ticket Modal */}
       {showAddModal && (
         <Drawer
           isOpen={showAddModal}
           onClose={() => { setShowAddModal(false); setEditingId(null); }}
-          title={editingId ? "Update Stock Holding" : "Record Stock Trade"}
+          title={editingId ? `Edit ${formData.symbol}` : "Order Ticket"}
         >
-          <div className="p-2 max-w-lg mx-auto w-full">
-            {!editingId && (
-              <div className="flex bg-[#1e1e1e] rounded-md p-1 border border-white/10 mb-6">
+          {/* Custom Kite style modal header override inside Content */}
+          <div className="p-0 -mx-6 -mt-6">
+            <div className={`p-4 rounded-t flex items-center justify-between ${
+              formData.trade_type === "buy" ? "bg-[#4185f4]" : "bg-[#ff5722]"
+            } text-white`}>
+              <div>
+                <span className="text-base font-bold uppercase tracking-wider">{editingId ? "Modify" : formData.trade_type === "buy" ? "Buy" : "Sell"} {formData.symbol || "Stock"}</span>
+                <span className="ml-2 text-[10px] bg-white/20 px-1.5 py-0.5 rounded font-black tracking-widest">NSE</span>
+              </div>
+              <div className="text-right">
+                <span className="text-xs text-white/70">LTP</span>
+                <span className="ml-1 text-sm font-bold">₹{parseFloat(formData.current_price || "0").toFixed(2)}</span>
+              </div>
+            </div>
+
+            <div className="p-5 space-y-5 bg-[#151515]">
+              {/* Product selector: CNC vs MIS */}
+              <div className="flex gap-2">
                 <button 
-                  type="button"
-                  onClick={() => setFormData({ ...formData, trade_type: "buy" })}
-                  className={`flex-1 py-2 rounded text-xs font-semibold transition-all ${
-                    formData.trade_type === "buy" ? "bg-[#2185d0] text-white shadow-md" : "text-[--text-muted] hover:text-white"
-                  }`}
+                  type="button" 
+                  className="flex-1 py-1.5 text-xs font-bold rounded border border-[#4185f4]/30 text-[#4185f4] bg-[#4185f4]/5 hover:bg-[#4185f4]/10 transition-colors"
                 >
-                  Buy
+                  CNC (Longterm)
                 </button>
                 <button 
-                  type="button"
-                  onClick={() => setFormData({ ...formData, trade_type: "sell" })}
-                  className={`flex-1 py-2 rounded text-xs font-semibold transition-all ${
-                    formData.trade_type === "sell" ? "bg-rose-500 text-white shadow-md" : "text-[--text-muted] hover:text-white"
-                  }`}
+                  type="button" 
+                  disabled
+                  className="flex-1 py-1.5 text-xs font-bold rounded border border-white/5 text-gray-500 cursor-not-allowed"
                 >
-                  Sell
+                  MIS (Intraday)
                 </button>
               </div>
-            )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2 relative">
-                  <label className="text-xs font-medium text-[--text-muted]">Search Stock</label>
-                  <div className="relative">
-                    <input 
-                      className="w-full bg-[#1e1e1e] border border-white/10 rounded px-3 py-2 text-sm text-white focus:border-[#2185d0] outline-none" 
-                      placeholder="e.g. Reliance, AAPL" 
-                      value={searchQuery || formData.name} 
-                      onChange={e => {
-                        setSearchQuery(e.target.value);
-                        setFormData({...formData, name: e.target.value});
-                      }} 
-                    />
-                    {isSearching && (
-                      <div className="absolute right-3 top-2.5">
-                        <svg className="w-4 h-4 animate-spin text-[--text-muted]" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" strokeDasharray="32" className="opacity-25"></circle><path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" className="opacity-75"></path></svg>
-                      </div>
-                    )}
-                  </div>
-                  {showSearchDropdown && searchResults.length > 0 && (
-                    <div className="absolute z-50 left-0 right-0 top-[100%] mt-1 bg-[#2a2a2a] border border-white/10 rounded-md shadow-xl overflow-hidden max-h-48 overflow-y-auto custom-scrollbar">
-                      {searchResults.map((res, i) => (
-                        <div 
-                          key={i} 
-                          className="px-3 py-2 hover:bg-white/5 cursor-pointer transition-colors border-b border-white/5 last:border-0"
-                          onClick={async () => {
-                            setFormData({...formData, name: res.name, symbol: res.fullSymbol || res.symbol});
-                            setSearchQuery("");
-                            setShowSearchDropdown(false);
-                            // Auto fetch current price
-                            const liveData = await fetchLiveStockPrice(res.fullSymbol || res.symbol);
-                            if (liveData) {
-                              setFormData(prev => ({...prev, current_price: liveData.price.toString()}));
-                            }
-                          }}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-white truncate max-w-[70%]">{res.name}</span>
-                            <span className="text-xs font-bold text-[#2185d0]">{res.symbol}</span>
-                          </div>
-                          <div className="text-[10px] text-[--text-muted] mt-0.5">{res.exchange}</div>
-                        </div>
-                      ))}
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Manual Symbol Entry (if adding new from scratch) */}
+                {!formData.symbol && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Stock Name</label>
+                      <input 
+                        className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]" 
+                        placeholder="e.g. Reliance Industries"
+                        value={formData.name}
+                        onChange={e => setFormData({ ...formData, name: e.target.value })}
+                        required
+                      />
                     </div>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-medium text-[--text-muted]">Symbol</label>
-                  <input className="w-full bg-[#1e1e1e] border border-white/10 rounded px-3 py-2 text-sm text-white focus:border-[#2185d0] outline-none uppercase" placeholder="e.g. RELIANCE" value={formData.symbol} onChange={e => setFormData({...formData, symbol: e.target.value})} />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-medium text-[--text-muted]">Quantity</label>
-                  <input required type="number" step="any" className="w-full bg-[#1e1e1e] border border-white/10 rounded px-3 py-2 text-sm text-white focus:border-[#2185d0] outline-none" value={formData.quantity} onChange={e => setFormData({...formData, quantity: e.target.value})} inputMode="decimal" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-medium text-[--text-muted]">{formData.trade_type === 'buy' ? 'Buy Price' : 'Sell Price'}</label>
-                  <input required type="number" step="any" className="w-full bg-[#1e1e1e] border border-white/10 rounded px-3 py-2 text-sm text-white focus:border-[#2185d0] outline-none" value={formData.buy_price} onChange={e => setFormData({...formData, buy_price: e.target.value})} inputMode="decimal" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-medium text-[--text-muted]">Current Price (LTP)</label>
-                  <input required type="number" step="any" className="w-full bg-[#1e1e1e] border border-white/10 rounded px-3 py-2 text-sm text-white focus:border-[#2185d0] outline-none" value={formData.current_price} onChange={e => setFormData({...formData, current_price: e.target.value})} inputMode="decimal" />
-                </div>
-              </div>
-
-              {!editingId && (
-                <>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-[--text-muted]">Date</label>
-                    <input type="date" className="w-full bg-[#1e1e1e] border border-white/10 rounded px-3 py-2 text-sm text-white focus:border-[#2185d0] outline-none" value={formData.bought_at} onChange={e => setFormData({...formData, bought_at: e.target.value})} />
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Symbol</label>
+                      <input 
+                        className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white uppercase outline-none focus:border-[#2185d0]" 
+                        placeholder="e.g. RELIANCE"
+                        value={formData.symbol}
+                        onChange={e => setFormData({ ...formData, symbol: e.target.value.toUpperCase() })}
+                        required
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-[--text-muted]">
-                      {formData.trade_type === 'buy' ? 'Deduct From' : 'Deposit To'}
+                )}
+
+                {/* Qty & Price row */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Qty.</label>
+                    <input 
+                      required 
+                      type="number" 
+                      step="any"
+                      className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]" 
+                      value={formData.quantity} 
+                      onChange={e => setFormData({...formData, quantity: e.target.value})} 
+                      inputMode="decimal"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">
+                      {formData.trade_type === 'buy' ? 'Buy Price' : 'Sell Price'}
                     </label>
-                    <select className="w-full bg-[#1e1e1e] border border-white/10 rounded px-3 py-2 text-sm text-white focus:border-[#2185d0] outline-none" value={formData.deduct_from_account} onChange={e => setFormData({...formData, deduct_from_account: e.target.value})}>
-                      <option value="">No Transaction (Track Only)</option>
-                      {accounts.map(acc => (
-                        <option key={acc.id} value={acc.id}>{acc.name} (₹{acc.balance.toLocaleString()})</option>
-                      ))}
-                    </select>
+                    <input 
+                      required 
+                      type="number" 
+                      step="any"
+                      className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]" 
+                      value={formData.buy_price} 
+                      onChange={e => setFormData({...formData, buy_price: e.target.value})} 
+                      inputMode="decimal"
+                    />
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-xs font-medium text-[--text-muted]">Charges (₹)</label>
-                  <input type="number" step="any" className="w-full bg-[#1e1e1e] border border-white/10 rounded px-3 py-2 text-sm text-white focus:border-[#2185d0] outline-none" value={charges} onChange={e => setCharges(e.target.value)} />
+                {/* LTP Price row */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">LTP (Latest price)</label>
+                    <input 
+                      required 
+                      type="number" 
+                      step="any"
+                      className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]" 
+                      value={formData.current_price} 
+                      onChange={e => setFormData({...formData, current_price: e.target.value})} 
+                      inputMode="decimal"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Order Type</label>
+                    <div className="flex border border-white/10 rounded overflow-hidden">
+                      <button type="button" className="flex-1 py-1.5 bg-[#2185d0] text-white text-[10px] font-bold uppercase">Limit</button>
+                      <button type="button" disabled className="flex-1 py-1.5 text-gray-500 text-[10px] font-bold uppercase cursor-not-allowed">Market</button>
+                    </div>
+                  </div>
                 </div>
-                </>
-              )}
 
-              <div className="pt-6">
-                <button type="submit" disabled={submitting} className={`w-full py-2.5 rounded text-sm font-semibold transition-colors ${!editingId && formData.trade_type === 'sell' ? 'bg-rose-500 hover:bg-rose-600 text-white' : 'bg-[#2185d0] hover:bg-[#1678c2] text-white'}`}>
-                  {submitting ? "Processing..." : (editingId ? "Update" : formData.trade_type === 'buy' ? "Buy" : "Sell")}
-                </button>
-              </div>
-            </form>
+                {!editingId && (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Date</label>
+                        <input 
+                          type="date" 
+                          className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]" 
+                          value={formData.bought_at} 
+                          onChange={e => setFormData({...formData, bought_at: e.target.value})} 
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">
+                          {formData.trade_type === 'buy' ? 'Deduct From' : 'Deposit To'}
+                        </label>
+                        <select 
+                          className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]" 
+                          value={formData.deduct_from_account} 
+                          onChange={e => setFormData({...formData, deduct_from_account: e.target.value})}
+                        >
+                          <option value="">No Transaction (Track Only)</option>
+                          {accounts.map(acc => (
+                            <option key={acc.id} value={acc.id}>{acc.name} (₹{acc.balance.toLocaleString()})</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Brokerage &amp; Charges (₹)</label>
+                      <input 
+                        type="number" 
+                        step="any"
+                        className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]" 
+                        value={charges} 
+                        onChange={e => setCharges(e.target.value)} 
+                      />
+                    </div>
+                  </>
+                )}
+
+                {/* Notes (Optional) */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Notes</label>
+                  <textarea 
+                    className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0] resize-none h-12" 
+                    placeholder="Optional notes..."
+                    value={formData.notes}
+                    onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                  />
+                </div>
+
+                {/* Live Margin Calculation details */}
+                <div className="bg-white/5 rounded p-3 flex justify-between items-center text-xs text-gray-400">
+                  <div>
+                    <span>Margin required</span>
+                    <span className="ml-1 text-white font-bold">
+                      ₹{formatMoney((parseFloat(formData.quantity) || 0) * (parseFloat(formData.buy_price) || 0))}
+                    </span>
+                  </div>
+                  <div>
+                    <span>Charges: </span>
+                    <span className="text-white font-bold">₹{parseFloat(charges || "0").toFixed(2)}</span>
+                  </div>
+                </div>
+
+                {/* Modal actions */}
+                <div className="flex gap-3 pt-2">
+                  <button 
+                    type="submit" 
+                    disabled={submitting} 
+                    className={`flex-1 py-2 rounded text-xs font-bold transition-all text-white shadow-md active:scale-[0.98] ${
+                      editingId ? "bg-indigo-600 hover:bg-indigo-700" :
+                      formData.trade_type === 'sell' ? "bg-[#ff5722] hover:bg-[#e64a19]" : "bg-[#4185f4] hover:bg-[#3574d3]"
+                    }`}
+                  >
+                    {submitting ? "Processing..." : (editingId ? "Modify" : formData.trade_type === 'buy' ? "Buy" : "Sell")}
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={() => { setShowAddModal(false); setEditingId(null); }} 
+                    className="px-4 py-2 rounded text-xs font-bold bg-[#333] hover:bg-[#444] text-white transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </Drawer>
       )}

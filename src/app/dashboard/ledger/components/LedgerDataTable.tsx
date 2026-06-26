@@ -32,7 +32,8 @@ interface LedgerDataTableProps {
   logs: LedgerLog[];
   getLogCurrency: (accountId: string | null) => string;
   isDebitLog: (log: LedgerLog) => boolean;
-  getActionBadge: (type: string) => React.ReactNode;
+  isCreditLog: (log: LedgerLog) => boolean;
+  getActionBadge: (log: LedgerLog) => React.ReactNode;
   formatMoney: (val: number | null, currency: string) => string;
   onReset: () => void;
   onRevert: (logId: string) => void;
@@ -44,6 +45,7 @@ export default function LedgerDataTable({
   logs,
   getLogCurrency,
   isDebitLog,
+  isCreditLog,
   getActionBadge,
   formatMoney,
   onReset,
@@ -52,73 +54,95 @@ export default function LedgerDataTable({
   const [isReverting, setIsReverting] = useState<string | null>(null);
   const [sorting, setSorting] = useState<SortingState>([]);
 
+  const getVoucherType = (type: string) => {
+    if (type === "CREATE" || type === "TRANSFER_IN" || type === "ADJUST_UP") return "RECEIPT";
+    if (type === "DELETE" || type === "TRANSFER_OUT" || type === "SEND_MONEY" || type === "ADJUST_DOWN") return "PAYMENT";
+    return "JOURNAL";
+  };
+
   const columns = useMemo(
     () => [
       columnHelper.accessor("created_at", {
         header: ({ column }) => (
           <button onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="flex items-center gap-1 uppercase tracking-[0.2em] hover:text-white transition-colors">
-            Timestamp
+            Date
             {column.getIsSorted() === "asc" ? <ArrowUp className="w-3 h-3" /> : column.getIsSorted() === "desc" ? <ArrowDown className="w-3 h-3" /> : <ArrowUpDown className="w-3 h-3 opacity-50" />}
           </button>
         ),
         cell: (info) => {
           const val = info.getValue();
-          return (
-            <div>
-              <p className="text-xs font-bold text-white tracking-tight">
-                {val ? format(new Date(val), "MMM d, yyyy") : "—"}
-              </p>
-              <p className="text-[10px] font-mono text-[--text-muted] mt-1 tracking-widest uppercase">
-                {val ? format(new Date(val), "hh:mm:ss a") : "—"}
-              </p>
-            </div>
-          );
+          return <span className="text-xs text-white">{val ? format(new Date(val), "dd-MM-yyyy") : "—"}</span>;
         },
         sortingFn: "datetime",
       }),
       columnHelper.accessor("action_type", {
-        header: "Action Type",
-        cell: (info) => getActionBadge(info.getValue()),
-      }),
-      columnHelper.accessor("account_name", {
-        header: "Registry Account",
-        cell: (info) => (
-          <span className="text-xs font-bold text-white tracking-tight px-2 py-1 rounded bg-white/5 border border-white/10">
-            {info.getValue() || "System"}
-          </span>
-        ),
+        header: "Voucher Type",
+        cell: (info) => {
+          const val = info.getValue();
+          const vType = getVoucherType(val);
+          return (
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded tracking-wide ${
+              vType === "RECEIPT" ? "bg-emerald-500/10 text-emerald-500" :
+              vType === "PAYMENT" ? "bg-rose-500/10 text-rose-500" : "bg-blue-500/10 text-blue-500"
+            }`}>
+              {vType}
+            </span>
+          );
+        }
       }),
       columnHelper.accessor("details", {
-        header: "Audit Details",
-        cell: (info) => (
-          <div className="text-xs text-[--text-secondary] leading-relaxed break-words max-w-[300px]">
-            {info.getValue() || "No transactional details provided"}
-          </div>
-        ),
+        header: "Particulars",
+        cell: (info) => {
+          const log = info.row.original;
+          const details = info.getValue() || "No details provided";
+          const account = log.account_name ? `[${log.account_name}] ` : "";
+          return (
+            <div className="text-xs text-gray-300 leading-relaxed max-w-[320px] break-words">
+              <span className="text-gray-500 font-medium">{account}</span>
+              {details}
+            </div>
+          );
+        }
       }),
-      columnHelper.accessor("amount", {
-        header: ({ column }) => (
-          <button onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="flex items-center justify-end w-full gap-1 uppercase tracking-[0.2em] hover:text-white transition-colors">
-            {column.getIsSorted() === "asc" ? <ArrowUp className="w-3 h-3" /> : column.getIsSorted() === "desc" ? <ArrowDown className="w-3 h-3" /> : <ArrowUpDown className="w-3 h-3 opacity-50" />}
-            Amount Flow
-          </button>
-        ),
+      columnHelper.display({
+        id: "debit",
+        header: () => <div className="text-right w-full">Debit (Dr)</div>,
         cell: (info) => {
           const log = info.row.original;
           const isDebit = isDebitLog(log);
+          if (!isDebit || log.amount === null) return <div className="text-right text-xs text-gray-600">—</div>;
           return (
-            <div className="text-right">
-              <p className={`text-base font-black tabular-nums tracking-tight ${isDebit ? "text-danger" : "text-success"}`}>
-                {log.amount !== null ? `${isDebit ? "-" : "+"}${formatMoney(log.amount, getLogCurrency(log.account_id))}` : "—"}
-              </p>
-              {log.new_balance !== null && (
-                <p className="text-[10px] font-bold text-[--text-muted] mt-1.5 uppercase tracking-widest opacity-60">
-                  Bal: {formatMoney(log.new_balance, getLogCurrency(log.account_id))}
-                </p>
-              )}
+            <div className="text-right text-sm font-semibold text-rose-500 tabular-nums">
+              {formatMoney(log.amount, getLogCurrency(log.account_id))}
             </div>
           );
-        },
+        }
+      }),
+      columnHelper.display({
+        id: "credit",
+        header: () => <div className="text-right w-full">Credit (Cr)</div>,
+        cell: (info) => {
+          const log = info.row.original;
+          const isCredit = isCreditLog(log);
+          if (!isCredit || log.amount === null) return <div className="text-right text-xs text-gray-600">—</div>;
+          return (
+            <div className="text-right text-sm font-semibold text-emerald-500 tabular-nums">
+              {formatMoney(log.amount, getLogCurrency(log.account_id))}
+            </div>
+          );
+        }
+      }),
+      columnHelper.accessor("new_balance", {
+        header: () => <div className="text-right w-full">Balance</div>,
+        cell: (info) => {
+          const log = info.row.original;
+          if (log.new_balance === null) return <div className="text-right text-xs text-gray-600">—</div>;
+          return (
+            <div className="text-right text-sm font-bold text-white tabular-nums">
+              {formatMoney(log.new_balance, getLogCurrency(log.account_id))}
+            </div>
+          );
+        }
       }),
       columnHelper.display({
         id: "actions",
@@ -145,7 +169,7 @@ export default function LedgerDataTable({
         },
       }),
     ],
-    [getLogCurrency, isDebitLog, getActionBadge, formatMoney, onRevert, isReverting]
+    [getLogCurrency, isDebitLog, isCreditLog, formatMoney, onRevert, isReverting]
   );
 
   // eslint-disable-next-line react-hooks/incompatible-library
@@ -232,7 +256,7 @@ export default function LedgerDataTable({
                     </span>
                   </div>
                 </div>
-                {getActionBadge(log.action_type)}
+                {getActionBadge(log)}
               </div>
 
               <p className="text-xs text-[--text-secondary] leading-relaxed break-words">{log.details || "No details"}</p>

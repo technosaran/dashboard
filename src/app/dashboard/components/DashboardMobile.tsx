@@ -46,6 +46,7 @@ const quickActions = [
   { label: "Forex", href: "/dashboard/forex?action=new", icon: "💱", color: "#fbbf24", desc: "Currencies", module: "Forex" },
   { label: "Liability", href: "/dashboard/liabilities?action=new", icon: "💸", color: "#ec4899", desc: "Loans & EMIs", module: "Liabilities" },
   { label: "Alt Asset", href: "/dashboard/alternative-assets?action=new", icon: "🏢", color: "#14b8a6", desc: "Gold & Property", module: "Alt Assets" },
+  { label: "Family Send", href: "/dashboard/family?action=send", icon: "👨‍👩‍👧‍👦", color: "#8b5cf6", desc: "Send to members", module: "Family Management" },
 ];
 
 const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, accounts, isValidating }: Props) {

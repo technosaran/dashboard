@@ -21,11 +21,12 @@ interface FnoDataTableProps {
   onDeleteTrade?: (id: string) => void;
   onAdd?: () => void;
   showActions: boolean;
+  livePrices?: Record<string, { price: number; prevClose?: number }>;
 }
 
 const columnHelper = createColumnHelper<FnoTrade>();
 
-export default function FNODataTable({ trades, onCloseTrade, onDeleteTrade, onAdd, showActions }: FnoDataTableProps) {
+export default function FNODataTable({ trades, onCloseTrade, onDeleteTrade, onAdd, showActions, livePrices }: FnoDataTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
 
@@ -81,6 +82,19 @@ export default function FNODataTable({ trades, onCloseTrade, onDeleteTrade, onAd
         ),
         cell: (info) => <div className="text-right text-sm text-[--text-secondary]">{formatMoney(Number(info.getValue()))}</div>,
       }),
+      columnHelper.display({
+        id: "ltp_or_exit",
+        header: () => <div className="text-right text-xs font-normal text-[--text-muted]">LTP / Exit</div>,
+        cell: (info) => {
+          const trade = info.row.original;
+          if (trade.status === 'OPEN') {
+            const price = livePrices?.[trade.symbol]?.price;
+            return <div className="text-right text-sm text-[--text-secondary]">{price ? `₹${formatMoney(price)}` : "—"}</div>;
+          } else {
+            return <div className="text-right text-sm text-[--text-secondary]">{trade.exit_price ? `₹${formatMoney(Number(trade.exit_price))}` : "—"}</div>;
+          }
+        }
+      }),
       columnHelper.accessor("pnl", {
         header: ({ column }) => (
           <button onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="flex items-center justify-end w-full gap-1 hover:text-[--text-primary] transition-colors">
@@ -89,7 +103,20 @@ export default function FNODataTable({ trades, onCloseTrade, onDeleteTrade, onAd
           </button>
         ),
         cell: (info) => {
-          if (info.row.original.status === 'OPEN') return <div className="text-right text-sm text-[--text-muted]">Open</div>;
+          const trade = info.row.original;
+          if (trade.status === 'OPEN') {
+            const ltp = livePrices?.[trade.symbol]?.price;
+            if (!ltp) return <div className="text-right text-sm text-[--text-muted]">—</div>;
+            const pnl = trade.trade_type === 'BUY' 
+              ? (ltp - Number(trade.entry_price)) * Number(trade.quantity)
+              : (Number(trade.entry_price) - ltp) * Number(trade.quantity);
+            const isPositive = pnl >= 0;
+            return (
+              <div className={`text-right text-sm font-medium ${isPositive ? 'text-emerald-500' : 'text-rose-500'}`}>
+                {isPositive ? '+' : ''}{formatMoney(pnl)}
+              </div>
+            );
+          }
           const pnl = Number(info.getValue());
           const isPositive = pnl >= 0;
           return (
@@ -98,7 +125,20 @@ export default function FNODataTable({ trades, onCloseTrade, onDeleteTrade, onAd
             </div>
           );
         },
-        sortingFn: (rowA, rowB) => Number(rowA.original.pnl) - Number(rowB.original.pnl)
+        sortingFn: (rowA, rowB) => {
+          const getPnLValue = (row: typeof rowA) => {
+            const trade = row.original;
+            if (trade.status === 'OPEN') {
+              const ltp = livePrices?.[trade.symbol]?.price;
+              if (!ltp) return 0;
+              return trade.trade_type === 'BUY'
+                ? (ltp - Number(trade.entry_price)) * Number(trade.quantity)
+                : (Number(trade.entry_price) - ltp) * Number(trade.quantity);
+            }
+            return Number(trade.pnl);
+          };
+          return getPnLValue(rowA) - getPnLValue(rowB);
+        }
       })
     ];
 

@@ -473,6 +473,12 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                   <span className="text-[11px] font-black uppercase tracking-widest text-blue-400">Add Stock</span>
                 </Link>
               )}
+              {enabledModules.includes("Family Management") && (
+                <Link href="/dashboard/family?action=send" className="flex flex-col items-center justify-center p-4 bg-purple-500/5 hover:bg-purple-500/10 border border-purple-500/10 rounded-2xl text-center transition-all group hover:-translate-y-1">
+                  <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">👨‍👩‍👧‍👦</span>
+                  <span className="text-[11px] font-black uppercase tracking-widest text-purple-400">Send Family</span>
+                </Link>
+              )}
               <Link href="/dashboard/accounts?action=new" className="flex flex-col items-center justify-center p-4 bg-sky-500/5 hover:bg-sky-500/10 border border-sky-500/10 rounded-2xl text-center transition-all group hover:-translate-y-1">
                 <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">💳</span>
                 <span className="text-[11px] font-black uppercase tracking-widest text-sky-400">Add Account</span>

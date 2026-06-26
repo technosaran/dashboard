@@ -73,56 +73,7 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
 
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  
-  // Calendar states
-  const [showCalendar, setShowCalendar] = useState(false);
-  const [currentCalendarMonth, setCurrentCalendarMonth] = useState(new Date().getMonth());
-  const [currentCalendarYear, setCurrentCalendarYear] = useState(new Date().getFullYear());
-
-  const calendarDays = useMemo(() => {
-    const days = [];
-    const daysInMonth = new Date(currentCalendarYear, currentCalendarMonth + 1, 0).getDate();
-    const firstDayIndex = new Date(currentCalendarYear, currentCalendarMonth, 1).getDay();
-
-    for (let i = 0; i < firstDayIndex; i++) days.push(null);
-    for (let i = 1; i <= daysInMonth; i++) days.push(new Date(currentCalendarYear, currentCalendarMonth, i));
-
-    return days;
-  }, [currentCalendarMonth, currentCalendarYear]);
-
-  const handleDayClick = (day: Date) => {
-    const formattedDate = format(day, "yyyy-MM-dd");
-    if (!startDate || (startDate && endDate)) {
-      setStartDate(formattedDate);
-      setEndDate("");
-    } else {
-      if (formattedDate < startDate) {
-        setStartDate(formattedDate);
-        setEndDate("");
-      } else {
-        setEndDate(formattedDate);
-        setShowCalendar(false);
-      }
-    }
-  };
-
-  const handlePrevMonth = () => {
-    if (currentCalendarMonth === 0) {
-      setCurrentCalendarMonth(11);
-      setCurrentCalendarYear(currentCalendarYear - 1);
-    } else {
-      setCurrentCalendarMonth(currentCalendarMonth - 1);
-    }
-  };
-
-  const handleNextMonth = () => {
-    if (currentCalendarMonth === 11) {
-      setCurrentCalendarMonth(0);
-      setCurrentCalendarYear(currentCalendarYear + 1);
-    } else {
-      setCurrentCalendarMonth(currentCalendarMonth + 1);
-    }
-  };
+  const [selectedAccountId, setSelectedAccountId] = useState("all");
 
   const selectQuickRange = (range: string) => {
     const today = new Date();
@@ -151,12 +102,17 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
       setStartDate("");
       setEndDate("");
     }
-    setShowCalendar(false);
   };
 
   const allFilteredLogs = useMemo(() => {
     return logs.filter((log) => {
       if (!log.created_at) return false;
+
+      // Filter by account
+      if (selectedAccountId !== "all" && log.account_id !== selectedAccountId) {
+        return false;
+      }
+
       const date = new Date(log.created_at);
 
       if (startDate || endDate) {
@@ -166,21 +122,33 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
       }
       return true;
     });
-  }, [endDate, logs, startDate]);
+  }, [endDate, logs, startDate, selectedAccountId]);
+
+  const openingBalance = useMemo(() => {
+    if (allFilteredLogs.length === 0) return 0;
+    const oldestLog = allFilteredLogs[allFilteredLogs.length - 1];
+    return oldestLog.previous_balance || 0;
+  }, [allFilteredLogs]);
+
+  const closingBalance = useMemo(() => {
+    if (allFilteredLogs.length === 0) return 0;
+    const newestLog = allFilteredLogs[0];
+    return newestLog.new_balance || 0;
+  }, [allFilteredLogs]);
 
   const totalInflow = useMemo(() => {
-    return logs.reduce((sum, log) => {
+    return allFilteredLogs.reduce((sum, log) => {
       if (!isCreditLog(log)) return sum;
       return sum + (log.amount || 0);
     }, 0);
-  }, [logs]);
+  }, [allFilteredLogs]);
 
   const totalOutflow = useMemo(() => {
-    return logs.reduce((sum, log) => {
+    return allFilteredLogs.reduce((sum, log) => {
       if (!isDebitLog(log)) return sum;
       return sum + (log.amount || 0);
     }, 0);
-  }, [logs]);
+  }, [allFilteredLogs]);
 
   const resetRange = () => {
     setStartDate("");
@@ -197,7 +165,11 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
     };
   };
 
-  const getActionBadge = (type: string) => {
+  const getActionBadge = (log: LedgerLog) => {
+    let type = log.action_type;
+    if (log.source_type === "family_transfer") {
+      type = "SEND_MONEY";
+    }
     const cfg = getActionConfig(type);
     return (
       <span 
@@ -215,8 +187,8 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 px-2">
         <div className="flex items-center gap-4">
           <div>
-            <h1 className="text-3xl font-black tracking-tight text-white uppercase italic">Financial Ledger</h1>
-            <p className="text-[10px] text-[--text-muted] font-black uppercase tracking-[0.3em] mt-1.5">Consolidated Audit Trail & Balance History</p>
+            <h1 className="text-3xl font-black tracking-tight text-white uppercase italic">Ledger</h1>
+            <p className="text-[10px] text-[--text-muted] font-black uppercase tracking-[0.3em] mt-1.5">Console Statement & Balance Audit Trail</p>
           </div>
           <div className="inline-flex items-center gap-2 mt-1">
             <span className={`h-2 w-2 rounded-full shadow-lg ${isValidating ? "animate-pulse bg-warning shadow-warning/40" : "bg-success shadow-success/40"}`} />
@@ -224,110 +196,100 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
         </div>
       </header>
 
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { label: "Total Capital Inflow", value: totalInflow, sub: "Revenue & Adjustments", color: "text-success", bg: "from-emerald-500/10", border: "hover:border-emerald-500/20", icon: "📈", sign: "+" },
-          { label: "Total Capital Outflow", value: totalOutflow, sub: "Expenses & Transfers", color: "text-danger", bg: "from-rose-500/10", border: "hover:border-rose-500/20", icon: "📉", sign: "-" },
-          { label: "Total Audit Logs", value: logs.length, sub: "Uncompromised Records", color: "text-white", bg: "from-indigo-500/10", border: "hover:border-indigo-500/20", icon: "🛡️", raw: true },
-          { label: "Filtered Records", value: allFilteredLogs.length, sub: "Date Range Filter", color: "text-[--accent-primary-light]", bg: "from-sky-500/10", border: "hover:border-sky-500/20", icon: "🔍", raw: true },
-        ].map((s, i) => (
-          <div key={i} className={`glass-card-static p-6 flex flex-col justify-between min-h-[140px] rounded-[24px] border border-white/5 bg-gradient-to-br ${s.bg} to-transparent ${s.border} transition-all duration-300 relative group overflow-hidden`}>
-            <div className="absolute right-4 top-4 text-3xl opacity-5 group-hover:opacity-10 group-hover:scale-110 transition-all duration-300">{s.icon}</div>
-            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-4">{s.label}</p>
-            <div>
-              <p className={`text-2xl font-black tabular-nums tracking-tight ${s.color}`}>
-                {s.raw ? s.value.toLocaleString() : `${s.sign}${formatMoney(s.value as number, "INR")}`}
-              </p>
-              <p className="text-[9px] font-black text-[--text-muted] uppercase tracking-widest mt-1 opacity-60">{s.sub}</p>
-            </div>
+      {/* Zerodha Console Filters Form */}
+      <section className="bg-[#151515] p-5 rounded border border-white/10 flex flex-col gap-4">
+        <div className="flex flex-wrap items-end gap-4">
+          <div className="flex-1 min-w-[200px] space-y-1.5">
+            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Account / Segment</label>
+            <select
+              className="w-full bg-[#1e1e1e] border border-white/10 rounded px-3 py-2 text-xs text-white outline-none focus:border-[#f26522]"
+              value={selectedAccountId}
+              onChange={(e) => setSelectedAccountId(e.target.value)}
+            >
+              <option value="all">All Accounts (Consolidated)</option>
+              {accounts.map(acc => (
+                <option key={acc.id} value={acc.id}>{acc.name} ({acc.currency})</option>
+              ))}
+            </select>
           </div>
-        ))}
+
+          <div className="flex-1 min-w-[150px] space-y-1.5">
+            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">From Date</label>
+            <input
+              type="date"
+              className="w-full bg-[#1e1e1e] border border-white/10 rounded px-3 py-2 text-xs text-[#fff] [color-scheme:dark] outline-none focus:border-[#f26522]"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+            />
+          </div>
+
+          <div className="flex-1 min-w-[150px] space-y-1.5">
+            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">To Date</label>
+            <input
+              type="date"
+              className="w-full bg-[#1e1e1e] border border-white/10 rounded px-3 py-2 text-xs text-[#fff] [color-scheme:dark] outline-none focus:border-[#f26522]"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+            />
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                // Trigger reload/filter
+              }}
+              className="h-[34px] px-5 bg-[#f26522] hover:bg-[#d85317] text-white text-xs font-bold rounded transition-colors"
+            >
+              View
+            </button>
+            <button
+              onClick={() => {
+                resetRange();
+                setSelectedAccountId("all");
+              }}
+              className="h-[34px] px-5 bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white text-xs font-bold rounded border border-white/10 transition-colors"
+            >
+              Reset
+            </button>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/5">
+          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mr-2">Quick Ranges:</span>
+          {["Today", "Yesterday", "This Month", "Last 30 Days", "All Time"].map((range) => (
+            <button
+              key={range}
+              onClick={() => selectQuickRange(range)}
+              className="px-3 py-1 bg-[#1e1e1e] hover:bg-white/5 border border-white/10 hover:border-white/20 text-gray-400 hover:text-white text-[10px] font-bold rounded transition-all"
+            >
+              {range}
+            </button>
+          ))}
+        </div>
       </section>
 
-      <section className="flex flex-col md:flex-row gap-4 items-center px-2">
-        <div className="relative w-full md:w-[320px] shrink-0">
-          <button
-            type="button"
-            onClick={() => setShowCalendar(!showCalendar)}
-            className="w-full h-14 bg-white/[0.015] border border-white/[0.05] hover:border-white/10 focus:border-[--accent-primary] transition-all rounded-2xl px-4 flex items-center justify-between cursor-pointer text-sm font-bold text-[--text-primary]"
-          >
-            <span className="flex items-center gap-2">
-              <span>📅</span>
-              {startDate || endDate ? (
-                <span className="text-white text-xs">
-                  {startDate ? format(new Date(startDate), "MMM d, yyyy") : "—"} to {endDate ? format(new Date(endDate), "MMM d, yyyy") : "—"}
-                </span>
-              ) : (
-                <span className="text-white/40 text-xs">Filter by Date Range...</span>
-              )}
-            </span>
-            {startDate || endDate ? (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  resetRange();
-                }}
-                aria-label="Clear selected date range"
-                className="text-[9px] font-black uppercase tracking-widest text-rose-400 hover:text-rose-500 bg-rose-500/10 border border-rose-500/20 px-2 py-1 rounded"
-              >
-                Clear
-              </button>
-            ) : (
-              <span className="text-xs opacity-40">▼</span>
-            )}
-          </button>
-
-          {showCalendar && (
-            <>
-              <div className="fixed inset-0 z-40" onClick={() => setShowCalendar(false)} />
-              <div 
-                className="absolute left-0 md:right-0 top-[calc(100%+0.5rem)] z-50 glass-card-static !p-4 border border-white/10 rounded-2xl w-[320px] shadow-2xl flex flex-col gap-4 animate-scale-in"
-                style={{ background: "rgba(10, 14, 28, 0.95)", backdropFilter: "blur(20px)" }}
-              >
-                <div className="flex items-center justify-between border-b border-white/5 pb-3">
-                  <button type="button" onClick={handlePrevMonth} className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 transition-colors flex items-center justify-center font-bold text-xs text-white">◀</button>
-                  <span className="text-xs font-black uppercase tracking-wider text-white">{MONTHS[currentCalendarMonth + 1]} {currentCalendarYear}</span>
-                  <button type="button" onClick={handleNextMonth} className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 transition-colors flex items-center justify-center font-bold text-xs text-white">▶</button>
-                </div>
-                <div className="grid grid-cols-7 gap-1 text-center">
-                  {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => <span key={d} className="text-[9px] font-black uppercase text-[--text-muted]">{d}</span>)}
-                </div>
-                <div className="grid grid-cols-7 gap-1 text-center">
-                  {calendarDays.map((day, idx) => {
-                    if (!day) return <div key={`empty-${idx}`} />;
-                    const formatted = format(day, "yyyy-MM-dd");
-                    const isSelectedStart = startDate === formatted;
-                    const isSelectedEnd = endDate === formatted;
-                    const isWithinRange = startDate && endDate && formatted >= startDate && formatted <= endDate;
-                    return (
-                      <button
-                        key={formatted}
-                        type="button"
-                        onClick={() => handleDayClick(day)}
-                        className={`w-9 h-9 rounded-xl text-[11px] font-black transition-all flex items-center justify-center ${isSelectedStart || isSelectedEnd ? "bg-[--accent-primary] text-white shadow-lg shadow-[--accent-primary]/25" : isWithinRange ? "bg-[--accent-primary]/15 text-[--accent-primary-light] border border-[--accent-primary]/10" : "hover:bg-white/5 text-white/70 hover:text-white"}`}
-                      >
-                        {day.getDate()}
-                      </button>
-                    );
-                  })}
-                </div>
-                <div className="border-t border-white/5 pt-3 grid grid-cols-2 gap-2">
-                  {["Today", "Yesterday", "This Month", "Last 30 Days"].map((range) => (
-                    <button key={range} type="button" onClick={() => selectQuickRange(range)} className="py-2 bg-white/5 hover:bg-white/10 transition-colors text-[9px] font-black uppercase tracking-wider text-white/80 hover:text-white rounded-lg border border-white/5">{range}</button>
-                  ))}
-                  <button type="button" onClick={() => selectQuickRange("All Time")} className="col-span-2 py-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-400 hover:text-rose-300 text-[9px] font-black uppercase tracking-wider transition-colors rounded-lg">Reset Date Range</button>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
+      {/* Zerodha Console Summary Statements */}
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { label: "Opening Balance", value: openingBalance, color: "text-white" },
+          { label: "Total Credits (Pay-in)", value: totalInflow, color: "text-emerald-500" },
+          { label: "Total Debits (Pay-out)", value: totalOutflow, color: "text-rose-500" },
+          { label: "Closing Balance", value: closingBalance, color: "text-white" },
+        ].map((s, i) => (
+          <div key={i} className="p-5 rounded border border-white/10 bg-[#151515] flex flex-col justify-between min-h-[90px]">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500">{s.label}</p>
+            <p className={`text-xl font-normal tracking-tight ${s.color} mt-2`}>
+              {formatMoney(s.value, "INR")}
+            </p>
+          </div>
+        ))}
       </section>
 
       <LedgerDataTable
         logs={allFilteredLogs}
         getLogCurrency={getLogCurrency}
         isDebitLog={isDebitLog}
+        isCreditLog={isCreditLog}
         getActionBadge={getActionBadge}
         formatMoney={formatMoney}
         onReset={resetRange}

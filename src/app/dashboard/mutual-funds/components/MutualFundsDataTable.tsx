@@ -1,17 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  useReactTable,
-  getCoreRowModel,
-  getSortedRowModel,
-  getPaginationRowModel,
-  flexRender,
-  createColumnHelper,
-  SortingState,
-} from "@tanstack/react-table";
 import { EmptyState } from "@/components/empty-state";
-import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import type { Tables } from "@/lib/database.types";
 
 type MF = Tables<"mutual_funds"> & { scheme_code?: string | null; fund_symbol?: string | null; pnlPercent?: number; day_change?: number; day_change_percent?: number };
@@ -22,8 +12,6 @@ interface MutualFundsDataTableProps {
   onSell: (fund: MF) => void;
   onAdd: () => void;
 }
-
-const columnHelper = createColumnHelper<MF>();
 
 function getAMCLogoUrl(amcName: string): string {
   const amc = (amcName || "").toLowerCase();
@@ -65,139 +53,22 @@ function AMCAvatar({ amcName, logoUrl }: { amcName: string; logoUrl: string }) {
       <img 
         src={logoUrl} 
         alt={amcName} 
-        className="w-8 h-8 rounded-full bg-white object-contain flex-shrink-0 border border-[#eee] dark:border-white/10"
+        className="w-10 h-10 rounded-full bg-white object-contain flex-shrink-0 border border-white/10"
         onError={() => setError(true)}
       />
     );
   }
   return (
-    <div className="w-8 h-8 rounded-full bg-white dark:bg-[#1e1e1e] border border-[#ddd] dark:border-white/10 flex items-center justify-center text-xs font-semibold text-[#555] dark:text-[--text-muted] flex-shrink-0">
+    <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xs font-semibold text-gray-300 flex-shrink-0">
       {initials}
     </div>
   );
 }
 
 export default function MutualFundsDataTable({ funds, onEdit, onSell, onAdd }: MutualFundsDataTableProps) {
-  const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
 
   const formatMoney = (val: number) => val.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-  const columns = useMemo(
-    () => [
-      columnHelper.accessor("fund_name", {
-        header: "Fund name",
-        cell: (info) => {
-          const amc = info.row.original.amc_name || "";
-          const logo = getAMCLogoUrl(amc);
-          return (
-            <div className="flex items-center gap-3">
-              <AMCAvatar amcName={amc} logoUrl={logo} />
-              <div className="flex flex-col">
-                <p className="text-sm font-medium text-[--text-primary]" title={info.getValue()}>{info.getValue()}</p>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-[10px] text-[--text-muted] px-1.5 py-0.5 rounded bg-white/5 border border-white/10">{info.row.original.category || "Others"}</span>
-                  <span className="text-[10px] text-[--text-muted]">{info.row.original.investment_type || "SIP"}</span>
-                </div>
-              </div>
-            </div>
-          );
-        },
-      }),
-      columnHelper.display({
-        id: "invested",
-        header: ({ column }) => (
-          <button onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="flex items-center justify-end w-full gap-1 hover:text-[--text-primary] transition-colors">
-            Invested
-            {column.getIsSorted() === "asc" ? <ArrowUp className="w-3 h-3" /> : column.getIsSorted() === "desc" ? <ArrowDown className="w-3 h-3" /> : <ArrowUpDown className="w-3 h-3 opacity-30" />}
-          </button>
-        ),
-        cell: (info) => {
-          const invested = Number(info.row.original.units) * Number(info.row.original.avg_nav);
-          return (
-            <div className="flex flex-col items-end">
-              <span className="text-sm text-[--text-primary]">₹{formatMoney(invested)}</span>
-              <span className="text-xs text-[--text-muted]">{Number(info.row.original.units).toFixed(3)} units</span>
-            </div>
-          );
-        },
-        sortingFn: (rowA, rowB) => {
-          return (Number(rowA.original.units) * Number(rowA.original.avg_nav)) - (Number(rowB.original.units) * Number(rowB.original.avg_nav));
-        }
-      }),
-      columnHelper.display({
-        id: "current",
-        header: ({ column }) => (
-          <button onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="flex items-center justify-end w-full gap-1 hover:text-[--text-primary] transition-colors">
-            Current
-            {column.getIsSorted() === "asc" ? <ArrowUp className="w-3 h-3" /> : column.getIsSorted() === "desc" ? <ArrowDown className="w-3 h-3" /> : <ArrowUpDown className="w-3 h-3 opacity-30" />}
-          </button>
-        ),
-        cell: (info) => {
-          const current = Number(info.row.original.units) * Number(info.row.original.current_nav);
-          return (
-            <div className="flex flex-col items-end">
-              <span className="text-sm font-medium text-[--text-primary]">₹{formatMoney(current)}</span>
-              <span className="text-xs text-[--text-muted]">NAV: ₹{Number(info.row.original.current_nav).toFixed(2)}</span>
-            </div>
-          );
-        },
-        sortingFn: (rowA, rowB) => {
-          return (Number(rowA.original.units) * Number(rowA.original.current_nav)) - (Number(rowB.original.units) * Number(rowB.original.current_nav));
-        }
-      }),
-      columnHelper.display({
-        id: "returns",
-        header: ({ column }) => (
-          <button onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="flex items-center justify-end w-full gap-1 hover:text-[--text-primary] transition-colors">
-            Returns
-            {column.getIsSorted() === "asc" ? <ArrowUp className="w-3 h-3" /> : column.getIsSorted() === "desc" ? <ArrowDown className="w-3 h-3" /> : <ArrowUpDown className="w-3 h-3 opacity-30" />}
-          </button>
-        ),
-        cell: (info) => {
-          const invested = Number(info.row.original.units) * Number(info.row.original.avg_nav);
-          const current = Number(info.row.original.units) * Number(info.row.original.current_nav);
-          const pnl = current - invested;
-          const pct = invested > 0 ? (pnl / invested) * 100 : 0;
-          const isPositive = pnl >= 0;
-          return (
-            <div className={`flex flex-col items-end text-sm ${isPositive ? 'text-emerald-500' : 'text-rose-500'}`}>
-              <span className="font-medium">{isPositive ? '+' : ''}₹{formatMoney(pnl)}</span>
-              <span className="text-xs opacity-80">{isPositive ? '+' : ''}{pct.toFixed(2)}%</span>
-            </div>
-          );
-        },
-        sortingFn: (rowA, rowB) => {
-          const invA = Number(rowA.original.units) * Number(rowA.original.avg_nav);
-          const curA = Number(rowA.original.units) * Number(rowA.original.current_nav);
-          const invB = Number(rowB.original.units) * Number(rowB.original.avg_nav);
-          const curB = Number(rowB.original.units) * Number(rowB.original.current_nav);
-          return (curA - invA) - (curB - invB);
-        }
-      }),
-      columnHelper.display({
-        id: "actions",
-        header: "",
-        cell: (info) => (
-          <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button
-              onClick={(e) => { e.stopPropagation(); onEdit(info.row.original); }}
-              className="px-3 py-1 rounded bg-[#2185d0]/10 text-[#2185d0] hover:bg-[#2185d0] hover:text-white transition-colors text-xs font-semibold"
-            >
-              Add
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); onSell(info.row.original); }}
-              className="px-3 py-1 rounded bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-colors text-xs font-semibold"
-            >
-              Redeem
-            </button>
-          </div>
-        ),
-      }),
-    ],
-    [onEdit, onSell]
-  );
 
   const filteredFunds = useMemo(() => {
     if (!globalFilter) return funds;
@@ -208,20 +79,6 @@ export default function MutualFundsDataTable({ funds, onEdit, onSell, onAdd }: M
       (f.category && f.category.toLowerCase().includes(lower))
     );
   }, [funds, globalFilter]);
-
-  // eslint-disable-next-line react-hooks/incompatible-library
-  const table = useReactTable({
-    data: filteredFunds,
-    columns,
-    state: { sorting },
-    onSortingChange: setSorting,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    initialState: {
-      pagination: { pageSize: 50 },
-    },
-  });
 
   if (funds.length === 0) {
     return (
@@ -239,67 +96,115 @@ export default function MutualFundsDataTable({ funds, onEdit, onSell, onAdd }: M
   }
 
   return (
-    <div className="bg-[#121212] rounded-xl border border-white/10 flex flex-col overflow-hidden shadow-sm">
-      <div className="p-4 border-b border-white/10 flex items-center justify-between">
-        <input
-          type="text"
-          placeholder="Search your investments"
-          value={globalFilter}
-          onChange={(e) => setGlobalFilter(e.target.value)}
-          className="bg-transparent border-none outline-none text-sm text-[--text-primary] placeholder-[--text-muted] w-full max-w-xs"
-        />
+    <div className="flex flex-col w-full space-y-6">
+      {/* Search and Filters */}
+      <div className="flex items-center justify-between">
+        <div className="relative w-full max-w-sm">
+          <input
+            type="text"
+            placeholder="Search your investments (e.g. HDFC, Equity)"
+            value={globalFilter}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            className="w-full bg-[#151515] border border-white/10 rounded px-4 py-2 text-xs text-white placeholder-gray-500 focus:border-[#2185d0] outline-none"
+          />
+        </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse min-w-[800px]">
-          <thead>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id} className="border-b border-white/10">
-                {headerGroup.headers.map((header) => (
-                  <th key={header.id} className="px-6 py-4 text-xs font-normal text-[--text-muted] whitespace-nowrap bg-white/[0.02]">
-                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </thead>
-          <tbody className="divide-y divide-white/5">
-            {table.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="group hover:bg-white/[0.03] transition-colors cursor-pointer bg-[#121212]">
-                {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="px-6 py-4 align-middle">
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {/* Cards Grid (Zerodha Coin Style) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredFunds.map((fund) => {
+          const invested = Number(fund.units) * Number(fund.avg_nav);
+          const current = Number(fund.units) * Number(fund.current_nav);
+          const pnl = current - invested;
+          const pnlPercent = invested > 0 ? (pnl / invested) * 100 : 0;
+          const isPositive = pnl >= 0;
+
+          const amc = fund.amc_name || "";
+          const logo = getAMCLogoUrl(amc);
+
+          return (
+            <div 
+              key={fund.id} 
+              className="bg-[#151515] border border-white/5 rounded-lg p-5 flex flex-col justify-between hover:border-white/10 transition-all duration-300 shadow-md group relative"
+            >
+              {/* Card Header */}
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  <AMCAvatar amcName={amc} logoUrl={logo} />
+                  <div className="min-w-0">
+                    <h4 className="text-xs font-bold text-white truncate tracking-wide" title={fund.fund_name}>
+                      {fund.fund_name}
+                    </h4>
+                    <p className="text-[10px] text-gray-500 font-semibold mt-0.5">{fund.amc_name || "Mutual Fund"}</p>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => onEdit(fund)}
+                  className="w-6 h-6 rounded bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white flex items-center justify-center text-[10px] transition-colors"
+                  title="Edit details"
+                >
+                  ✏️
+                </button>
+              </div>
+
+              {/* Badges */}
+              <div className="flex gap-2 mt-4">
+                <span className="text-[9px] font-bold text-gray-400 px-2 py-0.5 bg-white/5 border border-white/10 rounded uppercase tracking-wider">
+                  {fund.category || "Equity"}
+                </span>
+                <span className="text-[9px] font-bold text-gray-400 px-2 py-0.5 bg-white/5 border border-white/10 rounded uppercase tracking-wider">
+                  {fund.investment_type || "SIP"}
+                </span>
+              </div>
+
+              {/* Divider */}
+              <div className="h-px bg-white/5 my-4 w-full" />
+
+              {/* Metrics Grid */}
+              <div className="grid grid-cols-2 gap-y-4 gap-x-2">
+                <div>
+                  <span className="text-[9px] font-bold text-gray-500 uppercase tracking-wider block">Invested</span>
+                  <span className="text-xs font-semibold text-gray-300">₹{formatMoney(invested)}</span>
+                  <span className="text-[10px] text-gray-500 block mt-0.5">{Number(fund.units).toFixed(3)} units</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[9px] font-bold text-gray-500 uppercase tracking-wider block">Current Value</span>
+                  <span className="text-sm font-bold text-white">₹{formatMoney(current)}</span>
+                  <span className="text-[10px] text-gray-500 block mt-0.5">NAV: ₹{Number(fund.current_nav).toFixed(2)}</span>
+                </div>
+                <div>
+                  <span className="text-[9px] font-bold text-gray-500 uppercase tracking-wider block">Avg. NAV</span>
+                  <span className="text-xs text-gray-300">₹{Number(fund.avg_nav).toFixed(2)}</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[9px] font-bold text-gray-500 uppercase tracking-wider block">Total Returns</span>
+                  <span className={`text-xs font-bold ${isPositive ? 'text-[#4caf50]' : 'text-[#f44336]'}`}>
+                    {isPositive ? '+' : ''}₹{formatMoney(pnl)}
+                    <span className="text-[10px] font-semibold ml-1">({isPositive ? '+' : ''}{pnlPercent.toFixed(2)}%)</span>
+                  </span>
+                </div>
+              </div>
+
+              {/* Footer Actions (Coin style B/S buttons) */}
+              <div className="flex gap-3 mt-5 pt-3 border-t border-white/5">
+                <button 
+                  onClick={() => onEdit(fund)}
+                  className="flex-1 py-1.5 rounded bg-[#2185d0]/10 hover:bg-[#2185d0] text-[#2185d0] hover:text-white transition-all text-[11px] font-bold uppercase tracking-wider text-center"
+                >
+                  Invest More
+                </button>
+                <button 
+                  onClick={() => onSell(fund)}
+                  className="flex-1 py-1.5 rounded border border-rose-500/30 hover:bg-rose-500/10 text-rose-500 transition-all text-[11px] font-bold uppercase tracking-wider text-center"
+                >
+                  Redeem
+                </button>
+              </div>
+            </div>
+          );
+        })}
       </div>
-      
-      {table.getPageCount() > 1 && (
-        <div className="p-4 border-t border-white/10 flex items-center justify-between text-xs text-[--text-muted] bg-white/[0.02]">
-          <div>
-            Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to {Math.min((table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize, filteredFunds.length)} of {filteredFunds.length} entries
-          </div>
-          <div className="flex gap-3">
-            <button
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-              className="px-3 py-1.5 disabled:opacity-30 hover:text-white border border-white/10 rounded"
-            >
-              Previous
-            </button>
-            <button
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-              className="px-3 py-1.5 disabled:opacity-30 hover:text-white border border-white/10 rounded"
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

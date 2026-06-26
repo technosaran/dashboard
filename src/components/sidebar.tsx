@@ -198,6 +198,7 @@ const quickActions = [
   { label: "Forex", href: "/dashboard/forex?action=new", icon: "💱", color: "#fbbf24" },
   { label: "Liability", href: "/dashboard/liabilities?action=new", icon: "💸", color: "#ec4899" },
   { label: "Alt Asset", href: "/dashboard/alternative-assets?action=new", icon: "🏢", color: "#14b8a6" },
+  { label: "Family Send", href: "/dashboard/family?action=send", icon: "👨‍👩‍👧‍👦", color: "#8b5cf6" },
 ];
 
 const actionModuleMap: Record<string, string> = {
@@ -210,6 +211,7 @@ const actionModuleMap: Record<string, string> = {
   "Forex": "Forex",
   "Liability": "Liabilities",
   "Alt Asset": "Alt Assets",
+  "Family Send": "Family Management",
 };
 
 export default function Sidebar() {
@@ -224,7 +226,7 @@ export default function Sidebar() {
 
   const filteredNav = useMemo(() => {
     return nav.filter(item => {
-      if (["Dashboard", "Accounts", "Wallet", "Settings"].includes(item.label)) return true;
+      if (["Dashboard", "Accounts", "Wallet", "Settings", "Family"].includes(item.label)) return true;
       const dbLabel: ModuleKey | string = 
         item.label === "Assets" ? "Alt Assets" : 
         item.label === "Loans" ? "Liabilities" : 

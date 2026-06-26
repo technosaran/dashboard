@@ -13,10 +13,7 @@ import {
   addFamilyMember,
   updateFamilyMember,
   deleteFamilyMember,
-  createAllowance,
-  deleteAllowance,
   processFamilyTransfer,
-  payAllowance,
 } from "./actions";
 
 /* ── Types ── */
@@ -27,16 +24,6 @@ type Member = {
   balance: number | string;
   created_at: string;
   user_id: string;
-};
-
-type Allowance = {
-  id: string;
-  family_member_id: string;
-  amount: number;
-  frequency: string;
-  last_paid_at: string | null;
-  user_id: string;
-  created_at: string;
 };
 
 type Transfer = {
@@ -51,27 +38,7 @@ type Transfer = {
 };
 
 const RELATIONSHIPS = ["Parent", "Spouse", "Child", "Sibling", "Other"];
-const FREQUENCIES = ["daily", "weekly", "monthly"];
-
-const MEMBER_GRADIENTS = [
-  "linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(168,85,247,0.06) 100%)",
-  "linear-gradient(135deg, rgba(16,185,129,0.08) 0%, rgba(52,211,153,0.06) 100%)",
-  "linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(251,191,36,0.06) 100%)",
-  "linear-gradient(135deg, rgba(239,68,68,0.08) 0%, rgba(244,114,182,0.06) 100%)",
-  "linear-gradient(135deg, rgba(59,130,246,0.08) 0%, rgba(96,165,250,0.06) 100%)",
-  "linear-gradient(135deg, rgba(20,184,166,0.08) 0%, rgba(45,212,191,0.06) 100%)",
-];
-
-const RELATIONSHIP_BADGES: Record<string, string> = {
-  Parent: "badge-info",
-  Spouse: "badge-success",
-  Child: "badge-warning",
-  Sibling: "badge-info",
-  Other: "badge",
-};
-
 const fmt = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" });
-
 const supabase = createClient();
 
 export default function FamilyClient() {
@@ -82,14 +49,12 @@ export default function FamilyClient() {
 
   /* ── SWR for family data ── */
   const { data: familyData, mutate } = useSWR("finance_family", async () => {
-    const [membersRes, allowancesRes, transfersRes] = await Promise.all([
+    const [membersRes, transfersRes] = await Promise.all([
       supabase.from("family_members").select("*").order("created_at", { ascending: false }),
-      supabase.from("family_allowances").select("*").order("created_at", { ascending: false }),
       supabase.from("family_transfers").select("*").order("transfer_date", { ascending: false }),
     ]);
     return {
       members: (membersRes.data ?? []) as Member[],
-      allowances: (allowancesRes.data ?? []) as Allowance[],
       transfers: (transfersRes.data ?? []) as Transfer[],
     };
   }, {
@@ -99,28 +64,40 @@ export default function FamilyClient() {
   });
 
   const members = familyData?.members ?? [];
-  const allowances = familyData?.allowances ?? [];
   const transfers = familyData?.transfers ?? [];
+
+  const totalFamilyNetWorth = useMemo(() => {
+    return members.reduce((acc, m) => acc + Number(m.balance || 0), 0);
+  }, [members]);
+
+  const totalSentThisMonth = useMemo(() => {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    return transfers.reduce((acc, t) => {
+      const date = new Date(t.transfer_date);
+      if (date >= startOfMonth) {
+        return acc + Number(t.amount || 0);
+      }
+      return acc;
+    }, 0);
+  }, [transfers]);
 
   /* ── Modal state ── */
   const [showMemberModal, setShowMemberModal] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
-  const [showAllowanceModal, setShowAllowanceModal] = useState(false);
-  const [showPayAllowanceModal, setShowPayAllowanceModal] = useState(false);
-  
   const [editingMember, setEditingMember] = useState<Member | null>(null);
-  const [payingAllowance, setPayingAllowance] = useState<Allowance | null>(null);
 
   /* ── Form state ── */
   const [memberForm, setMemberForm] = useState({ name: "", relationship: "Other" });
   const [transferForm, setTransferForm] = useState({ family_member_id: "", account_id: "", amount: "", note: "" });
-  const [allowanceForm, setAllowanceForm] = useState({ family_member_id: "", amount: "", frequency: "monthly" });
-  const [payAllowanceForm, setPayAllowanceForm] = useState({ account_id: "" });
 
   /* ── Auto-open from URL ── */
   useEffect(() => {
-    if (searchParams?.get("action") === "new") {
+    const action = searchParams?.get("action");
+    if (action === "new") {
       setShowMemberModal(true);
+    } else if (action === "send") {
+      setShowTransferModal(true);
     }
   }, [searchParams]);
 
@@ -130,12 +107,6 @@ export default function FamilyClient() {
       setTimeout(() => setTransferForm(prev => ({ ...prev, account_id: accounts[0].id })), 0);
     }
   }, [accounts, transferForm.account_id]);
-
-  useEffect(() => {
-    if (accounts.length > 0 && !payAllowanceForm.account_id) {
-      setTimeout(() => setPayAllowanceForm({ account_id: accounts[0].id }), 0);
-    }
-  }, [accounts, payAllowanceForm.account_id]);
 
   /* ── Helpers ── */
   const getMemberName = useCallback((id: string) => {
@@ -149,10 +120,6 @@ export default function FamilyClient() {
 
   const resetTransferForm = () => {
     setTransferForm({ family_member_id: "", account_id: accounts[0]?.id ?? "", amount: "", note: "" });
-  };
-
-  const resetAllowanceForm = () => {
-    setAllowanceForm({ family_member_id: "", amount: "", frequency: "monthly" });
   };
 
   /* ── Handlers ── */
@@ -175,7 +142,7 @@ export default function FamilyClient() {
   }
 
   async function handleDeleteMember(id: string) {
-    if (!confirm("Delete this family member? This will also remove related allowances and transfers.")) return;
+    if (!confirm("Delete this family member? This will also remove their transfer history.")) return;
     await withLock(async () => {
       const res = await deleteFamilyMember(id);
       if (res.error) { toast.error(res.error); return; }
@@ -195,50 +162,9 @@ export default function FamilyClient() {
         note: transferForm.note || undefined,
       });
       if (res.error) { toast.error(res.error); return; }
-      toast.success("Transfer sent");
+      toast.success("Money sent successfully");
       resetTransferForm();
       setShowTransferModal(false);
-      mutate();
-      mutateFinance();
-    });
-  }
-
-  async function handleCreateAllowance() {
-    await withLock(async () => {
-      const res = await createAllowance({
-        family_member_id: allowanceForm.family_member_id,
-        amount: Number(allowanceForm.amount),
-        frequency: allowanceForm.frequency,
-      });
-      if (res.error) { toast.error(res.error); return; }
-      toast.success("Allowance created");
-      resetAllowanceForm();
-      setShowAllowanceModal(false);
-      mutate();
-    });
-  }
-
-  async function handleDeleteAllowance(id: string) {
-    if (!confirm("Delete this allowance?")) return;
-    await withLock(async () => {
-      const res = await deleteAllowance(id);
-      if (res.error) { toast.error(res.error); return; }
-      toast.success("Allowance deleted");
-      mutate();
-    });
-  }
-
-  async function handlePayAllowanceSubmit() {
-    if (!payingAllowance) return;
-    await withLock(async () => {
-      const res = await payAllowance({
-        allowance_id: payingAllowance.id,
-        account_id: payAllowanceForm.account_id,
-      });
-      if (res.error) { toast.error(res.error); return; }
-      toast.success("Allowance paid");
-      setPayingAllowance(null);
-      setShowPayAllowanceModal(false);
       mutate();
       mutateFinance();
     });
@@ -257,19 +183,10 @@ export default function FamilyClient() {
     setShowTransferModal(true);
   }
 
-  function openPayAllowance(allowance: Allowance) {
-    setPayingAllowance(allowance);
-    if (accounts.length > 0) {
-      setPayAllowanceForm({ account_id: accounts[0].id });
-    }
-    setShowPayAllowanceModal(true);
-  }
-
   if (!mounted) return null;
 
   const isLoading = !familyData;
 
-  /* ── Loading state ── */
   if (isLoading) {
     return (
       <div className="animate-fade-in" style={{ padding: "2rem" }}>
@@ -291,256 +208,159 @@ export default function FamilyClient() {
   }
 
   return (
-    <div className="animate-fade-in" style={{ padding: "1rem 1rem 6rem", maxWidth: 1200, margin: "0 auto" }}>
+    <div className="animate-fade-in text-[#d1d4dc] max-w-7xl mx-auto w-full px-4 py-6">
 
       {/* ═══ PAGE HEADER ═══ */}
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "1rem", marginBottom: "2rem" }}>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
         <div>
-          <h1 className="gradient-text" style={{ fontSize: "clamp(1.5rem, 4vw, 2rem)", fontWeight: 900, letterSpacing: "-0.03em", margin: 0 }}>
-            Family Management
-          </h1>
-          <p style={{ color: "var(--text-muted)", fontSize: 14, margin: "0.25rem 0 0", letterSpacing: "-0.01em" }}>
-            Manage members, allowances &amp; transfers
+          <h1 className="text-3xl font-black tracking-tight text-white uppercase italic">Family Tracker</h1>
+          <p className="text-[10px] text-[--text-muted] font-black uppercase tracking-[0.3em] mt-1.5">
+            Log and monitor money sent to family members
           </p>
         </div>
-        <button
-          className="btn-primary"
-          onClick={() => { resetMemberForm(); setShowMemberModal(true); }}
-          style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 700 }}
-        >
-          <svg width={16} height={16} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
-          Add Member
-        </button>
-      </div>
-
-      {/* ═══ MEMBERS GRID ═══ */}
-      <section style={{ marginBottom: "2.5rem" }}>
-        <h2 style={{ fontSize: 15, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em", textTransform: "uppercase", marginBottom: "1rem", opacity: 0.7 }}>
-          Family Members
-        </h2>
-
-        {members.length === 0 ? (
-          <div className="glass-card-static animate-scale-in" style={{ borderRadius: "var(--radius-xl)", padding: "3rem 2rem", textAlign: "center" }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>👨‍👩‍👧‍👦</div>
-            <p style={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: 15, margin: "0 0 4px" }}>No family members yet</p>
-            <p style={{ color: "var(--text-muted)", fontSize: 13, margin: 0 }}>Add your first member to start managing family finances</p>
-          </div>
-        ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "1rem" }}>
-            {members.map((member, idx) => {
-              const balance = Number(member.balance || 0);
-              const badgeClass = RELATIONSHIP_BADGES[member.relationship ?? "Other"] ?? "badge";
-              return (
-                <div
-                  key={member.id}
-                  className="glass-card animate-scale-in"
-                  style={{
-                    borderRadius: "var(--radius-xl)",
-                    padding: "1.25rem 1.5rem",
-                    background: MEMBER_GRADIENTS[idx % MEMBER_GRADIENTS.length],
-                    animationDelay: `${idx * 60}ms`,
-                    position: "relative",
-                    overflow: "hidden",
-                  }}
-                >
-                  {/* Decorative circle */}
-                  <div style={{ position: "absolute", top: -20, right: -20, width: 80, height: 80, borderRadius: "50%", background: "var(--accent-primary)", opacity: 0.04 }} />
-
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1rem" }}>
-                    {/* Avatar */}
-                    <div style={{
-                      width: 44, height: 44, borderRadius: "50%",
-                      background: "linear-gradient(135deg, var(--accent-primary), rgba(168,85,247,0.8))",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      color: "#fff", fontWeight: 900, fontSize: 16, letterSpacing: "-0.03em",
-                      boxShadow: "0 4px 12px rgba(99,102,241,0.25)",
-                    }}>
-                      {member.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 800, fontSize: 15, color: "var(--text-primary)", letterSpacing: "-0.02em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {member.name}
-                      </div>
-                      <span className={badgeClass} style={{ fontSize: 10, marginTop: 2, display: "inline-block" }}>
-                        {member.relationship ?? "Other"}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Balance */}
-                  <div style={{ marginBottom: "1rem" }}>
-                    <div style={{ color: "var(--text-muted)", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 2 }}>Current Balance</div>
-                    <div style={{ fontSize: 22, fontWeight: 900, color: "var(--text-primary)", letterSpacing: "-0.03em" }}>
-                      {fmt.format(balance)}
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <button
-                      className="btn-success"
-                      onClick={() => openSendMoney(member.id)}
-                      style={{ flex: 1, fontSize: 11, padding: "8px 10px", fontWeight: 700 }}
-                    >
-                      💸 Send
-                    </button>
-                    <button
-                      className="btn-secondary"
-                      onClick={() => openEditMember(member)}
-                      style={{ fontSize: 11, padding: "8px 12px", fontWeight: 700 }}
-                    >
-                      ✏️
-                    </button>
-                    <button
-                      className="btn-danger"
-                      onClick={() => handleDeleteMember(member.id)}
-                      disabled={submitting}
-                      style={{ fontSize: 11, padding: "8px 12px", fontWeight: 700 }}
-                    >
-                      🗑️
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
-
-      {/* ═══ ALLOWANCES SECTION ═══ */}
-      <section style={{ marginBottom: "2.5rem" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
-          <h2 style={{ fontSize: 15, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em", textTransform: "uppercase", opacity: 0.7, margin: 0 }}>
-            Allowances
-          </h2>
+        <div className="flex gap-3">
           <button
-            className="btn-secondary"
-            onClick={() => { resetAllowanceForm(); setShowAllowanceModal(true); }}
+            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-xs font-bold transition-colors shadow-md flex items-center gap-1.5"
+            onClick={() => openSendMoney()}
             disabled={members.length === 0}
-            style={{ fontSize: 11, padding: "8px 14px", fontWeight: 700 }}
           >
-            + Add Allowance
+            💸 Send Money
+          </button>
+          <button
+            className="bg-white/10 hover:bg-white/15 text-white border border-white/10 px-4 py-2 rounded text-xs font-bold transition-colors shadow-md flex items-center gap-1.5"
+            onClick={() => { resetMemberForm(); setShowMemberModal(true); }}
+          >
+            <span className="text-sm">+</span> Add Member
           </button>
         </div>
+      </div>
 
-        {allowances.length === 0 ? (
-          <div className="glass-card-static animate-scale-in" style={{ borderRadius: "var(--radius-xl)", padding: "2.5rem 2rem", textAlign: "center" }}>
-            <div style={{ fontSize: 40, marginBottom: 8 }}>📅</div>
-            <p style={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: 14, margin: "0 0 4px" }}>No allowances set</p>
-            <p style={{ color: "var(--text-muted)", fontSize: 12, margin: 0 }}>Create recurring allowances for family members</p>
+      {/* ═══ STATS OVERVIEW ═══ */}
+      <section className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        {[
+          { label: "Total Sent (All Time)", value: totalFamilyNetWorth, color: "text-white" },
+          { label: "Sent This Month", value: totalSentThisMonth, color: "text-purple-400" },
+          { label: "Active Members", raw: `${members.length} registered`, color: "text-emerald-400" },
+        ].map((s, i) => (
+          <div key={i} className="p-5 rounded border border-white/10 bg-[#151515] flex flex-col justify-between min-h-[90px]">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500">{s.label}</p>
+            {s.raw ? (
+              <p className={`text-xl font-bold tracking-tight ${s.color} mt-2`}>{s.raw}</p>
+            ) : (
+              <p className={`text-2xl font-bold tracking-tight ${s.color} mt-2`}>
+                {fmt.format(Number(s.value))}
+              </p>
+            )}
           </div>
-        ) : (
-          <div className="glass-card-static" style={{ borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead>
-                  <tr style={{ borderBottom: "1px solid var(--border-default)" }}>
-                    {["Member", "Amount", "Frequency", "Last Paid", "Actions"].map(h => (
-                      <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--text-muted)" }}>
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {allowances.map(al => (
-                    <tr key={al.id} style={{ borderBottom: "1px solid var(--border-default)" }} className="animate-fade-in">
-                      <td style={{ padding: "12px 16px", fontWeight: 700, fontSize: 13, color: "var(--text-primary)" }}>
-                        {getMemberName(al.family_member_id)}
-                      </td>
-                      <td style={{ padding: "12px 16px", fontWeight: 800, fontSize: 14, color: "var(--success)" }}>
-                        {fmt.format(Number(al.amount))}
-                      </td>
-                      <td style={{ padding: "12px 16px" }}>
-                        <span className="badge-info" style={{ fontSize: 10, textTransform: "capitalize" }}>{al.frequency}</span>
-                      </td>
-                      <td style={{ padding: "12px 16px", fontSize: 12, color: "var(--text-muted)" }}>
-                        {al.last_paid_at ? new Date(al.last_paid_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "Never"}
-                      </td>
-                      <td style={{ padding: "12px 16px", display: "flex", gap: 6 }}>
-                        <button
-                          className="btn-success"
-                          onClick={() => openPayAllowance(al)}
-                          disabled={submitting}
-                          style={{ fontSize: 10, padding: "6px 12px", fontWeight: 700 }}
-                        >
-                          Pay Now
-                        </button>
-                        <button
-                          className="btn-danger"
-                          onClick={() => handleDeleteAllowance(al.id)}
-                          disabled={submitting}
-                          style={{ fontSize: 10, padding: "6px 12px", fontWeight: 700 }}
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
+        ))}
       </section>
 
-      {/* ═══ RECENT TRANSFERS ═══ */}
-      <section style={{ marginBottom: "2rem" }}>
-        <h2 style={{ fontSize: 15, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em", textTransform: "uppercase", marginBottom: "1rem", opacity: 0.7 }}>
-          Recent Transfers
-        </h2>
-
-        {transfers.length === 0 ? (
-          <div className="glass-card-static animate-scale-in" style={{ borderRadius: "var(--radius-xl)", padding: "2.5rem 2rem", textAlign: "center" }}>
-            <div style={{ fontSize: 40, marginBottom: 8 }}>💱</div>
-            <p style={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: 14, margin: "0 0 4px" }}>No transfers yet</p>
-            <p style={{ color: "var(--text-muted)", fontSize: 12, margin: 0 }}>Send money to family members to see transfers here</p>
+      {/* ═══ TWO-COLUMN CONTENT LAYOUT ═══ */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {/* Family Directory Column (2/3 width on large) */}
+        <div className="lg:col-span-2">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Family Directory</h2>
           </div>
-        ) : (
-          <div className="glass-card-static" style={{ borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead>
-                  <tr style={{ borderBottom: "1px solid var(--border-default)" }}>
-                    {["Date", "Member", "Amount", "Type", "Note"].map(h => (
-                      <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--text-muted)" }}>
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {transfers.slice(0, 25).map(tr => (
-                    <tr key={tr.id} style={{ borderBottom: "1px solid var(--border-default)" }} className="animate-fade-in">
-                      <td style={{ padding: "12px 16px", fontSize: 12, color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+
+          {members.length === 0 ? (
+            <div className="p-8 rounded border border-dashed border-white/10 bg-[#151515] text-center">
+              <p className="text-xs text-gray-500">No family members set up yet. Click &quot;Add Member&quot; to begin.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {members.map((member) => {
+                const balance = Number(member.balance || 0);
+                const initials = member.name.charAt(0).toUpperCase();
+                return (
+                  <div key={member.id} className="p-4 rounded border border-white/10 bg-[#151515] flex flex-col justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm">
+                        {initials}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-sm font-bold text-white leading-tight truncate">{member.name}</h3>
+                          <span className="shrink-0 text-[8px] font-bold uppercase tracking-wider text-purple-400 bg-purple-500/10 border border-purple-500/20 px-1.5 py-0.5 rounded">
+                            {member.relationship ?? "Other"}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-400 mt-1">
+                          Total Sent: <span className="font-bold text-white">{fmt.format(balance)}</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 border-t border-white/5 pt-3">
+                      <button
+                        className="flex-1 bg-purple-600/10 hover:bg-purple-600 text-purple-400 hover:text-white py-1.5 rounded text-xs font-bold transition-all flex items-center justify-center gap-1 border border-purple-500/10"
+                        onClick={() => openSendMoney(member.id)}
+                      >
+                        💸 Send Money
+                      </button>
+                      <button
+                        className="bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 hover:text-white px-2.5 py-1.5 rounded text-xs transition-colors"
+                        onClick={() => openEditMember(member)}
+                        title="Edit member"
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        className="bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-500 px-2.5 py-1.5 rounded text-xs transition-colors"
+                        onClick={() => handleDeleteMember(member.id)}
+                        disabled={submitting}
+                        title="Delete member"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Transfer Log Column (1/3 width on large) */}
+        <div>
+          <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Recent Transfers</h2>
+
+          {transfers.length === 0 ? (
+            <div className="p-8 rounded border border-dashed border-white/10 bg-[#151515] text-center">
+              <p className="text-xs text-gray-500">No transfers logged yet.</p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {transfers.slice(0, 10).map((tr) => (
+                <div key={tr.id} className="p-3.5 rounded border border-white/5 bg-[#121212] flex flex-col gap-1.5">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="text-xs font-bold text-white">{getMemberName(tr.family_member_id)}</p>
+                      <p className="text-[10px] text-gray-500 mt-0.5">
                         {tr.transfer_date ? new Date(tr.transfer_date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—"}
-                      </td>
-                      <td style={{ padding: "12px 16px", fontWeight: 700, fontSize: 13, color: "var(--text-primary)" }}>
-                        {getMemberName(tr.family_member_id)}
-                      </td>
-                      <td style={{ padding: "12px 16px", fontWeight: 800, fontSize: 14, color: "var(--danger)" }}>
-                        {fmt.format(Number(tr.amount))}
-                      </td>
-                      <td style={{ padding: "12px 16px" }}>
-                        <span className={tr.type === "allowance" ? "badge-warning" : "badge-info"} style={{ fontSize: 10, textTransform: "capitalize" }}>
-                          {tr.type ?? "one-off"}
-                        </span>
-                      </td>
-                      <td style={{ padding: "12px 16px", fontSize: 12, color: "var(--text-muted)", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {tr.note || "—"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </p>
+                    </div>
+                    <span className="text-xs font-black text-rose-400 tabular-nums">
+                      -{fmt.format(Number(tr.amount))}
+                    </span>
+                  </div>
+                  {tr.note && (
+                    <p className="text-[10px] text-gray-400 bg-white/5 p-1.5 rounded border border-white/5 leading-relaxed">
+                      {tr.note}
+                    </p>
+                  )}
+                </div>
+              ))}
             </div>
-          </div>
-        )}
-      </section>
+          )}
+        </div>
+
+      </div>
 
       {/* ═══ MODALS ═══ */}
 
-      {/* ── Add/Edit Member Modal ── */}
+      {/* Add/Edit Member Modal */}
       {showMemberModal && (
         <ModalOverlay onClose={() => { setShowMemberModal(false); resetMemberForm(); }}>
           <h3 style={{ fontSize: 18, fontWeight: 900, color: "var(--text-primary)", letterSpacing: "-0.03em", margin: "0 0 1.25rem" }}>
@@ -583,7 +403,7 @@ export default function FamilyClient() {
         </ModalOverlay>
       )}
 
-      {/* ── Send Money Modal ── */}
+      {/* Send Money Modal */}
       {showTransferModal && (
         <ModalOverlay onClose={() => { setShowTransferModal(false); resetTransferForm(); }}>
           <h3 style={{ fontSize: 18, fontWeight: 900, color: "var(--text-primary)", letterSpacing: "-0.03em", margin: "0 0 1.25rem" }}>
@@ -651,115 +471,6 @@ export default function FamilyClient() {
                 {submitting ? "Sending..." : "Send Money"}
               </button>
               <button className="btn-secondary" onClick={() => { setShowTransferModal(false); resetTransferForm(); }} style={{ fontWeight: 700 }}>
-                Cancel
-              </button>
-            </div>
-          </div>
-        </ModalOverlay>
-      )}
-
-      {/* ── Add Allowance Modal ── */}
-      {showAllowanceModal && (
-        <ModalOverlay onClose={() => { setShowAllowanceModal(false); resetAllowanceForm(); }}>
-          <h3 style={{ fontSize: 18, fontWeight: 900, color: "var(--text-primary)", letterSpacing: "-0.03em", margin: "0 0 1.25rem" }}>
-            📅 Add Allowance
-          </h3>
-          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-            <div>
-              <label style={labelStyle}>Family Member</label>
-              <select
-                className="input-premium"
-                value={allowanceForm.family_member_id}
-                onChange={e => setAllowanceForm(prev => ({ ...prev, family_member_id: e.target.value }))}
-                style={{ width: "100%" }}
-              >
-                <option value="">Select member</option>
-                {members.map(m => (
-                  <option key={m.id} value={m.id}>{m.name}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label style={labelStyle}>Amount</label>
-              <input
-                className="input-premium"
-                type="number"
-                placeholder="0.00"
-                min="0"
-                step="0.01"
-                value={allowanceForm.amount}
-                onChange={e => setAllowanceForm(prev => ({ ...prev, amount: e.target.value }))}
-                style={{ width: "100%" }}
-              />
-            </div>
-            <div>
-              <label style={labelStyle}>Frequency</label>
-              <select
-                className="input-premium"
-                value={allowanceForm.frequency}
-                onChange={e => setAllowanceForm(prev => ({ ...prev, frequency: e.target.value }))}
-                style={{ width: "100%" }}
-              >
-                {FREQUENCIES.map(f => (
-                  <option key={f} value={f} style={{ textTransform: "capitalize" }}>{f.charAt(0).toUpperCase() + f.slice(1)}</option>
-                ))}
-              </select>
-            </div>
-            <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
-              <button
-                className="btn-primary"
-                onClick={handleCreateAllowance}
-                disabled={submitting || !allowanceForm.family_member_id || !allowanceForm.amount}
-                style={{ flex: 1, fontWeight: 800 }}
-              >
-                {submitting ? "Creating..." : "Create Allowance"}
-              </button>
-              <button className="btn-secondary" onClick={() => { setShowAllowanceModal(false); resetAllowanceForm(); }} style={{ fontWeight: 700 }}>
-                Cancel
-              </button>
-            </div>
-          </div>
-        </ModalOverlay>
-      )}
-
-      {/* ── Pay Allowance Confirm Modal ── */}
-      {showPayAllowanceModal && payingAllowance && (
-        <ModalOverlay onClose={() => { setShowPayAllowanceModal(false); setPayingAllowance(null); }}>
-          <h3 style={{ fontSize: 18, fontWeight: 900, color: "var(--text-primary)", letterSpacing: "-0.03em", margin: "0 0 1.25rem" }}>
-            💳 Pay Allowance
-          </h3>
-          <p style={{ color: "var(--text-secondary)", fontSize: 14, lineHeight: "1.5", marginBottom: "1rem" }}>
-            Confirm paying the allowance of <strong>{fmt.format(payingAllowance.amount)}</strong> ({payingAllowance.frequency}) to <strong>{getMemberName(payingAllowance.family_member_id)}</strong>?
-          </p>
-          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-            <div>
-              <label style={labelStyle}>From Account</label>
-              <select
-                className="input-premium"
-                value={payAllowanceForm.account_id}
-                onChange={e => setPayAllowanceForm({ account_id: e.target.value })}
-                style={{ width: "100%" }}
-              >
-                <option value="">Select account</option>
-                {accounts.map(a => (
-                  <option key={a.id} value={a.id}>{a.name} ({fmt.format(Number(a.balance))})</option>
-                ))}
-              </select>
-            </div>
-            <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
-              <button
-                className="btn-success"
-                onClick={handlePayAllowanceSubmit}
-                disabled={submitting || !payAllowanceForm.account_id}
-                style={{ flex: 1, fontWeight: 800 }}
-              >
-                {submitting ? "Processing..." : "Confirm Payment"}
-              </button>
-              <button
-                className="btn-secondary"
-                onClick={() => { setShowPayAllowanceModal(false); setPayingAllowance(null); }}
-                style={{ fontWeight: 700 }}
-              >
                 Cancel
               </button>
             </div>
