@@ -4,8 +4,6 @@ import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { toast } from "react-hot-toast";
-import { useMediaQuery } from "@/hooks/use-media-query";
-import Link from "next/link";
 import { format } from "date-fns";
 import type { Tables } from "@/lib/database.types";
 import { searchBanks, type Bank } from "@/lib/banks";
@@ -204,7 +202,6 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
     });
   }
 
-  const USD_TO_INR = 84.0;
   const displayedCurrency = showUSD ? "USD" : "INR";
 
   const filteredAccounts = useMemo(() => 

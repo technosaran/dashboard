@@ -69,7 +69,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const headerStore = await headers();
+  await headers();
 
   return (
     <html

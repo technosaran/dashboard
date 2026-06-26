@@ -26,48 +26,50 @@ export async function resetUserData() {
       console.error("reset_user_data RPC failed with error:", error);
       return { error: `Database error: ${error.message} (${error.code})` };
     }
-    
+
     const result = data as Record<string, unknown> | null;
-    
-    if (result && result.success === false) {
-      console.error("reset_user_data returned internal failure:", result.error);
-      // Don't return error immediately, proceed to JS fallback
-    }
-    
-    console.log("Executing JS client fallback deletes...");
-    try {
-      await Promise.all([
-        supabase.from("bond_transactions").delete().eq("user_id", user.id),
-        supabase.from("bonds").delete().eq("user_id", user.id),
-        supabase.from("forex_transactions").delete().eq("user_id", user.id),
-        supabase.from("forex_trades").delete().eq("user_id", user.id),
-        supabase.from("forex_accounts").delete().eq("user_id", user.id),
-        supabase.from("alternative_assets").delete().eq("user_id", user.id),
-        supabase.from("liabilities").delete().eq("user_id", user.id),
-        supabase.from("budgets").delete().eq("user_id", user.id),
-        supabase.from("net_worth_snapshots").delete().eq("user_id", user.id),
-        supabase.from("stock_trades").delete().eq("user_id", user.id),
-        supabase.from("investments").delete().eq("user_id", user.id),
-        supabase.from("mutual_fund_trades").delete().eq("user_id", user.id),
-        supabase.from("mutual_funds").delete().eq("user_id", user.id),
-        supabase.from("transactions").delete().eq("user_id", user.id),
-        supabase.from("transfers").delete().eq("user_id", user.id),
-        supabase.from("expenses").delete().eq("user_id", user.id),
-        supabase.from("incomes").delete().eq("user_id", user.id),
-        supabase.from("goals").delete().eq("user_id", user.id),
-        supabase.from("recipients").delete().eq("user_id", user.id),
-      ]);
-      // Attempt ledger_logs delete, but wrap in try-catch because of immutability trigger
+    const rpcSucceeded = result?.success === true;
+
+    if (!rpcSucceeded) {
+      // RPC returned a failure — run JS client deletes as a true fallback
+      console.warn("reset_user_data RPC did not report success, running JS fallback deletes...", result?.error);
       try {
-        await supabase.from("ledger_logs").delete().eq("user_id", user.id);
-      } catch (e) {
-        console.warn("Ledger logs fallback delete blocked by immutability trigger (expected)");
+        await Promise.all([
+          supabase.from("bond_transactions").delete().eq("user_id", user.id),
+          supabase.from("bonds").delete().eq("user_id", user.id),
+          supabase.from("forex_transactions").delete().eq("user_id", user.id),
+          supabase.from("forex_trades").delete().eq("user_id", user.id),
+          supabase.from("forex_accounts").delete().eq("user_id", user.id),
+          supabase.from("alternative_assets").delete().eq("user_id", user.id),
+          supabase.from("liabilities").delete().eq("user_id", user.id),
+          supabase.from("budgets").delete().eq("user_id", user.id),
+          supabase.from("net_worth_snapshots").delete().eq("user_id", user.id),
+          supabase.from("stock_trades").delete().eq("user_id", user.id),
+          supabase.from("investments").delete().eq("user_id", user.id),
+          supabase.from("mutual_fund_trades").delete().eq("user_id", user.id),
+          supabase.from("mutual_funds").delete().eq("user_id", user.id),
+          supabase.from("transactions").delete().eq("user_id", user.id),
+          supabase.from("transfers").delete().eq("user_id", user.id),
+          supabase.from("expenses").delete().eq("user_id", user.id),
+          supabase.from("incomes").delete().eq("user_id", user.id),
+          supabase.from("goals").delete().eq("user_id", user.id),
+          supabase.from("recipients").delete().eq("user_id", user.id),
+        ]);
+        // Attempt ledger_logs delete — blocked by immutability trigger in most cases
+        try {
+          await supabase.from("ledger_logs").delete().eq("user_id", user.id);
+        } catch {
+          console.warn("Ledger logs fallback delete blocked by immutability trigger (expected)");
+        }
+        await supabase.from("accounts").delete().eq("user_id", user.id);
+      } catch (fallbackError) {
+        console.error("JS client fallback deletes failed:", fallbackError);
+        return { error: "Data reset failed. Please try again." };
       }
-      await supabase.from("accounts").delete().eq("user_id", user.id);
-    } catch (fallbackError) {
-      console.error("JS client fallback deletes failed:", fallbackError);
+    } else {
+      console.log("reset_user_data RPC succeeded — skipping JS fallback deletes.");
     }
-    
+
     console.log("Database reset completed. Revalidating Next.js cache paths...");
     
     // Revalidate all major paths to ensure no stale data from layout or nested routes

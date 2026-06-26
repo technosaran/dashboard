@@ -1135,6 +1135,75 @@ export type Database = {
           referencedColumns: ["id"]
         }]
       }
+      fno_trades: {
+        Row: {
+          id: string
+          user_id: string
+          symbol: string
+          instrument_type: "FUT" | "CE" | "PE"
+          strike_price: number | null
+          expiry_date: string
+          trade_type: "BUY" | "SELL"
+          quantity: number
+          entry_price: number
+          exit_price: number | null
+          pnl: number | null
+          status: "OPEN" | "CLOSED"
+          account_id: string | null
+          ledger_log_id: string | null
+          close_ledger_log_id: string | null
+          notes: string | null
+          trade_date: string
+          close_date: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          symbol: string
+          instrument_type: "FUT" | "CE" | "PE"
+          strike_price?: number | null
+          expiry_date: string
+          trade_type: "BUY" | "SELL"
+          quantity: number
+          entry_price: number
+          exit_price?: number | null
+          pnl?: number | null
+          status?: "OPEN" | "CLOSED"
+          account_id?: string | null
+          ledger_log_id?: string | null
+          close_ledger_log_id?: string | null
+          notes?: string | null
+          trade_date?: string
+          close_date?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          symbol?: string
+          instrument_type?: "FUT" | "CE" | "PE"
+          strike_price?: number | null
+          expiry_date?: string
+          trade_type?: "BUY" | "SELL"
+          quantity?: number
+          entry_price?: number
+          exit_price?: number | null
+          pnl?: number | null
+          status?: "OPEN" | "CLOSED"
+          account_id?: string | null
+          ledger_log_id?: string | null
+          close_ledger_log_id?: string | null
+          notes?: string | null
+          trade_date?: string
+          close_date?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       dashboard_stats: {
@@ -1417,6 +1486,7 @@ export type Database = {
           stockTrades: Database["public"]["Tables"]["stock_trades"]["Row"][]
           mutualFundTrades: Database["public"]["Tables"]["mutual_fund_trades"]["Row"][]
           bondTransactions: Database["public"]["Tables"]["bond_transactions"]["Row"][]
+          fnoTrades: Database["public"]["Tables"]["fno_trades"]["Row"][]
         }
       }
       get_cashflow_v1: {
@@ -1457,6 +1527,7 @@ export type Database = {
           stockTrades: Database["public"]["Tables"]["stock_trades"]["Row"][]
           mutualFundTrades: Database["public"]["Tables"]["mutual_fund_trades"]["Row"][]
           bondTransactions: Database["public"]["Tables"]["bond_transactions"]["Row"][]
+          fnoTrades: Database["public"]["Tables"]["fno_trades"]["Row"][]
           incomes: Database["public"]["Tables"]["incomes"]["Row"][]
           expenses: Database["public"]["Tables"]["expenses"]["Row"][]
           budgets: Database["public"]["Tables"]["budgets"]["Row"][]

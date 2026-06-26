@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { format } from "date-fns";
 import {
   useReactTable,
@@ -34,11 +34,11 @@ export default function FamilyDataTable({ recentSends, accounts, recipients, get
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
 
-  const getAccountCurrency = (accountId: string | null) => {
+  const getAccountCurrency = useCallback((accountId: string | null) => {
     if (!accountId) return "INR";
     const acc = accounts.find((a) => a.id === accountId);
     return acc ? acc.currency : "INR";
-  };
+  }, [accounts]);
 
   const columns = useMemo(
     () => [
@@ -132,7 +132,7 @@ export default function FamilyDataTable({ recentSends, accounts, recipients, get
         ),
       }),
     ],
-    [accounts, recipients, getRecipientId]
+    [accounts, recipients, getAccountCurrency, getRecipientId, onRevert]
   );
 
   const table = useReactTable({

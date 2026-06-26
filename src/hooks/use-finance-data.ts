@@ -7,29 +7,6 @@ import type { Tables } from "@/lib/database.types";
 
 const EMPTY_ARRAY: never[] = [];
 
-export interface FnoTrade {
-  id: string;
-  user_id: string;
-  symbol: string;
-  instrument_type: "FUT" | "CE" | "PE";
-  strike_price: number | null;
-  expiry_date: string;
-  trade_type: "BUY" | "SELL";
-  quantity: number;
-  entry_price: number;
-  exit_price: number | null;
-  pnl: number | null;
-  status: "OPEN" | "CLOSED";
-  account_id: string | null;
-  ledger_log_id: string | null;
-  close_ledger_log_id: string | null;
-  notes: string | null;
-  trade_date: string;
-  close_date: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
 const supabase = createClient();
 
 type FinanceData = {
@@ -60,10 +37,11 @@ type FinanceData = {
   budgets: Tables<"budgets">[];
   alternativeAssets: Tables<"alternative_assets">[];
   liabilities: Tables<"liabilities">[];
-  fnoTrades: FnoTrade[];
+  fnoTrades: Tables<"fno_trades">[];
 };
 
 export type { FinanceData };
+export type FnoTrade = Tables<"fno_trades">;
 export const OVERVIEW_KEY = "finance_overview";
 
 // Granular Fetcher functions corresponding to database vertical functions
@@ -84,7 +62,7 @@ async function fetchInvestments() {
     stockTrades: Tables<"stock_trades">[];
     mutualFundTrades: Tables<"mutual_fund_trades">[];
     bondTransactions: Tables<"bond_transactions">[];
-    fnoTrades: FnoTrade[];
+    fnoTrades: Tables<"fno_trades">[];
   };
 }
 

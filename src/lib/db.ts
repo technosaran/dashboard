@@ -1,11 +1,31 @@
 import { drizzle } from "drizzle-orm/node-postgres";
-import { Client } from "pg";
+import { Pool } from "pg";
 import * as schema from "@/db/schema";
 
-const connectionString = process.env.DATABASE_URL || "";
+type Database = ReturnType<typeof drizzle<typeof schema>>;
 
-const client = new Client({
-  connectionString,
-});
+let pool: Pool | null = null;
+let db: Database | null = null;
 
-export const db = drizzle(client, { schema });
+export function getDb() {
+  if (db) {
+    return db;
+  }
+
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) {
+    throw new Error("Missing environment variable: DATABASE_URL is required to initialize Drizzle.");
+  }
+
+  pool = new Pool({ connectionString });
+  db = drizzle(pool, { schema });
+  return db;
+}
+
+export async function closeDb() {
+  if (pool) {
+    await pool.end();
+  }
+  pool = null;
+  db = null;
+}

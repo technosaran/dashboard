@@ -65,7 +65,7 @@ export default function SettingsPage() {
   };
 
   // General optimistic update helper
-  const saveSetting = async (key: string, value: any, successMessage: string) => {
+  const saveSetting = async (key: string, value: unknown, successMessage: string) => {
     const optimisticProfile = {
       username: profile?.username || "",
       base_currency: key === "base_currency" ? value : baseCurrency,

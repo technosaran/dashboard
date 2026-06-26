@@ -60,6 +60,7 @@ function AMCAvatar({ amcName, logoUrl }: { amcName: string; logoUrl: string }) {
   const [error, setError] = useState(false);
   const initials = amcName.substring(0, 2).toUpperCase();
   if (logoUrl && !error) {
+    // eslint-disable-next-line @next/next/no-img-element
     return (
       <img 
         src={logoUrl} 
@@ -208,6 +209,7 @@ export default function MutualFundsDataTable({ funds, onEdit, onSell, onAdd }: M
     );
   }, [funds, globalFilter]);
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data: filteredFunds,
     columns,

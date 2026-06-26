@@ -120,6 +120,7 @@ export default function StocksHistoryTable({ trades }: StocksHistoryTableProps) 
     );
   }, [trades, globalFilter]);
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data: filteredTrades,
     columns,

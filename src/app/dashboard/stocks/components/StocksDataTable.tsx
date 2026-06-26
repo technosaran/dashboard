@@ -169,6 +169,7 @@ export default function StocksDataTable({ stocks, onEdit, onSell, onAdd }: Stock
     );
   }, [stocks, globalFilter]);
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data: filteredStocks,
     columns,

@@ -143,6 +143,7 @@ export default function LiabilitiesDataTable({ liabilities, onEdit, onDelete, on
     );
   }, [liabilities, globalFilter]);
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data: filteredLiabilities,
     columns,

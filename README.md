@@ -84,7 +84,7 @@ Or apply manually through the Supabase SQL editor in order.
 
 - **Single RPC fetch**: `get_finance_overview` fetches all user data in one round-trip
 - **Real-time sync**: All 20+ tables subscribe to Postgres changes via Supabase Realtime
-- **Middleware auth**: `src/middleware.ts` guards all dashboard routes server-side
+- **Proxy auth**: `src/proxy.ts` guards all dashboard routes server-side
 - **Atomic operations**: Financial mutations use RPC functions for ACID compliance
 - **Module system**: Users can toggle dashboard modules on/off via Settings
 
@@ -107,5 +107,5 @@ src/
 ├── context/              # React context providers
 ├── hooks/                # Custom hooks (SWR, media queries)
 ├── lib/                  # Utilities, Supabase clients, types
-└── middleware.ts         # Auth middleware
+└── proxy.ts              # Auth proxy
 ```

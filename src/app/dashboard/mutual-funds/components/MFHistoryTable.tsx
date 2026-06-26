@@ -120,6 +120,7 @@ export default function MFHistoryTable({ trades }: MFHistoryTableProps) {
     );
   }, [trades, globalFilter]);
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data: filteredTrades,
     columns,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { useHasMounted } from "@/hooks/use-has-mounted";
 import dynamic from "next/dynamic";
 import { format } from "date-fns";
@@ -16,7 +16,12 @@ const PDFDownloadLink = dynamic(
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 
 // We define the PDF document component
-const FinanceReportPDF = ({ stats }: { stats: any }) => {
+type ReportStats = ReturnType<typeof useNetWorth> & {
+  monthlyIncome: number;
+  monthlySpend: number;
+};
+
+const FinanceReportPDF = ({ stats }: { stats: ReportStats }) => {
 
   const styles = StyleSheet.create({
     page: { padding: 40, backgroundColor: "#ffffff", fontFamily: "Helvetica" },
@@ -120,7 +125,6 @@ export default function ReportDownloadButton() {
   const mounted = useHasMounted();
   const netWorthData = useNetWorth();
   const { data } = useFinanceData();
-  const transactions = data?.transactions || [];
 
   const stats = useMemo(() => {
     let monthlySpend = 0;
@@ -129,8 +133,8 @@ export default function ReportDownloadButton() {
     const currentMonthNum = now.getMonth();
     const currentYearNum = now.getFullYear();
 
-    for (let i = 0; i < transactions.length; i++) {
-      const t = transactions[i];
+    for (let i = 0; i < data.transactions.length; i++) {
+      const t = data.transactions[i];
       if (!t.date) continue;
       const tDate = new Date(t.date);
       if (tDate.getMonth() === currentMonthNum && tDate.getFullYear() === currentYearNum) {
@@ -144,7 +148,7 @@ export default function ReportDownloadButton() {
       monthlyIncome,
       monthlySpend,
     };
-  }, [netWorthData, transactions]);
+  }, [data.transactions, netWorthData]);
 
 
 

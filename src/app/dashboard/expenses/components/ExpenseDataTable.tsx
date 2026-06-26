@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { format, parseISO } from "date-fns";
 import {
   useReactTable,
@@ -12,7 +12,6 @@ import {
   SortingState,
 } from "@tanstack/react-table";
 import { EmptyState } from "@/components/empty-state";
-import { getCategoryColour } from "@/lib/chart-colours";
 import { ArrowUpDown, ArrowUp, ArrowDown, Trash2 } from "lucide-react";
 
 type Expense = {
@@ -45,11 +44,11 @@ export default function ExpenseDataTable({ expenses, accounts, onDelete, onAdd, 
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
 
-  const getAccountCurrency = (accountId: string | null) => {
+  const getAccountCurrency = useCallback((accountId: string | null) => {
     if (!accountId) return "INR";
     const acc = accounts.find((a) => a.id === accountId);
     return acc ? acc.currency : "INR";
-  };
+  }, [accounts]);
 
   const columns = useMemo(
     () => [
@@ -142,7 +141,7 @@ export default function ExpenseDataTable({ expenses, accounts, onDelete, onAdd, 
         ),
       }),
     ],
-    [accounts, categories]
+    [accounts, categories, getAccountCurrency, onDelete]
   );
 
   const table = useReactTable({

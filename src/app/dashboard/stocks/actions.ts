@@ -9,24 +9,42 @@ type RecordInvestmentResult = {
   error?: string | null;
 };
 
+interface TickertapeStock {
+  ticker: string;
+  name: string;
+  type: string;
+}
+
+interface YahooQuote {
+  symbol: string;
+  quoteType: string;
+  shortname?: string;
+  longname?: string;
+}
+
+interface YahooSearchResponse {
+  quotes?: YahooQuote[];
+}
+
+interface TickertapeSearchResponse {
+  data?: {
+    stocks?: TickertapeStock[];
+  };
+}
+
 export async function searchStocks(query: string, exchange: string = "NSE") {
   if (!query || query.length < 2) return [];
   try {
-    let stocks = [];
-    
+    let stocks: TickertapeStock[] = [];
+
     // 1. Try Tickertape
     try {
       const url = `https://api.tickertape.in/search?text=${encodeURIComponent(query)}`;
       const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" }, cache: "no-store" });
-      
+
       if (res.ok) {
-        const data = await res.json();
-        interface TickertapeStock {
-          ticker: string;
-          name: string;
-          type: string;
-        }
-        stocks = (data?.data?.stocks as TickertapeStock[] || []).filter((q) => q.type === "stock" && q.ticker);
+        const data = await res.json() as TickertapeSearchResponse;
+        stocks = (data?.data?.stocks ?? []).filter((q) => q.type === "stock" && q.ticker);
       }
     } catch (e) {
       console.error("Tickertape search failed", e);
@@ -38,13 +56,13 @@ export async function searchStocks(query: string, exchange: string = "NSE") {
         const url = `https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(query)}&quotesCount=15&newsCount=0`;
         const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" }, cache: "no-store" });
         if (res.ok) {
-          const data = await res.json();
-          stocks = (data?.quotes || [])
-            .filter((q: any) => q.quoteType === "EQUITY" && (q.symbol.endsWith(".NS") || q.symbol.endsWith(".BO")))
-            .map((q: any) => ({
+          const data = await res.json() as YahooSearchResponse;
+          stocks = (data?.quotes ?? [])
+            .filter((q) => q.quoteType === "EQUITY" && (q.symbol.endsWith(".NS") || q.symbol.endsWith(".BO")))
+            .map((q) => ({
               ticker: q.symbol.replace(".NS", "").replace(".BO", ""),
-              name: q.shortname || q.longname,
-              type: "stock"
+              name: q.shortname ?? q.longname ?? q.symbol,
+              type: "stock",
             }));
         }
       } catch (e) {
@@ -54,13 +72,13 @@ export async function searchStocks(query: string, exchange: string = "NSE") {
 
     return stocks
       .slice(0, 10)
-      .map((q: any) => {
+      .map((q) => {
         const fullSymbol = exchange === "BSE" ? `${q.ticker}.BO` : `${q.ticker}.NS`;
         return {
           symbol: q.ticker,
-          fullSymbol: fullSymbol,
+          fullSymbol,
           name: q.name,
-          exchange: exchange
+          exchange,
         };
       });
   } catch {

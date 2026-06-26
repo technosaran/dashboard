@@ -34,7 +34,7 @@ export function useNetWorth() {
     const mfBalanceINR = hasMF ? mutualFunds.reduce((sum, mf) => sum + (Number(mf.units) * Number(mf.current_nav || 0)), 0) : 0;
     const bondBalanceINR = hasBonds ? (bonds || []).filter(b => b.status === 'Active').reduce((sum, b) => sum + Number(b.current_value || 0), 0) : 0;
     const altBalanceINR = hasAlt ? (alternativeAssets || []).reduce((sum, asset) => sum + Number(asset.current_value || 0), 0) : 0;
-    const debtBalanceINR = hasLiabilities ? (liabilities || []).filter(d => (d as any).currency !== 'USD').reduce((sum, debt) => sum + Number(debt.remaining_amount || 0), 0) : 0;
+    const debtBalanceINR = hasLiabilities ? liabilities.reduce((sum, debt) => sum + Number(debt.remaining_amount || 0), 0) : 0;
 
     // Total INR Net Worth
     const liquidBalanceINR = cashBalanceINR + stockBalanceINR + mfBalanceINR + bondBalanceINR + forexBalanceINR;
@@ -50,7 +50,7 @@ export function useNetWorth() {
     const mfBalanceUSD = 0;
     const bondBalanceUSD = 0;
     const altBalanceUSD = 0;
-    const debtBalanceUSD = hasLiabilities ? (liabilities || []).filter(d => (d as any).currency === 'USD').reduce((sum, debt) => sum + Number(debt.remaining_amount || 0), 0) : 0;
+    const debtBalanceUSD = 0;
 
     const liquidBalanceUSD = cashBalanceUSD + stockBalanceUSD + mfBalanceUSD + bondBalanceUSD + forexBalanceUSD;
     const totalAssetsUSD = liquidBalanceUSD + altBalanceUSD;

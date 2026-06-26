@@ -9,6 +9,7 @@ import { recordMFInvestment, updateMFHolding, searchMFSchemes, fetchLiveMFNAV } 
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { Drawer } from "@/components/ui/drawer";
+import { getColorByLabel } from "@/lib/chart-colours";
 
 import dynamic from "next/dynamic";
 const ResponsiveContainer = dynamic(() => import("recharts").then((mod) => mod.ResponsiveContainer), { ssr: false });
@@ -18,18 +19,6 @@ import MutualFundsDataTable from "./components/MutualFundsDataTable";
 import MFHistoryTable from "./components/MFHistoryTable";
 
 type MF = Tables<"mutual_funds"> & { scheme_code?: string | null; fund_symbol?: string | null; pnlPercent?: number; day_change?: number; day_change_percent?: number };
-
-const getColorByLabel = (label: string) => {
-  let hash = 0;
-  for (let i = 0; i < label.length; i++) {
-    hash = label.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const colors = [
-    "#2185d0", "#f2711c", "#a333c8", "#21ba45", "#e03997", 
-    "#fbbd08", "#6435c9", "#db2828", "#00b5ad", "#b5cc18"
-  ];
-  return colors[Math.abs(hash) % colors.length];
-};
 
 export default function MutualFundsClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { mutualFunds: rawMfs, accounts, profile, mutualFundTrades }, mutate } = useFinanceData(initialData);
@@ -61,7 +50,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
   });
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<{ schemeCode: string, schemeName: string }[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
 
@@ -182,7 +171,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
         if (!mf.scheme_code) continue;
         const liveData = await fetchLiveMFNAV(mf.scheme_code);
         if (liveData && (liveData.nav !== mf.current_nav || liveData.previousNav !== mf.previous_nav)) {
-          const updatePayload: any = { current_nav: liveData.nav };
+          const updatePayload: { current_nav: number; previous_nav?: number } = { current_nav: liveData.nav };
           if (liveData.previousNav) updatePayload.previous_nav = liveData.previousNav;
           await updateMFHolding(mf.id, updatePayload);
           updated++;
@@ -341,7 +330,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                       <RechartsTooltip 
                         contentStyle={{ backgroundColor: "#1e1e1e", border: "1px solid #333", borderRadius: "4px" }}
                         itemStyle={{ color: "#fff", fontSize: "12px" }}
-                        formatter={(value: any) => [`₹${formatMoney(Number(value))}`, "Value"]}
+                        formatter={(value) => [`₹${Number(value).toLocaleString()}`, "Value"]}
                       />
                     </PieChart>
                   </ResponsiveContainer>

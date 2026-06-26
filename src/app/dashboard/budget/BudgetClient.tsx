@@ -6,24 +6,13 @@ import { upsertBudget, deleteBudget } from "./actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { format, parseISO, getDaysInMonth, isSameMonth, subMonths } from "date-fns";
-import { getCategoryColour } from "@/lib/chart-colours";
+import { getCategoryColour, getColorByLabel } from "@/lib/chart-colours";
 
 import dynamic from "next/dynamic";
 const ResponsiveContainer = dynamic(() => import("recharts").then((mod) => mod.ResponsiveContainer), { ssr: false });
 import { PieChart, Pie, Cell, AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip as RechartsTooltip } from "recharts";
 
-const getColorByLabel = (label: string) => {
-  let hash = 0;
-  for (let i = 0; i < label.length; i++) {
-    hash = label.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const colors = [
-    "#06B6D4", "#F97316", "#8B5CF6", "#22C55E", "#EC4899", 
-    "#EAB308", "#3B82F6", "#F43F5E", "#14B8A6", "#84CC16", 
-    "#6366F1", "#FB7185"
-  ];
-  return colors[Math.abs(hash) % colors.length];
-};
+import { Tabs } from "@/components/ui/tabs";
 
 export default function BudgetClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { budgets, expenses, incomes }, mutate } = useFinanceData(initialData);
@@ -217,8 +206,8 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
     <div className="flex flex-col gap-8 animate-in fade-in duration-700">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-          <h1 className="text-4xl font-black tracking-tight text-white">Budget Planner</h1>
-          <p className="text-xs text-[--text-muted] font-bold uppercase tracking-[0.3em] mt-2">Fiscal Strategy & Controls</p>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[--text-primary]">Budget Planner</h1>
+          <p className="text-[13px] md:text-sm mt-1 text-[--text-secondary]">Fiscal strategy, category limits, and monthly controls.</p>
         </div>
         <div className="flex items-center gap-3">
           <select className="btn-secondary !h-11 px-4" value={selectedMonth} onChange={e => setSelectedMonth(parseInt(e.target.value))} aria-label="Select month" id="budget-month-select" name="month">
@@ -285,33 +274,14 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex border-b border-white/10">
-          <button
-            onClick={() => setActiveView("overview")}
-            className={`px-6 py-3 text-sm font-bold transition-colors border-b-2 ${
-              activeView === "overview"
-                ? "border-[--accent-primary] text-[--accent-primary]"
-                : "border-transparent text-[--text-muted] hover:text-white"
-            }`}
-          >
-            Overview
-          </button>
-          <button
-            onClick={() => setActiveView("categories")}
-            className={`px-6 py-3 text-sm font-bold transition-colors border-b-2 flex items-center gap-2 ${
-              activeView === "categories"
-                ? "border-[--accent-primary] text-[--accent-primary]"
-                : "border-transparent text-[--text-muted] hover:text-white"
-            }`}
-          >
-            Category Allocations
-            {overBudgetCategories.length > 0 && (
-              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-danger text-[9px] text-white">
-                {overBudgetCategories.length}
-              </span>
-            )}
-          </button>
-        </div>
+        <Tabs
+          items={[
+            { key: "overview", label: "Overview" },
+            { key: "categories", label: "Category Allocations", badge: overBudgetCategories.length > 0 ? overBudgetCategories.length : undefined },
+          ]}
+          active={activeView}
+          onChange={(key) => setActiveView(key as "overview" | "categories")}
+        />
 
         {/* View Content */}
         {activeView === "overview" ? (
@@ -343,9 +313,9 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
                         <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 12 }} dy={10} />
                         <YAxis tickFormatter={formatCurrency} axisLine={false} tickLine={false} tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 12 }} dx={-10} />
                         <RechartsTooltip 
-                          contentStyle={{ backgroundColor: "rgba(10,10,10,0.9)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px", boxShadow: "0 10px 25px rgba(0,0,0,0.5)" }}
-                          itemStyle={{ color: "#fff", fontWeight: "bold" }}
-                          formatter={(value: any) => [`₹${Number(value).toLocaleString()}`, ""]}
+                          contentStyle={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "12px", boxShadow: "var(--shadow-lg)" }}
+                          itemStyle={{ color: "var(--text-primary)", fontWeight: "bold" }}
+                          formatter={(value: unknown) => [`₹${Number(value).toLocaleString()}`, ""]}
                         />
                         <Area type="monotone" dataKey="Budget" stroke="#10B981" strokeWidth={3} fillOpacity={1} fill="url(#colorBudget)" />
                         <Area type="monotone" dataKey="Spent" stroke="#EF4444" strokeWidth={3} fillOpacity={1} fill="url(#colorSpent)" />
@@ -366,9 +336,9 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
                           {pieData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} stroke="rgba(255,255,255,0.05)" strokeWidth={2} />)}
                         </Pie>
                         <RechartsTooltip 
-                          contentStyle={{ backgroundColor: "rgba(10,10,10,0.9)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px" }}
-                          itemStyle={{ color: "#fff", fontWeight: "bold" }}
-                          formatter={(value: any) => [`₹${Number(value).toLocaleString()}`, "Budget"]}
+                          contentStyle={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "12px" }}
+                          itemStyle={{ color: "var(--text-primary)", fontWeight: "bold" }}
+                          formatter={(value: unknown) => [`₹${Number(value).toLocaleString()}`, "Budget"]}
                         />
                       </PieChart>
                     </ResponsiveContainer>

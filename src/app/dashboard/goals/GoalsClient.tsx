@@ -10,6 +10,7 @@ import type { Tables } from "@/lib/database.types";
 import { createGoal, updateGoalAmount, deleteGoal, updateGoal } from "./actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
+import { getColorByLabel } from "@/lib/chart-colours";
 
 import dynamic from "next/dynamic";
 const ResponsiveContainer = dynamic(() => import("recharts").then((mod) => mod.ResponsiveContainer), { ssr: false });
@@ -30,19 +31,6 @@ const GOAL_CATEGORIES = [
   { label: "Education", icon: "🎓" },
   { label: "Others", icon: "🎯" },
 ];
-
-const getColorByLabel = (label: string) => {
-  let hash = 0;
-  for (let i = 0; i < label.length; i++) {
-    hash = label.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const colors = [
-    "#06B6D4", "#F97316", "#8B5CF6", "#22C55E", "#EC4899", 
-    "#EAB308", "#3B82F6", "#F43F5E", "#14B8A6", "#84CC16", 
-    "#6366F1", "#FB7185"
-  ];
-  return colors[Math.abs(hash) % colors.length];
-};
 
 export default function GoalsClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { profile, goals, accounts }, mutate } = useFinanceData(initialData);

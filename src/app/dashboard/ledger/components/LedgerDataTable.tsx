@@ -148,6 +148,7 @@ export default function LedgerDataTable({
     [getLogCurrency, isDebitLog, getActionBadge, formatMoney, onRevert, isReverting]
   );
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data: logs,
     columns,

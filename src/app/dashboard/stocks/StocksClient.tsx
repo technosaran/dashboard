@@ -9,6 +9,7 @@ import { createInvestment, updateInvestment, searchStocks, fetchLiveStockPrice }
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { Drawer } from "@/components/ui/drawer";
+import { getColorByLabel } from "@/lib/chart-colours";
 
 import dynamic from "next/dynamic";
 const ResponsiveContainer = dynamic(() => import("recharts").then((mod) => mod.ResponsiveContainer), { ssr: false });
@@ -18,19 +19,6 @@ import StocksDataTable from "./components/StocksDataTable";
 import StocksHistoryTable from "./components/StocksHistoryTable";
 
 type Stock = Tables<"investments"> & { day_change?: number; day_change_percent?: number };
-
-const getColorByLabel = (label: string) => {
-  let hash = 0;
-  for (let i = 0; i < label.length; i++) {
-    hash = label.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const colors = [
-    "#06B6D4", "#F97316", "#8B5CF6", "#22C55E", "#EC4899", 
-    "#EAB308", "#3B82F6", "#F43F5E", "#14B8A6", "#84CC16", 
-    "#6366F1", "#FB7185"
-  ];
-  return colors[Math.abs(hash) % colors.length];
-};
 
 export default function StocksClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { investments, accounts, profile, stockTrades }, mutate } = useFinanceData(initialData);
@@ -59,7 +47,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
   }, []);
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<{ symbol: string, name: string, fullSymbol?: string, exchange?: string }[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
 
@@ -181,7 +169,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
         if (!stock.symbol) continue;
         const liveData = await fetchLiveStockPrice(stock.symbol);
         if (liveData && (liveData.price !== stock.current_price || liveData.previousClose !== stock.previous_close)) {
-          const updatePayload: any = { current_price: liveData.price };
+          const updatePayload: { current_price: number; previous_close?: number } = { current_price: liveData.price };
           if (liveData.previousClose) updatePayload.previous_close = liveData.previousClose;
           await updateInvestment(stock.id, updatePayload);
           updated++;
@@ -373,7 +361,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                       <RechartsTooltip 
                         contentStyle={{ backgroundColor: "#1e1e1e", border: "1px solid #333", borderRadius: "4px" }}
                         itemStyle={{ color: "#fff", fontSize: "12px" }}
-                        formatter={(value: any) => [`₹${formatMoney(Number(value))}`, "Value"]}
+                        formatter={(value) => [`₹${formatMoney(Number(value))}`, "Value"]}
                       />
                     </PieChart>
                   </ResponsiveContainer>
@@ -450,11 +438,11 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                           key={i} 
                           className="px-3 py-2 hover:bg-white/5 cursor-pointer transition-colors border-b border-white/5 last:border-0"
                           onClick={async () => {
-                            setFormData({...formData, name: res.name, symbol: res.fullSymbol});
+                            setFormData({...formData, name: res.name, symbol: res.fullSymbol || res.symbol});
                             setSearchQuery("");
                             setShowSearchDropdown(false);
                             // Auto fetch current price
-                            const liveData = await fetchLiveStockPrice(res.fullSymbol);
+                            const liveData = await fetchLiveStockPrice(res.fullSymbol || res.symbol);
                             if (liveData) {
                               setFormData(prev => ({...prev, current_price: liveData.price.toString()}));
                             }
