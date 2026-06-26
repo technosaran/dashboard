@@ -785,19 +785,66 @@ select:focus {
 
 /* ==========================================
    Google Developed Premium Theme Styles
-   Inspired by Material You, Google Design, Pixel UI
+   Strict Material Design 3 (Material You)
    ========================================== */
 .theme-google {
-  /* Dynamic Slate Obsidian Dark Base */
-  --bg-base: #03050a;
-  --bg-surface: #0a0e1c;
-  --bg-elevated: #111526;
-  --bg-overlay: #03050a;
+  /* Material 3 Dark Theme Base */
+  --bg-base: #1C1B1F;           /* M3 Surface */
+  --bg-surface: #2B2930;        /* M3 Surface Container */
+  --bg-elevated: #36343B;       /* M3 Surface Container High */
+  --bg-overlay: #1C1B1F;
 
-  /* Premium Obsidian Electric Palette */
-  --accent-primary: #6366f1;         /* Electric Indigo */
-  --accent-primary-light: #818cf8;   /* Light Neon Indigo */
-  --accent-secondary: #0ea5e9;       /* Sky Blue */
+  /* Premium M3 Primary Palette (e.g. Indigo/Blue) */
+  --accent-primary: #AEC6FF;         /* M3 Primary (Light blue in dark mode) */
+  --accent-primary-light: #D8E2FF;   /* M3 Primary Container */
+  --accent-secondary: #5C7ED3;       /* M3 Secondary */
+  
+  /* Text */
+  --text-primary: #E6E1E5;           /* M3 On Surface */
+  --text-secondary: #CAC4D0;         /* M3 On Surface Variant */
+  --text-muted: #938F99;             /* M3 Outline */
+
+  /* M3 Status Colors */
+  --success: #81C784;
+  --danger: #F2B8B5;                 /* M3 Error */
+  --warning: #FFB74D;
+  --info: #81D4FA;
+
+  /* Typography */
+  --font-sans: 'Roboto', 'Google Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-primary: var(--font-sans);
+  --font-display: 'Google Sans', var(--font-sans);
+
+  /* Shadows (M3 Elevation) */
+  --shadow-sm: 0px 1px 2px 0px rgba(0, 0, 0, 0.3), 0px 1px 3px 1px rgba(0, 0, 0, 0.15); /* Level 1 */
+  --shadow-md: 0px 1px 2px 0px rgba(0, 0, 0, 0.3), 0px 2px 6px 2px rgba(0, 0, 0, 0.15); /* Level 2 */
+  --shadow-lg: 0px 4px 8px 3px rgba(0, 0, 0, 0.15), 0px 1px 3px 0px rgba(0, 0, 0, 0.3); /* Level 3 */
+
+  /* Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 28px; /* Standard M3 large component radius */
+
+  /* TailWind Overrides for Shadcn */
+  --background: #1C1B1F;
+  --foreground: #E6E1E5;
+  --card: #2B2930;
+  --card-foreground: #E6E1E5;
+  --popover: #36343B;
+  --popover-foreground: #E6E1E5;
+  --primary: #AEC6FF;
+  --primary-foreground: #002E69;     /* M3 On Primary */
+  --secondary: #404659;
+  --secondary-foreground: #D8E2FF;
+  --muted: #49454F;
+  --muted-foreground: #CAC4D0;
+  --destructive: #F2B8B5;
+  --destructive-foreground: #601410; /* M3 On Error */
+  --border: #938F99;                 /* M3 Outline */
+  --input: #49454F;
+  --ring: #AEC6FF;
+}
   --accent-tertiary: #d946ef;        /* Violet-Fuchsia */
 
   /* Financial Status Colors - High-Fidelity Gains/Losses */
