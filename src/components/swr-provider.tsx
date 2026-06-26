@@ -41,16 +41,12 @@ export function SWRProvider({ children, initialData }: SWRProviderProps) {
           forexTrades: initialData.forexTrades,
           forexTransactions: initialData.forexTransactions,
         },
-        finance_family: {
-          recipients: initialData.recipients,
-        },
       }
     : {
         finance_summary: { profile: null, accounts: [], transactions: [], ledgerLogs: [] },
         finance_investments: { investments: [], mutualFunds: [], bonds: [], alternativeAssets: [], stockTrades: [], mutualFundTrades: [], bondTransactions: [], fnoTrades: [] },
         finance_cashflow: { incomes: [], expenses: [], budgets: [], goals: [], liabilities: [] },
         finance_forex: { forexAccounts: [], forexTrades: [], forexTransactions: [] },
-        finance_family: { recipients: [] },
       };
 
   return (

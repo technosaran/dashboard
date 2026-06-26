@@ -53,7 +53,6 @@ export async function resetUserData() {
           supabase.from("expenses").delete().eq("user_id", user.id),
           supabase.from("incomes").delete().eq("user_id", user.id),
           supabase.from("goals").delete().eq("user_id", user.id),
-          supabase.from("recipients").delete().eq("user_id", user.id),
         ]);
         // Attempt ledger_logs delete — blocked by immutability trigger in most cases
         try {

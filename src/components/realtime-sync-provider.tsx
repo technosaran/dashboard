@@ -38,8 +38,6 @@ export function RealtimeSyncProvider({ children }: { children: React.ReactNode }
         key = "finance_cashflow";
       } else if (["forex_accounts", "forex_trades", "forex_transactions"].includes(table)) {
         key = "finance_forex";
-      } else if (["recipients"].includes(table)) {
-        key = "finance_family";
       } else if (table === "transfers") {
         key = "finance_summary";
       }
@@ -64,7 +62,6 @@ export function RealtimeSyncProvider({ children }: { children: React.ReactNode }
         .on("postgres_changes", { event: "*", schema: "public", table: "investments", filter: `user_id=eq.${user_id}` }, () => handleChange("investments"))
         .on("postgres_changes", { event: "*", schema: "public", table: "mutual_funds", filter: `user_id=eq.${user_id}` }, () => handleChange("mutual_funds"))
         .on("postgres_changes", { event: "*", schema: "public", table: "goals", filter: `user_id=eq.${user_id}` }, () => handleChange("goals"))
-        .on("postgres_changes", { event: "*", schema: "public", table: "recipients", filter: `user_id=eq.${user_id}` }, () => handleChange("recipients"))
         .on("postgres_changes", { event: "*", schema: "public", table: "incomes", filter: `user_id=eq.${user_id}` }, () => handleChange("incomes"))
         .on("postgres_changes", { event: "*", schema: "public", table: "expenses", filter: `user_id=eq.${user_id}` }, () => handleChange("expenses"))
         .on("postgres_changes", { event: "*", schema: "public", table: "stock_trades", filter: `user_id=eq.${user_id}` }, () => handleChange("stock_trades"))

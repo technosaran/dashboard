@@ -417,14 +417,42 @@ export const fnoTrades = pgTable("fno_trades", {
 });
 
 // ---------------------------------------------------------------------------
-// recipients (family)
+// family_members
 // ---------------------------------------------------------------------------
-export const recipients = pgTable("recipients", {
+export const familyMembers = pgTable("family_members", {
   id: uuid("id").defaultRandom().primaryKey(),
   user_id: uuid("user_id").notNull(),
   name: text("name").notNull(),
-  relationship: text("relationship"),
-  created_at: timestamp("created_at").defaultNow(),
+  relationship: text("relationship").notNull(),
+  balance: numeric("balance").default("0").notNull(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+});
+
+// ---------------------------------------------------------------------------
+// family_allowances
+// ---------------------------------------------------------------------------
+export const familyAllowances = pgTable("family_allowances", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  user_id: uuid("user_id").notNull(),
+  family_member_id: uuid("family_member_id").notNull(),
+  amount: numeric("amount").notNull(),
+  frequency: text("frequency").notNull(),
+  last_paid_at: timestamp("last_paid_at"),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+});
+
+// ---------------------------------------------------------------------------
+// family_transfers
+// ---------------------------------------------------------------------------
+export const familyTransfers = pgTable("family_transfers", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  user_id: uuid("user_id").notNull(),
+  family_member_id: uuid("family_member_id").notNull(),
+  account_id: uuid("account_id").notNull(),
+  amount: numeric("amount").notNull(),
+  type: text("type").notNull(),
+  transfer_date: timestamp("transfer_date").defaultNow().notNull(),
+  note: text("note"),
 });
 
 // ---------------------------------------------------------------------------

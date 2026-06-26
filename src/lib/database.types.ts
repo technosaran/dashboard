@@ -815,6 +815,96 @@ export type Database = {
         }
         Relationships: []
       }
+      family_members: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          relationship: string
+          balance: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name: string
+          relationship: string
+          balance?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          relationship?: string
+          balance?: number
+          created_at?: string
+        }
+        Relationships: []
+      }
+      family_allowances: {
+        Row: {
+          id: string
+          user_id: string
+          family_member_id: string
+          amount: number
+          frequency: string
+          last_paid_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          family_member_id: string
+          amount: number
+          frequency: string
+          last_paid_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          family_member_id?: string
+          amount?: number
+          frequency?: string
+          last_paid_at?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      family_transfers: {
+        Row: {
+          id: string
+          user_id: string
+          family_member_id: string
+          account_id: string
+          amount: number
+          type: string
+          transfer_date: string
+          note: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          family_member_id: string
+          account_id: string
+          amount: number
+          type: string
+          transfer_date?: string
+          note?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          family_member_id?: string
+          account_id?: string
+          amount?: number
+          type?: string
+          transfer_date?: string
+          note?: string | null
+        }
+        Relationships: []
+      }
       stock_trades: {
         Row: {
           charges: number | null
@@ -1310,6 +1400,25 @@ export type Database = {
           p_amount: number
           p_note?: string
           p_recipient_id: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      process_family_transfer_v2: {
+        Args: {
+          p_account_id: string
+          p_amount: number
+          p_family_member_id: string
+          p_note?: string
+          p_type: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      pay_family_allowance: {
+        Args: {
+          p_account_id: string
+          p_allowance_id: string
           p_user_id: string
         }
         Returns: Json

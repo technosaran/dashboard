@@ -38,7 +38,6 @@ export async function revertLedgerTransaction(logId: string) {
     revalidatePath("/dashboard/ledger");
     revalidatePath("/dashboard/expenses");
     revalidatePath("/dashboard/income");
-    revalidatePath("/dashboard/family");
     revalidatePath("/dashboard/accounts");
 
     return { success: true };

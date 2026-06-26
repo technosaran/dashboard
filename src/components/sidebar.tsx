@@ -225,7 +225,11 @@ export default function Sidebar() {
   const filteredNav = useMemo(() => {
     return nav.filter(item => {
       if (["Dashboard", "Accounts", "Wallet", "Settings"].includes(item.label)) return true;
-      const dbLabel: ModuleKey | string = item.label === "Assets" ? "Alt Assets" : item.label === "Loans" ? "Liabilities" : item.label;
+      const dbLabel: ModuleKey | string = 
+        item.label === "Assets" ? "Alt Assets" : 
+        item.label === "Loans" ? "Liabilities" : 
+        item.label === "Family" ? "Family Management" : 
+        item.label;
       return enabledModules.includes(dbLabel);
     });
   }, [enabledModules]);

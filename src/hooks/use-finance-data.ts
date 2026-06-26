@@ -24,7 +24,6 @@ type FinanceData = {
   investments: Tables<"investments">[];
   mutualFunds: Tables<"mutual_funds">[];
   goals: Tables<"goals">[];
-  recipients: Tables<"recipients">[];
   incomes: Tables<"incomes">[];
   expenses: Tables<"expenses">[];
   stockTrades: Tables<"stock_trades">[];
@@ -74,12 +73,6 @@ async function fetchCashflow() {
 
 async function fetchForex() {
   const { data, error } = await supabase.rpc("get_forex_v1");
-  if (error) throw error;
-  return data;
-}
-
-async function fetchFamily() {
-  const { data, error } = await supabase.rpc("get_family_v1");
   if (error) throw error;
   return data;
 }
@@ -145,15 +138,6 @@ export function useFinanceData(initialData?: FinanceData) {
     ...swrOptions,
   });
 
-  const familySWR = useSWR("finance_family", fetchFamily, {
-    fallbackData: initialData
-      ? {
-          recipients: initialData.recipients,
-        }
-      : undefined,
-    ...swrOptions,
-  });
-
   const data: FinanceData = useMemo(() => ({
     profile: summarySWR.data?.profile ?? null,
     accounts: summarySWR.data?.accounts ?? EMPTY_ARRAY,
@@ -175,35 +159,30 @@ export function useFinanceData(initialData?: FinanceData) {
     forexAccounts: forexSWR.data?.forexAccounts ?? EMPTY_ARRAY,
     forexTrades: forexSWR.data?.forexTrades ?? EMPTY_ARRAY,
     forexTransactions: forexSWR.data?.forexTransactions ?? EMPTY_ARRAY,
-    recipients: familySWR.data?.recipients ?? EMPTY_ARRAY,
   }), [
     summarySWR.data,
     investmentsSWR.data,
     cashflowSWR.data,
-    forexSWR.data,
-    familySWR.data
+    forexSWR.data
   ]);
 
   const isLoading =
     (!summarySWR.data && !summarySWR.error) ||
     (!investmentsSWR.data && !investmentsSWR.error) ||
     (!cashflowSWR.data && !cashflowSWR.error) ||
-    (!forexSWR.data && !forexSWR.error) ||
-    (!familySWR.data && !familySWR.error);
+    (!forexSWR.data && !forexSWR.error);
 
   const error =
     summarySWR.error ||
     investmentsSWR.error ||
     cashflowSWR.error ||
-    forexSWR.error ||
-    familySWR.error;
+    forexSWR.error;
 
   const isValidating =
     summarySWR.isValidating ||
     investmentsSWR.isValidating ||
     cashflowSWR.isValidating ||
-    forexSWR.isValidating ||
-    familySWR.isValidating;
+    forexSWR.isValidating;
 
   const mutate = async (
     data?: unknown,
@@ -240,9 +219,6 @@ export function useFinanceData(initialData?: FinanceData) {
           forexTrades: d.forexTrades,
           forexTransactions: d.forexTransactions,
         }, options as Parameters<typeof forexSWR.mutate>[1]),
-        familySWR.mutate({
-          recipients: d.recipients,
-        }, options as Parameters<typeof familySWR.mutate>[1]),
       ]);
     } else {
       await Promise.all([
@@ -250,7 +226,6 @@ export function useFinanceData(initialData?: FinanceData) {
         investmentsSWR.mutate(),
         cashflowSWR.mutate(),
         forexSWR.mutate(),
-        familySWR.mutate(),
       ]);
     }
   };

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { login } from "./actions";
 import Link from "next/link";
 import "./login.css";
@@ -17,10 +17,14 @@ export default function LoginPage() {
   const failCountRef = useRef(0);
   const lockoutTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const startLockout = useCallback((durationMs: number) => {
-    const until = Date.now() + durationMs;
+  const startLockout = useCallback((durationMs: number, customUntil?: number) => {
+    const until = customUntil || (Date.now() + durationMs);
     setLockoutUntil(until);
-    setLockoutSeconds(Math.ceil(durationMs / 1000));
+    setLockoutSeconds(Math.ceil((until - Date.now()) / 1000));
+
+    if (!customUntil) {
+      localStorage.setItem("lockoutUntil", until.toString());
+    }
 
     if (lockoutTimerRef.current) clearInterval(lockoutTimerRef.current);
     lockoutTimerRef.current = setInterval(() => {
@@ -28,12 +32,33 @@ export default function LoginPage() {
       if (remaining <= 0) {
         setLockoutUntil(null);
         setLockoutSeconds(0);
+        localStorage.removeItem("lockoutUntil");
         if (lockoutTimerRef.current) clearInterval(lockoutTimerRef.current);
       } else {
         setLockoutSeconds(remaining);
       }
     }, 1000);
   }, []);
+
+  useEffect(() => {
+    const savedUntil = localStorage.getItem("lockoutUntil");
+    const savedFails = localStorage.getItem("failCount");
+    
+    if (savedFails) {
+      failCountRef.current = parseInt(savedFails, 10);
+    }
+    
+    if (savedUntil) {
+      const until = parseInt(savedUntil, 10);
+      if (until > Date.now()) {
+        startLockout(until - Date.now(), until);
+      } else {
+        localStorage.removeItem("lockoutUntil");
+        localStorage.removeItem("failCount");
+        failCountRef.current = 0;
+      }
+    }
+  }, [startLockout]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -43,20 +68,29 @@ export default function LoginPage() {
 
     setError("");
     setLoading(true);
-    const result = await login(new FormData(e.currentTarget));
-    if (result?.error) {
-      failCountRef.current += 1;
-      setError(result.error);
-      setLoading(false);
+    
+    try {
+      const result = await login(new FormData(e.currentTarget));
+      if (result?.error) {
+        failCountRef.current += 1;
+        localStorage.setItem("failCount", failCountRef.current.toString());
+        setError(result.error);
+        setLoading(false);
 
-      // Progressive lockout after MAX_ATTEMPTS failures
-      if (failCountRef.current >= MAX_ATTEMPTS) {
-        const multiplier = Math.pow(2, failCountRef.current - MAX_ATTEMPTS);
-        startLockout(LOCKOUT_DURATION_MS * multiplier);
+        // Progressive lockout after MAX_ATTEMPTS failures
+        if (failCountRef.current >= MAX_ATTEMPTS) {
+          const multiplier = Math.pow(2, failCountRef.current - MAX_ATTEMPTS);
+          startLockout(LOCKOUT_DURATION_MS * multiplier);
+        }
+      } else {
+        // Reset on success
+        failCountRef.current = 0;
+        localStorage.removeItem("failCount");
+        localStorage.removeItem("lockoutUntil");
       }
-    } else {
-      // Reset on success
-      failCountRef.current = 0;
+    } catch (err) {
+      setError("An unexpected error occurred. Please try again.");
+      setLoading(false);
     }
   }
 

@@ -179,7 +179,6 @@ export default function SettingsPage() {
           forexAccounts: [],
           forexTrades: [],
           forexTransactions: [],
-          recipients: [],
         }, { revalidate: false });
 
         setTimeout(() => {
