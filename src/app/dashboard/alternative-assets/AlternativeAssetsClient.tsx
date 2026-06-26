@@ -40,7 +40,7 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
 
   const assetLogs = useMemo(() => {
     return ledgerLogs
-      .filter(log => log.details?.toLowerCase().includes("asset") || log.details?.toLowerCase().includes("physical asset"))
+      .filter(log => log.source_type === "alternative_asset" || log.details?.toLowerCase().includes("asset") || log.details?.toLowerCase().includes("physical asset"))
       .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
   }, [ledgerLogs]);
 
@@ -110,7 +110,7 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
       category: asset.category,
       purchase_price: asset.purchase_price.toString(),
       current_value: asset.current_value.toString(),
-      purchase_date: asset.purchase_date || "",
+      purchase_date: asset.purchase_date ? new Date(asset.purchase_date).toISOString().split("T")[0] : "",
       notes: asset.notes || "", account_id: "",
     });
     setShowAddModal(true);

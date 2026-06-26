@@ -22,6 +22,116 @@ import PnLValue from "@/components/pnl-value";
 import type { Tables } from "@/lib/database.types";
 type Bond = Tables<"bonds">;
 
+const MOCK_BOND_DB: Record<string, {
+  bond_name: string;
+  issuer: string;
+  bond_type: "Government" | "Corporate" | "Tax-Free" | "Infrastructure" | "PSU";
+  face_value: number;
+  coupon_rate: number;
+  ytm: number;
+  interest_frequency: "Monthly" | "Quarterly" | "Semi-Annual" | "Annual";
+  credit_rating: string;
+  current_price: number;
+  maturity_date: string;
+}> = {
+  "IN0020230085": {
+    bond_name: "7.18% GS 2033",
+    issuer: "Government of India",
+    bond_type: "Government",
+    face_value: 1000,
+    coupon_rate: 7.18,
+    ytm: 7.18,
+    interest_frequency: "Semi-Annual",
+    credit_rating: "Sovereign",
+    current_price: 1005.50,
+    maturity_date: "2033-08-14"
+  },
+  "IN0020210244": {
+    bond_name: "6.10% GS 2031",
+    issuer: "Government of India",
+    bond_type: "Government",
+    face_value: 1000,
+    coupon_rate: 6.10,
+    ytm: 6.85,
+    interest_frequency: "Semi-Annual",
+    credit_rating: "Sovereign",
+    current_price: 955.20,
+    maturity_date: "2031-07-12"
+  },
+  "INE901L07347": {
+    bond_name: "8.30% NHAI Tax Free 2034",
+    issuer: "National Highways Authority of India",
+    bond_type: "Tax-Free",
+    face_value: 1000,
+    coupon_rate: 8.30,
+    ytm: 5.60,
+    interest_frequency: "Annual",
+    credit_rating: "AAA",
+    current_price: 1250.00,
+    maturity_date: "2034-01-25"
+  },
+  "INE020B07355": {
+    bond_name: "8.71% REC Tax Free 2029",
+    issuer: "REC Limited",
+    bond_type: "Tax-Free",
+    face_value: 1000,
+    coupon_rate: 8.71,
+    ytm: 5.45,
+    interest_frequency: "Annual",
+    credit_rating: "AAA",
+    current_price: 1195.00,
+    maturity_date: "2029-09-24"
+  },
+  "INE134E07567": {
+    bond_name: "8.20% PFC Tax Free 2030",
+    issuer: "Power Finance Corporation",
+    bond_type: "Tax-Free",
+    face_value: 1000,
+    coupon_rate: 8.20,
+    ytm: 5.50,
+    interest_frequency: "Annual",
+    credit_rating: "AAA",
+    current_price: 1160.00,
+    maturity_date: "2030-11-16"
+  },
+  "INE516F07409": {
+    bond_name: "9.25% Piramal NCD 2027",
+    issuer: "Piramal Enterprises Limited",
+    bond_type: "Corporate",
+    face_value: 1000,
+    coupon_rate: 9.25,
+    ytm: 9.50,
+    interest_frequency: "Monthly",
+    credit_rating: "AA",
+    current_price: 990.00,
+    maturity_date: "2027-06-18"
+  },
+  "INE895D07849": {
+    bond_name: "8.75% Muthoot Finance NCD 2028",
+    issuer: "Muthoot Finance Limited",
+    bond_type: "Corporate",
+    face_value: 1000,
+    coupon_rate: 8.75,
+    ytm: 8.90,
+    interest_frequency: "Annual",
+    credit_rating: "AA+",
+    current_price: 1002.00,
+    maturity_date: "2028-12-15"
+  },
+  "INE121A07QD6": {
+    bond_name: "9.05% Shriram Finance NCD 2027",
+    issuer: "Shriram Finance Limited",
+    bond_type: "Corporate",
+    face_value: 1000,
+    coupon_rate: 9.05,
+    ytm: 9.20,
+    interest_frequency: "Monthly",
+    credit_rating: "AA+",
+    current_price: 1010.00,
+    maturity_date: "2027-04-20"
+  }
+};
+
 export default function BondsClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { bonds: bondsData, accounts, profile }, mutate } = useFinanceData(initialData);
   const searchParams = useSearchParams();
@@ -43,6 +153,64 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
     credit_rating: "", platform: "Wint", demat_account: "", account_id: "", notes: "",
     accrued_interest: "0", total_interest_earned: "0", current_value: ""
   });
+
+  const handleIsinChange = (val: string) => {
+    const cleanIsin = val.toUpperCase().trim().substring(0, 12);
+    setFormData(prev => ({ ...prev, isin: cleanIsin }));
+
+    if (cleanIsin.length === 12) {
+      const matched = MOCK_BOND_DB[cleanIsin];
+      if (matched) {
+        toast.success(`✨ Auto-filled details for: ${matched.bond_name}`);
+        setFormData(prev => ({
+          ...prev,
+          bond_name: matched.bond_name,
+          issuer: matched.issuer,
+          bond_type: matched.bond_type,
+          face_value: matched.face_value.toString(),
+          coupon_rate: matched.coupon_rate.toString(),
+          ytm: matched.ytm.toString(),
+          interest_frequency: matched.interest_frequency,
+          credit_rating: matched.credit_rating,
+          current_price: matched.current_price.toString(),
+          purchase_price: prev.purchase_price || matched.current_price.toString(),
+          maturity_date: matched.maturity_date,
+        }));
+      } else if (cleanIsin.startsWith("IN00")) {
+        toast.success("✨ Auto-filled RBI Government Bond defaults");
+        setFormData(prev => ({
+          ...prev,
+          bond_name: "Government G-Sec",
+          issuer: "Government of India",
+          bond_type: "Government",
+          face_value: "1000",
+          coupon_rate: "7.15",
+          ytm: "7.15",
+          interest_frequency: "Semi-Annual",
+          credit_rating: "Sovereign",
+          current_price: "1000",
+          purchase_price: prev.purchase_price || "1000",
+          maturity_date: "2034-06-15",
+        }));
+      } else if (cleanIsin.startsWith("INE")) {
+        toast.success("✨ Auto-filled Corporate NCD defaults");
+        setFormData(prev => ({
+          ...prev,
+          bond_name: "Corporate Bond",
+          issuer: "Corporate Issuer",
+          bond_type: "Corporate",
+          face_value: "1000",
+          coupon_rate: "8.50",
+          ytm: "8.50",
+          interest_frequency: "Annual",
+          credit_rating: "AAA",
+          current_price: "1000",
+          purchase_price: prev.purchase_price || "1000",
+          maturity_date: "2029-12-31",
+        }));
+      }
+    }
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -410,7 +578,7 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-3">
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">ISIN</label>
-                  <input required className="input-premium" placeholder="IN0000..." value={formData.isin} onChange={e => setFormData({...formData, isin: e.target.value})} />
+                  <input required className="input-premium uppercase" placeholder="e.g. IN0020230085" value={formData.isin} onChange={e => handleIsinChange(e.target.value)} />
                 </div>
                 <div className="space-y-3">
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Bond Type</label>

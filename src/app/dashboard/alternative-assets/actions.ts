@@ -62,7 +62,9 @@ export async function addAlternativeAsset(formData: {
 type AlternativeAssetUpdate = {
   name?: string;
   category?: string;
+  purchase_price?: number;
   current_value?: number;
+  purchase_date?: string;
   notes?: string | null;
 };
 
@@ -77,7 +79,9 @@ export async function updateAlternativeAsset(id: string, formData: AlternativeAs
       .update({
         name: formData.name,
         category: formData.category,
+        purchase_price: formData.purchase_price,
         current_value: formData.current_value,
+        purchase_date: formData.purchase_date,
         notes: formData.notes
       })
       .eq("id", id)

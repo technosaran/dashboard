@@ -53,7 +53,7 @@ export default function AlternativeAssetsDataTable({ assets, onEdit, onDelete, o
                 {category.icon}
               </div>
               <div className="flex flex-col max-w-[200px]">
-                <p className="text-[13px] font-bold text-white truncate hover:text-clip hover:absolute hover:bg-black hover:z-10 hover:p-1 hover:rounded-md hover:border hover:border-white/10" title={info.getValue()}>{info.getValue()}</p>
+                <p className="text-[13px] font-bold text-white truncate" title={info.getValue()}>{info.getValue()}</p>
                 <p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] truncate">{info.row.original.category}</p>
               </div>
             </div>
