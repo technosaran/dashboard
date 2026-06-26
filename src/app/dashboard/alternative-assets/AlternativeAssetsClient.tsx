@@ -5,7 +5,7 @@ import { useHasMounted } from "@/hooks/use-has-mounted";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 
-import { addAlternativeAsset, updateAlternativeAsset, deleteAlternativeAsset, revertLedgerLog } from "./actions";
+import { addAlternativeAsset, updateAlternativeAsset, deleteAlternativeAsset } from "./actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { format } from "date-fns";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
@@ -127,16 +127,6 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
     });
   }
 
-  async function handleRevert(logId: string) {
-    if (!confirm("Revert this action? This will undo the ledger entry and any associated balance changes.")) return;
-    await withLock(async () => {
-      const res = await revertLedgerLog(logId);
-      if (!res.error) {
-        toast.success("Action reverted successfully");
-        mutate();
-      } else toast.error(res.error);
-    });
-  }
 
   return (
     <div className="flex flex-col gap-8 animate-in fade-in duration-700">
@@ -329,7 +319,6 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
                     <th className="py-4 px-6">Action</th>
                     <th className="py-4 px-6">Details</th>
                     <th className="py-4 px-6 text-right">Amount Impact</th>
-                    <th className="py-4 px-6 text-right">Ops</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
@@ -358,21 +347,12 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
                             {log.amount ? `${isPositive ? "+" : "-"}₹${log.amount.toLocaleString()}` : "—"}
                           </p>
                         </td>
-                        <td className="py-4 px-6 text-right">
-                           <button type="button" 
-                             onClick={() => handleRevert(log.id)}
-                             disabled={submitting}
-                             className="text-[9px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-all bg-rose-500/5 px-3 py-1.5 rounded-lg border border-rose-500/10"
-                           >
-                             Revert
-                           </button>
-                        </td>
                       </tr>
                     );
                   })}
                   {assetLogs.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="py-12 text-center text-[11px] font-bold text-[--text-muted] uppercase tracking-[0.3em]">No historical records detected</td>
+                      <td colSpan={4} className="py-12 text-center text-[11px] font-bold text-[--text-muted] uppercase tracking-[0.3em]">No historical records detected</td>
                     </tr>
                   )}
                 </tbody>

@@ -10,7 +10,6 @@ import { createClient } from "@/lib/supabase-browser";
 import { useFinanceData } from "@/hooks/use-finance-data";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { format } from "date-fns";
-import { revertLedgerTransaction } from "../ledger/actions";
 import {
   addFamilyMember,
   updateFamilyMember,
@@ -215,19 +214,6 @@ export default function FamilyClient() {
     });
   }
 
-  async function handleRevert(logId: string) {
-    if (!confirm("Revert this family transfer? This will restore the account balance and decrease the member's balance.")) return;
-    await withLock(async () => {
-      const res = await revertLedgerTransaction(logId);
-      if (!res.error) {
-        toast.success("Transfer reverted successfully");
-        mutate();
-        mutateFinance();
-      } else {
-        toast.error(res.error);
-      }
-    });
-  }
 
   function openEditMember(member: Member) {
     setEditingMember(member);
@@ -443,7 +429,6 @@ export default function FamilyClient() {
                     <th className="py-4 px-6">From Account</th>
                     <th className="py-4 px-6">Note</th>
                     <th className="py-4 px-6 text-right">Amount</th>
-                    <th className="py-4 px-6 text-right">Ops</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
@@ -471,26 +456,12 @@ export default function FamilyClient() {
                             -{fmt.format(Number(tr.amount))}
                           </span>
                         </td>
-                        <td className="py-4 px-6 text-right">
-                          {matchingLog ? (
-                            <button
-                              type="button"
-                              onClick={() => handleRevert(matchingLog.id)}
-                              disabled={submitting}
-                              className="text-[9px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-all bg-rose-500/5 px-3 py-1.5 rounded-lg border border-rose-500/10"
-                            >
-                              Revert
-                            </button>
-                          ) : (
-                            <span className="text-[9px] text-[--text-muted] italic">un-revertible</span>
-                          )}
-                        </td>
                       </tr>
                     );
                   })}
                   {filteredTransfers.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="py-12 text-center text-[11px] font-bold text-[--text-muted] uppercase tracking-[0.3em]">
+                      <td colSpan={5} className="py-12 text-center text-[11px] font-bold text-[--text-muted] uppercase tracking-[0.3em]">
                         No historical records detected
                       </td>
                     </tr>

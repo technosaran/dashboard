@@ -13,7 +13,6 @@ import {
   createForexAccount,
   deleteForexAccount
 } from "./actions";
-import { revertLedgerLog } from "../alternative-assets/actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { format } from "date-fns";
@@ -242,15 +241,6 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
     });
   }
 
-  async function handleRevert(logId: string | null) {
-    if (!logId) return toast.error("No log found");
-    if (!confirm("Revert this transaction?")) return;
-    const res = await revertLedgerLog(logId);
-    if (!res.error) {
-      toast.success("Transaction reverted");
-      mutate();
-    } else toast.error(res.error);
-  }
 
   return (
     <div className="flex flex-col gap-8 animate-in fade-in duration-700">
@@ -480,13 +470,8 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                         </td>
                         <td className="px-5 py-4 text-xs font-bold text-[--text-secondary]">{getAccountLabel(tx.forex_account_id)}</td>
                         <td className="px-5 py-4 text-xs text-[--text-muted]">{tx.notes || "—"}</td>
-                        <td className={`px-5 py-4 text-right font-black tabular-nums flex items-center justify-end gap-4 ${tx.transaction_type === 'DEPOSIT' ? 'text-[--accent-primary-light]' : 'text-warning'}`}>
-                          <span>{tx.transaction_type === 'DEPOSIT' ? '+' : '-'}{getAccountCurrency(tx.forex_account_id) === 'USD' ? '$' : '₹'}{tx.amount.toLocaleString()}</span>
-                          {matchingLog && (
-                            <button type="button" onClick={() => handleRevert(matchingLog.id)} disabled={submitting} className="text-[9px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-all bg-rose-500/5 px-2 py-1 rounded-lg border border-rose-500/10">
-                              Revert
-                            </button>
-                          )}
+                        <td className={`px-5 py-4 text-right font-black tabular-nums ${tx.transaction_type === 'DEPOSIT' ? 'text-[--accent-primary-light]' : 'text-warning'}`}>
+                          {tx.transaction_type === 'DEPOSIT' ? '+' : '-'}{getAccountCurrency(tx.forex_account_id) === 'USD' ? '$' : '₹'}{tx.amount.toLocaleString()}
                         </td>
                       </tr>
                     );
