@@ -89,8 +89,8 @@ export default function FamilyClient() {
       transfers: (transfersRes.data ?? []) as Transfer[],
     };
   }, {
-    dedupingInterval: 60000,
-    revalidateOnFocus: false,
+    dedupingInterval: 2000,
+    revalidateOnFocus: true,
     keepPreviousData: true,
   });
 
