@@ -52,3 +52,53 @@ export async function deleteBudget(id: string) {
     return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
   }
 }
+
+export async function copyPreviousMonthBudgets(
+  fromMonth: number,
+  fromYear: number,
+  toMonth: number,
+  toYear: number
+) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Not authenticated" };
+
+    // 1. Fetch source budgets
+    const { data: sourceBudgets, error: fetchErr } = await supabase
+      .from("budgets")
+      .select("category,amount")
+      .eq("user_id", user.id)
+      .eq("period_month", fromMonth)
+      .eq("period_year", fromYear);
+
+    if (fetchErr) return { error: fetchErr.message };
+    if (!sourceBudgets || sourceBudgets.length === 0) {
+      return { error: "No budgets found in the previous period to carry over." };
+    }
+
+    // 2. Map payload
+    const upsertData = sourceBudgets.map(b => ({
+      user_id: user.id,
+      category: b.category,
+      amount: Number(b.amount),
+      period_month: toMonth,
+      period_year: toYear
+    }));
+
+    // 3. Upsert
+    const { error: upsertErr } = await supabase
+      .from("budgets")
+      .upsert(upsertData, {
+        onConflict: "user_id,category,period_month,period_year"
+      });
+
+    if (upsertErr) return { error: upsertErr.message };
+
+    revalidatePath("/dashboard/budget");
+    return { success: true, count: sourceBudgets.length };
+  } catch (err) {
+    console.error("Error in copyPreviousMonthBudgets:", err);
+    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+  }
+}

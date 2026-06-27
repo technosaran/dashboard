@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useRef, useEffect } from "react";
 import { toast } from "react-hot-toast";
-import { upsertBudget, deleteBudget } from "./actions";
+import { upsertBudget, deleteBudget, copyPreviousMonthBudgets } from "./actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { format, parseISO, getDaysInMonth, isSameMonth, subMonths } from "date-fns";
@@ -14,12 +14,28 @@ import { PieChart, Pie, Cell, AreaChart, Area, CartesianGrid, XAxis, YAxis, Tool
 
 import { Tabs } from "@/components/ui/tabs";
 
+const BUDGET_CATEGORIES = [
+  { label: "Rent", icon: "🏠" },
+  { label: "Food", icon: "🍔" },
+  { label: "Travel", icon: "✈️" },
+  { label: "Investment", icon: "📈" },
+  { label: "Transport", icon: "🚌" },
+  { label: "Utilities", icon: "⚡" },
+  { label: "Entertainment", icon: "🎬" },
+  { label: "Shopping", icon: "🛍️" },
+  { label: "Subscription", icon: "💳" },
+  { label: "Others", icon: "📦" }
+];
+
 export default function BudgetClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { budgets, expenses, incomes }, mutate } = useFinanceData(initialData);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [activeView, setActiveView] = useState<"overview" | "categories">("overview");
   
+  const [editingCategory, setEditingCategory] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState<string>("");
+
   const [submitting, withLock] = useSubmitLock();
   const activeSubmissionsRef = useRef<Record<string, boolean>>({});
 
@@ -75,28 +91,25 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
   const isBurningFast = budgetBurnRatePercent > monthProgressPercent;
 
   const dynamicCategories = useMemo(() => {
-    const cats = new Set<string>();
-    Object.keys(actualSpending).forEach(c => cats.add(c));
-    currentBudgets.forEach(b => cats.add(b.category));
+    const catsMap = new Map<string, string>();
+    BUDGET_CATEGORIES.forEach(c => catsMap.set(c.label, c.icon));
     
-    return Array.from(cats).map(name => {
-      let icon = "📦";
-      switch(name.toLowerCase()) {
-        case "food": case "food & dining": icon = "🍔"; break;
-        case "rent": case "housing": icon = "🏠"; break;
-        case "travel": icon = "✈️"; break;
-        case "utilities": case "bills & utilities": icon = "⚡"; break;
-        case "investment": icon = "📈"; break;
-        case "shopping": icon = "🛍️"; break;
-        case "entertainment": icon = "🎬"; break;
-        case "healthcare": icon = "⚕️"; break;
-        case "education": icon = "📚"; break;
-        case "transportation": case "transport": icon = "🚗"; break;
-        case "groceries": icon = "🛒"; break;
-        case "personal care": icon = "🧴"; break;
-        case "subscription": icon = "💳"; break;
-      }
-      return { label: name, icon };
+    Object.keys(actualSpending).forEach(c => {
+      if (!catsMap.has(c)) catsMap.set(c, "📦");
+    });
+    currentBudgets.forEach(b => {
+      if (!catsMap.has(b.category)) catsMap.set(b.category, "📦");
+    });
+    
+    return Array.from(catsMap.entries()).map(([label, icon]) => {
+      let finalIcon = icon;
+      const lower = label.toLowerCase();
+      if (lower === "food & dining") finalIcon = "🍔";
+      else if (lower === "housing") finalIcon = "🏠";
+      else if (lower === "bills & utilities") finalIcon = "⚡";
+      else if (lower === "transportation") finalIcon = "🚌";
+      
+      return { label, icon: finalIcon };
     }).sort((a, b) => {
       const aSpent = actualSpending[a.label] || 0;
       const bSpent = actualSpending[b.label] || 0;
@@ -193,6 +206,25 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
     } finally {
       activeSubmissionsRef.current[category] = false;
     }
+  }
+
+  async function handleCarryOver() {
+    let fromMonth = selectedMonth - 1;
+    let fromYear = selectedYear;
+    if (fromMonth === 0) {
+      fromMonth = 12;
+      fromYear = selectedYear - 1;
+    }
+    
+    await withLock(async () => {
+      const res = await copyPreviousMonthBudgets(fromMonth, fromYear, selectedMonth, selectedYear);
+      if (!res.error) {
+        toast.success(`Successfully carried over ${res.count} budget limits!`);
+        mutate();
+      } else {
+        toast.error(res.error);
+      }
+    });
   }
 
   const formatCurrency = (value: number) => {
@@ -454,63 +486,203 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
             )}
 
             {/* Category Budgeting */}
-            <div className="glass-card-static p-8 space-y-8">
-              <h3 className="text-sm font-black uppercase tracking-[0.3em] text-[--text-muted]">Allocation by Segment</h3>
-              <div className="space-y-6">
+            <div className="space-y-6">
+              <div className="flex justify-between items-center bg-white/[0.01] p-4 rounded-2xl border border-white/5">
+                <div>
+                  <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[--text-primary]">Allocation by Segment</h3>
+                  <p className="text-xs text-[--text-muted] mt-1">Set maximum monthly limits per expense type.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCarryOver}
+                  disabled={submitting}
+                  className="btn-secondary !h-9 px-3.5 text-[10px] font-black uppercase tracking-wider flex items-center gap-2"
+                  title="Carry over last month's budget limits"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 7.5V6.108c0-1.135.845-2.098 1.976-2.192.373-.03.748-.057 1.123-.08M15.75 18H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08M15.75 18.75v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5A3.375 3.375 0 006.375 7.5H5.25m11.9-3.664A2.251 2.251 0 0015 2.25h-1.5a2.251 2.251 0 00-2.15 1.586m5.8 0c.065.21.1.433.1.664v.75h-6V4.5c0-.231.035-.454.1-.664M6.75 7.5H4.875c-.621 0-1.125.504-1.125 1.125v9.75c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V16.5a9 9 0 00-9-9z" />
+                  </svg>
+                  Carry Over Limits
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {dynamicCategories.map(cat => {
                   const budget = currentBudgets.find(b => b.category === cat.label);
                   const spent = actualSpending[cat.label] || 0;
                   const limit = Number(budget?.amount || 0);
                   const percent = limit > 0 ? (spent / limit) * 100 : 0;
                   
+                  const isEditing = editingCategory === cat.label;
+
                   return (
-                    <div key={cat.label} className="group">
-                      <div className="flex justify-between items-center mb-3">
-                        <div className="flex items-center gap-3">
-                          <span className="text-2xl opacity-80 group-hover:opacity-100 transition-opacity">{cat.icon}</span>
-                          <div>
-                            <p className="text-sm font-bold text-white flex items-center gap-2">
-                              {cat.label}
-                              {percent > 100 && <span className="w-2 h-2 rounded-full bg-danger animate-pulse" title="Over budget!" />}
-                            </p>
-                            <p className="text-[10px] font-black text-[--text-muted] uppercase tracking-widest">
-                              Spent: ₹{spent.toLocaleString()}
-                            </p>
+                    <div key={cat.label} className="glass-card-static p-5 flex flex-col justify-between border-white/5 bg-gradient-to-b from-white/[0.01] to-transparent hover:from-white/[0.02] transition-all duration-300">
+                      <div>
+                        {/* Card Header */}
+                        <div className="flex justify-between items-start gap-2 mb-4">
+                          <div className="flex items-center gap-3">
+                            <span className="text-3xl p-2 bg-white/[0.02] rounded-2xl border border-white/5 shadow-inner">{cat.icon}</span>
+                            <div>
+                              <p className="text-sm font-black text-white">{cat.label}</p>
+                              <p className="text-[10px] font-bold text-[--text-muted] uppercase tracking-wider mt-0.5">
+                                Spent: ₹{spent.toLocaleString()}
+                              </p>
+                            </div>
                           </div>
+
+                          {/* Status Tag */}
+                          {limit > 0 ? (
+                            percent > 100 ? (
+                              <span className="text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-[4px] bg-rose-500/10 text-rose-400 border border-rose-500/20">Over Limit</span>
+                            ) : percent > 80 ? (
+                              <span className="text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-[4px] bg-amber-500/10 text-amber-400 border border-amber-500/20">Near Limit</span>
+                            ) : (
+                              <span className="text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-[4px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">On Track</span>
+                            )
+                          ) : (
+                            <span className="text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-[4px] bg-white/5 text-[--text-muted] border border-white/10">No Limit</span>
+                          )}
                         </div>
-                        <div className="flex items-center gap-4">
-                          <input 
-                            type="number" 
-                            placeholder="Set Limit"
-                            defaultValue={limit || ""}
-                            disabled={submitting}
-                            onBlur={(e) => {
-                              const lastVal = limit ? limit.toString() : "";
-                              if (e.target.value !== lastVal) {
-                                handleBudgetChange(cat.label, e.target.value);
-                              }
-                            }}
-                            className="input-premium !h-10 w-32 text-right !bg-white/5 border-transparent focus:border-[--accent-primary] text-sm font-black"
-                            autoComplete="new-password"
-                            inputMode="decimal"
-                            name="budget-limit"
-                            id={`budget-limit-${cat.label}`}
-                          />
-                        </div>
+
+                        {/* Progress Bar */}
+                        {limit > 0 && (
+                          <div className="my-5">
+                            <div className="flex justify-between text-[10px] font-bold text-[--text-muted] mb-1.5">
+                              <span>{percent.toFixed(0)}% used</span>
+                              <span>Limit: ₹{limit.toLocaleString()}</span>
+                            </div>
+                            <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden flex relative border border-white/5">
+                              <div 
+                                className={`h-full transition-all duration-1000 ${percent > 100 ? "bg-rose-500" : percent > 80 ? "bg-amber-400" : "bg-gradient-to-r from-emerald-400 to-teal-500"}`} 
+                                style={{ width: `${Math.min(percent, 100)}%` }} 
+                              />
+                              <div 
+                                className="absolute top-0 bottom-0 w-0.5 bg-sky-400/80 shadow-[0_0_8px_rgba(56,189,248,0.8)] z-10" 
+                                style={{ left: `${monthProgressPercent}%` }}
+                                title={`Time Progress: ${monthProgressPercent.toFixed(0)}%`}
+                              />
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      {limit > 0 && (
-                        <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden flex relative">
-                          <div 
-                            className={`h-full transition-all duration-1000 ${percent > 100 ? "bg-danger" : percent > 80 ? "bg-warning" : "bg-gradient-to-r from-[--accent-primary] to-emerald-400"}`} 
-                            style={{ width: `${Math.min(percent, 100)}%` }} 
-                          />
-                          <div 
-                            className="absolute top-0 bottom-0 w-0.5 bg-white/50 shadow-[0_0_8px_rgba(255,255,255,0.8)] z-10" 
-                            style={{ left: `${monthProgressPercent}%` }}
-                            title={`Month Progress: ${monthProgressPercent.toFixed(0)}%`}
-                          />
-                        </div>
-                      )}
+
+                      {/* Inline Limit Editor / Display */}
+                      <div className="mt-4 pt-4 border-t border-white/5">
+                        {isEditing ? (
+                          <div className="space-y-3">
+                            <div className="flex gap-2">
+                              <input
+                                autoFocus
+                                type="number"
+                                placeholder="Limit Amount"
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                className="input-premium py-1 text-xs w-full text-right font-black"
+                                autoComplete="off"
+                                inputMode="decimal"
+                                name={`edit-limit-${cat.label}`}
+                                id={`edit-limit-${cat.label}`}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  handleBudgetChange(cat.label, editValue);
+                                  setEditingCategory(null);
+                                }}
+                                className="p-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-white border border-emerald-500/20 hover:border-transparent transition-all"
+                                title="Save Limit"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                </svg>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setEditingCategory(null)}
+                                className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-[--text-muted] hover:text-white border border-white/10 transition-all"
+                                title="Cancel"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
+                            </div>
+                            
+                            {/* Preset Buttons */}
+                            <div className="flex flex-wrap gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const current = Number(editValue) || 0;
+                                  setEditValue((current + 1000).toString());
+                                }}
+                                className="px-2 py-1 rounded-[6px] bg-white/5 hover:bg-white/10 border border-white/5 text-[9px] font-black uppercase tracking-wider text-[--text-secondary]"
+                              >
+                                +1k
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const current = Number(editValue) || 0;
+                                  setEditValue((current + 5000).toString());
+                                }}
+                                className="px-2 py-1 rounded-[6px] bg-white/5 hover:bg-white/10 border border-white/5 text-[9px] font-black uppercase tracking-wider text-[--text-secondary]"
+                              >
+                                +5k
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const current = Number(editValue) || 0;
+                                  setEditValue((current + 10000).toString());
+                                }}
+                                className="px-2 py-1 rounded-[6px] bg-white/5 hover:bg-white/10 border border-white/5 text-[9px] font-black uppercase tracking-wider text-[--text-secondary]"
+                              >
+                                +10k
+                              </button>
+                              {limit > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditValue("");
+                                    handleBudgetChange(cat.label, "");
+                                    setEditingCategory(null);
+                                  }}
+                                  className="px-2 py-1 rounded-[6px] bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/10 text-[9px] font-black uppercase tracking-wider text-rose-400 ml-auto"
+                                >
+                                  Clear Limit
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex justify-between items-center">
+                            <span className="text-[11px] text-[--text-muted] font-medium">
+                              {limit > 0 ? (
+                                <>
+                                  Target limit: <span className="font-bold text-white">₹{limit.toLocaleString()}</span>
+                                </>
+                              ) : (
+                                "No spending limit set"
+                              )}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingCategory(cat.label);
+                                setEditValue(limit ? limit.toString() : "");
+                              }}
+                              className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 hover:text-white text-xs font-bold text-[--text-secondary] border border-white/5 hover:border-white/10 transition-all flex items-center gap-1.5"
+                            >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.43l-1.003.828c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.43l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.991l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.28z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                              {limit > 0 ? "Adjust" : "Set Limit"}
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
