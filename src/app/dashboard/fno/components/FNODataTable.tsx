@@ -28,7 +28,7 @@ const columnHelper = createColumnHelper<FnoTrade>();
 
 export default function FNODataTable({ trades, onCloseTrade, onDeleteTrade, onAdd, showActions, livePrices }: FnoDataTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [globalFilter, setGlobalFilter] = useState("");
+
 
   const formatMoney = (val: number) => val.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -173,17 +173,10 @@ export default function FNODataTable({ trades, onCloseTrade, onDeleteTrade, onAd
     return cols;
   }, [showActions, onCloseTrade, onDeleteTrade]);
 
-  const filteredTrades = useMemo(() => {
-    if (!globalFilter) return trades;
-    const lower = globalFilter.toLowerCase();
-    return trades.filter(t => 
-      t.symbol.toLowerCase().includes(lower) || 
-      (t.notes && t.notes.toLowerCase().includes(lower))
-    );
-  }, [trades, globalFilter]);
+
 
   const table = useReactTable({
-    data: filteredTrades,
+    data: trades,
     columns,
     state: { sorting },
     onSortingChange: setSorting,
@@ -212,15 +205,6 @@ export default function FNODataTable({ trades, onCloseTrade, onDeleteTrade, onAd
 
   return (
     <div className="bg-[#0a0a0a] rounded-md border border-white/10 flex flex-col">
-      <div className="p-3 border-b border-white/10 flex items-center justify-between">
-        <input
-          type="text"
-          placeholder="Search eg: NIFTY CE"
-          value={globalFilter}
-          onChange={(e) => setGlobalFilter(e.target.value)}
-          className="bg-transparent border-none outline-none text-sm text-[--text-primary] placeholder-[--text-muted] w-full max-w-xs px-2"
-        />
-      </div>
 
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse min-w-[700px]">
@@ -252,7 +236,7 @@ export default function FNODataTable({ trades, onCloseTrade, onDeleteTrade, onAd
       {table.getPageCount() > 1 && (
         <div className="p-3 border-t border-white/10 flex items-center justify-between text-xs text-[--text-muted]">
           <div>
-            Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to {Math.min((table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize, filteredTrades.length)} of {filteredTrades.length} entries
+            Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to {Math.min((table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize, trades.length)} of {trades.length} entries
           </div>
           <div className="flex gap-2">
             <button
