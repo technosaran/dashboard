@@ -209,7 +209,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
                 onDeleteTrade={handleDeleteTrade}
                 onAdd={() => setShowLogForm(true)}
                 showActions={true}
-                livePrices={watchlistPrices}
+                livePrices={{}}
               />
               
               {activePositions.length > 0 && (
