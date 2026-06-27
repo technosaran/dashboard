@@ -14,6 +14,7 @@ export async function logFnoTrade(data: {
   account_id?: string;
   notes?: string;
   trade_date?: string;
+  charges?: number;
 }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -23,6 +24,7 @@ export async function logFnoTrade(data: {
   if (!data.symbol || data.symbol.trim().length === 0) return { error: "Symbol is required" };
   if (!data.quantity || data.quantity <= 0) return { error: "Quantity must be positive" };
   if (data.entry_price < 0) return { error: "Entry price cannot be negative" };
+  if (data.charges !== undefined && data.charges < 0) return { error: "Charges cannot be negative" };
 
   const cleanAccountId = data.account_id && data.account_id !== "null" && data.account_id !== "" ? data.account_id : null;
   const cleanStrike = data.instrument_type === "FUT" ? null : (data.strike_price || null);
@@ -38,7 +40,8 @@ export async function logFnoTrade(data: {
     p_entry_price: data.entry_price,
     p_account_id: cleanAccountId,
     p_notes: data.notes || null,
-    p_trade_date: data.trade_date || new Date().toISOString().split("T")[0]
+    p_trade_date: data.trade_date || new Date().toISOString().split("T")[0],
+    p_charges: data.charges || 0
   });
 
   if (error) return { error: error.message };

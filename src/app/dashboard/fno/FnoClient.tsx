@@ -36,7 +36,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
   const [logFormData, setLogFormData] = useState({
     symbol: "", instrument_type: "FUT" as "FUT" | "CE" | "PE", strike_price: "",
     expiry_date: "", trade_type: "BUY" as "BUY" | "SELL", quantity: "",
-    entry_price: "", account_id: "", notes: "", trade_date: ""
+    entry_price: "", account_id: "", notes: "", trade_date: "", charges: ""
   });
 
   const [closeFormData, setCloseFormData] = useState({
@@ -88,9 +88,11 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
       try {
         const qty = parseFloat(logFormData.quantity);
         const price = parseFloat(logFormData.entry_price);
+        const fnoCharges = parseFloat(logFormData.charges) || 0;
         const strike = logFormData.strike_price ? parseFloat(logFormData.strike_price) : undefined;
         if (isNaN(qty) || qty <= 0) { toast.error("Valid quantity required"); return; }
         if (isNaN(price) || price < 0) { toast.error("Valid entry price required"); return; }
+        if (fnoCharges < 0) { toast.error("Charges cannot be negative"); return; }
 
         const res = await logFnoTrade({
           symbol: logFormData.symbol.toUpperCase().trim(),
@@ -102,14 +104,15 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
           entry_price: price,
           account_id: logFormData.account_id || undefined,
           notes: logFormData.notes || undefined,
-          trade_date: logFormData.trade_date
+          trade_date: logFormData.trade_date,
+          charges: fnoCharges
         });
         if (!res.error) {
           toast.success("FnO Trade logged successfully!");
           setShowLogForm(false);
           setLogFormData({
             symbol: "", instrument_type: "FUT", strike_price: "", expiry_date: "",
-            trade_type: "BUY", quantity: "", entry_price: "", account_id: "", notes: "", trade_date: new Date().toISOString().split("T")[0]
+            trade_type: "BUY", quantity: "", entry_price: "", account_id: "", notes: "", trade_date: new Date().toISOString().split("T")[0], charges: ""
           });
           mutate();
         } else toast.error(res.error);
@@ -415,19 +418,32 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
                     />
                   </div>
                 </div>
-
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Deduct Margin Account</label>
-                  <select 
-                    className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]" 
-                    value={logFormData.account_id} 
-                    onChange={e => setLogFormData({...logFormData, account_id: e.target.value})}
-                  >
-                    <option value="">No Account (Track Only)</option>
-                    {accounts.map(acc => (
-                      <option key={acc.id} value={acc.id}>{acc.name} (₹{acc.balance.toLocaleString()})</option>
-                    ))}
-                  </select>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="col-span-2 space-y-1">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Deduct Margin Account</label>
+                    <select 
+                      className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]" 
+                      value={logFormData.account_id} 
+                      onChange={e => setLogFormData({...logFormData, account_id: e.target.value})}
+                    >
+                      <option value="">No Account (Track Only)</option>
+                      {accounts.map(acc => (
+                        <option key={acc.id} value={acc.id}>{acc.name} (₹{acc.balance.toLocaleString()})</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Charges (₹)</label>
+                    <input 
+                      type="number" 
+                      step="any" 
+                      className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]" 
+                      placeholder="e.g. 20" 
+                      value={logFormData.charges} 
+                      onChange={e => setLogFormData({...logFormData, charges: e.target.value})} 
+                      inputMode="decimal" 
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-1">
@@ -441,14 +457,30 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
                 </div>
 
                 {/* Calculation */}
-                <div className="bg-white/5 rounded p-3 flex justify-between items-center text-xs text-gray-400">
-                  <div>
-                    <span>Margin required</span>
-                    <span className="ml-1 text-white font-bold">
-                      ₹{formatMoney((parseFloat(logFormData.quantity) || 0) * (parseFloat(logFormData.entry_price) || 0))}
-                    </span>
+                {((parseFloat(logFormData.quantity) || 0) * (parseFloat(logFormData.entry_price) || 0)) > 0 && (
+                  <div className="bg-white/5 rounded p-3 space-y-1.5 text-xs text-gray-400">
+                    <div className="flex justify-between">
+                      <span>Premium Value:</span>
+                      <span className="text-white font-bold">₹{formatMoney((parseFloat(logFormData.quantity) || 0) * (parseFloat(logFormData.entry_price) || 0))}</span>
+                    </div>
+                    {parseFloat(logFormData.charges) > 0 && (
+                      <div className="flex justify-between">
+                        <span>Charges:</span>
+                        <span className="text-rose-400">₹{formatMoney(parseFloat(logFormData.charges) || 0)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between border-t border-white/5 pt-1.5 font-bold">
+                      <span className="text-white">{logFormData.trade_type === 'BUY' ? 'Net Outflow:' : 'Net Inflow:'}</span>
+                      <span className={logFormData.trade_type === 'BUY' ? 'text-amber-400' : 'text-emerald-400'}>
+                        ₹{formatMoney(
+                          logFormData.trade_type === 'BUY'
+                            ? ((parseFloat(logFormData.quantity) || 0) * (parseFloat(logFormData.entry_price) || 0)) + (parseFloat(logFormData.charges) || 0)
+                            : ((parseFloat(logFormData.quantity) || 0) * (parseFloat(logFormData.entry_price) || 0)) - (parseFloat(logFormData.charges) || 0)
+                        )}
+                      </span>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div className="flex gap-3 pt-2">
                   <button 
