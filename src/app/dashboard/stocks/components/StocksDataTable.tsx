@@ -27,7 +27,7 @@ const columnHelper = createColumnHelper<Stock>();
 
 export default function StocksDataTable({ stocks, onEdit, onSell, onAdd }: StocksDataTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [globalFilter, setGlobalFilter] = useState("");
+
 
   const formatMoney = (val: number) => val.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -160,18 +160,11 @@ export default function StocksDataTable({ stocks, onEdit, onSell, onAdd }: Stock
     [onEdit, onSell]
   );
 
-  const filteredStocks = useMemo(() => {
-    if (!globalFilter) return stocks;
-    const lower = globalFilter.toLowerCase();
-    return stocks.filter(s => 
-      s.name.toLowerCase().includes(lower) || 
-      (s.symbol && s.symbol.toLowerCase().includes(lower))
-    );
-  }, [stocks, globalFilter]);
+
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
-    data: filteredStocks,
+    data: stocks,
     columns,
     state: { sorting },
     onSortingChange: setSorting,
@@ -200,15 +193,6 @@ export default function StocksDataTable({ stocks, onEdit, onSell, onAdd }: Stock
 
   return (
     <div className="bg-[#0a0a0a] rounded-md border border-white/10 flex flex-col">
-      <div className="p-3 border-b border-white/10 flex items-center justify-between">
-        <input
-          type="text"
-          placeholder="Search eg: infy bse, nifty fut"
-          value={globalFilter}
-          onChange={(e) => setGlobalFilter(e.target.value)}
-          className="bg-transparent border-none outline-none text-sm text-[--text-primary] placeholder-[--text-muted] w-full max-w-xs px-2"
-        />
-      </div>
 
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse min-w-[800px]">
@@ -240,7 +224,7 @@ export default function StocksDataTable({ stocks, onEdit, onSell, onAdd }: Stock
       {table.getPageCount() > 1 && (
         <div className="p-3 border-t border-white/10 flex items-center justify-between text-xs text-[--text-muted]">
           <div>
-            Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to {Math.min((table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize, filteredStocks.length)} of {filteredStocks.length} entries
+            Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to {Math.min((table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize, stocks.length)} of {stocks.length} entries
           </div>
           <div className="flex gap-2">
             <button

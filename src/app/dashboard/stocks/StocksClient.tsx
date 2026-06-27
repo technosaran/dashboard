@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 
@@ -67,63 +67,33 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
     }
   }, [searchQuery]);
 
-  // Watchlist states
-  const [watchlist, setWatchlist] = useState<string[]>([]);
-  const [watchlistPrices, setWatchlistPrices] = useState<Record<string, { price: number; prevClose?: number }>>({});
-  const [watchlistSearchQuery, setWatchlistSearchQuery] = useState("");
-  const [watchlistSearchResults, setWatchlistSearchResults] = useState<{ symbol: string, name: string, fullSymbol?: string, exchange?: string }[]>([]);
-  const [isWatchlistSearching, setIsWatchlistSearching] = useState(false);
-  const [showWatchlistDropdown, setShowWatchlistDropdown] = useState(false);
-
-  // Load watchlist on mount
-  useEffect(() => {
-    const saved = localStorage.getItem("stocks_watchlist");
-    if (saved) {
-      setWatchlist(JSON.parse(saved));
-    } else {
-      const defaultWatchlist = ["RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK"];
-      setWatchlist(defaultWatchlist);
-      localStorage.setItem("stocks_watchlist", JSON.stringify(defaultWatchlist));
+  const handleSelectSearchResult = async (stock: { symbol: string, name: string }) => {
+    setIsSearching(true);
+    try {
+      const liveData = await fetchLiveStockPrice(stock.symbol);
+      const ltp = liveData?.price ? liveData.price.toString() : "0";
+      setFormData(prev => ({
+        ...prev,
+        symbol: stock.symbol,
+        name: stock.name,
+        buy_price: ltp,
+        current_price: ltp
+      }));
+    } catch (e) {
+      console.error("Failed to fetch price for selected stock:", e);
+      setFormData(prev => ({
+        ...prev,
+        symbol: stock.symbol,
+        name: stock.name,
+        buy_price: "0",
+        current_price: "0"
+      }));
+    } finally {
+      setIsSearching(false);
+      setShowSearchDropdown(false);
+      setSearchQuery("");
     }
-  }, []);
-
-  // Fetch prices for watchlist
-  const fetchWatchlistPrices = useCallback(async (symbols: string[]) => {
-    if (symbols.length === 0) return;
-    const prices: Record<string, { price: number; prevClose?: number }> = {};
-    await Promise.all(symbols.map(async (sym) => {
-      try {
-        const data = await fetchLiveStockPrice(sym);
-        if (data) prices[sym] = data;
-      } catch (e) {
-        console.error("Failed to fetch price for", sym, e);
-      }
-    }));
-    setWatchlistPrices(prev => ({ ...prev, ...prices }));
-  }, []);
-
-  useEffect(() => {
-    if (watchlist.length > 0) {
-      fetchWatchlistPrices(watchlist);
-    }
-  }, [watchlist, fetchWatchlistPrices]);
-
-  // Watchlist Search
-  useEffect(() => {
-    if (watchlistSearchQuery.length > 2) {
-      setIsWatchlistSearching(true);
-      setShowWatchlistDropdown(true);
-      const timeoutId = setTimeout(async () => {
-        const results = await searchStocks(watchlistSearchQuery);
-        setWatchlistSearchResults(results);
-        setIsWatchlistSearching(false);
-      }, 500);
-      return () => clearTimeout(timeoutId);
-    } else {
-      setWatchlistSearchResults([]);
-      setShowWatchlistDropdown(false);
-    }
-  }, [watchlistSearchQuery]);
+  };
 
   useEffect(() => {
     if (accounts.length > 0 && showAddModal && !formData.deduct_from_account) {
@@ -318,142 +288,6 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
 
   return (
     <div className="flex w-full bg-[#121212] min-h-screen">
-      {/* Zerodha Watchlist Sidebar (Left Column, hidden on small screens) */}
-      <div className="hidden lg:flex flex-col w-[340px] shrink-0 border-r border-white/10 bg-[#151515] select-none h-screen sticky top-0 overflow-y-auto custom-scrollbar">
-        {/* Watchlist Search Bar */}
-        <div className="p-3 border-b border-white/5 relative">
-          <div className="relative">
-            <input 
-              className="w-full bg-[#1e1e1e] border border-white/10 rounded px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:border-[#2185d0] outline-none" 
-              placeholder="Search eg: infy, reliance, bo" 
-              value={watchlistSearchQuery} 
-              onChange={e => setWatchlistSearchQuery(e.target.value)} 
-            />
-            {isWatchlistSearching && (
-              <div className="absolute right-3 top-2">
-                <svg className="w-3.5 h-3.5 animate-spin text-gray-500" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" strokeDasharray="32" className="opacity-25"></circle><path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" className="opacity-75"></path></svg>
-              </div>
-            )}
-          </div>
-
-          {/* Watchlist Search Results Dropdown */}
-          {showWatchlistDropdown && watchlistSearchResults.length > 0 && (
-            <div className="absolute z-50 left-3 right-3 top-[100%] mt-1 bg-[#202020] border border-white/10 rounded shadow-xl overflow-hidden max-h-56 overflow-y-auto custom-scrollbar">
-              {watchlistSearchResults.map((res, i) => (
-                <div 
-                  key={i} 
-                  className="px-3 py-2 hover:bg-white/5 cursor-pointer transition-colors border-b border-white/5 last:border-0 flex items-center justify-between"
-                  onClick={() => {
-                    if (!watchlist.includes(res.symbol)) {
-                      const updated = [...watchlist, res.symbol];
-                      setWatchlist(updated);
-                      localStorage.setItem("stocks_watchlist", JSON.stringify(updated));
-                    }
-                    setWatchlistSearchQuery("");
-                    setShowWatchlistDropdown(false);
-                  }}
-                >
-                  <div>
-                    <div className="text-xs font-bold text-white">{res.symbol}</div>
-                    <div className="text-[10px] text-gray-400 truncate max-w-[180px]">{res.name}</div>
-                  </div>
-                  <button className="text-[10px] bg-[#2185d0]/20 text-[#2185d0] hover:bg-[#2185d0] hover:text-white px-2 py-0.5 rounded transition-all font-semibold">
-                    + Add
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Watchlist Items */}
-        <div className="flex-1 divide-y divide-white/5">
-          {watchlist.map((sym) => {
-            const data = watchlistPrices[sym];
-            const price = data?.price ?? 0;
-            const prevClose = data?.prevClose ?? price;
-            const change = price - prevClose;
-            const pctChange = prevClose > 0 ? (change / prevClose) * 100 : 0;
-            const isUp = change >= 0;
-
-            return (
-              <div 
-                key={sym} 
-                className="group relative px-4 py-3.5 flex items-center justify-between hover:bg-white/[0.02] transition-colors cursor-pointer"
-              >
-                <div>
-                  <div className="text-xs font-bold text-white tracking-wide">{sym}</div>
-                  <div className="text-[9px] text-gray-500 font-semibold tracking-wider uppercase">NSE</div>
-                </div>
-
-                {/* Normal view: price and percentage */}
-                <div className="flex items-center gap-4 group-hover:opacity-0 transition-opacity duration-150">
-                  <div className="text-right">
-                    <div className="text-xs font-semibold text-white">
-                      {price > 0 ? `₹${formatMoney(price)}` : "—"}
-                    </div>
-                    <div className={`text-[10px] font-medium ${isUp ? "text-emerald-500" : "text-rose-500"}`}>
-                      {price > 0 ? `${isUp ? "+" : ""}${pctChange.toFixed(2)}%` : ""}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Hover view: floating action shortcuts */}
-                <div className="absolute inset-0 bg-[#151515] px-4 items-center justify-end gap-2 hidden group-hover:flex">
-                  <button 
-                    onClick={() => {
-                      setFormData({
-                        name: sym, symbol: sym, quantity: "1", buy_price: price.toString(), current_price: price.toString(),
-                        currency: "INR", notes: "", bought_at: new Date().toISOString().split("T")[0],
-                        deduct_from_account: "", trade_type: "buy"
-                      });
-                      setEditingId(null);
-                      setCharges("0");
-                      setShowAddModal(true);
-                    }}
-                    className="w-7 h-7 rounded bg-[#4185f4] hover:bg-[#3574d3] text-white flex items-center justify-center text-[10px] font-bold shadow-md transition-transform active:scale-95"
-                  >
-                    B
-                  </button>
-                  <button 
-                    onClick={() => {
-                      setFormData({
-                        name: sym, symbol: sym, quantity: "1", buy_price: price.toString(), current_price: price.toString(),
-                        currency: "INR", notes: "", bought_at: new Date().toISOString().split("T")[0],
-                        deduct_from_account: "", trade_type: "sell"
-                      });
-                      setEditingId(null);
-                      setCharges("0");
-                      setShowAddModal(true);
-                    }}
-                    className="w-7 h-7 rounded bg-[#ff5722] hover:bg-[#e64a19] text-white flex items-center justify-center text-[10px] font-bold shadow-md transition-transform active:scale-95"
-                  >
-                    S
-                  </button>
-                  <button 
-                    onClick={() => {
-                      const updated = watchlist.filter(s => s !== sym);
-                      setWatchlist(updated);
-                      localStorage.setItem("stocks_watchlist", JSON.stringify(updated));
-                    }}
-                    className="w-7 h-7 rounded bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white flex items-center justify-center text-[11px] transition-colors"
-                  >
-                    🗑️
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-
-          {watchlist.length === 0 && (
-            <div className="p-8 text-center text-xs text-gray-500">
-              Watchlist is empty. Search and add symbols above.
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Main Panel */}
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
         {/* Kite-style Top Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-[#151515]">
@@ -617,29 +451,64 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Manual Symbol Entry (if adding new from scratch) */}
-                {!formData.symbol && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Stock Name</label>
+                {/* Autocomplete Stock Search (if adding new from scratch) */}
+                {!formData.symbol ? (
+                  <div className="space-y-1.5 relative">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Search Stock Symbol / Company</label>
+                    <div className="relative">
                       <input 
-                        className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]" 
-                        placeholder="e.g. Reliance Industries"
-                        value={formData.name}
-                        onChange={e => setFormData({ ...formData, name: e.target.value })}
-                        required
+                        autoFocus
+                        className="w-full bg-[#202020] border border-white/10 rounded px-3 py-2 text-xs text-white outline-none focus:border-[#2185d0] placeholder-gray-500" 
+                        placeholder="Search e.g. TCS, Reliance, Infosys..."
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
                       />
+                      {isSearching && (
+                        <div className="absolute right-3 top-2.5">
+                          <svg className="w-3.5 h-3.5 animate-spin text-gray-500" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" strokeDasharray="32" className="opacity-25"></circle><path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" className="opacity-75"></path></svg>
+                        </div>
+                      )}
                     </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Symbol</label>
-                      <input 
-                        className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white uppercase outline-none focus:border-[#2185d0]" 
-                        placeholder="e.g. RELIANCE"
-                        value={formData.symbol}
-                        onChange={e => setFormData({ ...formData, symbol: e.target.value.toUpperCase() })}
-                        required
-                      />
+
+                    {showSearchDropdown && searchResults.length > 0 && (
+                      <div className="absolute z-[120] left-0 right-0 top-[100%] mt-1 bg-[#202020] border border-white/10 rounded shadow-xl overflow-hidden max-h-56 overflow-y-auto custom-scrollbar">
+                        {searchResults.map((res, i) => (
+                          <div 
+                            key={i} 
+                            className="px-3 py-2 hover:bg-white/5 cursor-pointer transition-colors border-b border-white/5 last:border-0 flex items-center justify-between"
+                            onClick={() => handleSelectSearchResult(res)}
+                          >
+                            <div>
+                              <div className="text-xs font-bold text-white">{res.symbol}</div>
+                              <div className="text-[10px] text-gray-400 truncate max-w-[220px]">{res.name}</div>
+                            </div>
+                            <span className="text-[9px] bg-white/10 px-1.5 py-0.5 rounded text-gray-400 font-semibold">Select</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  /* Selected Stock Card */
+                  <div className="bg-white/[0.02] border border-white/5 p-3.5 rounded-xl flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl p-2 bg-white/[0.02] rounded-xl border border-white/5">📈</span>
+                      <div>
+                        <p className="text-xs font-bold text-white">{formData.symbol}</p>
+                        <p className="text-[10px] text-gray-500 font-medium">{formData.name}</p>
+                      </div>
                     </div>
+                    {!editingId && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormData(prev => ({ ...prev, symbol: "", name: "" }));
+                        }}
+                        className="text-[10px] bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white px-2 py-1 rounded transition-all font-bold"
+                      >
+                        Change Stock
+                      </button>
+                    )}
                   </div>
                 )}
 
