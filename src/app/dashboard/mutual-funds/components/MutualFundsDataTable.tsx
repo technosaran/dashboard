@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { EmptyState } from "@/components/empty-state";
 import type { Tables } from "@/lib/database.types";
 
@@ -66,19 +66,11 @@ function AMCAvatar({ amcName, logoUrl }: { amcName: string; logoUrl: string }) {
 }
 
 export default function MutualFundsDataTable({ funds, onEdit, onSell, onAdd }: MutualFundsDataTableProps) {
-  const [globalFilter, setGlobalFilter] = useState("");
+
 
   const formatMoney = (val: number) => val.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  const filteredFunds = useMemo(() => {
-    if (!globalFilter) return funds;
-    const lower = globalFilter.toLowerCase();
-    return funds.filter(f => 
-      f.fund_name.toLowerCase().includes(lower) || 
-      (f.amc_name && f.amc_name.toLowerCase().includes(lower)) ||
-      (f.category && f.category.toLowerCase().includes(lower))
-    );
-  }, [funds, globalFilter]);
+
 
   if (funds.length === 0) {
     return (
@@ -96,37 +88,23 @@ export default function MutualFundsDataTable({ funds, onEdit, onSell, onAdd }: M
   }
 
   return (
-    <div className="flex flex-col w-full space-y-6">
-      {/* Search and Filters */}
-      <div className="flex items-center justify-between">
-        <div className="relative w-full max-w-sm">
-          <input
-            type="text"
-            placeholder="Search your investments (e.g. HDFC, Equity)"
-            value={globalFilter}
-            onChange={(e) => setGlobalFilter(e.target.value)}
-            className="w-full bg-[#151515] border border-white/10 rounded px-4 py-2 text-xs text-white placeholder-gray-500 focus:border-[#2185d0] outline-none"
-          />
-        </div>
-      </div>
-      {/* Table (Zerodha Coin Style) */}
       <div className="glass-card-static rounded-2xl overflow-hidden flex flex-col border border-white/5 bg-[#151515]">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[1000px]">
+          <table className="w-full text-left border-collapse min-w-[800px]">
             <thead>
               <tr className="border-b border-white/5 bg-black/40 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">
-                <th className="px-6 py-4">Scheme / Fund Name</th>
-                <th className="px-6 py-4 text-right">Units</th>
-                <th className="px-6 py-4 text-right">Avg. NAV</th>
-                <th className="px-6 py-4 text-right">Current NAV</th>
-                <th className="px-6 py-4 text-right">Invested Value</th>
-                <th className="px-6 py-4 text-right">Current Value</th>
-                <th className="px-6 py-4 text-right">P&L (Returns)</th>
-                <th className="px-6 py-4"></th>
+                <th className="px-4 py-4">Scheme / Fund Name</th>
+                <th className="px-4 py-4 text-right">Units</th>
+                <th className="px-4 py-4 text-right">Avg. NAV</th>
+                <th className="px-4 py-4 text-right">Cur. NAV</th>
+                <th className="px-4 py-4 text-right">Invested</th>
+                <th className="px-4 py-4 text-right">Current</th>
+                <th className="px-4 py-4 text-right">P&L</th>
+                <th className="px-4 py-4"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {filteredFunds.map((fund) => {
+              {funds.map((fund) => {
                 const invested = Number(fund.units) * Number(fund.avg_nav);
                 const current = Number(fund.units) * Number(fund.current_nav);
                 const pnl = current - invested;
@@ -139,11 +117,11 @@ export default function MutualFundsDataTable({ funds, onEdit, onSell, onAdd }: M
                 return (
                   <tr key={fund.id} className="group hover:bg-white/[0.02] transition-colors">
                     {/* Scheme Name */}
-                    <td className="px-6 py-4 align-middle">
+                    <td className="px-4 py-3.5 align-middle">
                       <div className="flex items-center gap-3">
                         <AMCAvatar amcName={amc} logoUrl={logo} />
                         <div className="min-w-0">
-                          <h4 className="text-[13px] font-bold text-white leading-tight truncate max-w-[280px]" title={fund.fund_name}>
+                          <h4 className="text-[13px] font-bold text-white leading-tight truncate max-w-[320px]" title={fund.fund_name}>
                             {fund.fund_name}
                           </h4>
                           <div className="flex items-center gap-1.5 mt-1">
@@ -159,7 +137,7 @@ export default function MutualFundsDataTable({ funds, onEdit, onSell, onAdd }: M
                     </td>
 
                     {/* Units */}
-                    <td className="px-6 py-4 text-right align-middle font-mono text-[13px] text-[--text-secondary]">
+                    <td className="px-4 py-3.5 text-right align-middle font-mono text-[13px] text-[--text-secondary]">
                       {Number(fund.units).toFixed(3)}
                     </td>
 
@@ -179,12 +157,12 @@ export default function MutualFundsDataTable({ funds, onEdit, onSell, onAdd }: M
                     </td>
 
                     {/* Current Value */}
-                    <td className="px-6 py-4 text-right align-middle font-mono text-[13px] font-bold text-white">
+                    <td className="px-4 py-3.5 text-right align-middle font-mono text-[13px] font-bold text-white">
                       ₹{formatMoney(current)}
                     </td>
 
                     {/* P&L */}
-                    <td className="px-6 py-4 text-right align-middle font-mono text-[13px]">
+                    <td className="px-4 py-3.5 text-right align-middle font-mono text-[13px]">
                       <span className={`font-bold ${isPositive ? 'text-success' : 'text-danger'}`}>
                         {isPositive ? '+' : ''}₹{formatMoney(pnl)}
                       </span>
@@ -194,7 +172,7 @@ export default function MutualFundsDataTable({ funds, onEdit, onSell, onAdd }: M
                     </td>
 
                     {/* Actions */}
-                    <td className="px-6 py-4 align-middle text-right">
+                    <td className="px-4 py-3.5 align-middle text-right">
                       <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => onEdit(fund)}
@@ -224,6 +202,5 @@ export default function MutualFundsDataTable({ funds, onEdit, onSell, onAdd }: M
           </table>
         </div>
       </div>
-    </div>
   );
 }
