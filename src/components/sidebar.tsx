@@ -160,17 +160,20 @@ const nav = [
   },
 ];
 
-function NavItem({ label, href, icon, pathname }: (typeof nav)[0] & { pathname: string }) {
+function NavItem({ label, href, icon, pathname, isCollapsed }: (typeof nav)[0] & { pathname: string; isCollapsed: boolean }) {
   const active = pathname === href || (href !== "/dashboard" && pathname.startsWith(href + "/"));
   return (
     <Link
       href={href}
       prefetch={true}
       aria-label={label}
-      className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-300 no-underline border ${
+      title={isCollapsed ? label : undefined}
+      className={`relative flex items-center rounded-xl transition-all duration-300 no-underline border ${
+        isCollapsed ? "justify-center p-2.5 w-10 h-10 mx-auto" : "gap-3 px-3 py-2.5 hover:pl-4"
+      } ${
         active 
           ? "text-[--accent-primary-light] bg-[--sidebar-active] border-[rgba(99,102,241,0.15)] shadow-[0_0_15px_rgba(99,102,241,0.08)] font-bold" 
-          : "text-[--text-secondary] border-transparent hover:bg-[var(--glass-hover)] hover:text-[--text-primary] hover:pl-4 group"
+          : "text-[--text-secondary] border-transparent hover:bg-[var(--glass-hover)] hover:text-[--text-primary] group"
       }`}
     >
       {active && (
@@ -182,7 +185,7 @@ function NavItem({ label, href, icon, pathname }: (typeof nav)[0] & { pathname: 
       <span className={`transition-transform duration-300 ${active ? "text-[--accent-primary-light] scale-110" : "text-[--text-muted] group-hover:text-[--text-primary] group-hover:scale-105"}`} aria-hidden="true">
         {icon}
       </span>
-      <span className="font-semibold text-[13px] tracking-tight">{label}</span>
+      {!isCollapsed && <span className="font-semibold text-[13px] tracking-tight">{label}</span>}
     </Link>
   );
 }
@@ -219,6 +222,20 @@ export default function Sidebar() {
   const pathname = usePathname();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [isQuickActionOpen, setIsQuickActionOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("sidebar_collapsed");
+    if (saved === "true") {
+      setTimeout(() => setIsCollapsed(true), 0);
+    }
+  }, []);
+
+  const toggleCollapse = () => {
+    const nextVal = !isCollapsed;
+    setIsCollapsed(nextVal);
+    localStorage.setItem("sidebar_collapsed", String(nextVal));
+  };
 
   const enabledModules = useMemo(() => {
     return profile?.enabled_modules || [...MODULE_KEYS];
@@ -256,7 +273,6 @@ export default function Sidebar() {
     });
   }, [enabledModules]);
 
-
   const mobileNavLeft = filteredNav.slice(0, 2); 
   const ledgerItem = filteredNav.find(n => n.label === "Ledger");
   const mobileNavRight = ledgerItem ? [ledgerItem] : [];
@@ -280,17 +296,41 @@ export default function Sidebar() {
       </div>
 
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex w-52 shrink-0 flex-col h-screen sticky top-0" style={{ background: "var(--sidebar-bg)", borderRight: "1px solid var(--sidebar-border)", backdropFilter: "blur(20px) saturate(1.2)", WebkitBackdropFilter: "blur(20px) saturate(1.2)" }}>
-        <div className="px-6 pt-6 pb-2"><div className="flex flex-col"><h2 className="text-xl font-black text-[--text-primary] tracking-tighter">Finance<span className="text-[--accent-primary]">OS</span></h2></div></div>
-        <nav className="flex-1 px-4 pt-2 space-y-0.5 overflow-y-auto no-scrollbar">
-          <p className="px-4 pb-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-[--text-muted] opacity-60">Navigation</p>
-          {filteredNav.map((item) => (<NavItem key={item.href} {...item} pathname={pathname} />))}
-        </nav>
-        <div className="px-3 py-2 mt-auto pb-8">
-          <button type="button" onClick={handleLogout} className="flex w-full items-center justify-center gap-3 rounded-2xl px-4 py-3 text-[11px] font-black uppercase tracking-widest transition-all bg-rose-500 text-white shadow-lg shadow-rose-500/20 hover:bg-rose-600 hover:shadow-rose-500/30 active:scale-[0.98]">
-            <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-            Sign Out
+      <aside className={`hidden md:flex shrink-0 flex-col h-screen sticky top-0 transition-all duration-300 ${isCollapsed ? "w-20" : "w-52"}`} style={{ background: "var(--sidebar-bg)", borderRight: "1px solid var(--sidebar-border)", backdropFilter: "blur(20px) saturate(1.2)", WebkitBackdropFilter: "blur(20px) saturate(1.2)" }}>
+        <div className={`px-4 pt-6 pb-2 flex items-center ${isCollapsed ? "justify-center" : "justify-between"}`}>
+          {!isCollapsed ? (
+            <h2 className="text-xl font-black text-[--text-primary] tracking-tighter">Finance<span className="text-[--accent-primary]">OS</span></h2>
+          ) : (
+            <h2 className="text-xl font-black text-[--accent-primary] tracking-tighter">F</h2>
+          )}
+          <button 
+            type="button" 
+            onClick={toggleCollapse} 
+            className="p-1.5 rounded-lg hover:bg-white/5 text-[--text-muted] hover:text-white transition-colors"
+            title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+          >
+            {isCollapsed ? (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" /></svg>
+            ) : (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" /></svg>
+            )}
           </button>
+        </div>
+        <nav className="flex-1 px-3 pt-4 space-y-1.5 overflow-y-auto no-scrollbar">
+          {!isCollapsed && <p className="px-4 pb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[--text-muted] opacity-60">Navigation</p>}
+          {filteredNav.map((item) => (<NavItem key={item.href} {...item} pathname={pathname} isCollapsed={isCollapsed} />))}
+        </nav>
+        <div className="px-3 py-4 mt-auto pb-8 flex justify-center">
+          {!isCollapsed ? (
+            <button type="button" onClick={handleLogout} className="flex w-full items-center justify-center gap-3 rounded-2xl px-4 py-3 text-[11px] font-black uppercase tracking-widest transition-all bg-rose-500 text-white shadow-lg shadow-rose-500/20 hover:bg-rose-600 hover:shadow-rose-500/30 active:scale-[0.98]">
+              <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+              Sign Out
+            </button>
+          ) : (
+            <button type="button" onClick={handleLogout} className="p-3 rounded-xl bg-rose-500 text-white hover:bg-rose-600 active:scale-95 shadow-lg shadow-rose-500/20 transition-all flex items-center justify-center w-10 h-10" title="Sign Out">
+              <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+            </button>
+          )}
         </div>
       </aside>
 
