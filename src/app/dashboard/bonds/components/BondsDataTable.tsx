@@ -251,17 +251,17 @@ export default function BondsDataTable({ bonds, onEdit, onAdd }: BondsDataTableP
               return (
                 <div 
                   key={bond.id} 
-                  className="p-5 rounded-2xl border border-white/10 bg-[#141414] hover:border-[--accent-primary]/30 transition-all flex flex-col justify-between min-h-[320px] shadow-lg relative group"
+                  className="p-5 rounded-2xl border border-white/10 bg-gradient-to-b from-[#18181e] to-[#121216] hover:border-purple-500/40 hover:shadow-[0_0_30px_-5px_rgba(139,92,246,0.25)] hover:scale-[1.02] transition-all duration-300 flex flex-col justify-between min-h-[320px] shadow-lg relative group"
                 >
                   <div>
                     {/* Top Segment: Issuer Avatar, Name, Rating */}
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500/10 to-indigo-600/10 border border-purple-500/20 flex items-center justify-center text-purple-400 font-black text-xs shrink-0 shadow-inner">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500/10 to-indigo-600/10 border border-purple-500/20 flex items-center justify-center text-purple-400 font-black text-xs shrink-0 shadow-[0_0_15px_rgba(139,92,246,0.1)]">
                           {initials}
                         </div>
                         <div className="min-w-0">
-                          <h3 className="text-sm font-bold text-white leading-tight truncate" title={bond.bond_name}>
+                          <h3 className="text-sm font-bold text-white leading-tight truncate group-hover:text-purple-400 transition-colors" title={bond.bond_name}>
                             {bond.bond_name}
                           </h3>
                           <p className="text-[10px] text-[--text-muted] mt-1 font-semibold truncate">
@@ -315,11 +315,15 @@ export default function BondsDataTable({ bonds, onEdit, onAdd }: BondsDataTableP
                   <div className="mt-4 pt-3 border-t border-white/5">
                     <div className="flex justify-between items-center text-[9px] text-gray-500 font-bold uppercase tracking-wider">
                       <span>Matures: {bond.maturity_date ? format(parseISO(bond.maturity_date), "dd MMM yyyy") : "N/A"}</span>
-                      <span>{daysLeft > 0 ? `${daysLeft} days left` : "Matured"}</span>
+                      <span className={daysLeft > 0 ? "text-indigo-400" : "text-emerald-400"}>
+                        {daysLeft > 0 ? `${daysLeft} days left` : "Matured"}
+                      </span>
                     </div>
-                    <div className="h-1 w-full bg-white/5 rounded-full mt-1.5 overflow-hidden">
+                    <div className="h-1.5 w-full bg-white/5 rounded-full mt-1.5 overflow-hidden">
                       <div 
-                        className="h-full bg-gradient-to-r from-purple-500 via-indigo-500 to-[--accent-primary] rounded-full transition-all"
+                        className={`h-full rounded-full transition-all ${
+                          daysLeft > 0 ? "bg-gradient-to-r from-purple-500 via-indigo-500 to-[--accent-primary]" : "bg-gradient-to-r from-emerald-500 to-teal-500"
+                        }`}
                         style={{ width: `${progress}%` }} 
                       />
                     </div>
@@ -329,7 +333,7 @@ export default function BondsDataTable({ bonds, onEdit, onAdd }: BondsDataTableP
                       <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">ISIN: {bond.isin}</span>
                       <button 
                         onClick={() => onEdit(bond)} 
-                        className="bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white px-3 py-1 rounded text-xs font-bold transition-all border border-white/10 flex items-center gap-1"
+                        className="bg-white/5 hover:bg-purple-600 hover:text-white px-3 py-1 rounded text-xs font-bold transition-all border border-white/10 hover:border-purple-500 flex items-center gap-1 cursor-pointer"
                       >
                         <Edit className="w-3.5 h-3.5" /> Edit
                       </button>

@@ -39,6 +39,7 @@ export async function revertLedgerTransaction(logId: string) {
     revalidatePath("/dashboard/expenses");
     revalidatePath("/dashboard/income");
     revalidatePath("/dashboard/accounts");
+    revalidatePath("/dashboard/family");
 
     return { success: true };
   } catch (err) {

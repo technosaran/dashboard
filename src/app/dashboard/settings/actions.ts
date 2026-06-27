@@ -126,3 +126,51 @@ export async function updateSettings(settings: ProfileSettings) {
   }
 }
 
+export async function checkApiHealth() {
+  const apis = [
+    { name: "AMFI Mutual Funds API (mfapi.in)", url: "https://api.mfapi.in/mf/122639" },
+    { name: "AMFI India Fallback (amfiindia.com)", url: "https://www.amfiindia.com/spages/NAVAll.txt" },
+    { name: "Tickertape Stocks API", url: "https://api.tickertape.in/search?text=RELIANCE" },
+    { name: "Yahoo Finance API", url: "https://query2.finance.yahoo.com/v1/finance/search?q=RELIANCE" }
+  ];
+
+  const results = [];
+  for (const api of apis) {
+    try {
+      const start = Date.now();
+      const res = await fetch(api.url, {
+        method: "GET",
+        headers: { "User-Agent": "Mozilla/5.0" },
+        signal: AbortSignal.timeout(3000)
+      });
+      const latency = Date.now() - start;
+      if (res.status === 200) {
+        results.push({ name: api.name, status: "Healthy", latency: `${latency}ms`, code: 200 });
+      } else if (res.status === 429) {
+        results.push({ name: api.name, status: "Rate Limited", latency: `${latency}ms`, code: 429 });
+      } else {
+        results.push({ name: api.name, status: "Degraded", latency: `${latency}ms`, code: res.status });
+      }
+    } catch (err) {
+      results.push({ name: api.name, status: "Offline", latency: "—", code: 504, error: err instanceof Error ? err.message : "Timeout" });
+    }
+  }
+
+  // Also include Supabase connection check
+  try {
+    const supabase = await createClient();
+    const start = Date.now();
+    const { data, error } = await supabase.from("accounts").select("id").limit(1);
+    const latency = Date.now() - start;
+    if (error) {
+      results.push({ name: "Supabase DB Connection", status: "Degraded", latency: `${latency}ms`, code: 500, error: error.message });
+    } else {
+      results.push({ name: "Supabase DB Connection", status: "Healthy", latency: `${latency}ms`, code: 200 });
+    }
+  } catch (err) {
+    results.push({ name: "Supabase DB Connection", status: "Offline", latency: "—", code: 500, error: err instanceof Error ? err.message : "Unknown" });
+  }
+
+  return { success: true, results };
+}
+

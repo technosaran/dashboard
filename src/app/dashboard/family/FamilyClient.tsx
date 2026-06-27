@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase-browser";
 import { useFinanceData } from "@/hooks/use-finance-data";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { format } from "date-fns";
+import { Edit2, Trash2, Send, Plus, Users, History } from "lucide-react";
 import {
   addFamilyMember,
   updateFamilyMember,
@@ -265,17 +266,19 @@ export default function FamilyClient() {
         </div>
         <div className="flex gap-3">
           <button
-            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-xs font-bold transition-colors shadow-md flex items-center gap-1.5"
+            className="relative bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 shadow-[0_0_20px_rgba(147,51,234,0.25)] hover:shadow-[0_0_25px_rgba(147,51,234,0.45)] flex items-center gap-2 active:scale-95 cursor-pointer"
             onClick={() => openSendMoney()}
             disabled={members.length === 0}
           >
-            💸 Send Money
+            <Send className="w-3.5 h-3.5" />
+            Send Money
           </button>
           <button
-            className="bg-white/10 hover:bg-white/15 text-white border border-white/10 px-4 py-2 rounded text-xs font-bold transition-colors shadow-md flex items-center gap-1.5"
+            className="bg-[#1e1e1e] hover:bg-white/5 text-white border border-white/10 hover:border-white/20 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center gap-2 active:scale-95 cursor-pointer"
             onClick={() => { resetMemberForm(); setShowMemberModal(true); }}
           >
-            <span className="text-sm">+</span> Add Member
+            <Plus className="w-3.5 h-3.5" />
+            Add Member
           </button>
         </div>
       </div>
@@ -301,27 +304,31 @@ export default function FamilyClient() {
       </section>
 
       {/* ═══ TABS SWITCHER ═══ */}
-      <div className="flex border-b border-white/10 mb-8">
+      <div className="flex p-1 bg-white/[0.02] border border-white/5 rounded-2xl mb-8 max-w-md">
         <button
           onClick={() => setActiveTab("directory")}
-          className={`px-6 py-3 text-sm font-bold transition-colors border-b-2 ${
+          className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer ${
             activeTab === "directory"
-              ? "border-[--accent-primary] text-[--accent-primary]"
-              : "border-transparent text-[--text-muted] hover:text-white"
+              ? "bg-purple-600 text-white shadow-[0_0_20px_rgba(147,51,234,0.3)]"
+              : "text-[--text-muted] hover:text-white hover:bg-white/[0.02]"
           }`}
         >
+          <Users className="w-3.5 h-3.5" />
           Family Directory
         </button>
         <button
           onClick={() => setActiveTab("history")}
-          className={`px-6 py-3 text-sm font-bold transition-colors border-b-2 flex items-center gap-2 ${
+          className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer ${
             activeTab === "history"
-              ? "border-[--accent-primary] text-[--accent-primary]"
-              : "border-transparent text-[--text-muted] hover:text-white"
+              ? "bg-purple-600 text-white shadow-[0_0_20px_rgba(147,51,234,0.3)]"
+              : "text-[--text-muted] hover:text-white hover:bg-white/[0.02]"
           }`}
         >
+          <History className="w-3.5 h-3.5" />
           Transfer History
-          <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white/10 text-[9px] text-white">
+          <span className={`flex h-4 items-center justify-center rounded-full text-[8px] font-black px-1.5 ${
+            activeTab === "history" ? "bg-white/20 text-white" : "bg-white/10 text-white"
+          }`}>
             {transfers.length}
           </span>
         </button>
@@ -352,7 +359,9 @@ export default function FamilyClient() {
                 const initials = member.name.charAt(0).toUpperCase();
                 const avatar = getMemberAvatar(member.name, member.relationship);
                 return (
-                  <div key={member.id} className="glass-card flex flex-col justify-between gap-4 border-white/5 hover:border-purple-500/30">
+                  <div key={member.id} className="glass-card flex flex-col justify-between gap-4 border-white/5 hover:border-purple-500/30 hover:shadow-[0_0_25px_rgba(147,51,234,0.08)] transition-all duration-300 relative group overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-purple-500 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    
                     <div className="flex items-center gap-4">
                       {avatar ? (
                         <img src={avatar} alt={member.name} className="w-12 h-12 rounded-full object-cover border border-white/10 shadow-[0_0_15px_rgba(255,255,255,0.05)]" />
@@ -376,25 +385,26 @@ export default function FamilyClient() {
 
                     <div className="flex gap-2 border-t border-white/5 pt-4 mt-2">
                       <button
-                        className="flex-1 bg-purple-500/10 hover:bg-purple-600 text-purple-400 hover:text-white py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 border border-purple-500/25 active:scale-95"
+                        className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(147,51,234,0.15)] hover:shadow-[0_0_20px_rgba(147,51,234,0.35)] active:scale-95 cursor-pointer"
                         onClick={() => openSendMoney(member.id)}
                       >
+                        <Send className="w-3 h-3" />
                         Send Money
                       </button>
                       <button
-                        className="bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 hover:text-white px-3 py-2 rounded-xl text-xs transition-all active:scale-95"
+                        className="bg-[#1e1e1e] hover:bg-white/5 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white px-3.5 py-2.5 rounded-xl text-xs transition-all duration-300 active:scale-95 flex items-center justify-center cursor-pointer"
                         onClick={() => openEditMember(member)}
                         title="Edit member"
                       >
-                        ✏️
+                        <Edit2 className="w-3.5 h-3.5" />
                       </button>
                       <button
-                        className="bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-500 px-3 py-2 rounded-xl text-xs transition-all active:scale-95"
+                        className="bg-rose-500/10 hover:bg-rose-600 border border-rose-500/20 hover:border-rose-600 text-rose-400 hover:text-white px-3.5 py-2.5 rounded-xl text-xs transition-all duration-300 active:scale-95 flex items-center justify-center cursor-pointer"
                         onClick={() => handleDeleteMember(member.id)}
                         disabled={submitting}
                         title="Delete member"
                       >
-                        🗑️
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>

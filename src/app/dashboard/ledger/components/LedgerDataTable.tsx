@@ -60,6 +60,24 @@ export default function LedgerDataTable({
     return "JOURNAL";
   };
 
+  const getSourceLabel = (srcType: string | null) => {
+    if (!srcType) return "Manual";
+    switch (srcType.toLowerCase()) {
+      case "family_transfer": return "Family";
+      case "investment": return "Stocks";
+      case "mutual_fund": return "Mutual Funds";
+      case "bond": return "Bonds";
+      case "forex": return "Forex";
+      case "alternative_asset": return "Alt Assets";
+      case "liability": return "Liabilities";
+      case "goal": return "Goals";
+      case "transfer": return "Transfer";
+      case "income": return "Income";
+      case "expense": return "Expense";
+      default: return srcType;
+    }
+  };
+
   const columns = useMemo(
     () => [
       columnHelper.accessor("created_at", {
@@ -71,78 +89,9 @@ export default function LedgerDataTable({
         ),
         cell: (info) => {
           const val = info.getValue();
-          return <span className="text-xs text-white">{val ? format(new Date(val), "dd-MM-yyyy") : "—"}</span>;
+          return <span className="text-xs text-white font-medium whitespace-nowrap">{val ? format(new Date(val), "dd-MM-yyyy") : "—"}</span>;
         },
         sortingFn: "datetime",
-      }),
-      columnHelper.accessor("action_type", {
-        header: "Voucher Type",
-        cell: (info) => {
-          const val = info.getValue();
-          const vType = getVoucherType(val);
-          return (
-            <span className={`text-[10px] font-bold px-2 py-0.5 rounded tracking-wide ${
-              vType === "RECEIPT" ? "bg-emerald-500/10 text-emerald-500" :
-              vType === "PAYMENT" ? "bg-rose-500/10 text-rose-500" : "bg-blue-500/10 text-blue-500"
-            }`}>
-              {vType}
-            </span>
-          );
-        }
-      }),
-      columnHelper.accessor("details", {
-        header: "Particulars",
-        cell: (info) => {
-          const log = info.row.original;
-          const details = info.getValue() || "No details provided";
-          const account = log.account_name ? `[${log.account_name}] ` : "";
-          return (
-            <div className="text-xs text-gray-300 leading-relaxed max-w-[320px] break-words">
-              <span className="text-gray-500 font-medium">{account}</span>
-              {details}
-            </div>
-          );
-        }
-      }),
-      columnHelper.display({
-        id: "debit",
-        header: () => <div className="text-right w-full">Debit (Dr)</div>,
-        cell: (info) => {
-          const log = info.row.original;
-          const isDebit = isDebitLog(log);
-          if (!isDebit || log.amount === null) return <div className="text-right text-xs text-gray-600">—</div>;
-          return (
-            <div className="text-right text-sm font-semibold text-rose-500 tabular-nums">
-              {formatMoney(log.amount, getLogCurrency(log.account_id))}
-            </div>
-          );
-        }
-      }),
-      columnHelper.display({
-        id: "credit",
-        header: () => <div className="text-right w-full">Credit (Cr)</div>,
-        cell: (info) => {
-          const log = info.row.original;
-          const isCredit = isCreditLog(log);
-          if (!isCredit || log.amount === null) return <div className="text-right text-xs text-gray-600">—</div>;
-          return (
-            <div className="text-right text-sm font-semibold text-emerald-500 tabular-nums">
-              {formatMoney(log.amount, getLogCurrency(log.account_id))}
-            </div>
-          );
-        }
-      }),
-      columnHelper.accessor("new_balance", {
-        header: () => <div className="text-right w-full">Balance</div>,
-        cell: (info) => {
-          const log = info.row.original;
-          if (log.new_balance === null) return <div className="text-right text-xs text-gray-600">—</div>;
-          return (
-            <div className="text-right text-sm font-bold text-white tabular-nums">
-              {formatMoney(log.new_balance, getLogCurrency(log.account_id))}
-            </div>
-          );
-        }
       }),
       columnHelper.display({
         id: "actions",
@@ -160,13 +109,112 @@ export default function LedgerDataTable({
                   setIsReverting(null);
                 }}
                 disabled={isReverting === log.id}
-                className="text-[10px] font-black uppercase tracking-widest text-danger hover:text-white bg-danger/10 hover:bg-danger/20 border border-danger/20 px-3 py-1.5 rounded-lg transition-all disabled:opacity-50"
+                className="text-[9px] font-black uppercase tracking-widest text-rose-500 hover:text-white bg-rose-500/5 hover:bg-rose-500 border border-rose-500/10 px-2.5 py-1.5 rounded-lg transition-all disabled:opacity-50 cursor-pointer whitespace-nowrap"
               >
                 {isReverting === log.id ? "..." : "Revert"}
               </button>
             </div>
           );
         },
+      }),
+      columnHelper.accessor("account_name", {
+        header: "Account",
+        cell: (info) => <span className="text-xs font-semibold text-[--text-secondary] whitespace-nowrap">{info.getValue() || "—"}</span>
+      }),
+      columnHelper.accessor("source_type", {
+        header: "Source",
+        cell: (info) => {
+          const val = info.getValue();
+          const label = getSourceLabel(val);
+          return (
+            <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-[4px] bg-white/5 border border-white/10 text-gray-300 whitespace-nowrap">
+              {label}
+            </span>
+          );
+        }
+      }),
+      columnHelper.display({
+        id: "action_badge",
+        header: "Action",
+        cell: (info) => getActionBadge(info.row.original)
+      }),
+      columnHelper.accessor("action_type", {
+        header: "Voucher",
+        cell: (info) => {
+          const val = info.getValue();
+          const vType = getVoucherType(val);
+          return (
+            <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-[4px] ${
+              vType === "RECEIPT" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
+              vType === "PAYMENT" ? "bg-rose-500/10 text-rose-400 border border-rose-500/20" : "bg-blue-500/10 text-blue-400 border border-blue-500/20"
+            } whitespace-nowrap`}>
+              {vType}
+            </span>
+          );
+        }
+      }),
+      columnHelper.accessor("details", {
+        header: "Particulars",
+        cell: (info) => {
+          const details = info.getValue() || "No details provided";
+          return (
+            <div className="text-xs text-gray-300 leading-relaxed max-w-[240px] break-words">
+              {details}
+            </div>
+          );
+        }
+      }),
+      columnHelper.accessor("previous_balance", {
+        header: () => <div className="text-right w-full">Prev Balance</div>,
+        cell: (info) => {
+          const log = info.row.original;
+          if (log.previous_balance === null) return <div className="text-right text-xs text-gray-600">—</div>;
+          return (
+            <div className="text-right text-xs font-medium text-[--text-secondary] tabular-nums whitespace-nowrap">
+              {formatMoney(log.previous_balance, getLogCurrency(log.account_id))}
+            </div>
+          );
+        }
+      }),
+      columnHelper.display({
+        id: "debit",
+        header: () => <div className="text-right w-full">Debit (Dr)</div>,
+        cell: (info) => {
+          const log = info.row.original;
+          const isDebit = isDebitLog(log);
+          if (!isDebit || log.amount === null) return <div className="text-right text-xs text-gray-600">—</div>;
+          return (
+            <div className="text-right text-[13px] font-bold text-rose-400 tabular-nums whitespace-nowrap">
+              {formatMoney(log.amount, getLogCurrency(log.account_id))}
+            </div>
+          );
+        }
+      }),
+      columnHelper.display({
+        id: "credit",
+        header: () => <div className="text-right w-full">Credit (Cr)</div>,
+        cell: (info) => {
+          const log = info.row.original;
+          const isCredit = isCreditLog(log);
+          if (!isCredit || log.amount === null) return <div className="text-right text-xs text-gray-600">—</div>;
+          return (
+            <div className="text-right text-[13px] font-bold text-emerald-400 tabular-nums whitespace-nowrap">
+              {formatMoney(log.amount, getLogCurrency(log.account_id))}
+            </div>
+          );
+        }
+      }),
+      columnHelper.accessor("new_balance", {
+        header: () => <div className="text-right w-full">Closing Balance</div>,
+        cell: (info) => {
+          const log = info.row.original;
+          if (log.new_balance === null) return <div className="text-right text-xs text-gray-600">—</div>;
+          return (
+            <div className="text-right text-[13px] font-bold text-white tabular-nums whitespace-nowrap">
+              {formatMoney(log.new_balance, getLogCurrency(log.account_id))}
+            </div>
+          );
+        }
       }),
     ],
     [getLogCurrency, isDebitLog, isCreditLog, formatMoney, onRevert, isReverting]
@@ -212,7 +260,7 @@ export default function LedgerDataTable({
   return (
     <div className="glass-card-static p-0 min-h-[400px] rounded-[24px] border border-white/10 overflow-hidden bg-white/[0.01] shadow-lg shadow-black/25 flex flex-col">
       <div className="w-full overflow-x-auto hidden md:block">
-        <table className="min-w-full divide-y divide-white/10 table-fixed">
+        <table className="min-w-full divide-y divide-white/10">
           <thead className="bg-white/[0.02]">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id} className="border-b border-white/10">
@@ -228,7 +276,7 @@ export default function LedgerDataTable({
             {table.getRowModel().rows.map((row) => (
               <tr key={row.id} className="transition-colors hover:bg-white/[0.02] border-b border-white/5">
                 {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="px-6 py-4.5 whitespace-nowrap">
+                  <td key={cell.id} className="px-6 py-4.5">
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>
                 ))}
