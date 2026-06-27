@@ -128,15 +128,19 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
   const stats = useMemo(() => {
     const totalInvested = activeStocks.reduce((s, i) => s + (Number(i.quantity) * Number(i.buy_price)), 0);
     const totalCurrent = activeStocks.reduce((s, i) => s + (Number(i.quantity) * Number(i.current_price)), 0);
-    const totalPnL = totalCurrent - totalInvested;
+    const unrealizedPnL = totalCurrent - totalInvested;
+    
+    // Include realized P&L from all stocks (partial sells on active + fully sold holdings)
+    const totalRealizedPnL = stocks.reduce((s, i) => s + Number(i.realized_pnl || 0), 0);
+    const totalPnL = unrealizedPnL + totalRealizedPnL;
     const totalPnLPercent = totalInvested > 0 ? (totalPnL / totalInvested) * 100 : 0;
     
     const dayPnL = activeStocks.reduce((s, i) => s + (Number(i.day_change || 0) * Number(i.quantity || 0)), 0);
     const prevDayValue = totalCurrent - dayPnL;
     const dayPnLPercent = prevDayValue > 0 ? (dayPnL / prevDayValue) * 100 : 0;
 
-    return { totalInvested, totalCurrent, totalPnL, totalPnLPercent, dayPnL, dayPnLPercent };
-  }, [activeStocks]);
+    return { totalInvested, totalCurrent, totalPnL, totalPnLPercent, dayPnL, dayPnLPercent, unrealizedPnL, totalRealizedPnL };
+  }, [activeStocks, stocks]);
 
   const pieChartData = useMemo(() => {
     const map: Record<string, number> = {};
@@ -356,10 +360,20 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                 </p>
               </div>
               <div>
-                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Total P&L</p>
+                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Total P&amp;L</p>
                 <p className={`text-xl font-medium ${stats.totalPnL >= 0 ? 'text-[#4caf50]' : 'text-[#f44336]'}`}>
                   {stats.totalPnL >= 0 ? '+' : ''}{formatMoney(stats.totalPnL)} <span className="text-xs font-semibold ml-1">({stats.totalPnL >= 0 ? '+' : ''}{stats.totalPnLPercent.toFixed(2)}%)</span>
                 </p>
+                {stats.totalRealizedPnL !== 0 && (
+                  <div className="flex gap-3 mt-1.5 text-[9px] font-semibold text-gray-500">
+                    <span className={stats.unrealizedPnL >= 0 ? 'text-emerald-500/70' : 'text-rose-500/70'}>
+                      Unrealized: {stats.unrealizedPnL >= 0 ? '+' : ''}{formatMoney(stats.unrealizedPnL)}
+                    </span>
+                    <span className={stats.totalRealizedPnL >= 0 ? 'text-emerald-500/70' : 'text-rose-500/70'}>
+                      Realized: {stats.totalRealizedPnL >= 0 ? '+' : ''}{formatMoney(stats.totalRealizedPnL)}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           )}

@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useRef, useEffect } from "react";
 import { toast } from "react-hot-toast";
-import { upsertBudget, deleteBudget, copyPreviousMonthBudgets, clearAllBudgets, setDefaultBudgets } from "./actions";
+import { upsertBudget, deleteBudget, copyPreviousMonthBudgets, clearAllBudgets } from "./actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { format, parseISO, getDaysInMonth, isSameMonth, subMonths } from "date-fns";
@@ -14,6 +14,7 @@ import { PieChart, Pie, Cell, AreaChart, Area, CartesianGrid, XAxis, YAxis, Tool
 
 import { Tabs } from "@/components/ui/tabs";
 import { Drawer } from "@/components/ui/drawer";
+import { Copy, Trash2, Edit2, Plus, Check } from "lucide-react";
 
 const BUDGET_CATEGORIES = [
   { label: "Rent", icon: "🏠" },
@@ -244,17 +245,7 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
     });
   }
 
-  async function handleSetDefault() {
-    await withLock(async () => {
-      const res = await setDefaultBudgets(selectedMonth, selectedYear);
-      if (!res.error) {
-        toast.success(`Successfully populated recommended limits!`);
-        mutate();
-      } else {
-        toast.error(res.error);
-      }
-    });
-  }
+
 
   const formatCurrency = (value: number) => {
     if (value >= 10000000) return `₹${(value / 10000000).toFixed(2)}Cr`;
@@ -296,7 +287,13 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
           <h3 className="text-2xl md:text-3xl font-black text-[--text-primary] tracking-tight">No Budget Data for This Period</h3>
           <p className="text-sm text-[--text-muted] mt-3 max-w-lg mx-auto font-medium leading-relaxed">Set spending limits by category to monitor your fiscal discipline. Start by allocating budgets for the selected month below.</p>
           <div className="mt-8 flex justify-center">
-             <button onClick={() => setActiveView("categories")} className="btn-primary">Set Allocations</button>
+             <button 
+               onClick={() => setActiveView("categories")} 
+               className="btn-primary flex items-center gap-2 group shadow-lg hover:shadow-[--accent-primary]/25 transition-all duration-300"
+             >
+               <Plus className="w-4 h-4 transition-transform group-hover:scale-110" />
+               <span>Set Allocations</span>
+             </button>
           </div>
         </div>
       ) : (
@@ -526,29 +523,23 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
                     type="button"
                     onClick={handleCarryOver}
                     disabled={submitting}
-                    className="btn-secondary !h-9 px-3.5 text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5"
+                    className="btn-secondary !h-9 px-3.5 text-[10px] font-black uppercase tracking-wider flex items-center gap-2 group transition-all duration-200"
                     title="Carry over last month's budget limits"
                   >
-                    🔄 Carry Over
+                    <Copy className="w-3.5 h-3.5 text-[--text-secondary] group-hover:text-[--accent-primary-light] transition-colors" />
+                    <span>Carry Over</span>
                   </button>
-                  <button
-                    type="button"
-                    onClick={handleSetDefault}
-                    disabled={submitting}
-                    className="btn-secondary !h-9 px-3.5 text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5"
-                    title="Pre-populate with standard budget limits"
-                  >
-                    ⭐ Default Limits
-                  </button>
+
                   {currentBudgets.length > 0 && (
                     <button
                       type="button"
                       onClick={handleClearAll}
                       disabled={submitting}
-                      className="px-3.5 py-1.5 rounded-lg border border-rose-500/20 bg-rose-500/5 hover:bg-rose-500/20 text-rose-400 text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all"
+                      className="h-9 px-3.5 rounded-lg border border-rose-500/20 bg-rose-500/5 hover:bg-rose-500/10 hover:border-rose-500/40 text-rose-400 hover:text-rose-300 text-[10px] font-black uppercase tracking-wider flex items-center gap-2 transition-all duration-200 group"
                       title="Clear all budget limits for this month"
                     >
-                      🗑️ Clear All
+                      <Trash2 className="w-3.5 h-3.5 transition-transform group-hover:scale-110" />
+                      <span>Clear All</span>
                     </button>
                   )}
                 </div>
@@ -632,9 +623,18 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
                             setDrawerSpent(spent);
                             setDrawerOpen(true);
                           }}
-                          className="px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs font-bold text-gray-300 hover:text-white border border-white/5 hover:border-white/10 transition-all flex items-center gap-1.5 cursor-pointer"
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border ${
+                            limit > 0
+                              ? "bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white border-white/5 hover:border-white/10 active:scale-95"
+                              : "bg-[--accent-primary]/10 hover:bg-[--accent-primary]/25 text-[--accent-primary-light] hover:text-white border-[--accent-primary]/10 hover:border-[--accent-primary]/25 active:scale-95"
+                          }`}
                         >
-                          ✏️ {limit > 0 ? "Adjust" : "Set Limit"}
+                          {limit > 0 ? (
+                            <Edit2 className="w-3 h-3 transition-transform" />
+                          ) : (
+                            <Plus className="w-3 h-3 transition-transform" />
+                          )}
+                          <span>{limit > 0 ? "Adjust" : "Set Limit"}</span>
                         </button>
                       </div>
                     </div>
@@ -715,7 +715,7 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
                     key={preset}
                     type="button"
                     onClick={() => setDrawerAmount(preset.toString())}
-                    className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/10 text-xs font-bold text-gray-300 hover:text-white transition-all cursor-pointer"
+                    className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 active:scale-95 border border-white/5 hover:border-white/10 text-xs font-semibold text-gray-300 hover:text-white transition-all cursor-pointer"
                   >
                     ₹{preset.toLocaleString()}
                   </button>
@@ -726,7 +726,7 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
                     const curr = Number(drawerAmount || 0);
                     setDrawerAmount((curr + 1000).toString());
                   }}
-                  className="px-3 py-1.5 rounded-lg bg-[--accent-primary]/10 hover:bg-[--accent-primary]/25 text-[--accent-primary-light] text-xs font-black cursor-pointer"
+                  className="px-3 py-1.5 rounded-lg bg-[--accent-primary]/10 hover:bg-[--accent-primary]/20 active:scale-95 border border-[--accent-primary]/10 hover:border-[--accent-primary]/25 text-[--accent-primary-light] text-xs font-bold transition-all cursor-pointer"
                 >
                   +1k
                 </button>
@@ -736,7 +736,7 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
                     const curr = Number(drawerAmount || 0);
                     setDrawerAmount((curr + 5000).toString());
                   }}
-                  className="px-3 py-1.5 rounded-lg bg-[--accent-primary]/10 hover:bg-[--accent-primary]/25 text-[--accent-primary-light] text-xs font-black cursor-pointer"
+                  className="px-3 py-1.5 rounded-lg bg-[--accent-primary]/10 hover:bg-[--accent-primary]/20 active:scale-95 border border-[--accent-primary]/10 hover:border-[--accent-primary]/25 text-[--accent-primary-light] text-xs font-bold transition-all cursor-pointer"
                 >
                   +5k
                 </button>
@@ -752,9 +752,19 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
                   setDrawerOpen(false);
                 }}
                 disabled={submitting}
-                className="flex-1 py-3 rounded-xl bg-[--accent-primary] hover:bg-[--accent-primary-hover] text-white text-xs font-black uppercase tracking-wider transition-all cursor-pointer"
+                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[--accent-primary] to-indigo-600 hover:from-[--accent-primary-hover] hover:to-indigo-700 text-white text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
               >
-                {submitting ? "Saving..." : "Save Allocation"}
+                {submitting ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-3.5 h-3.5" />
+                    <span>Save Allocation</span>
+                  </>
+                )}
               </button>
               {Number(drawerAmount) > 0 && (
                 <button
@@ -764,9 +774,10 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
                     setDrawerOpen(false);
                   }}
                   disabled={submitting}
-                  className="px-4 py-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-black uppercase tracking-wider transition-all border border-rose-500/10 cursor-pointer"
+                  className="px-5 py-3 rounded-xl bg-rose-500/5 hover:bg-rose-500/15 text-rose-400 hover:text-rose-300 text-xs font-black uppercase tracking-wider transition-all border border-rose-500/10 hover:border-rose-500/30 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
                 >
-                  Clear
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Clear</span>
                 </button>
               )}
             </div>

@@ -8,11 +8,11 @@ export async function addLiability(formData: {
   category: string;
   total_amount: number;
   remaining_amount: number;
-  interest_rate?: number;
-  monthly_payment?: number;
-  due_date?: string;
-  notes?: string;
-  account_id?: string;
+  interest_rate?: number | null;
+  monthly_payment?: number | null;
+  due_date?: string | null;
+  notes?: string | null;
+  account_id?: string | null;
 }) {
   try {
     const supabase = await createClient();
@@ -68,6 +68,7 @@ export async function addLiability(formData: {
 type LiabilityUpdate = {
   name?: string;
   category?: string;
+  total_amount?: number;
   remaining_amount?: number;
   interest_rate?: number | null;
   monthly_payment?: number | null;
@@ -86,6 +87,7 @@ export async function updateLiability(id: string, formData: LiabilityUpdate) {
       .update({
         name: formData.name,
         category: formData.category,
+        total_amount: formData.total_amount,
         remaining_amount: formData.remaining_amount,
         interest_rate: formData.interest_rate,
         monthly_payment: formData.monthly_payment,

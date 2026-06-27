@@ -64,7 +64,7 @@ export default function LiabilitiesDataTable({ liabilities, onEdit, onDelete, on
         cell: (info) => {
           const current = Number(info.row.original.remaining_amount);
           const total = Number(info.row.original.total_amount);
-          const pct = total > 0 ? (1 - (current / total)) * 100 : 0;
+          const pct = total > 0 ? Math.max(0, Math.min(100, (1 - (current / total)) * 100)) : 0;
           return (
             <div className="w-full max-w-[150px]">
               <div className="flex justify-between items-center mb-1">
@@ -74,7 +74,7 @@ export default function LiabilitiesDataTable({ liabilities, onEdit, onDelete, on
               <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-gradient-to-r from-rose-500 to-orange-400"
-                  style={{ width: `${Math.min(pct, 100)}%` }}
+                  style={{ width: `${pct}%` }}
                 />
               </div>
             </div>
@@ -100,11 +100,19 @@ export default function LiabilitiesDataTable({ liabilities, onEdit, onDelete, on
         cell: (info) => {
           const val = info.getValue();
           if (!val) return <span className="text-[11px] text-[--text-muted]">--</span>;
-          return (
-            <div>
-              <p className="text-[12px] font-bold text-white">{format(parseISO(val), "MMM d, yyyy")}</p>
-            </div>
-          );
+          try {
+            const dateObj = parseISO(val);
+            if (isNaN(dateObj.getTime())) {
+              return <span className="text-[11px] text-[--text-muted]">--</span>;
+            }
+            return (
+              <div>
+                <p className="text-[12px] font-bold text-white">{format(dateObj, "MMM d, yyyy")}</p>
+              </div>
+            );
+          } catch {
+            return <span className="text-[11px] text-[--text-muted]">--</span>;
+          }
         },
       }),
       columnHelper.display({

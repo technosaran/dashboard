@@ -55,10 +55,13 @@ export default function LiabilitiesClient({ initialData }: { initialData?: Finan
     const totalPrincipal = liabilities.reduce((s, l) => s + Number(l.total_amount), 0);
     const monthlyEMI = liabilities.reduce((s, l) => s + Number(l.monthly_payment || 0), 0);
     const highestInterest = liabilities.reduce((max, l) => Math.max(max, Number(l.interest_rate || 0)), 0);
+    const weightedInterest = totalDebt > 0 
+      ? liabilities.reduce((sum, l) => sum + (Number(l.remaining_amount) * Number(l.interest_rate || 0)), 0) / totalDebt 
+      : 0;
     const totalPaid = totalPrincipal - totalDebt;
     const payoffPct = totalPrincipal > 0 ? (totalPaid / totalPrincipal) * 100 : 0;
     
-    return { totalDebt, monthlyEMI, highestInterest, totalPrincipal, totalPaid, payoffPct };
+    return { totalDebt, monthlyEMI, highestInterest, weightedInterest, totalPrincipal, totalPaid, payoffPct };
   }, [liabilities]);
 
   const pieChartData = useMemo(() => {
@@ -89,15 +92,23 @@ export default function LiabilitiesClient({ initialData }: { initialData?: Finan
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const total = parseFloat(formData.total_amount);
+    const remaining = parseFloat(formData.remaining_amount);
+    if (remaining > total) {
+      toast.error("Remaining balance cannot exceed total principal!");
+      return;
+    }
+
     await withLock(async () => {
       const { account_id, ...libData } = formData;
       const payload = {
         ...libData,
-        total_amount: parseFloat(formData.total_amount),
-        remaining_amount: parseFloat(formData.remaining_amount),
-        interest_rate: formData.interest_rate ? parseFloat(formData.interest_rate) : undefined,
-        monthly_payment: formData.monthly_payment ? parseFloat(formData.monthly_payment) : undefined,
-        due_date: formData.due_date || undefined,
+        total_amount: total,
+        remaining_amount: remaining,
+        interest_rate: formData.interest_rate ? parseFloat(formData.interest_rate) : null,
+        monthly_payment: formData.monthly_payment ? parseFloat(formData.monthly_payment) : null,
+        due_date: formData.due_date || null,
+        notes: formData.notes || null,
       };
 
       const res = editingId 
@@ -178,8 +189,8 @@ export default function LiabilitiesClient({ initialData }: { initialData?: Finan
           </div>
           <div className="glass-card-static p-6 border-white/5">
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Weighted Interest</p>
-            <p className="text-2xl md:text-3xl font-black text-white">{stats.highestInterest.toFixed(1)}%</p>
-            <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Max APR %</p>
+            <p className="text-2xl md:text-3xl font-black text-white">{stats.weightedInterest.toFixed(2)}%</p>
+            <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Max: {stats.highestInterest.toFixed(1)}% APR</p>
           </div>
           <div className="glass-card-static p-6 border-white/5">
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Total Paid</p>
@@ -305,7 +316,7 @@ export default function LiabilitiesClient({ initialData }: { initialData?: Finan
                   remaining_amount: l.remaining_amount.toString(),
                   interest_rate: (l.interest_rate || "").toString(),
                   monthly_payment: (l.monthly_payment || "").toString(),
-                  due_date: l.due_date || "",
+                  due_date: l.due_date ? l.due_date.substring(0, 10) : "",
                   notes: l.notes || "", 
                   account_id: "",
                 });
@@ -367,15 +378,22 @@ export default function LiabilitiesClient({ initialData }: { initialData?: Finan
                 <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Next Due Date</label>
                 <input type="date" className="input-premium" value={formData.due_date} onChange={e => setFormData({...formData, due_date: e.target.value})} autoComplete="new-password" />
               </div>
-              <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Destination Account (Optional)</label>
-                <select aria-label="Select account" id="liability-account" name="account_id" className="input-premium" value={formData.account_id} onChange={e => setFormData({...formData, account_id: e.target.value})}>
-                  <option value="">No Transaction</option>
-                  {accounts.map(acc => (
-                    <option key={acc.id} value={acc.id}>{acc.name} (₹{acc.balance.toLocaleString()})</option>
-                  ))}
-                </select>
-              </div>
+              {!editingId ? (
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Destination Account (Optional)</label>
+                  <select aria-label="Select account" id="liability-account" name="account_id" className="input-premium" value={formData.account_id} onChange={e => setFormData({...formData, account_id: e.target.value})}>
+                    <option value="">No Transaction</option>
+                    {accounts.map(acc => (
+                      <option key={acc.id} value={acc.id}>{acc.name} (₹{acc.balance.toLocaleString()})</option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div className="space-y-3 opacity-60">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Destination Account</label>
+                  <input className="input-premium bg-white/5 cursor-not-allowed text-[--text-muted]" value="N/A (Disbursement already processed)" disabled />
+                </div>
+              )}
             </div>
 
             <div className="space-y-3">
