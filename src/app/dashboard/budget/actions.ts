@@ -102,3 +102,65 @@ export async function copyPreviousMonthBudgets(
     return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
   }
 }
+
+export async function clearAllBudgets(month: number, year: number) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Not authenticated" };
+
+    const { error } = await supabase
+      .from("budgets")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("period_month", month)
+      .eq("period_year", year);
+
+    if (error) return { error: error.message };
+    revalidatePath("/dashboard/budget");
+    return { success: true };
+  } catch (err) {
+    console.error("Error in clearAllBudgets:", err);
+    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+  }
+}
+
+export async function setDefaultBudgets(month: number, year: number) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Not authenticated" };
+
+    const defaultBudgets = [
+      { category: "Rent", amount: 15000 },
+      { category: "Food", amount: 8000 },
+      { category: "Travel", amount: 4000 },
+      { category: "Investment", amount: 10000 },
+      { category: "Transport", amount: 3000 },
+      { category: "Utilities", amount: 3000 },
+      { category: "Entertainment", amount: 4000 },
+      { category: "Shopping", amount: 5000 },
+      { category: "Subscription", amount: 1500 },
+      { category: "Others", amount: 2000 }
+    ].map(b => ({
+      user_id: user.id,
+      category: b.category,
+      amount: b.amount,
+      period_month: month,
+      period_year: year
+    }));
+
+    const { error } = await supabase
+      .from("budgets")
+      .upsert(defaultBudgets, {
+        onConflict: "user_id,category,period_month,period_year"
+      });
+
+    if (error) return { error: error.message };
+    revalidatePath("/dashboard/budget");
+    return { success: true, count: defaultBudgets.length };
+  } catch (err) {
+    console.error("Error in setDefaultBudgets:", err);
+    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+  }
+}

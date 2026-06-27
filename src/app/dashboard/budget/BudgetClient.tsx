@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useRef, useEffect } from "react";
 import { toast } from "react-hot-toast";
-import { upsertBudget, deleteBudget, copyPreviousMonthBudgets } from "./actions";
+import { upsertBudget, deleteBudget, copyPreviousMonthBudgets, clearAllBudgets, setDefaultBudgets } from "./actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { format, parseISO, getDaysInMonth, isSameMonth, subMonths } from "date-fns";
@@ -13,6 +13,7 @@ const ResponsiveContainer = dynamic(() => import("recharts").then((mod) => mod.R
 import { PieChart, Pie, Cell, AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip as RechartsTooltip } from "recharts";
 
 import { Tabs } from "@/components/ui/tabs";
+import { Drawer } from "@/components/ui/drawer";
 
 const BUDGET_CATEGORIES = [
   { label: "Rent", icon: "🏠" },
@@ -33,8 +34,11 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [activeView, setActiveView] = useState<"overview" | "categories">("overview");
   
-  const [editingCategory, setEditingCategory] = useState<string | null>(null);
-  const [editValue, setEditValue] = useState<string>("");
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerCategory, setDrawerCategory] = useState<string>("");
+  const [drawerIcon, setDrawerIcon] = useState<string>("📦");
+  const [drawerAmount, setDrawerAmount] = useState<string>("");
+  const [drawerSpent, setDrawerSpent] = useState<number>(0);
 
   const [submitting, withLock] = useSubmitLock();
   const activeSubmissionsRef = useRef<Record<string, boolean>>({});
@@ -220,6 +224,31 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
       const res = await copyPreviousMonthBudgets(fromMonth, fromYear, selectedMonth, selectedYear);
       if (!res.error) {
         toast.success(`Successfully carried over ${res.count} budget limits!`);
+        mutate();
+      } else {
+        toast.error(res.error);
+      }
+    });
+  }
+
+  async function handleClearAll() {
+    if (!confirm("Are you sure you want to clear all budget limits for this month?")) return;
+    await withLock(async () => {
+      const res = await clearAllBudgets(selectedMonth, selectedYear);
+      if (!res.error) {
+        toast.success("Successfully cleared all budget limits!");
+        mutate();
+      } else {
+        toast.error(res.error);
+      }
+    });
+  }
+
+  async function handleSetDefault() {
+    await withLock(async () => {
+      const res = await setDefaultBudgets(selectedMonth, selectedYear);
+      if (!res.error) {
+        toast.success(`Successfully populated recommended limits!`);
         mutate();
       } else {
         toast.error(res.error);
@@ -451,11 +480,7 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
                         <p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mt-1">Expense Ratio</p>
                       </div>
                    </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : (
+             ) : (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {overBudgetCategories.length > 0 && (
               <div className="glass-card-static p-8 border-danger/30 bg-gradient-to-br from-danger/5 to-transparent">
@@ -487,23 +512,42 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
 
             {/* Category Budgeting */}
             <div className="space-y-6">
-              <div className="flex justify-between items-center bg-white/[0.01] p-4 rounded-2xl border border-white/5">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white/[0.01] p-5 rounded-2xl border border-white/5 gap-4">
                 <div>
                   <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[--text-primary]">Allocation by Segment</h3>
                   <p className="text-xs text-[--text-muted] mt-1">Set maximum monthly limits per expense type.</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleCarryOver}
-                  disabled={submitting}
-                  className="btn-secondary !h-9 px-3.5 text-[10px] font-black uppercase tracking-wider flex items-center gap-2"
-                  title="Carry over last month's budget limits"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 7.5V6.108c0-1.135.845-2.098 1.976-2.192.373-.03.748-.057 1.123-.08M15.75 18H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08M15.75 18.75v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5A3.375 3.375 0 006.375 7.5H5.25m11.9-3.664A2.251 2.251 0 0015 2.25h-1.5a2.251 2.251 0 00-2.15 1.586m5.8 0c.065.21.1.433.1.664v.75h-6V4.5c0-.231.035-.454.1-.664M6.75 7.5H4.875c-.621 0-1.125.504-1.125 1.125v9.75c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V16.5a9 9 0 00-9-9z" />
-                  </svg>
-                  Carry Over Limits
-                </button>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={handleCarryOver}
+                    disabled={submitting}
+                    className="btn-secondary !h-9 px-3.5 text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5"
+                    title="Carry over last month's budget limits"
+                  >
+                    🔄 Carry Over
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSetDefault}
+                    disabled={submitting}
+                    className="btn-secondary !h-9 px-3.5 text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5"
+                    title="Pre-populate with standard budget limits"
+                  >
+                    ⭐ Default Limits
+                  </button>
+                  {currentBudgets.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleClearAll}
+                      disabled={submitting}
+                      className="px-3.5 py-1.5 rounded-lg border border-rose-500/20 bg-rose-500/5 hover:bg-rose-500/20 text-rose-400 text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all"
+                      title="Clear all budget limits for this month"
+                    >
+                      🗑️ Clear All
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -512,11 +556,9 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
                   const spent = actualSpending[cat.label] || 0;
                   const limit = Number(budget?.amount || 0);
                   const percent = limit > 0 ? (spent / limit) * 100 : 0;
-                  
-                  const isEditing = editingCategory === cat.label;
 
                   return (
-                    <div key={cat.label} className="glass-card-static p-5 flex flex-col justify-between border-white/5 bg-gradient-to-b from-white/[0.01] to-transparent hover:from-white/[0.02] transition-all duration-300">
+                    <div key={cat.label} className="glass-card-static p-5 flex flex-col justify-between border-white/5 bg-gradient-to-b from-white/[0.01] to-transparent hover:from-white/[0.02] transition-all duration-300 min-h-[190px]">
                       <div>
                         {/* Card Header */}
                         <div className="flex justify-between items-start gap-2 mb-4">
@@ -546,7 +588,7 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
 
                         {/* Progress Bar */}
                         {limit > 0 && (
-                          <div className="my-5">
+                          <div className="my-4">
                             <div className="flex justify-between text-[10px] font-bold text-[--text-muted] mb-1.5">
                               <span>{percent.toFixed(0)}% used</span>
                               <span>Limit: ₹{limit.toLocaleString()}</span>
@@ -566,122 +608,30 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
                         )}
                       </div>
 
-                      {/* Inline Limit Editor / Display */}
-                      <div className="mt-4 pt-4 border-t border-white/5">
-                        {isEditing ? (
-                          <div className="space-y-3">
-                            <div className="flex gap-2">
-                              <input
-                                autoFocus
-                                type="number"
-                                placeholder="Limit Amount"
-                                value={editValue}
-                                onChange={(e) => setEditValue(e.target.value)}
-                                className="input-premium py-1 text-xs w-full text-right font-black"
-                                autoComplete="off"
-                                inputMode="decimal"
-                                name={`edit-limit-${cat.label}`}
-                                id={`edit-limit-${cat.label}`}
-                              />
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  handleBudgetChange(cat.label, editValue);
-                                  setEditingCategory(null);
-                                }}
-                                className="p-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-white border border-emerald-500/20 hover:border-transparent transition-all"
-                                title="Save Limit"
-                              >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                                </svg>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setEditingCategory(null)}
-                                className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-[--text-muted] hover:text-white border border-white/10 transition-all"
-                                title="Cancel"
-                              >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                              </button>
-                            </div>
-                            
-                            {/* Preset Buttons */}
-                            <div className="flex flex-wrap gap-1.5">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const current = Number(editValue) || 0;
-                                  setEditValue((current + 1000).toString());
-                                }}
-                                className="px-2 py-1 rounded-[6px] bg-white/5 hover:bg-white/10 border border-white/5 text-[9px] font-black uppercase tracking-wider text-[--text-secondary]"
-                              >
-                                +1k
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const current = Number(editValue) || 0;
-                                  setEditValue((current + 5000).toString());
-                                }}
-                                className="px-2 py-1 rounded-[6px] bg-white/5 hover:bg-white/10 border border-white/5 text-[9px] font-black uppercase tracking-wider text-[--text-secondary]"
-                              >
-                                +5k
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const current = Number(editValue) || 0;
-                                  setEditValue((current + 10000).toString());
-                                }}
-                                className="px-2 py-1 rounded-[6px] bg-white/5 hover:bg-white/10 border border-white/5 text-[9px] font-black uppercase tracking-wider text-[--text-secondary]"
-                              >
-                                +10k
-                              </button>
-                              {limit > 0 && (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setEditValue("");
-                                    handleBudgetChange(cat.label, "");
-                                    setEditingCategory(null);
-                                  }}
-                                  className="px-2 py-1 rounded-[6px] bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/10 text-[9px] font-black uppercase tracking-wider text-rose-400 ml-auto"
-                                >
-                                  Clear Limit
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="flex justify-between items-center">
-                            <span className="text-[11px] text-[--text-muted] font-medium">
-                              {limit > 0 ? (
-                                <>
-                                  Target limit: <span className="font-bold text-white">₹{limit.toLocaleString()}</span>
-                                </>
-                              ) : (
-                                "No spending limit set"
-                              )}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setEditingCategory(cat.label);
-                                setEditValue(limit ? limit.toString() : "");
-                              }}
-                              className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 hover:text-white text-xs font-bold text-[--text-secondary] border border-white/5 hover:border-white/10 transition-all flex items-center gap-1.5"
-                            >
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.43l-1.003.828c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.43l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.991l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.28z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                              </svg>
-                              {limit > 0 ? "Adjust" : "Set Limit"}
-                            </button>
-                          </div>
-                        )}
+                      {/* Display / Adjust Trigger */}
+                      <div className="mt-4 pt-4 border-t border-white/5 flex justify-between items-center">
+                        <span className="text-[11px] text-[--text-muted] font-medium">
+                          {limit > 0 ? (
+                            <>
+                              Limit: <span className="font-bold text-white">₹{limit.toLocaleString()}</span>
+                            </>
+                          ) : (
+                            "No limit set"
+                          )}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDrawerCategory(cat.label);
+                            setDrawerIcon(cat.icon);
+                            setDrawerAmount(limit ? limit.toString() : "");
+                            setDrawerSpent(spent);
+                            setDrawerOpen(true);
+                          }}
+                          className="px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs font-bold text-gray-300 hover:text-white border border-white/5 hover:border-white/10 transition-all flex items-center gap-1.5 cursor-pointer"
+                        >
+                          ✏️ {limit > 0 ? "Adjust" : "Set Limit"}
+                        </button>
                       </div>
                     </div>
                   );
@@ -691,6 +641,133 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
           </div>
         )}
       </>
+      )}
+
+      {/* Slide-out Category Allocation Drawer */}
+      {drawerOpen && (
+        <Drawer
+          isOpen={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          title={`Limit: ${drawerCategory}`}
+        >
+          <div className="space-y-6">
+            <div className="flex items-center gap-4 bg-white/[0.02] p-4 rounded-2xl border border-white/5">
+              <span className="text-4xl p-2 bg-white/[0.02] rounded-2xl border border-white/5 shadow-inner">{drawerIcon}</span>
+              <div>
+                <h4 className="text-sm font-black text-white">{drawerCategory}</h4>
+                <p className="text-xs text-[--text-muted] mt-0.5">Spent this month: <span className="font-bold text-white">₹{drawerSpent.toLocaleString()}</span></p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]" htmlFor="drawer-limit-amount">
+                Budget Limit (₹)
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  placeholder="e.g. 5000"
+                  value={drawerAmount}
+                  onChange={(e) => setDrawerAmount(e.target.value)}
+                  className="w-full bg-[#151515] border border-white/10 rounded-xl px-4 py-3 text-lg font-black text-white outline-none focus:border-[#2185d0] text-right"
+                  autoComplete="off"
+                  inputMode="decimal"
+                  id="drawer-limit-amount"
+                />
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">₹</span>
+              </div>
+            </div>
+
+            {/* Range Slider for quick adjustments */}
+            <div className="space-y-2">
+              <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">
+                <span>Adjust Slider</span>
+                <span className="text-[--accent-primary-light] font-black">
+                  ₹{Number(drawerAmount || 0).toLocaleString()}
+                </span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max={Math.max(100000, Number(drawerAmount || 0) * 1.5)}
+                step="500"
+                value={Number(drawerAmount || 0)}
+                onChange={(e) => setDrawerAmount(e.target.value)}
+                className="w-full h-1.5 bg-white/15 rounded-lg appearance-none cursor-pointer accent-[--accent-primary]"
+                aria-label="Budget limit range slider"
+              />
+              <div className="flex justify-between text-[9px] font-bold text-[--text-muted]">
+                <span>₹0</span>
+                <span>₹{Math.max(100000, Number(drawerAmount || 0) * 1.5).toLocaleString()}</span>
+              </div>
+            </div>
+
+            {/* Quick preset buttons */}
+            <div className="space-y-2">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Presets</p>
+              <div className="flex flex-wrap gap-2">
+                {[2000, 5000, 10000, 20000, 50000].map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => setDrawerAmount(preset.toString())}
+                    className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/10 text-xs font-bold text-gray-300 hover:text-white transition-all cursor-pointer"
+                  >
+                    ₹{preset.toLocaleString()}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const curr = Number(drawerAmount || 0);
+                    setDrawerAmount((curr + 1000).toString());
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-[--accent-primary]/10 hover:bg-[--accent-primary]/25 text-[--accent-primary-light] text-xs font-black cursor-pointer"
+                >
+                  +1k
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const curr = Number(drawerAmount || 0);
+                    setDrawerAmount((curr + 5000).toString());
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-[--accent-primary]/10 hover:bg-[--accent-primary]/25 text-[--accent-primary-light] text-xs font-black cursor-pointer"
+                >
+                  +5k
+                </button>
+              </div>
+            </div>
+
+            {/* Save / Clear actions */}
+            <div className="pt-6 border-t border-white/5 flex gap-3">
+              <button
+                type="button"
+                onClick={async () => {
+                  await handleBudgetChange(drawerCategory, drawerAmount);
+                  setDrawerOpen(false);
+                }}
+                disabled={submitting}
+                className="flex-1 py-3 rounded-xl bg-[--accent-primary] hover:bg-[--accent-primary-hover] text-white text-xs font-black uppercase tracking-wider transition-all cursor-pointer"
+              >
+                {submitting ? "Saving..." : "Save Allocation"}
+              </button>
+              {Number(drawerAmount) > 0 && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await handleBudgetChange(drawerCategory, "");
+                    setDrawerOpen(false);
+                  }}
+                  disabled={submitting}
+                  className="px-4 py-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-black uppercase tracking-wider transition-all border border-rose-500/10 cursor-pointer"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+          </div>
+        </Drawer>
       )}
     </div>
   );
