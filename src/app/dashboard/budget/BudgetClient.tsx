@@ -480,7 +480,11 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
                         <p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mt-1">Expense Ratio</p>
                       </div>
                    </div>
-             ) : (
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {overBudgetCategories.length > 0 && (
               <div className="glass-card-static p-8 border-danger/30 bg-gradient-to-br from-danger/5 to-transparent">
