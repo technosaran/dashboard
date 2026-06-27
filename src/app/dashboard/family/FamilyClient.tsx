@@ -130,9 +130,9 @@ export default function FamilyClient() {
   useEffect(() => {
     const action = searchParams?.get("action");
     if (action === "new") {
-      setShowMemberModal(true);
+      setTimeout(() => setShowMemberModal(true), 0);
     } else if (action === "send") {
-      setShowTransferModal(true);
+      setTimeout(() => setShowTransferModal(true), 0);
     }
   }, [searchParams]);
 
@@ -445,7 +445,6 @@ export default function FamilyClient() {
                   {filteredTransfers.map((tr) => {
                     const memberName = getMemberName(tr.family_member_id);
                     const accountName = accounts.find(a => a.id === tr.account_id)?.name || "Unknown Account";
-                    const matchingLog = ledgerLogs.find(log => log.source_id === tr.id && log.source_type === "family_transfer");
 
                     return (
                       <tr key={tr.id} className="hover:bg-white/[0.02] transition-colors group">

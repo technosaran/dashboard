@@ -217,7 +217,7 @@ export default function LedgerDataTable({
         }
       }),
     ],
-    [getLogCurrency, isDebitLog, isCreditLog, formatMoney, onRevert, isReverting]
+    [getLogCurrency, isDebitLog, isCreditLog, formatMoney, onRevert, isReverting, getActionBadge]
   );
 
   // eslint-disable-next-line react-hooks/incompatible-library

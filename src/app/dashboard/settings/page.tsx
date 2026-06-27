@@ -43,6 +43,7 @@ export default function SettingsPage() {
     if (activeTab === "status" && diagnostics.length === 0) {
       runDiagnostics();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
   const defaultAccounts = profile?.default_accounts || {};
@@ -484,7 +485,7 @@ export default function SettingsPage() {
               ))}
               {diagnostics.length === 0 && !runningDiagnostics && (
                 <div className="text-center py-6 text-xs text-[--text-muted]">
-                  No diagnostics run yet. Click "Run Diagnostics" to check API health.
+                  No diagnostics run yet. Click &quot;Run Diagnostics&quot; to check API health.
                 </div>
               )}
             </div>
