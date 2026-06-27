@@ -31,7 +31,7 @@ const nav = [
     ),
   },
   {
-    label: "Transactions",
+    label: "Income & Expenses",
     href: "/dashboard/transactions",
     icon: (
       <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
@@ -54,26 +54,7 @@ const nav = [
     href: "/dashboard/investments",
     icon: (
       <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-        <path d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
-      </svg>
-    ),
-  },
-  {
-    label: "Assets",
-    href: "/dashboard/alternative-assets",
-    icon: (
-      <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-        <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-      </svg>
-    ),
-  },
-  {
-    label: "Forex",
-    href: "/dashboard/forex",
-    icon: (
-      <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-        <circle cx="12" cy="12" r="10" />
-        <path d="M12 2a14.5 14.5 0 000 20M12 2a14.5 14.5 0 010 20M2 12h20" />
+        <path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     ),
   },
@@ -203,7 +184,30 @@ export default function Sidebar() {
   };
 
   const enabledModules = useMemo(() => {
-    return profile?.enabled_modules || [...MODULE_KEYS];
+    const raw = profile?.enabled_modules || [...MODULE_KEYS];
+    const populated = [...raw] as string[];
+    
+    // Bidirectional fallback mapping for Cashflow
+    if (raw.includes("Income & Expenses")) {
+      populated.push("Income", "Expenses");
+    } else if (raw.includes("Income") || raw.includes("Expenses")) {
+      populated.push("Income & Expenses");
+    }
+    
+    // Bidirectional fallback mapping for Investments
+    if (raw.includes("Investments")) {
+      populated.push("Stocks", "Mutual Funds", "Bonds", "FnO", "Forex");
+    } else if (
+      raw.includes("Stocks") || 
+      raw.includes("Mutual Funds") || 
+      raw.includes("Bonds") || 
+      raw.includes("FnO") || 
+      raw.includes("Forex")
+    ) {
+      populated.push("Investments");
+    }
+    
+    return populated;
   }, [profile]);
 
   const filteredNav = useMemo(() => {
@@ -211,11 +215,11 @@ export default function Sidebar() {
       if (["Dashboard", "Accounts", "Wallet", "Settings", "Family"].includes(item.label)) return true;
 
       // Dynamic visibility rules for unified sections
-      if (item.label === "Transactions") {
+      if (item.label === "Income & Expenses") {
         return enabledModules.includes("Income") || enabledModules.includes("Expenses");
       }
       if (item.label === "Investments") {
-        return enabledModules.includes("Stocks") || enabledModules.includes("Mutual Funds") || enabledModules.includes("Bonds") || enabledModules.includes("FnO");
+        return enabledModules.includes("Stocks") || enabledModules.includes("Mutual Funds") || enabledModules.includes("Bonds") || enabledModules.includes("FnO") || enabledModules.includes("Forex");
       }
 
       const dbLabel: ModuleKey | string = 

@@ -16,7 +16,28 @@ export function useNetWorth() {
   } = data || {};
 
   return useMemo(() => {
-    const enabledModules = profile?.enabled_modules || [...MODULE_KEYS];
+    const raw = profile?.enabled_modules || [...MODULE_KEYS];
+    const enabledModules = [...raw] as string[];
+    
+    // Bidirectional fallback mapping for Cashflow
+    if (raw.includes("Income & Expenses")) {
+      enabledModules.push("Income", "Expenses");
+    } else if (raw.includes("Income") || raw.includes("Expenses")) {
+      enabledModules.push("Income & Expenses");
+    }
+    
+    // Bidirectional fallback mapping for Investments
+    if (raw.includes("Investments")) {
+      enabledModules.push("Stocks", "Mutual Funds", "Bonds", "FnO", "Forex");
+    } else if (
+      raw.includes("Stocks") || 
+      raw.includes("Mutual Funds") || 
+      raw.includes("Bonds") || 
+      raw.includes("FnO") || 
+      raw.includes("Forex")
+    ) {
+      enabledModules.push("Investments");
+    }
     
     const hasStocks = enabledModules.includes("Stocks");
     const hasForex = enabledModules.includes("Forex");

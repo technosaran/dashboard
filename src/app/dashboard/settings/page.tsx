@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, startTransition } from "react";
+import { useEffect, useState, useRef, startTransition, useMemo } from "react";
 import { useUser } from "@/context/user-context";
 import { resetUserData, updateSettings } from "./actions";
 import { toast } from "react-hot-toast";
@@ -50,7 +50,32 @@ export default function SettingsPage() {
   const baseCurrency = profile?.base_currency || "INR";
   const theme = profile?.theme || "system";
   const timezone = profile?.timezone || "Asia/Kolkata";
-  const enabledModules = profile?.enabled_modules || [...MODULE_KEYS];
+  const enabledModules = useMemo(() => {
+    const raw = profile?.enabled_modules || [...MODULE_KEYS];
+    const populated = [...raw] as string[];
+    
+    // Bidirectional fallback mapping for Cashflow
+    if (raw.includes("Income & Expenses")) {
+      populated.push("Income", "Expenses");
+    } else if (raw.includes("Income") || raw.includes("Expenses")) {
+      populated.push("Income & Expenses");
+    }
+    
+    // Bidirectional fallback mapping for Investments
+    if (raw.includes("Investments")) {
+      populated.push("Stocks", "Mutual Funds", "Bonds", "FnO", "Forex");
+    } else if (
+      raw.includes("Stocks") || 
+      raw.includes("Mutual Funds") || 
+      raw.includes("Bonds") || 
+      raw.includes("FnO") || 
+      raw.includes("Forex")
+    ) {
+      populated.push("Investments");
+    }
+    
+    return populated;
+  }, [profile]);
 
   // Sync internal input state when user details load/change
   useEffect(() => {
@@ -123,9 +148,28 @@ export default function SettingsPage() {
   };
 
   const toggleModule = (module: string) => {
-    const newModules = enabledModules.includes(module)
-      ? enabledModules.filter((m: string) => m !== module)
-      : [...enabledModules, module];
+    const raw = profile?.enabled_modules || [...MODULE_KEYS];
+    let newModules: string[];
+    
+    if (module === "Income & Expenses") {
+      const isEnabled = raw.includes("Income & Expenses") || raw.includes("Income") || raw.includes("Expenses");
+      newModules = isEnabled
+        ? raw.filter(m => m !== "Income & Expenses" && m !== "Income" && m !== "Expenses")
+        : [...raw.filter(m => m !== "Income" && m !== "Expenses"), "Income & Expenses"];
+    } else if (module === "Investments") {
+      const isEnabled = raw.includes("Investments") || raw.includes("Stocks") || raw.includes("Mutual Funds") || raw.includes("Bonds") || raw.includes("FnO") || raw.includes("Forex");
+      newModules = isEnabled
+        ? raw.filter(m => m !== "Investments" && m !== "Stocks" && m !== "Mutual Funds" && m !== "Bonds" && m !== "FnO" && m !== "Forex")
+        : [...raw.filter(m => !["Stocks", "Mutual Funds", "Bonds", "FnO", "Forex"].includes(m)), "Investments"];
+    } else {
+      newModules = raw.includes(module)
+        ? raw.filter(m => m !== module)
+        : [...raw, module];
+    }
+    
+    // Purge legacy keys from the final list to keep the database tidy
+    newModules = newModules.filter(m => !["Income", "Expenses", "Stocks", "Mutual Funds", "Bonds", "FnO", "Forex"].includes(m));
+    
     saveSetting("enabled_modules", newModules, `${module} visibility updated`);
   };
 
@@ -240,27 +284,35 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex overflow-x-auto gap-2 pb-2 custom-scrollbar">
+      {/* Premium Segmented Toggle Bar */}
+      <div className="flex flex-wrap gap-1.5 rounded-2xl bg-white/[0.02] border border-white/5 p-1.5 max-w-fit shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]">
         {[
           { key: "profile", label: "Profile" },
           { key: "modules", label: "Modules" },
           { key: "defaults", label: "Defaults" },
           { key: "status", label: "System Status" },
           { key: "danger", label: "Danger Zone" },
-        ].map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key as TabKey)}
-            className={`px-5 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${
-              activeTab === tab.key
-                ? "bg-[--accent-primary] text-white shadow-lg shadow-indigo-500/20"
-                : "bg-white/5 text-[--text-secondary] hover:bg-white/10 hover:text-white border border-white/5"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+        ].map((tab) => {
+          const isActive = activeTab === tab.key;
+          
+          let activeStyles = "bg-cyan-500 text-white shadow-[0_0_20px_rgba(6,182,212,0.3)]";
+          if (tab.key === "danger") activeStyles = "bg-rose-500 text-white shadow-[0_0_20px_rgba(244,63,94,0.3)]";
+
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key as TabKey)}
+              className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center gap-2 whitespace-nowrap active:scale-95 cursor-pointer ${
+                isActive
+                  ? `${activeStyles} border border-transparent`
+                  : "text-[--text-muted] hover:text-white hover:bg-white/5 border border-transparent"
+              }`}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
 
       {/* Profile Identity */}

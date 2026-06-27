@@ -260,16 +260,12 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
           <div className={`status-dot scale-90 ${isValidating ? 'animate-pulse bg-yellow-400' : 'bg-emerald-400 opacity-50'}`} />
         </div>
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-          <button type="button" onClick={() => setActiveTab(activeTab === "accounts" ? "history" : "accounts")} className="btn-secondary h-11 w-full sm:w-auto flex items-center justify-center gap-2">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            {activeTab === "accounts" ? "History" : "Accounts"}
-          </button>
           <button type="button" onClick={() => { setTransferFromId(null); setShowTransferModal(true); }} className="btn-secondary h-11 w-full sm:w-auto flex items-center justify-center gap-2"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>Transfer</button>
           <button type="button" onClick={() => setShowForm(true)} className="btn-primary h-11 w-full sm:w-auto flex items-center justify-center gap-2"><svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>New Account</button>
         </div>
       </div>
-      {activeTab === "accounts" ? (
-        accounts.length === 0 ? (
+
+      {accounts.length === 0 ? (
           <div className="glass-card-static rich-border relative overflow-hidden p-8 md:p-16 text-center flex flex-col items-center justify-center min-h-[450px]">
             {/* Glowing background */}
             <div className="absolute -top-24 -left-24 w-96 h-96 bg-[--accent-primary]/10 rounded-full blur-[100px] pointer-events-none" />
@@ -513,7 +509,38 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Premium Segmented Toggle Bar on top of accounts cards list */}
+          <div className="flex justify-start w-full my-6">
+            <div className="flex flex-wrap gap-1.5 rounded-2xl bg-white/[0.02] border border-white/5 p-1.5 max-w-fit shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]">
+              {[
+                { key: "accounts", label: "Accounts" },
+                { key: "history", label: "Transfer History" }
+              ].map((tab) => {
+                const isActive = activeTab === tab.key;
+                
+                let activeStyles = "bg-[--accent-primary] text-white shadow-[0_0_20px_rgba(99,102,241,0.3)]";
+                if (tab.key === "history") activeStyles = "bg-amber-500 text-white shadow-[0_0_20px_rgba(245,158,11,0.3)]";
+
+                return (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    onClick={() => setActiveTab(tab.key as any)}
+                    className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center gap-2 whitespace-nowrap active:scale-95 cursor-pointer ${
+                      isActive
+                        ? `${activeStyles} border border-transparent`
+                        : "text-[--text-muted] hover:text-white hover:bg-white/5 border border-transparent"
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {activeTab === "accounts" ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-500">
             {filteredAccounts.length === 0 && (
               <div className="col-span-full py-12 text-center text-[--text-muted] bg-white/5 rounded-2xl border border-white/10 border-dashed">
                 <p className="text-sm font-bold uppercase tracking-widest">No {displayedCurrency} accounts found.</p>
@@ -540,10 +567,8 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
               );
             })}
           </div>
-          </>
-        )
-      ) : (
-      <div className="glass-card-static overflow-hidden">
+          ) : (
+          <div className="glass-card-static overflow-hidden animate-in fade-in duration-500">
         <div className="p-6 border-b border-white/5 flex items-center justify-between gap-3">
           <div>
             <h2 className="text-2xl font-black text-[--text-primary]">Account History</h2>
@@ -639,6 +664,8 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
           </div>
         )}
       </div>
+      )}
+      </>
       )}
 
       {/* DRAWERS */}

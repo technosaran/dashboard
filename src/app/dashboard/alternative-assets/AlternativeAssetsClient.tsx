@@ -29,13 +29,13 @@ const CATEGORIES = [
   { label: "Others", icon: "🎯" },
 ];
 
-export default function AlternativeAssetsClient({ initialData }: { initialData?: FinanceData }) {
+export default function AlternativeAssetsClient({ initialData, isSubComponent = false }: { initialData?: FinanceData; isSubComponent?: boolean }) {
   const { data: { alternativeAssets, ledgerLogs, accounts }, mutate } = useFinanceData(initialData);
   const searchParams = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(searchParams?.get("action") === "new");
   const [submitting, withLock] = useSubmitLock();
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"overview" | "inventory" | "history">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "inventory" | "history">(isSubComponent ? "inventory" : "overview");
 
   const mounted = useHasMounted();
 
@@ -131,25 +131,28 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
 
   return (
     <div className="flex flex-col gap-8 animate-in fade-in duration-700">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[--text-primary]">Alternative Assets</h1>
-          <p className="text-[13px] md:text-sm mt-1 text-[--text-secondary]">Tangible wealth, physical assets, private equity, and holdings.</p>
+      {/* Header (Only if NOT sub-component) */}
+      {!isSubComponent && (
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[--text-primary]">Alternative Assets</h1>
+            <p className="text-[13px] md:text-sm mt-1 text-[--text-secondary]">Tangible wealth, physical assets, private equity, and holdings.</p>
+          </div>
+          <button 
+            type="button" 
+            onClick={() => {
+              setEditingId(null);
+              setFormData({ name: "", category: "Real Estate", purchase_price: "", current_value: "", purchase_date: new Date().toISOString().split("T")[0], notes: "", account_id: "" });
+              setShowAddModal(true);
+            }} 
+            disabled={submitting} 
+            className="btn-primary !h-11 px-6 shadow-[0_0_30px_rgba(14,165,233,0.3)] text-xs font-bold uppercase tracking-wider flex items-center gap-2 cursor-pointer"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
+            Record Asset
+          </button>
         </div>
-        <button 
-          type="button" 
-          onClick={() => {
-            setEditingId(null);
-            setFormData({ name: "", category: "Real Estate", purchase_price: "", current_value: "", purchase_date: new Date().toISOString().split("T")[0], notes: "", account_id: "" });
-            setShowAddModal(true);
-          }} 
-          disabled={submitting} 
-          className="btn-primary !h-11 px-6 shadow-[0_0_30px_rgba(14,165,233,0.3)] text-xs font-bold uppercase tracking-wider flex items-center gap-2"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
-          Record Asset
-        </button>
-      </div>
+      )}
 
       {alternativeAssets.length === 0 ? (
         <div className="glass-card-static relative overflow-hidden p-8 md:p-16 text-center flex flex-col items-center justify-center min-h-[450px]">
@@ -172,45 +175,93 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
         </div>
       ) : (
       <>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          <div className="glass-card-static p-6 border-white/5">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Asset Valuation</p>
-            <p className="text-2xl md:text-3xl font-black text-white">₹{stats.totalValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
-            <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Total Market Value</p>
+        {/* Top Cards (Only if NOT sub-component) */}
+        {!isSubComponent && (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div className="glass-card-static p-6 border-white/5">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Asset Valuation</p>
+              <p className="text-2xl md:text-3xl font-black text-white">₹{stats.totalValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+              <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Total Market Value</p>
+            </div>
+            <div className="glass-card-static p-6 border-white/5">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Acquisition Cost</p>
+              <p className="text-2xl md:text-3xl font-black text-[--text-secondary]">₹{stats.totalCost.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+              <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Total Invested</p>
+            </div>
+            <div className="glass-card-static p-6 border-white/5">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Portfolio Growth</p>
+              <PnLValue amount={stats.netGrowth} size="lg" showIcon currency="INR" />
+              <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Absolute Return</p>
+            </div>
+            <div className="glass-card-static p-6 border-white/5">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Yield (ROI)</p>
+              <p className={`text-2xl md:text-3xl font-black ${stats.netGrowth >= 0 ? "text-success" : "text-danger"}`}>
+                {stats.netGrowth >= 0 ? "+" : ""}{stats.growthPercent.toFixed(2)}%
+              </p>
+              <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Relative Return</p>
+            </div>
+            <div className="glass-card-static p-6 border-white/5 bg-gradient-to-br from-[--accent-primary]/10 to-transparent">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Asset Count</p>
+              <p className="text-xl md:text-2xl font-black text-white">{alternativeAssets.length}</p>
+              <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Active Holdings</p>
+            </div>
           </div>
-          <div className="glass-card-static p-6 border-white/5">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Acquisition Cost</p>
-            <p className="text-2xl md:text-3xl font-black text-[--text-secondary]">₹{stats.totalCost.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
-            <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Total Invested</p>
-          </div>
-          <div className="glass-card-static p-6 border-white/5">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Portfolio Growth</p>
-            <PnLValue amount={stats.netGrowth} size="lg" showIcon currency="INR" />
-            <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Absolute Return</p>
-          </div>
-          <div className="glass-card-static p-6 border-white/5">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Yield (ROI)</p>
-            <p className={`text-2xl md:text-3xl font-black ${stats.netGrowth >= 0 ? "text-success" : "text-danger"}`}>
-              {stats.netGrowth >= 0 ? "+" : ""}{stats.growthPercent.toFixed(2)}%
-            </p>
-            <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Relative Return</p>
-          </div>
-          <div className="glass-card-static p-6 border-white/5 bg-gradient-to-br from-[--accent-primary]/10 to-transparent">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Asset Count</p>
-            <p className="text-xl md:text-2xl font-black text-white">{alternativeAssets.length}</p>
-            <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Active Holdings</p>
-          </div>
-        </div>
+        )}
 
-        <Tabs
-          items={[
-            { key: "overview", label: "Overview" },
-            { key: "inventory", label: "Inventory Directory", badge: alternativeAssets.length },
-            { key: "history", label: "Audit History" }
-          ]}
-          active={activeTab}
-          onChange={(key) => setActiveTab(key as any)}
-        />
+        {/* Toolbar & Secondary Switcher row */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex flex-wrap gap-1.5 rounded-2xl bg-white/[0.02] border border-white/5 p-1.5 max-w-fit shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]">
+            {[
+              ...(!isSubComponent ? [{ key: "overview", label: "Overview" }] : []),
+              { key: "inventory", label: "Inventory Directory", badge: alternativeAssets.length },
+              { key: "history", label: "Audit History" }
+            ].map((tab) => {
+              const isActive = activeTab === tab.key;
+              
+              let activeStyles = "bg-[--accent-primary] text-white shadow-[0_0_20px_rgba(99,102,241,0.3)]";
+              if (tab.key === "inventory") activeStyles = "bg-amber-500 text-white shadow-[0_0_20px_rgba(245,158,11,0.3)]";
+              else if (tab.key === "history") activeStyles = "bg-slate-500 text-white shadow-[0_0_20px_rgba(100,116,139,0.3)]";
+
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setActiveTab(tab.key as any)}
+                  className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center gap-2 whitespace-nowrap active:scale-95 cursor-pointer ${
+                    isActive
+                      ? `${activeStyles} border border-transparent`
+                      : "text-[--text-muted] hover:text-white hover:bg-white/5 border border-transparent"
+                  }`}
+                >
+                  {tab.label}
+                  {tab.badge !== undefined && (
+                    <span className={`flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1 text-[9px] font-black ${
+                      isActive ? "bg-white/20 text-white" : "bg-white/10 text-white"
+                    }`}>
+                      {tab.badge}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {isSubComponent && (
+            <button 
+              type="button" 
+              onClick={() => {
+                setEditingId(null);
+                setFormData({ name: "", category: "Real Estate", purchase_price: "", current_value: "", purchase_date: new Date().toISOString().split("T")[0], notes: "", account_id: "" });
+                setShowAddModal(true);
+              }} 
+              disabled={submitting} 
+              className="btn-primary !h-10 px-5 shadow-[0_0_20px_rgba(14,165,233,0.2)] text-xs font-bold uppercase tracking-wider flex items-center gap-2 cursor-pointer"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
+              Record Asset
+            </button>
+          )}
+        </div>
 
         {activeTab === "overview" && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -358,39 +409,39 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
           title={editingId ? "Update Asset" : "Establish Asset"}
         >
           <div className="p-2 max-w-lg mx-auto w-full">
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-3">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Asset Name</label>
-                  <input required className="input-premium" placeholder="e.g. 2BHK Apartment" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} autoComplete="new-password" />
+                  <input required className="input-premium !h-10 text-xs" placeholder="e.g. 2BHK Apartment" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} autoComplete="new-password" />
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-1.5">
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Classification</label>
-                  <select aria-label="Select asset category" className="input-premium" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
+                  <select aria-label="Select asset category" className="input-premium !h-10 text-xs text-white" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
                     {CATEGORIES.map(c => <option key={c.label} value={c.label}>{c.label}</option>)}
                   </select>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Acquisition Cost (₹)</label>
-                  <input required type="number" className="input-premium tabular-nums" value={formData.purchase_price} onChange={e => setFormData({...formData, purchase_price: e.target.value})} autoComplete="new-password" inputMode="decimal" />
+                  <input required type="number" className="input-premium !h-10 text-xs tabular-nums" value={formData.purchase_price} onChange={e => setFormData({...formData, purchase_price: e.target.value})} autoComplete="new-password" inputMode="decimal" />
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-1.5">
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Current Valuation (₹)</label>
-                  <input required type="number" className="input-premium tabular-nums" value={formData.current_value} onChange={e => setFormData({...formData, current_value: e.target.value})} autoComplete="new-password" inputMode="decimal" />
+                  <input required type="number" className="input-premium !h-10 text-xs tabular-nums" value={formData.current_value} onChange={e => setFormData({...formData, current_value: e.target.value})} autoComplete="new-password" inputMode="decimal" />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Acquisition Date</label>
-                  <input type="date" className="input-premium" value={formData.purchase_date} onChange={e => setFormData({...formData, purchase_date: e.target.value})} autoComplete="new-password" />
+                  <input type="date" className="input-premium !h-10 text-xs" value={formData.purchase_date} onChange={e => setFormData({...formData, purchase_date: e.target.value})} autoComplete="new-password" />
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-1.5">
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Source Account (Optional)</label>
-                  <select aria-label="Select account" className="input-premium" value={formData.account_id} onChange={e => setFormData({...formData, account_id: e.target.value})}>
+                  <select aria-label="Select account" className="input-premium !h-10 text-xs text-white" value={formData.account_id} onChange={e => setFormData({...formData, account_id: e.target.value})}>
                     <option value="">No Transaction</option>
                     {accounts.map(acc => (
                       <option key={acc.id} value={acc.id}>{acc.name} (₹{acc.balance.toLocaleString()})</option>
@@ -399,13 +450,15 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Notes / Location</label>
-                <textarea className="input-premium min-h-[80px] py-4 resize-none" value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} autoComplete="new-password" />
+              <div className="grid grid-cols-1 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Notes / Location</label>
+                  <input type="text" className="input-premium !h-10 text-xs" placeholder="Optional notes..." value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} autoComplete="new-password" />
+                </div>
               </div>
 
-              <div className="pt-4">
-                <button type="submit" disabled={submitting} className="btn-primary w-full h-12 shadow-xl shadow-[--accent-primary]/20 text-[11px] font-black uppercase tracking-widest">
+              <div className="pt-2">
+                <button type="submit" disabled={submitting} className="btn-primary w-full h-11 text-xs font-bold shadow-xl shadow-[--accent-primary]/20 uppercase tracking-widest cursor-pointer">
                   {submitting ? "Processing..." : editingId ? "Update Entry" : "Establish Entry"}
                 </button>
               </div>

@@ -5,7 +5,6 @@ import { useSearchParams } from "next/navigation";
 import { useFinanceData } from "@/hooks/use-finance-data";
 import { useHasMounted } from "@/hooks/use-has-mounted";
 import { getColorByLabel } from "@/lib/chart-colours";
-import { Tabs } from "@/components/ui/tabs";
 import dynamic from "next/dynamic";
 
 const ResponsiveContainer = dynamic(() => import("recharts").then((mod) => mod.ResponsiveContainer), { ssr: false });
@@ -19,12 +18,16 @@ import StocksClient from "@/app/dashboard/stocks/StocksClient";
 import MutualFundsClient from "@/app/dashboard/mutual-funds/MutualFundsClient";
 import BondsClient from "@/app/dashboard/bonds/BondsClient";
 import FnoClient from "@/app/dashboard/fno/FnoClient";
+import ForexClient from "@/app/dashboard/forex/ForexClient";
+import AlternativeAssetsClient from "@/app/dashboard/alternative-assets/AlternativeAssetsClient";
+
+const USD_TO_INR = 83.5;
 
 export default function InvestmentsClient() {
   const searchParams = useSearchParams();
   const initialTab = searchParams.get("tab") || "overview";
 
-  const { data: { investments, mutualFunds, bonds, fnoTrades, profile }, isLoading } = useFinanceData();
+  const { data: { investments, mutualFunds, bonds, fnoTrades, forexAccounts, alternativeAssets, profile }, isLoading } = useFinanceData();
   const mounted = useHasMounted();
   const [activeTab, setActiveTab] = useState(initialTab);
 
@@ -34,6 +37,8 @@ export default function InvestmentsClient() {
   const hasMF = enabledModules.includes("Mutual Funds");
   const hasBonds = enabledModules.includes("Bonds");
   const hasFnO = enabledModules.includes("FnO");
+  const hasForex = enabledModules.includes("Forex");
+  const hasAltAssets = enabledModules.includes("Alt Assets");
 
   const availableTabs = useMemo(() => {
     const list = [{ key: "overview", label: "Overview" }];
@@ -41,8 +46,10 @@ export default function InvestmentsClient() {
     if (hasMF) list.push({ key: "mutual-funds", label: "Mutual Funds" });
     if (hasBonds) list.push({ key: "bonds", label: "Bonds" });
     if (hasFnO) list.push({ key: "fno", label: "FnO Trading" });
+    if (hasForex) list.push({ key: "forex", label: "Forex" });
+    if (hasAltAssets) list.push({ key: "alt-assets", label: "Alternative Assets" });
     return list;
-  }, [hasStocks, hasMF, hasBonds, hasFnO]);
+  }, [hasStocks, hasMF, hasBonds, hasFnO, hasForex, hasAltAssets]);
 
   // Adjust active tab if the requested tab isn't enabled
   useEffect(() => {
@@ -73,9 +80,31 @@ export default function InvestmentsClient() {
     // 4. FnO Realized PnL
     const fnoRealized = fnoTrades.reduce((sum, f) => sum + Number(f.pnl || 0), 0);
 
-    const totalInvested = stocksInvested + mfInvested + bondsInvested;
-    const totalCurrent = stocksCurrent + mfCurrent + bondsCurrent;
-    const totalRealized = stocksRealized + mfRealized + fnoRealized;
+    // 5. Forex (Converted from USD to INR)
+    const activeForex = forexAccounts.filter(f => Number(f.balance) > 0);
+    const forexInvested = activeForex.reduce((sum, f) => {
+      const amount = Number(f.total_deposited || 0) - Number(f.total_withdrawn || 0);
+      const converted = f.currency === "USD" ? amount * USD_TO_INR : amount;
+      return sum + Math.max(0, converted);
+    }, 0);
+    const forexCurrent = activeForex.reduce((sum, f) => {
+      const balance = Number(f.balance || 0);
+      const converted = f.currency === "USD" ? balance * USD_TO_INR : balance;
+      return sum + converted;
+    }, 0);
+    const forexRealized = forexAccounts.reduce((sum, f) => {
+      const pnl = Number(f.total_pnl || 0);
+      return sum + (f.currency === "USD" ? pnl * USD_TO_INR : pnl);
+    }, 0);
+
+    // 6. Alternative Assets
+    const activeAlt = alternativeAssets || [];
+    const altInvested = activeAlt.reduce((sum, a) => sum + Number(a.purchase_price || 0), 0);
+    const altCurrent = activeAlt.reduce((sum, a) => sum + Number(a.current_value || 0), 0);
+
+    const totalInvested = stocksInvested + mfInvested + bondsInvested + forexInvested + altInvested;
+    const totalCurrent = stocksCurrent + mfCurrent + bondsCurrent + forexCurrent + altCurrent;
+    const totalRealized = stocksRealized + mfRealized + forexRealized;
 
     const totalPnL = (totalCurrent - totalInvested) + totalRealized;
     const totalPnLPercent = totalInvested > 0 ? (totalPnL / totalInvested) * 100 : 0;
@@ -84,13 +113,15 @@ export default function InvestmentsClient() {
       stocksValue: stocksCurrent,
       mfValue: mfCurrent,
       bondsValue: bondsCurrent,
+      forexValue: forexCurrent,
+      altValue: altCurrent,
       totalInvested,
       totalCurrent,
       totalPnL,
       totalPnLPercent,
-      hasData: (stocksCurrent + mfCurrent + bondsCurrent) > 0
+      hasData: (stocksCurrent + mfCurrent + bondsCurrent + forexCurrent + altCurrent) > 0
     };
-  }, [investments, mutualFunds, bonds, fnoTrades]);
+  }, [investments, mutualFunds, bonds, fnoTrades, forexAccounts, alternativeAssets]);
 
   // Donut chart data for portfolio allocation
   const allocationData = useMemo(() => {
@@ -103,6 +134,12 @@ export default function InvestmentsClient() {
     }
     if (portfolioStats.bondsValue > 0) {
       data.push({ name: "Bonds", value: portfolioStats.bondsValue, fill: getColorByLabel("Bonds") });
+    }
+    if (portfolioStats.forexValue > 0) {
+      data.push({ name: "Forex", value: portfolioStats.forexValue, fill: getColorByLabel("Forex") });
+    }
+    if (portfolioStats.altValue > 0) {
+      data.push({ name: "Alternative Assets", value: portfolioStats.altValue, fill: getColorByLabel("Alt Assets") });
     }
     return data;
   }, [portfolioStats]);
@@ -124,13 +161,36 @@ export default function InvestmentsClient() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <Tabs
-        variant="underline"
-        items={availableTabs}
-        active={activeTab}
-        onChange={(key) => setActiveTab(key)}
-      />
+      {/* Premium Segmented Toggle Bar */}
+      <div className="flex flex-wrap gap-1.5 rounded-2xl bg-white/[0.02] border border-white/5 p-1.5 max-w-fit shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]">
+        {availableTabs.map((tab) => {
+          const isActive = activeTab === tab.key;
+          
+          // Get specific color styling based on the active tab key
+          let activeStyles = "bg-[--accent-primary] text-white shadow-[0_0_20px_rgba(99,102,241,0.3)]";
+          if (tab.key === "stocks") activeStyles = "bg-sky-500 text-white shadow-[0_0_20px_rgba(14,165,233,0.3)]";
+          else if (tab.key === "mutual-funds") activeStyles = "bg-amber-500 text-white shadow-[0_0_20px_rgba(245,158,11,0.3)]";
+          else if (tab.key === "bonds") activeStyles = "bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)]";
+          else if (tab.key === "fno") activeStyles = "bg-rose-500 text-white shadow-[0_0_20px_rgba(244,63,94,0.3)]";
+          else if (tab.key === "forex") activeStyles = "bg-cyan-500 text-white shadow-[0_0_20px_rgba(6,182,212,0.3)]";
+          else if (tab.key === "alt-assets") activeStyles = "bg-orange-500 text-white shadow-[0_0_20px_rgba(249,115,22,0.3)]";
+
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center gap-2 whitespace-nowrap active:scale-95 cursor-pointer ${
+                isActive
+                  ? `${activeStyles} border border-transparent`
+                  : "text-[--text-muted] hover:text-white hover:bg-white/5 border border-transparent"
+              }`}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
 
       {/* Content Rendering */}
       {activeTab === "overview" && (
@@ -222,6 +282,42 @@ export default function InvestmentsClient() {
                       </div>
                     </div>
                   )}
+
+                  {hasForex && (
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-xs font-bold">
+                        <span className="text-white">Forex Assets</span>
+                        <span className="text-[--text-secondary]">₹{formatMoney(portfolioStats.forexValue)}</span>
+                      </div>
+                      <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full rounded-full" 
+                          style={{ 
+                            width: `${portfolioStats.totalCurrent > 0 ? (portfolioStats.forexValue / portfolioStats.totalCurrent) * 100 : 0}%`,
+                            backgroundColor: getColorByLabel("Forex")
+                          }} 
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {hasAltAssets && (
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-xs font-bold">
+                        <span className="text-white">Alternative Assets</span>
+                        <span className="text-[--text-secondary]">₹{formatMoney(portfolioStats.altValue)}</span>
+                      </div>
+                      <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full rounded-full" 
+                          style={{ 
+                            width: `${portfolioStats.totalCurrent > 0 ? (portfolioStats.altValue / portfolioStats.totalCurrent) * 100 : 0}%`,
+                            backgroundColor: getColorByLabel("Alt Assets")
+                          }} 
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -269,6 +365,8 @@ export default function InvestmentsClient() {
       {activeTab === "mutual-funds" && hasMF && <MutualFundsClient />}
       {activeTab === "bonds" && hasBonds && <BondsClient />}
       {activeTab === "fno" && hasFnO && <FnoClient />}
+      {activeTab === "forex" && hasForex && <ForexClient />}
+      {activeTab === "alt-assets" && hasAltAssets && <AlternativeAssetsClient isSubComponent />}
     </div>
   );
 }

@@ -493,29 +493,33 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
       {showAccountModal && (
         <Drawer isOpen={showAccountModal} onClose={() => setShowAccountModal(false)} title="Broker Account">
           <div className="p-2 max-w-lg mx-auto w-full">
-            <form onSubmit={handleCreateAccount} className="space-y-5">
-              <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Broker Name</label>
-                <input required className="input-premium" placeholder="e.g. MetaTrader 5" value={accountForm.broker_name} onChange={e => setAccountForm({...accountForm, broker_name: e.target.value})} />
+            <form onSubmit={handleCreateAccount} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Broker Name</label>
+                  <input required className="input-premium !h-10 text-xs" placeholder="e.g. MetaTrader 5" value={accountForm.broker_name} onChange={e => setAccountForm({...accountForm, broker_name: e.target.value})} />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Account Label</label>
+                  <input required className="input-premium !h-10 text-xs" placeholder="e.g. Live Account" value={accountForm.account_label} onChange={e => setAccountForm({...accountForm, account_label: e.target.value})} />
+                </div>
               </div>
-              <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Account Label</label>
-                <input required className="input-premium" placeholder="e.g. Live Account" value={accountForm.account_label} onChange={e => setAccountForm({...accountForm, account_label: e.target.value})} />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Account Number (Optional)</label>
+                  <input className="input-premium !h-10 text-xs" placeholder="e.g. 104859" value={accountForm.account_number} onChange={e => setAccountForm({...accountForm, account_number: e.target.value})} />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Currency</label>
+                  <select required className="input-premium !h-10 text-xs text-white" value={accountForm.currency} onChange={e => setAccountForm({...accountForm, currency: e.target.value})}>
+                    <option value="USD">USD</option>
+                    <option value="EUR">EUR</option>
+                    <option value="GBP">GBP</option>
+                    <option value="INR">INR</option>
+                  </select>
+                </div>
               </div>
-              <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Account Number (Optional)</label>
-                <input className="input-premium" placeholder="e.g. 104859" value={accountForm.account_number} onChange={e => setAccountForm({...accountForm, account_number: e.target.value})} />
-              </div>
-              <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Currency</label>
-                <select required className="input-premium" value={accountForm.currency} onChange={e => setAccountForm({...accountForm, currency: e.target.value})}>
-                  <option value="USD">USD</option>
-                  <option value="EUR">EUR</option>
-                  <option value="GBP">GBP</option>
-                  <option value="INR">INR</option>
-                </select>
-              </div>
-              <button type="submit" disabled={submitting} className="btn-primary w-full h-12 shadow-md mt-4">
+              <button type="submit" disabled={submitting} className="btn-primary w-full h-11 text-xs font-bold shadow-md mt-4 cursor-pointer">
                 {submitting ? "Creating..." : "Create Account"}
               </button>
             </form>
@@ -527,26 +531,28 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
       {showFundsModal && (
         <Drawer isOpen={showFundsModal} onClose={() => setShowFundsModal(false)} title={fundsType === "DEPOSIT" ? "Deposit Funds" : "Withdraw Funds"}>
           <div className="p-2 max-w-lg mx-auto w-full">
-            <form onSubmit={handleFunds} className="space-y-5">
-              <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Broker Account</label>
-                <select required className="input-premium" value={fundsForm.forex_account_id} onChange={e => setFundsForm({...fundsForm, forex_account_id: e.target.value})}>
-                  <option value="">Select Broker</option>
-                  {forexAccounts.map(a => <option key={a.id} value={a.id}>{a.account_label} ({a.broker_name}) - {getAccountCurrency(a.id)}</option>)}
-                </select>
+            <form onSubmit={handleFunds} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Broker Account</label>
+                  <select required className="input-premium !h-10 text-xs text-white" value={fundsForm.forex_account_id} onChange={e => setFundsForm({...fundsForm, forex_account_id: e.target.value})}>
+                    <option value="">Select Broker</option>
+                    {forexAccounts.map(a => <option key={a.id} value={a.id}>{a.account_label} ({a.broker_name})</option>)}
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">{fundsType === "DEPOSIT" ? "From Bank Account" : "To Bank Account"}</label>
+                  <select required className="input-premium !h-10 text-xs text-white" value={fundsForm.bank_account_id} onChange={e => setFundsForm({...fundsForm, bank_account_id: e.target.value})}>
+                    <option value="">Select Bank</option>
+                    {accounts.map(a => <option key={a.id} value={a.id}>{a.name} ({a.currency})</option>)}
+                  </select>
+                </div>
               </div>
-              <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">{fundsType === "DEPOSIT" ? "From Bank Account" : "To Bank Account"}</label>
-                <select required className="input-premium" value={fundsForm.bank_account_id} onChange={e => setFundsForm({...fundsForm, bank_account_id: e.target.value})}>
-                  <option value="">Select Bank</option>
-                  {accounts.map(a => <option key={a.id} value={a.id}>{a.name} ({a.currency})</option>)}
-                </select>
-              </div>
-              <div className="space-y-3">
+              <div className="space-y-1.5">
                 <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Amount</label>
-                <input required type="number" step="0.01" className="input-premium tabular-nums" placeholder="0.00" value={fundsForm.amount} onChange={e => setFundsForm({...fundsForm, amount: e.target.value})} inputMode="decimal" />
+                <input required type="number" step="0.01" className="input-premium !h-10 text-xs tabular-nums" placeholder="0.00" value={fundsForm.amount} onChange={e => setFundsForm({...fundsForm, amount: e.target.value})} inputMode="decimal" />
               </div>
-              <button type="submit" disabled={submitting} className="btn-primary w-full h-12 shadow-md mt-4">
+              <button type="submit" disabled={submitting} className="btn-primary w-full h-11 text-xs font-bold shadow-md mt-4 cursor-pointer">
                 {submitting ? "Processing..." : fundsType === "DEPOSIT" ? "Deposit Funds" : "Withdraw Funds"}
               </button>
             </form>
@@ -558,30 +564,34 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
       {(showTradeModal || showEditTradeModal) && (
         <Drawer isOpen={showTradeModal || showEditTradeModal} onClose={() => { setShowTradeModal(false); setShowEditTradeModal(false); setEditingTrade(null); }} title={showEditTradeModal ? "Edit Daily P&L" : "Log Daily P&L"}>
           <div className="p-2 max-w-lg mx-auto w-full">
-            <form onSubmit={showEditTradeModal ? handleUpdateTrade : handleLogTrade} className="space-y-5">
-              <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Select Broker</label>
-                <select required className="input-premium" value={showEditTradeModal ? editTradeForm.forex_account_id : tradeForm.forex_account_id} onChange={e => showEditTradeModal ? setEditTradeForm({...editTradeForm, forex_account_id: e.target.value}) : setTradeForm({...tradeForm, forex_account_id: e.target.value})}>
-                  <option value="">Select Account</option>
-                  {forexAccounts.map(a => <option key={a.id} value={a.id}>{a.account_label} ({a.broker_name})</option>)}
-                </select>
-              </div>
-              <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Date</label>
-                <input required type="date" className="input-premium" value={showEditTradeModal ? editTradeForm.trade_date : tradeForm.trade_date} onChange={e => showEditTradeModal ? setEditTradeForm({...editTradeForm, trade_date: e.target.value}) : setTradeForm({...tradeForm, trade_date: e.target.value})} />
-              </div>
-              <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Entry Type</label>
-                <div className="flex bg-white/5 p-1 rounded-xl border border-white/5 gap-1">
-                  <button type="button" onClick={() => showEditTradeModal ? setEditTradePnlType("profit") : setTradePnlType("profit")} className={`flex-1 h-10 text-[10px] font-black rounded-lg transition-all ${((showEditTradeModal ? editTradePnlType : tradePnlType) === "profit") ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "text-[--text-muted]"}`}>Profit</button>
-                  <button type="button" onClick={() => showEditTradeModal ? setEditTradePnlType("loss") : setTradePnlType("loss")} className={`flex-1 h-10 text-[10px] font-black rounded-lg transition-all ${((showEditTradeModal ? editTradePnlType : tradePnlType) === "loss") ? "bg-rose-500/20 text-rose-400 border border-rose-500/30" : "text-[--text-muted]"}`}>Loss</button>
+            <form onSubmit={showEditTradeModal ? handleUpdateTrade : handleLogTrade} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Select Broker</label>
+                  <select required className="input-premium !h-10 text-xs text-white" value={showEditTradeModal ? editTradeForm.forex_account_id : tradeForm.forex_account_id} onChange={e => showEditTradeModal ? setEditTradeForm({...editTradeForm, forex_account_id: e.target.value}) : setTradeForm({...tradeForm, forex_account_id: e.target.value})}>
+                    <option value="">Select Account</option>
+                    {forexAccounts.map(a => <option key={a.id} value={a.id}>{a.account_label} ({a.broker_name})</option>)}
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Date</label>
+                  <input required type="date" className="input-premium !h-10 text-xs" value={showEditTradeModal ? editTradeForm.trade_date : tradeForm.trade_date} onChange={e => showEditTradeModal ? setEditTradeForm({...editTradeForm, trade_date: e.target.value}) : setTradeForm({...tradeForm, trade_date: e.target.value})} />
                 </div>
               </div>
-              <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Amount</label>
-                <input required type="number" step="0.01" min="0.01" className="input-premium tabular-nums" placeholder="0.00" value={showEditTradeModal ? editTradeAmount : tradeAmount} onChange={e => showEditTradeModal ? setEditTradeAmount(e.target.value) : setTradeAmount(e.target.value)} inputMode="decimal" />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Entry Type</label>
+                  <div className="flex bg-white/5 p-1 rounded-xl border border-white/5 gap-1">
+                    <button type="button" onClick={() => showEditTradeModal ? setEditTradePnlType("profit") : setTradePnlType("profit")} className={`flex-1 h-8 text-[10px] font-black rounded-lg transition-all ${((showEditTradeModal ? editTradePnlType : tradePnlType) === "profit") ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "text-[--text-muted]"}`}>Profit</button>
+                    <button type="button" onClick={() => showEditTradeModal ? setEditTradePnlType("loss") : setTradePnlType("loss")} className={`flex-1 h-8 text-[10px] font-black rounded-lg transition-all ${((showEditTradeModal ? editTradePnlType : tradePnlType) === "loss") ? "bg-rose-500/20 text-rose-400 border border-rose-500/30" : "text-[--text-muted]"}`}>Loss</button>
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Amount</label>
+                  <input required type="number" step="0.01" min="0.01" className="input-premium !h-10 text-xs tabular-nums" placeholder="0.00" value={showEditTradeModal ? editTradeAmount : tradeAmount} onChange={e => showEditTradeModal ? setEditTradeAmount(e.target.value) : setTradeAmount(e.target.value)} inputMode="decimal" />
+                </div>
               </div>
-              <button type="submit" disabled={submitting} className="btn-primary w-full h-12 shadow-md mt-4">
+              <button type="submit" disabled={submitting} className="btn-primary w-full h-11 text-xs font-bold shadow-md mt-4 cursor-pointer">
                 {submitting ? "Processing..." : (showEditTradeModal ? "Update P&L" : "Log P&L")}
               </button>
             </form>

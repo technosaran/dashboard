@@ -337,51 +337,51 @@ export default function LiabilitiesClient({ initialData }: { initialData?: Finan
           onClose={() => { setShowAddModal(false); setEditingId(null); }}
           title={editingId ? "Update Liability" : "Record Liability"}
         >
-          <form onSubmit={handleSubmit} className="space-y-6 p-2">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-3">
+          <form onSubmit={handleSubmit} className="space-y-4 p-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
                 <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Liability Name</label>
-                <input required className="input-premium" placeholder="e.g. HDFC Home Loan" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} autoComplete="new-password" />
+                <input required className="input-premium !h-10 text-xs" placeholder="e.g. HDFC Home Loan" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} autoComplete="new-password" />
               </div>
-              <div className="space-y-3">
+              <div className="space-y-1.5">
                 <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Category</label>
-                <select aria-label="Select liability category" id="liability-category" name="category" className="input-premium" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
+                <select aria-label="Select liability category" id="liability-category" name="category" className="input-premium !h-10 text-xs text-white" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
                   {CATEGORIES.map(c => <option key={c.label} value={c.label}>{c.label}</option>)}
                 </select>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
                 <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Total Principal (₹)</label>
-                <input required type="number" className="input-premium tabular-nums" value={formData.total_amount} onChange={e => setFormData({...formData, total_amount: e.target.value})} autoComplete="new-password" inputMode="decimal" />
+                <input required type="number" className="input-premium !h-10 text-xs tabular-nums" value={formData.total_amount} onChange={e => setFormData({...formData, total_amount: e.target.value})} autoComplete="new-password" inputMode="decimal" />
               </div>
-              <div className="space-y-3">
+              <div className="space-y-1.5">
                 <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Remaining Balance (₹)</label>
-                <input required type="number" className="input-premium tabular-nums" value={formData.remaining_amount} onChange={e => setFormData({...formData, remaining_amount: e.target.value})} autoComplete="new-password" inputMode="decimal" />
+                <input required type="number" className="input-premium !h-10 text-xs tabular-nums" value={formData.remaining_amount} onChange={e => setFormData({...formData, remaining_amount: e.target.value})} autoComplete="new-password" inputMode="decimal" />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
                 <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Interest Rate (%)</label>
-                <input type="number" step="0.01" className="input-premium tabular-nums" value={formData.interest_rate} onChange={e => setFormData({...formData, interest_rate: e.target.value})} autoComplete="new-password" inputMode="decimal" />
+                <input type="number" step="0.01" className="input-premium !h-10 text-xs tabular-nums" value={formData.interest_rate} onChange={e => setFormData({...formData, interest_rate: e.target.value})} autoComplete="new-password" inputMode="decimal" />
               </div>
-              <div className="space-y-3">
+              <div className="space-y-1.5">
                 <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Monthly EMI (₹)</label>
-                <input type="number" className="input-premium tabular-nums" value={formData.monthly_payment} onChange={e => setFormData({...formData, monthly_payment: e.target.value})} autoComplete="new-password" inputMode="decimal" />
+                <input type="number" className="input-premium !h-10 text-xs tabular-nums" value={formData.monthly_payment} onChange={e => setFormData({...formData, monthly_payment: e.target.value})} autoComplete="new-password" inputMode="decimal" />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
                 <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Next Due Date</label>
-                <input type="date" className="input-premium" value={formData.due_date} onChange={e => setFormData({...formData, due_date: e.target.value})} autoComplete="new-password" />
+                <input type="date" className="input-premium !h-10 text-xs" value={formData.due_date} onChange={e => setFormData({...formData, due_date: e.target.value})} autoComplete="new-password" />
               </div>
               {!editingId ? (
-                <div className="space-y-3">
+                <div className="space-y-1.5">
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Destination Account (Optional)</label>
-                  <select aria-label="Select account" id="liability-account" name="account_id" className="input-premium" value={formData.account_id} onChange={e => setFormData({...formData, account_id: e.target.value})}>
+                  <select aria-label="Select account" id="liability-account" name="account_id" className="input-premium !h-10 text-xs text-white" value={formData.account_id} onChange={e => setFormData({...formData, account_id: e.target.value})}>
                     <option value="">No Transaction</option>
                     {accounts.map(acc => (
                       <option key={acc.id} value={acc.id}>{acc.name} (₹{acc.balance.toLocaleString()})</option>
@@ -389,20 +389,22 @@ export default function LiabilitiesClient({ initialData }: { initialData?: Finan
                   </select>
                 </div>
               ) : (
-                <div className="space-y-3 opacity-60">
+                <div className="space-y-1.5 opacity-60">
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Destination Account</label>
-                  <input className="input-premium bg-white/5 cursor-not-allowed text-[--text-muted]" value="N/A (Disbursement already processed)" disabled />
+                  <input className="input-premium !h-10 text-xs bg-white/5 cursor-not-allowed text-[--text-muted]" value="N/A" disabled />
                 </div>
               )}
             </div>
 
-            <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Notes / Account Number</label>
-              <textarea className="input-premium min-h-[100px] py-4 resize-none" value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} autoComplete="new-password" />
+            <div className="grid grid-cols-1 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Notes / Account Number</label>
+                <input type="text" className="input-premium !h-10 text-xs" placeholder="Optional notes..." value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} autoComplete="new-password" />
+              </div>
             </div>
 
-            <div className="pt-4 mt-8">
-              <button type="submit" disabled={submitting} className="btn-primary w-full h-12 shadow-xl shadow-[--danger]/20 !bg-danger hover:!bg-rose-600 text-[11px] font-black uppercase tracking-widest">
+            <div className="pt-2 mt-4">
+              <button type="submit" disabled={submitting} className="btn-primary w-full h-11 text-xs font-bold shadow-xl shadow-[--danger]/20 !bg-danger hover:!bg-rose-600 uppercase tracking-widest cursor-pointer">
                 {submitting ? "Processing..." : (editingId ? "Update Record" : "Register Liability")}
               </button>
             </div>

@@ -1,19 +1,11 @@
-import { Suspense } from "react";
-import AlternativeAssetsClient from "./AlternativeAssetsClient";
-import { ModuleGuard } from "@/components/module-guard";
+import { redirect } from "next/navigation";
 
-export const metadata = {
-  title: "Alternative Assets",
-  description: "Monitor your physical holdings, real estate, and alternative investments.",
+type PageProps = {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
-export default async function AlternativeAssetsPage() {
-  return (
-    <Suspense fallback={<div className="animate-pulse bg-white/5 h-screen rounded-2xl" />}>
-      <ModuleGuard moduleKey="Alt Assets">
-        <AlternativeAssetsClient />
-      </ModuleGuard>
-    </Suspense>
-  );
+export default async function AlternativeAssetsPage({ searchParams }: PageProps) {
+  const resolvedParams = await searchParams;
+  const queryString = new URLSearchParams(resolvedParams as any).toString();
+  redirect(`/dashboard/investments?tab=alt-assets${queryString ? `&${queryString}` : ""}`);
 }
-

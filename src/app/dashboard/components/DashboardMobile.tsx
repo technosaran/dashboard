@@ -49,7 +49,30 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, accou
   const { data: { profile } = {} } = useFinanceData();
   
   const enabledModules = useMemo(() => {
-    return profile?.enabled_modules || [...MODULE_KEYS];
+    const raw = profile?.enabled_modules || [...MODULE_KEYS];
+    const populated = [...raw] as string[];
+    
+    // Bidirectional fallback mapping for Cashflow
+    if (raw.includes("Income & Expenses")) {
+      populated.push("Income", "Expenses");
+    } else if (raw.includes("Income") || raw.includes("Expenses")) {
+      populated.push("Income & Expenses");
+    }
+    
+    // Bidirectional fallback mapping for Investments
+    if (raw.includes("Investments")) {
+      populated.push("Stocks", "Mutual Funds", "Bonds", "FnO", "Forex");
+    } else if (
+      raw.includes("Stocks") || 
+      raw.includes("Mutual Funds") || 
+      raw.includes("Bonds") || 
+      raw.includes("FnO") || 
+      raw.includes("Forex")
+    ) {
+      populated.push("Investments");
+    }
+    
+    return populated;
   }, [profile]);
 
   const [showUSD, setShowUSD] = useState(false);

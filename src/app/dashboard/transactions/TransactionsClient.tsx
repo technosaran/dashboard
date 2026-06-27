@@ -250,8 +250,8 @@ export default function TransactionsClient() {
     <div className="flex flex-col gap-8 animate-in fade-in duration-700">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white uppercase italic">Transactions</h1>
-          <p className="text-[10px] text-[--text-muted] font-black uppercase tracking-[0.4em] mt-2 ml-1">Cashflow & Transaction Feed</p>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white uppercase italic">Income &amp; Expenses</h1>
+          <p className="text-[10px] text-[--text-muted] font-black uppercase tracking-[0.4em] mt-2 ml-1">Cashflow &amp; Income/Expenses Log</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <select 
@@ -286,11 +286,19 @@ export default function TransactionsClient() {
           </button>
           <button 
             type="button" 
-            onClick={() => { setModalType("expense"); setShowAddModal(true); }}
-            className="btn-primary !h-11 px-5 text-xs font-bold flex items-center gap-2 shadow-[0_0_30px_rgba(33,133,208,0.2)]"
+            onClick={() => { setModalType("income"); setShowAddModal(true); }}
+            className="btn-primary !h-11 px-4 text-xs font-bold flex items-center gap-2 !bg-emerald-500 hover:!bg-emerald-600 shadow-[0_0_20px_rgba(16,185,129,0.2)] cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>Log Transaction</span>
+            <span>Log Income</span>
+          </button>
+          <button 
+            type="button" 
+            onClick={() => { setModalType("expense"); setShowAddModal(true); }}
+            className="btn-primary !h-11 px-4 text-xs font-bold flex items-center gap-2 !bg-rose-500 hover:!bg-rose-600 shadow-[0_0_20px_rgba(244,63,94,0.2)] cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Log Expense</span>
           </button>
         </div>
       </div>
@@ -323,32 +331,34 @@ export default function TransactionsClient() {
         </div>
       </div>
 
-      {/* Tab Switcher */}
-      <div className="flex border-b border-white/10 gap-2 overflow-x-auto pb-px">
-        <button
-          onClick={() => { setActiveTab("all"); setCategoryFilter("All"); }}
-          className={`px-6 py-3 text-sm font-bold transition-colors border-b-2 whitespace-nowrap ${
-            activeTab === "all" ? "border-[--accent-primary] text-[--accent-primary]" : "border-transparent text-[--text-muted] hover:text-white"
-          }`}
-        >
-          All
-        </button>
-        <button
-          onClick={() => { setActiveTab("income"); setCategoryFilter("All"); }}
-          className={`px-6 py-3 text-sm font-bold transition-colors border-b-2 whitespace-nowrap ${
-            activeTab === "income" ? "border-emerald-500 text-emerald-400" : "border-transparent text-[--text-muted] hover:text-white"
-          }`}
-        >
-          Inflow / Income
-        </button>
-        <button
-          onClick={() => { setActiveTab("expense"); setCategoryFilter("All"); }}
-          className={`px-6 py-3 text-sm font-bold transition-colors border-b-2 whitespace-nowrap ${
-            activeTab === "expense" ? "border-rose-500 text-rose-400" : "border-transparent text-[--text-muted] hover:text-white"
-          }`}
-        >
-          Outflow / Expenses
-        </button>
+      {/* Premium Segmented Toggle Bar */}
+      <div className="flex flex-wrap gap-1.5 rounded-2xl bg-white/[0.02] border border-white/5 p-1.5 max-w-fit shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]">
+        {[
+          { key: "all", label: "All Transactions" },
+          { key: "income", label: "Income Only" },
+          { key: "expense", label: "Expenses Only" }
+        ].map((tab) => {
+          const isActive = activeTab === tab.key;
+          
+          let activeStyles = "bg-[--accent-primary] text-white shadow-[0_0_20px_rgba(99,102,241,0.3)]";
+          if (tab.key === "income") activeStyles = "bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)]";
+          else if (tab.key === "expense") activeStyles = "bg-rose-500 text-white shadow-[0_0_20px_rgba(244,63,94,0.3)]";
+
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => { setActiveTab(tab.key as any); setCategoryFilter("All"); }}
+              className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center gap-2 whitespace-nowrap active:scale-95 cursor-pointer ${
+                isActive
+                  ? `${activeStyles} border border-transparent`
+                  : "text-[--text-muted] hover:text-white hover:bg-white/5 border border-transparent"
+              }`}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
 
       {/* Unified Table view */}
@@ -527,15 +537,15 @@ export default function TransactionsClient() {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="space-y-2">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-1.5">
                 <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]" htmlFor="tx-description">
                   {modalType === "expense" ? "Merchant / Purpose" : "Source / Payor"}
                 </label>
                 <input 
                   type="text" 
                   required 
-                  className="input-premium" 
+                  className="input-premium !h-10 text-xs" 
                   placeholder={modalType === "expense" ? "e.g. Starbucks" : "e.g. Monthly Salary"} 
                   value={formData.description} 
                   onChange={e => setFormData({ ...formData, description: e.target.value })} 
@@ -545,91 +555,96 @@ export default function TransactionsClient() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]" htmlFor="tx-amount">
-                  Amount (₹)
-                </label>
-                <input 
-                  type="number" 
-                  required 
-                  className="input-premium" 
-                  placeholder="0.00" 
-                  value={formData.amount} 
-                  onChange={e => setFormData({ ...formData, amount: e.target.value })} 
-                  autoComplete="off" 
-                  inputMode="decimal" 
-                  id="tx-amount" 
-                  name="amount" 
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]" htmlFor="tx-amount">
+                    Amount (₹)
+                  </label>
+                  <input 
+                    type="number" 
+                    required 
+                    className="input-premium !h-10 text-xs" 
+                    placeholder="0.00" 
+                    value={formData.amount} 
+                    onChange={e => setFormData({ ...formData, amount: e.target.value })} 
+                    autoComplete="off" 
+                    inputMode="decimal" 
+                    id="tx-amount" 
+                    name="amount" 
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]" htmlFor="tx-date">
+                    Date
+                  </label>
+                  <input 
+                    type="date" 
+                    required 
+                    className="input-premium !h-10 text-xs" 
+                    value={formData.date} 
+                    onChange={e => setFormData({ ...formData, date: e.target.value })} 
+                    autoComplete="off" 
+                    id="tx-date" 
+                    name="date" 
+                  />
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]" htmlFor="tx-category">
-                  Category
-                </label>
-                <select 
-                  className="input-premium" 
-                  value={formData.category} 
-                  onChange={e => setFormData({ ...formData, category: e.target.value })} 
-                  id="tx-category" 
-                  name="category"
-                  aria-label="Select transaction category"
-                >
-                  {modalType === "income" 
-                    ? INCOME_CATEGORIES.map(c => <option key={c.label} value={c.label}>{c.label}</option>)
-                    : EXPENSE_CATEGORIES.map(c => <option key={c.label} value={c.label}>{c.label}</option>)
-                  }
-                </select>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]" htmlFor="tx-category">
+                    Category
+                  </label>
+                  <select 
+                    className="input-premium !h-10 text-xs text-white" 
+                    value={formData.category} 
+                    onChange={e => setFormData({ ...formData, category: e.target.value })} 
+                    id="tx-category" 
+                    name="category"
+                    aria-label="Select transaction category"
+                  >
+                    {modalType === "income" 
+                      ? INCOME_CATEGORIES.map(c => <option key={c.label} value={c.label}>{c.label}</option>)
+                      : EXPENSE_CATEGORIES.map(c => <option key={c.label} value={c.label}>{c.label}</option>)
+                    }
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]" htmlFor="tx-account">
+                    Account
+                  </label>
+                  <select 
+                    className="input-premium !h-10 text-xs text-white" 
+                    value={formData.account_id} 
+                    onChange={e => setFormData({ ...formData, account_id: e.target.value })} 
+                    id="tx-account" 
+                    name="account_id"
+                    aria-label="Select associated transaction account"
+                  >
+                    <option value="">No Account (Track only)</option>
+                    {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
+                  </select>
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]" htmlFor="tx-date">
-                  Date
-                </label>
-                <input 
-                  type="date" 
-                  required 
-                  className="input-premium" 
-                  value={formData.date} 
-                  onChange={e => setFormData({ ...formData, date: e.target.value })} 
-                  autoComplete="off" 
-                  id="tx-date" 
-                  name="date" 
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]" htmlFor="tx-account">
-                  Account
-                </label>
-                <select 
-                  className="input-premium" 
-                  value={formData.account_id} 
-                  onChange={e => setFormData({ ...formData, account_id: e.target.value })} 
-                  id="tx-account" 
-                  name="account_id"
-                  aria-label="Select associated transaction account"
-                >
-                  <option value="">No Account (Track only)</option>
-                  {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
-                </select>
-                {formData.account_id && (() => {
-                  const selectedAcc = accounts.find(a => a.id === formData.account_id);
-                  return selectedAcc ? (
-                    <div className="mt-2 p-2 rounded-lg bg-white/[0.02] border border-white/5 flex items-center justify-between text-[11px] text-[--text-secondary]">
-                      <span>Selected Balance</span>
-                      <span className="font-bold text-white">
-                        {selectedAcc.currency === 'USD' ? '$' : '₹'}{selectedAcc.balance.toLocaleString()}
-                      </span>
-                    </div>
-                  ) : null;
-                })()}
-              </div>
+              {formData.account_id && (() => {
+                const selectedAcc = accounts.find(a => a.id === formData.account_id);
+                return selectedAcc ? (
+                  <div className="p-2 rounded-lg bg-white/[0.02] border border-white/5 flex items-center justify-between text-[11px] text-[--text-secondary]">
+                    <span>Selected Balance</span>
+                    <span className="font-bold text-white">
+                      {selectedAcc.currency === 'USD' ? '$' : '₹'}{selectedAcc.balance.toLocaleString()}
+                    </span>
+                  </div>
+                ) : null;
+              })()}
 
               <button 
                 type="submit" 
                 disabled={submitting} 
-                className={`btn-primary w-full h-12 shadow-md mt-6 transition-all duration-200 ${
+                className={`btn-primary w-full h-11 text-xs font-bold shadow-md mt-4 transition-all duration-200 cursor-pointer ${
                   modalType === "income" 
                     ? "!bg-emerald-500 hover:!bg-emerald-600 shadow-emerald-500/20" 
                     : "!bg-rose-500 hover:!bg-rose-600 shadow-rose-500/20"

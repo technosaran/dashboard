@@ -526,6 +526,14 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                   </div>
                 )}
 
+                {/* Averaging helper note */}
+                {formData.symbol && !editingId && formData.trade_type === "buy" && investments.some(i => i.symbol === formData.symbol && i.type === "stock" && Number(i.quantity) > 0) && (
+                  <div className="p-3 rounded-xl bg-sky-500/5 border border-sky-500/10 text-[10px] text-sky-400 leading-relaxed flex items-start gap-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <span>💡</span>
+                    <span>You already own this stock. Buying more will automatically merge the shares and recalculate your <strong>weighted average buy price</strong>.</span>
+                  </div>
+                )}
+
                 {/* Qty & Price row */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
@@ -608,29 +616,30 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                       </div>
                     </div>
 
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Brokerage &amp; Charges (₹)</label>
-                      <input 
-                        type="number" 
-                        step="any"
-                        className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]" 
-                        value={charges} 
-                        onChange={e => setCharges(e.target.value)} 
-                      />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Brokerage &amp; Charges (₹)</label>
+                        <input 
+                          type="number" 
+                          step="any"
+                          className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]" 
+                          value={charges} 
+                          onChange={e => setCharges(e.target.value)} 
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Notes</label>
+                        <input 
+                          type="text"
+                          className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]" 
+                          placeholder="Optional notes..."
+                          value={formData.notes}
+                          onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                        />
+                      </div>
                     </div>
                   </>
                 )}
-
-                {/* Notes (Optional) */}
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Notes</label>
-                  <textarea 
-                    className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0] resize-none h-12" 
-                    placeholder="Optional notes..."
-                    value={formData.notes}
-                    onChange={e => setFormData({ ...formData, notes: e.target.value })}
-                  />
-                </div>
 
                 {/* Live Margin Calculation details */}
                 <div className="bg-white/5 rounded p-3 flex justify-between items-center text-xs text-gray-400">

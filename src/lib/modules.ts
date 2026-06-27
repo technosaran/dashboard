@@ -3,36 +3,26 @@
  * Import this everywhere instead of using magic string literals.
  */
 export const MODULE_KEYS = [
-  "Income",
-  "Expenses",
+  "Income & Expenses",
   "Budget",
-  "Stocks",
-  "Mutual Funds",
+  "Investments",
   "Alt Assets",
-  "Bonds",
   "Liabilities",
   "Goals",
   "Family Management",
-  "Forex",
   "Ledger",
-  "FnO",
 ] as const;
 
 export type ModuleKey = (typeof MODULE_KEYS)[number];
 
 /** Map internal module key to user-facing sidebar label */
 export const MODULE_DISPLAY_LABELS: Record<ModuleKey, string> = {
-  "Income": "Income",
-  "Expenses": "Expenses",
+  "Income & Expenses": "Income & Expenses",
   "Budget": "Budget",
-  "Stocks": "Stocks",
-  "Mutual Funds": "Mutual Funds",
+  "Investments": "Investments",
   "Alt Assets": "Assets",
-  "Bonds": "Bonds",
   "Liabilities": "Loans",
   "Goals": "Goals",
   "Family Management": "Family Management",
-  "Forex": "Forex",
   "Ledger": "Ledger",
-  "FnO": "FnO Trading",
 };

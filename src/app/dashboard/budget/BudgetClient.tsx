@@ -332,14 +332,40 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
         </div>
 
         {/* Tab Switcher */}
-        <Tabs
-          items={[
+        {/* Premium Segmented Toggle Bar */}
+        <div className="flex flex-wrap gap-1.5 rounded-2xl bg-white/[0.02] border border-white/5 p-1.5 max-w-fit shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]">
+          {[
             { key: "overview", label: "Overview" },
             { key: "categories", label: "Category Allocations", badge: overBudgetCategories.length > 0 ? overBudgetCategories.length : undefined },
-          ]}
-          active={activeView}
-          onChange={(key) => setActiveView(key as "overview" | "categories")}
-        />
+          ].map((tab) => {
+            const isActive = activeView === tab.key;
+            
+            let activeStyles = "bg-[--accent-primary] text-white shadow-[0_0_20px_rgba(99,102,241,0.3)]";
+            if (tab.key === "categories") activeStyles = "bg-rose-500 text-white shadow-[0_0_20px_rgba(244,63,94,0.3)]";
+
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveView(tab.key as any)}
+                className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center gap-2 whitespace-nowrap active:scale-95 cursor-pointer ${
+                  isActive
+                    ? `${activeStyles} border border-transparent`
+                    : "text-[--text-muted] hover:text-white hover:bg-white/5 border border-transparent"
+                }`}
+              >
+                {tab.label}
+                {tab.badge !== undefined && (
+                  <span className={`flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1 text-[9px] font-black ${
+                    isActive ? "bg-white/20 text-white" : "bg-white/10 text-white"
+                  }`}>
+                    {tab.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
 
         {/* View Content */}
         {activeView === "overview" ? (
