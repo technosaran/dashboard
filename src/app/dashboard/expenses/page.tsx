@@ -1,34 +1,11 @@
-import { Suspense } from "react";
-
-import { createClient } from "@/lib/supabase-server";
-import ExpensesClient from "./ExpensesClient";
 import { redirect } from "next/navigation";
-import type { Metadata } from "next";
-import { ModuleGuard } from "@/components/module-guard";
 
-export const metadata: Metadata = {
-  title: "Expense Management",
-  description:
-    "Detailed expenditure tracking. Analyze your spending habits across custom categories and accounts.",
+type PageProps = {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
-export const dynamic = "force-dynamic";
-
-export default async function ExpensesPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
-  return (
-    <Suspense fallback={null}>
-      <ModuleGuard moduleKey="Expenses">
-        <ExpensesClient />
-      </ModuleGuard>
-    </Suspense>
-  );
+export default async function ExpensesPage({ searchParams }: PageProps) {
+  const resolvedParams = await searchParams;
+  const queryString = new URLSearchParams(resolvedParams as any).toString();
+  redirect(`/dashboard/transactions?tab=expenses${queryString ? `&${queryString}` : ""}`);
 }
-

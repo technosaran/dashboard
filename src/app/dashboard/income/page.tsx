@@ -1,34 +1,11 @@
-import { Suspense } from "react";
-
-import { createClient } from "@/lib/supabase-server";
-import IncomeClient from "./IncomeClient";
 import { redirect } from "next/navigation";
-import type { Metadata } from "next";
-import { ModuleGuard } from "@/components/module-guard";
 
-export const metadata: Metadata = {
-  title: "Income Tracking",
-  description:
-    "Monitor your cash flow and earnings. Categorize your revenue sources with precision.",
+type PageProps = {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
-export const dynamic = "force-dynamic";
-
-export default async function IncomePage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
-  return (
-    <Suspense fallback={null}>
-      <ModuleGuard moduleKey="Income">
-        <IncomeClient />
-      </ModuleGuard>
-    </Suspense>
-  );
+export default async function IncomePage({ searchParams }: PageProps) {
+  const resolvedParams = await searchParams;
+  const queryString = new URLSearchParams(resolvedParams as any).toString();
+  redirect(`/dashboard/transactions?tab=income${queryString ? `&${queryString}` : ""}`);
 }
-

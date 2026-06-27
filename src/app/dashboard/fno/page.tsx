@@ -1,30 +1,11 @@
-import { Suspense } from "react";
-import { createClient } from "@/lib/supabase-server";
-import FnoClient from "./FnoClient";
 import { redirect } from "next/navigation";
-import type { Metadata } from "next";
-import { ModuleGuard } from "@/components/module-guard";
 
-export const metadata: Metadata = {
-  title: "FnO Trading",
-  description: "Log, track, and audit Futures & Options trades and cash margins.",
+type PageProps = {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
-export const dynamic = "force-dynamic";
-
-export default async function FnoPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
-
-  return (
-    <Suspense fallback={null}>
-      <ModuleGuard moduleKey="FnO">
-        <FnoClient />
-      </ModuleGuard>
-    </Suspense>
-  );
+export default async function FnoPage({ searchParams }: PageProps) {
+  const resolvedParams = await searchParams;
+  const queryString = new URLSearchParams(resolvedParams as any).toString();
+  redirect(`/dashboard/investments?tab=fno${queryString ? `&${queryString}` : ""}`);
 }
-

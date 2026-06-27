@@ -1,32 +1,11 @@
-import { Suspense } from "react";
-import { createClient } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
-import BondsClient from "./BondsClient";
-import type { Metadata } from "next";
-import { ModuleGuard } from "@/components/module-guard";
 
-export const metadata: Metadata = {
-  title: "Bonds",
-  description:
-    "Track your fixed-income securities, coupon payments, and bond portfolio performance.",
+type PageProps = {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
-export const dynamic = "force-dynamic";
-
-export default async function BondsPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) redirect("/login");
-
-  return (
-    <Suspense fallback={null}>
-      <ModuleGuard moduleKey="Bonds">
-        <BondsClient />
-      </ModuleGuard>
-    </Suspense>
-  );
+export default async function BondsPage({ searchParams }: PageProps) {
+  const resolvedParams = await searchParams;
+  const queryString = new URLSearchParams(resolvedParams as any).toString();
+  redirect(`/dashboard/investments?tab=bonds${queryString ? `&${queryString}` : ""}`);
 }
-
