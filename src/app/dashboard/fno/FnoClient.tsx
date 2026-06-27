@@ -189,7 +189,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
             onClick={() => {
               setLogFormData({
                 symbol: "", instrument_type: "FUT", strike_price: "", expiry_date: "",
-                trade_type: "BUY", quantity: "", entry_price: "", account_id: "", notes: "", trade_date: new Date().toISOString().split("T")[0]
+                trade_type: "BUY", quantity: "", entry_price: "", account_id: "", notes: "", trade_date: new Date().toISOString().split("T")[0], charges: ""
               });
               setShowLogForm(true);
             }}
