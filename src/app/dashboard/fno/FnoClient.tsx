@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useHasMounted } from "@/hooks/use-has-mounted";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 
 import { logFnoTrade, closeFnoTrade, deleteFnoTrade } from "./actions";
-import { fetchLiveStockPrice, searchStocks } from "../stocks/actions";
+
 import { useFinanceData, type FinanceData, type FnoTrade } from "@/hooks/use-finance-data";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { Drawer } from "@/components/ui/drawer";
@@ -28,74 +28,8 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
   // Kite uses tabs: Positions (Open), History (Closed)
   const [activeTab, setActiveTab] = useState<"positions" | "history">("positions");
 
-  // Watchlist states
-  const [watchlist, setWatchlist] = useState<string[]>([]);
-  const [watchlistPrices, setWatchlistPrices] = useState<Record<string, { price: number; prevClose?: number }>>({});
-  const [watchlistSearchQuery, setWatchlistSearchQuery] = useState("");
-  const [watchlistSearchResults, setWatchlistSearchResults] = useState<{ symbol: string, name: string, fullSymbol?: string, exchange?: string }[]>([]);
-  const [isWatchlistSearching, setIsWatchlistSearching] = useState(false);
-  const [showWatchlistDropdown, setShowWatchlistDropdown] = useState(false);
-
   const activePositions = useMemo(() => fnoTrades.filter(t => t.status === "OPEN"), [fnoTrades]);
   const closedHistory = useMemo(() => fnoTrades.filter(t => t.status === "CLOSED"), [fnoTrades]);
-
-  const allSymbols = useMemo(() => {
-    const syms = new Set(watchlist);
-    activePositions.forEach(p => {
-      if (p.symbol) syms.add(p.symbol);
-    });
-    return Array.from(syms);
-  }, [watchlist, activePositions]);
-
-  // Load watchlist on mount
-  useEffect(() => {
-    const saved = localStorage.getItem("stocks_watchlist");
-    if (saved) {
-      setWatchlist(JSON.parse(saved));
-    } else {
-      const defaultWatchlist = ["RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK"];
-      setWatchlist(defaultWatchlist);
-      localStorage.setItem("stocks_watchlist", JSON.stringify(defaultWatchlist));
-    }
-  }, []);
-
-  // Fetch prices for watchlist
-  const fetchWatchlistPrices = useCallback(async (symbols: string[]) => {
-    if (symbols.length === 0) return;
-    const prices: Record<string, { price: number; prevClose?: number }> = {};
-    await Promise.all(symbols.map(async (sym) => {
-      try {
-        const data = await fetchLiveStockPrice(sym);
-        if (data) prices[sym] = data;
-      } catch (e) {
-        console.error("Failed to fetch price for", sym, e);
-      }
-    }));
-    setWatchlistPrices(prev => ({ ...prev, ...prices }));
-  }, []);
-
-  useEffect(() => {
-    if (allSymbols.length > 0) {
-      fetchWatchlistPrices(allSymbols);
-    }
-  }, [allSymbols, fetchWatchlistPrices]);
-
-  // Watchlist Search
-  useEffect(() => {
-    if (watchlistSearchQuery.length > 2) {
-      setIsWatchlistSearching(true);
-      setShowWatchlistDropdown(true);
-      const timeoutId = setTimeout(async () => {
-        const results = await searchStocks(watchlistSearchQuery);
-        setWatchlistSearchResults(results);
-        setIsWatchlistSearching(false);
-      }, 500);
-      return () => clearTimeout(timeoutId);
-    } else {
-      setWatchlistSearchResults([]);
-      setShowWatchlistDropdown(false);
-    }
-  }, [watchlistSearchQuery]);
 
   const mounted = useHasMounted();
 
@@ -132,20 +66,9 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
   const stats = useMemo(() => {
     const totalRealizedPnL = closedHistory.reduce((acc, t) => acc + Number(t.pnl || 0), 0);
     const activeCost = activePositions.reduce((acc, t) => acc + (Number(t.quantity) * Number(t.entry_price)), 0);
-    
-    let totalUnrealizedPnL = 0;
-    activePositions.forEach(t => {
-      const ltp = watchlistPrices[t.symbol]?.price;
-      if (ltp) {
-        const diff = t.trade_type === 'BUY' 
-          ? (ltp - Number(t.entry_price)) * Number(t.quantity)
-          : (Number(t.entry_price) - ltp) * Number(t.quantity);
-        totalUnrealizedPnL += diff;
-      }
-    });
-
+    const totalUnrealizedPnL = 0;
     return { totalRealizedPnL, activeCost, totalUnrealizedPnL };
-  }, [activePositions, closedHistory, watchlistPrices]);
+  }, [activePositions, closedHistory]);
 
   const pieChartData = useMemo(() => {
     const map: Record<string, number> = {};
@@ -240,138 +163,6 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
 
   return (
     <div className="flex w-full bg-[#121212] min-h-screen">
-      {/* Zerodha Watchlist Sidebar (Left Column, hidden on small screens) */}
-      <div className="hidden lg:flex flex-col w-[340px] shrink-0 border-r border-white/10 bg-[#151515] select-none h-screen sticky top-0 overflow-y-auto custom-scrollbar">
-        {/* Watchlist Search Bar */}
-        <div className="p-3 border-b border-white/5 relative">
-          <div className="relative">
-            <input 
-              className="w-full bg-[#1e1e1e] border border-white/10 rounded px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:border-[#2185d0] outline-none" 
-              placeholder="Search eg: nifty ce, reliance fut" 
-              value={watchlistSearchQuery} 
-              onChange={e => setWatchlistSearchQuery(e.target.value)} 
-            />
-            {isWatchlistSearching && (
-              <div className="absolute right-3 top-2">
-                <svg className="w-3.5 h-3.5 animate-spin text-gray-500" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" strokeDasharray="32" className="opacity-25"></circle><path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" className="opacity-75"></path></svg>
-              </div>
-            )}
-          </div>
-
-          {/* Watchlist Search Results Dropdown */}
-          {showWatchlistDropdown && watchlistSearchResults.length > 0 && (
-            <div className="absolute z-50 left-3 right-3 top-[100%] mt-1 bg-[#202020] border border-white/10 rounded shadow-xl overflow-hidden max-h-56 overflow-y-auto custom-scrollbar">
-              {watchlistSearchResults.map((res, i) => (
-                <div 
-                  key={i} 
-                  className="px-3 py-2 hover:bg-white/5 cursor-pointer transition-colors border-b border-white/5 last:border-0 flex items-center justify-between"
-                  onClick={() => {
-                    if (!watchlist.includes(res.symbol)) {
-                      const updated = [...watchlist, res.symbol];
-                      setWatchlist(updated);
-                      localStorage.setItem("stocks_watchlist", JSON.stringify(updated));
-                    }
-                    setWatchlistSearchQuery("");
-                    setShowWatchlistDropdown(false);
-                  }}
-                >
-                  <div>
-                    <div className="text-xs font-bold text-white">{res.symbol}</div>
-                    <div className="text-[10px] text-gray-400 truncate max-w-[180px]">{res.name}</div>
-                  </div>
-                  <button className="text-[10px] bg-[#2185d0]/20 text-[#2185d0] hover:bg-[#2185d0] hover:text-white px-2 py-0.5 rounded transition-all font-semibold">
-                    + Add
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Watchlist Items */}
-        <div className="flex-1 divide-y divide-white/5">
-          {watchlist.map((sym) => {
-            const data = watchlistPrices[sym];
-            const price = data?.price ?? 0;
-            const prevClose = data?.prevClose ?? price;
-            const change = price - prevClose;
-            const pctChange = prevClose > 0 ? (change / prevClose) * 100 : 0;
-            const isUp = change >= 0;
-
-            return (
-              <div 
-                key={sym} 
-                className="group relative px-4 py-3.5 flex items-center justify-between hover:bg-white/[0.02] transition-colors cursor-pointer"
-              >
-                <div>
-                  <div className="text-xs font-bold text-white tracking-wide">{sym}</div>
-                  <div className="text-[9px] text-gray-500 font-semibold tracking-wider uppercase">NSE</div>
-                </div>
-
-                {/* Normal view */}
-                <div className="flex items-center gap-4 group-hover:opacity-0 transition-opacity duration-150">
-                  <div className="text-right">
-                    <div className="text-xs font-semibold text-white">
-                      {price > 0 ? `₹${formatMoney(price)}` : "—"}
-                    </div>
-                    <div className={`text-[10px] font-medium ${isUp ? "text-emerald-500" : "text-rose-500"}`}>
-                      {price > 0 ? `${isUp ? "+" : ""}${pctChange.toFixed(2)}%` : ""}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Hover actions */}
-                <div className="absolute inset-0 bg-[#151515] px-4 items-center justify-end gap-2 hidden group-hover:flex">
-                  <button 
-                    onClick={() => {
-                      setLogFormData({
-                        symbol: sym, instrument_type: "FUT", strike_price: "", expiry_date: "",
-                        trade_type: "BUY", quantity: "1", entry_price: price.toString(),
-                        account_id: "", notes: "", trade_date: new Date().toISOString().split("T")[0]
-                      });
-                      setShowLogForm(true);
-                    }}
-                    className="w-7 h-7 rounded bg-[#4185f4] hover:bg-[#3574d3] text-white flex items-center justify-center text-[10px] font-bold shadow-md transition-transform active:scale-95"
-                  >
-                    B
-                  </button>
-                  <button 
-                    onClick={() => {
-                      setLogFormData({
-                        symbol: sym, instrument_type: "FUT", strike_price: "", expiry_date: "",
-                        trade_type: "SELL", quantity: "1", entry_price: price.toString(),
-                        account_id: "", notes: "", trade_date: new Date().toISOString().split("T")[0]
-                      });
-                      setShowLogForm(true);
-                    }}
-                    className="w-7 h-7 rounded bg-[#ff5722] hover:bg-[#e64a19] text-white flex items-center justify-center text-[10px] font-bold shadow-md transition-transform active:scale-95"
-                  >
-                    S
-                  </button>
-                  <button 
-                    onClick={() => {
-                      const updated = watchlist.filter(s => s !== sym);
-                      setWatchlist(updated);
-                      localStorage.setItem("stocks_watchlist", JSON.stringify(updated));
-                    }}
-                    className="w-7 h-7 rounded bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white flex items-center justify-center text-[11px] transition-colors"
-                  >
-                    🗑️
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-
-          {watchlist.length === 0 && (
-            <div className="p-8 text-center text-xs text-gray-500">
-              Watchlist is empty. Search and add symbols above.
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Main positions panel */}
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
         {/* Kite Top Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-[#151515]">
