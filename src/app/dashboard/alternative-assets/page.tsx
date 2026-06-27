@@ -3,7 +3,7 @@ import AlternativeAssetsClient from "./AlternativeAssetsClient";
 import { ModuleGuard } from "@/components/module-guard";
 
 export const metadata = {
-  title: "Alternative Assets | FinanceOS",
+  title: "Alternative Assets",
   description: "Monitor your physical holdings, real estate, and alternative investments.",
 };
 

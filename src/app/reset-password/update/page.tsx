@@ -43,7 +43,7 @@ export default function UpdatePasswordPage() {
             </svg>
           </div>
           <div className="login-logo-text">
-            <span className="login-logo-name">FinanceOS</span>
+            <span className="login-logo-name">Dashboard</span>
             <span className="login-logo-sub">Security</span>
           </div>
         </div>

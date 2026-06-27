@@ -3,7 +3,7 @@ import LiabilitiesClient from "./LiabilitiesClient";
 import { ModuleGuard } from "@/components/module-guard";
 
 export const metadata = {
-  title: "Liabilities & Debt | FinanceOS",
+  title: "Liabilities & Debt",
   description: "Track and manage your loans, EMIs, and outstanding debts.",
 };
 

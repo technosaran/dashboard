@@ -71,7 +71,7 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, accou
       <div className="flex items-center justify-between pt-2 px-1">
         <div className="flex flex-col">
           <span className="text-[10px] font-black uppercase tracking-[0.25em] text-[--accent-primary]">Console</span>
-          <h2 className="text-lg font-black text-white tracking-tighter">Finance<span className="text-[--accent-primary]">OS</span></h2>
+          <h2 className="text-lg font-black text-white tracking-tighter">Dashboard</h2>
         </div>
         <div className="flex items-center gap-2 bg-white/[0.02] border border-white/5 px-2.5 py-1 rounded-full">
           <span className={`w-1.5 h-1.5 rounded-full ${isValidating ? 'animate-pulse bg-yellow-400 shadow-[0_0_10px_rgba(250,204,21,0.5)]' : 'bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]'}`} />

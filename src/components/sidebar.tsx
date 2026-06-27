@@ -299,9 +299,9 @@ export default function Sidebar() {
       <aside className={`hidden md:flex shrink-0 flex-col h-screen sticky top-0 transition-all duration-300 ${isCollapsed ? "w-20" : "w-52"}`} style={{ background: "var(--sidebar-bg)", borderRight: "1px solid var(--sidebar-border)", backdropFilter: "blur(20px) saturate(1.2)", WebkitBackdropFilter: "blur(20px) saturate(1.2)" }}>
         <div className={`px-4 pt-6 pb-2 flex items-center ${isCollapsed ? "justify-center" : "justify-between"}`}>
           {!isCollapsed ? (
-            <h2 className="text-xl font-black text-[--text-primary] tracking-tighter">Finance<span className="text-[--accent-primary]">OS</span></h2>
+            <h2 className="text-xl font-black text-[--text-primary] tracking-tighter">Dashboard</h2>
           ) : (
-            <h2 className="text-xl font-black text-[--accent-primary] tracking-tighter">F</h2>
+            <h2 className="text-xl font-black text-[--accent-primary] tracking-tighter">D</h2>
           )}
           <button 
             type="button" 

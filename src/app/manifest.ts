@@ -5,8 +5,8 @@ export default function manifest(): MetadataRoute.Manifest {
   const version = "2.0.8"; // This can be dynamic based on your build or package.json
   
   return {
-    name: 'FinanceOS Dashboard',
-    short_name: 'FinanceOS',
+    name: 'Wealth Dashboard',
+    short_name: 'Dashboard',
     description: 'Premium personal finance dashboard — manage accounts, track wealth, send money',
     start_url: '/dashboard',
     display: 'standalone',

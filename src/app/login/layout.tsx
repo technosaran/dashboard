@@ -7,7 +7,7 @@ export const metadata: Metadata = {
     canonical: "/login",
   },
   openGraph: {
-    title: "Login | FinanceOS",
+    title: "Login",
     description: "Sign in to access your premium financial dashboard.",
     url: "https://finance-os.app/login",
   },

@@ -3,7 +3,7 @@ import BudgetClient from "./BudgetClient";
 import { ModuleGuard } from "@/components/module-guard";
 
 export const metadata = {
-  title: "Budget Planner | FinanceOS",
+  title: "Budget Planner",
   description: "Strategize your monthly spending and track savings potential.",
 };
 

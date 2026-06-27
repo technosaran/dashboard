@@ -116,8 +116,8 @@ export default function LoginPage() {
             </svg>
           </div>
           <div className="login-logo-text">
-            <span className="login-logo-name">FinanceOS</span>
-            <span className="login-logo-sub">Premium Dashboard</span>
+            <span className="login-logo-name">Dashboard</span>
+            <span className="login-logo-sub">Premium Console</span>
           </div>
         </div>
 

@@ -195,7 +195,7 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
             <div className="flex-1 space-y-3">
               <div className="flex items-center gap-3">
                 <span className="text-2xl">🚀</span>
-                <h2 className="text-xl font-black text-white">Welcome to your FinanceOS Terminal</h2>
+                <h2 className="text-xl font-black text-white">Welcome to your Dashboard Terminal</h2>
               </div>
               <p className="text-xs text-[--text-secondary] leading-relaxed max-w-2xl">
                 Your database is initialized and completely clean. Let&apos;s breathe life into your dashboard! Manually construct your financial system to see allocations, investments, cash flows, and forex logs in action.

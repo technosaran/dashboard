@@ -9,13 +9,13 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "FinanceOS — Premium Financial Control",
-    template: "%s | FinanceOS"
+    default: "Premium Financial Control",
+    template: "%s | Portfolio"
   },
   description: "Your private wealth dashboard. Track net worth, cash flow, and portfolio performance at a glance.",
   keywords: ["personal finance", "stock tracker", "wealth management", "budgeting", "net worth", "investment dashboard"],
-  authors: [{ name: "FinanceOS Team" }],
-  creator: "FinanceOS",
+  authors: [{ name: "Wealth Team" }],
+  creator: "TechnoSaran",
   publisher: "TechnoSaran",
   metadataBase: new URL("https://finance-os.app"),
   alternates: {
@@ -25,13 +25,13 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     url: "https://finance-os.app",
-    title: "FinanceOS — Private Wealth Dashboard",
+    title: "Private Wealth Dashboard",
     description: "Institutional-grade wealth management for elite traders and investors.",
-    siteName: "FinanceOS",
+    siteName: "Portfolio",
   },
   twitter: {
     card: "summary_large_image",
-    title: "FinanceOS — Wealth Refined",
+    title: "Wealth Refined",
     description: "Track your global financial footprint from a single premium console.",
     creator: "@technosaran",
   },
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "FinanceOS",
+    title: "Portfolio",
   },
   icons: {
     icon: [
@@ -57,8 +57,6 @@ export const metadata: Metadata = {
 };
 
 import { Toaster } from "react-hot-toast";
-import { Suspense } from "react";
-import ProgressBar from "@/components/progress-bar";
 import { cn } from "@/lib/utils";
 import PwaSecurityManager from "@/components/pwa-security-manager";
 
@@ -87,9 +85,7 @@ export default async function RootLayout({
 
         <PwaSecurityManager />
 
-        <Suspense fallback={null}>
-          <ProgressBar />
-        </Suspense>
+
         {children}
         <Toaster 
           position="top-center"
