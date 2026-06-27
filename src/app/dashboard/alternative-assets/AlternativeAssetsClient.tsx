@@ -11,6 +11,7 @@ import { format } from "date-fns";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { Drawer } from "@/components/ui/drawer";
 import PnLValue from "@/components/pnl-value";
+import { Tabs } from "@/components/ui/tabs";
 
 import dynamic from "next/dynamic";
 const ResponsiveContainer = dynamic(() => import("recharts").then((mod) => mod.ResponsiveContainer), { ssr: false });
@@ -132,10 +133,19 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
     <div className="flex flex-col gap-8 animate-in fade-in duration-700">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-          <h1 className="text-4xl font-black tracking-tight text-white uppercase italic">Alternative Assets</h1>
-          <p className="text-[10px] text-[--text-muted] font-black uppercase tracking-[0.4em] mt-2 ml-1">Tangible Wealth & Private Holdings</p>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[--text-primary]">Alternative Assets</h1>
+          <p className="text-[13px] md:text-sm mt-1 text-[--text-secondary]">Tangible wealth, physical assets, private equity, and holdings.</p>
         </div>
-        <button type="button" onClick={() => setShowAddModal(true)} disabled={submitting} className="btn-primary !h-11 px-6 shadow-[0_0_30px_rgba(14,165,233,0.3)] text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+        <button 
+          type="button" 
+          onClick={() => {
+            setEditingId(null);
+            setFormData({ name: "", category: "Real Estate", purchase_price: "", current_value: "", purchase_date: new Date().toISOString().split("T")[0], notes: "", account_id: "" });
+            setShowAddModal(true);
+          }} 
+          disabled={submitting} 
+          className="btn-primary !h-11 px-6 shadow-[0_0_30px_rgba(14,165,233,0.3)] text-xs font-bold uppercase tracking-wider flex items-center gap-2"
+        >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
           Record Asset
         </button>
@@ -153,7 +163,11 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
           <h3 className="text-2xl md:text-3xl font-black text-[--text-primary] tracking-tight">Register Your First Asset</h3>
           <p className="text-sm text-[--text-muted] mt-3 max-w-lg mx-auto font-medium leading-relaxed">Track real estate, gold, collectibles, and other tangible holdings. Build a complete picture of your wealth.</p>
           <div className="mt-8 flex justify-center">
-             <button onClick={() => setShowAddModal(true)} className="btn-primary">Record New Asset</button>
+             <button onClick={() => {
+               setEditingId(null);
+               setFormData({ name: "", category: "Real Estate", purchase_price: "", current_value: "", purchase_date: new Date().toISOString().split("T")[0], notes: "", account_id: "" });
+               setShowAddModal(true);
+             }} className="btn-primary">Record New Asset</button>
           </div>
         </div>
       ) : (
@@ -188,41 +202,15 @@ export default function AlternativeAssetsClient({ initialData }: { initialData?:
           </div>
         </div>
 
-        <div className="flex border-b border-white/10">
-          <button
-            onClick={() => setActiveTab("overview")}
-            className={`px-6 py-3 text-sm font-bold transition-colors border-b-2 ${
-              activeTab === "overview"
-                ? "border-[--accent-primary] text-[--accent-primary]"
-                : "border-transparent text-[--text-muted] hover:text-white"
-            }`}
-          >
-            Overview
-          </button>
-          <button
-            onClick={() => setActiveTab("inventory")}
-            className={`px-6 py-3 text-sm font-bold transition-colors border-b-2 flex items-center gap-2 ${
-              activeTab === "inventory"
-                ? "border-[--accent-primary] text-[--accent-primary]"
-                : "border-transparent text-[--text-muted] hover:text-white"
-            }`}
-          >
-            Inventory Directory
-            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white/10 text-[9px] text-white">
-              {alternativeAssets.length}
-            </span>
-          </button>
-          <button
-            onClick={() => setActiveTab("history")}
-            className={`px-6 py-3 text-sm font-bold transition-colors border-b-2 flex items-center gap-2 ${
-              activeTab === "history"
-                ? "border-[--accent-primary] text-[--accent-primary]"
-                : "border-transparent text-[--text-muted] hover:text-white"
-            }`}
-          >
-            Audit History
-          </button>
-        </div>
+        <Tabs
+          items={[
+            { key: "overview", label: "Overview" },
+            { key: "inventory", label: "Inventory Directory", badge: alternativeAssets.length },
+            { key: "history", label: "Audit History" }
+          ]}
+          active={activeTab}
+          onChange={(key) => setActiveTab(key as any)}
+        />
 
         {activeTab === "overview" && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
