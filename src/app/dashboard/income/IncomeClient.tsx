@@ -70,9 +70,20 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
 
   const [selectedMonth, setSelectedMonth] = useState(() => new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear());
-
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingIncomeId, setDeletingIncomeId] = useState<string | null>(null);
+
+  const defaultDate = useMemo(() => {
+    const today = new Date();
+    const yyyy = selectedYear;
+    const mm = String(selectedMonth).padStart(2, '0');
+    if (today.getMonth() + 1 === selectedMonth && today.getFullYear() === selectedYear) {
+      const dd = String(today.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    } else {
+      return `${yyyy}-${mm}-01`;
+    }
+  }, [selectedMonth, selectedYear]);
 
   const [formData, setFormData] = useState({
     description: "",
@@ -82,57 +93,47 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
     account_id: "",
   });
 
-  // Set today's date on client mount to prevent SSR/hydration mismatch
+  const [initialized, setInitialized] = useState(false);
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setFormData(prev => ({
-        ...prev,
-        date: new Date().toISOString().split("T")[0]
-      }));
-    }, 0);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Initialize default account when accounts/profile loads or modal is opened
-  useEffect(() => {
-    if (accounts.length > 0 && showAddModal && !formData.account_id) {
+    const isNew = searchParams.get("action") === "new";
+    if (isNew && !initialized && accounts.length > 0 && defaultDate) {
+      setInitialized(true);
       const defaultAccId = profile?.default_accounts?.income;
-      const defaultAccExists = defaultAccId && accounts.some(a => a.id === defaultAccId);
-      if (defaultAccExists) {
-        setTimeout(() => {
-          setFormData(prev => ({ ...prev, account_id: defaultAccId }));
-        }, 0);
-      }
-    }
-  }, [accounts, profile, showAddModal, formData.account_id]);
-
-  // Align form default date with the selected month and year
-  useEffect(() => {
-    if (showAddModal) {
-      const t = setTimeout(() => {
-        setFormData(prev => {
-          if (!prev.date) return prev;
-          const today = new Date();
-          const [currYear, currMonth] = prev.date.split("-").map(Number);
-          
-          if (currMonth === selectedMonth && currYear === selectedYear) {
-            return prev;
-          }
-          
-          const yyyy = selectedYear;
-          const mm = String(selectedMonth).padStart(2, '0');
-          
-          if (today.getMonth() + 1 === selectedMonth && today.getFullYear() === selectedYear) {
-            const dd = String(today.getDate()).padStart(2, '0');
-            return { ...prev, date: `${yyyy}-${mm}-${dd}` };
-          } else {
-            return { ...prev, date: `${yyyy}-${mm}-01` };
-          }
+      const account_id = (defaultAccId && accounts.some(a => a.id === defaultAccId)) ? defaultAccId : "";
+      setTimeout(() => {
+        setFormData({
+          description: "",
+          amount: "",
+          category: "Salary",
+          date: defaultDate,
+          account_id
         });
       }, 0);
-      return () => clearTimeout(t);
+    } else if (!initialized && defaultDate) {
+      setInitialized(true);
+      setTimeout(() => {
+        setFormData(prev => ({ ...prev, date: defaultDate }));
+      }, 0);
     }
-  }, [selectedMonth, selectedYear, showAddModal]);
+  }, [accounts, profile, defaultDate, initialized, searchParams]);
+
+  // Reset pagination page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [categoryFilter, selectedMonth, selectedYear]);
+
+  const handleOpenAddModal = () => {
+    const defaultAccId = profile?.default_accounts?.income;
+    const account_id = (defaultAccId && accounts.some(a => a.id === defaultAccId)) ? defaultAccId : "";
+    setFormData({
+      description: "",
+      amount: "",
+      category: "Salary",
+      date: defaultDate,
+      account_id
+    });
+    setShowAddModal(true);
+  };
 
   // Close modals on Escape key
   useEffect(() => {
@@ -413,7 +414,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M12 4v12m0 0l-4-4m4 4l4-4M3 16v2a2 2 0 002 2h14a2 2 0 002-2v-2" /></svg>
             Export
           </button>
-          <button type="button" onClick={() => setShowAddModal(true)} className="btn-primary flex-1 md:flex-none gap-2">
+          <button type="button" onClick={handleOpenAddModal} className="btn-primary flex-1 md:flex-none gap-2">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
             Log Income
           </button>
@@ -510,7 +511,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
               }
               glowColor="emerald"
               action={
-                <button type="button" onClick={() => setShowAddModal(true)} className="btn-primary shadow-xl !bg-emerald-500 hover:!bg-emerald-600 shadow-emerald-500/20 mt-8 flex items-center gap-2">
+                <button type="button" onClick={handleOpenAddModal} className="btn-primary shadow-xl !bg-emerald-500 hover:!bg-emerald-600 shadow-emerald-500/20 mt-8 flex items-center gap-2">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
                   Log Your First Income
                 </button>
