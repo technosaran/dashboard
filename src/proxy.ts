@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_ROUTES = new Set(["/", "/login", "/reset-password", "/reset-password/update"]);
+const PUBLIC_ROUTES = new Set(["/", "/login", "/reset-password", "/reset-password/update", "/api/sync"]);
 
 function isStaticAsset(pathname: string) {
   return (
