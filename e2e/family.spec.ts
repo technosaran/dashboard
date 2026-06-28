@@ -8,8 +8,8 @@ test.describe('Family Management E2E', () => {
 
   test('login page elements are visible', async ({ page }) => {
     await page.goto('/login');
-    const emailInput = page.getByPlaceholder(/email/i);
-    const passwordInput = page.getByPlaceholder(/password/i);
+    const emailInput = page.getByPlaceholder("you@example.com");
+    const passwordInput = page.getByPlaceholder("••••••••");
     const submitButton = page.getByRole('button', { name: /sign in/i });
 
     await expect(emailInput).toBeVisible();
