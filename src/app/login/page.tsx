@@ -51,7 +51,9 @@ export default function LoginPage() {
     if (savedUntil) {
       const until = parseInt(savedUntil, 10);
       if (until > Date.now()) {
-        startLockout(until - Date.now(), until);
+        setTimeout(() => {
+          startLockout(until - Date.now(), until);
+        }, 0);
       } else {
         localStorage.removeItem("lockoutUntil");
         localStorage.removeItem("failCount");
@@ -88,7 +90,7 @@ export default function LoginPage() {
         localStorage.removeItem("failCount");
         localStorage.removeItem("lockoutUntil");
       }
-    } catch (err) {
+    } catch {
       setError("An unexpected error occurred. Please try again.");
       setLoading(false);
     }

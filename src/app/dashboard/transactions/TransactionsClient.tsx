@@ -1,18 +1,15 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
-import { format, parseISO, subMonths } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { useFinanceData } from "@/hooks/use-finance-data";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
-import { useMediaQuery } from "@/hooks/use-media-query";
 import { Drawer } from "@/components/ui/drawer";
-import { EmptyState } from "@/components/empty-state";
-import { ArrowUpDown, ArrowUp, ArrowDown, Trash2, Plus, Download } from "lucide-react";
+import { Trash2, Plus, Download } from "lucide-react";
 import { addIncome, deleteIncome } from "@/app/dashboard/income/actions";
 import { addExpense, deleteExpense } from "@/app/dashboard/expenses/actions";
-import { getCategoryColour } from "@/lib/chart-colours";
 import { exportToCSV } from "@/lib/export-csv";
 
 const INCOME_CATEGORIES = [
@@ -42,8 +39,7 @@ export default function TransactionsClient() {
   const searchParams = useSearchParams();
   const initialTab = searchParams.get("tab") === "income" ? "income" : searchParams.get("tab") === "expenses" ? "expense" : "all";
 
-  const { data: { transactions, accounts, profile }, mutate, isValidating } = useFinanceData();
-  const isMobile = useMediaQuery("(max-width: 767.98px)");
+  const { data: { transactions, accounts, profile }, mutate } = useFinanceData();
   const [showAddModal, setShowAddModal] = useState(searchParams.get("action") === "new");
   const [submitting, withLock] = useSubmitLock();
   
@@ -65,6 +61,10 @@ export default function TransactionsClient() {
     category: "Food",
     date: "",
     account_id: "",
+    is_recurring: false,
+    recurrence_frequency: "monthly",
+    recurrence_day: 1,
+    recurrence_end_date: "",
   });
 
   // Default date and account setup
@@ -80,33 +80,74 @@ export default function TransactionsClient() {
     }
   }, [selectedMonth, selectedYear]);
 
-  useEffect(() => {
-    setFormData(prev => ({
-      ...prev,
-      date: defaultDate
-    }));
-  }, [defaultDate]);
+  const initializedRef = useRef(false);
 
-  // Adjust categories when modalType changes
   useEffect(() => {
-    if (modalType === "income") {
-      setFormData(prev => ({ ...prev, category: "Salary" }));
-    } else {
-      setFormData(prev => ({ ...prev, category: "Food" }));
-    }
-  }, [modalType]);
-
-  // Auto-populate default account
-  useEffect(() => {
-    if (accounts.length > 0 && showAddModal && !formData.account_id) {
-      const defaultAccId = modalType === "income" 
-        ? profile?.default_accounts?.income 
-        : profile?.default_accounts?.expenses;
-      if (defaultAccId && accounts.some(a => a.id === defaultAccId)) {
-        setFormData(prev => ({ ...prev, account_id: defaultAccId }));
+    const isNew = searchParams.get("action") === "new";
+    if (isNew && !initializedRef.current && accounts.length > 0) {
+      initializedRef.current = true;
+      const category = "Food";
+      const defaultAccId = profile?.default_accounts?.expenses;
+      const account_id = (defaultAccId && accounts.some(a => a.id === defaultAccId)) ? defaultAccId : "";
+      setTimeout(() => {
+        setFormData({
+          description: "",
+          amount: "",
+          category,
+          date: defaultDate,
+          account_id,
+          is_recurring: false,
+          recurrence_frequency: "monthly",
+          recurrence_day: 1,
+          recurrence_end_date: "",
+        });
+      }, 0);
+    } else if (!initializedRef.current && defaultDate) {
+      setTimeout(() => {
+        setFormData(prev => ({ ...prev, date: defaultDate }));
+      }, 0);
+      if (defaultDate) {
+        initializedRef.current = true;
       }
     }
-  }, [accounts, profile, showAddModal, modalType, formData.account_id]);
+  }, [accounts, profile, defaultDate, searchParams]);
+
+  const handleOpenAddModal = (type: "income" | "expense") => {
+    setModalType(type);
+    const category = type === "income" ? "Salary" : "Food";
+    const defaultAccId = type === "income" 
+      ? profile?.default_accounts?.income 
+      : profile?.default_accounts?.expenses;
+    const account_id = (defaultAccId && accounts.some(a => a.id === defaultAccId)) ? defaultAccId : "";
+    
+    setFormData({
+      description: "",
+      amount: "",
+      category,
+      date: defaultDate,
+      account_id,
+      is_recurring: false,
+      recurrence_frequency: "monthly",
+      recurrence_day: 1,
+      recurrence_end_date: ""
+    });
+    setShowAddModal(true);
+  };
+
+  const handleSwitchModalType = (type: "income" | "expense") => {
+    setModalType(type);
+    const category = type === "income" ? "Salary" : "Food";
+    const defaultAccId = type === "income" 
+      ? profile?.default_accounts?.income 
+      : profile?.default_accounts?.expenses;
+    const account_id = (defaultAccId && accounts.some(a => a.id === defaultAccId)) ? defaultAccId : "";
+    
+    setFormData(prev => ({
+      ...prev,
+      category,
+      account_id
+    }));
+  };
 
   const getAccountCurrency = (accountId: string | null) => {
     if (!accountId) return "INR";
@@ -196,6 +237,10 @@ export default function TransactionsClient() {
     );
   };
 
+  const handleExportPDF = () => {
+    window.open(`/api/reports/download?month=${selectedMonth}&year=${selectedYear}`, "_blank");
+  };
+
   async function handleDelete(id: string, type: "income" | "expense") {
     setDeletingId(id);
     setDeletingType(type);
@@ -228,7 +273,13 @@ export default function TransactionsClient() {
         amount: parseFloat(formData.amount),
         category: formData.category,
         date: formData.date,
-        account_id: formData.account_id || undefined
+        account_id: formData.account_id || undefined,
+        ...(modalType === "expense" ? {
+          is_recurring: formData.is_recurring,
+          recurrence_frequency: formData.recurrence_frequency,
+          recurrence_day: formData.recurrence_day,
+          recurrence_end_date: formData.recurrence_end_date || undefined
+        } : {})
       };
 
       const res = modalType === "income" 
@@ -237,7 +288,17 @@ export default function TransactionsClient() {
 
       if (!res?.error) {
         toast.success(modalType === "income" ? "Income logged successfully" : "Expense logged successfully");
-        setFormData({ description: "", amount: "", category: "Food", date: defaultDate, account_id: "" });
+        setFormData({ 
+          description: "", 
+          amount: "", 
+          category: "Food", 
+          date: defaultDate, 
+          account_id: "",
+          is_recurring: false,
+          recurrence_frequency: "monthly",
+          recurrence_day: 1,
+          recurrence_end_date: ""
+        });
         setShowAddModal(false);
         mutate();
       } else {
@@ -286,7 +347,15 @@ export default function TransactionsClient() {
           </button>
           <button 
             type="button" 
-            onClick={() => { setModalType("income"); setShowAddModal(true); }}
+            onClick={handleExportPDF}
+            className="btn-secondary !h-11 px-4 text-xs font-bold flex items-center gap-2"
+          >
+            <Download className="w-4 h-4" />
+            <span>PDF Statement</span>
+          </button>
+          <button 
+            type="button" 
+            onClick={() => handleOpenAddModal("income")}
             className="btn-primary !h-11 px-4 text-xs font-bold flex items-center gap-2 !bg-emerald-500 hover:!bg-emerald-600 shadow-[0_0_20px_rgba(16,185,129,0.2)] cursor-pointer"
           >
             <Plus className="w-4 h-4" />
@@ -294,7 +363,7 @@ export default function TransactionsClient() {
           </button>
           <button 
             type="button" 
-            onClick={() => { setModalType("expense"); setShowAddModal(true); }}
+            onClick={() => handleOpenAddModal("expense")}
             className="btn-primary !h-11 px-4 text-xs font-bold flex items-center gap-2 !bg-rose-500 hover:!bg-rose-600 shadow-[0_0_20px_rgba(244,63,94,0.2)] cursor-pointer"
           >
             <Plus className="w-4 h-4" />
@@ -515,7 +584,7 @@ export default function TransactionsClient() {
             <div className="flex rounded-xl bg-white/5 p-1 border border-white/5">
               <button
                 type="button"
-                onClick={() => setModalType("expense")}
+                onClick={() => handleSwitchModalType("expense")}
                 className={`flex-1 py-2 text-xs font-black uppercase tracking-wider rounded-lg transition-all ${
                   modalType === "expense" 
                     ? "bg-rose-500/10 text-rose-400 border border-rose-500/25" 
@@ -526,7 +595,7 @@ export default function TransactionsClient() {
               </button>
               <button
                 type="button"
-                onClick={() => setModalType("income")}
+                onClick={() => handleSwitchModalType("income")}
                 className={`flex-1 py-2 text-xs font-black uppercase tracking-wider rounded-lg transition-all ${
                   modalType === "income" 
                     ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/25" 
@@ -640,6 +709,72 @@ export default function TransactionsClient() {
                   </div>
                 ) : null;
               })()}
+
+              {modalType === "expense" && (
+                <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]" htmlFor="tx-recurring">
+                      Recurring Expense
+                    </label>
+                    <input
+                      type="checkbox"
+                      id="tx-recurring"
+                      className="w-4 h-4 rounded border-white/10 bg-white/5 text-rose-500 focus:ring-rose-500/20"
+                      checked={formData.is_recurring}
+                      onChange={e => setFormData({ ...formData, is_recurring: e.target.checked })}
+                    />
+                  </div>
+
+                  {formData.is_recurring && (
+                    <div className="grid grid-cols-3 gap-3 pt-2 border-t border-white/5 animate-in fade-in duration-200">
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-bold text-[--text-muted]" htmlFor="tx-frequency">
+                          Frequency
+                        </label>
+                        <select
+                          id="tx-frequency"
+                          className="input-premium !h-9 text-[11px] text-white"
+                          value={formData.recurrence_frequency}
+                          onChange={e => setFormData({ ...formData, recurrence_frequency: e.target.value })}
+                        >
+                          <option value="daily">Daily</option>
+                          <option value="weekly">Weekly</option>
+                          <option value="monthly">Monthly</option>
+                          <option value="yearly">Yearly</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-bold text-[--text-muted]" htmlFor="tx-rec-day">
+                          Day Due
+                        </label>
+                        <input
+                          type="number"
+                          id="tx-rec-day"
+                          min="1"
+                          max="31"
+                          className="input-premium !h-9 text-[11px] text-white"
+                          value={formData.recurrence_day}
+                          onChange={e => setFormData({ ...formData, recurrence_day: parseInt(e.target.value) || 1 })}
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-bold text-[--text-muted]" htmlFor="tx-end-date">
+                          End Date
+                        </label>
+                        <input
+                          type="date"
+                          id="tx-end-date"
+                          className="input-premium !h-9 text-[11px] text-white"
+                          value={formData.recurrence_end_date}
+                          onChange={e => setFormData({ ...formData, recurrence_end_date: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <button 
                 type="submit" 

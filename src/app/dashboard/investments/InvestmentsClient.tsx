@@ -27,7 +27,7 @@ export default function InvestmentsClient() {
   const searchParams = useSearchParams();
   const initialTab = searchParams.get("tab") || "overview";
 
-  const { data: { investments, mutualFunds, bonds, fnoTrades, forexAccounts, alternativeAssets, profile }, isLoading } = useFinanceData();
+  const { data: { investments, mutualFunds, bonds, forexAccounts, alternativeAssets, profile }, isLoading } = useFinanceData();
   const mounted = useHasMounted();
   const [activeTab, setActiveTab] = useState(initialTab);
 
@@ -55,7 +55,9 @@ export default function InvestmentsClient() {
   useEffect(() => {
     const exists = availableTabs.some(t => t.key === activeTab);
     if (!exists && availableTabs.length > 0) {
-      setActiveTab("overview");
+      setTimeout(() => {
+        setActiveTab("overview");
+      }, 0);
     }
   }, [availableTabs, activeTab]);
 
@@ -76,9 +78,6 @@ export default function InvestmentsClient() {
     // 3. Bonds
     const bondsInvested = bonds.reduce((sum, b) => sum + Number(b.total_invested || 0), 0);
     const bondsCurrent = bonds.reduce((sum, b) => sum + Number(b.current_value || 0), 0);
-
-    // 4. FnO Realized PnL
-    const fnoRealized = fnoTrades.reduce((sum, f) => sum + Number(f.pnl || 0), 0);
 
     // 5. Forex (Converted from USD to INR)
     const activeForex = forexAccounts.filter(f => Number(f.balance) > 0);
@@ -121,7 +120,7 @@ export default function InvestmentsClient() {
       totalPnLPercent,
       hasData: (stocksCurrent + mfCurrent + bondsCurrent + forexCurrent + altCurrent) > 0
     };
-  }, [investments, mutualFunds, bonds, fnoTrades, forexAccounts, alternativeAssets]);
+  }, [investments, mutualFunds, bonds, forexAccounts, alternativeAssets]);
 
   // Donut chart data for portfolio allocation
   const allocationData = useMemo(() => {

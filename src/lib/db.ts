@@ -4,12 +4,14 @@ import * as schema from "@/db/schema";
 
 type Database = ReturnType<typeof drizzle<typeof schema>>;
 
-let pool: Pool | null = null;
-let db: Database | null = null;
+const globalForDb = globalThis as unknown as {
+  pool: Pool | undefined;
+  db: Database | undefined;
+};
 
 export function getDb() {
-  if (db) {
-    return db;
+  if (globalForDb.db) {
+    return globalForDb.db;
   }
 
   const connectionString = process.env.DATABASE_URL;
@@ -17,15 +19,15 @@ export function getDb() {
     throw new Error("Missing environment variable: DATABASE_URL is required to initialize Drizzle.");
   }
 
-  pool = new Pool({ connectionString });
-  db = drizzle(pool, { schema });
-  return db;
+  globalForDb.pool = new Pool({ connectionString });
+  globalForDb.db = drizzle(globalForDb.pool, { schema });
+  return globalForDb.db;
 }
 
 export async function closeDb() {
-  if (pool) {
-    await pool.end();
+  if (globalForDb.pool) {
+    await globalForDb.pool.end();
   }
-  pool = null;
-  db = null;
+  globalForDb.pool = undefined;
+  globalForDb.db = undefined;
 }

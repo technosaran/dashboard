@@ -183,7 +183,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
       } else {
         toast.success("NAVs are already up to date.");
       }
-    } catch (e) {
+    } catch {
       toast.error("Failed to refresh some NAVs");
     } finally {
       setIsRefreshing(false);
@@ -227,18 +227,14 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
             return;
           }
           
-          const qty = parseFloat(formData.units);
-          const price = parseFloat(formData.nav);
-          const amt = qty * price;
           const chargeAmt = parseFloat(charges) || 0;
-          const finalNet = formData.trade_type === 'buy' ? amt + chargeAmt : amt - chargeAmt;
           
           const res = await recordMFInvestment({
             fund_name: formData.fund_name,
             amc_name: formData.amc_name,
             scheme_code: formData.scheme_code,
-            units: qty,
-            nav: price,
+            units: parseFloat(formData.units),
+            nav: parseFloat(formData.nav),
             category: formData.category,
             investment_type: formData.investment_type,
             account_id: formData.account_id,

@@ -171,7 +171,7 @@ export default function FNODataTable({ trades, onCloseTrade, onDeleteTrade, onAd
       );
     }
     return cols;
-  }, [showActions, onCloseTrade, onDeleteTrade]);
+  }, [showActions, onCloseTrade, onDeleteTrade, livePrices]);
 
 
 

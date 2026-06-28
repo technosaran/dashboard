@@ -11,7 +11,7 @@
  *   npx drizzle-kit push
  */
 
-import { pgTable, uuid, text, numeric, timestamp, boolean, integer, jsonb, real } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, numeric, timestamp, boolean, integer, jsonb, real, date } from "drizzle-orm/pg-core";
 
 // ---------------------------------------------------------------------------
 // profiles
@@ -283,9 +283,9 @@ export const bonds = pgTable("bonds", {
   quantity: numeric("quantity").default("1"),
   total_invested: numeric("total_invested").notNull(),
   current_value: numeric("current_value").notNull(),
-  purchase_date: timestamp("purchase_date").notNull(),
-  maturity_date: timestamp("maturity_date").notNull(),
-  next_interest_date: timestamp("next_interest_date"),
+  purchase_date: date("purchase_date").notNull(),
+  maturity_date: date("maturity_date").notNull(),
+  next_interest_date: date("next_interest_date"),
   interest_frequency: text("interest_frequency"),
   credit_rating: text("credit_rating"),
   platform: text("platform"),
@@ -312,10 +312,10 @@ export const bondTransactions = pgTable("bond_transactions", {
   quantity: numeric("quantity"),
   price_per_bond: numeric("price_per_bond"),
   interest_amount: numeric("interest_amount"),
-  interest_period_start: timestamp("interest_period_start"),
-  interest_period_end: timestamp("interest_period_end"),
+  interest_period_start: date("interest_period_start"),
+  interest_period_end: date("interest_period_end"),
   notes: text("notes"),
-  transaction_date: timestamp("transaction_date").notNull(),
+  transaction_date: date("transaction_date").notNull(),
   created_at: timestamp("created_at").defaultNow(),
 });
 
@@ -402,16 +402,16 @@ export const fnoTrades = pgTable("fno_trades", {
   symbol: text("symbol").notNull(),
   instrument_type: text("instrument_type").notNull(), // FUT | CE | PE
   strike_price: numeric("strike_price"),
-  expiry_date: text("expiry_date").notNull(),
+  expiry_date: date("expiry_date").notNull(),
   trade_type: text("trade_type").notNull(), // BUY | SELL
-  quantity: integer("quantity").notNull(),
+  quantity: numeric("quantity").notNull(),
   entry_price: numeric("entry_price").notNull(),
   exit_price: numeric("exit_price"),
   pnl: numeric("pnl"),
   status: text("status").default("OPEN"), // OPEN | CLOSED
   notes: text("notes"),
-  trade_date: text("trade_date").notNull(),
-  close_date: text("close_date"),
+  trade_date: date("trade_date").notNull(),
+  close_date: date("close_date"),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 });
@@ -453,19 +453,4 @@ export const familyTransfers = pgTable("family_transfers", {
   type: text("type").notNull(),
   transfer_date: timestamp("transfer_date").defaultNow().notNull(),
   note: text("note"),
-});
-
-// ---------------------------------------------------------------------------
-// net_worth_snapshots
-// ---------------------------------------------------------------------------
-export const netWorthSnapshots = pgTable("net_worth_snapshots", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  user_id: uuid("user_id").notNull(),
-  snapshot_date: text("snapshot_date").notNull(),
-  net_worth: numeric("net_worth").default("0"),
-  total_assets: numeric("total_assets").default("0"),
-  total_liabilities: numeric("total_liabilities").default("0"),
-  accounts_balance: numeric("accounts_balance").default("0"),
-  investments_value: numeric("investments_value").default("0"),
-  created_at: timestamp("created_at").defaultNow().notNull(),
 });

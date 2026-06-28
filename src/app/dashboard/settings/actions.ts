@@ -160,7 +160,7 @@ export async function checkApiHealth() {
   try {
     const supabase = await createClient();
     const start = Date.now();
-    const { data, error } = await supabase.from("accounts").select("id").limit(1);
+    const { error } = await supabase.from("accounts").select("id").limit(1);
     const latency = Date.now() - start;
     if (error) {
       results.push({ name: "Supabase DB Connection", status: "Degraded", latency: `${latency}ms`, code: 500, error: error.message });

@@ -7,7 +7,7 @@
 type LogLevel = 'info' | 'warn' | 'error' | 'debug';
 
 class Logger {
-  private log(level: LogLevel, message: string, meta?: any) {
+  private log(level: LogLevel, message: string, meta?: Record<string, unknown>) {
     const timestamp = new Date().toISOString();
     const payload = { timestamp, level, message, ...meta };
 
@@ -30,19 +30,19 @@ class Logger {
     }
   }
 
-  info(message: string, meta?: any) {
+  info(message: string, meta?: Record<string, unknown>) {
     this.log('info', message, meta);
   }
 
-  warn(message: string, meta?: any) {
+  warn(message: string, meta?: Record<string, unknown>) {
     this.log('warn', message, meta);
   }
 
-  error(message: string, error?: Error | unknown, meta?: any) {
-    this.log('error', message, { error, ...meta });
+  error(message: string, error?: Error | unknown, meta?: Record<string, unknown>) {
+    this.log('error', message, { error, ...meta } as Record<string, unknown>);
   }
 
-  debug(message: string, meta?: any) {
+  debug(message: string, meta?: Record<string, unknown>) {
     this.log('debug', message, meta);
   }
 }

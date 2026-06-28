@@ -1,15 +1,13 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useHasMounted } from "@/hooks/use-has-mounted";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { addLiability, updateLiability, deleteLiability } from "./actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
-import { format, parseISO } from "date-fns";
 import { Drawer } from "@/components/ui/drawer";
-import { Tabs } from "@/components/ui/tabs";
 import { getColorByLabel } from "@/lib/chart-colours";
 
 import dynamic from "next/dynamic";
@@ -29,7 +27,7 @@ const CATEGORIES = [
 ];
 
 export default function LiabilitiesClient({ initialData }: { initialData?: FinanceData }) {
-  const { data: { liabilities, ledgerLogs, accounts }, mutate } = useFinanceData(initialData);
+  const { data: { liabilities, accounts }, mutate } = useFinanceData(initialData);
   const searchParams = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(searchParams?.get("action") === "new");
   const [submitting, withLock] = useSubmitLock();

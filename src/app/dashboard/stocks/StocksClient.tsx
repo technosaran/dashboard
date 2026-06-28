@@ -213,7 +213,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
       } else {
         toast.success("Prices are already up to date.");
       }
-    } catch (e) {
+    } catch {
       toast.error("Failed to refresh some prices");
     } finally {
       setIsRefreshing(false);

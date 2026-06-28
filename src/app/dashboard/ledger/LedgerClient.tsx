@@ -19,11 +19,6 @@ type LedgerLog = {
   source_id: string | null;
 };
 
-const MONTHS = [
-  "All Months", "January", "February", "March", "April", "May", "June", 
-  "July", "August", "September", "October", "November", "December",
-];
-
 const DEBIT_ACTIONS = new Set(["ADJUST_DOWN", "TRANSFER_OUT", "DELETE", "SEND_MONEY"]);
 const CREDIT_ACTIONS = new Set(["ADJUST_UP", "TRANSFER_IN", "CREATE"]);
 
