@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, startTransition, useMemo } from "react";
+import { mutate as globalMutate } from "swr";
 import { useUser } from "@/context/user-context";
 import { resetUserData, updateSettings } from "./actions";
 import { toast } from "react-hot-toast";
@@ -250,6 +251,11 @@ export default function SettingsPage() {
           forexAccounts: [],
           forexTrades: [],
           forexTransactions: [],
+        }, { revalidate: false });
+
+        globalMutate("finance_family", {
+          members: [],
+          transfers: []
         }, { revalidate: false });
 
         setTimeout(() => {

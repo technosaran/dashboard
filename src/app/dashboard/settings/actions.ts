@@ -43,7 +43,6 @@ export async function resetUserData() {
           supabase.from("alternative_assets").delete().eq("user_id", user.id),
           supabase.from("liabilities").delete().eq("user_id", user.id),
           supabase.from("budgets").delete().eq("user_id", user.id),
-          supabase.from("net_worth_snapshots").delete().eq("user_id", user.id),
           supabase.from("stock_trades").delete().eq("user_id", user.id),
           supabase.from("investments").delete().eq("user_id", user.id),
           supabase.from("mutual_fund_trades").delete().eq("user_id", user.id),
@@ -53,6 +52,9 @@ export async function resetUserData() {
           supabase.from("expenses").delete().eq("user_id", user.id),
           supabase.from("incomes").delete().eq("user_id", user.id),
           supabase.from("goals").delete().eq("user_id", user.id),
+          supabase.from("family_transfers").delete().eq("user_id", user.id),
+          supabase.from("family_allowances").delete().eq("user_id", user.id),
+          supabase.from("family_members").delete().eq("user_id", user.id),
         ]);
         // Attempt ledger_logs delete — blocked by immutability trigger in most cases
         try {
