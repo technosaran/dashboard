@@ -89,119 +89,90 @@ export default function MutualFundsDataTable({ funds, onEdit, onBuy, onSell, onA
   }
 
   return (
-      <div className="glass-card-static rounded-2xl overflow-hidden flex flex-col border border-white/5 bg-[#151515]">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[800px]">
-            <thead>
-              <tr className="border-b border-white/5 bg-black/40 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">
-                <th className="px-4 py-4">Scheme / Fund Name</th>
-                <th className="px-4 py-4 text-right">Units</th>
-                <th className="px-4 py-4 text-right">Avg. NAV</th>
-                <th className="px-4 py-4 text-right">Cur. NAV</th>
-                <th className="px-4 py-4 text-right">Invested</th>
-                <th className="px-4 py-4 text-right">Current</th>
-                <th className="px-4 py-4 text-right">P&L</th>
-                <th className="px-4 py-4"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {funds.map((fund) => {
-                const invested = Number(fund.units) * Number(fund.avg_nav);
-                const current = Number(fund.units) * Number(fund.current_nav);
-                const pnl = current - invested;
-                const pnlPercent = invested > 0 ? (pnl / invested) * 100 : 0;
-                const isPositive = pnl >= 0;
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {funds.map((fund) => {
+        const invested = Number(fund.units) * Number(fund.avg_nav);
+        const current = Number(fund.units) * Number(fund.current_nav);
+        const pnl = current - invested;
+        const pnlPercent = invested > 0 ? (pnl / invested) * 100 : 0;
+        const isPositive = pnl >= 0;
 
-                const amc = fund.amc_name || "";
-                const logo = getAMCLogoUrl(amc);
+        const amc = fund.amc_name || "";
+        const logo = getAMCLogoUrl(amc);
 
-                return (
-                  <tr key={fund.id} className="group hover:bg-white/[0.02] transition-colors">
-                    {/* Scheme Name */}
-                    <td className="px-4 py-3.5 align-middle">
-                      <div className="flex items-center gap-3">
-                        <AMCAvatar amcName={amc} logoUrl={logo} />
-                        <div className="min-w-0">
-                          <h4 className="text-[13px] font-bold text-white leading-tight truncate max-w-[320px]" title={fund.fund_name}>
-                            {fund.fund_name}
-                          </h4>
-                          <div className="flex items-center gap-1.5 mt-1">
-                            <span className="text-[8px] font-black text-purple-400 bg-purple-500/10 border border-purple-500/20 px-1.5 py-0.2 rounded-md uppercase tracking-wider">
-                              {fund.category || "Equity"}
-                            </span>
-                            <span className="text-[8px] font-black text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-1.5 py-0.2 rounded-md uppercase tracking-wider">
-                              {fund.investment_type || "SIP"}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </td>
+        return (
+          <div 
+            key={fund.id} 
+            className="p-5 rounded-2xl border border-white/5 bg-gradient-to-b from-[#18181e] to-[#121216] hover:border-amber-500/40 hover:shadow-[0_0_30px_-5px_rgba(245,158,11,0.15)] hover:scale-[1.01] transition-all duration-300 flex flex-col justify-between min-h-[220px] shadow-lg relative group"
+          >
+            {/* Top Segment: AMC Avatar, Name, Category tags */}
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <AMCAvatar amcName={amc} logoUrl={logo} />
+                <div className="min-w-0">
+                  <h3 className="text-xs font-black text-white leading-tight truncate max-w-[150px]" title={fund.fund_name}>
+                    {fund.fund_name}
+                  </h3>
+                  <div className="flex items-center gap-1.5 mt-1.5">
+                    <span className="text-[8px] font-black text-purple-400 bg-purple-500/10 border border-purple-500/20 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                      {fund.category || "Equity"}
+                    </span>
+                    <span className="text-[8px] font-black text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                      {fund.investment_type || "SIP"}
+                    </span>
+                  </div>
+                </div>
+              </div>
 
-                    {/* Units */}
-                    <td className="px-4 py-3.5 text-right align-middle font-mono text-[13px] text-[--text-secondary]">
-                      {Number(fund.units).toFixed(3)}
-                    </td>
+              {/* Action Buttons: Edit, Buy, Redeem */}
+              <div className="flex items-center gap-1.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                <button
+                  onClick={() => onEdit(fund)}
+                  className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs font-bold text-gray-300 hover:text-white transition-all cursor-pointer"
+                  title="Edit details"
+                >
+                  ✏️
+                </button>
+                <button
+                  onClick={() => onBuy(fund)}
+                  className="px-2 py-1 rounded bg-[--accent-primary]/10 hover:bg-[--accent-primary] text-[--accent-primary] hover:text-white transition-all text-[9px] font-black uppercase tracking-wider cursor-pointer"
+                >
+                  Buy
+                </button>
+                <button
+                  onClick={() => onSell(fund)}
+                  className="px-2 py-1 rounded border border-rose-500/30 hover:bg-rose-500 text-rose-500 hover:text-white transition-all text-[9px] font-black uppercase tracking-wider cursor-pointer"
+                >
+                  Redeem
+                </button>
+              </div>
+            </div>
 
-                    {/* Avg. NAV */}
-                    <td className="px-6 py-4 text-right align-middle font-mono text-[13px] text-[--text-secondary]">
-                      ₹{Number(fund.avg_nav).toFixed(2)}
-                    </td>
-
-                    {/* Current NAV */}
-                    <td className="px-6 py-4 text-right align-middle font-mono text-[13px] text-[--text-secondary]">
-                      ₹{Number(fund.current_nav).toFixed(2)}
-                    </td>
-
-                    {/* Invested */}
-                    <td className="px-6 py-4 text-right align-middle font-mono text-[13px] text-[--text-secondary]">
-                      ₹{formatMoney(invested)}
-                    </td>
-
-                    {/* Current Value */}
-                    <td className="px-4 py-3.5 text-right align-middle font-mono text-[13px] font-bold text-white">
-                      ₹{formatMoney(current)}
-                    </td>
-
-                    {/* P&L */}
-                    <td className="px-4 py-3.5 text-right align-middle font-mono text-[13px]">
-                      <span className={`font-bold ${isPositive ? 'text-success' : 'text-danger'}`}>
-                        {isPositive ? '+' : ''}₹{formatMoney(pnl)}
-                      </span>
-                      <span className={`text-[10px] block mt-0.5 font-semibold ${isPositive ? 'text-success/80' : 'text-danger/80'}`}>
-                        {isPositive ? '+' : ''}{pnlPercent.toFixed(2)}%
-                      </span>
-                    </td>
-
-                    {/* Actions */}
-                    <td className="px-4 py-3.5 align-middle text-right">
-                      <div className="flex items-center justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={() => onEdit(fund)}
-                          className="px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs font-bold text-gray-300 hover:text-white transition-all cursor-pointer"
-                          title="Edit transaction details"
-                        >
-                          ✏️
-                        </button>
-                        <button
-                          onClick={() => onBuy(fund)}
-                          className="px-3 py-1.5 rounded-lg bg-[--accent-primary]/10 hover:bg-[--accent-primary] text-[--accent-primary] hover:text-white transition-all text-[10px] font-black uppercase tracking-wider cursor-pointer"
-                        >
-                          Buy
-                        </button>
-                        <button
-                          onClick={() => onSell(fund)}
-                          className="px-3 py-1.5 rounded-lg border border-rose-500/30 hover:bg-rose-500 text-rose-500 hover:text-white transition-all text-[10px] font-black uppercase tracking-wider cursor-pointer"
-                        >
-                          Redeem
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
+            {/* Middle Segment: Stats Grid */}
+            <div className="grid grid-cols-3 gap-3 border-t border-white/5 pt-4 mt-4">
+              <div>
+                <p className="text-[8px] font-black uppercase tracking-wider text-gray-500">Invested</p>
+                <p className="text-xs font-bold text-white mt-1">₹{formatMoney(invested)}</p>
+                <p className="text-[9px] text-gray-400 mt-0.5">{Number(fund.units).toFixed(3)} Units</p>
+              </div>
+              <div>
+                <p className="text-[8px] font-black uppercase tracking-wider text-gray-500">Current</p>
+                <p className="text-xs font-bold text-white mt-1">₹{formatMoney(current)}</p>
+                <p className="text-[9px] text-gray-400 mt-0.5">NAV: ₹{formatMoney(Number(fund.current_nav))}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-[8px] font-black uppercase tracking-wider text-gray-500">P&L</p>
+                <p className={`text-xs font-bold mt-1 ${isPositive ? 'text-emerald-500' : 'text-rose-500'}`}>
+                  {isPositive ? '+' : ''}₹{formatMoney(pnl)}
+                </p>
+                <p className={`text-[9px] font-semibold mt-0.5 ${isPositive ? 'text-emerald-500/80' : 'text-rose-500/80'}`}>
+                  {isPositive ? '+' : ''}{pnlPercent.toFixed(2)}%
+                </p>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
   );
 }
