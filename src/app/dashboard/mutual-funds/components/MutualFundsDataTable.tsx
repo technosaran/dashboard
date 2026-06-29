@@ -89,7 +89,7 @@ export default function MutualFundsDataTable({ funds, onEdit, onBuy, onSell, onA
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="flex flex-row overflow-x-auto gap-6 pb-4 scroll-smooth custom-scrollbar w-full">
       {funds.map((fund) => {
         const invested = Number(fund.units) * Number(fund.avg_nav);
         const current = Number(fund.units) * Number(fund.current_nav);
@@ -103,7 +103,7 @@ export default function MutualFundsDataTable({ funds, onEdit, onBuy, onSell, onA
         return (
           <div 
             key={fund.id} 
-            className="p-5 rounded-2xl border border-white/5 bg-gradient-to-b from-[#18181e] to-[#121216] hover:border-amber-500/40 hover:shadow-[0_0_30px_-5px_rgba(245,158,11,0.15)] hover:scale-[1.01] transition-all duration-300 flex flex-col justify-between min-h-[220px] shadow-lg relative group"
+            className="p-5 rounded-2xl bg-gradient-to-b from-[#18181e] to-[#121216] hover:shadow-[0_0_30px_-5px_rgba(245,158,11,0.15)] hover:scale-[1.01] transition-all duration-300 flex flex-col justify-between min-h-[220px] w-[320px] shrink-0 shadow-lg relative group"
           >
             {/* Top Segment: AMC Avatar, Name, Category tags */}
             <div className="flex items-start justify-between gap-4">
