@@ -159,7 +159,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
     setFormData({
       name: inv.name, 
       symbol: inv.symbol || "",
-      quantity: inv.quantity.toString(), 
+      quantity: "", 
       buy_price: inv.current_price.toString(), 
       current_price: inv.current_price.toString(), 
       currency: inv.currency,
@@ -167,6 +167,24 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
       bought_at: new Date().toISOString().split("T")[0],
       deduct_from_account: "", 
       trade_type: "sell"
+    });
+    setEditingId(null); 
+    setCharges("0");
+    setShowAddModal(true);
+  };
+
+  const startBuy = (inv: Stock) => {
+    setFormData({
+      name: inv.name, 
+      symbol: inv.symbol || "",
+      quantity: "", 
+      buy_price: inv.current_price.toString(), 
+      current_price: inv.current_price.toString(), 
+      currency: inv.currency,
+      notes: "", 
+      bought_at: new Date().toISOString().split("T")[0],
+      deduct_from_account: "", 
+      trade_type: "buy"
     });
     setEditingId(null); 
     setCharges("0");
@@ -382,6 +400,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
             <StocksDataTable 
               stocks={activeStocks} 
               onEdit={startEdit} 
+              onBuy={startBuy}
               onSell={startSell} 
               onAdd={() => setShowAddModal(true)} 
             />
@@ -642,16 +661,30 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                 )}
 
                 {/* Live Margin Calculation details */}
-                <div className="bg-white/5 rounded p-3 flex justify-between items-center text-xs text-gray-400">
-                  <div>
-                    <span>Margin required</span>
-                    <span className="ml-1 text-white font-bold">
+                <div className="bg-white/5 rounded p-3 flex flex-col gap-1.5 text-xs text-gray-400">
+                  <div className="flex justify-between items-center">
+                    <span>Turnover:</span>
+                    <span className="text-white font-medium">
                       ₹{formatMoney((parseFloat(formData.quantity) || 0) * (parseFloat(formData.buy_price) || 0))}
                     </span>
                   </div>
-                  <div>
-                    <span>Charges: </span>
-                    <span className="text-white font-bold">₹{parseFloat(charges || "0").toFixed(2)}</span>
+                  {parseFloat(charges) > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span>Brokerage & Charges:</span>
+                      <span className="text-white font-medium">
+                        ₹{formatMoney(parseFloat(charges))}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-center pt-1.5 border-t border-white/5 font-bold">
+                    <span>Net Amount:</span>
+                    <span className="text-white">
+                      ₹{formatMoney(
+                        formData.trade_type === 'buy'
+                          ? ((parseFloat(formData.quantity) || 0) * (parseFloat(formData.buy_price) || 0)) + (parseFloat(charges) || 0)
+                          : ((parseFloat(formData.quantity) || 0) * (parseFloat(formData.buy_price) || 0)) - (parseFloat(charges) || 0)
+                      )}
+                    </span>
                   </div>
                 </div>
 

@@ -112,7 +112,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
       const data = { name: formData.name, type: formData.type, balance: parseFloat(formData.balance), currency: formData.currency, bank_name: formData.bank_name || null };
       const result = editingId ? await updateAccount(editingId, data) : await createAccount(data);
       if (!result?.error) {
-        toast.success(editingId ? "Financial node updated successfully" : "New account initialized successfully");
+        toast.success(editingId ? "Account updated successfully" : "New account created successfully");
         resetForm();
         mutate();
       } else {
@@ -178,7 +178,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
       const finalAmount = adjustData.type === "subtract" ? -amount : amount;
       const res = await adjustBalance(adjustingAccountId, finalAmount, adjustData.note);
       if (!res?.error) {
-        toast.success("Balance adjustment finalized");
+        toast.success("Account balance adjusted successfully");
         setShowAdjustModal(false);
         mutate();
       } else {

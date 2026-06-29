@@ -529,7 +529,7 @@ export default function TransactionsClient() {
                         <button
                           type="button"
                           onClick={() => handleDelete(t.source_id || t.id, t.type as any)}
-                          className="p-2 rounded-xl bg-white/5 border border-white/10 text-[--text-muted] hover:text-rose-400 hover:bg-rose-500/10 transition-all ml-auto flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100"
+                          className="p-2 rounded-xl bg-white/5 border border-white/10 text-[--text-muted] hover:text-rose-400 hover:bg-rose-500/10 transition-all ml-auto flex items-center justify-center cursor-pointer opacity-100 md:opacity-0 md:group-hover:opacity-100"
                           title="Delete Transaction"
                         >
                           <Trash2 className="w-3.5 h-3.5" />

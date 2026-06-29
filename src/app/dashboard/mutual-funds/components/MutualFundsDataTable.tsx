@@ -9,6 +9,7 @@ type MF = Tables<"mutual_funds"> & { scheme_code?: string | null; fund_symbol?: 
 interface MutualFundsDataTableProps {
   funds: MF[];
   onEdit: (fund: MF) => void;
+  onBuy: (fund: MF) => void;
   onSell: (fund: MF) => void;
   onAdd: () => void;
 }
@@ -65,7 +66,7 @@ function AMCAvatar({ amcName, logoUrl }: { amcName: string; logoUrl: string }) {
   );
 }
 
-export default function MutualFundsDataTable({ funds, onEdit, onSell, onAdd }: MutualFundsDataTableProps) {
+export default function MutualFundsDataTable({ funds, onEdit, onBuy, onSell, onAdd }: MutualFundsDataTableProps) {
 
 
   const formatMoney = (val: number) => val.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -173,7 +174,7 @@ export default function MutualFundsDataTable({ funds, onEdit, onSell, onAdd }: M
 
                     {/* Actions */}
                     <td className="px-4 py-3.5 align-middle text-right">
-                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => onEdit(fund)}
                           className="px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs font-bold text-gray-300 hover:text-white transition-all cursor-pointer"
@@ -182,7 +183,7 @@ export default function MutualFundsDataTable({ funds, onEdit, onSell, onAdd }: M
                           ✏️
                         </button>
                         <button
-                          onClick={() => onEdit(fund)}
+                          onClick={() => onBuy(fund)}
                           className="px-3 py-1.5 rounded-lg bg-[--accent-primary]/10 hover:bg-[--accent-primary] text-[--accent-primary] hover:text-white transition-all text-[10px] font-black uppercase tracking-wider cursor-pointer"
                         >
                           Buy

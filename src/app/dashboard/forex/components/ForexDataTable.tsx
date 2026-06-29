@@ -98,7 +98,7 @@ export default function ForexDataTable({ accounts, onDelete, onAdd }: ForexDataT
         id: "actions",
         header: "",
         cell: (info) => (
-          <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
             <button
               onClick={() => onDelete(info.row.original.id)}
               className="p-2 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-colors"

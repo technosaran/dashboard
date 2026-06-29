@@ -93,20 +93,57 @@ export async function fetchLiveStockPrice(symbol: string) {
       querySymbol = `${querySymbol}.NS`;
     }
     let url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(querySymbol)}`;
-    let res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" }, cache: "no-store" });
-    
-    // Fallback if query1 fails
-    if (!res.ok) {
-      url = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}`;
+    let res: Response | null = null;
+    try {
       res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" }, cache: "no-store" });
+      if (!res.ok) {
+        url = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(querySymbol)}`;
+        res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" }, cache: "no-store" });
+      }
+    } catch {
+      // Fallback
     }
 
-    if (!res.ok) return null;
-    const data = await res.json();
-    const meta = data?.chart?.result?.[0]?.meta;
-    const price = meta?.regularMarketPrice;
-    const previousClose = meta?.chartPreviousClose || meta?.previousClose;
-    return price ? { price: parseFloat(price), previousClose: previousClose ? parseFloat(previousClose) : undefined } : null;
+    let price = null;
+    let previousClose = null;
+    if (res && res.ok) {
+      const data = await res.json();
+      const meta = data?.chart?.result?.[0]?.meta;
+      price = meta?.regularMarketPrice;
+      previousClose = meta?.chartPreviousClose || meta?.previousClose;
+    }
+
+    if (price) {
+      return { price: parseFloat(price), previousClose: previousClose ? parseFloat(previousClose) : undefined };
+    }
+
+    // Secondary Fallback API: Tickertape
+    try {
+      const rawSymbol = symbol.split(".")[0];
+      const ttUrl = `https://api.tickertape.in/search?text=${encodeURIComponent(rawSymbol)}`;
+      const ttRes = await fetch(ttUrl, { headers: { "User-Agent": "Mozilla/5.0" }, cache: "no-store" });
+      if (ttRes.ok) {
+        const ttData = await ttRes.json();
+        const matches = ttData?.data?.stocks ?? [];
+        const matchedStock = matches.find(
+          (s: any) => s.type === "stock" && s.ticker?.toUpperCase() === rawSymbol.toUpperCase()
+        ) || matches[0];
+        
+        if (matchedStock?.quote) {
+          const ttPrice = matchedStock.quote.price;
+          const ttClose = matchedStock.quote.close;
+          if (ttPrice !== undefined) {
+            return {
+              price: parseFloat(ttPrice),
+              previousClose: ttClose !== undefined ? parseFloat(ttClose) : undefined
+            };
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Tickertape fallback price fetch failed", e);
+    }
+    return null;
   } catch {
     return null;
   }

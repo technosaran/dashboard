@@ -20,6 +20,23 @@ import MFHistoryTable from "./components/MFHistoryTable";
 
 type MF = Tables<"mutual_funds"> & { scheme_code?: string | null; fund_symbol?: string | null; pnlPercent?: number; day_change?: number; day_change_percent?: number };
 
+function guessAMCName(fundName: string): string {
+  const name = fundName.toLowerCase();
+  const amcs = [
+    'HDFC', 'SBI', 'ICICI Prudential', 'Axis', 'Kotak', 'Aditya Birla Sun Life', 
+    'Nippon India', 'Franklin Templeton', 'DSP', 'Mirae Asset', 'Parag Parikh', 
+    'Motilal Oswal', 'Tata', 'UTI', 'Bandhan', 'Edelweiss', 'Sundaram', 'Quant', 
+    'Canara Robeco', 'Invesco', 'LIC', 'Mahindra Manulife', 'Union', 'Taurus', 
+    'Navi', 'Groww'
+  ];
+  for (const amc of amcs) {
+    if (name.includes(amc.toLowerCase())) return amc;
+  }
+  const firstWord = fundName.split(" ")[0];
+  if (firstWord) return firstWord;
+  return "HDFC";
+}
+
 export default function MutualFundsClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { mutualFunds: rawMfs, accounts, profile, mutualFundTrades }, mutate } = useFinanceData(initialData);
   const searchParams = useSearchParams();
@@ -28,7 +45,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
   const [editingId, setEditingId] = useState<string | null>(null);
   
   // Coin uses Dashboard, Mutual Funds (Holdings, Orders)
-  const [activeTab, setActiveTab] = useState<"dashboard" | "holdings" | "history">("dashboard");
+  const [activeTab, setActiveTab] = useState<"holdings" | "history">("holdings");
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -139,6 +156,25 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
         trade_type: "sell"
     });
     setCharges("0");
+    setShowAddModal(true);
+  };
+
+  const startBuy = (mf: MF) => {
+    setFormData({
+        fund_name: mf.fund_name,
+        scheme_code: mf.fund_symbol || mf.scheme_code || "",
+        units: "",
+        nav: mf.current_nav.toString(),
+        current_nav: mf.current_nav.toString(),
+        investment_type: mf.investment_type || "SIP",
+        category: mf.category || "Equity",
+        amc_name: mf.amc_name || "",
+        date: new Date().toISOString().split("T")[0],
+        account_id: "",
+        trade_type: "buy"
+    });
+    setCharges("0");
+    setEditingId(null);
     setShowAddModal(true);
   };
 
@@ -263,12 +299,6 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
       <div className="flex items-center justify-between px-8 py-4 border-b border-white/5 bg-[#151515]">
         <div className="flex items-center gap-8">
           <button 
-            onClick={() => setActiveTab("dashboard")} 
-            className={`text-sm font-bold transition-colors tracking-wider uppercase ${activeTab === "dashboard" ? "text-[#2185d0]" : "text-gray-400 hover:text-white"}`}
-          >
-            Dashboard
-          </button>
-          <button 
             onClick={() => setActiveTab("holdings")} 
             className={`text-sm font-bold transition-colors tracking-wider uppercase ${activeTab === "holdings" ? "text-[#2185d0]" : "text-gray-400 hover:text-white"}`}
           >
@@ -312,92 +342,80 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
       </div>
 
       <div className="p-6 max-w-6xl w-full mx-auto">
-        {activeTab === "dashboard" && (
-          <div className="flex flex-col lg:flex-row gap-12 items-center lg:items-stretch mt-4">
-            {/* Left: Large Allocation Donut */}
-            <div className="flex-1 flex flex-col items-center justify-center bg-[#151515] p-8 border border-white/5 rounded-lg">
-              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">Asset Allocation</h3>
-              {mounted && pieChartData.length > 0 ? (
-                <div className="w-[280px] h-[280px] relative">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie data={pieChartData} cx="50%" cy="50%" innerRadius={80} outerRadius={110} paddingAngle={2} dataKey="value" stroke="none">
-                        {pieChartData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} />)}
-                      </Pie>
-                      <RechartsTooltip 
-                        contentStyle={{ backgroundColor: "#1e1e1e", border: "1px solid #333", borderRadius: "4px" }}
-                        itemStyle={{ color: "#fff", fontSize: "11px" }}
-                        formatter={(value) => [`₹${Number(value).toLocaleString()}`, "Value"]}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                    <span className="text-gray-500 text-[10px] uppercase tracking-widest font-bold">Total Wealth</span>
-                    <span className="text-white text-2xl font-normal mt-1">₹{stats.totalCurrentValue >= 10000000 ? (stats.totalCurrentValue/10000000).toFixed(2) + 'Cr' : stats.totalCurrentValue >= 100000 ? (stats.totalCurrentValue/100000).toFixed(2) + 'L' : formatMoney(stats.totalCurrentValue)}</span>
-                  </div>
-                </div>
-              ) : (
-                <div className="w-[250px] h-[250px] rounded-full border-2 border-dashed border-white/10 flex items-center justify-center">
-                  <span className="text-xs text-gray-500 font-bold uppercase tracking-wider">No MF Holdings</span>
-                </div>
-              )}
-              
-              {pieChartData.length > 0 && (
-                <div className="flex flex-wrap justify-center gap-4 mt-8">
-                  {pieChartData.map((entry, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: entry.fill }} />
-                      <span className="text-xs text-gray-400 font-semibold">{entry.name}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Right: Coin Stats summary */}
-            <div className="flex-1 flex flex-col justify-center bg-[#151515] p-8 border border-white/5 rounded-lg">
-              <div className="space-y-6">
-                <div>
-                  <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Current value</p>
-                  <p className="text-3xl font-normal text-white">₹{formatMoney(stats.totalCurrentValue)}</p>
-                </div>
-                
-                <div>
-                  <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Invested value</p>
-                  <p className="text-xl font-normal text-white/90">₹{formatMoney(stats.totalInvested)}</p>
-                </div>
-
-                <div className="h-px w-full bg-white/5" />
-
-                <div className="grid grid-cols-2 gap-8">
-                  <div>
-                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Total returns</p>
-                    <div className={`text-lg font-bold ${stats.totalPnL >= 0 ? 'text-[#4caf50]' : 'text-[#f44336]'}`}>
-                      {stats.totalPnL >= 0 ? '+' : ''}₹{formatMoney(stats.totalPnL)}
-                      <div className="text-xs font-semibold mt-0.5 opacity-90">{stats.totalPnLPercent >= 0 ? '+' : ''}{stats.totalPnLPercent.toFixed(2)}%</div>
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Day&apos;s returns</p>
-                    <div className={`text-lg font-bold ${stats.dayPnL >= 0 ? 'text-[#4caf50]' : 'text-[#f44336]'}`}>
-                      {stats.dayPnL >= 0 ? '+' : ''}₹{formatMoney(stats.dayPnL)}
-                      <div className="text-xs font-semibold mt-0.5 opacity-90">{stats.dayPnLPercent >= 0 ? '+' : ''}{stats.dayPnLPercent.toFixed(2)}%</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
         {activeTab === "holdings" && (
           <div className="animate-in fade-in mt-4">
+            {mutualFunds.length > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6 bg-[#151515] p-5 border border-white/5 rounded">
+                <div>
+                  <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Total investment</p>
+                  <p className="text-xl font-normal text-white">₹{formatMoney(stats.totalInvested)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Current value</p>
+                  <p className="text-xl font-normal text-white">₹{formatMoney(stats.totalCurrentValue)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Day&apos;s returns</p>
+                  <p className={`text-xl font-medium ${stats.dayPnL >= 0 ? 'text-[#4caf50]' : 'text-[#f44336]'}`}>
+                    {stats.dayPnL >= 0 ? '+' : ''}{formatMoney(stats.dayPnL)} <span className="text-xs font-semibold ml-1">({stats.dayPnLPercent >= 0 ? '+' : ''}{stats.dayPnLPercent.toFixed(2)}%)</span>
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Total returns</p>
+                  <p className={`text-xl font-medium ${stats.totalPnL >= 0 ? 'text-[#4caf50]' : 'text-[#f44336]'}`}>
+                    {stats.totalPnL >= 0 ? '+' : ''}{formatMoney(stats.totalPnL)} <span className="text-xs font-semibold ml-1">({stats.totalPnLPercent >= 0 ? '+' : ''}{stats.totalPnLPercent.toFixed(2)}%)</span>
+                  </p>
+                </div>
+              </div>
+            )}
+
             <MutualFundsDataTable 
               funds={mutualFunds} 
               onEdit={startEdit} 
+              onBuy={startBuy}
               onSell={startSell}
               onAdd={() => setShowAddModal(true)} 
             />
+
+            {/* Allocation Donut */}
+            {mutualFunds.length > 0 && (
+              <div className="mt-8 bg-[#151515] border border-white/5 rounded p-6 max-w-md">
+                <h3 className="text-xs font-bold text-white tracking-wider uppercase mb-4">Portfolio Allocation</h3>
+                {mounted && pieChartData.length > 0 ? (
+                  <div className="w-full h-48 relative flex items-center justify-between gap-6">
+                    <div className="w-[140px] h-[140px] relative shrink-0">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie data={pieChartData} cx="50%" cy="50%" innerRadius={50} outerRadius={65} paddingAngle={2} dataKey="value" stroke="none">
+                            {pieChartData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} />)}
+                          </Pie>
+                          <RechartsTooltip 
+                            contentStyle={{ backgroundColor: "#1e1e1e", border: "1px solid #333", borderRadius: "4px" }}
+                            itemStyle={{ color: "#fff", fontSize: "11px" }}
+                            formatter={(value) => [`₹${Number(value).toLocaleString()}`, "Value"]}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className="flex-1 space-y-1.5 overflow-y-auto max-h-[140px] custom-scrollbar pr-1 text-xs">
+                      {pieChartData.map((entry, index) => (
+                        <div key={index} className="flex items-center justify-between py-1 border-b border-white/5 last:border-0">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: entry.fill }} />
+                            <span className="text-gray-400 truncate">{entry.name}</span>
+                          </div>
+                          <span className="text-white font-semibold">₹{formatMoney(entry.value)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-full h-44 rounded-lg border border-dashed border-white/10 flex items-center justify-center text-xs text-gray-500 font-bold uppercase tracking-wider">
+                    No MF Holdings
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -483,13 +501,23 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                             key={i} 
                             className="px-3 py-2 hover:bg-white/5 cursor-pointer transition-colors border-b border-white/5 last:border-0"
                             onClick={async () => {
-                              setFormData({...formData, fund_name: res.schemeName, scheme_code: res.schemeCode});
+                              const guessed = guessAMCName(res.schemeName);
+                              setFormData({
+                                ...formData, 
+                                fund_name: res.schemeName, 
+                                scheme_code: res.schemeCode,
+                                amc_name: guessed
+                              });
                               setSearchQuery("");
                               setShowSearchDropdown(false);
                               if (res.schemeCode) {
                                 const liveData = await fetchLiveMFNAV(res.schemeCode);
                                 if (liveData) {
-                                  setFormData(prev => ({...prev, current_nav: liveData.nav.toString()}));
+                                  setFormData(prev => ({
+                                    ...prev, 
+                                    current_nav: liveData.nav.toString(),
+                                    nav: prev.nav || liveData.nav.toString()
+                                  }));
                                 }
                               }
                             }}
@@ -587,7 +615,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                 </div>
 
                 {!editingId && (
-                  <>
+                  <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Date</label>
@@ -599,34 +627,61 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">
-                          {formData.trade_type === 'buy' ? 'Deduct From' : 'Deposit To'}
-                        </label>
-                        <select 
+                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Stamp Duty / Charges (₹)</label>
+                        <input 
+                          type="number" 
+                          step="any" 
                           className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]" 
-                          value={formData.account_id} 
-                          onChange={e => setFormData({...formData, account_id: e.target.value})}
-                        >
-                          <option value="">No Account (Track Only)</option>
-                          {accounts.map(acc => (
-                            <option key={acc.id} value={acc.id}>{acc.name} (₹{acc.balance.toLocaleString()})</option>
-                          ))}
-                        </select>
+                          placeholder="0.00"
+                          value={charges} 
+                          onChange={e => setCharges(e.target.value)} 
+                          inputMode="decimal" 
+                        />
                       </div>
                     </div>
-                  </>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">
+                        {formData.trade_type === 'buy' ? 'Deduct From' : 'Deposit To'}
+                      </label>
+                      <select 
+                        className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]" 
+                        value={formData.account_id} 
+                        onChange={e => setFormData({...formData, account_id: e.target.value})}
+                      >
+                        <option value="">No Account (Track Only)</option>
+                        {accounts.map(acc => (
+                          <option key={acc.id} value={acc.id}>{acc.name} (₹{acc.balance.toLocaleString()})</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
                 )}
 
                 {/* Live Margin Calculation details */}
-                <div className="bg-white/5 rounded p-3 flex justify-between items-center text-xs text-gray-400">
-                  <div>
-                    <span>Total Amount</span>
-                    <span className="ml-1 text-white font-bold">
+                <div className="bg-white/5 rounded p-3 flex flex-col gap-1.5 text-xs text-gray-400">
+                  <div className="flex justify-between items-center">
+                    <span>Turnover:</span>
+                    <span className="text-white font-medium">
                       ₹{formatMoney((parseFloat(formData.units) || 0) * (parseFloat(formData.nav) || 0))}
                     </span>
                   </div>
-                  <div>
-                    <span className="text-[9px] uppercase tracking-wider text-gray-500 font-bold">Direct Mutual Fund</span>
+                  {parseFloat(charges) > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span>Charges / Stamp Duty:</span>
+                      <span className="text-white font-medium">
+                        ₹{formatMoney(parseFloat(charges))}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-center pt-1.5 border-t border-white/5 font-bold">
+                    <span>Net Amount:</span>
+                    <span className="text-white">
+                      ₹{formatMoney(
+                        formData.trade_type === 'buy'
+                          ? ((parseFloat(formData.units) || 0) * (parseFloat(formData.nav) || 0)) + (parseFloat(charges) || 0)
+                          : ((parseFloat(formData.units) || 0) * (parseFloat(formData.nav) || 0)) - (parseFloat(charges) || 0)
+                      )}
+                    </span>
                   </div>
                 </div>
 

@@ -89,6 +89,18 @@ export default function StocksHistoryTable({ trades }: StocksHistoryTableProps) 
         ),
         cell: (info) => <div className="text-right text-sm text-[--text-secondary]">{formatMoney(Number(info.getValue()))}</div>,
       }),
+      columnHelper.accessor("charges", {
+        header: ({ column }) => (
+          <button onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="flex items-center justify-end w-full gap-1 hover:text-[--text-primary] transition-colors">
+            Charges
+            {column.getIsSorted() === "asc" ? <ArrowUp className="w-3 h-3" /> : column.getIsSorted() === "desc" ? <ArrowDown className="w-3 h-3" /> : <ArrowUpDown className="w-3 h-3 opacity-30" />}
+          </button>
+        ),
+        cell: (info) => {
+          const val = info.getValue();
+          return <div className="text-right text-sm text-[--text-secondary]">{val !== null && val !== undefined ? formatMoney(Number(val)) : "—"}</div>;
+        },
+      }),
       columnHelper.accessor("realized_pnl", {
         header: ({ column }) => (
           <button onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="flex items-center justify-end w-full gap-1 hover:text-[--text-primary] transition-colors">

@@ -19,13 +19,14 @@ type Stock = Tables<"investments"> & { day_change?: number; day_change_percent?:
 interface StocksDataTableProps {
   stocks: Stock[];
   onEdit: (stock: Stock) => void;
+  onBuy: (stock: Stock) => void;
   onSell: (stock: Stock) => void;
   onAdd: () => void;
 }
 
 const columnHelper = createColumnHelper<Stock>();
 
-export default function StocksDataTable({ stocks, onEdit, onSell, onAdd }: StocksDataTableProps) {
+export default function StocksDataTable({ stocks, onEdit, onBuy, onSell, onAdd }: StocksDataTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
 
 
@@ -140,24 +141,31 @@ export default function StocksDataTable({ stocks, onEdit, onSell, onAdd }: Stock
         id: "actions",
         header: "",
         cell: (info) => (
-          <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
             <button
               onClick={(e) => { e.stopPropagation(); onEdit(info.row.original); }}
-              className="px-3 py-1 rounded bg-blue-500/10 text-blue-500 hover:bg-blue-500 hover:text-white transition-colors text-xs font-semibold"
+              className="px-2.5 py-1 rounded bg-white/5 hover:bg-white/10 text-xs font-bold text-gray-300 hover:text-white transition-all cursor-pointer"
+              title="Edit holding details"
             >
-              Add
+              ✏️
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); onBuy(info.row.original); }}
+              className="px-3 py-1 rounded bg-blue-500/10 hover:bg-blue-500 text-blue-500 hover:text-white transition-colors text-xs font-semibold cursor-pointer"
+            >
+              Buy
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); onSell(info.row.original); }}
-              className="px-3 py-1 rounded bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-colors text-xs font-semibold"
+              className="px-3 py-1 rounded bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white transition-colors text-xs font-semibold cursor-pointer"
             >
-              Exit
+              Sell
             </button>
           </div>
         ),
       }),
     ],
-    [onEdit, onSell]
+    [onEdit, onBuy, onSell]
   );
 
 
