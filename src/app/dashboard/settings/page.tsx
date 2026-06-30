@@ -294,6 +294,7 @@ export default function SettingsPage() {
       <div className="flex flex-wrap gap-1.5 rounded-2xl bg-white/[0.02] border border-white/5 p-1.5 max-w-fit shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]">
         {[
           { key: "profile", label: "Profile" },
+          { key: "preferences", label: "Preferences" },
           { key: "modules", label: "Modules" },
           { key: "defaults", label: "Defaults" },
           { key: "status", label: "System Status" },
@@ -303,6 +304,7 @@ export default function SettingsPage() {
           
           let activeStyles = "bg-cyan-500 text-white shadow-[0_0_20px_rgba(6,182,212,0.3)]";
           if (tab.key === "danger") activeStyles = "bg-rose-500 text-white shadow-[0_0_20px_rgba(244,63,94,0.3)]";
+          else if (tab.key === "preferences") activeStyles = "bg-violet-500 text-white shadow-[0_0_20px_rgba(139,92,246,0.3)]";
 
           return (
             <button
@@ -369,6 +371,86 @@ export default function SettingsPage() {
                 <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 Your profile name is synchronized across all devices in real-time.
               </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Preferences Section */}
+      {activeTab === "preferences" && (
+        <div className="max-w-2xl animate-fade-in-up">
+          <div className="glass-card-static p-6 md:p-10 relative overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-[3px] bg-violet-500/70" />
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-base font-bold text-white">System Preferences</h2>
+                <p className="text-xs text-[--text-muted]">Configure default settings for your workspace</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {/* Base Currency */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-white/[0.02] border border-white/5">
+                <div>
+                  <span className="text-[13px] font-bold text-white block ml-1">Base Currency</span>
+                  <span className="text-[10px] text-[--text-muted] block ml-1 mt-0.5">Primary currency for asset evaluation and statistics</span>
+                </div>
+                <select
+                  aria-label="Base Currency"
+                  value={baseCurrency}
+                  onChange={(e) => saveSetting("base_currency", e.target.value, `Base currency updated to ${e.target.value}`)}
+                  className="bg-[--bg-surface] text-white border border-white/10 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-[--accent-primary] min-w-[200px]"
+                >
+                  <option value="INR">INR (₹) - Indian Rupee</option>
+                  <option value="USD">USD ($) - US Dollar</option>
+                  <option value="EUR">EUR (€) - Euro</option>
+                  <option value="GBP">GBP (£) - British Pound</option>
+                </select>
+              </div>
+
+              {/* Theme Settings */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-white/[0.02] border border-white/5">
+                <div>
+                  <span className="text-[13px] font-bold text-white block ml-1">UI Appearance</span>
+                  <span className="text-[10px] text-[--text-muted] block ml-1 mt-0.5">Select a design theme for the dashboard</span>
+                </div>
+                <select
+                  aria-label="UI Appearance Theme"
+                  value={theme}
+                  onChange={(e) => saveSetting("theme", e.target.value, `Theme updated to ${e.target.value}`)}
+                  className="bg-[--bg-surface] text-white border border-white/10 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-[--accent-primary] min-w-[200px]"
+                >
+                  <option value="system">System Default</option>
+                  <option value="dark">Sleek Dark Mode</option>
+                  <option value="light">Refined Light Mode</option>
+                </select>
+              </div>
+
+              {/* Timezone Settings */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-white/[0.02] border border-white/5">
+                <div>
+                  <span className="text-[13px] font-bold text-white block ml-1">Standard Timezone</span>
+                  <span className="text-[10px] text-[--text-muted] block ml-1 mt-0.5">Used for date stamps and transaction logs</span>
+                </div>
+                <select
+                  aria-label="Standard Timezone"
+                  value={timezone}
+                  onChange={(e) => saveSetting("timezone", e.target.value, `Timezone updated to ${e.target.value}`)}
+                  className="bg-[--bg-surface] text-white border border-white/10 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-[--accent-primary] min-w-[200px]"
+                >
+                  <option value="Asia/Kolkata">India (IST) - Asia/Kolkata</option>
+                  <option value="UTC">Coordinated Universal Time (UTC)</option>
+                  <option value="America/New_York">US Eastern Time (EST/EDT)</option>
+                  <option value="Europe/London">London (GMT/BST)</option>
+                  <option value="Asia/Singapore">Singapore (SGT)</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
