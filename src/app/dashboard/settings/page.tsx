@@ -8,7 +8,12 @@ import { toast } from "react-hot-toast";
 import { useFinanceData } from "@/hooks/use-finance-data";
 import type { FinanceData } from "@/hooks/use-finance-data";
 import { MODULE_KEYS, MODULE_DISPLAY_LABELS } from "@/lib/modules";
-import ReportDownloadButton from "../components/ReportDownloadButton";
+import dynamic from "next/dynamic";
+
+const ReportDownloadButton = dynamic(
+  () => import("../components/ReportDownloadButton"),
+  { ssr: false }
+);
 
 type TabKey = "profile" | "preferences" | "modules" | "defaults" | "danger" | "status";
 
