@@ -309,66 +309,77 @@ export default function TransactionsClient() {
 
   return (
     <div className="flex flex-col gap-8 animate-in fade-in duration-700">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
         <div>
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white uppercase italic">Income &amp; Expenses</h1>
           <p className="text-[10px] text-[--text-muted] font-black uppercase tracking-[0.4em] mt-2 ml-1">Cashflow &amp; Income/Expenses Log</p>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <select 
-            className="btn-secondary !h-11 px-4 text-xs font-bold" 
-            value={selectedMonth} 
-            onChange={e => setSelectedMonth(parseInt(e.target.value))}
-            aria-label="Select month"
-          >
-            {Array.from({ length: 12 }, (_, i) => (
-              <option key={i + 1} value={i + 1} className="bg-[--bg-surface]">
-                {format(new Date(2020, i, 1), "MMMM")}
-              </option>
-            ))}
-          </select>
-          <select 
-            className="btn-secondary !h-11 px-4 text-xs font-bold" 
-            value={selectedYear} 
-            onChange={e => setSelectedYear(parseInt(e.target.value))}
-            aria-label="Select year"
-          >
-            {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map(y => (
-              <option key={y} value={y} className="bg-[--bg-surface]">{y}</option>
-            ))}
-          </select>
-          <button 
-            type="button" 
-            onClick={handleExportCSV}
-            className="btn-secondary !h-11 px-4 text-xs font-bold flex items-center gap-2"
-          >
-            <Download className="w-4 h-4" />
-            <span>Export</span>
-          </button>
-          <button 
-            type="button" 
-            onClick={handleExportPDF}
-            className="btn-secondary !h-11 px-4 text-xs font-bold flex items-center gap-2"
-          >
-            <Download className="w-4 h-4" />
-            <span>PDF Statement</span>
-          </button>
-          <button 
-            type="button" 
-            onClick={() => handleOpenAddModal("income")}
-            className="btn-primary !h-11 px-4 text-xs font-bold flex items-center gap-2 !bg-emerald-500 hover:!bg-emerald-600 shadow-[0_0_20px_rgba(16,185,129,0.2)] cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Log Income</span>
-          </button>
-          <button 
-            type="button" 
-            onClick={() => handleOpenAddModal("expense")}
-            className="btn-primary !h-11 px-4 text-xs font-bold flex items-center gap-2 !bg-rose-500 hover:!bg-rose-600 shadow-[0_0_20px_rgba(244,63,94,0.2)] cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Log Expense</span>
-          </button>
+        <div className="flex flex-wrap items-center gap-3 justify-start lg:justify-end w-full lg:w-auto">
+          {/* Selectors Group */}
+          <div className="flex items-center gap-2">
+            <select 
+              className="btn-secondary !h-11 px-4 text-xs font-bold" 
+              value={selectedMonth} 
+              onChange={e => setSelectedMonth(parseInt(e.target.value))}
+              aria-label="Select month"
+            >
+              {Array.from({ length: 12 }, (_, i) => (
+                <option key={i + 1} value={i + 1} className="bg-[--bg-surface]">
+                  {format(new Date(2020, i, 1), "MMMM")}
+                </option>
+              ))}
+            </select>
+            <select 
+              className="btn-secondary !h-11 px-4 text-xs font-bold" 
+              value={selectedYear} 
+              onChange={e => setSelectedYear(parseInt(e.target.value))}
+              aria-label="Select year"
+            >
+              {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map(y => (
+                <option key={y} value={y} className="bg-[--bg-surface]">{y}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Exports Group */}
+          <div className="flex items-center gap-2">
+            <button 
+              type="button" 
+              onClick={handleExportCSV}
+              className="btn-secondary !h-11 px-4 text-xs font-bold flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" />
+              <span>Export</span>
+            </button>
+            <button 
+              type="button" 
+              onClick={handleExportPDF}
+              className="btn-secondary !h-11 px-4 text-xs font-bold flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" />
+              <span>PDF Statement</span>
+            </button>
+          </div>
+
+          {/* Action Logs Group */}
+          <div className="flex items-center gap-2">
+            <button 
+              type="button" 
+              onClick={() => handleOpenAddModal("income")}
+              className="btn-primary !h-11 px-4 text-xs font-bold flex items-center gap-2 !bg-emerald-500 hover:!bg-emerald-600 shadow-[0_0_20px_rgba(16,185,129,0.2)] cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Log Income</span>
+            </button>
+            <button 
+              type="button" 
+              onClick={() => handleOpenAddModal("expense")}
+              className="btn-primary !h-11 px-4 text-xs font-bold flex items-center gap-2 !bg-rose-500 hover:!bg-rose-600 shadow-[0_0_20px_rgba(244,63,94,0.2)] cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Log Expense</span>
+            </button>
+          </div>
         </div>
       </div>
 

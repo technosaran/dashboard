@@ -98,7 +98,6 @@ export default function LedgerDataTable({
         header: "",
         cell: (info) => {
           const log = info.row.original;
-          if (!log.source_type || log.source_type === "account") return null;
           return (
             <div className="flex justify-end">
               <button

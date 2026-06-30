@@ -19,7 +19,8 @@ export async function searchMFSchemes(query: string) {
     const userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)";
     const res = await fetch(`https://api.mfapi.in/mf/search?q=${encodeURIComponent(query)}`, {
         cache: "no-store",
-        headers: { "User-Agent": userAgent }
+        headers: { "User-Agent": userAgent },
+        signal: AbortSignal.timeout(3000)
     });
     if (res.ok) {
       const data = await res.json();
@@ -64,7 +65,8 @@ export async function fetchLiveMFNAV(schemeCode: string) {
   try {
     const res = await fetch(`https://api.mfapi.in/mf/${schemeCode}`, { 
       cache: "no-store",
-      headers: { "User-Agent": userAgent }
+      headers: { "User-Agent": userAgent },
+      signal: AbortSignal.timeout(3000)
     });
     if (res.ok) {
       const data = await res.json();

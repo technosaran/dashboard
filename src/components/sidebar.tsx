@@ -31,12 +31,22 @@ const nav = [
     ),
   },
   {
-    label: "Income & Expenses",
-    href: "/dashboard/transactions",
+    label: "Income",
+    href: "/dashboard/income",
     icon: (
       <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-        <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-        <path d="M12 11v6m-3-3h6" strokeLinecap="round" />
+        <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+        <path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
+    label: "Expenses",
+    href: "/dashboard/expenses",
+    icon: (
+      <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+        <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M16 8H8m8 4H8m5 4H8" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     ),
   },
@@ -214,10 +224,6 @@ export default function Sidebar() {
     return nav.filter(item => {
       if (["Dashboard", "Accounts", "Wallet", "Settings", "Family"].includes(item.label)) return true;
 
-      // Dynamic visibility rules for unified sections
-      if (item.label === "Income & Expenses") {
-        return enabledModules.includes("Income") || enabledModules.includes("Expenses");
-      }
       if (item.label === "Investments") {
         return enabledModules.includes("Stocks") || enabledModules.includes("Mutual Funds") || enabledModules.includes("Bonds") || enabledModules.includes("FnO") || enabledModules.includes("Forex");
       }
