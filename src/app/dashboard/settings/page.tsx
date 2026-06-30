@@ -15,7 +15,7 @@ const ReportDownloadButton = dynamic(
   { ssr: false }
 );
 
-type TabKey = "profile" | "preferences" | "modules" | "defaults" | "danger" | "status";
+type TabKey = "profile" | "modules" | "defaults" | "danger" | "status";
 
 export default function SettingsPage() {
   const { username, setUsername, loading, isSyncing } = useUser();
@@ -180,15 +180,15 @@ export default function SettingsPage() {
   };
 
   const SECTIONS_REQUIRING_ACCOUNT = [
-    { key: "expenses", label: "Expenses Section" },
-    { key: "income", label: "Income Section" },
-    { key: "family", label: "Family Transfers" },
-    { key: "forex", label: "Forex Operations" },
-    { key: "goals", label: "Goals & Savings" },
-    { key: "fno", label: "Futures & Options" },
-    { key: "stocks", label: "Stock Portfolio" },
-    { key: "mutual_funds", label: "Mutual Funds" },
-    { key: "bonds", label: "Bond Investments" },
+    { key: "expenses", label: "Expenses Section", icon: "🔴" },
+    { key: "income", label: "Income Section", icon: "🟢" },
+    { key: "family", label: "Family Transfers", icon: "💜" },
+    { key: "forex", label: "Forex Operations", icon: "💱" },
+    { key: "goals", label: "Goals & Savings", icon: "🎯" },
+    { key: "fno", label: "Futures & Options", icon: "📈" },
+    { key: "stocks", label: "Stock Portfolio", icon: "📊" },
+    { key: "mutual_funds", label: "Mutual Funds", icon: "🏦" },
+    { key: "bonds", label: "Bond Investments", icon: "🔏" },
   ];
 
   // Reset confirmation state
@@ -299,7 +299,6 @@ export default function SettingsPage() {
       <div className="flex flex-wrap gap-1.5 rounded-2xl bg-white/[0.02] border border-white/5 p-1.5 max-w-fit shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]">
         {[
           { key: "profile", label: "Profile" },
-          { key: "preferences", label: "Preferences" },
           { key: "modules", label: "Modules" },
           { key: "defaults", label: "Defaults" },
           { key: "status", label: "System Status" },
@@ -309,7 +308,6 @@ export default function SettingsPage() {
           
           let activeStyles = "bg-cyan-500 text-white shadow-[0_0_20px_rgba(6,182,212,0.3)]";
           if (tab.key === "danger") activeStyles = "bg-rose-500 text-white shadow-[0_0_20px_rgba(244,63,94,0.3)]";
-          else if (tab.key === "preferences") activeStyles = "bg-violet-500 text-white shadow-[0_0_20px_rgba(139,92,246,0.3)]";
 
           return (
             <button
@@ -360,6 +358,17 @@ export default function SettingsPage() {
               </div>
             </div>
 
+            {/* Avatar initials badge */}
+            <div className="flex items-center gap-4 mb-6 p-4 rounded-2xl bg-white/[0.01] border border-white/5">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-2xl font-black shadow-lg shadow-indigo-500/20">
+                {input ? input.charAt(0).toUpperCase() : "?"}
+              </div>
+              <div>
+                <h3 className="text-sm font-black text-white">{input || "Anonymous User"}</h3>
+                <p className="text-[10px] text-[--text-muted] font-bold uppercase tracking-wider mt-0.5">Active Account Session</p>
+              </div>
+            </div>
+
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider mb-2 text-[--text-muted]">Change Display Name</label>
               <input
@@ -381,86 +390,6 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* Preferences Section */}
-      {activeTab === "preferences" && (
-        <div className="max-w-2xl animate-fade-in-up">
-          <div className="glass-card-static p-6 md:p-10 relative overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-[3px] bg-violet-500/70" />
-            <div className="flex items-center gap-3 mb-8">
-              <div className="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </div>
-              <div>
-                <h2 className="text-base font-bold text-white">System Preferences</h2>
-                <p className="text-xs text-[--text-muted]">Configure default settings for your workspace</p>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              {/* Base Currency */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-white/[0.02] border border-white/5">
-                <div>
-                  <span className="text-[13px] font-bold text-white block ml-1">Base Currency</span>
-                  <span className="text-[10px] text-[--text-muted] block ml-1 mt-0.5">Primary currency for asset evaluation and statistics</span>
-                </div>
-                <select
-                  aria-label="Base Currency"
-                  value={baseCurrency}
-                  onChange={(e) => saveSetting("base_currency", e.target.value, `Base currency updated to ${e.target.value}`)}
-                  className="bg-[--bg-surface] text-white border border-white/10 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-[--accent-primary] min-w-[200px]"
-                >
-                  <option value="INR">INR (₹) - Indian Rupee</option>
-                  <option value="USD">USD ($) - US Dollar</option>
-                  <option value="EUR">EUR (€) - Euro</option>
-                  <option value="GBP">GBP (£) - British Pound</option>
-                </select>
-              </div>
-
-              {/* Theme Settings */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-white/[0.02] border border-white/5">
-                <div>
-                  <span className="text-[13px] font-bold text-white block ml-1">UI Appearance</span>
-                  <span className="text-[10px] text-[--text-muted] block ml-1 mt-0.5">Select a design theme for the dashboard</span>
-                </div>
-                <select
-                  aria-label="UI Appearance Theme"
-                  value={theme}
-                  onChange={(e) => saveSetting("theme", e.target.value, `Theme updated to ${e.target.value}`)}
-                  className="bg-[--bg-surface] text-white border border-white/10 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-[--accent-primary] min-w-[200px]"
-                >
-                  <option value="system">System Default</option>
-                  <option value="dark">Sleek Dark Mode</option>
-                  <option value="light">Refined Light Mode</option>
-                </select>
-              </div>
-
-              {/* Timezone Settings */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-white/[0.02] border border-white/5">
-                <div>
-                  <span className="text-[13px] font-bold text-white block ml-1">Standard Timezone</span>
-                  <span className="text-[10px] text-[--text-muted] block ml-1 mt-0.5">Used for date stamps and transaction logs</span>
-                </div>
-                <select
-                  aria-label="Standard Timezone"
-                  value={timezone}
-                  onChange={(e) => saveSetting("timezone", e.target.value, `Timezone updated to ${e.target.value}`)}
-                  className="bg-[--bg-surface] text-white border border-white/10 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-[--accent-primary] min-w-[200px]"
-                >
-                  <option value="Asia/Kolkata">India (IST) - Asia/Kolkata</option>
-                  <option value="UTC">Coordinated Universal Time (UTC)</option>
-                  <option value="America/New_York">US Eastern Time (EST/EDT)</option>
-                  <option value="Europe/London">London (GMT/BST)</option>
-                  <option value="Asia/Singapore">Singapore (SGT)</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Module Management */}
       {activeTab === "modules" && (
         <div className="max-w-2xl animate-fade-in-up">
@@ -471,8 +400,8 @@ export default function SettingsPage() {
                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
               </div>
               <div>
-                 <h2 className="text-base font-bold text-white">Module Architecture</h2>
-                 <p className="text-xs text-[--text-muted]">Enable or disable dashboard sections based on your workflow.</p>
+                  <h2 className="text-base font-bold text-white">Module Architecture</h2>
+                  <p className="text-xs text-[--text-muted]">Enable or disable dashboard sections based on your workflow.</p>
               </div>
             </div>
 
@@ -480,10 +409,20 @@ export default function SettingsPage() {
                {MODULE_KEYS.map((module) => {
                  const displayLabel = MODULE_DISPLAY_LABELS[module];
                  const isEnabled = enabledModules.includes(module);
+                 const MODULE_ICONS: Record<string, string> = {
+                   "Income & Expenses": "💰",
+                   "Budget": "📊",
+                   "Investments": "📈",
+                   "Alt Assets": "🏢",
+                   "Liabilities": "💸",
+                   "Goals": "🎯",
+                   "Family Management": "👨‍👩‍👧‍👦",
+                   "Ledger": "📑",
+                 };
                  return (
                   <div key={module} className={`p-4 rounded-2xl border transition-all flex items-center justify-between ${isEnabled ? 'bg-white/[0.03] border-white/10' : 'bg-black/20 border-white/5 opacity-60'}`}>
                      <div className="flex items-center gap-3">
-                        <span className={`w-2 h-2 rounded-full ${isEnabled ? 'bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.5)]' : 'bg-white/10'}`} />
+                        <span className="text-base select-none">{MODULE_ICONS[module] || "⚙️"}</span>
                         <span className="text-[13px] font-bold text-white">{displayLabel}</span>
                      </div>
                      <button type="button" 
@@ -522,7 +461,10 @@ export default function SettingsPage() {
                 const currentVal = defaultAccounts[section.key] || "";
                 return (
                   <div key={section.key} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-white/[0.02] border border-white/5">
-                    <span className="text-[13px] font-bold text-white ml-1">{section.label}</span>
+                    <div className="flex items-center gap-2.5 ml-1">
+                      <span className="text-sm select-none">{section.icon}</span>
+                      <span className="text-[13px] font-bold text-white">{section.label}</span>
+                    </div>
                     <select
                       aria-label={`Default account for ${section.label}`}
                       value={currentVal}
