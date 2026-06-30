@@ -88,6 +88,22 @@ export default function LiabilitiesClient({ initialData }: { initialData?: Finan
     }).sort((a, b) => b.Remaining - a.Remaining).slice(0, 10);
   }, [liabilities]);
 
+  const safetyIndex = useMemo(() => {
+    const liquidAssets = accounts
+      .filter(a => a.type === "checking" || a.type === "savings")
+      .reduce((sum, a) => sum + Number(a.balance), 0);
+    const totalDebt = liabilities.reduce((s, l) => s + Number(l.remaining_amount), 0);
+    if (totalDebt === 0) return { ratio: 999, status: "Safe", text: "Debt-free", color: "text-emerald-400 border-emerald-500/20 bg-emerald-500/5" };
+    const ratio = liquidAssets / totalDebt;
+    if (ratio >= 1.5) {
+      return { ratio, status: "Safe", text: "Liquid assets fully cover debt", color: "text-emerald-400 border-emerald-500/20 bg-emerald-500/5" };
+    } else if (ratio >= 0.6) {
+      return { ratio, status: "Caution", text: "Moderate leverage exposure", color: "text-amber-400 border-amber-500/20 bg-amber-500/5" };
+    } else {
+      return { ratio, status: "Critical", text: "High debt exposure relative to cash", color: "text-rose-400 border-rose-500/20 bg-rose-500/5" };
+    }
+  }, [accounts, liabilities]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const total = parseFloat(formData.total_amount);
@@ -234,6 +250,23 @@ export default function LiabilitiesClient({ initialData }: { initialData?: Finan
         {/* View Content */}
         {activeView === "overview" ? (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            {/* Debt Safety Index Banner */}
+            <div className={`p-5 rounded-2xl border flex flex-col md:flex-row md:items-center justify-between gap-4 animate-fade-in ${safetyIndex.color}`}>
+              <div className="flex items-center gap-4">
+                <span className="text-3xl">🛡️</span>
+                <div>
+                  <h4 className="text-sm font-black uppercase tracking-wider">Debt Safety Status: {safetyIndex.status}</h4>
+                  <p className="text-[11px] font-bold opacity-80 mt-1">{safetyIndex.text}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-bold opacity-60">Liquid Coverage Ratio:</span>
+                <span className="text-sm font-mono font-black bg-white/5 border border-white/10 px-3 py-1.5 rounded-xl">
+                  {safetyIndex.ratio === 999 ? "∞" : `${safetyIndex.ratio.toFixed(2)}x`}
+                </span>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Paydown Bar Chart */}
               <div className="glass-card-static p-6 lg:col-span-2 min-h-[400px] flex flex-col">

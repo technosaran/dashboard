@@ -19,7 +19,7 @@ type TabKey = "profile" | "modules" | "defaults" | "danger" | "status";
 
 export default function SettingsPage() {
   const { username, setUsername, loading, isSyncing } = useUser();
-  const { data: { profile, accounts }, mutate } = useFinanceData();
+  const { data: { profile, accounts, goals, budgets }, mutate } = useFinanceData();
   const [input, setInput] = useState(username);
   const [lastSaved, setLastSaved] = useState<string | null>(null);
   const prevIsSyncingRef = useRef(false);

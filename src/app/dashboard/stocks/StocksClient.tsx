@@ -660,33 +660,48 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                   </>
                 )}
 
-                {/* Live Margin Calculation details */}
-                <div className="bg-white/5 rounded p-3 flex flex-col gap-1.5 text-xs text-gray-400">
-                  <div className="flex justify-between items-center">
-                    <span>Turnover:</span>
-                    <span className="text-white font-medium">
-                      ₹{formatMoney((parseFloat(formData.quantity) || 0) * (parseFloat(formData.buy_price) || 0))}
+                {/* Live Premium Margin Calculator & Order Slip */}
+                {((parseFloat(formData.quantity) || 0) > 0) && (
+                  <div className="glass-card-static border border-white/5 p-4 rounded-xl space-y-2.5 text-[11px] bg-white/[0.01] animate-fade-in">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-[--text-muted] block border-b border-white/5 pb-1.5">
+                      Order Slip Preview
                     </span>
-                  </div>
-                  {parseFloat(charges) > 0 && (
-                    <div className="flex justify-between items-center">
-                      <span>Brokerage & Charges:</span>
-                      <span className="text-white font-medium">
-                        ₹{formatMoney(parseFloat(charges))}
+                    <div className="flex justify-between">
+                      <span className="text-[--text-secondary]">Gross Turnover:</span>
+                      <span className="text-white font-bold">
+                        ₹{formatMoney((parseFloat(formData.quantity) || 0) * (parseFloat(formData.buy_price) || 0))}
                       </span>
                     </div>
-                  )}
-                  <div className="flex justify-between items-center pt-1.5 border-t border-white/5 font-bold">
-                    <span>Net Amount:</span>
-                    <span className="text-white">
-                      ₹{formatMoney(
-                        formData.trade_type === 'buy'
-                          ? ((parseFloat(formData.quantity) || 0) * (parseFloat(formData.buy_price) || 0)) + (parseFloat(charges) || 0)
-                          : ((parseFloat(formData.quantity) || 0) * (parseFloat(formData.buy_price) || 0)) - (parseFloat(charges) || 0)
-                      )}
-                    </span>
+                    
+                    {/* Dynamic Stamp Duty mock */}
+                    <div className="flex justify-between">
+                      <span className="text-[--text-secondary]">Stamp Duty (0.015%):</span>
+                      <span className="text-white font-mono">
+                        ₹{formatMoney((parseFloat(formData.quantity) || 0) * (parseFloat(formData.buy_price) || 0) * 0.00015)}
+                      </span>
+                    </div>
+
+                    {(parseFloat(charges) || 0) > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-[--text-secondary]">Brokerage &amp; Fees:</span>
+                        <span className="text-white font-bold">
+                          ₹{formatMoney(parseFloat(charges) || 0)}
+                        </span>
+                      </div>
+                    )}
+                    
+                    <div className="flex justify-between items-center pt-2 border-t border-white/5 font-black text-xs">
+                      <span className="text-white">Estimated {formData.trade_type === 'buy' ? 'Outflow' : 'Inflow'}:</span>
+                      <span style={{ color: formData.trade_type === 'buy' ? '#ef4444' : '#10b981' }}>
+                        ₹{formatMoney(
+                          formData.trade_type === 'buy'
+                            ? ((parseFloat(formData.quantity) || 0) * (parseFloat(formData.buy_price) || 0)) + (parseFloat(charges) || 0) + ((parseFloat(formData.quantity) || 0) * (parseFloat(formData.buy_price) || 0) * 0.00015)
+                            : ((parseFloat(formData.quantity) || 0) * (parseFloat(formData.buy_price) || 0)) - (parseFloat(charges) || 0) - ((parseFloat(formData.quantity) || 0) * (parseFloat(formData.buy_price) || 0) * 0.00015)
+                        )}
+                      </span>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Modal actions */}
                 <div className="flex gap-3 pt-2">

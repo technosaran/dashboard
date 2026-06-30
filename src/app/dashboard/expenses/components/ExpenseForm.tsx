@@ -16,7 +16,7 @@ interface ExpenseFormProps {
   onSubmit: (data: any) => Promise<void>;
   submitting: boolean;
   accounts: Account[];
-  categories: { label: string }[];
+  categories: { label: string; icon?: string }[];
   defaultDate: string;
   defaultAccountId?: string;
 }
@@ -61,6 +61,28 @@ export default function ExpenseForm({ isOpen, onClose, onSubmit, submitting, acc
         <select className="input-premium" value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} aria-label="Select expenditure category" id="expense-category" name="category">
           {categories.map((c) => <option key={c.label} value={c.label}>{c.label}</option>)}
         </select>
+
+        {/* Category Quick Presets */}
+        <div className="space-y-1.5 mt-2">
+          <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Category Quick Presets</label>
+          <div className="flex flex-wrap gap-2 pt-1">
+            {categories.map((c) => (
+              <button
+                key={c.label}
+                type="button"
+                onClick={() => setFormData({ ...formData, category: c.label })}
+                className={`px-3 py-1.5 rounded-xl text-[10px] font-bold border transition-all cursor-pointer ${
+                  formData.category === c.label
+                    ? "bg-rose-500/10 border-rose-500/30 text-rose-400 font-black shadow-[0_2px_10px_rgba(244,63,94,0.15)]"
+                    : "bg-white/5 border-white/10 text-[--text-muted] hover:text-white"
+                }`}
+              >
+                <span className="mr-1">{c.icon}</span>
+                {c.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
       
       <div className="space-y-3">

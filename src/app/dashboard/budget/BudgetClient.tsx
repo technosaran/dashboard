@@ -95,6 +95,16 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
   const budgetBurnRatePercent = totalBudgeted > 0 ? (totalSpent / totalBudgeted) * 100 : 0;
   const isBurningFast = budgetBurnRatePercent > monthProgressPercent;
 
+  const predictiveDeplDate = useMemo(() => {
+    if (totalSpent <= 0 || daysPassed <= 0 || totalBudgeted <= 0) return null;
+    const avgDailySpent = totalSpent / daysPassed;
+    if (avgDailySpent <= 0) return null;
+    const daysToBurn = totalBudgeted / avgDailySpent;
+    const date = new Date(selectedYear, selectedMonth - 1, 1);
+    date.setDate(1 + Math.floor(daysToBurn));
+    return date;
+  }, [totalSpent, daysPassed, totalBudgeted, selectedMonth, selectedYear]);
+
   const dynamicCategories = useMemo(() => {
     const catsMap = new Map<string, string>();
     BUDGET_CATEGORIES.forEach(c => catsMap.set(c.label, c.icon));
@@ -462,26 +472,41 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
                   </div>
                 </div>
                 {totalBudgeted > 0 && (
-                  <div className="p-4 rounded-xl bg-white/5 border border-white/10 flex items-start gap-4">
-                    <div className={`mt-1 p-1.5 rounded-lg ${isBurningFast ? 'bg-danger/20 text-danger' : 'bg-success/20 text-success'}`}>
-                      {isBurningFast ? (
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                      ) : (
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                      )}
+                  <>
+                    <div className="p-4 rounded-xl bg-white/5 border border-white/10 flex items-start gap-4">
+                      <div className={`mt-1 p-1.5 rounded-lg ${isBurningFast ? 'bg-danger/20 text-danger' : 'bg-success/20 text-success'}`}>
+                        {isBurningFast ? (
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                        ) : (
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-[--text-primary]">
+                          {isBurningFast ? "Spending too fast" : "Pacing well"}
+                        </p>
+                        <p className="text-xs text-[--text-secondary] mt-1">
+                          {isBurningFast 
+                            ? `You've spent ${budgetBurnRatePercent.toFixed(0)}% of your budget, but only ${monthProgressPercent.toFixed(0)}% of the month has passed.`
+                            : `You are spending slower than the month is passing (${monthProgressPercent.toFixed(0)}% passed). Great job!`
+                          }
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-bold text-[--text-primary]">
-                        {isBurningFast ? "Spending too fast" : "Pacing well"}
-                      </p>
-                      <p className="text-xs text-[--text-secondary] mt-1">
-                        {isBurningFast 
-                          ? `You've spent ${budgetBurnRatePercent.toFixed(0)}% of your budget, but only ${monthProgressPercent.toFixed(0)}% of the month has passed.`
-                          : `You are spending slower than the month is passing (${monthProgressPercent.toFixed(0)}% passed). Great job!`
-                        }
-                      </p>
-                    </div>
-                  </div>
+                    {predictiveDeplDate && budgetBurnRatePercent > 0 && (
+                      <div className="mt-4 p-4 rounded-xl bg-indigo-500/5 border border-indigo-500/10 flex items-start gap-4 animate-fade-in">
+                        <div className="mt-0.5 text-base text-indigo-400">
+                          🔮
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-white">Predictive Spending Assistant</p>
+                          <p className="text-[11px] text-[--text-secondary] mt-1 leading-relaxed">
+                            Based on your current burn velocity, your budget is projected to run out on <span className="font-bold text-white">{format(predictiveDeplDate, "MMM d, yyyy")}</span>.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
               <div className="glass-card-static p-8">
@@ -584,7 +609,30 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
                         {/* Card Header */}
                         <div className="flex justify-between items-start gap-2 mb-4">
                           <div className="flex items-center gap-3">
-                            <span className="text-3xl p-2 bg-white/[0.02] rounded-2xl border border-white/5 shadow-inner">{cat.icon}</span>
+                            <div className="relative w-12 h-12 flex-shrink-0 flex items-center justify-center">
+                              {limit > 0 ? (
+                                <>
+                                  <svg className="w-full h-full transform -rotate-90 absolute">
+                                    <circle cx="24" cy="24" r="20" className="stroke-white/5" strokeWidth="3" fill="transparent" />
+                                    <circle
+                                      cx="24"
+                                      cy="24"
+                                      r="20"
+                                      className={`transition-all duration-1000 ${
+                                        percent > 90 ? "stroke-rose-500" : percent > 75 ? "stroke-amber-500" : "stroke-cyan-400"
+                                      }`}
+                                      strokeWidth="3"
+                                      fill="transparent"
+                                      strokeDasharray={125.6}
+                                      strokeDashoffset={125.6 * (1 - Math.min(percent, 100) / 100)}
+                                    />
+                                  </svg>
+                                  <span className="text-xl z-10">{cat.icon}</span>
+                                </>
+                              ) : (
+                                <span className="text-xl p-2 bg-white/[0.02] rounded-2xl border border-white/5 shadow-inner">{cat.icon}</span>
+                              )}
+                            </div>
                             <div>
                               <p className="text-sm font-black text-white">{cat.label}</p>
                               <p className="text-[10px] font-bold text-[--text-muted] uppercase tracking-wider mt-0.5">
@@ -606,30 +654,35 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
                             <span className="text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-[4px] bg-white/5 text-[--text-muted] border border-white/10">No Limit</span>
                           )}
                         </div>
-
-                        {/* Progress Bar */}
-                        {limit > 0 && (
-                          <div className="my-4">
-                            <div className="flex justify-between text-[10px] font-bold text-[--text-muted] mb-1.5">
-                              <span>{percent.toFixed(0)}% used</span>
-                              <span>Limit: ₹{limit.toLocaleString()}</span>
-                            </div>
-                            <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden flex relative border border-white/5">
-                              <div 
-                                className={`h-full transition-all duration-1000 ${percent > 100 ? "bg-rose-500" : percent > 80 ? "bg-amber-400" : "bg-gradient-to-r from-emerald-400 to-teal-500"}`} 
-                                style={{ width: `${Math.min(percent, 100)}%` }} 
-                              />
-                              <div 
-                                className="absolute top-0 bottom-0 w-0.5 bg-sky-400/80 shadow-[0_0_8px_rgba(56,189,248,0.8)] z-10" 
-                                style={{ left: `${monthProgressPercent}%` }}
-                                title={`Time Progress: ${monthProgressPercent.toFixed(0)}%`}
-                              />
-                            </div>
-                          </div>
-                        )}
                       </div>
 
-                      {/* Display / Adjust Trigger */}
+                      {/* Progress Bar */}
+                      {limit > 0 && (
+                        <div className="my-4">
+                          <div className="flex justify-between text-[10px] font-bold text-[--text-muted] mb-1.5">
+                            <span>{percent.toFixed(0)}% used</span>
+                            <span>Limit: ₹{limit.toLocaleString()}</span>
+                          </div>
+                          <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden flex relative border border-white/5">
+                            <div 
+                              className={`h-full transition-all duration-1000 ${
+                                percent > 90 
+                                  ? "bg-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.5)] animate-pulse" 
+                                  : percent > 75 
+                                    ? "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.4)]" 
+                                    : "bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.3)]"
+                              }`} 
+                              style={{ width: `${Math.min(percent, 100)}%` }} 
+                            />
+                            <div 
+                              className="absolute top-0 bottom-0 w-0.5 bg-sky-400/80 shadow-[0_0_8px_rgba(56,189,248,0.8)] z-10" 
+                              style={{ left: `${monthProgressPercent}%` }}
+                              title={`Time Progress: ${monthProgressPercent.toFixed(0)}%`}
+                            />
+                          </div>
+                        </div>
+                      )}
+
                       <div className="mt-4 pt-4 border-t border-white/5 flex justify-between items-center">
                         <span className="text-[11px] text-[--text-muted] font-medium">
                           {limit > 0 ? (

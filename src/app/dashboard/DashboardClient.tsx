@@ -149,6 +149,23 @@ export default function DashboardClient() {
       }
     }
 
+    // Calculate historical curves walking backward
+    const monthsKeys = Object.keys(trendMap);
+    let runningNetWorth = netWorthINR || 100000;
+    let runningInvestments = (stockBalanceINR || 0) + (mfBalance || 0) + (bondBalance || 0);
+
+    for (let i = monthsKeys.length - 1; i >= 0; i--) {
+      const key = monthsKeys[i];
+      const entry = trendMap[key] as any;
+      entry.netWorth = Math.max(0, runningNetWorth);
+      entry.investments = Math.max(0, runningInvestments);
+
+      // Walk backward
+      const netMonthlyChange = entry.income - entry.expense;
+      runningNetWorth -= netMonthlyChange;
+      runningInvestments -= (entry.income * 0.3 - entry.expense * 0.1);
+    }
+
     const pieData = Object.entries(catMap).map(([name, value], index) => {
       const resolvedColor = getChartColour(index);
       return { name, value, fill: resolvedColor, color: resolvedColor, percentage: "0" };

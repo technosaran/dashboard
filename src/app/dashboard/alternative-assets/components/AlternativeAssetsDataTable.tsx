@@ -102,7 +102,7 @@ export default function AlternativeAssetsDataTable({ assets, onEdit, onDelete, o
           const val = Number(info.row.original.current_value);
           const cost = Number(info.row.original.purchase_price);
           const diff = val - cost;
-          return <PnLValue amount={diff} showIcon currency="INR" />;
+          return <PnLValue amount={diff} showIcon currency="INR" glow />;
         },
       }),
       columnHelper.display({

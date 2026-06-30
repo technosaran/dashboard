@@ -227,8 +227,46 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
           <p className="text-[--text-secondary] text-[13px] md:text-sm mt-1">Monitor your spending and analyze your monthly expenditure.</p>
         </div>
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          {/* Desktop Month Switcher */}
+          <div className="hidden md:flex items-center gap-1.5 bg-white/5 border border-white/10 p-1.5 rounded-xl">
+            <button
+              type="button"
+              onClick={() => {
+                if (selectedMonth === 1) {
+                  setSelectedMonth(12);
+                  setSelectedYear(prev => prev - 1);
+                } else {
+                  setSelectedMonth(prev => prev - 1);
+                }
+              }}
+              className="px-2.5 py-1.5 rounded-lg text-[10px] font-black text-[--text-muted] hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+              aria-label="Previous month"
+            >
+              ◀
+            </button>
+            <div className="px-3 py-1.5 text-xs font-black uppercase tracking-wider text-rose-400 select-none">
+              {format(new Date(selectedYear, selectedMonth - 1, 1), "MMM yyyy")}
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                if (selectedMonth === 12) {
+                  setSelectedMonth(1);
+                  setSelectedYear(prev => prev + 1);
+                } else {
+                  setSelectedMonth(prev => prev + 1);
+                }
+              }}
+              className="px-2.5 py-1.5 rounded-lg text-[10px] font-black text-[--text-muted] hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+              aria-label="Next month"
+            >
+              ▶
+            </button>
+          </div>
+
+          {/* Mobile Fallback selects */}
           <select 
-            className="btn-secondary !h-11 px-4 text-xs font-bold" 
+            className="btn-secondary !h-11 px-4 text-xs font-bold md:hidden" 
             value={selectedMonth} 
             onChange={e => setSelectedMonth(parseInt(e.target.value))}
             aria-label="Select month"
@@ -240,7 +278,7 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
             ))}
           </select>
           <select 
-            className="btn-secondary !h-11 px-4 text-xs font-bold" 
+            className="btn-secondary !h-11 px-4 text-xs font-bold md:hidden" 
             value={selectedYear} 
             onChange={e => setSelectedYear(parseInt(e.target.value))}
             aria-label="Select year"

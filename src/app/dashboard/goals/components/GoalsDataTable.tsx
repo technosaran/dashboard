@@ -270,9 +270,30 @@ export default function GoalsDataTable({ goals, onEdit, onDelete, onContribute, 
                           <h3 className="text-sm font-bold text-white leading-tight truncate" title={goal.name}>
                             {goal.name}
                           </h3>
-                          <p className="text-[10px] text-[--text-muted] mt-1 font-semibold uppercase tracking-wider">
-                            {goal.category || "Others"}
-                          </p>
+                          <div className="flex items-center gap-1.5 mt-1.5">
+                            <p className="text-[10px] text-[--text-muted] font-semibold uppercase tracking-wider">
+                              {goal.category || "Others"}
+                            </p>
+                            {(() => {
+                              let priority = "Low";
+                              let priorityBadge = "bg-blue-500/10 text-blue-400 border border-blue-500/20";
+                              if (goal.deadline) {
+                                const days = differenceInDays(parseISO(goal.deadline), new Date());
+                                if (days < 60) {
+                                  priority = "High";
+                                  priorityBadge = "bg-rose-500/10 text-rose-400 border border-rose-500/20";
+                                } else if (days < 180) {
+                                  priority = "Medium";
+                                  priorityBadge = "bg-amber-500/10 text-amber-400 border border-amber-500/20";
+                                }
+                              }
+                              return (
+                                <span className={`text-[7px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-[4px] ${priorityBadge}`}>
+                                  {priority}
+                                </span>
+                              );
+                            })()}
+                          </div>
                         </div>
                       </div>
                       <span className={`shrink-0 px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider border ${
@@ -288,13 +309,22 @@ export default function GoalsDataTable({ goals, onEdit, onDelete, onContribute, 
                         <span className="text-lg font-black text-white">₹{current.toLocaleString()}</span>
                         <span className="text-[10px] text-[--text-muted]">target ₹{target.toLocaleString()}</span>
                       </div>
-                      <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                      <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden relative">
                         <div 
                           className={`h-full rounded-full transition-all duration-500 ${
                             isCompleted ? 'bg-gradient-to-r from-emerald-500 to-teal-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]' : 'bg-gradient-to-r from-purple-500 to-[--accent-primary]'
                           }`}
                           style={{ width: `${Math.min(pct, 100)}%` }}
                         />
+                        {/* Milestone indicators */}
+                        {!isCompleted && [25, 50, 75].map(m => (
+                          <div 
+                            key={m}
+                            className={`absolute top-0 bottom-0 w-0.5 z-10 transition-colors ${pct >= m ? 'bg-white/40' : 'bg-white/10'}`}
+                            style={{ left: `${m}%` }}
+                            title={`Milestone: ${m}%`}
+                          />
+                        ))}
                       </div>
                     </div>
                   </div>

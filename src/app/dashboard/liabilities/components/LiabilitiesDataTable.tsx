@@ -34,16 +34,36 @@ export default function LiabilitiesDataTable({ liabilities, onEdit, onDelete, on
     () => [
       columnHelper.accessor("name", {
         header: "Liability Name",
-        cell: (info) => (
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-xs flex-shrink-0 text-rose-500">
-              📉
+        cell: (info) => {
+          const current = Number(info.row.original.remaining_amount);
+          const total = Number(info.row.original.total_amount);
+          const pct = total > 0 ? Math.max(0, Math.min(100, (1 - (current / total)) * 100)) : 0;
+          return (
+            <div className="flex items-center gap-3">
+              <div className="relative w-8 h-8 flex-shrink-0 flex items-center justify-center">
+                <svg className="w-full h-full transform -rotate-90 absolute">
+                  <circle cx="16" cy="16" r="13" className="stroke-white/5" strokeWidth="2.5" fill="transparent" />
+                  <circle
+                    cx="16"
+                    cy="16"
+                    r="13"
+                    className="stroke-rose-500 transition-all duration-1000"
+                    strokeWidth="2.5"
+                    fill="transparent"
+                    strokeDasharray={81.6}
+                    strokeDashoffset={81.6 * (1 - pct / 100)}
+                  />
+                </svg>
+                <span className="text-[9px] font-black text-rose-400 z-10">{pct.toFixed(0)}%</span>
+              </div>
+              <div className="flex flex-col max-w-[200px]">
+                <p className="text-[13px] font-bold text-white group-hover:text-rose-400 transition-colors truncate">
+                  {info.getValue()}
+                </p>
+              </div>
             </div>
-            <p className="text-[13px] font-bold text-white group-hover:text-rose-400 transition-colors truncate">
-              {info.getValue()}
-            </p>
-          </div>
-        ),
+          );
+        },
       }),
       columnHelper.accessor("category", {
         header: "Category",

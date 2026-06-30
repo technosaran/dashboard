@@ -69,6 +69,7 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [selectedAccountId, setSelectedAccountId] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const selectQuickRange = (range: string) => {
     const today = new Date();
@@ -108,6 +109,17 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
         return false;
       }
 
+      // Filter by search query
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        const detailsMatch = (log.details || "").toLowerCase().includes(q);
+        const actionMatch = log.action_type.toLowerCase().includes(q);
+        const accMatch = (log.account_name || "").toLowerCase().includes(q);
+        if (!detailsMatch && !actionMatch && !accMatch) {
+          return false;
+        }
+      }
+
       const date = new Date(log.created_at);
 
       if (startDate || endDate) {
@@ -117,7 +129,7 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
       }
       return true;
     });
-  }, [endDate, logs, startDate, selectedAccountId]);
+  }, [endDate, logs, startDate, selectedAccountId, searchQuery]);
 
   const openingBalance = useMemo(() => {
     if (allFilteredLogs.length === 0) return 0;
@@ -168,7 +180,7 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
     const cfg = getActionConfig(type);
     return (
       <span 
-        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] text-[10px] font-black uppercase tracking-wider border whitespace-nowrap"
+        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] text-[9px] font-mono font-black uppercase tracking-wider border whitespace-nowrap"
         style={{ backgroundColor: cfg.bg, color: cfg.text, borderColor: cfg.ring }}
       >
         <span className="text-[11px] shrink-0" aria-hidden="true">{cfg.icon}</span>
@@ -194,6 +206,17 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
       {/* Zerodha Console Filters Form */}
       <section className="bg-[#151515] p-5 rounded border border-white/10 flex flex-col gap-4">
         <div className="flex flex-wrap items-end gap-4">
+          <div className="flex-1 min-w-[200px] space-y-1.5">
+            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Search Logs</label>
+            <input
+              type="text"
+              placeholder="Search details, accounts..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-[#1e1e1e] border border-white/10 rounded px-3 py-2 text-xs text-white outline-none focus:border-[#f26522]"
+            />
+          </div>
+
           <div className="flex-1 min-w-[200px] space-y-1.5">
             <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Account / Segment</label>
             <select

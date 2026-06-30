@@ -356,9 +356,47 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
           </div>
           <p className="text-[--text-secondary] text-[13px] md:text-sm mt-1">Monitor your revenue streams and track financial growth.</p>
         </div>
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          {/* Desktop Month Switcher */}
+          <div className="hidden md:flex items-center gap-1.5 bg-white/5 border border-white/10 p-1.5 rounded-xl">
+            <button
+              type="button"
+              onClick={() => {
+                if (selectedMonth === 1) {
+                  setSelectedMonth(12);
+                  setSelectedYear(prev => prev - 1);
+                } else {
+                  setSelectedMonth(prev => prev - 1);
+                }
+              }}
+              className="px-2.5 py-1.5 rounded-lg text-[10px] font-black text-[--text-muted] hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+              aria-label="Previous month"
+            >
+              ◀
+            </button>
+            <div className="px-3 py-1.5 text-xs font-black uppercase tracking-wider text-emerald-400 select-none">
+              {format(new Date(selectedYear, selectedMonth - 1, 1), "MMM yyyy")}
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                if (selectedMonth === 12) {
+                  setSelectedMonth(1);
+                  setSelectedYear(prev => prev + 1);
+                } else {
+                  setSelectedMonth(prev => prev + 1);
+                }
+              }}
+              className="px-2.5 py-1.5 rounded-lg text-[10px] font-black text-[--text-muted] hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+              aria-label="Next month"
+            >
+              ▶
+            </button>
+          </div>
+
+          {/* Mobile Fallback selects */}
           <select 
-            className="btn-secondary !h-11 px-4 text-xs font-bold" 
+            className="btn-secondary !h-11 px-4 text-xs font-bold md:hidden" 
             value={selectedMonth} 
             onChange={e => setSelectedMonth(parseInt(e.target.value))}
             aria-label="Select month"
@@ -372,7 +410,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
             ))}
           </select>
           <select 
-            className="btn-secondary !h-11 px-4 text-xs font-bold" 
+            className="btn-secondary !h-11 px-4 text-xs font-bold md:hidden" 
             value={selectedYear} 
             onChange={e => setSelectedYear(parseInt(e.target.value))}
             aria-label="Select year"
@@ -722,6 +760,28 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
                 <select className="input-premium py-2 text-xs" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} aria-label="Select income stream" id="income-category" name="category">
                   {INCOME_CATEGORIES.map(c => <option key={c.label} value={c.label} className="bg-[--bg-surface]">{c.label}</option>)}
                 </select>
+              </div>
+            </div>
+
+            {/* Category Quick Presets */}
+            <div className="space-y-1.5">
+              <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Category Quick Presets</label>
+              <div className="flex flex-wrap gap-2 pt-1">
+                {INCOME_CATEGORIES.map((c) => (
+                  <button
+                    key={c.label}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, category: c.label })}
+                    className={`px-3 py-1.5 rounded-xl text-[10px] font-bold border transition-all cursor-pointer ${
+                      formData.category === c.label
+                        ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 font-black shadow-[0_2px_10px_rgba(16,185,129,0.15)]"
+                        : "bg-white/5 border-white/10 text-[--text-muted] hover:text-white"
+                    }`}
+                  >
+                    <span className="mr-1">{c.icon}</span>
+                    {c.label}
+                  </button>
+                ))}
               </div>
             </div>
             

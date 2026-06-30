@@ -10,17 +10,50 @@ type MutualFundRpcResult = {
     success?: boolean;
     error?: string | null;
 } | null;
+// Simple in-memory caches to survive server process lifecycles and avoid rate limiting
+const navCache = new Map<string, { nav: number; previousNav?: number; timestamp: number }>();
+const NAV_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 
+let amfiCacheText: string | null = null;
+let amfiCacheTime = 0;
+const AMFI_CACHE_TTL = 60 * 60 * 1000; // 1 hour
 
+async function getAmfiNavText(): Promise<string | null> {
+  const now = Date.now();
+  if (amfiCacheText && (now - amfiCacheTime < AMFI_CACHE_TTL)) {
+    return amfiCacheText;
+  }
+
+  try {
+    const userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+    const res = await fetch("https://www.amfiindia.com/spages/NAVAll.txt", {
+      cache: "no-store",
+      headers: { "User-Agent": userAgent },
+      signal: AbortSignal.timeout(10000) // Allow up to 10 seconds for large text list download
+    });
+    if (res.ok) {
+      const text = await res.text();
+      amfiCacheText = text;
+      amfiCacheTime = now;
+      return text;
+    }
+  } catch (err) {
+    console.error("Failed to fetch AMFI text file", err);
+  }
+
+  return amfiCacheText;
+}
 
 export async function searchMFSchemes(query: string) {
   if (!query || query.length < 2) return [];
+  const userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+  
+  // Try api.mfapi.in search
   try {
-    const userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)";
     const res = await fetch(`https://api.mfapi.in/mf/search?q=${encodeURIComponent(query)}`, {
         cache: "no-store",
         headers: { "User-Agent": userAgent },
-        signal: AbortSignal.timeout(3000)
+        signal: AbortSignal.timeout(4000)
     });
     if (res.ok) {
       const data = await res.json();
@@ -30,18 +63,13 @@ export async function searchMFSchemes(query: string) {
       }));
     }
   } catch (err) {
-    console.error("MFAPI Search failed, trying fallback", err);
+    console.warn("MFAPI Search failed, trying AMFI fallback", err);
   }
 
-  // Fallback
+  // Try AMFI search fallback using the cached text
   try {
-    const userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)";
-    const fallbackRes = await fetch("https://www.amfiindia.com/spages/NAVAll.txt", { 
-      cache: "no-store",
-      headers: { "User-Agent": userAgent } 
-    });
-    if (fallbackRes.ok) {
-      const text = await fallbackRes.text();
+    const text = await getAmfiNavText();
+    if (text) {
       const lines = text.split("\n");
       const qLower = query.toLowerCase();
       const results = [];
@@ -50,55 +78,73 @@ export async function searchMFSchemes(query: string) {
           const parts = line.split(";");
           if (parts.length >= 4 && parts[3].toLowerCase().includes(qLower)) {
             results.push({ schemeCode: parts[0], schemeName: parts[3] });
-            if (results.length >= 10) break;
+            if (results.length >= 15) break;
           }
         }
       }
       return results;
     }
-  } catch {}
+  } catch (err) {
+    console.error("AMFI search fallback failed", err);
+  }
   return [];
 }
 
 export async function fetchLiveMFNAV(schemeCode: string) {
-  const userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)";
+  const now = Date.now();
+  const cached = navCache.get(schemeCode);
+  if (cached && (now - cached.timestamp < NAV_CACHE_TTL)) {
+    return { nav: cached.nav, previousNav: cached.previousNav };
+  }
+
+  const userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+  
+  // Try api.mfapi.in first
   try {
     const res = await fetch(`https://api.mfapi.in/mf/${schemeCode}`, { 
       cache: "no-store",
       headers: { "User-Agent": userAgent },
-      signal: AbortSignal.timeout(3000)
+      signal: AbortSignal.timeout(4000)
     });
     if (res.ok) {
       const data = await res.json();
       if (data && data.data && data.data.length > 0) {
         const currentNav = parseFloat(data.data[0].nav);
         const previousNav = data.data.length > 1 ? parseFloat(data.data[1].nav) : undefined;
+        
+        // Cache the healthy result
+        navCache.set(schemeCode, { nav: currentNav, previousNav, timestamp: now });
         return { nav: currentNav, previousNav };
       }
     }
   } catch (err) {
-    console.error("MFAPI NAV failed, trying fallback", err);
+    console.warn(`MFAPI NAV failed for ${schemeCode}, trying AMFI fallback`, err);
   }
   
-  // Fallback
+  // Try AMFI fallback
   try {
-    const fallbackRes = await fetch("https://www.amfiindia.com/spages/NAVAll.txt", { 
-      cache: "no-store",
-      headers: { "User-Agent": userAgent }
-    });
-    if (fallbackRes.ok) {
-      const text = await fallbackRes.text();
+    const text = await getAmfiNavText();
+    if (text) {
       const lines = text.split("\n");
       for (const line of lines) {
         if (line.startsWith(`${schemeCode};`)) {
           const parts = line.split(";");
-          return { nav: parseFloat(parts[4]) };
+          const currentNav = parseFloat(parts[4]);
+          if (!isNaN(currentNav)) {
+            // Cache the result
+            navCache.set(schemeCode, { nav: currentNav, timestamp: now });
+            return { nav: currentNav };
+          }
         }
       }
     }
-  } catch {}
+  } catch (err) {
+    console.error("AMFI fallback search failed", err);
+  }
+  
   return null;
 }
+
 
 export async function recordMFInvestment(data: {
     fund_name: string;

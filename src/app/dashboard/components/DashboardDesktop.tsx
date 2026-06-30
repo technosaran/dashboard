@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { format } from "date-fns";
-import { useMemo, memo, useState } from "react";
+import { useMemo, memo, useState, useEffect } from "react";
 import Greeting from "@/components/greeting";
 
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
@@ -90,6 +90,8 @@ type Props = {
 
 const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goals, accounts, isLoading }: Props) {
   const { data: { profile } = {} } = useFinanceData();
+  const [activeChartMetric, setActiveChartMetric] = useState<"cashflow" | "assets" | "investments">("cashflow");
+
   const enabledModules = useMemo(() => {
     const raw = profile?.enabled_modules || [...MODULE_KEYS];
     const populated = [...raw] as string[];
@@ -205,9 +207,19 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
     <div className="hidden md:flex flex-col gap-8 animate-fade-in relative z-20 pb-10">
       
       {/* HEADER SECTION */}
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between px-2">
-        <Greeting />
-
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between px-2">
+        <div className="flex flex-col gap-1">
+          <Greeting />
+          <div className="flex flex-wrap items-center gap-2.5 mt-1 text-[11px] text-[--text-muted]">
+            <span className={`flex items-center gap-1.5 border px-3 py-1 rounded-full font-bold ${
+              stats.monthlySpend > stats.monthlyIncome
+                ? "bg-rose-500/5 border-rose-500/20 text-rose-400"
+                : "bg-emerald-500/5 border-emerald-500/20 text-emerald-400"
+            }`}>
+              💰 System Nominal • {stats.monthlySpend > stats.monthlyIncome ? "Alert: Expenses exceed income" : "Cash Flow Healthy"}
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* INITIALIZATION PLAYGROUND BANNER */}
@@ -368,22 +380,51 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
           {/* CASH FLOW VELOCITY AREA CHART */}
           {(enabledModules.includes("Income") || enabledModules.includes("Expenses")) && (
             <div className="glass-card-static rich-border p-6 md:p-8 animate-fade-in">
-              <div className="flex justify-between items-center mb-8">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                 <div className="flex flex-col">
-                  <h3 className="text-xs font-black uppercase tracking-widest text-[--text-muted]">Cash Flow Velocity</h3>
-                  <span className="text-[10px] text-[--text-secondary] mt-1">Income streams vs Expense consumption trends</span>
+                  <h3 className="text-xs font-black uppercase tracking-widest text-[--text-muted]">
+                    {activeChartMetric === "cashflow" ? "Cash Flow Velocity" : activeChartMetric === "assets" ? "Net Worth Trajectory" : "Investment Portfolio Growth"}
+                  </h3>
+                  <span className="text-[10px] text-[--text-secondary] mt-1">
+                    {activeChartMetric === "cashflow" ? "Income streams vs Expense consumption trends" : activeChartMetric === "assets" ? "Cumulative historical net worth trends" : "Growth curve of Stock, Mutual Fund, and Bond assets"}
+                  </span>
                 </div>
-                <div className="flex items-center gap-4">
-                  {enabledModules.includes("Income") && (
-                    <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full bg-[--accent-primary]" />
-                      <span className="text-[10px] font-bold text-white/70">Income</span>
-                    </div>
-                  )}
-                  {enabledModules.includes("Expenses") && (
-                    <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-                      <span className="text-[10px] font-bold text-white/70">Expenses</span>
+                <div className="flex flex-wrap items-center gap-3">
+                  {/* Segmented Controller Toggle */}
+                  <div className="flex items-center gap-1 rounded-xl bg-white/5 border border-white/10 p-1">
+                    {[
+                      { key: "cashflow", label: "Cash Flow" },
+                      { key: "assets", label: "Net Worth" },
+                      { key: "investments", label: "Investments" },
+                    ].map((m) => (
+                      <button
+                        key={m.key}
+                        onClick={() => setActiveChartMetric(m.key as any)}
+                        className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                          activeChartMetric === m.key
+                            ? "bg-[--accent-primary] text-white shadow-md shadow-[--accent-primary]/20"
+                            : "text-[--text-muted] hover:text-white"
+                        }`}
+                      >
+                        {m.label}
+                      </button>
+                    ))}
+                  </div>
+                  
+                  {activeChartMetric === "cashflow" && (
+                    <div className="flex items-center gap-3">
+                      {enabledModules.includes("Income") && (
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-[--accent-primary]" />
+                          <span className="text-[10px] font-bold text-white/70">Income</span>
+                        </div>
+                      )}
+                      {enabledModules.includes("Expenses") && (
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-rose-500" />
+                          <span className="text-[10px] font-bold text-white/70">Expenses</span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -394,12 +435,20 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                   <AreaChart data={stats.trendData} margin={{ left: -10, right: 10, top: 10, bottom: 0 }}>
                     <defs>
                       <linearGradient id="incomeGlow" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="var(--accent-primary)" stopOpacity={0.2} />
+                        <stop offset="5%" stopColor="var(--accent-primary)" stopOpacity={0.25} />
                         <stop offset="95%" stopColor="var(--accent-primary)" stopOpacity={0} />
                       </linearGradient>
                       <linearGradient id="expenseGlow" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#ef4444" stopOpacity={0.2} />
+                        <stop offset="5%" stopColor="#ef4444" stopOpacity={0.25} />
                         <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="netWorthGlow" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.25} />
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="investmentGlow" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.25} />
+                        <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
@@ -412,13 +461,20 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                         borderRadius: '16px',
                         boxShadow: 'var(--shadow-lg)',
                         fontWeight: 700
-                      }} 
+                      }}
+                      formatter={(value) => showUSD ? `$${Number(value || 0).toLocaleString()}` : `₹${Number(value || 0).toLocaleString()}`}
                     />
-                    {enabledModules.includes("Income") && (
+                    {activeChartMetric === "cashflow" && enabledModules.includes("Income") && (
                       <Area type="monotone" dataKey="income" stroke="var(--accent-primary)" strokeWidth={3} fillOpacity={1} fill="url(#incomeGlow)" />
                     )}
-                    {enabledModules.includes("Expenses") && (
+                    {activeChartMetric === "cashflow" && enabledModules.includes("Expenses") && (
                       <Area type="monotone" dataKey="expense" stroke="#ef4444" strokeWidth={3} fillOpacity={1} fill="url(#expenseGlow)" />
+                    )}
+                    {activeChartMetric === "assets" && (
+                      <Area type="monotone" dataKey="netWorth" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#netWorthGlow)" />
+                    )}
+                    {activeChartMetric === "investments" && (
+                      <Area type="monotone" dataKey="investments" stroke="#8b5cf6" strokeWidth={3} fillOpacity={1} fill="url(#investmentGlow)" />
                     )}
                   </AreaChart>
                 </ResponsiveContainer>

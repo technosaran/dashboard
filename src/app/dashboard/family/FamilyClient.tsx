@@ -229,6 +229,16 @@ export default function FamilyClient() {
     setShowTransferModal(true);
   }
 
+  function openSendAllowance(memberId: string, amount: string, note: string) {
+    setTransferForm({
+      family_member_id: memberId,
+      account_id: accounts[0]?.id || "",
+      amount,
+      note
+    });
+    setShowTransferModal(true);
+  }
+
   if (!mounted) return null;
 
   const isLoading = !familyData;
@@ -363,13 +373,17 @@ export default function FamilyClient() {
                     <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-purple-500 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     
                     <div className="flex items-center gap-4">
-                      {avatar ? (
-                        <img src={avatar} alt={member.name} className="w-12 h-12 rounded-full object-cover border border-white/10 shadow-[0_0_15px_rgba(255,255,255,0.05)]" />
-                      ) : (
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-[0_0_15px_rgba(139,92,246,0.2)]">
-                          {initials}
+                      <div className="relative p-[2.5px] rounded-full bg-gradient-to-tr from-purple-500 via-pink-500 to-blue-500 shadow-[0_0_15px_rgba(168,85,247,0.25)] flex-shrink-0">
+                        <div className="bg-[#121214] p-[1.5px] rounded-full">
+                          {avatar ? (
+                            <img src={avatar} alt={member.name} className="w-11 h-11 rounded-full object-cover" />
+                          ) : (
+                            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-purple-600 to-indigo-700 flex items-center justify-center text-white font-black text-sm">
+                              {initials}
+                            </div>
+                          )}
                         </div>
-                      )}
+                      </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <h3 className="text-sm font-bold text-white leading-tight truncate" title={member.name}>{member.name}</h3>
@@ -377,9 +391,18 @@ export default function FamilyClient() {
                             {member.relationship ?? "Other"}
                           </span>
                         </div>
-                        <p className="text-xs text-[--text-muted] mt-1.5">
-                          Total Sent: <span className="font-mono font-bold text-white">{fmt.format(balance)}</span>
-                        </p>
+                        <div className="text-xs text-[--text-muted] mt-1.5 flex items-center justify-between gap-2">
+                          <span>Total Sent: <span className="font-mono font-bold text-white">{fmt.format(balance)}</span></span>
+                          {member.relationship === "Child" && (
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); openSendAllowance(member.id, "500", "Allowance Support"); }}
+                              className="text-[9.5px] font-black uppercase text-purple-400 hover:text-purple-300 bg-purple-500/10 border border-purple-500/20 px-2 py-0.5 rounded cursor-pointer transition-all active:scale-95 shrink-0"
+                            >
+                              👶 Allowance
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
 

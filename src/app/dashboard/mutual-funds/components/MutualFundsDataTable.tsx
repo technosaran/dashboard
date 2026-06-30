@@ -88,91 +88,154 @@ export default function MutualFundsDataTable({ funds, onEdit, onBuy, onSell, onA
     );
   }
 
+  const totalInvested = funds.reduce((sum, f) => sum + (Number(f.units) * Number(f.avg_nav)), 0);
+  const totalCurrent = funds.reduce((sum, f) => sum + (Number(f.units) * Number(f.current_nav)), 0);
+  const totalPnL = totalCurrent - totalInvested;
+  const totalPnLPct = totalInvested > 0 ? (totalPnL / totalInvested) * 100 : 0;
+
   return (
-    <div className="flex flex-row overflow-x-auto gap-6 pb-4 scroll-smooth custom-scrollbar w-full">
-      {funds.map((fund) => {
-        const invested = Number(fund.units) * Number(fund.avg_nav);
-        const current = Number(fund.units) * Number(fund.current_nav);
-        const pnl = current - invested;
-        const pnlPercent = invested > 0 ? (pnl / invested) * 100 : 0;
-        const isPositive = pnl >= 0;
+    <div className="glass-card-static rounded-2xl overflow-hidden flex flex-col border border-white/5 bg-[#151515] w-full">
+      <div className="overflow-x-auto">
+        <table className="w-full text-left border-collapse min-w-[1000px]">
+          <thead>
+            <tr className="border-b border-white/5 bg-black/40 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">
+              <th className="px-5 py-4">Fund Name</th>
+              <th className="px-5 py-4 text-center">Type</th>
+              <th className="px-5 py-4 text-right">Units</th>
+              <th className="px-5 py-4 text-right">Avg. NAV</th>
+              <th className="px-5 py-4 text-right">Current NAV</th>
+              <th className="px-5 py-4 text-right">Invested Value</th>
+              <th className="px-5 py-4 text-right">Current Value</th>
+              <th className="px-5 py-4 text-right">P&L / Return</th>
+              <th className="px-5 py-4 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-white/5">
+            {funds.map((fund) => {
+              const invested = Number(fund.units) * Number(fund.avg_nav);
+              const current = Number(fund.units) * Number(fund.current_nav);
+              const pnl = current - invested;
+              const pnlPercent = invested > 0 ? (pnl / invested) * 100 : 0;
+              const isPositive = pnl >= 0;
 
-        const amc = fund.amc_name || "";
-        const logo = getAMCLogoUrl(amc);
+              const amc = fund.amc_name || "";
+              const logo = getAMCLogoUrl(amc);
 
-        return (
-          <div 
-            key={fund.id} 
-            className="p-5 rounded-2xl bg-gradient-to-b from-[#18181e] to-[#121216] hover:shadow-[0_0_30px_-5px_rgba(245,158,11,0.15)] hover:scale-[1.01] transition-all duration-300 flex flex-col justify-between min-h-[220px] w-[320px] shrink-0 shadow-lg relative group"
-          >
-            {/* Top Segment: AMC Avatar, Name, Category tags */}
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <AMCAvatar amcName={amc} logoUrl={logo} />
-                <div className="min-w-0">
-                  <h3 className="text-xs font-black text-white leading-tight truncate max-w-[150px]" title={fund.fund_name}>
-                    {fund.fund_name}
-                  </h3>
-                  <div className="flex items-center gap-1.5 mt-1.5">
-                    <span className="text-[8px] font-black text-purple-400 bg-purple-500/10 border border-purple-500/20 px-1.5 py-0.5 rounded uppercase tracking-wider">
-                      {fund.category || "Equity"}
-                    </span>
-                    <span className="text-[8px] font-black text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-1.5 py-0.5 rounded uppercase tracking-wider">
+              return (
+                <tr key={fund.id} className="hover:bg-white/[0.02] transition-colors group">
+                  {/* Fund Name */}
+                  <td className="px-5 py-3.5">
+                    <div className="flex items-center gap-3">
+                      <AMCAvatar amcName={amc} logoUrl={logo} />
+                      <div className="min-w-0">
+                        <span className="text-[13px] font-bold text-white block truncate max-w-[250px]" title={fund.fund_name}>
+                          {fund.fund_name}
+                        </span>
+                        <span className="text-[8px] font-black text-purple-400 bg-purple-500/10 border border-purple-500/20 px-1.5 py-0.5 rounded uppercase tracking-wider mt-1 inline-block">
+                          {fund.category || "Equity"}
+                        </span>
+                      </div>
+                    </div>
+                  </td>
+
+                  {/* Type */}
+                  <td className="px-5 py-3.5 text-center">
+                    <span className="text-[8px] font-black text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-2 py-0.5 rounded uppercase tracking-wider">
                       {fund.investment_type || "SIP"}
                     </span>
-                  </div>
+                  </td>
+
+                  {/* Units */}
+                  <td className="px-5 py-3.5 text-right font-mono text-xs text-white">
+                    {Number(fund.units).toFixed(3)}
+                  </td>
+
+                  {/* Avg NAV */}
+                  <td className="px-5 py-3.5 text-right font-mono text-xs text-[--text-secondary]">
+                    ₹{formatMoney(Number(fund.avg_nav))}
+                  </td>
+
+                  {/* Current NAV */}
+                  <td className="px-5 py-3.5 text-right font-mono text-xs text-white">
+                    ₹{formatMoney(Number(fund.current_nav))}
+                  </td>
+
+                  {/* Invested Value */}
+                  <td className="px-5 py-3.5 text-right font-mono text-xs text-[--text-secondary]">
+                    ₹{formatMoney(invested)}
+                  </td>
+
+                  {/* Current Value */}
+                  <td className="px-5 py-3.5 text-right font-mono text-xs text-white font-bold">
+                    ₹{formatMoney(current)}
+                  </td>
+
+                  {/* P&L */}
+                  <td className="px-5 py-3.5 text-right">
+                    <div 
+                      className="text-xs font-black inline-flex flex-col items-end"
+                      style={{
+                        color: isPositive ? '#34d399' : '#f87171',
+                        textShadow: isPositive ? '0 0 8px rgba(52,211,153,0.35)' : '0 0 8px rgba(248,113,113,0.35)'
+                      }}
+                    >
+                      <span>{isPositive ? '+' : ''}₹{formatMoney(pnl)}</span>
+                      <span className="text-[10px] opacity-80 mt-0.5">{isPositive ? '+' : ''}{pnlPercent.toFixed(2)}%</span>
+                    </div>
+                  </td>
+
+                  {/* Actions */}
+                  <td className="px-5 py-3.5 text-right">
+                    <div className="flex items-center justify-end gap-1.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => onEdit(fund)}
+                        className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs font-bold text-gray-300 hover:text-white transition-all cursor-pointer"
+                        title="Edit details"
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        onClick={() => onBuy(fund)}
+                        className="px-2 py-1 rounded bg-[--accent-primary]/10 hover:bg-[--accent-primary] text-[--accent-primary] hover:text-white transition-all text-[9px] font-black uppercase tracking-wider cursor-pointer"
+                      >
+                        Buy
+                      </button>
+                      <button
+                        onClick={() => onSell(fund)}
+                        className="px-2 py-1 rounded border border-rose-500/30 hover:bg-rose-500 text-rose-500 hover:text-white transition-all text-[9px] font-black uppercase tracking-wider cursor-pointer"
+                      >
+                        Redeem
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+          
+          {/* Zerodha-Style Summary Row */}
+          <tfoot>
+            <tr className="border-t-2 border-white/10 bg-black/60 font-black text-xs">
+              <td className="px-5 py-4 text-white uppercase tracking-wider" colSpan={5}>Total Holdings ({funds.length})</td>
+              <td className="px-5 py-4 text-right font-mono text-white">₹{formatMoney(totalInvested)}</td>
+              <td className="px-5 py-4 text-right font-mono text-white">₹{formatMoney(totalCurrent)}</td>
+              <td className="px-5 py-4 text-right">
+                <div 
+                  className="font-mono font-black inline-flex flex-col items-end"
+                  style={{
+                    color: totalPnL >= 0 ? '#34d399' : '#f87171',
+                    textShadow: totalPnL >= 0 ? '0 0 10px rgba(52,211,153,0.4)' : '0 0 10px rgba(248,113,113,0.4)'
+                  }}
+                >
+                  <span>{totalPnL >= 0 ? '+' : ''}₹{formatMoney(totalPnL)}</span>
+                  <span className="text-[10px] opacity-80 mt-0.5">{totalPnL >= 0 ? '+' : ''}{totalPnLPct.toFixed(2)}%</span>
                 </div>
-              </div>
-
-              {/* Action Buttons: Edit, Buy, Redeem */}
-              <div className="flex items-center gap-1.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                <button
-                  onClick={() => onEdit(fund)}
-                  className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs font-bold text-gray-300 hover:text-white transition-all cursor-pointer"
-                  title="Edit details"
-                >
-                  ✏️
-                </button>
-                <button
-                  onClick={() => onBuy(fund)}
-                  className="px-2 py-1 rounded bg-[--accent-primary]/10 hover:bg-[--accent-primary] text-[--accent-primary] hover:text-white transition-all text-[9px] font-black uppercase tracking-wider cursor-pointer"
-                >
-                  Buy
-                </button>
-                <button
-                  onClick={() => onSell(fund)}
-                  className="px-2 py-1 rounded border border-rose-500/30 hover:bg-rose-500 text-rose-500 hover:text-white transition-all text-[9px] font-black uppercase tracking-wider cursor-pointer"
-                >
-                  Redeem
-                </button>
-              </div>
-            </div>
-
-            {/* Middle Segment: Stats Grid */}
-            <div className="grid grid-cols-3 gap-3 border-t border-white/5 pt-4 mt-4">
-              <div>
-                <p className="text-[8px] font-black uppercase tracking-wider text-gray-500">Invested</p>
-                <p className="text-xs font-bold text-white mt-1">₹{formatMoney(invested)}</p>
-                <p className="text-[9px] text-gray-400 mt-0.5">{Number(fund.units).toFixed(3)} Units</p>
-              </div>
-              <div>
-                <p className="text-[8px] font-black uppercase tracking-wider text-gray-500">Current</p>
-                <p className="text-xs font-bold text-white mt-1">₹{formatMoney(current)}</p>
-                <p className="text-[9px] text-gray-400 mt-0.5">NAV: ₹{formatMoney(Number(fund.current_nav))}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-[8px] font-black uppercase tracking-wider text-gray-500">P&L</p>
-                <p className={`text-xs font-bold mt-1 ${isPositive ? 'text-emerald-500' : 'text-rose-500'}`}>
-                  {isPositive ? '+' : ''}₹{formatMoney(pnl)}
-                </p>
-                <p className={`text-[9px] font-semibold mt-0.5 ${isPositive ? 'text-emerald-500/80' : 'text-rose-500/80'}`}>
-                  {isPositive ? '+' : ''}{pnlPercent.toFixed(2)}%
-                </p>
-              </div>
-            </div>
-          </div>
-        );
-      })}
+              </td>
+              <td className="px-5 py-4"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
     </div>
   );
 }

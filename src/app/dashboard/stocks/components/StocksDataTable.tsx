@@ -105,9 +105,15 @@ export default function StocksDataTable({ stocks, onEdit, onBuy, onSell, onAdd }
           const pct = inv > 0 ? (pnl / inv) * 100 : 0;
           const isPositive = pnl >= 0;
           return (
-            <div className={`text-right text-sm ${isPositive ? 'text-emerald-500' : 'text-rose-500'}`}>
+            <div 
+              className="text-right text-sm font-black"
+              style={{ 
+                color: isPositive ? '#34d399' : '#f87171',
+                textShadow: isPositive ? '0 0 8px rgba(52,211,153,0.35)' : '0 0 8px rgba(248,113,113,0.35)'
+              }}
+            >
               <div>{isPositive ? '+' : ''}{formatMoney(pnl)}</div>
-              <div className="text-xs opacity-80">{isPositive ? '+' : ''}{pct.toFixed(2)}%</div>
+              <div className="text-[10px] opacity-90">{isPositive ? '+' : ''}{pct.toFixed(2)}%</div>
             </div>
           );
         },
@@ -131,7 +137,13 @@ export default function StocksDataTable({ stocks, onEdit, onBuy, onSell, onAdd }
           const pct = Number(info.row.original.day_change_percent || 0);
           const isPositive = pct >= 0;
           return (
-            <div className={`text-right text-sm ${isPositive ? 'text-emerald-500' : 'text-rose-500'}`}>
+            <div 
+              className="text-right text-sm font-black"
+              style={{ 
+                color: isPositive ? '#34d399' : '#f87171',
+                textShadow: isPositive ? '0 0 8px rgba(52,211,153,0.35)' : '0 0 8px rgba(248,113,113,0.35)'
+              }}
+            >
               {isPositive ? '+' : ''}{pct.toFixed(2)}%
             </div>
           );
