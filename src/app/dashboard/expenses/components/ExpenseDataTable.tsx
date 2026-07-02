@@ -13,6 +13,7 @@ import {
 } from "@tanstack/react-table";
 import { EmptyState } from "@/components/empty-state";
 import { ArrowUpDown, ArrowUp, ArrowDown, Trash2 } from "lucide-react";
+import { getTableHeaderClass, getTableCellClass } from "@/lib/utils";
 
 type Expense = {
   id: string;
@@ -180,7 +181,7 @@ export default function ExpenseDataTable({ expenses, accounts, onDelete, onAdd, 
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id} className="border-b border-white/10">
                   {headerGroup.headers.map((header) => (
-                    <th key={header.id} className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">
+                    <th key={header.id} className={`px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] ${getTableHeaderClass(header.column.id)}`}>
                       {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                     </th>
                   ))}
@@ -191,7 +192,7 @@ export default function ExpenseDataTable({ expenses, accounts, onDelete, onAdd, 
               {table.getRowModel().rows.map((row) => (
                 <tr key={row.id} className="transition-colors hover:bg-white/[0.02] border-b border-white/5">
                   {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="px-6 py-4.5 whitespace-nowrap">
+                    <td key={cell.id} className={`px-6 py-4.5 whitespace-nowrap ${getTableCellClass(cell.column.id)}`}>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </td>
                   ))}

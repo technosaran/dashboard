@@ -15,6 +15,7 @@ import { EmptyState } from "@/components/empty-state";
 import { ArrowUpDown, ArrowUp, ArrowDown, Edit2, Trash2 } from "lucide-react";
 import type { Tables } from "@/lib/database.types";
 import PnLValue from "@/components/pnl-value";
+import { getTableHeaderClass, getTableCellClass } from "@/lib/utils";
 
 type AltAsset = Tables<"alternative_assets">;
 
@@ -170,7 +171,7 @@ export default function AlternativeAssetsDataTable({ assets, onEdit, onDelete, o
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id} className="border-b border-white/5 bg-black/40">
                 {headerGroup.headers.map((header) => (
-                  <th key={header.id} className="px-5 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] whitespace-nowrap">
+                  <th key={header.id} className={`px-5 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] whitespace-nowrap ${getTableHeaderClass(header.column.id)}`}>
                     {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                   </th>
                 ))}
@@ -181,7 +182,7 @@ export default function AlternativeAssetsDataTable({ assets, onEdit, onDelete, o
             {table.getRowModel().rows.map((row) => (
               <tr key={row.id} className="group hover:bg-white/[0.02] transition-colors">
                 {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="px-5 py-3.5 align-middle">
+                  <td key={cell.id} className={`px-5 py-3.5 align-middle ${getTableCellClass(cell.column.id)}`}>
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>
                 ))}

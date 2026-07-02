@@ -63,3 +63,45 @@ export function getCurrencySymbol(currency?: string | null): string {
   return currency.toUpperCase() === "USD" ? "$" : "₹";
 }
 
+export function getTableHeaderClass(columnId?: string): string {
+  if (!columnId) return "text-left [&_button]:mr-auto [&_button]:justify-start";
+  const id = columnId.toLowerCase();
+  
+  if (
+    id === "actions" || id === "action" ||
+    id.includes("qty") || id.includes("quantity") || id.includes("units") || id.includes("lot") ||
+    id.includes("price") || id.includes("cost") || id.includes("nav") || id.includes("ltp") || id.includes("rate") ||
+    id.includes("val") || id.includes("amount") || id.includes("invest") || id.includes("balance") || id.includes("emi") || id.includes("turnover") ||
+    id.includes("pnl") || id.includes("chg") || id.includes("return") || id.includes("coupon") || id.includes("apr") || id.includes("ytm") || id.includes("progress") || id.includes("inr") || id.includes("remaining") || id.includes("outstanding") || id.includes("target") || id.includes("paid")
+  ) {
+    return "text-right [&_button]:ml-auto [&_button]:justify-end";
+  }
+  
+  if (id === "type" || id === "status" || id === "channel" || id.includes("frequency")) {
+    return "text-center [&_button]:mx-auto [&_button]:justify-center";
+  }
+
+  return "text-left [&_button]:mr-auto [&_button]:justify-start";
+}
+
+export function getTableCellClass(columnId?: string): string {
+  if (!columnId) return "text-left";
+  const id = columnId.toLowerCase();
+  
+  if (
+    id === "actions" || id === "action" ||
+    id.includes("qty") || id.includes("quantity") || id.includes("units") || id.includes("lot") ||
+    id.includes("price") || id.includes("cost") || id.includes("nav") || id.includes("ltp") || id.includes("rate") ||
+    id.includes("val") || id.includes("amount") || id.includes("invest") || id.includes("balance") || id.includes("emi") || id.includes("turnover") ||
+    id.includes("pnl") || id.includes("chg") || id.includes("return") || id.includes("coupon") || id.includes("apr") || id.includes("ytm") || id.includes("progress") || id.includes("inr") || id.includes("remaining") || id.includes("outstanding") || id.includes("target") || id.includes("paid")
+  ) {
+    return "text-right";
+  }
+  
+  if (id === "type" || id === "status" || id === "channel" || id.includes("frequency")) {
+    return "text-center";
+  }
+
+  return "text-left";
+}
+

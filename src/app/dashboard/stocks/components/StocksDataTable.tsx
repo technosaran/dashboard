@@ -13,6 +13,7 @@ import {
 import { EmptyState } from "@/components/empty-state";
 import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import type { Tables } from "@/lib/database.types";
+import { getTableHeaderClass, getTableCellClass } from "@/lib/utils";
 
 type Stock = Tables<"investments"> & { day_change?: number; day_change_percent?: number };
 
@@ -220,7 +221,7 @@ export default function StocksDataTable({ stocks, onEdit, onBuy, onSell, onAdd }
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id} className="border-b border-white/10">
                 {headerGroup.headers.map((header) => (
-                  <th key={header.id} className="px-4 py-3 text-xs font-normal text-[--text-muted] whitespace-nowrap bg-white/[0.02]">
+                  <th key={header.id} className={`px-4 py-3 text-xs font-normal text-[--text-muted] whitespace-nowrap bg-white/[0.02] ${getTableHeaderClass(header.column.id)}`}>
                     {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                   </th>
                 ))}
@@ -231,7 +232,7 @@ export default function StocksDataTable({ stocks, onEdit, onBuy, onSell, onAdd }
             {table.getRowModel().rows.map((row) => (
               <tr key={row.id} className="group hover:bg-white/[0.02] transition-colors cursor-pointer">
                 {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="px-4 py-3 align-middle">
+                  <td key={cell.id} className={`px-4 py-3 align-middle ${getTableCellClass(cell.column.id)}`}>
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>
                 ))}
