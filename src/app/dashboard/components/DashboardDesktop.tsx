@@ -51,6 +51,7 @@ type TrendDataEntry = {
 
 export type DashboardStats = {
   totalBalance: number;
+  netWorth: number;
   netWorthINR: number;
   netWorthUSD: number;
   totalDayPnL: number;
@@ -76,6 +77,7 @@ export type DashboardStats = {
   cashBalanceUSD: number;
   stockBalanceINR: number;
   stockBalanceUSD: number;
+  forexBalance: number;
   forexBalanceINR: number;
   forexBalanceUSD: number;
 };
@@ -119,68 +121,23 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
     return populated;
   }, [profile]);
 
-  const [showUSD, setShowUSD] = useState(false);
   const getAccountCurrency = (accountId: string | null) => {
     if (!accountId) return "INR";
     const acc = accounts.find(a => a.id === accountId);
     return acc ? acc.currency : "INR";
   };
 
-  // Extract portfolio data computation into a single useMemo
   const portfolioData = useMemo<PieEntry[]>(() => {
-    const totalAssets = showUSD ? stats.totalAssetsUSD : stats.totalAssetsINR;
+    const totalAssets = stats.totalAssets;
     if (totalAssets <= 0) return [];
     
-    const rawData = showUSD ? [
-        { 
-          name: 'Cash', 
-          value: stats.cashBalanceUSD, 
-          fill: getChartColour(0),
-          color: getChartColour(0),
-        },
-        { 
-          name: 'Stocks', 
-          value: stats.stockBalanceUSD, 
-          fill: getChartColour(1),
-          color: getChartColour(1),
-        },
-        { 
-          name: 'Forex', 
-          value: stats.forexBalanceUSD, 
-          fill: getChartColour(3),
-          color: getChartColour(3),
-        }
-    ] : [
-        { 
-          name: 'Cash', 
-          value: stats.cashBalanceINR, 
-          fill: getChartColour(0),
-          color: getChartColour(0),
-        },
-        { 
-          name: 'Stocks', 
-          value: stats.stockBalanceINR, 
-          fill: getChartColour(1),
-          color: getChartColour(1),
-        },
-        { 
-          name: 'Mutual Funds', 
-          value: stats.mfBalance, 
-          fill: getChartColour(2),
-          color: getChartColour(2),
-        },
-        { 
-          name: 'Assets', 
-          value: stats.altBalance, 
-          fill: getChartColour(3),
-          color: getChartColour(3),
-        },
-        { 
-          name: 'Bonds', 
-          value: stats.bondBalance, 
-          fill: getChartColour(4),
-          color: getChartColour(4),
-        }
+    const rawData = [
+        { name: 'Cash', value: stats.cashBalance, fill: getChartColour(0), color: getChartColour(0) },
+        { name: 'Stocks', value: stats.stockBalance, fill: getChartColour(1), color: getChartColour(1) },
+        { name: 'Mutual Funds', value: stats.mfBalance, fill: getChartColour(2), color: getChartColour(2) },
+        { name: 'Assets', value: stats.altBalance, fill: getChartColour(3), color: getChartColour(3) },
+        { name: 'Bonds', value: stats.bondBalance, fill: getChartColour(4), color: getChartColour(4) },
+        { name: 'Forex', value: stats.forexBalance, fill: getChartColour(5), color: getChartColour(5) }
     ];
 
     return rawData
@@ -190,23 +147,18 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
         percentage: ((item.value / totalAssets) * 100).toFixed(1)
       }));
   }, [
-    showUSD,
-    stats.totalAssetsUSD,
-    stats.totalAssetsINR,
-    stats.cashBalanceUSD,
-    stats.stockBalanceUSD,
-    stats.forexBalanceUSD,
-    stats.cashBalanceINR,
-    stats.stockBalanceINR,
+    stats.totalAssets,
+    stats.cashBalance,
+    stats.stockBalance,
     stats.mfBalance,
     stats.altBalance,
-    stats.bondBalance
+    stats.bondBalance,
+    stats.forexBalance,
   ]);
 
   return (
     <div className="hidden md:flex flex-col gap-8 animate-fade-in relative z-20 pb-10">
       
-      {/* HEADER SECTION */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between px-2">
         <div className="flex flex-col gap-1">
           <Greeting />
@@ -216,14 +168,13 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                 ? "bg-rose-500/5 border-rose-500/20 text-rose-400"
                 : "bg-emerald-500/5 border-emerald-500/20 text-emerald-400"
             }`}>
-              💰 System Nominal • {stats.monthlySpend > stats.monthlyIncome ? "Alert: Expenses exceed income" : "Cash Flow Healthy"}
+              💰 {stats.monthlySpend > stats.monthlyIncome ? "Alert: Expenses exceed income" : "Cash Flow Healthy"}
             </span>
           </div>
         </div>
       </div>
 
-      {/* INITIALIZATION PLAYGROUND BANNER */}
-      {stats.totalAssets === 0 && recentLogs.length === 0 && (
+      {!isLoading && stats.totalAssets === 0 && recentLogs.length === 0 && (
         <div className="glass-card-static rich-border relative overflow-hidden p-8 md:p-10 border border-white/10 bg-white/[0.02]">
           <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[--accent-primary] via-purple-500 to-cyan-400" />
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
@@ -248,7 +199,6 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
         </div>
       )}
 
-      {/* NET WORTH PROFESSIONAL OVERVIEW CARD */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="glass-card-static rich-border group relative overflow-hidden p-8 md:p-10 lg:col-span-3">
           <div className="absolute top-0 left-0 right-0 h-[4px] bg-gradient-to-r from-[--accent-primary] via-purple-500 to-emerald-500 animate-pulse-glow" />
@@ -260,30 +210,14 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                 </span>
               </div>
               <div className="flex flex-col md:flex-row md:items-center gap-12 flex-wrap max-w-full">
-                <div 
-                  className="flex flex-col cursor-pointer group/nw select-none" 
-                  onClick={() => setShowUSD(!showUSD)}
-                  title="Click to toggle currency"
-                >
+                <div className="flex flex-col select-none">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[10px] font-black tracking-widest text-[--text-muted] uppercase transition-colors group-hover/nw:text-white">
-                      {showUSD ? 'Dollars (USD)' : 'Rupees (INR)'}
+                    <span className="text-[10px] font-black tracking-widest text-[--text-muted] uppercase transition-colors">
+                      Rupees (INR)
                     </span>
-                    <svg className="w-3 h-3 text-[--text-muted] opacity-50 group-hover/nw:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                    </svg>
                   </div>
-                  <h2 
-                    key={showUSD ? 'usd' : 'inr'} 
-                    className={`animate-fade-in bg-clip-text bg-gradient-to-r text-[clamp(2.2rem,5vw,3.5rem)] font-[950] leading-none tracking-[-0.04em] text-transparent [font-family:'Outfit',sans-serif] whitespace-nowrap overflow-x-auto no-scrollbar transition-all duration-500 ${
-                    showUSD 
-                      ? "from-white via-sky-200 to-indigo-300 drop-shadow-[0_10px_35px_rgba(99,102,241,0.3)]" 
-                      : "from-white via-white to-slate-300 drop-shadow-[0_10px_35px_rgba(14,165,233,0.3)]"
-                  }`}>
-                    {showUSD 
-                      ? `$${stats.netWorthUSD.toLocaleString(undefined, { minimumFractionDigits: 0 })}` 
-                      : `₹${stats.netWorthINR.toLocaleString(undefined, { minimumFractionDigits: 0 })}`
-                    }
+                  <h2 className="animate-fade-in bg-clip-text bg-gradient-to-r text-[clamp(2.2rem,5vw,3.5rem)] font-[950] leading-none tracking-[-0.04em] text-transparent [font-family:'Outfit',sans-serif] whitespace-nowrap overflow-x-auto no-scrollbar transition-all duration-500 from-white via-white to-slate-300 drop-shadow-[0_10px_35px_rgba(14,165,233,0.3)]">
+                    ₹{stats.netWorth.toLocaleString(undefined, { minimumFractionDigits: 0 })}
                   </h2>
                 </div>
               </div>
@@ -294,14 +228,11 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                   <div className="flex flex-col">
                     <span className="text-[9px] font-black uppercase tracking-widest text-[--text-muted]">Liquid Assets</span>
                     <span className="text-sm sm:text-base font-black text-emerald-400">
-                      {showUSD 
-                        ? `+$${stats.totalAssetsUSD.toLocaleString()}` 
-                        : `+₹${stats.totalAssetsINR.toLocaleString()}`
-                      }
+                      +₹{stats.totalAssets.toLocaleString()}
                     </span>
                   </div>
                 </div>
-                {!showUSD && stats.debtBalance > 0 && (
+                {stats.debtBalance > 0 && (
                   <div className="flex items-center gap-3 bg-rose-500/5 border border-rose-500/10 px-5 py-3.5 rounded-2xl transition-all hover:bg-rose-500/10">
                     <div className="w-9 h-9 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-400 text-base shadow-inner">📉</div>
                     <div className="flex flex-col">
@@ -315,7 +246,6 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
               </div>
             </div>
 
-            {/* PORTFOLIO ALLOCATION PIE CHART */}
             <div className="flex-1 max-w-md w-full bg-white/[0.01] border border-white/5 rounded-3xl p-6 relative overflow-hidden">
               <div className="flex flex-col sm:flex-row items-center gap-6 h-full justify-between">
                 {portfolioData.length === 0 ? (
@@ -333,7 +263,7 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                           <div className="flex items-center gap-2 flex-shrink-0 text-right">
                             <span className="text-[9px] font-bold text-[--text-muted]">{item.percentage}%</span>
                             <span className="text-[11px] font-black tabular-nums whitespace-nowrap" style={{ color: item.color }}>
-                              {showUSD ? '$' : '₹'}{item.value > 10000000 ? Intl.NumberFormat(showUSD ? 'en-US' : 'en-IN', { notation: 'compact', maximumFractionDigits: 2 }).format(item.value) : item.value.toLocaleString()}
+                              ₹{item.value > 10000000 ? Intl.NumberFormat('en-IN', { notation: 'compact', maximumFractionDigits: 2 }).format(item.value) : item.value.toLocaleString()}
                             </span>
                           </div>
                         </div>
@@ -349,17 +279,14 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                           </Pie>
                           <Tooltip 
                             contentStyle={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "12px" }}
-                            formatter={(value) => showUSD ? `$${Number(value || 0).toLocaleString()}` : `₹${Number(value || 0).toLocaleString()}`}
+                            formatter={(value) => `₹${Number(value || 0).toLocaleString()}`}
                           />
                         </PieChart>
                       </ResponsiveContainer>
                       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
                         <span className="text-[8px] uppercase font-black tracking-widest text-[--text-muted]">Assets</span>
                         <span className="text-[12px] font-black text-white mt-0.5">
-                          {showUSD 
-                            ? `$${Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(stats.totalAssetsUSD)}`
-                            : `₹${Intl.NumberFormat('en-IN', { notation: 'compact', maximumFractionDigits: 1 }).format(stats.totalAssetsINR)}`
-                          }
+                          ₹{Intl.NumberFormat('en-IN', { notation: 'compact', maximumFractionDigits: 1 }).format(stats.totalAssets)}
                         </span>
                       </div>
                     </div>
@@ -371,13 +298,8 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
         </div>
       </div>
 
-      {/* THREE-COLUMN BENTO GRID */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        
-        {/* LEFT COLUMN: CASH FLOW TRENDS & LEDGER PULSE (Span 2) */}
         <div className="lg:col-span-2 flex flex-col gap-6">
-          
-          {/* CASH FLOW VELOCITY AREA CHART */}
           {(enabledModules.includes("Income") || enabledModules.includes("Expenses")) && (
             <div className="glass-card-static rich-border p-6 md:p-8 animate-fade-in">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
@@ -390,7 +312,6 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                   </span>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
-                  {/* Segmented Controller Toggle */}
                   <div className="flex items-center gap-1 rounded-xl bg-white/5 border border-white/10 p-1">
                     {[
                       { key: "cashflow", label: "Cash Flow" },
@@ -462,7 +383,7 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                         boxShadow: 'var(--shadow-lg)',
                         fontWeight: 700
                       }}
-                      formatter={(value) => showUSD ? `$${Number(value || 0).toLocaleString()}` : `₹${Number(value || 0).toLocaleString()}`}
+                      formatter={(value) => `₹${Number(value || 0).toLocaleString()}`}
                     />
                     {activeChartMetric === "cashflow" && enabledModules.includes("Income") && (
                       <Area type="monotone" dataKey="income" stroke="var(--accent-primary)" strokeWidth={3} fillOpacity={1} fill="url(#incomeGlow)" />

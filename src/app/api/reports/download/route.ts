@@ -2,7 +2,6 @@ import React from "react";
 import { NextResponse } from "next/server";
 import { renderToStream } from "@react-pdf/renderer";
 import { createClient } from "@/lib/supabase-server";
-import { getUsdToInrRate } from "@/lib/currency";
 import FinancialStatementPDF from "@/components/reports/FinancialStatementPDF";
 
 export async function GET(request: Request) {
@@ -34,13 +33,11 @@ export async function GET(request: Request) {
       .select("name, type, balance, currency")
       .eq("user_id", user.id);
 
-    const usdToInr = await getUsdToInrRate();
     let totalAssets = 0;
     
     const mappedAccounts = (accounts || []).map((acc) => {
       const bal = Number(acc.balance) || 0;
-      const converted = acc.currency === "USD" ? bal * usdToInr : bal;
-      totalAssets += converted;
+      totalAssets += bal;
       return {
         name: acc.name,
         type: acc.type,

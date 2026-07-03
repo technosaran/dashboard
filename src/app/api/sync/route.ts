@@ -4,7 +4,6 @@ import * as schema from "@/db/schema";
 import { eq, gt, and } from "drizzle-orm";
 import { fetchLiveMFNAV } from "@/app/dashboard/mutual-funds/actions";
 import { fetchLiveStockPrice } from "@/app/dashboard/stocks/actions";
-import { getUsdToInrRate } from "@/lib/currency";
 
 export async function GET(request: Request) {
   try {
@@ -17,9 +16,6 @@ export async function GET(request: Request) {
 
     const db = getDb();
     const now = new Date();
-
-    // 2. Fetch and Cache USD/INR Exchange Rate
-    const usdRate = await getUsdToInrRate();
 
     // 3. Sync Mutual Fund NAVs (for active holdings where units > 0)
     let mfsUpdated = 0;
@@ -188,7 +184,6 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       success: true,
-      usd_to_inr: usdRate,
       stocks_updated: stocksUpdated,
       mfs_updated: mfsUpdated,
       expenses_generated: expensesGenerated,

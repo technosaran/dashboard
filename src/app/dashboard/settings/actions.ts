@@ -131,19 +131,30 @@ export async function updateSettings(settings: ProfileSettings) {
 export async function checkApiHealth() {
   const apis = [
     { name: "AMFI Mutual Funds API (mfapi.in)", url: "https://api.mfapi.in/mf/122639" },
-    { name: "AMFI India Fallback (amfiindia.com)", url: "https://www.amfiindia.com/spages/NAVAll.txt" },
+    { name: "AMFI India Official NAV (amfiindia.com)", url: "https://www.amfiindia.com/spages/NAVAll.txt" },
+    { name: "Groww Mutual Funds API", url: "https://groww.in/v1/api/search/v1/derived/scheme?availableForInvestment=true&docType=scheme&plan_type=Direct&q=HDFC" },
+    { name: "Yahoo Finance Chart API (v8)", url: "https://query1.finance.yahoo.com/v8/finance/chart/RELIANCE.NS" },
+    { name: "Yahoo Finance Search API", url: "https://query2.finance.yahoo.com/v1/finance/search?q=RELIANCE" },
     { name: "Tickertape Stocks API", url: "https://api.tickertape.in/search?text=RELIANCE" },
-    { name: "Yahoo Finance API", url: "https://query2.finance.yahoo.com/v1/finance/search?q=RELIANCE" }
+    { name: "Open Exchange Rates API", url: "https://open.er-api.com/v6/latest/USD" },
+    { name: "Frankfurter Forex Fallback API", url: "https://api.frankfurter.app/latest?from=USD&to=INR" }
   ];
 
   const results = [];
+  const userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+
   for (const api of apis) {
     try {
       const start = Date.now();
       const res = await fetch(api.url, {
         method: "GET",
-        headers: { "User-Agent": "Mozilla/5.0" },
-        signal: AbortSignal.timeout(3000)
+        headers: { 
+          "User-Agent": userAgent,
+          "Accept": "application/json, text/plain, */*",
+          "Accept-Language": "en-US,en;q=0.9"
+        },
+        cache: "no-store",
+        signal: AbortSignal.timeout(8000)
       });
       const latency = Date.now() - start;
       if (res.status === 200) {
@@ -154,7 +165,7 @@ export async function checkApiHealth() {
         results.push({ name: api.name, status: "Degraded", latency: `${latency}ms`, code: res.status });
       }
     } catch (err) {
-      results.push({ name: api.name, status: "Offline", latency: "—", code: 504, error: err instanceof Error ? err.message : "Timeout" });
+      results.push({ name: api.name, status: "Offline", latency: "—", code: 504, error: err instanceof Error ? err.message : "Timeout / Connection Failed" });
     }
   }
 

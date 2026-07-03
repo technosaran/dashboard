@@ -12,6 +12,7 @@ import DashboardMobile from "./components/DashboardMobile";
 import DashboardDesktop from "./components/DashboardDesktop";
 import OnboardingWizard from "@/components/onboarding-wizard";
 import { useUser } from "@/context/user-context";
+import LoadingSkeleton from "./loading";
 
 type TrendMapEntry = {
   name: string;
@@ -79,6 +80,7 @@ export default function DashboardClient() {
       stockBalance,
       stockBalanceINR,
       stockBalanceUSD,
+      forexBalance,
       forexBalanceINR,
       forexBalanceUSD,
       mfBalance,
@@ -181,6 +183,7 @@ export default function DashboardClient() {
 
     return { 
       totalBalance: netWorth,
+      netWorth,
       netWorthINR,
       netWorthUSD,
       totalDayPnL,
@@ -198,6 +201,7 @@ export default function DashboardClient() {
       stockBalance,
       stockBalanceINR,
       stockBalanceUSD,
+      forexBalance,
       forexBalanceINR,
       forexBalanceUSD,
       monthlySpend, 
@@ -214,6 +218,10 @@ export default function DashboardClient() {
   const isMounted = useHasMounted();
 
   if (!isMounted) return null; // Prevent hydration mismatch
+
+  if (isLoading) {
+    return <LoadingSkeleton />;
+  }
 
   // Conditionally render only one view based on screen size
   if (isMobile) {

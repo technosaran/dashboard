@@ -46,36 +46,33 @@ export function useNetWorth() {
     const hasAlt = enabledModules.includes("Alt Assets");
     const hasLiabilities = enabledModules.includes("Liabilities");
 
-    // Calculate strict consolidated values in INR (No conversion)
-    const cashBalanceINR = accounts.filter(a => a.currency !== 'USD').reduce((sum, acc) => sum + Number(acc.balance || 0), 0);
-    const stockBalanceINR = hasStocks ? investments.filter(i => i.currency !== 'USD').reduce((sum, inv) => sum + (Number(inv.quantity || 0) * Number(inv.current_price || 0)), 0) : 0;
-    const forexBalanceINR = hasForex ? forexAccounts.filter(f => f.currency !== 'USD').reduce((sum, acc) => sum + Number(acc.balance || 0), 0) : 0;
+    // Calculate consolidated values across all accounts (no currency separation)
+    const cashBalanceINR = accounts.reduce((sum, acc) => sum + Number(acc.balance || 0), 0);
+    const stockBalanceINR = hasStocks ? investments.reduce((sum, inv) => sum + (Number(inv.quantity || 0) * Number(inv.current_price || 0)), 0) : 0;
+    const forexBalanceINR = hasForex ? forexAccounts.reduce((sum, acc) => sum + Number(acc.balance || 0), 0) : 0;
     
-    // Mutual funds, bonds, alt assets, liabilities are assumed INR unless specified
+    // Mutual funds, bonds, alt assets, liabilities
     const mfBalanceINR = hasMF ? mutualFunds.reduce((sum, mf) => sum + (Number(mf.units) * Number(mf.current_nav || 0)), 0) : 0;
     const bondBalanceINR = hasBonds ? (bonds || []).filter(b => b.status === 'Active').reduce((sum, b) => sum + Number(b.current_value || 0), 0) : 0;
     const altBalanceINR = hasAlt ? (alternativeAssets || []).reduce((sum, asset) => sum + Number(asset.current_value || 0), 0) : 0;
     const debtBalanceINR = hasLiabilities ? liabilities.reduce((sum, debt) => sum + Number(debt.remaining_amount || 0), 0) : 0;
 
-    // Total INR Net Worth
+    // Total Net Worth
     const liquidBalanceINR = cashBalanceINR + stockBalanceINR + mfBalanceINR + bondBalanceINR + forexBalanceINR;
     const totalAssetsINR = liquidBalanceINR + altBalanceINR;
     const netWorthINR = totalAssetsINR - debtBalanceINR;
 
-    // Calculate strict consolidated values in USD (No conversion)
-    const cashBalanceUSD = accounts.filter(a => a.currency === 'USD').reduce((sum, acc) => sum + Number(acc.balance || 0), 0);
-    const stockBalanceUSD = hasStocks ? investments.filter(i => i.currency === 'USD').reduce((sum, inv) => sum + (Number(inv.quantity || 0) * Number(inv.current_price || 0)), 0) : 0;
-    const forexBalanceUSD = hasForex ? forexAccounts.filter(f => f.currency === 'USD').reduce((sum, acc) => sum + Number(acc.balance || 0), 0) : 0;
-    
-    // Assume 0 for USD unless they have an explicit currency field
-    const mfBalanceUSD = 0;
-    const bondBalanceUSD = 0;
-    const altBalanceUSD = 0;
-    const debtBalanceUSD = 0;
-
-    const liquidBalanceUSD = cashBalanceUSD + stockBalanceUSD + mfBalanceUSD + bondBalanceUSD + forexBalanceUSD;
-    const totalAssetsUSD = liquidBalanceUSD + altBalanceUSD;
-    const netWorthUSD = totalAssetsUSD - debtBalanceUSD;
+    // For backwards compatibility without separating or converting currencies
+    const cashBalanceUSD = cashBalanceINR;
+    const stockBalanceUSD = stockBalanceINR;
+    const forexBalanceUSD = forexBalanceINR;
+    const mfBalanceUSD = mfBalanceINR;
+    const bondBalanceUSD = bondBalanceINR;
+    const altBalanceUSD = altBalanceINR;
+    const debtBalanceUSD = debtBalanceINR;
+    const liquidBalanceUSD = liquidBalanceINR;
+    const totalAssetsUSD = totalAssetsINR;
+    const netWorthUSD = netWorthINR;
 
     // Maintain backwards compatibility for legacy names
     const cashBalance = cashBalanceINR;

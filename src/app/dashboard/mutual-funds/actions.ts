@@ -53,7 +53,7 @@ export async function searchMFSchemes(query: string) {
     const res = await fetch(`https://api.mfapi.in/mf/search?q=${encodeURIComponent(query)}`, {
         cache: "no-store",
         headers: { "User-Agent": userAgent },
-        signal: AbortSignal.timeout(4000)
+        signal: AbortSignal.timeout(5000)
     });
     if (res.ok) {
       const data = await res.json();
@@ -63,7 +63,27 @@ export async function searchMFSchemes(query: string) {
       }));
     }
   } catch (err) {
-    console.warn("MFAPI Search failed, trying AMFI fallback", err);
+    console.warn("MFAPI Search failed, trying Groww fallback", err);
+  }
+
+  // Try Groww MF API fallback
+  try {
+    const res = await fetch(`https://groww.in/v1/api/search/v1/derived/scheme?availableForInvestment=true&docType=scheme&plan_type=Direct&q=${encodeURIComponent(query)}`, {
+      cache: "no-store",
+      headers: { "User-Agent": userAgent },
+      signal: AbortSignal.timeout(5000)
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.content && data.content.length > 0) {
+        return data.content.map((s: { scheme_code?: string; scheme_name?: string; fund_name?: string }) => ({
+          schemeCode: s.scheme_code?.toString() || "",
+          schemeName: s.scheme_name || s.fund_name || ""
+        })).filter((s: { schemeCode: string; schemeName: string }) => s.schemeCode && s.schemeName);
+      }
+    }
+  } catch (err) {
+    console.warn("Groww MF search fallback failed, trying AMFI fallback", err);
   }
 
   // Try AMFI search fallback using the cached text
@@ -104,7 +124,7 @@ export async function fetchLiveMFNAV(schemeCode: string) {
     const res = await fetch(`https://api.mfapi.in/mf/${schemeCode}`, { 
       cache: "no-store",
       headers: { "User-Agent": userAgent },
-      signal: AbortSignal.timeout(4000)
+      signal: AbortSignal.timeout(6000)
     });
     if (res.ok) {
       const data = await res.json();
@@ -118,9 +138,30 @@ export async function fetchLiveMFNAV(schemeCode: string) {
       }
     }
   } catch (err) {
-    console.warn(`MFAPI NAV failed for ${schemeCode}, trying AMFI fallback`, err);
+    console.warn(`MFAPI NAV failed for ${schemeCode}, trying Groww fallback`, err);
   }
   
+  // Try Groww MF API fallback
+  try {
+    const res = await fetch(`https://groww.in/v1/api/search/v1/derived/scheme?availableForInvestment=true&docType=scheme&plan_type=Direct&q=${schemeCode}`, {
+      cache: "no-store",
+      headers: { "User-Agent": userAgent },
+      signal: AbortSignal.timeout(5000)
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.content && data.content.length > 0) {
+        const matched = data.content.find((s: any) => s.scheme_code === schemeCode) || data.content[0];
+        if (matched && typeof matched.nav === "number") {
+          navCache.set(schemeCode, { nav: matched.nav, timestamp: now });
+          return { nav: matched.nav };
+        }
+      }
+    }
+  } catch (err) {
+    console.warn(`Groww NAV failed for ${schemeCode}, trying AMFI fallback`, err);
+  }
+
   // Try AMFI fallback
   try {
     const text = await getAmfiNavText();

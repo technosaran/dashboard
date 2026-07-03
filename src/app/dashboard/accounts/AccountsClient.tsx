@@ -92,7 +92,6 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingAccountId, setDeletingAccountId] = useState<string | null>(null);
   const [historyAccountId, setHistoryAccountId] = useState("all");
-  const [showUSD, setShowUSD] = useState(false);
 
   function handleBankSearch(query: string) {
     setBankSearch(query);
@@ -202,11 +201,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
     });
   }
 
-  const displayedCurrency = showUSD ? "USD" : "INR";
-
-  const filteredAccounts = useMemo(() => 
-    accounts.filter(a => a.currency === displayedCurrency),
-  [accounts, displayedCurrency]);
+  const filteredAccounts = useMemo(() => accounts, [accounts]);
 
   const totalBalance = useMemo(() => 
     filteredAccounts.reduce((acc, a) => acc + a.balance, 0),
@@ -221,11 +216,11 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
           value: Math.abs(a.balance), 
           fill: getChartColour(i),
           color: getChartColour(i), 
-          currency: displayedCurrency,
+          currency: a.currency || "INR",
           account: a
         };
       }),
-    [filteredAccounts, displayedCurrency]
+    [filteredAccounts]
   );
 
   const accountHistory = useMemo(() => {
@@ -347,27 +342,17 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
               {/* Left: Balance Info - Takes 2/3 of space */}
               <div>
                 <div 
-                  className="flex flex-col cursor-pointer group/nw select-none mb-6" 
-                  onClick={() => setShowUSD(!showUSD)}
-                  title="Click to toggle currency"
+                  className="flex flex-col select-none mb-6" 
                 >
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[10px] font-black tracking-widest text-[--text-muted] uppercase transition-colors group-hover/nw:text-[--text-primary]">
-                      Total Balance ({displayedCurrency})
+                    <span className="text-[10px] font-black tracking-widest text-[--text-muted] uppercase">
+                      Total Portfolio Balance
                     </span>
-                    <svg className="w-3 h-3 text-[--text-muted] opacity-50 group-hover/nw:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                    </svg>
                   </div>
                   <h2 
-                    key={displayedCurrency} 
-                    className={`animate-fade-in bg-clip-text bg-gradient-to-r text-[clamp(2.2rem,5vw,3.5rem)] font-[950] leading-none tracking-[-0.04em] text-transparent [font-family:'Outfit',sans-serif] whitespace-nowrap overflow-x-auto no-scrollbar transition-all duration-500 ${
-                      displayedCurrency === 'USD' 
-                        ? "from-white via-sky-200 to-indigo-300 drop-shadow-[0_10px_35px_rgba(99,102,241,0.3)]" 
-                        : "from-white via-white to-slate-300 drop-shadow-[0_10px_35px_rgba(14,165,233,0.3)]"
-                    }`}
+                    className={`animate-fade-in bg-clip-text bg-gradient-to-r text-[clamp(2.2rem,5vw,3.5rem)] font-[950] leading-none tracking-[-0.04em] text-transparent [font-family:'Outfit',sans-serif] whitespace-nowrap overflow-x-auto no-scrollbar transition-all duration-500 from-white via-white to-slate-300 drop-shadow-[0_10px_35px_rgba(14,165,233,0.3)]`}
                   >
-                    {getCurrencySymbol(displayedCurrency)}{totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                    {totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                   </h2>
                 </div>
                 <div className="grid grid-cols-3 gap-3">
@@ -418,8 +403,8 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
                   <p className="text-[8px] uppercase font-black text-[--text-muted] mb-1 tracking-widest">Net Value</p>
                   <div className="flex flex-col gap-2">
-                    <p key={displayedCurrency} className="text-base font-black text-[--text-primary] leading-tight">
-                      {getCurrencySymbol(displayedCurrency)}{totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                    <p className="text-base font-black text-[--text-primary] leading-tight">
+                      {totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                     </p>
                   </div>
                 </div>
@@ -429,26 +414,17 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
             {/* Mobile/Tablet: Stacked layout */}
             <div className="lg:hidden">
               <div 
-                className="flex flex-col items-center cursor-pointer group/nw select-none mb-6" 
-                onClick={() => setShowUSD(!showUSD)}
+                className="flex flex-col items-center select-none mb-6" 
               >
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[10px] font-black tracking-widest text-[--text-muted] uppercase transition-colors group-hover/nw:text-[--text-primary]">
-                    Total Balance ({displayedCurrency})
+                  <span className="text-[10px] font-black tracking-widest text-[--text-muted] uppercase">
+                    Total Portfolio Balance
                   </span>
-                  <svg className="w-3 h-3 text-[--text-muted] opacity-50 group-hover/nw:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                  </svg>
                 </div>
                 <h2 
-                  key={displayedCurrency} 
-                  className={`animate-fade-in bg-clip-text bg-gradient-to-r text-3xl sm:text-5xl font-[950] tracking-tight text-transparent transition-all duration-500 ${
-                    displayedCurrency === 'USD' 
-                      ? "from-white via-sky-200 to-indigo-300 drop-shadow-[0_10px_35px_rgba(99,102,241,0.3)]" 
-                      : "from-white via-white to-slate-300 drop-shadow-[0_10px_35px_rgba(14,165,233,0.3)]"
-                  }`}
+                  className={`animate-fade-in bg-clip-text bg-gradient-to-r text-3xl sm:text-5xl font-[950] tracking-tight text-transparent transition-all duration-500 from-white via-white to-slate-300 drop-shadow-[0_10px_35px_rgba(14,165,233,0.3)]`}
                 >
-                  {getCurrencySymbol(displayedCurrency)}{totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                  {totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                 </h2>
               </div>
 
@@ -481,8 +457,8 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
                   <p className="text-[9px] md:text-[11px] uppercase font-black text-[--text-muted] mb-1 tracking-widest">Net Value</p>
                   <div className="flex flex-col gap-2">
-                    <p key={displayedCurrency} className="text-lg md:text-2xl font-black text-[--text-primary] leading-tight">
-                      {getCurrencySymbol(displayedCurrency)}{totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                    <p className="text-lg md:text-2xl font-black text-[--text-primary] leading-tight">
+                      {totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                     </p>
                   </div>
                 </div>
@@ -543,7 +519,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-500">
             {filteredAccounts.length === 0 && (
               <div className="col-span-full py-12 text-center text-[--text-muted] bg-white/5 rounded-2xl border border-white/10 border-dashed">
-                <p className="text-sm font-bold uppercase tracking-widest">No {displayedCurrency} accounts found.</p>
+                <p className="text-sm font-bold uppercase tracking-widest">No accounts found.</p>
               </div>
             )}
             {filteredAccounts.map((a) => {

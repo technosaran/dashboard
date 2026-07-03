@@ -8,19 +8,55 @@ export async function getUsdToInrRate(): Promise<number> {
     return cachedRate;
   }
 
+  // 1. Try open.er-api
   try {
     const res = await fetch("https://open.er-api.com/v6/latest/USD", {
-      next: { revalidate: 3600 } // Next.js fetch cache integration
+      next: { revalidate: 3600 }
     });
     if (res.ok) {
       const data = await res.json();
       if (data && data.rates && typeof data.rates.INR === "number") {
         cachedRate = data.rates.INR;
         lastFetched = now;
+        return cachedRate;
       }
     }
   } catch (err) {
-    console.error("Failed to fetch live USD/INR exchange rate:", err);
+    console.warn("Primary forex API failed, trying fallback 1:", err);
+  }
+
+  // 2. Try Exchangerate-API fallback
+  try {
+    const res = await fetch("https://api.exchangerate-api.com/v4/latest/USD", {
+      next: { revalidate: 3600 }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.rates && typeof data.rates.INR === "number") {
+        cachedRate = data.rates.INR;
+        lastFetched = now;
+        return cachedRate;
+      }
+    }
+  } catch (err) {
+    console.warn("Secondary forex API failed, trying fallback 2:", err);
+  }
+
+  // 3. Try Frankfurter API fallback
+  try {
+    const res = await fetch("https://api.frankfurter.app/latest?from=USD&to=INR", {
+      next: { revalidate: 3600 }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.rates && typeof data.rates.INR === "number") {
+        cachedRate = data.rates.INR;
+        lastFetched = now;
+        return cachedRate;
+      }
+    }
+  } catch (err) {
+    console.error("All forex APIs failed, using cached rate:", err);
   }
 
   return cachedRate;
