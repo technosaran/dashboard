@@ -77,6 +77,8 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, accou
     return populated;
   }, [profile]);
 
+  const [showUSD, setShowUSD] = useState(false);
+
   const getAccountCurrency = (accountId: string | null) => {
     if (!accountId) return "INR";
     const acc = accounts.find(a => a.id === accountId);
@@ -115,12 +117,18 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, accou
           </span>
         </div>
         
-        <div className="flex items-baseline gap-2 mt-2.5 select-none">
+        <div 
+          className="flex items-baseline gap-2 mt-2.5 cursor-pointer select-none"
+          onClick={() => setShowUSD(!showUSD)}
+        >
           <h1 className="text-3xl font-[900] tracking-tight text-white">
-            ₹{stats.netWorth.toLocaleString(undefined, { minimumFractionDigits: 0 })}
+            {showUSD 
+              ? `$${stats.netWorthUSD.toLocaleString(undefined, { minimumFractionDigits: 0 })}`
+              : `₹${stats.netWorthINR.toLocaleString(undefined, { minimumFractionDigits: 0 })}`
+            }
           </h1>
           <span className="text-[9px] font-black tracking-widest text-[--text-muted] uppercase">
-            INR
+            {showUSD ? 'USD' : 'INR'}
           </span>
         </div>
 
