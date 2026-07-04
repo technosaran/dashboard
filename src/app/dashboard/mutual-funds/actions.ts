@@ -287,21 +287,21 @@ export async function updateMFHolding(id: string, data: {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Unauthorized" };
 
+    const payload: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    if (data.fund_name !== undefined) payload.fund_name = data.fund_name;
+    if (data.amc_name !== undefined) payload.amc_name = data.amc_name;
+    if (data.scheme_code !== undefined) payload.scheme_code = data.scheme_code;
+    if (data.fund_symbol !== undefined) payload.fund_symbol = data.fund_symbol;
+    if (data.units !== undefined) payload.units = data.units;
+    if (data.avg_nav !== undefined) payload.avg_nav = data.avg_nav;
+    if (data.current_nav !== undefined) payload.current_nav = data.current_nav;
+    if (data.previous_nav !== undefined) payload.previous_nav = data.previous_nav;
+    if (data.category !== undefined) payload.category = data.category;
+    if (data.investment_type !== undefined) payload.investment_type = data.investment_type;
+
     const { error } = await supabase
       .from("mutual_funds")
-      .update({ 
-        fund_name: data.fund_name,
-        amc_name: data.amc_name,
-        scheme_code: data.scheme_code,
-        fund_symbol: data.fund_symbol,
-        units: data.units,
-        avg_nav: data.avg_nav,
-        current_nav: data.current_nav,
-        previous_nav: data.previous_nav,
-        category: data.category,
-        investment_type: data.investment_type,
-        updated_at: new Date().toISOString() 
-      })
+      .update(payload)
       .eq("id", id)
       .eq("user_id", user.id);
 

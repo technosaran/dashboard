@@ -74,16 +74,17 @@ export async function updateAlternativeAsset(id: string, formData: AlternativeAs
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Unauthorized" };
 
+    const payload: Record<string, unknown> = {};
+    if (formData.name !== undefined) payload.name = formData.name;
+    if (formData.category !== undefined) payload.category = formData.category;
+    if (formData.purchase_price !== undefined) payload.purchase_price = formData.purchase_price;
+    if (formData.current_value !== undefined) payload.current_value = formData.current_value;
+    if (formData.purchase_date !== undefined) payload.purchase_date = formData.purchase_date;
+    if (formData.notes !== undefined) payload.notes = formData.notes;
+
     const { error } = await supabase
       .from("alternative_assets")
-      .update({
-        name: formData.name,
-        category: formData.category,
-        purchase_price: formData.purchase_price,
-        current_value: formData.current_value,
-        purchase_date: formData.purchase_date,
-        notes: formData.notes
-      })
+      .update(payload)
       .eq("id", id)
       .eq("user_id", user.id);
 

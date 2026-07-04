@@ -10,8 +10,10 @@ export async function GET(request: Request) {
     // 1. Cron Authentication check
     const authHeader = request.headers.get("Authorization");
     const cronSecret = process.env.CRON_SECRET;
-    if (process.env.NODE_ENV !== "development" && cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (process.env.NODE_ENV !== "development") {
+      if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
     }
 
     const db = getDb();

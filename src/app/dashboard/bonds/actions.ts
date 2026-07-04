@@ -156,33 +156,33 @@ export async function updateBond(id: string, data: {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Unauthorized" };
 
+    const payload: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    if (data.bond_name !== undefined) payload.bond_name = data.bond_name;
+    if (data.isin !== undefined) payload.isin = data.isin;
+    if (data.issuer !== undefined) payload.issuer = data.issuer;
+    if (data.bond_type !== undefined) payload.bond_type = data.bond_type;
+    if (data.face_value !== undefined) payload.face_value = data.face_value;
+    if (data.quantity !== undefined) payload.quantity = data.quantity;
+    if (data.purchase_price !== undefined) payload.purchase_price = data.purchase_price;
+    if (data.current_price !== undefined) payload.current_price = data.current_price;
+    if (data.coupon_rate !== undefined) payload.coupon_rate = data.coupon_rate;
+    if (data.ytm !== undefined) payload.ytm = data.ytm;
+    if (data.purchase_date !== undefined) payload.purchase_date = data.purchase_date;
+    if (data.maturity_date !== undefined) payload.maturity_date = data.maturity_date;
+    if (data.next_interest_date !== undefined) payload.next_interest_date = data.next_interest_date || null;
+    if (data.interest_frequency !== undefined) payload.interest_frequency = data.interest_frequency;
+    if (data.credit_rating !== undefined) payload.credit_rating = data.credit_rating;
+    if (data.platform !== undefined) payload.platform = data.platform;
+    if (data.notes !== undefined) payload.notes = data.notes;
+    if (data.accrued_interest !== undefined) payload.accrued_interest = data.accrued_interest;
+    if (data.total_interest_earned !== undefined) payload.total_interest_earned = data.total_interest_earned;
+    if (data.current_value !== undefined) payload.current_value = data.current_value;
+    if (data.total_invested !== undefined) payload.total_invested = data.total_invested;
+    if (data.status !== undefined) payload.status = data.status;
+
     const { error } = await supabase
       .from("bonds")
-      .update({ 
-        bond_name: data.bond_name,
-        isin: data.isin,
-        issuer: data.issuer,
-        bond_type: data.bond_type,
-        face_value: data.face_value,
-        quantity: data.quantity,
-        purchase_price: data.purchase_price,
-        current_price: data.current_price,
-        coupon_rate: data.coupon_rate,
-        ytm: data.ytm,
-        purchase_date: data.purchase_date,
-        maturity_date: data.maturity_date,
-        next_interest_date: data.next_interest_date || null,
-        interest_frequency: data.interest_frequency,
-        credit_rating: data.credit_rating,
-        platform: data.platform,
-        notes: data.notes,
-        accrued_interest: data.accrued_interest,
-        total_interest_earned: data.total_interest_earned,
-        current_value: data.current_value,
-        total_invested: data.total_invested,
-        status: data.status,
-        updated_at: new Date().toISOString() 
-      })
+      .update(payload)
       .eq("id", id)
       .eq("user_id", user.id);
 

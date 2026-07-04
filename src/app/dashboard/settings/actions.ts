@@ -129,6 +129,11 @@ export async function updateSettings(settings: ProfileSettings) {
 }
 
 export async function checkApiHealth() {
+  // Auth guard — only authenticated users may trigger outbound API health checks
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
   const apis = [
     { name: "AMFI Mutual Funds API (mfapi.in)", url: "https://api.mfapi.in/mf/122639" },
     { name: "AMFI India Official NAV (amfiindia.com)", url: "https://www.amfiindia.com/spages/NAVAll.txt" },
@@ -171,7 +176,6 @@ export async function checkApiHealth() {
 
   // Also include Supabase connection check
   try {
-    const supabase = await createClient();
     const start = Date.now();
     const { error } = await supabase.from("accounts").select("id").limit(1);
     const latency = Date.now() - start;

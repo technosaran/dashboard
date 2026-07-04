@@ -115,18 +115,27 @@ export default function DashboardClient() {
     }
 
     // Single pass over transactions
-    for (let i = 0; i < transactions.length; i++) {
-      const t = transactions[i];
+    // Only count actual expenses (source_type "expense" or null) — skip investment purchases
+    const EXPENSE_SOURCE_TYPES = new Set(["expense", null, undefined, ""]);
+
+    const sortedForLoop = [...transactions].sort((a, b) => {
+      if (!a.date || !b.date) return 0;
+      return b.date.localeCompare(a.date);
+    });
+
+    for (let i = 0; i < sortedForLoop.length; i++) {
+      const t = sortedForLoop[i];
       if (!t.date) continue;
       
       const tDate = parseISO(t.date);
       const tAmount = Number(t.amount);
       const tType = t.type;
+      const isRealExpense = tType === "expense" && EXPENSE_SOURCE_TYPES.has(t.source_type);
       
       // Monthly Stats & Category Map - Timezone-robust direct comparison
       if (tDate.getMonth() === currentMonthNum && tDate.getFullYear() === currentYearNum) {
         if (tType === "income") monthlyIncome += tAmount;
-        if (tType === "expense") {
+        if (isRealExpense) {
           monthlySpend += tAmount;
           const cat = t.category || "Others";
           catMap[cat] = (catMap[cat] || 0) + tAmount;
@@ -134,7 +143,7 @@ export default function DashboardClient() {
       }
 
       // Expense Trend (Last 15)
-      if (tType === "expense" && expenseTrend.length < 15) {
+      if (isRealExpense && expenseTrend.length < 15) {
         expenseTrend.push({
           date: t.date,
           amount: tAmount,
@@ -147,25 +156,26 @@ export default function DashboardClient() {
       const m = format(tDate, "MMM yy");
       if (trendMap[m]) {
         if (tType === "income") trendMap[m].income += tAmount;
-        if (tType === "expense") trendMap[m].expense += tAmount;
+        if (isRealExpense) trendMap[m].expense += tAmount;
       }
     }
 
     // Calculate historical curves walking backward
     const monthsKeys = Object.keys(trendMap);
-    let runningNetWorth = netWorthINR || 100000;
+    let runningNetWorth = (netWorthINR || 100000);
     let runningInvestments = (stockBalanceINR || 0) + (mfBalance || 0) + (bondBalance || 0);
 
     for (let i = monthsKeys.length - 1; i >= 0; i--) {
       const key = monthsKeys[i];
       const entry = trendMap[key] as any;
+      const netMonthlyChange = entry.income - entry.expense;
+      const investmentDelta = Math.max(0, entry.income * 0.3 - entry.expense * 0.1);
+
       entry.netWorth = Math.max(0, runningNetWorth);
       entry.investments = Math.max(0, runningInvestments);
 
-      // Walk backward
-      const netMonthlyChange = entry.income - entry.expense;
       runningNetWorth -= netMonthlyChange;
-      runningInvestments -= (entry.income * 0.3 - entry.expense * 0.1);
+      runningInvestments -= investmentDelta;
     }
 
     const pieData = Object.entries(catMap).map(([name, value], index) => {

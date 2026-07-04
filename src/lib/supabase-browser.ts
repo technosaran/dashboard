@@ -39,13 +39,6 @@ export function createClient() {
     }
   );
 
-  // Clear singleton on sign-out to prevent stale session leaks
-  const { data: { subscription } } = client.auth.onAuthStateChange((event) => {
-    if (event === 'SIGNED_OUT') {
-      subscription.unsubscribe();
-      client = null;
-    }
-  });
   
   return client;
 }
