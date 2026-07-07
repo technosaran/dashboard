@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, memo } from "react";
 import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { toast } from "react-hot-toast";
@@ -26,7 +26,7 @@ const Tooltip = dynamic(() => import("recharts").then(mod => mod.Tooltip), { ssr
 type Account = Tables<"accounts">;
 type LedgerLog = Tables<"ledger_logs">;
 
-const CategoryIcon = ({ type, className = "w-6 h-6" }: { type: string; className?: string }) => {
+const CategoryIcon = memo(({ type, className = "w-6 h-6" }: { type: string; className?: string }) => {
   const styles: Record<string, { bg: string; color: string; path: string }> = {
     checking: { bg: "rgba(14, 165, 233, 0.05)", color: "var(--accent-primary)", path: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" },
     savings: { bg: "rgba(16, 185, 129, 0.05)", color: "var(--success)", path: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" },
@@ -40,7 +40,8 @@ const CategoryIcon = ({ type, className = "w-6 h-6" }: { type: string; className
       <svg className="w-full h-full" style={{ color: style.color }} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d={style.path} /></svg>
     </div>
   );
-};
+});
+CategoryIcon.displayName = "CategoryIcon";
 
 const TYPE_STYLES: Record<string, { gradient: string; badge: string; badgeBorder: string; color: string; iconBg: string }> = {
   checking: { gradient: "linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%)", badge: "rgba(14, 165, 233, 0.05)", badgeBorder: "rgba(14, 165, 233, 0.1)", color: "var(--accent-primary)", iconBg: "rgba(14, 165, 233, 0.05)" },
@@ -51,6 +52,12 @@ const TYPE_STYLES: Record<string, { gradient: string; badge: string; badgeBorder
 };
 const ACCOUNT_HISTORY_ACTIONS = new Set(["CREATE", "UPDATE", "DELETE", "TRANSFER_IN", "TRANSFER_OUT", "ADJUST_UP", "ADJUST_DOWN"]);
 const DEBIT_ACCOUNT_ACTIONS = new Set(["ADJUST_DOWN", "TRANSFER_OUT", "DELETE"]);
+
+function getHistoryCutoff(range: string): Date | null {
+  if (range === "all") return null;
+  const days = range === "90d" ? 90 : 30;
+  return new Date(Date.now() - days * 86400_000);
+}
 
 
 
@@ -92,6 +99,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingAccountId, setDeletingAccountId] = useState<string | null>(null);
   const [historyAccountId, setHistoryAccountId] = useState("all");
+  const [historyDateRange, setHistoryDateRange] = useState<"30d" | "90d" | "all">("30d");
 
   function handleBankSearch(query: string) {
     setBankSearch(query);
@@ -204,17 +212,21 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
   const [showUSD, setShowUSD] = useState(false);
   const displayedCurrency = showUSD ? "USD" : "INR";
 
-  const filteredAccounts = useMemo(() => 
-    accounts.filter(a => a.currency === displayedCurrency),
-  [accounts, displayedCurrency]);
+  // Display all accounts in the list as requested by the user
+  const filteredAccounts = useMemo(() => accounts, [accounts]);
 
+  // Total balance summates only matching currency accounts
   const totalBalance = useMemo(() => 
-    filteredAccounts.reduce((acc, a) => acc + a.balance, 0),
-    [filteredAccounts]
+    accounts
+      .filter(a => a.currency === displayedCurrency)
+      .reduce((acc, a) => acc + a.balance, 0),
+    [accounts, displayedCurrency]
   );
 
+  // Pie chart displays allocation only for matching currency accounts to avoid mixing USD/INR values
   const chartData = useMemo(() => 
-    filteredAccounts
+    accounts
+      .filter(a => a.currency === displayedCurrency)
       .map((a, i) => { 
         return {
           name: a.name, 
@@ -225,16 +237,19 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
           account: a
         };
       }),
-    [filteredAccounts, displayedCurrency]
+    [accounts, displayedCurrency]
   );
 
   const accountHistory = useMemo(() => {
+    const cutoff = getHistoryCutoff(historyDateRange);
+
     return (ledgerLogs as LedgerLog[])
       .filter((log) => ACCOUNT_HISTORY_ACTIONS.has(log.action_type))
       .filter((log) => !!log.created_at)
       .filter((log) => historyAccountId === "all" || log.account_id === historyAccountId)
+      .filter((log) => !cutoff || new Date(log.created_at as string) >= cutoff)
       .sort((a, b) => new Date(b.created_at as string).getTime() - new Date(a.created_at as string).getTime());
-  }, [ledgerLogs, historyAccountId]);
+  }, [ledgerLogs, historyAccountId, historyDateRange]);
 
   function getActionLabel(type: string) {
     const labels: Record<string, string> = {
@@ -371,21 +386,24 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
                   </h2>
                 </div>
                 <div className="grid grid-cols-3 gap-3">
-                  {chartData.map((item, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center gap-3 rounded-xl px-4 py-3 transition-all"
-                      style={{ background: hexToRgba(item.color, 0.12), border: `1px solid ${hexToRgba(item.color, 0.28)}` }}
-                    >
-                      <div className="relative flex-shrink-0">
-                        {item.account.bank_name ? <BankLogo bankName={item.account.bank_name!} size={32} /> : <CategoryIcon type={item.account.type} className="w-8 h-8" />}
+                  {accounts.map((a, i) => {
+                    const color = getChartColour(i);
+                    return (
+                      <div
+                        key={a.id}
+                        className="flex items-center gap-3 rounded-xl px-4 py-3 transition-all"
+                        style={{ background: hexToRgba(color, 0.12), border: `1px solid ${hexToRgba(color, 0.28)}` }}
+                      >
+                        <div className="relative flex-shrink-0">
+                          {a.bank_name ? <BankLogo bankName={a.bank_name!} size={32} /> : <CategoryIcon type={a.type} className="w-8 h-8" />}
+                        </div>
+                        <div className="flex flex-col min-w-0 flex-1 text-left">
+                          <p className="font-bold text-[10px] text-[--text-secondary] truncate">{a.name}</p>
+                          <p className="font-black text-sm" style={{ color: color }}>{getCurrencySymbol(a.currency)}{a.balance.toLocaleString()}</p>
+                        </div>
                       </div>
-                      <div className="flex flex-col min-w-0 flex-1 text-left">
-                        <p className="font-bold text-[10px] text-[--text-secondary] truncate">{item.name}</p>
-                        <p className="font-black text-sm" style={{ color: item.color }}>{getCurrencySymbol(item.currency)}{item.value.toLocaleString()}</p>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
@@ -490,21 +508,24 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
 
               {/* Account list below chart on mobile */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {chartData.map((item, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center gap-3 rounded-2xl px-4 py-3 h-[64px] md:h-[72px] transition-all"
-                    style={{ background: hexToRgba(item.color, 0.12), border: `1px solid ${hexToRgba(item.color, 0.28)}` }}
-                  >
-                    <div className="relative flex-shrink-0">
-                      {item.account.bank_name ? <BankLogo bankName={item.account.bank_name!} size={40} /> : <CategoryIcon type={item.account.type} className="w-10 h-10" />}
+                {accounts.map((a, i) => {
+                  const color = getChartColour(i);
+                  return (
+                    <div
+                      key={a.id}
+                      className="flex items-center gap-3 rounded-2xl px-4 py-3 h-[64px] md:h-[72px] transition-all"
+                      style={{ background: hexToRgba(color, 0.12), border: `1px solid ${hexToRgba(color, 0.28)}` }}
+                    >
+                      <div className="relative flex-shrink-0">
+                        {a.bank_name ? <BankLogo bankName={a.bank_name!} size={40} /> : <CategoryIcon type={a.type} className="w-10 h-10" />}
+                      </div>
+                      <div className="flex flex-col min-w-0 flex-1 text-left">
+                        <p className="font-bold text-[11px] md:text-xs text-[--text-secondary] truncate">{a.name}</p>
+                        <p className="font-black text-[13px] md:text-sm" style={{ color: color }}>{getCurrencySymbol(a.currency)}{a.balance.toLocaleString()}</p>
+                      </div>
                     </div>
-                    <div className="flex flex-col min-w-0 flex-1 text-left">
-                      <p className="font-bold text-[11px] md:text-xs text-[--text-secondary] truncate">{item.name}</p>
-                      <p className="font-black text-[13px] md:text-sm" style={{ color: item.color }}>{getCurrencySymbol(item.currency)}{item.value.toLocaleString()}</p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -543,7 +564,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-500">
             {filteredAccounts.length === 0 && (
               <div className="col-span-full py-12 text-center text-[--text-muted] bg-white/5 rounded-2xl border border-white/10 border-dashed">
-                <p className="text-sm font-bold uppercase tracking-widest">No {displayedCurrency} accounts found.</p>
+                <p className="text-sm font-bold uppercase tracking-widest">No accounts found.</p>
               </div>
             )}
             {filteredAccounts.map((a) => {
@@ -559,7 +580,10 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
                     <h3 className="text-lg font-bold truncate">{a.name}</h3>
                     <p className="text-2xl font-black mt-1" style={{ color: style.color }}>{getCurrencySymbol(a.currency)} {a.balance.toLocaleString()}</p>
                     <div className="flex gap-2 mt-6">
-                      <button type="button" onClick={() => { setAdjustingAccountId(a.id); setShowAdjustModal(true); }} className="flex-1 h-11 rounded-xl font-bold text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-2" style={{ background: style.iconBg, color: style.color, border: `1px solid ${style.badgeBorder}` }}><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>Adjust balance</button>
+                      <button type="button" onClick={() => { setAdjustingAccountId(a.id); setShowAdjustModal(true); }} className="flex-1 h-11 rounded-xl font-bold text-[11px] transition-all flex items-center justify-center gap-2" style={{ background: style.iconBg, color: style.color, border: `1px solid ${style.badgeBorder}` }}>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+                        Adjust ±
+                      </button>
                       {a.name !== "Cash" && <button type="button" onClick={() => handleDelete(a.id)} className="w-11 h-11 rounded-xl bg-danger/10 border border-danger/20 text-danger hover:bg-danger/20 transition-all flex items-center justify-center"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>}
                     </div>
                   </div>
@@ -571,17 +595,44 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
           <div className="glass-card-static overflow-hidden animate-in fade-in duration-500">
         <div className="p-6 border-b border-white/5 flex items-center justify-between gap-3">
           <div>
-            <h2 className="text-2xl font-black text-[--text-primary]">Account History</h2>
-            <p className="text-[11px] font-bold text-[--text-muted] uppercase tracking-widest mt-1">Past account activity</p>
+            <h2 className="text-2xl font-bold text-[--text-primary]">Account History</h2>
+            <p className="text-xs font-medium text-[--text-muted] mt-1">Past account activity</p>
           </div>
-          <span className="text-[10px] font-black px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[--text-muted] uppercase tracking-widest">{accountHistory.length} entries</span>
+          <span className="text-xs font-semibold px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[--text-muted]">{accountHistory.length} entries</span>
         </div>
 
-        <div className="p-4 border-b border-white/5 flex flex-wrap gap-2">
-          <button type="button" onClick={() => setHistoryAccountId("all")} className={`px-4 h-10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${historyAccountId === "all" ? "bg-[--accent-primary]/20 text-[--accent-primary-light] border border-[--accent-primary]/30" : "bg-white/5 text-[--text-muted] border border-white/10 hover:text-[--text-primary]"}`}>All Accounts</button>
-          {accounts.map((account) => (
-            <button type="button" key={account.id} onClick={() => setHistoryAccountId(account.id)} className={`px-4 h-10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${historyAccountId === account.id ? "bg-[--accent-primary]/20 text-[--accent-primary-light] border border-[--accent-primary]/30" : "bg-white/5 text-[--text-muted] border border-white/10 hover:text-[--text-primary]"}`}>{account.name}</button>
-          ))}
+        <div className="p-4 border-b border-white/5 flex flex-col gap-3">
+          {/* Date range quick filter */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-[--text-muted] shrink-0">Period</span>
+            <div className="flex gap-1 rounded-xl bg-white/[0.03] border border-white/5 p-0.5">
+              {([
+                { key: "30d", label: "Last 30 days" },
+                { key: "90d", label: "Last 90 days" },
+                { key: "all", label: "All time" },
+              ] as const).map((opt) => (
+                <button
+                  key={opt.key}
+                  type="button"
+                  onClick={() => setHistoryDateRange(opt.key)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    historyDateRange === opt.key
+                      ? "bg-[--accent-primary] text-white shadow-sm"
+                      : "text-[--text-muted] hover:text-white"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          {/* Account chips */}
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => setHistoryAccountId("all")} className={`px-4 h-9 rounded-xl text-xs font-semibold transition-all ${historyAccountId === "all" ? "bg-[--accent-primary]/20 text-[--accent-primary-light] border border-[--accent-primary]/30" : "bg-white/5 text-[--text-muted] border border-white/10 hover:text-[--text-primary]"}`}>All accounts</button>
+            {accounts.map((account) => (
+              <button type="button" key={account.id} onClick={() => setHistoryAccountId(account.id)} className={`px-4 h-9 rounded-xl text-xs font-semibold transition-all ${historyAccountId === account.id ? "bg-[--accent-primary]/20 text-[--accent-primary-light] border border-[--accent-primary]/30" : "bg-white/5 text-[--text-muted] border border-white/10 hover:text-[--text-primary]"}`}>{account.name}</button>
+            ))}
+          </div>
         </div>
 
         {accountHistory.length === 0 ? (
@@ -594,12 +645,12 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
             <table className="w-full text-left border-collapse min-w-[800px]">
               <thead>
                 <tr className="border-b border-white/10 bg-white/5">
-                  <th className="p-4 text-[10px] font-black uppercase tracking-widest text-[--text-muted] whitespace-nowrap">Timestamp</th>
-                  <th className="p-4 text-[10px] font-black uppercase tracking-widest text-[--text-muted] whitespace-nowrap">Account</th>
-                  <th className="p-4 text-[10px] font-black uppercase tracking-widest text-[--text-muted] whitespace-nowrap">Action</th>
-                  <th className="p-4 text-[10px] font-black uppercase tracking-widest text-[--text-muted] w-full">Details</th>
-                  <th className="p-4 text-[10px] font-black uppercase tracking-widest text-[--text-muted] text-right whitespace-nowrap">Amount</th>
-                  <th className="p-4 text-[10px] font-black uppercase tracking-widest text-[--text-muted] text-right whitespace-nowrap">Balance</th>
+                  <th className="p-4 text-xs font-semibold text-[--text-muted] whitespace-nowrap">Timestamp</th>
+                  <th className="p-4 text-xs font-semibold text-[--text-muted] whitespace-nowrap">Account</th>
+                  <th className="p-4 text-xs font-semibold text-[--text-muted] whitespace-nowrap">Action</th>
+                  <th className="p-4 text-xs font-semibold text-[--text-muted] w-full">Details</th>
+                  <th className="p-4 text-xs font-semibold text-[--text-muted] text-right whitespace-nowrap">Amount</th>
+                  <th className="p-4 text-xs font-semibold text-[--text-muted] text-right whitespace-nowrap">Balance</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
@@ -632,7 +683,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
                           <span className={`w-6 h-6 rounded-md flex items-center justify-center text-xs ${isDebit ? 'bg-rose-500/10 text-rose-400' : 'bg-emerald-500/10 text-emerald-400'}`}>
                             {ActionIcon}
                           </span>
-                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-300">
+                          <span className="text-xs font-semibold text-slate-300">
                             {getActionLabel(log.action_type)}
                           </span>
                         </div>
@@ -674,7 +725,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
         onClose={resetForm}
         title={editingId ? "Update Account" : "Open New Account"}
       >
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-3">
             <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Account Label</label>
             <input required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="input-premium" placeholder="e.g. Primary Savings" autoComplete="new-password" />
@@ -722,8 +773,8 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
               </div>
             )}
           </div>
-          <div className="pt-4 mt-8">
-            <button type="submit" disabled={submitting} className="btn-primary w-full h-12 shadow-xl shadow-[--accent-primary]/20 transition-all text-[11px] font-black uppercase tracking-widest">
+          <div className="pt-2 mt-4">
+            <button type="submit" disabled={submitting} className="btn-primary w-full h-11 shadow-xl shadow-[--accent-primary]/20 transition-all text-[11px] font-black uppercase tracking-widest">
               {submitting ? "Processing Registry..." : (editingId ? "Update Portfolio" : "Activate Account")}
             </button>
           </div>
@@ -735,21 +786,21 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
         onClose={() => setShowAdjustModal(false)}
         title="Adjust Balance"
       >
-        <form onSubmit={handleAdjust} className="space-y-6">
+        <form onSubmit={handleAdjust} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <button 
               type="button" 
               onClick={() => setAdjustData({...adjustData, type: 'add'})} 
-              className={`py-4 rounded-xl font-black transition-all border shadow-lg ${adjustData.type === 'add' ? 'bg-emerald-500 border-emerald-400 text-white shadow-emerald-500/20' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'}`}
+              className={`py-4 rounded-xl font-bold text-sm transition-all border shadow-lg ${adjustData.type === 'add' ? 'bg-emerald-500 border-emerald-400 text-white shadow-emerald-500/20' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'}`}
             >
-              INCREMENT
+              + Add funds
             </button>
             <button 
               type="button" 
               onClick={() => setAdjustData({...adjustData, type: 'subtract'})} 
-              className={`py-4 rounded-xl font-black transition-all border shadow-lg ${adjustData.type === 'subtract' ? 'bg-rose-500 border-rose-400 text-white shadow-rose-500/20' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'}`}
+              className={`py-4 rounded-xl font-bold text-sm transition-all border shadow-lg ${adjustData.type === 'subtract' ? 'bg-rose-500 border-rose-400 text-white shadow-rose-500/20' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'}`}
             >
-              DECREMENT
+              − Remove funds
             </button>
           </div>
           <div className="space-y-3">
@@ -760,8 +811,8 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
             <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Reason / Note</label>
             <input value={adjustData.note} onChange={e => setAdjustData({...adjustData, note: e.target.value})} className="input-premium" placeholder="Why the change?" autoComplete="new-password" />
           </div>
-          <div className="pt-4 mt-8">
-            <button type="submit" disabled={submitting} className="btn-primary w-full h-12 text-[11px] font-black uppercase tracking-widest shadow-xl shadow-[--accent-primary]/20">
+          <div className="pt-2 mt-4">
+            <button type="submit" disabled={submitting} className="btn-primary w-full h-11 text-[11px] font-black uppercase tracking-widest shadow-xl shadow-[--accent-primary]/20">
               {submitting ? "Processing..." : "Finalize Adjustment"}
             </button>
           </div>
@@ -773,7 +824,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
         onClose={() => setShowTransferModal(false)}
         title="Inter-Account Transfer"
       >
-        <form onSubmit={handleTransfer} className="space-y-6">
+        <form onSubmit={handleTransfer} className="space-y-4">
           <div className="space-y-3">
             <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">SOURCE ACCOUNT</label>
             <select aria-label="Select source account" id="transfer-source" name="from_account" required value={transferFromId || ""} onChange={e => setTransferFromId(e.target.value)} className="input-premium h-14">
@@ -792,8 +843,8 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
             <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">AMOUNT</label>
             <input required type="number" step="0.01" value={transferData.amount} onChange={e => setTransferData({...transferData, amount: e.target.value})} className="input-premium !h-14 text-xl font-black" placeholder="0.00" autoComplete="new-password" inputMode="decimal" />
           </div>
-          <div className="pt-4 mt-8">
-            <button type="submit" disabled={submitting || !transferFromId || !transferData.to_account_id || !transferData.amount} className="btn-primary w-full h-12 shadow-xl shadow-[--accent-primary]/20 text-[11px] font-black uppercase tracking-widest disabled:opacity-50">
+          <div className="pt-2 mt-4">
+            <button type="submit" disabled={submitting || !transferFromId || !transferData.to_account_id || !transferData.amount} className="btn-primary w-full h-11 shadow-xl shadow-[--accent-primary]/20 text-[11px] font-black uppercase tracking-widest disabled:opacity-50">
               {submitting ? "Processing..." : "Execute Transfer"}
             </button>
           </div>

@@ -54,6 +54,7 @@ export default function TransactionsClient() {
   const [deletingType, setDeletingType] = useState<"income" | "expense" | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
+
   const [modalType, setModalType] = useState<"income" | "expense">("expense");
   const [formData, setFormData] = useState({
     description: "",
@@ -189,6 +190,18 @@ export default function TransactionsClient() {
       return new Date(b.date).getTime() - new Date(a.date).getTime();
     });
   }, [transactions, selectedMonth, selectedYear, activeTab, categoryFilter, globalFilter, accounts]);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 15;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [globalFilter, activeTab, selectedMonth, selectedYear, categoryFilter]);
+
+  const paginatedTransactions = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    return filteredTransactions.slice(startIndex, startIndex + pageSize);
+  }, [filteredTransactions, currentPage]);
 
   // Statistics calculation
   const stats = useMemo(() => {
@@ -482,14 +495,14 @@ export default function TransactionsClient() {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {filteredTransactions.length === 0 ? (
+              {paginatedTransactions.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-5 py-12 text-center text-[--text-muted] text-sm italic">
                     No transactions match your filters.
                   </td>
                 </tr>
               ) : (
-                filteredTransactions.map((t) => {
+                paginatedTransactions.map((t) => {
                   const isIncome = t.type === "income";
                   const icon = getCategoryIcon(t.category || "Others", t.type);
                   const account = accounts.find(a => a.id === t.account_id);
@@ -553,6 +566,33 @@ export default function TransactionsClient() {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination Controls */}
+        {filteredTransactions.length > pageSize && (
+          <div className="flex items-center justify-between mt-4 px-5 py-3.5 border-t border-white/5">
+            <p className="text-[11px] text-[--text-muted] font-bold uppercase tracking-wider">
+              Showing {(currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, filteredTransactions.length)} of {filteredTransactions.length} txns
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="btn-secondary !h-8 !px-3 !text-[10px] font-black uppercase tracking-wider disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+              >
+                Prev
+              </button>
+              <button
+                type="button"
+                onClick={() => setCurrentPage(p => Math.min(Math.ceil(filteredTransactions.length / pageSize), p + 1))}
+                disabled={currentPage === Math.ceil(filteredTransactions.length / pageSize)}
+                className="btn-secondary !h-8 !px-3 !text-[10px] font-black uppercase tracking-wider disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Delete Confirmation Modal */}

@@ -2,6 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { useState, useMemo, useEffect, useCallback } from "react";
+import Image from "next/image";
 import { useHasMounted } from "@/hooks/use-has-mounted";
 import { toast } from "react-hot-toast";
 import useSWR from "swr";
@@ -43,7 +44,8 @@ const RELATIONSHIPS = ["Parent", "Spouse", "Child", "Sibling", "Other"];
 const fmt = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" });
 const supabase = createClient();
 
-function getMemberAvatar(name: string, relationship: string): string | null {
+function getMemberAvatar(name: string | null | undefined, relationship: string | null | undefined): string | null {
+  if (!name || !relationship) return null;
   const rel = relationship.toLowerCase();
   const nm = name.toLowerCase();
   if (rel === "parent") {
@@ -53,6 +55,7 @@ function getMemberAvatar(name: string, relationship: string): string | null {
     if (nm.includes("father") || nm.includes("dad") || nm.includes("papa") || nm.includes("daddy") || nm.includes("mr")) {
       return "/avatar_father.png";
     }
+    if (nm.length === 0) return "/avatar_father.png";
     return nm.charCodeAt(0) % 2 === 0 ? "/avatar_mother.png" : "/avatar_father.png";
   }
   if (rel === "spouse") {
@@ -376,7 +379,7 @@ export default function FamilyClient() {
                       <div className="relative p-[2.5px] rounded-full bg-gradient-to-tr from-purple-500 via-pink-500 to-blue-500 shadow-[0_0_15px_rgba(168,85,247,0.25)] flex-shrink-0">
                         <div className="bg-[#121214] p-[1.5px] rounded-full">
                           {avatar ? (
-                            <img src={avatar} alt={member.name} className="w-11 h-11 rounded-full object-cover" />
+                            <Image src={avatar} alt={member.name} width={44} height={44} className="w-11 h-11 rounded-full object-cover" />
                           ) : (
                             <div className="w-11 h-11 rounded-full bg-gradient-to-br from-purple-600 to-indigo-700 flex items-center justify-center text-white font-black text-sm">
                               {initials}

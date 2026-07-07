@@ -206,45 +206,39 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
           <div className="absolute top-0 left-0 right-0 h-[4px] bg-gradient-to-r from-[--accent-primary] via-purple-500 to-emerald-500 animate-pulse-glow" />
           <div className="flex flex-col lg:flex-row items-center justify-between gap-10">
             <div className="relative z-10 w-full lg:w-auto">
-              <div className="mb-4 flex items-center gap-2 md:mb-6">
-                <span className="text-xs font-black uppercase tracking-[0.4em] text-[--text-muted]">
-                  Portfolio Net Worth {isLoading && <span className="text-[10px] lowercase italic">(loading...)</span>}
-                </span>
-              </div>
-              <div className="flex flex-col md:flex-row md:items-center gap-12 flex-wrap max-w-full">
-                <div 
-                  className="flex flex-col cursor-pointer group/nw select-none" 
-                  onClick={() => setShowUSD(!showUSD)}
-                  title="Click to toggle currency"
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[10px] font-black tracking-widest text-[--text-muted] uppercase transition-colors group-hover/nw:text-white">
-                      {showUSD ? 'Dollars (USD)' : 'Rupees (INR)'}
-                    </span>
-                    <svg className="w-3 h-3 text-[--text-muted] opacity-50 group-hover/nw:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                    </svg>
-                  </div>
-                  <h2 
-                    key={showUSD ? 'usd' : 'inr'} 
-                    className={`animate-fade-in bg-clip-text bg-gradient-to-r text-[clamp(2.2rem,5vw,3.5rem)] font-[950] leading-none tracking-[-0.04em] text-transparent [font-family:'Outfit',sans-serif] whitespace-nowrap overflow-x-auto no-scrollbar transition-all duration-500 ${
+              <div 
+                className="flex flex-col cursor-pointer group/nw select-none" 
+                onClick={() => setShowUSD(!showUSD)}
+                title="Click to toggle currency"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xs font-semibold text-[--text-muted] transition-colors group-hover/nw:text-[--text-primary]">
+                    Portfolio Net Worth ({showUSD ? 'USD' : 'INR'}) {isLoading && <span className="text-[10px] italic font-normal">(loading...)</span>}
+                  </span>
+                  <svg className="w-3.5 h-3.5 text-[--text-muted] opacity-50 group-hover/nw:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                  </svg>
+                </div>
+                <h2 
+                  key={showUSD ? 'usd' : 'inr'} 
+                  className={`animate-fade-in bg-clip-text bg-gradient-to-r text-[clamp(2.2rem,5vw,3.5rem)] font-[950] leading-none tracking-[-0.04em] text-transparent [font-family:'Outfit',sans-serif] whitespace-nowrap overflow-x-auto no-scrollbar transition-all duration-500 ${
                     showUSD 
                       ? "from-white via-sky-200 to-indigo-300 drop-shadow-[0_10px_35px_rgba(99,102,241,0.3)]" 
                       : "from-white via-white to-slate-300 drop-shadow-[0_10px_35px_rgba(14,165,233,0.3)]"
-                  }`}>
-                    {showUSD 
-                      ? `$${stats.netWorthUSD.toLocaleString(undefined, { minimumFractionDigits: 0 })}` 
-                      : `₹${stats.netWorthINR.toLocaleString(undefined, { minimumFractionDigits: 0 })}`
-                    }
-                  </h2>
-                </div>
+                  }`}
+                >
+                  {showUSD 
+                    ? `$${stats.netWorthUSD.toLocaleString(undefined, { minimumFractionDigits: 0 })}` 
+                    : `₹${stats.netWorthINR.toLocaleString(undefined, { minimumFractionDigits: 0 })}`
+                  }
+                </h2>
               </div>
 
               <div className="mt-8 flex flex-wrap items-center gap-4 sm:gap-6">
                 <div className="flex items-center gap-3 bg-emerald-500/5 border border-emerald-500/10 px-5 py-3.5 rounded-2xl transition-all hover:bg-emerald-500/10">
                   <div className="w-9 h-9 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 text-base shadow-inner">📈</div>
                   <div className="flex flex-col">
-                    <span className="text-[9px] font-black uppercase tracking-widest text-[--text-muted]">Liquid Assets</span>
+                    <span className="text-[11px] font-semibold text-[--text-muted]">Liquid assets</span>
                     <span className="text-sm sm:text-base font-black text-emerald-400">
                       {showUSD 
                         ? `+$${stats.totalAssetsUSD.toLocaleString()}` 
@@ -257,7 +251,7 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                   <div className="flex items-center gap-3 bg-rose-500/5 border border-rose-500/10 px-5 py-3.5 rounded-2xl transition-all hover:bg-rose-500/10">
                     <div className="w-9 h-9 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-400 text-base shadow-inner">📉</div>
                     <div className="flex flex-col">
-                      <span className="text-[9px] font-black uppercase tracking-widest text-[--text-muted]">Outstanding Debt</span>
+                      <span className="text-[11px] font-semibold text-[--text-muted]">Outstanding debt</span>
                       <span className="text-sm sm:text-base font-black text-rose-500">
                         -₹{stats.debtBalance.toLocaleString()}
                       </span>
@@ -274,7 +268,7 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                 ) : (
                   <>
                     <div className="flex-1 min-w-0 space-y-2.5 w-full">
-                      <p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mb-3">Portfolio Allocation</p>
+                      <p className="text-[11px] font-semibold text-[--text-muted] mb-3">Portfolio allocation</p>
                       {portfolioData.map((item) => (
                         <div key={item.name} className="flex justify-between items-center group gap-3 min-w-0 py-1.5 hover:bg-white/[0.02] px-2 rounded-lg transition-colors">
                           <div className="flex items-center gap-2.5 min-w-0">
@@ -305,7 +299,7 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                         </PieChart>
                       </ResponsiveContainer>
                       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
-                        <span className="text-[8px] uppercase font-black tracking-widest text-[--text-muted]">Assets</span>
+                        <span className="text-[11px] font-semibold text-[--text-muted]">Assets</span>
                         <span className="text-[12px] font-black text-white mt-0.5">
                           {showUSD 
                             ? `$${Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(stats.totalAssetsUSD)}`
@@ -326,16 +320,18 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
         <div className="lg:col-span-2 flex flex-col gap-6">
           {(enabledModules.includes("Income") || enabledModules.includes("Expenses")) && (
             <div className="glass-card-static rich-border p-6 md:p-8 animate-fade-in">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-8">
                 <div className="flex flex-col">
-                  <h3 className="text-xs font-black uppercase tracking-widest text-[--text-muted]">
-                    {activeChartMetric === "cashflow" ? "Cash Flow Velocity" : activeChartMetric === "assets" ? "Net Worth Trajectory" : "Investment Portfolio Growth"}
+                  <h3 className="text-base font-bold text-white">
+                    {activeChartMetric === "cashflow" ? "Cash Flow" : activeChartMetric === "assets" ? "Net Worth Over Time" : "Investment Growth"}
                   </h3>
-                  <span className="text-[10px] text-[--text-secondary] mt-1">
-                    {activeChartMetric === "cashflow" ? "Income streams vs Expense consumption trends" : activeChartMetric === "assets" ? "Cumulative historical net worth trends" : "Growth curve of Stock, Mutual Fund, and Bond assets"}
+                  <span className="text-xs text-[--text-muted] mt-1">
+                    {activeChartMetric === "cashflow" ? "Income vs expenses over the last 6 months" : activeChartMetric === "assets" ? "Cumulative net worth trend" : "Stock, mutual fund, and bond portfolio growth"}
                   </span>
                 </div>
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-col items-start sm:items-end gap-2 shrink-0">
+                  {/* #2 — clear label above the segmented control */}
+                  <p className="text-[10px] font-semibold text-[--text-muted]">Chart type</p>
                   <div className="flex items-center gap-1 rounded-xl bg-white/5 border border-white/10 p-1">
                     {[
                       { key: "cashflow", label: "Cash Flow" },
@@ -345,7 +341,8 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                       <button
                         key={m.key}
                         onClick={() => setActiveChartMetric(m.key as any)}
-                        className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                        aria-pressed={activeChartMetric === m.key}
+                        className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
                           activeChartMetric === m.key
                             ? "bg-[--accent-primary] text-white shadow-md shadow-[--accent-primary]/20"
                             : "text-[--text-muted] hover:text-white"
@@ -355,19 +352,18 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                       </button>
                     ))}
                   </div>
-                  
                   {activeChartMetric === "cashflow" && (
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 mt-1">
                       {enabledModules.includes("Income") && (
                         <div className="flex items-center gap-2">
                           <div className="w-2 h-2 rounded-full bg-[--accent-primary]" />
-                          <span className="text-[10px] font-bold text-white/70">Income</span>
+                          <span className="text-[11px] font-medium text-white/60">Income</span>
                         </div>
                       )}
                       {enabledModules.includes("Expenses") && (
                         <div className="flex items-center gap-2">
                           <div className="w-2 h-2 rounded-full bg-rose-500" />
-                          <span className="text-[10px] font-bold text-white/70">Expenses</span>
+                          <span className="text-[11px] font-medium text-white/60">Expenses</span>
                         </div>
                       )}
                     </div>
@@ -432,8 +428,8 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
             <div className="glass-card-static rich-border p-6 md:p-8 animate-fade-in">
               <div className="flex justify-between items-center mb-6">
                 <div>
-                  <h3 className="text-xs font-black uppercase tracking-widest text-[--text-muted]">Financial Ledger Pulse</h3>
-                  <p className="text-[10px] text-[--text-secondary] mt-1">Real-time cryptographic logging audit trail</p>
+                  <h3 className="text-sm font-bold text-[--text-secondary]">Financial ledger</h3>
+                  <p className="text-xs text-[--text-secondary] mt-1">Recent account activity</p>
                 </div>
                 <Link href="/dashboard/ledger" className="btn-secondary !h-9 !px-4 text-[10px]">Audit Trail</Link>
               </div>
@@ -477,35 +473,40 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
           
           {/* QUICK ACTIONS PANEL */}
           <div className="glass-card-static rich-border p-6 md:p-8">
-            <h3 className="text-xs font-black uppercase tracking-widest text-[--text-muted] mb-6">Operations Hub</h3>
+            <h3 className="text-sm font-semibold text-[--text-muted] mb-5">Quick Actions</h3>
             <div className="grid grid-cols-2 gap-3">
               {enabledModules.includes("Expenses") && (
                 <Link href="/dashboard/expenses?action=new" className="flex flex-col items-center justify-center p-4 bg-rose-500/5 hover:bg-rose-500/10 border border-rose-500/10 rounded-2xl text-center transition-all group hover:-translate-y-1">
                   <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">💸</span>
-                  <span className="text-[11px] font-black uppercase tracking-widest text-rose-400">Log Expense</span>
+                  <span className="text-[11px] font-bold text-rose-400">Log Expense</span>
                 </Link>
               )}
               {enabledModules.includes("Income") && (
                 <Link href="/dashboard/income?action=new" className="flex flex-col items-center justify-center p-4 bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/10 rounded-2xl text-center transition-all group hover:-translate-y-1">
                   <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">💼</span>
-                  <span className="text-[11px] font-black uppercase tracking-widest text-emerald-400">Log Income</span>
+                  <span className="text-[11px] font-bold text-emerald-400">Log Income</span>
                 </Link>
               )}
               {enabledModules.includes("Stocks") && (
                 <Link href="/dashboard/stocks?action=new" className="flex flex-col items-center justify-center p-4 bg-blue-500/5 hover:bg-blue-500/10 border border-blue-500/10 rounded-2xl text-center transition-all group hover:-translate-y-1">
                   <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">📈</span>
-                  <span className="text-[11px] font-black uppercase tracking-widest text-blue-400">Add Stock</span>
+                  <span className="text-[11px] font-bold text-blue-400">Add Stock</span>
                 </Link>
               )}
               {enabledModules.includes("Family Management") && (
                 <Link href="/dashboard/family?action=send" className="flex flex-col items-center justify-center p-4 bg-purple-500/5 hover:bg-purple-500/10 border border-purple-500/10 rounded-2xl text-center transition-all group hover:-translate-y-1">
                   <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">👨‍👩‍👧‍👦</span>
-                  <span className="text-[11px] font-black uppercase tracking-widest text-purple-400">Send Family</span>
+                  <span className="text-[11px] font-bold text-purple-400">Send Family</span>
                 </Link>
               )}
               <Link href="/dashboard/accounts?action=new" className="flex flex-col items-center justify-center p-4 bg-sky-500/5 hover:bg-sky-500/10 border border-sky-500/10 rounded-2xl text-center transition-all group hover:-translate-y-1">
                 <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">💳</span>
-                <span className="text-[11px] font-black uppercase tracking-widest text-sky-400">Add Account</span>
+                <span className="text-[11px] font-bold text-sky-400">Add Account</span>
+              </Link>
+              {/* #4 — fallback "Browse all" tile ensures even grid when modules are limited */}
+              <Link href="/dashboard/settings" className="flex flex-col items-center justify-center p-4 bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 rounded-2xl text-center transition-all group hover:-translate-y-1">
+                <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">⚙️</span>
+                <span className="text-[11px] font-bold text-[--text-muted]">Settings</span>
               </Link>
             </div>
           </div>
@@ -514,8 +515,8 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
           {enabledModules.includes("Goals") && (
             <div className="glass-card-static rich-border p-6 md:p-8 flex-1 animate-fade-in">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xs font-black uppercase tracking-widest text-[--text-muted]">Wealth Milestones</h3>
-                <Link href="/dashboard/goals" className="text-[10px] font-black uppercase text-[--accent-primary-light] hover:underline">Track</Link>
+                <h3 className="text-sm font-bold text-[--text-secondary]">Goals</h3>
+                <Link href="/dashboard/goals" className="text-xs font-semibold text-[--accent-primary-light] hover:underline">View all</Link>
               </div>
 
               <div className="space-y-6">
@@ -523,28 +524,37 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                   const saved = Number(goal.current_amount || 0);
                   const target = Number(goal.target_amount || 1);
                   const pct = Math.min((saved / target) * 100, 100);
+                  const notStarted = saved === 0;
                   
                   return (
                     <div key={goal.id} className="p-4 rounded-2xl bg-white/[0.01] border border-white/5 hover:bg-white/[0.03] transition-all">
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex flex-col">
-                          <span className="text-[13px] font-black text-white">{goal.name}</span>
-                          <span className="text-[9px] font-bold text-[--text-muted] tracking-tight uppercase mt-0.5">Target: ₹{target.toLocaleString()}</span>
+                          <span className="text-[13px] font-bold text-white">{goal.name}</span>
+                          <span className="text-xs text-[--text-muted] mt-0.5">Target: ₹{target.toLocaleString()}</span>
                         </div>
-                        <span className="text-[11px] font-black text-[--accent-primary-light] tabular-nums">{pct.toFixed(0)}%</span>
+                        {notStarted ? (
+                          <span className="text-[11px] font-bold text-[--text-muted] bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">Not started</span>
+                        ) : (
+                          <span className="text-[11px] font-black text-[--accent-primary-light] tabular-nums">{pct.toFixed(0)}%</span>
+                        )}
                       </div>
 
                       <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden mb-3">
-                        <div 
-                          className="h-full bg-gradient-to-r from-[--accent-primary] to-[--accent-secondary] rounded-full transition-all duration-1000"
-                          style={{ width: `${pct}%` }}
-                        />
+                        {notStarted ? (
+                          <div className="h-full w-full bg-white/5 rounded-full" />
+                        ) : (
+                          <div 
+                            className="h-full bg-gradient-to-r from-[--accent-primary] to-[--accent-secondary] rounded-full transition-all duration-1000"
+                            style={{ width: `${pct}%` }}
+                          />
+                        )}
                       </div>
                       
-                      <div className="flex justify-between items-center text-[10px] font-bold text-[--text-secondary]">
-                        <span>Saved: ₹{saved.toLocaleString()}</span>
-                        <span className="text-[9px] font-black uppercase tracking-wider text-[--text-muted]">
-                          {goal.deadline ? format(new Date(goal.deadline), "MMM yyyy") : "No limit"}
+                      <div className="flex justify-between items-center text-xs text-[--text-secondary]">
+                        <span>{notStarted ? "No contributions yet" : `Saved: ₹${saved.toLocaleString()}`}</span>
+                        <span className="text-xs text-[--text-muted]">
+                          {goal.deadline ? format(new Date(goal.deadline), "MMM yyyy") : "No deadline"}
                         </span>
                       </div>
                     </div>

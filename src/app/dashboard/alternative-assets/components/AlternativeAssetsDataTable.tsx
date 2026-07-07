@@ -165,13 +165,14 @@ export default function AlternativeAssetsDataTable({ assets, onEdit, onDelete, o
   return (
     <div className="glass-card-static rounded-2xl overflow-hidden flex flex-col border border-white/5 bg-[#151515]">
 
-      <div className="overflow-x-auto">
+      {/* Desktop table */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-left border-collapse min-w-[900px]">
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id} className="border-b border-white/5 bg-black/40">
                 {headerGroup.headers.map((header) => (
-                  <th key={header.id} className={`px-5 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] whitespace-nowrap ${getTableHeaderClass(header.column.id)}`}>
+                  <th key={header.id} className={`px-5 py-3 text-[11px] font-semibold text-[--text-muted] whitespace-nowrap ${getTableHeaderClass(header.column.id)}`}>
                     {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                   </th>
                 ))}
@@ -188,29 +189,59 @@ export default function AlternativeAssetsDataTable({ assets, onEdit, onDelete, o
                 ))}
               </tr>
             ))}
-
           </tbody>
         </table>
       </div>
 
+      {/* Mobile card view */}
+      <div className="md:hidden divide-y divide-white/5">
+        {assets.map((asset) => {
+          const category = CATEGORIES.find(c => c.label === asset.category) || CATEGORIES[6];
+          const cost = Number(asset.purchase_price);
+          const current = Number(asset.current_value);
+          const diff = current - cost;
+          const isPos = diff >= 0;
+          return (
+            <div key={asset.id} className="p-4 flex flex-col gap-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-lg shrink-0">{category.icon}</div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[13px] font-bold text-white truncate">{asset.name}</span>
+                    <span className="text-[11px] text-[--text-muted]">{asset.category}</span>
+                  </div>
+                </div>
+                <span className={`text-[14px] font-black tabular-nums shrink-0 ${isPos ? "text-emerald-400" : "text-rose-400"}`}>
+                  {isPos ? "+" : ""}₹{Math.abs(diff).toLocaleString()}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 bg-white/[0.02] rounded-xl p-2.5 border border-white/5 text-center">
+                <div>
+                  <p className="text-[10px] text-[--text-muted] mb-0.5">Cost</p>
+                  <p className="text-[12px] font-bold text-white">₹{cost.toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-[--text-muted] mb-0.5">Current</p>
+                  <p className="text-[12px] font-bold text-white">₹{current.toLocaleString()}</p>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-1">
+                <button onClick={() => onEdit(asset.id)} className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-[11px] font-medium text-[--text-secondary] active:scale-95 transition-all">Edit</button>
+                <button onClick={() => onDelete(asset.id, asset.name)} className="px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[11px] font-medium active:scale-95 transition-all">Delete</button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
       {table.getPageCount() > 1 && (
         <div className="p-4 border-t border-white/5 flex items-center justify-between bg-white/[0.02]">
-          <span className="text-xs font-bold text-[--text-muted]">
-            Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
-          </span>
+          <span className="text-xs text-[--text-muted]">Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}</span>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-              className="p-2 rounded-lg hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent transition-colors text-white"
-            >
+            <button onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()} className="p-2 rounded-lg hover:bg-white/5 disabled:opacity-30 transition-colors text-white">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
             </button>
-            <button
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-              className="p-2 rounded-lg hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent transition-colors text-white"
-            >
+            <button onClick={() => table.nextPage()} disabled={!table.getCanNextPage()} className="p-2 rounded-lg hover:bg-white/5 disabled:opacity-30 transition-colors text-white">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
             </button>
           </div>

@@ -20,7 +20,7 @@ import StocksHistoryTable from "./components/StocksHistoryTable";
 
 type Stock = Tables<"investments"> & { day_change?: number; day_change_percent?: number };
 
-export default function StocksClient({ initialData }: { initialData?: FinanceData }) {
+export default function StocksClient({ initialData, showUSD = false }: { initialData?: FinanceData; showUSD?: boolean }) {
   const { data: { investments, accounts, profile, stockTrades }, mutate } = useFinanceData(initialData);
   const searchParams = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(searchParams?.get("action") === "new");
@@ -123,15 +123,21 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
     });
   }, [investments]);
 
-  const activeStocks = useMemo(() => stocks.filter(s => Number(s.quantity) > 0), [stocks]);
+  const activeStocks = useMemo(() => 
+    stocks
+      .filter(s => Number(s.quantity) > 0)
+      .filter(s => showUSD ? s.currency === "USD" : s.currency !== "USD"),
+    [stocks, showUSD]
+  );
 
   const stats = useMemo(() => {
     const totalInvested = activeStocks.reduce((s, i) => s + (Number(i.quantity) * Number(i.buy_price)), 0);
     const totalCurrent = activeStocks.reduce((s, i) => s + (Number(i.quantity) * Number(i.current_price)), 0);
     const unrealizedPnL = totalCurrent - totalInvested;
     
-    // Include realized P&L from all stocks (partial sells on active + fully sold holdings)
-    const totalRealizedPnL = stocks.reduce((s, i) => s + Number(i.realized_pnl || 0), 0);
+    // Include realized P&L from all stocks (partial sells on active + fully sold holdings) matching active currency
+    const currencyStocks = stocks.filter(s => showUSD ? s.currency === "USD" : s.currency !== "USD");
+    const totalRealizedPnL = currencyStocks.reduce((s, i) => s + Number(i.realized_pnl || 0), 0);
     const totalPnL = unrealizedPnL + totalRealizedPnL;
     const totalPnLPercent = totalInvested > 0 ? (totalPnL / totalInvested) * 100 : 0;
     
@@ -140,7 +146,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
     const dayPnLPercent = prevDayValue > 0 ? (dayPnL / prevDayValue) * 100 : 0;
 
     return { totalInvested, totalCurrent, totalPnL, totalPnLPercent, dayPnL, dayPnLPercent, unrealizedPnL, totalRealizedPnL };
-  }, [activeStocks, stocks]);
+  }, [activeStocks, stocks, showUSD]);
 
   const pieChartData = useMemo(() => {
     const map: Record<string, number> = {};
@@ -306,7 +312,11 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
 
   const [activeTab, setActiveTab] = useState<"holdings" | "history">("holdings");
 
-  const formatMoney = (val: number) => val.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const formatMoney = (val: number) => {
+    const locale = showUSD ? "en-US" : "en-IN";
+    const symbol = showUSD ? "$" : "₹";
+    return symbol + val.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
 
   return (
     <div className="flex w-full bg-[#121212] min-h-screen">
@@ -365,11 +375,11 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6 bg-[#151515] p-5 border border-white/5 rounded">
               <div>
                 <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Total investment</p>
-                <p className="text-xl font-normal text-white">₹{formatMoney(stats.totalInvested)}</p>
+                <p className="text-xl font-normal text-white">{formatMoney(stats.totalInvested)}</p>
               </div>
               <div>
                 <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Current value</p>
-                <p className="text-xl font-normal text-white">₹{formatMoney(stats.totalCurrent)}</p>
+                <p className="text-xl font-normal text-white">{formatMoney(stats.totalCurrent)}</p>
               </div>
               <div>
                 <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Day&apos;s P&amp;L</p>
@@ -423,7 +433,7 @@ export default function StocksClient({ initialData }: { initialData?: FinanceDat
                         <RechartsTooltip 
                           contentStyle={{ backgroundColor: "#1e1e1e", border: "1px solid #333", borderRadius: "4px" }}
                           itemStyle={{ color: "#fff", fontSize: "11px" }}
-                          formatter={(value) => [`₹${formatMoney(Number(value))}`, "Value"]}
+                          formatter={(value) => [`${formatMoney(Number(value))}`, "Value"]}
                         />
                       </PieChart>
                     </ResponsiveContainer>

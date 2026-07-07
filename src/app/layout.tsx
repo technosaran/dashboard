@@ -59,6 +59,8 @@ export const metadata: Metadata = {
 import { Toaster } from "react-hot-toast";
 import { cn } from "@/lib/utils";
 import PwaSecurityManager from "@/components/pwa-security-manager";
+import { SkipNavLink } from "@/components/ui/skip-nav";
+import { Analytics } from "@vercel/analytics/react";
 
 import { headers } from "next/headers";
 
@@ -77,6 +79,7 @@ export default async function RootLayout({
     >
       <head />
       <body className="min-h-full flex flex-col overflow-x-hidden bg-[--bg-base] text-[--text-primary] font-sans relative">
+        <SkipNavLink />
         {/* Optimized Static Background (Removed heavy animated blurs) */}
         <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none bg-[--bg-base]">
           {/* Subtle static gradient instead of massive animating blurs */}
@@ -97,17 +100,18 @@ export default async function RootLayout({
               iconTheme: {
                 primary: "#10b981",
                 secondary: "#ffffff",
+                },
               },
-            },
             error: {
               className: "app-toast app-toast-error",
               iconTheme: {
                 primary: "#f43f5e",
                 secondary: "#ffffff",
-              },
-            }
-          }}
-        />
+                },
+              }
+            }}
+          />
+        <Analytics />
       </body>
     </html>
   );

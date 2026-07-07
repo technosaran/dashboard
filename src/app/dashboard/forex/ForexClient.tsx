@@ -26,7 +26,7 @@ import { AreaChart, Area, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip as
 
 import ForexDataTable from "./components/ForexDataTable";
 
-export default function ForexClient({ initialData }: { initialData?: FinanceData }) {
+export default function ForexClient({ initialData, showUSD = false }: { initialData?: FinanceData; showUSD?: boolean }) {
   const { data: { profile, accounts, forexAccounts, forexTrades, forexTransactions, ledgerLogs }, mutate } = useFinanceData(initialData);
   const searchParams = useSearchParams();
   const action = searchParams?.get("action");
@@ -52,6 +52,27 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
   const [fundsForm, setFundsForm] = useState({ forex_account_id: "", bank_account_id: "", amount: "", notes: "" });
   const [accountForm, setAccountForm] = useState({ broker_name: "", account_label: "", account_number: "", currency: "USD", notes: "" });
 
+  const filteredForexAccounts = useMemo(() => 
+    forexAccounts.filter(a => showUSD ? a.currency === "USD" : a.currency !== "USD"),
+    [forexAccounts, showUSD]
+  );
+
+  const filteredForexTrades = useMemo(() => 
+    forexTrades.filter(t => {
+      const fx = forexAccounts.find(a => a.id === t.forex_account_id);
+      return fx && (showUSD ? fx.currency === "USD" : fx.currency !== "USD");
+    }),
+    [forexTrades, forexAccounts, showUSD]
+  );
+
+  const filteredForexTransactions = useMemo(() => 
+    forexTransactions.filter(tx => {
+      const fx = forexAccounts.find(a => a.id === tx.forex_account_id);
+      return fx && (showUSD ? fx.currency === "USD" : fx.currency !== "USD");
+    }),
+    [forexTransactions, forexAccounts, showUSD]
+  );
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setTradeForm(prev => ({ ...prev, trade_date: new Date().toISOString().split("T")[0] }));
@@ -70,21 +91,21 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
   }, [accounts, fundsForm.bank_account_id, profile]);
 
   const stats = useMemo(() => {
-    const totalBalance = forexAccounts.reduce((s, a) => s + Number(a.balance), 0);
-    const totalPnL = forexAccounts.reduce((s, a) => s + Number(a.total_pnl), 0);
-    const totalDeposited = forexAccounts.reduce((s, a) => s + Number(a.total_deposited), 0);
-    const totalWithdrawn = forexAccounts.reduce((s, a) => s + Number(a.total_withdrawn), 0);
-    const dailyPnlSum = forexTrades
+    const totalBalance = filteredForexAccounts.reduce((s, a) => s + Number(a.balance), 0);
+    const totalPnL = filteredForexAccounts.reduce((s, a) => s + Number(a.total_pnl), 0);
+    const totalDeposited = filteredForexAccounts.reduce((s, a) => s + Number(a.total_deposited), 0);
+    const totalWithdrawn = filteredForexAccounts.reduce((s, a) => s + Number(a.total_withdrawn), 0);
+    const dailyPnlSum = filteredForexTrades
       .filter(t => t.trade_date && t.trade_date.startsWith(new Date().toISOString().split("T")[0]))
       .reduce((s, t) => s + Number(t.pnl), 0);
     
     return { totalBalance, totalPnL, totalDeposited, totalWithdrawn, dailyPnlSum };
-  }, [forexAccounts, forexTrades]);
+  }, [filteredForexAccounts, filteredForexTrades]);
 
   const pnlChartData = useMemo(() => {
     // Group trades by month
     const grouped: Record<string, number> = {};
-    const sortedTrades = [...forexTrades].sort((a, b) => new Date(a.trade_date || a.created_at || 0).getTime() - new Date(b.trade_date || b.created_at || 0).getTime());
+    const sortedTrades = [...filteredForexTrades].sort((a, b) => new Date(a.trade_date || a.created_at || 0).getTime() - new Date(b.trade_date || b.created_at || 0).getTime());
     
     let cumPnL = 0;
     const res: any[] = [];
@@ -100,15 +121,15 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
       res.push({ name: month, PnL: val });
     }
     return res;
-  }, [forexTrades]);
+  }, [filteredForexTrades]);
 
   const brokerAllocData = useMemo(() => {
-    return forexAccounts.map(a => ({
+    return filteredForexAccounts.map(a => ({
       name: a.account_label,
       Balance: Number(a.balance),
       PnL: Number(a.total_pnl)
     }));
-  }, [forexAccounts]);
+  }, [filteredForexAccounts]);
 
   const getAccountLabel = (id: string | null) => {
     if (!id) return "—";
@@ -260,7 +281,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
         </div>
       </div>
 
-      {forexTrades.length === 0 && forexTransactions.length === 0 && forexAccounts.length === 0 ? (
+      {filteredForexTrades.length === 0 && filteredForexTransactions.length === 0 && filteredForexAccounts.length === 0 ? (
         <div className="glass-card-static relative overflow-hidden p-8 md:p-16 text-center flex flex-col items-center justify-center min-h-[450px]">
           <div className="absolute -top-24 -left-24 w-96 h-96 bg-[--accent-primary]/10 rounded-full blur-[100px] pointer-events-none" />
           <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-emerald-500/10 rounded-full blur-[100px] pointer-events-none" />
@@ -280,27 +301,27 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           <div className="glass-card-static p-6 border-white/5">
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Total Balance</p>
-            <p className="text-2xl md:text-3xl font-black text-white">${stats.totalBalance.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+            <p className="text-2xl md:text-3xl font-black text-white">{showUSD ? "$" : "₹"}{stats.totalBalance.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
             <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Across Brokers</p>
           </div>
           <div className="glass-card-static p-6 border-white/5">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Total P&L</p>
-            <PnLValue amount={stats.totalPnL} size="lg" showIcon />
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Total P&amp;L</p>
+            <PnLValue amount={stats.totalPnL} size="lg" showIcon currency={showUSD ? "USD" : "INR"} />
             <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Trading Performance</p>
           </div>
           <div className="glass-card-static p-6 border-white/5">
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Today&apos;s P&amp;L</p>
-            <PnLValue amount={stats.dailyPnlSum} size="lg" showIcon />
+            <PnLValue amount={stats.dailyPnlSum} size="lg" showIcon currency={showUSD ? "USD" : "INR"} />
             <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Daily Return</p>
           </div>
           <div className="glass-card-static p-6 border-white/5">
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Deposited</p>
-            <p className="text-2xl md:text-3xl font-black text-[--accent-primary-light]">${stats.totalDeposited.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+            <p className="text-2xl md:text-3xl font-black text-[--accent-primary-light]">{showUSD ? "$" : "₹"}{stats.totalDeposited.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
             <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Total Inflow</p>
           </div>
           <div className="glass-card-static p-6 border-white/5 bg-gradient-to-br from-[--accent-primary]/10 to-transparent">
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Withdrawn</p>
-            <p className="text-xl md:text-2xl font-black text-amber-400">${stats.totalWithdrawn.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+            <p className="text-xl md:text-2xl font-black text-amber-400">{showUSD ? "$" : "₹"}{stats.totalWithdrawn.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
             <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Total Outflow</p>
           </div>
         </div>
@@ -317,7 +338,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
               }`}
             >
               {tab === "overview" && "Overview"}
-              {tab === "accounts" && `Accounts (${forexAccounts.length})`}
+              {tab === "accounts" && `Accounts (${filteredForexAccounts.length})`}
               {tab === "pnl" && "P&L Summaries"}
               {tab === "transactions" && "Transactions"}
             </button>
@@ -346,10 +367,10 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
                         <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 12 }} dy={10} />
-                        <YAxis axisLine={false} tickLine={false} tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 12 }} tickFormatter={(val: any) => `$${Number(val).toLocaleString()}`} />
+                        <YAxis axisLine={false} tickLine={false} tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 12 }} tickFormatter={(val: any) => (showUSD ? "$" : "₹") + Number(val).toLocaleString()} />
                         <RechartsTooltip 
                           contentStyle={{ backgroundColor: "rgba(10,10,10,0.9)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px" }}
-                          formatter={(val: any) => [`$${Number(val).toLocaleString()}`, "P&L"]}
+                          formatter={(val: any) => [(showUSD ? "$" : "₹") + Number(val).toLocaleString(), "P&L"]}
                         />
                         <Area type="monotone" dataKey="PnL" stroke="var(--accent-primary)" strokeWidth={3} fillOpacity={1} fill="url(#colorPnL)" />
                       </AreaChart>
@@ -364,7 +385,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                 <div className="flex justify-between items-start mb-6">
                   <div>
                     <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[--text-muted]">Broker Allocation</h3>
-                    <p className="text-2xl font-black mt-2 text-white">Balances vs P&L</p>
+                    <p className="text-2xl font-black mt-2 text-white">Balances vs P&amp;L</p>
                   </div>
                 </div>
                 <div className="flex-1 w-full mt-4 -ml-4">
@@ -373,10 +394,10 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                       <BarChart data={brokerAllocData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
                         <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 12 }} dy={10} />
-                        <YAxis axisLine={false} tickLine={false} tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 12 }} tickFormatter={(val: any) => `$${Number(val).toLocaleString()}`} />
+                        <YAxis axisLine={false} tickLine={false} tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 12 }} tickFormatter={(val: any) => (showUSD ? "$" : "₹") + Number(val).toLocaleString()} />
                         <RechartsTooltip 
                           contentStyle={{ backgroundColor: "rgba(10,10,10,0.9)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px" }}
-                          formatter={(val: any, name: any) => [`$${Number(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, name]}
+                          formatter={(val: any, name: any) => [(showUSD ? "$" : "₹") + Number(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), name]}
                         />
                         <Legend wrapperStyle={{ paddingTop: "20px" }} />
                         <Bar dataKey="Balance" fill="#06B6D4" radius={[4, 4, 0, 0]} />
@@ -395,7 +416,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
         {activeTab === "accounts" && (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
             <ForexDataTable 
-              accounts={forexAccounts}
+              accounts={filteredForexAccounts}
               onDelete={handleDeleteAccount}
               onAdd={() => setShowAccountModal(true)}
             />
@@ -416,7 +437,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
-                  {forexTrades.map(trade => (
+                  {filteredForexTrades.map(trade => (
                     <tr key={trade.id} className="hover:bg-white/[0.02] transition-colors group">
                       <td className="px-5 py-4 text-sm font-medium text-white">{format(new Date(trade.trade_date || trade.created_at || 0), "MMM d, yyyy")}</td>
                       <td className="px-5 py-4 text-xs font-bold text-[--text-muted]">{getAccountLabel(trade.forex_account_id)}</td>
@@ -431,7 +452,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                       </td>
                     </tr>
                   ))}
-                  {forexTrades.length === 0 && (
+                  {filteredForexTrades.length === 0 && (
                     <tr>
                       <td colSpan={5} className="p-8 text-center text-sm text-[--text-muted] italic">No daily P&L entries logged.</td>
                     </tr>
@@ -456,7 +477,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
-                  {forexTransactions.map((tx) => {
+                  {filteredForexTransactions.map((tx) => {
                     const matchingLog = ledgerLogs?.find(log => log.source_type === 'forex' && log.source_id === tx.id);
                     return (
                       <tr key={tx.id} className="hover:bg-white/[0.02] transition-colors group">
@@ -476,7 +497,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                       </tr>
                     );
                   })}
-                  {forexTransactions.length === 0 && (
+                  {filteredForexTransactions.length === 0 && (
                     <tr>
                       <td colSpan={5} className="p-8 text-center text-sm text-[--text-muted] italic">No transactions logged yet.</td>
                     </tr>
@@ -537,7 +558,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Broker Account</label>
                   <select required className="input-premium !h-10 text-xs text-white" value={fundsForm.forex_account_id} onChange={e => setFundsForm({...fundsForm, forex_account_id: e.target.value})}>
                     <option value="">Select Broker</option>
-                    {forexAccounts.map(a => <option key={a.id} value={a.id}>{a.account_label} ({a.broker_name})</option>)}
+                    {filteredForexAccounts.map(a => <option key={a.id} value={a.id}>{a.account_label} ({a.broker_name})</option>)}
                   </select>
                 </div>
                 <div className="space-y-1.5">
@@ -570,7 +591,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Select Broker</label>
                   <select required className="input-premium !h-10 text-xs text-white" value={showEditTradeModal ? editTradeForm.forex_account_id : tradeForm.forex_account_id} onChange={e => showEditTradeModal ? setEditTradeForm({...editTradeForm, forex_account_id: e.target.value}) : setTradeForm({...tradeForm, forex_account_id: e.target.value})}>
                     <option value="">Select Account</option>
-                    {forexAccounts.map(a => <option key={a.id} value={a.id}>{a.account_label} ({a.broker_name})</option>)}
+                    {filteredForexAccounts.map(a => <option key={a.id} value={a.id}>{a.account_label} ({a.broker_name})</option>)}
                   </select>
                 </div>
                 <div className="space-y-1.5">

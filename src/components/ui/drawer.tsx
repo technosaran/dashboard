@@ -58,23 +58,23 @@ export function Drawer({ isOpen, onClose, title, children, width = "max-w-md" }:
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[--accent-primary] via-purple-500 to-emerald-500" />
         
         {/* Header */}
-        <div className="px-6 py-5 border-b border-white/5 flex flex-col gap-1 shrink-0 relative z-10 bg-[#0a0a0a]">
+        <div className="px-6 py-4 border-b border-white/5 flex flex-col gap-0.5 shrink-0 relative z-10 bg-[#0a0a0a]">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-black text-white tracking-tight">{title}</h2>
+            <h2 className="text-lg font-black text-white tracking-tight">{title}</h2>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-[--text-muted] hover:text-white transition-colors"
+              className="w-7 h-7 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-[--text-muted] hover:text-white transition-colors"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3.5 h-3.5" />
             </button>
           </div>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-[--text-muted]">Data Entry / Actions</p>
+          <p className="text-[9px] font-bold uppercase tracking-widest text-[--text-muted]">Data Entry / Actions</p>
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 relative z-10">
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-5 relative z-10">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-32 bg-[--accent-primary]/5 blur-[80px] pointer-events-none" />
-          <div className="relative z-10 space-y-6">
+          <div className="relative z-10 space-y-4">
             {children}
           </div>
         </div>

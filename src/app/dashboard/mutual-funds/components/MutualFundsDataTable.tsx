@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { EmptyState } from "@/components/empty-state";
 import type { Tables } from "@/lib/database.types";
 
@@ -49,11 +50,12 @@ function AMCAvatar({ amcName, logoUrl }: { amcName: string; logoUrl: string }) {
   const [error, setError] = useState(false);
   const initials = amcName.substring(0, 2).toUpperCase();
   if (logoUrl && !error) {
-    // eslint-disable-next-line @next/next/no-img-element
     return (
-      <img 
+      <Image 
         src={logoUrl} 
         alt={amcName} 
+        width={40}
+        height={40}
         className="w-10 h-10 rounded-full bg-white object-contain flex-shrink-0 border border-white/10"
         onError={() => setError(true)}
       />

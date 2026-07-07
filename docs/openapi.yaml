@@ -1,0 +1,149 @@
+openapi: 3.1.0
+info:
+  title: FinanceOS Personal Finance Dashboard API
+  description: API endpoints for synchronizing market data, running recurring processes, and exporting financial reports.
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+paths:
+  /api/reports/download:
+    get:
+      summary: Download Financial Report
+      description: Generates and downloads a PDF or CSV format report of selected accounts.
+      security:
+        - SupabaseAuthCookie: []
+      parameters:
+        - name: type
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [pdf, csv]
+          description: Format of the report to download.
+        - name: dateRange
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Date filter range.
+        - name: accounts
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Comma-separated list of account IDs to include.
+      responses:
+        '200':
+          description: Successful file download.
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+              description: File download attachment headers.
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            text/csv:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '429':
+          $ref: '#/components/responses/429TooManyRequests'
+        '500':
+          $ref: '#/components/responses/500InternalServerError'
+
+  /api/sync:
+    post:
+      summary: Sync Market Data and Process Recurring Expenses
+      description: Updates stock and mutual fund prices and generates recurring expenses.
+      security:
+        - CronTokenAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - type
+              properties:
+                type:
+                  type: string
+                  enum: [stocks, mutual-funds, recurring-expenses]
+                  description: Specific sync task to run.
+      responses:
+        '200':
+          description: Sync completed successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '429':
+          $ref: '#/components/responses/429TooManyRequests'
+        '500':
+          $ref: '#/components/responses/500InternalServerError'
+
+components:
+  securitySchemes:
+    SupabaseAuthCookie:
+      type: apiKey
+      in: cookie
+      name: sb-access-token
+    CronTokenAuth:
+      type: http
+      scheme: bearer
+      description: Bearer token matching CRON_SECRET env variable.
+
+  responses:
+    401Unauthorized:
+      description: Authentication failed or missing token.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    429TooManyRequests:
+      description: Rate limit exceeded.
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+          description: Backoff duration in seconds.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    500InternalServerError:
+      description: Server error occurred during processing.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: object
+              additionalProperties:
+                type: string
+            requestId:
+              type: string

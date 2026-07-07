@@ -38,6 +38,7 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
   const isMobile = useMediaQuery('(max-width: 767.98px)');
   const searchParams = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(searchParams.get("action") === "new");
+  const [editingExpense, setEditingExpense] = useState<{ id: string; description: string; amount: string | number; category: string; date: string | null; account_id: string | null } | null>(null);
   const [submitting, withLock] = useSubmitLock();
 
   const [selectedMonth, setSelectedMonth] = useState(() => new Date().getMonth() + 1);
@@ -86,6 +87,11 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
     setShowDeleteConfirm(true);
   }
 
+  function handleEditExpense(expense: { id: string; description: string; amount: string | number; category: string; date: string | null; account_id: string | null }) {
+    setEditingExpense(expense);
+    setShowAddModal(true);
+  }
+
   async function confirmDeleteExpense() {
     if (!deletingExpenseId) return;
     await withLock(async () => {
@@ -101,7 +107,8 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
     });
   }
 
-  const getColorByLabel = (label: string) => {
+  const getColorByLabel = (label: string | null | undefined) => {
+    if (!label) return "#06B6D4";
     let hash = 0;
     for (let i = 0; i < label.length; i++) {
       hash = label.charCodeAt(i) + ((hash << 5) - hash);
@@ -394,6 +401,7 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
         expenses={currentMonthExpenses as any[]}
         accounts={accounts}
         onDelete={handleDeleteExpense}
+        onEdit={handleEditExpense}
         onAdd={() => setShowAddModal(true)}
         categories={CATEGORIES}
       />
@@ -421,17 +429,18 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
       )}
 
       {showAddModal && (
-        <Drawer isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Record Transaction">
+        <Drawer isOpen={showAddModal} onClose={() => { setShowAddModal(false); setEditingExpense(null); }} title={editingExpense ? "Edit Expense" : "Record Transaction"}>
           <ExpenseForm
-            key={`drawer-${defaultDate}-${defaultAccountId}-${showAddModal}`}
+            key={`drawer-${editingExpense?.id ?? 'new'}-${defaultDate}-${defaultAccountId}-${showAddModal}`}
             isOpen={showAddModal}
-            onClose={() => setShowAddModal(false)}
+            onClose={() => { setShowAddModal(false); setEditingExpense(null); }}
             onSubmit={handleSubmitForm}
             submitting={submitting}
             accounts={accounts}
             categories={CATEGORIES}
-            defaultDate={defaultDate}
-            defaultAccountId={defaultAccountId}
+            defaultDate={editingExpense?.date ?? defaultDate}
+            defaultAccountId={editingExpense?.account_id ?? defaultAccountId}
+            editingExpense={editingExpense ?? undefined}
           />
         </Drawer>
       )}

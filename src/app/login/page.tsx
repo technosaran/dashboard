@@ -245,9 +245,23 @@ export default function LoginPage() {
                   <div className="login-submit-shimmer" />
                 </button>
 
-                <p style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '11px', color: 'var(--text-muted)' }}>
-                  This is a private site. For access, please mail <a href="mailto:saransci2006@gmail.com" style={{ color: 'var(--accent-primary)', textDecoration: 'none', fontWeight: 'bold' }}>saransci2006@gmail.com</a>
-                </p>
+                <div className="login-private-banner">
+                  <div className="login-private-badge">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                    </svg>
+                    <span>Private Console</span>
+                  </div>
+                  <p className="login-private-text">
+                    This is an invite-only financial dashboard. If you need access, request credentials by sending an email.
+                  </p>
+                  <a href="mailto:saransci2006@gmail.com?subject=Access%20Request%20-%20Finance%20Dashboard" className="login-private-link">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                    </svg>
+                    Request Access
+                  </a>
+                </div>
 
               </form>
             </div>

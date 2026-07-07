@@ -3,6 +3,9 @@ import { NextResponse } from "next/server";
 import { renderToStream } from "@react-pdf/renderer";
 import { createClient } from "@/lib/supabase-server";
 import FinancialStatementPDF from "@/components/reports/FinancialStatementPDF";
+import { createAppContainer } from "@/lib/container";
+import { AccountRepository } from "@/repositories/account-repository";
+import { TransactionRepository } from "@/repositories/transaction-repository";
 
 export async function GET(request: Request) {
   try {
@@ -27,22 +30,30 @@ export async function GET(request: Request) {
 
     const userName = profile?.username || user.email?.split("@")[0] || "Client";
 
-    // 4. Fetch accounts and compute asset stats
-    const { data: accounts } = await supabase
-      .from("accounts")
-      .select("name, type, balance, currency")
-      .eq("user_id", user.id);
+    // 4. Initialize DI Container and Repositories
+    const container = createAppContainer(supabase);
+    const accountRepo = container.resolve<AccountRepository>("accountRepo");
+    const transactionRepo = container.resolve<TransactionRepository>("transactionRepo");
+
+    // Fetch accounts and compute asset stats
+    const accounts = await accountRepo.findAll({
+      where: { user_id: user.id }
+    });
 
     let totalAssets = 0;
+    const accountNameMap = new Map<string, string>();
     
     const mappedAccounts = (accounts || []).map((acc) => {
       const bal = Number(acc.balance) || 0;
       totalAssets += bal;
+      if (acc.id && acc.name) {
+        accountNameMap.set(acc.id, acc.name);
+      }
       return {
-        name: acc.name,
-        type: acc.type,
+        name: acc.name || "",
+        type: acc.type || "",
         balance: String(acc.balance),
-        currency: acc.currency,
+        currency: acc.currency || "INR",
       };
     });
 
@@ -57,36 +68,25 @@ export async function GET(request: Request) {
       0
     );
 
-    // 6. Fetch transactions for current period range
+    // 6. Fetch transactions for current period range using repositories
     const pad = (n: number) => String(n).padStart(2, "0");
     const lastDay = new Date(year, month, 0).getDate();
     const startDate = `${year}-${pad(month)}-01T00:00:00.000Z`;
     const endDate = `${year}-${pad(month)}-${pad(lastDay)}T23:59:59.999Z`;
 
-    const { data: txns } = await supabase
-      .from("transactions")
-      .select(`
-        date,
-        description,
-        type,
-        amount,
-        category,
-        accounts (
-          name
-        )
-      `)
-      .eq("user_id", user.id)
-      .gte("date", startDate)
-      .lte("date", endDate)
-      .order("date", { ascending: true });
+    const txns = await transactionRepo.findByDateRange(user.id, startDate, endDate);
+    // Sort ascending for chronological PDF statement representation
+    const sortedTxns = [...txns].sort((a, b) => {
+      return new Date(a.date || 0).getTime() - new Date(b.date || 0).getTime();
+    });
 
-    const mappedTxns = (txns || []).map((t) => ({
+    const mappedTxns = sortedTxns.map((t) => ({
       date: t.date ? new Date(t.date).toISOString().split("T")[0] : "—",
-      description: t.description,
-      type: t.type,
+      description: t.description || "",
+      type: t.type || "",
       amount: String(t.amount),
-      category: t.category,
-      account_name: t.accounts ? (t.accounts as any).name : undefined,
+      category: t.category || "",
+      account_name: t.account_id ? accountNameMap.get(t.account_id) : undefined,
     }));
 
     // 7. Render React PDF to stream

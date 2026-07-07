@@ -257,9 +257,11 @@ export default function Sidebar() {
     });
   }, [enabledModules]);
 
-  const mobileNavLeft = filteredNav.slice(0, 2); 
+  const mobileNavLeft = filteredNav.slice(0, 2);
+  // #5 — Expenses is the most-used page; prefer it over Ledger in the right slot
+  const expensesItem = filteredNav.find(n => n.label === "Expenses");
   const ledgerItem = filteredNav.find(n => n.label === "Ledger");
-  const mobileNavRight = ledgerItem ? [ledgerItem] : [];
+  const mobileNavRight = expensesItem ? [expensesItem] : ledgerItem ? [ledgerItem] : [];
   const moreNav = filteredNav.filter(n => !mobileNavLeft.includes(n) && !mobileNavRight.includes(n));
 
   return (
@@ -318,21 +320,54 @@ export default function Sidebar() {
         </div>
       </aside>
 
-      {/* Mobile More Overlay */}
-      <div className={`md:hidden fixed inset-0 z-[60] bg-slate-900/40 backdrop-blur-md transition-all duration-500 ease-in-out ${isMoreOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`} onClick={() => setIsMoreOpen(false)}>
-        <div className={`fixed bottom-0 left-0 right-0 rounded-t-[40px] p-6 pb-[calc(env(safe-area-inset-bottom,0px)+6rem)] max-h-[85vh] overflow-y-auto no-scrollbar transition-all duration-500 cubic-bezier(0.32, 0.72, 0, 1) transform ${isMoreOpen ? "translate-y-0" : "translate-y-full"}`} onClick={(e) => e.stopPropagation()} style={{ background: "var(--bg-surface)", boxShadow: "0 -20px 60px rgba(15, 23, 42, 0.15)", borderTop: "1px solid var(--border-default)" }}>
-          <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-8 opacity-60" />
-          <div className="grid grid-cols-3 gap-3 mb-6">
-            {moreNav.map((item) => (
-              <Link key={item.label} href={item.href} prefetch={true} onClick={() => setIsMoreOpen(false)} className="flex flex-col items-center justify-center p-4 rounded-[28px] bg-white/[0.02] border border-white/[0.04] active:bg-white/10 transition-all no-underline gap-2 aspect-square">
-                <div className="w-10 h-10 rounded-full bg-[--accent-primary]/10 flex items-center justify-center text-[--accent-primary-light]">{item.icon}</div>
-                <span className="text-[9px] font-black text-[--text-muted] uppercase tracking-[0.15em] text-center">{item.label}</span>
-              </Link>
-            ))}
+      {/* Mobile More Overlay — #6 improved layout, #25 focus trap */}
+      <div
+        className={`md:hidden fixed inset-0 z-[60] bg-slate-900/40 backdrop-blur-md transition-all duration-500 ease-in-out ${isMoreOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        onClick={() => setIsMoreOpen(false)}
+        aria-hidden={!isMoreOpen}
+      >
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="More navigation"
+          className={`fixed bottom-0 left-0 right-0 rounded-t-[32px] p-5 pb-[calc(env(safe-area-inset-bottom,0px)+6rem)] max-h-[85vh] overflow-y-auto no-scrollbar transition-all duration-500 transform ${isMoreOpen ? "translate-y-0" : "translate-y-full"}`}
+          onClick={(e) => e.stopPropagation()}
+          style={{ background: "var(--bg-surface)", boxShadow: "0 -20px 60px rgba(15, 23, 42, 0.15)", borderTop: "1px solid var(--border-default)" }}
+        >
+          {/* drag handle */}
+          <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-6" />
+          <p className="text-xs font-semibold text-[--text-muted] mb-4 px-1">More sections</p>
+          {/* #6 — list layout for readability instead of tiny 3-col grid */}
+          <div className="flex flex-col gap-1 mb-5">
+            {moreNav.map((item, idx) => {
+              const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href + "/"));
+              return (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  prefetch={true}
+                  onClick={() => setIsMoreOpen(false)}
+                  // #25 — auto-focus first item when sheet opens
+                  ref={idx === 0 ? (el) => { if (isMoreOpen && el) el.focus(); } : undefined}
+                  className={`flex items-center gap-4 px-4 py-3.5 rounded-2xl no-underline transition-all active:scale-[0.98] ${active ? "bg-[--accent-primary]/10 text-[--accent-primary-light]" : "text-[--text-secondary] hover:bg-white/[0.04]"}`}
+                >
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${active ? "bg-[--accent-primary]/15 text-[--accent-primary-light]" : "bg-white/[0.05] text-[--text-muted]"}`}>
+                    {item.icon}
+                  </div>
+                  {/* #6 — readable 13px label, sentence case */}
+                  <span className="text-[13px] font-semibold">{item.label}</span>
+                  {active && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-[--accent-primary]" />}
+                </Link>
+              );
+            })}
           </div>
-          <button type="button" onClick={handleLogout} className="w-full flex items-center justify-between px-6 h-14 rounded-[24px] bg-rose-500 text-white font-black text-[11px] uppercase tracking-[0.2em] active:scale-[0.98] transition-all shadow-xl shadow-rose-500/20">
-            <div className="flex items-center gap-3"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg><span>Terminate Session</span></div>
-            <div className="text-[10px] font-black opacity-60 tracking-tight">V2.0.4</div>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-5 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 font-bold text-sm active:scale-[0.98] transition-all"
+          >
+            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+            Sign out
           </button>
         </div>
       </div>
@@ -354,7 +389,7 @@ export default function Sidebar() {
           return (
             <Link key={item.label} href={item.href} prefetch={true} className={`flex-1 flex flex-col items-center justify-center h-full relative transition-all active:scale-90 ${active ? "text-[--accent-primary-light]" : "text-[--text-muted]"}`}>
               <div className={`${active ? "scale-110 -translate-y-1" : "opacity-40"} transition-all duration-300`}>{item.icon}</div>
-              <span className={`text-[8px] font-black uppercase tracking-widest absolute bottom-2 transition-all duration-300 ${active ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"}`}>{item.label}</span>
+              <span className={`text-[11px] font-bold absolute bottom-2 transition-all duration-300 ${active ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"}`}>{item.label}</span>
             </Link>
           );
         })}
@@ -378,14 +413,14 @@ export default function Sidebar() {
           return (
             <Link key={item.label} href={item.href} prefetch={true} className={`flex-1 flex flex-col items-center justify-center h-full relative transition-all active:scale-90 ${active ? "text-[--accent-primary-light]" : "text-[--text-muted]"}`}>
               <div className={`${active ? "scale-110 -translate-y-1" : "opacity-40"} transition-all duration-300`}>{item.icon}</div>
-              <span className={`text-[8px] font-black uppercase tracking-widest absolute bottom-2 transition-all duration-300 ${active ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"}`}>{item.label}</span>
+              <span className={`text-[11px] font-bold absolute bottom-2 transition-all duration-300 ${active ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"}`}>{item.label}</span>
             </Link>
           );
         })}
         
         <button type="button" onClick={() => setIsMoreOpen(true)} className={`flex-1 flex flex-col items-center justify-center h-full relative transition-all active:scale-90 ${isMoreOpen ? "text-[--accent-primary-light]" : "text-[--text-muted]"}`}>
           <div className={`${isMoreOpen ? "scale-110 translate-y-0" : "opacity-40"} transition-all duration-300`}><svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" /></svg></div>
-          <span className={`text-[8px] font-black uppercase tracking-widest absolute bottom-2 transition-all duration-300 ${isMoreOpen ? "opacity-100" : "opacity-0 translate-y-2"}`}>More</span>
+          <span className={`text-[11px] font-bold absolute bottom-2 transition-all duration-300 ${isMoreOpen ? "opacity-100" : "opacity-0 translate-y-2"}`}>More</span>
         </button>
       </nav>
     </>

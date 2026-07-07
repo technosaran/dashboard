@@ -73,7 +73,8 @@ export function getChartColour(index: number): string {
  * Returns a deterministic colour for any arbitrary string label.
  * Used as a fallback when a category doesn't match the known palette.
  */
-export function getColorByLabel(label: string): string {
+export function getColorByLabel(label: string | null | undefined): string {
+  if (!label) return CHART_COLOURS[0];
   let hash = 0;
   for (let i = 0; i < label.length; i++) {
     hash = label.charCodeAt(i) + ((hash << 5) - hash);

@@ -155,25 +155,26 @@ export default function ForexDataTable({ accounts, onDelete, onAdd }: ForexDataT
   return (
     <div className="glass-card-static rounded-2xl overflow-hidden flex flex-col border border-white/5">
       <div className="p-4 md:p-5 border-b border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/[0.02]">
-        <div className="relative">
+        <div className="relative w-full sm:w-64">
           <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[--text-muted]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
           <input
             type="text"
             placeholder="Search accounts..."
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
-            className="input-premium pl-9 py-2 text-sm w-full sm:w-64 !bg-black/20"
+            className="input-premium pl-9 py-2 text-sm w-full !bg-black/20"
           />
         </div>
       </div>
 
-      <div className="overflow-x-auto">
+      {/* Desktop table */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-left border-collapse min-w-[900px]">
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id} className="border-b border-white/5 bg-black/40">
                 {headerGroup.headers.map((header) => (
-                  <th key={header.id} className={`px-5 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] whitespace-nowrap ${getTableHeaderClass(header.column.id)}`}>
+                  <th key={header.id} className={`px-5 py-3 text-[11px] font-semibold text-[--text-muted] whitespace-nowrap ${getTableHeaderClass(header.column.id)}`}>
                     {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                   </th>
                 ))}
@@ -191,34 +192,63 @@ export default function ForexDataTable({ accounts, onDelete, onAdd }: ForexDataT
               </tr>
             ))}
             {table.getRowModel().rows.length === 0 && (
-              <tr>
-                <td colSpan={columns.length} className="px-5 py-12 text-center text-[--text-muted] text-sm">
-                  No accounts match your search.
-                </td>
-              </tr>
+              <tr><td colSpan={columns.length} className="px-5 py-12 text-center text-[--text-muted] text-sm">No accounts match your search.</td></tr>
             )}
           </tbody>
         </table>
       </div>
 
+      {/* Mobile card view */}
+      <div className="md:hidden divide-y divide-white/5">
+        {filteredAccounts.length === 0 ? (
+          <div className="p-8 text-center text-[--text-muted] text-sm italic">No accounts match your search.</div>
+        ) : (
+          filteredAccounts.map((acc) => {
+            const pnl = Number(acc.total_pnl);
+            const isPos = pnl >= 0;
+            const sym = acc.currency === "USD" ? "$" : "₹";
+            return (
+              <div key={acc.id} className="p-4 flex flex-col gap-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[13px] font-bold text-white truncate">{acc.account_label}</span>
+                    <span className="text-[11px] text-[--text-muted]">{acc.broker_name}{acc.account_number ? ` · ${acc.account_number}` : ""}</span>
+                  </div>
+                  <span className={`text-[14px] font-black tabular-nums shrink-0 ${isPos ? "text-emerald-400" : "text-rose-400"}`}>
+                    {isPos ? "+" : ""}{sym}{Math.abs(pnl).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 bg-white/[0.02] rounded-xl p-2.5 border border-white/5 text-center">
+                  <div>
+                    <p className="text-[10px] text-[--text-muted] mb-0.5">Balance</p>
+                    <p className="text-[12px] font-bold text-white">{sym}{Number(acc.balance).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-[--text-muted] mb-0.5">Deposited</p>
+                    <p className="text-[12px] font-bold text-white">{sym}{Number(acc.total_deposited).toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-[--text-muted] mb-0.5">Withdrawn</p>
+                    <p className="text-[12px] font-bold text-white">{sym}{Number(acc.total_withdrawn).toLocaleString()}</p>
+                  </div>
+                </div>
+                <div className="flex justify-end pt-1">
+                  <button onClick={() => onDelete(acc.id)} className="px-3 py-1.5 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[11px] font-bold active:scale-95 transition-all">Delete</button>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
       {table.getPageCount() > 1 && (
         <div className="p-4 border-t border-white/5 flex items-center justify-between bg-white/[0.02]">
-          <span className="text-xs font-bold text-[--text-muted]">
-            Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
-          </span>
+          <span className="text-xs text-[--text-muted]">Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}</span>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-              className="p-2 rounded-lg hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent transition-colors text-white"
-            >
+            <button onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()} className="p-2 rounded-lg hover:bg-white/5 disabled:opacity-30 transition-colors text-white">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
             </button>
-            <button
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-              className="p-2 rounded-lg hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent transition-colors text-white"
-            >
+            <button onClick={() => table.nextPage()} disabled={!table.getCanNextPage()} className="p-2 rounded-lg hover:bg-white/5 disabled:opacity-30 transition-colors text-white">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
             </button>
           </div>

@@ -10,7 +10,15 @@ import { getCategoryColour, getColorByLabel } from "@/lib/chart-colours";
 
 import dynamic from "next/dynamic";
 const ResponsiveContainer = dynamic(() => import("recharts").then((mod) => mod.ResponsiveContainer), { ssr: false });
-import { PieChart, Pie, Cell, AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip as RechartsTooltip } from "recharts";
+const PieChart = dynamic(() => import("recharts").then((mod) => mod.PieChart), { ssr: false });
+const Pie = dynamic(() => import("recharts").then((mod) => mod.Pie), { ssr: false });
+const Cell = dynamic(() => import("recharts").then((mod) => mod.Cell), { ssr: false });
+const AreaChart = dynamic(() => import("recharts").then((mod) => mod.AreaChart), { ssr: false });
+const Area = dynamic(() => import("recharts").then((mod) => mod.Area), { ssr: false });
+const CartesianGrid = dynamic(() => import("recharts").then((mod) => mod.CartesianGrid), { ssr: false });
+const XAxis = dynamic(() => import("recharts").then((mod) => mod.XAxis), { ssr: false });
+const YAxis = dynamic(() => import("recharts").then((mod) => mod.YAxis), { ssr: false });
+const RechartsTooltip = dynamic(() => import("recharts").then((mod) => mod.Tooltip), { ssr: false });
 
 import { Tabs } from "@/components/ui/tabs";
 import { Drawer } from "@/components/ui/drawer";
@@ -40,6 +48,16 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
   const [drawerIcon, setDrawerIcon] = useState<string>("📦");
   const [drawerAmount, setDrawerAmount] = useState<string>("");
   const [drawerSpent, setDrawerSpent] = useState<number>(0);
+
+  // #15/#20 — custom confirm modal instead of window.confirm
+  const [confirmModal, setConfirmModal] = useState<{
+    open: boolean;
+    title: string;
+    message: string;
+    confirmLabel: string;
+    confirmStyle: "danger" | "primary";
+    onConfirm: () => void;
+  }>({ open: false, title: "", message: "", confirmLabel: "Confirm", confirmStyle: "danger", onConfirm: () => {} });
 
   const [submitting, withLock] = useSubmitLock();
   const activeSubmissionsRef = useRef<Record<string, boolean>>({});
@@ -230,28 +248,56 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
       fromMonth = 12;
       fromYear = selectedYear - 1;
     }
-    
-    await withLock(async () => {
-      const res = await copyPreviousMonthBudgets(fromMonth, fromYear, selectedMonth, selectedYear);
-      if (!res.error) {
-        toast.success(`Successfully carried over ${res.count} budget limits!`);
-        mutate();
-      } else {
-        toast.error(res.error);
-      }
+
+    // #15 — include categories with actual spending this month even if not in previous budgets
+    const spentCategoryLabels = Object.keys(actualSpending);
+    const prevBudgets = budgets.filter(b => b.period_month === fromMonth && b.period_year === fromYear);
+    const prevBudgetCategories = prevBudgets.map(b => b.category);
+    const newCategories = spentCategoryLabels.filter(c => !prevBudgetCategories.includes(c));
+
+    const fromLabel = format(new Date(fromYear, fromMonth - 1), "MMMM yyyy");
+
+    setConfirmModal({
+      open: true,
+      title: "Carry over budget limits?",
+      message: `This will copy all ${prevBudgets.length} budget limits from ${fromLabel} into this month.${newCategories.length > 0 ? ` It will also add blank limits for ${newCategories.length} new spending ${newCategories.length === 1 ? "category" : "categories"} (${newCategories.slice(0, 3).join(", ")}${newCategories.length > 3 ? "…" : ""}) from your current activity.` : ""} Existing limits for this month will be overwritten.`,
+      confirmLabel: "Carry over",
+      confirmStyle: "primary",
+      onConfirm: async () => {
+        setConfirmModal(m => ({ ...m, open: false }));
+        await withLock(async () => {
+          const res = await copyPreviousMonthBudgets(fromMonth, fromYear, selectedMonth, selectedYear);
+          if (!res.error) {
+            toast.success(`Carried over ${res.count} budget limits from ${fromLabel}`);
+            mutate();
+          } else {
+            toast.error(res.error);
+          }
+        });
+      },
     });
   }
 
   async function handleClearAll() {
-    if (!confirm("Are you sure you want to clear all budget limits for this month?")) return;
-    await withLock(async () => {
-      const res = await clearAllBudgets(selectedMonth, selectedYear);
-      if (!res.error) {
-        toast.success("Successfully cleared all budget limits!");
-        mutate();
-      } else {
-        toast.error(res.error);
-      }
+    // #18/#20 — custom modal instead of window.confirm
+    setConfirmModal({
+      open: true,
+      title: "Clear all budget limits?",
+      message: `This will permanently remove all ${currentBudgets.length} budget limits for ${format(new Date(selectedYear, selectedMonth - 1), "MMMM yyyy")}. Your expense records will not be affected.`,
+      confirmLabel: "Clear all",
+      confirmStyle: "danger",
+      onConfirm: async () => {
+        setConfirmModal(m => ({ ...m, open: false }));
+        await withLock(async () => {
+          const res = await clearAllBudgets(selectedMonth, selectedYear);
+          if (!res.error) {
+            toast.success("All budget limits cleared for this month");
+            mutate();
+          } else {
+            toast.error(res.error);
+          }
+        });
+      },
     });
   }
 
@@ -311,33 +357,33 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
         {/* Top Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           <div className="glass-card-static p-6 border-white/5">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Planned Spend</p>
+            <p className="text-xs font-semibold text-[--text-muted] mb-3">Planned spend</p>
             <p className="text-2xl md:text-3xl font-black text-white">₹{totalBudgeted.toLocaleString()}</p>
-            <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Total Budget</p>
+            <p className="text-[11px] text-[--text-muted] mt-2 opacity-60">Total budget</p>
           </div>
           <div className="glass-card-static p-6 border-white/5">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Actual Burn</p>
+            <p className="text-xs font-semibold text-[--text-muted] mb-3">Actual spend</p>
             <p className={`text-2xl md:text-3xl font-black ${totalSpent > totalBudgeted && totalBudgeted > 0 ? "text-danger" : "text-white"}`}>₹{totalSpent.toLocaleString()}</p>
-            <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Real-time Outflow</p>
+            <p className="text-[11px] text-[--text-muted] mt-2 opacity-60">Real-time outflow</p>
           </div>
           <div className="glass-card-static p-6 border-white/5">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Margin</p>
+            <p className="text-xs font-semibold text-[--text-muted] mb-3">Margin</p>
             <p className={`text-2xl md:text-3xl font-black ${totalBudgeted - totalSpent >= 0 ? "text-success" : "text-danger"}`}>
               ₹{(totalBudgeted - totalSpent).toLocaleString()}
             </p>
-            <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Remaining Budget</p>
+            <p className="text-[11px] text-[--text-muted] mt-2 opacity-60">Remaining budget</p>
           </div>
           <div className="glass-card-static p-6 border-white/5">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Daily Allowance</p>
+            <p className="text-xs font-semibold text-[--text-muted] mb-3">Daily allowance</p>
             <p className={`text-2xl md:text-3xl font-black ${(daysInMonth - daysPassed) > 0 && (totalBudgeted - totalSpent) > 0 ? "text-emerald-400" : "text-slate-500"}`}>
               ₹{((daysInMonth - daysPassed) > 0 && (totalBudgeted - totalSpent) > 0 ? (totalBudgeted - totalSpent) / (daysInMonth - daysPassed) : 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
             </p>
-            <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Safe Spend / Day</p>
+            <p className="text-[11px] text-[--text-muted] mt-2 opacity-60">Safe spend / day</p>
           </div>
           <div className="glass-card-static p-6 border-white/5 bg-gradient-to-br from-[--accent-primary]/10 to-transparent">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Monthly Income</p>
+            <p className="text-xs font-semibold text-[--text-muted] mb-3">Monthly income</p>
             <p className="text-2xl md:text-3xl font-black text-[--accent-primary-light]">₹{totalIncome.toLocaleString()}</p>
-            <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Revenue Stream</p>
+            <p className="text-[11px] text-[--text-muted] mt-2 opacity-60">Revenue stream</p>
           </div>
         </div>
 
@@ -493,7 +539,7 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
                         </p>
                       </div>
                     </div>
-                    {predictiveDeplDate && budgetBurnRatePercent > 0 && (
+                    {predictiveDeplDate && budgetBurnRatePercent > 15 && (
                       <div className="mt-4 p-4 rounded-xl bg-indigo-500/5 border border-indigo-500/10 flex items-start gap-4 animate-fade-in">
                         <div className="mt-0.5 text-base text-indigo-400">
                           🔮
@@ -566,7 +612,7 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white/[0.01] p-5 rounded-2xl border border-white/5 gap-4">
                 <div>
-                  <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[--text-primary]">Allocation by Segment</h3>
+                  <h3 className="text-sm font-bold text-[--text-primary]">Allocation by segment</h3>
                   <p className="text-xs text-[--text-muted] mt-1">Set maximum monthly limits per expense type.</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -644,14 +690,14 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
                           {/* Status Tag */}
                           {limit > 0 ? (
                             percent > 100 ? (
-                              <span className="text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-[4px] bg-rose-500/10 text-rose-400 border border-rose-500/20">Over Limit</span>
+                              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-400 border border-rose-500/20">Over limit</span>
                             ) : percent > 80 ? (
-                              <span className="text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-[4px] bg-amber-500/10 text-amber-400 border border-amber-500/20">Near Limit</span>
+                              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20">Near limit</span>
                             ) : (
-                              <span className="text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-[4px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">On Track</span>
+                              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">On track</span>
                             )
                           ) : (
-                            <span className="text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-[4px] bg-white/5 text-[--text-muted] border border-white/10">No Limit</span>
+                            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-white/5 text-[--text-muted] border border-white/10">No limit</span>
                           )}
                         </div>
                       </div>
@@ -862,6 +908,37 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
             </div>
           </div>
         </Drawer>
+      )}
+      {/* #15/#20 — Custom confirm modal (replaces window.confirm for carry-over & clear all) */}
+      {confirmModal.open && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[--bg-base]/80 backdrop-blur-md animate-fade-in">
+          <div className="glass-card-static w-full max-w-sm p-8 animate-scale-in">
+            <div className="flex flex-col gap-4">
+              <h3 className="text-lg font-bold text-white">{confirmModal.title}</h3>
+              <p className="text-sm text-[--text-secondary] leading-relaxed">{confirmModal.message}</p>
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setConfirmModal(m => ({ ...m, open: false }))}
+                  className="btn-secondary flex-1 h-11 rounded-xl font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmModal.onConfirm}
+                  className={`flex-1 h-11 rounded-xl font-bold text-white transition-all active:scale-[0.98] ${
+                    confirmModal.confirmStyle === "danger"
+                      ? "bg-rose-500 hover:bg-rose-600 shadow-lg shadow-rose-500/20"
+                      : "btn-primary"
+                  }`}
+                >
+                  {confirmModal.confirmLabel}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

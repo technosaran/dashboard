@@ -125,7 +125,7 @@ export default function BankLogo({ bankName, size = 40, className = "" }: BankLo
   const [allFailed, setAllFailed] = useState(false);
 
   const sources = bankName ? getLogoSources(bankName) : [];
-  const key = bankName?.toLowerCase().trim() || "";
+  const key = (bankName || "").toLowerCase().trim();
   const brand = BANK_BRANDS[key];
 
   // Generate fallback styling

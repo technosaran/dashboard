@@ -17,7 +17,8 @@ import { EmptyState } from "@/components/empty-state";
 import { exportToCSV } from "@/lib/export-csv";
 
 import { CHART_COLOURS, CHART_SERIES_COLOURS } from "@/lib/chart-colours";
-function getColorByLabel(label: string) {
+function getColorByLabel(label: string | null | undefined) {
+  if (!label) return CHART_COLOURS[0];
   let hash = 0;
   for (let i = 0; i < label.length; i += 1) {
     hash = (hash * 31 + label.charCodeAt(i)) >>> 0;

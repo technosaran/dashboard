@@ -21,8 +21,6 @@ import FnoClient from "@/app/dashboard/fno/FnoClient";
 import ForexClient from "@/app/dashboard/forex/ForexClient";
 import AlternativeAssetsClient from "@/app/dashboard/alternative-assets/AlternativeAssetsClient";
 
-const USD_TO_INR = 83.5;
-
 export default function InvestmentsClient() {
   const searchParams = useSearchParams();
   const initialTab = searchParams.get("tab") || "overview";
@@ -30,9 +28,24 @@ export default function InvestmentsClient() {
   const { data: { investments, mutualFunds, bonds, forexAccounts, alternativeAssets, profile }, isLoading } = useFinanceData();
   const mounted = useHasMounted();
   const [activeTab, setActiveTab] = useState(initialTab);
+  const showUSD = false;
 
   // Dynamic modules check
-  const enabledModules = profile?.enabled_modules || [];
+  const enabledModules = useMemo(() => {
+    const raw = profile?.enabled_modules && profile.enabled_modules.length > 0
+      ? profile.enabled_modules
+      : ["Income & Expenses", "Budget", "Investments", "Alt Assets", "Liabilities", "Goals", "Family Management", "Ledger"];
+    const populated = [...raw] as string[];
+    
+    if (raw.includes("Investments")) {
+      populated.push("Stocks", "Mutual Funds", "Bonds", "FnO", "Forex");
+    }
+    if (raw.includes("Alt Assets") || raw.includes("Assets")) {
+      populated.push("Alt Assets", "Assets");
+    }
+    return populated;
+  }, [profile]);
+
   const hasStocks = enabledModules.includes("Stocks");
   const hasMF = enabledModules.includes("Mutual Funds");
   const hasBonds = enabledModules.includes("Bonds");
@@ -65,41 +78,63 @@ export default function InvestmentsClient() {
   const portfolioStats = useMemo(() => {
     // 1. Stocks
     const activeStocks = investments.filter(i => i.type === "stock" && Number(i.quantity) > 0);
-    const stocksInvested = activeStocks.reduce((sum, i) => sum + (Number(i.quantity) * Number(i.buy_price)), 0);
-    const stocksCurrent = activeStocks.reduce((sum, i) => sum + (Number(i.quantity) * Number(i.current_price)), 0);
-    const stocksRealized = investments.filter(i => i.type === "stock").reduce((sum, i) => sum + Number(i.realized_pnl || 0), 0);
+    const stocksInvestedINR = activeStocks.filter(i => i.currency !== "USD").reduce((sum, i) => sum + (Number(i.quantity) * Number(i.buy_price)), 0);
+    const stocksCurrentINR = activeStocks.filter(i => i.currency !== "USD").reduce((sum, i) => sum + (Number(i.quantity) * Number(i.current_price)), 0);
+    const stocksRealizedINR = investments.filter(i => i.type === "stock" && i.currency !== "USD").reduce((sum, i) => sum + Number(i.realized_pnl || 0), 0);
 
-    // 2. Mutual Funds
+    const stocksInvestedUSD = activeStocks.filter(i => i.currency === "USD").reduce((sum, i) => sum + (Number(i.quantity) * Number(i.buy_price)), 0);
+    const stocksCurrentUSD = activeStocks.filter(i => i.currency === "USD").reduce((sum, i) => sum + (Number(i.quantity) * Number(i.current_price)), 0);
+    const stocksRealizedUSD = investments.filter(i => i.type === "stock" && i.currency === "USD").reduce((sum, i) => sum + Number(i.realized_pnl || 0), 0);
+
+    // 2. Mutual Funds (assumed INR)
     const activeMF = mutualFunds.filter(m => Number(m.units) > 0);
-    const mfInvested = activeMF.reduce((sum, m) => sum + (Number(m.units) * Number(m.avg_nav)), 0);
-    const mfCurrent = activeMF.reduce((sum, m) => sum + (Number(m.units) * Number(m.current_nav)), 0);
-    const mfRealized = mutualFunds.reduce((sum, m) => sum + Number(m.realized_pnl || 0), 0);
+    const mfInvestedINR = activeMF.reduce((sum, m) => sum + (Number(m.units) * Number(m.avg_nav)), 0);
+    const mfCurrentINR = activeMF.reduce((sum, m) => sum + (Number(m.units) * Number(m.current_nav)), 0);
+    const mfRealizedINR = mutualFunds.reduce((sum, m) => sum + Number(m.realized_pnl || 0), 0);
 
-    // 3. Bonds
-    const bondsInvested = bonds.reduce((sum, b) => sum + Number(b.total_invested || 0), 0);
-    const bondsCurrent = bonds.reduce((sum, b) => sum + Number(b.current_value || 0), 0);
+    // 3. Bonds (assumed INR)
+    const bondsInvestedINR = bonds.reduce((sum, b) => sum + Number(b.total_invested || 0), 0);
+    const bondsCurrentINR = bonds.reduce((sum, b) => sum + Number(b.current_value || 0), 0);
 
-    // 5. Forex (Converted from USD to INR)
+    // 5. Forex
     const activeForex = forexAccounts.filter(f => Number(f.balance) > 0);
-    const forexInvested = activeForex.reduce((sum, f) => {
+    const forexInvestedINR = activeForex.filter(f => f.currency !== "USD").reduce((sum, f) => {
       const amount = Number(f.total_deposited || 0) - Number(f.total_withdrawn || 0);
-      const converted = f.currency === "USD" ? amount * USD_TO_INR : amount;
-      return sum + Math.max(0, converted);
+      return sum + Math.max(0, amount);
     }, 0);
-    const forexCurrent = activeForex.reduce((sum, f) => {
-      const balance = Number(f.balance || 0);
-      const converted = f.currency === "USD" ? balance * USD_TO_INR : balance;
-      return sum + converted;
-    }, 0);
-    const forexRealized = forexAccounts.reduce((sum, f) => {
-      const pnl = Number(f.total_pnl || 0);
-      return sum + (f.currency === "USD" ? pnl * USD_TO_INR : pnl);
-    }, 0);
+    const forexCurrentINR = activeForex.filter(f => f.currency !== "USD").reduce((sum, f) => sum + Number(f.balance || 0), 0);
+    const forexRealizedINR = forexAccounts.filter(f => f.currency !== "USD").reduce((sum, f) => sum + Number(f.total_pnl || 0), 0);
 
-    // 6. Alternative Assets
+    const forexInvestedUSD = activeForex.filter(f => f.currency === "USD").reduce((sum, f) => {
+      const amount = Number(f.total_deposited || 0) - Number(f.total_withdrawn || 0);
+      return sum + Math.max(0, amount);
+    }, 0);
+    const forexCurrentUSD = activeForex.filter(f => f.currency === "USD").reduce((sum, f) => sum + Number(f.balance || 0), 0);
+    const forexRealizedUSD = forexAccounts.filter(f => f.currency === "USD").reduce((sum, f) => sum + Number(f.total_pnl || 0), 0);
+
+    // 6. Alternative Assets (assumed INR)
     const activeAlt = alternativeAssets || [];
-    const altInvested = activeAlt.reduce((sum, a) => sum + Number(a.purchase_price || 0), 0);
-    const altCurrent = activeAlt.reduce((sum, a) => sum + Number(a.current_value || 0), 0);
+    const altInvestedINR = activeAlt.reduce((sum, a) => sum + Number(a.purchase_price || 0), 0);
+    const altCurrentINR = activeAlt.reduce((sum, a) => sum + Number(a.current_value || 0), 0);
+
+    // Toggle variables (Zero conversion fallback)
+    const stocksInvested = showUSD ? stocksInvestedUSD : stocksInvestedINR;
+    const stocksCurrent = showUSD ? stocksCurrentUSD : stocksCurrentINR;
+    const stocksRealized = showUSD ? stocksRealizedUSD : stocksRealizedINR;
+
+    const mfInvested = showUSD ? 0 : mfInvestedINR;
+    const mfCurrent = showUSD ? 0 : mfCurrentINR;
+    const mfRealized = showUSD ? 0 : mfRealizedINR;
+
+    const bondsInvested = showUSD ? 0 : bondsInvestedINR;
+    const bondsCurrent = showUSD ? 0 : bondsCurrentINR;
+
+    const forexInvested = showUSD ? forexInvestedUSD : forexInvestedINR;
+    const forexCurrent = showUSD ? forexCurrentUSD : forexCurrentINR;
+    const forexRealized = showUSD ? forexRealizedUSD : forexRealizedINR;
+
+    const altInvested = showUSD ? 0 : altInvestedINR;
+    const altCurrent = showUSD ? 0 : altCurrentINR;
 
     const totalInvested = stocksInvested + mfInvested + bondsInvested + forexInvested + altInvested;
     const totalCurrent = stocksCurrent + mfCurrent + bondsCurrent + forexCurrent + altCurrent;
@@ -120,7 +155,7 @@ export default function InvestmentsClient() {
       totalPnLPercent,
       hasData: (stocksCurrent + mfCurrent + bondsCurrent + forexCurrent + altCurrent) > 0
     };
-  }, [investments, mutualFunds, bonds, forexAccounts, alternativeAssets]);
+  }, [investments, mutualFunds, bonds, forexAccounts, alternativeAssets, showUSD]);
 
   // Donut chart data for portfolio allocation
   const allocationData = useMemo(() => {
@@ -144,7 +179,9 @@ export default function InvestmentsClient() {
   }, [portfolioStats]);
 
   const formatMoney = (val: number) => {
-    return val.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const locale = showUSD ? "en-US" : "en-IN";
+    const symbol = showUSD ? "$" : "₹";
+    return symbol + val.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
   if (isLoading) {
@@ -153,11 +190,13 @@ export default function InvestmentsClient() {
 
   return (
     <div className="flex flex-col gap-8 animate-in fade-in duration-700">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white uppercase italic">Investments Portfolio</h1>
-          <p className="text-[10px] text-[--text-muted] font-black uppercase tracking-[0.4em] mt-2 ml-1">Asset Allocation & Performance</p>
-        </div>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 w-full">
+          <div>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white uppercase italic">
+              Investments Portfolio
+            </h1>
+            <p className="text-[10px] text-[--text-muted] font-black uppercase tracking-[0.4em] mt-2 ml-1">Asset Allocation & Performance</p>
+          </div>
       </div>
 
       {/* Premium Segmented Toggle Bar */}
@@ -198,18 +237,18 @@ export default function InvestmentsClient() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="glass-card-static p-6 border-white/5">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Total Invested</p>
-              <p className="text-2xl md:text-3xl font-black text-white">₹{formatMoney(portfolioStats.totalInvested)}</p>
+              <p className="text-2xl md:text-3xl font-black text-white">{formatMoney(portfolioStats.totalInvested)}</p>
               <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Portfolio Principal</p>
             </div>
             <div className="glass-card-static p-6 border-white/5">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Current Value</p>
-              <p className="text-2xl md:text-3xl font-black text-white">₹{formatMoney(portfolioStats.totalCurrent)}</p>
+              <p className="text-2xl md:text-3xl font-black text-white">{formatMoney(portfolioStats.totalCurrent)}</p>
               <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Market Value</p>
             </div>
             <div className="glass-card-static p-6 border-white/5">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Portfolio P&amp;L</p>
               <p className={`text-2xl md:text-3xl font-black ${portfolioStats.totalPnL >= 0 ? "text-emerald-400" : "text-rose-500"}`}>
-                {portfolioStats.totalPnL >= 0 ? "+" : ""}₹{formatMoney(portfolioStats.totalPnL)}
+                {portfolioStats.totalPnL >= 0 ? "+" : ""}{formatMoney(portfolioStats.totalPnL)}
               </p>
               <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Total Return</p>
             </div>
@@ -232,7 +271,7 @@ export default function InvestmentsClient() {
                     <div className="space-y-2">
                       <div className="flex justify-between text-xs font-bold">
                         <span className="text-white">Equity Holdings (Stocks)</span>
-                        <span className="text-[--text-secondary]">₹{formatMoney(portfolioStats.stocksValue)}</span>
+                        <span className="text-[--text-secondary]">{formatMoney(portfolioStats.stocksValue)}</span>
                       </div>
                       <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
                         <div 
@@ -250,7 +289,7 @@ export default function InvestmentsClient() {
                     <div className="space-y-2">
                       <div className="flex justify-between text-xs font-bold">
                         <span className="text-white">Mutual Funds Portfolio</span>
-                        <span className="text-[--text-secondary]">₹{formatMoney(portfolioStats.mfValue)}</span>
+                        <span className="text-[--text-secondary]">{formatMoney(portfolioStats.mfValue)}</span>
                       </div>
                       <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
                         <div 
@@ -268,7 +307,7 @@ export default function InvestmentsClient() {
                     <div className="space-y-2">
                       <div className="flex justify-between text-xs font-bold">
                         <span className="text-white">Fixed Income (Bonds)</span>
-                        <span className="text-[--text-secondary]">₹{formatMoney(portfolioStats.bondsValue)}</span>
+                        <span className="text-[--text-secondary]">{formatMoney(portfolioStats.bondsValue)}</span>
                       </div>
                       <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
                         <div 
@@ -286,7 +325,7 @@ export default function InvestmentsClient() {
                     <div className="space-y-2">
                       <div className="flex justify-between text-xs font-bold">
                         <span className="text-white">Forex Assets</span>
-                        <span className="text-[--text-secondary]">₹{formatMoney(portfolioStats.forexValue)}</span>
+                        <span className="text-[--text-secondary]">{formatMoney(portfolioStats.forexValue)}</span>
                       </div>
                       <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
                         <div 
@@ -304,7 +343,7 @@ export default function InvestmentsClient() {
                     <div className="space-y-2">
                       <div className="flex justify-between text-xs font-bold">
                         <span className="text-white">Alternative Assets</span>
-                        <span className="text-[--text-secondary]">₹{formatMoney(portfolioStats.altValue)}</span>
+                        <span className="text-[--text-secondary]">{formatMoney(portfolioStats.altValue)}</span>
                       </div>
                       <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
                         <div 
@@ -334,7 +373,7 @@ export default function InvestmentsClient() {
                       <RechartsTooltip 
                         contentStyle={{ backgroundColor: "rgba(10,10,10,0.9)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px" }}
                         itemStyle={{ color: "#fff", fontWeight: "bold" }}
-                        formatter={(value: any) => [`₹${Number(value).toLocaleString()}`, "Value"]}
+                        formatter={(value: any) => [showUSD ? `$${Number(value).toLocaleString()}` : `₹${Number(value).toLocaleString()}`, "Value"]}
                       />
                     </PieChart>
                   </ResponsiveContainer>
@@ -360,11 +399,11 @@ export default function InvestmentsClient() {
         </div>
       )}
 
-      {activeTab === "stocks" && hasStocks && <StocksClient />}
+      {activeTab === "stocks" && hasStocks && <StocksClient showUSD={showUSD} />}
       {activeTab === "mutual-funds" && hasMF && <MutualFundsClient />}
       {activeTab === "bonds" && hasBonds && <BondsClient />}
       {activeTab === "fno" && hasFnO && <FnoClient />}
-      {activeTab === "forex" && hasForex && <ForexClient />}
+      {activeTab === "forex" && hasForex && <ForexClient showUSD={showUSD} />}
       {activeTab === "alt-assets" && hasAltAssets && <AlternativeAssetsClient isSubComponent />}
     </div>
   );

@@ -100,7 +100,7 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, accou
         </div>
         <div className="flex items-center gap-2 bg-white/[0.02] border border-white/5 px-2.5 py-1 rounded-full">
           <span className={`w-1.5 h-1.5 rounded-full ${isValidating ? 'animate-pulse bg-yellow-400 shadow-[0_0_10px_rgba(250,204,21,0.5)]' : 'bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]'}`} />
-          <span className="text-[8px] font-black uppercase tracking-wider text-[--text-muted]">{isValidating ? "Syncing" : "Synced"}</span>
+          <span className="text-[11px] font-semibold text-[--text-muted]">{isValidating ? "Syncing" : "Synced"}</span>
         </div>
       </div>
 
@@ -111,31 +111,38 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, accou
         <div className="absolute -left-16 -bottom-16 w-32 h-32 bg-purple-500/5 blur-3xl rounded-full" />
         
         <div className="flex items-center justify-between">
-          <p className="text-[9px] font-black uppercase tracking-[0.25em] text-[--text-muted]">Net Asset Value</p>
-          <span className="text-[8px] font-black uppercase tracking-widest text-[--accent-primary] bg-[--accent-primary]/10 px-2 py-0.5 rounded-full border border-[--accent-primary]/10">
+          <p className="text-[11px] font-semibold text-[--text-muted]">Net worth</p>
+          <span className="text-[11px] font-semibold text-[--accent-primary] bg-[--accent-primary]/10 px-2 py-0.5 rounded-full border border-[--accent-primary]/10">
             Live
           </span>
         </div>
         
         <div 
-          className="flex items-baseline gap-2 mt-2.5 cursor-pointer select-none"
+          className="flex flex-col cursor-pointer group/nw select-none"
           onClick={() => setShowUSD(!showUSD)}
+          title="Click to toggle currency"
         >
-          <h1 className="text-3xl font-[900] tracking-tight text-white">
+          <div className="flex items-center gap-1.5">
+            <p className="text-[11px] font-semibold text-[--text-muted] transition-colors group-hover/nw:text-[--text-primary]">
+              Net worth ({showUSD ? 'USD' : 'INR'})
+            </p>
+            <svg className="w-3 h-3 text-[--text-muted] opacity-50 group-hover/nw:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+            </svg>
+          </div>
+          
+          <h1 className="text-3xl font-[900] tracking-tight text-white mt-1">
             {showUSD 
               ? `$${stats.netWorthUSD.toLocaleString(undefined, { minimumFractionDigits: 0 })}`
               : `₹${stats.netWorthINR.toLocaleString(undefined, { minimumFractionDigits: 0 })}`
             }
           </h1>
-          <span className="text-[9px] font-black tracking-widest text-[--text-muted] uppercase">
-            {showUSD ? 'USD' : 'INR'}
-          </span>
         </div>
 
         {/* Quick Month Cashflow Inflow vs Outflow */}
         <div className="grid grid-cols-2 gap-4 mt-6 pt-4 border-t border-white/5">
           <div>
-            <span className="text-[8px] font-black uppercase tracking-wider text-[--text-muted] block mb-0.5">Month Inflow</span>
+            <span className="text-[11px] font-semibold text-[--text-muted] block mb-0.5">Month inflow</span>
             <span className="text-[13px] font-extrabold text-emerald-400">
               +₹{stats.monthlyIncome.toLocaleString(undefined, { maximumFractionDigits: 0 })}
             </span>
@@ -232,8 +239,8 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, accou
                         {log.action_type === "CREATE" ? "✨" : isOut ? "📉" : "📈"}
                       </div>
                       <div className="flex min-w-0 flex-col">
-                        <span className="truncate text-[10.5px] font-bold text-white leading-tight">{log.details}</span>
-                        <span className="truncate text-[8px] font-black uppercase text-[--text-muted] tracking-wide mt-0.5">{log.created_at ? format(new Date(log.created_at), "HH:mm") : "—"} • {log.account_name}</span>
+                        <span className="truncate text-[11px] font-bold text-white leading-tight">{log.details}</span>
+                        <span className="truncate text-[11px] font-medium text-[--text-muted] mt-0.5">{log.created_at ? format(new Date(log.created_at), "MMM d, HH:mm") : "—"} · {log.account_name}</span>
                       </div>
                     </div>
                    <span className={`shrink-0 text-[11.5px] font-black tabular-nums ${isOut ? "text-rose-400" : "text-emerald-400"}`}>
