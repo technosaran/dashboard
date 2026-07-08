@@ -5,6 +5,7 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
+import { vi } from 'vitest';
 
 /**
  * Mock Supabase client for testing
@@ -15,60 +16,60 @@ import { SupabaseClient } from '@supabase/supabase-js';
  * const mockSupabase = createMockSupabaseClient();
  * mockSupabase.from.mockReturnValue({ data: [], error: null });
  */
-export function createMockSupabaseClient(): jest.Mocked<Partial<SupabaseClient>> {
+export function createMockSupabaseClient(): any {
   const mockQuery = {
-    select: jest.fn().mockReturnThis(),
-    insert: jest.fn().mockReturnThis(),
-    update: jest.fn().mockReturnThis(),
-    delete: jest.fn().mockReturnThis(),
-    eq: jest.fn().mockReturnThis(),
-    neq: jest.fn().mockReturnThis(),
-    gt: jest.fn().mockReturnThis(),
-    gte: jest.fn().mockReturnThis(),
-    lt: jest.fn().mockReturnThis(),
-    lte: jest.fn().mockReturnThis(),
-    like: jest.fn().mockReturnThis(),
-    ilike: jest.fn().mockReturnThis(),
-    is: jest.fn().mockReturnThis(),
-    in: jest.fn().mockReturnThis(),
-    contains: jest.fn().mockReturnThis(),
-    containedBy: jest.fn().mockReturnThis(),
-    rangeLt: jest.fn().mockReturnThis(),
-    rangeGt: jest.fn().mockReturnThis(),
-    rangeGte: jest.fn().mockReturnThis(),
-    rangeLte: jest.fn().mockReturnThis(),
-    rangeAdjacent: jest.fn().mockReturnThis(),
-    overlaps: jest.fn().mockReturnThis(),
-    textSearch: jest.fn().mockReturnThis(),
-    match: jest.fn().mockReturnThis(),
-    not: jest.fn().mockReturnThis(),
-    or: jest.fn().mockReturnThis(),
-    filter: jest.fn().mockReturnThis(),
-    order: jest.fn().mockReturnThis(),
-    limit: jest.fn().mockReturnThis(),
-    range: jest.fn().mockReturnThis(),
-    single: jest.fn().mockResolvedValue({ data: null, error: null }),
-    maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
-    csv: jest.fn().mockResolvedValue({ data: null, error: null }),
-    then: jest.fn().mockResolvedValue({ data: null, error: null }),
+    select: vi.fn().mockReturnThis(),
+    insert: vi.fn().mockReturnThis(),
+    update: vi.fn().mockReturnThis(),
+    delete: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    neq: vi.fn().mockReturnThis(),
+    gt: vi.fn().mockReturnThis(),
+    gte: vi.fn().mockReturnThis(),
+    lt: vi.fn().mockReturnThis(),
+    lte: vi.fn().mockReturnThis(),
+    like: vi.fn().mockReturnThis(),
+    ilike: vi.fn().mockReturnThis(),
+    is: vi.fn().mockReturnThis(),
+    in: vi.fn().mockReturnThis(),
+    contains: vi.fn().mockReturnThis(),
+    containedBy: vi.fn().mockReturnThis(),
+    rangeLt: vi.fn().mockReturnThis(),
+    rangeGt: vi.fn().mockReturnThis(),
+    rangeGte: vi.fn().mockReturnThis(),
+    rangeLte: vi.fn().mockReturnThis(),
+    rangeAdjacent: vi.fn().mockReturnThis(),
+    overlaps: vi.fn().mockReturnThis(),
+    textSearch: vi.fn().mockReturnThis(),
+    match: vi.fn().mockReturnThis(),
+    not: vi.fn().mockReturnThis(),
+    or: vi.fn().mockReturnThis(),
+    filter: vi.fn().mockReturnThis(),
+    order: vi.fn().mockReturnThis(),
+    limit: vi.fn().mockReturnThis(),
+    range: vi.fn().mockReturnThis(),
+    single: vi.fn().mockResolvedValue({ data: null, error: null }),
+    maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+    csv: vi.fn().mockResolvedValue({ data: null, error: null }),
+    then: vi.fn().mockResolvedValue({ data: null, error: null }),
   };
 
   return {
-    from: jest.fn().mockReturnValue(mockQuery),
+    from: vi.fn().mockReturnValue(mockQuery),
     auth: {
-      getUser: jest.fn().mockResolvedValue({ data: { user: null }, error: null }),
-      getSession: jest.fn().mockResolvedValue({ data: { session: null }, error: null }),
-      signInWithPassword: jest.fn().mockResolvedValue({ data: { user: null, session: null }, error: null }),
-      signOut: jest.fn().mockResolvedValue({ error: null }),
-      onAuthStateChange: jest.fn().mockReturnValue({ data: { subscription: { unsubscribe: jest.fn() } } }),
+      getUser: vi.fn().mockResolvedValue({ data: { user: null }, error: null }),
+      getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
+      signInWithPassword: vi.fn().mockResolvedValue({ data: { user: null, session: null }, error: null }),
+      signOut: vi.fn().mockResolvedValue({ error: null }),
+      onAuthStateChange: vi.fn().mockReturnValue({ data: { subscription: { unsubscribe: vi.fn() } } }),
     },
     storage: {
-      from: jest.fn().mockReturnValue({
-        upload: jest.fn().mockResolvedValue({ data: null, error: null }),
-        download: jest.fn().mockResolvedValue({ data: null, error: null }),
-        list: jest.fn().mockResolvedValue({ data: [], error: null }),
-        remove: jest.fn().mockResolvedValue({ data: null, error: null }),
-        getPublicUrl: jest.fn().mockReturnValue({ data: { publicUrl: '' } }),
+      from: vi.fn().mockReturnValue({
+        upload: vi.fn().mockResolvedValue({ data: null, error: null }),
+        download: vi.fn().mockResolvedValue({ data: null, error: null }),
+        list: vi.fn().mockResolvedValue({ data: [], error: null }),
+        remove: vi.fn().mockResolvedValue({ data: null, error: null }),
+        getPublicUrl: vi.fn().mockReturnValue({ data: { publicUrl: '' } }),
       }),
     },
   } as any;
@@ -82,7 +83,7 @@ export function createMockSupabaseClient(): jest.Mocked<Partial<SupabaseClient>>
  * @returns Mock Response object
  * 
  * @example
- * global.fetch = jest.fn().mockResolvedValue(createMockFetchResponse({ success: true }));
+ * global.fetch = vi.fn().mockResolvedValue(createMockFetchResponse({ success: true }));
  */
 export function createMockFetchResponse<T = any>(
   data: T,
@@ -98,7 +99,7 @@ export function createMockFetchResponse<T = any>(
     blob: async () => new Blob([JSON.stringify(data)]),
     arrayBuffer: async () => new ArrayBuffer(0),
     formData: async () => new FormData(),
-    clone: jest.fn(),
+    clone: vi.fn(),
     body: null,
     bodyUsed: false,
     redirected: false,

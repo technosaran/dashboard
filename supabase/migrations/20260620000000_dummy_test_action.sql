@@ -1,1 +1,0 @@
--- Dummy migration to test the GitHub Actions deployment workflow

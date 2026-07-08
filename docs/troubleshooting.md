@@ -4,9 +4,6 @@ Common issues encountered when developing or running the FinanceOS personal fina
 
 ## 1. Local Development Issues
 
-### Next.js Build Fails with "Both middleware file and proxy file are detected"
-- **Cause**: Next.js App Router detected both `src/middleware.ts` and `src/proxy.ts` in the workspace directory.
-- **Fix**: Rename or delete `src/proxy.ts`. We support using `src/middleware.ts` as our unified security middleware entry point.
 
 ### Redis Connection Error: "ECONNREFUSED"
 - **Cause**: The application is trying to connect to Redis (`REDIS_URL`) but no Redis server is running at that port.
