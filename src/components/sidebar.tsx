@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useFinanceData } from "@/hooks/use-finance-data";
 import { MODULE_KEYS } from "@/lib/modules";
 import type { ModuleKey } from "@/lib/modules";
@@ -179,6 +179,8 @@ export default function Sidebar() {
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [isQuickActionOpen, setIsQuickActionOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const quickActionDialogRef = useRef<HTMLDivElement | null>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem("sidebar_collapsed");
@@ -244,6 +246,40 @@ export default function Sidebar() {
     return () => { document.body.style.overflow = previousOverflow; };
   }, [isMoreOpen, isQuickActionOpen]);
 
+  useEffect(() => {
+    const hasOverlayOpen = isMoreOpen || isQuickActionOpen;
+
+    if (hasOverlayOpen && !previousFocusRef.current) {
+      previousFocusRef.current = document.activeElement as HTMLElement | null;
+    }
+
+    if (!hasOverlayOpen && previousFocusRef.current) {
+      previousFocusRef.current.focus();
+      previousFocusRef.current = null;
+    }
+  }, [isMoreOpen, isQuickActionOpen]);
+
+  useEffect(() => {
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      if (isQuickActionOpen) {
+        setIsQuickActionOpen(false);
+      }
+      if (isMoreOpen) {
+        setIsMoreOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", onEscape);
+    return () => window.removeEventListener("keydown", onEscape);
+  }, [isMoreOpen, isQuickActionOpen]);
+
+  useEffect(() => {
+    if (!isQuickActionOpen || !quickActionDialogRef.current) return;
+    const firstFocusable = quickActionDialogRef.current.querySelector<HTMLElement>("a[href],button:not([disabled])");
+    firstFocusable?.focus();
+  }, [isQuickActionOpen]);
+
   async function handleLogout() {
     const supabase = createClient();
     await supabase.auth.signOut();
@@ -267,8 +303,8 @@ export default function Sidebar() {
   return (
     <>
       {/* Universal Quick Action Hub */}
-      <div className={`md:hidden fixed inset-0 z-[100] bg-black/80 backdrop-blur-md transition-all duration-500 ${isQuickActionOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`} onClick={() => setIsQuickActionOpen(false)}>
-        <div className={`absolute bottom-[calc(var(--mobile-bottom-nav-height)+0.5rem)] left-4 right-4 max-h-[75vh] overflow-y-auto no-scrollbar grid grid-cols-2 gap-2.5 sm:gap-3 transition-all duration-500 ${isQuickActionOpen ? "translate-y-0 scale-100" : "translate-y-16 scale-90"}`} onClick={e => e.stopPropagation()}>
+      <div className={`md:hidden fixed inset-0 z-[100] bg-black/80 backdrop-blur-md transition-all duration-500 ${isQuickActionOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`} onClick={() => setIsQuickActionOpen(false)} aria-hidden={!isQuickActionOpen}>
+        <div id="quick-actions-dialog" role="dialog" aria-modal="true" aria-label="Quick actions" ref={quickActionDialogRef} className={`absolute bottom-[calc(var(--mobile-bottom-nav-height)+0.5rem)] left-4 right-4 max-h-[75vh] overflow-y-auto no-scrollbar grid grid-cols-2 gap-2.5 sm:gap-3 transition-all duration-500 ${isQuickActionOpen ? "translate-y-0 scale-100" : "translate-y-16 scale-90"}`} onClick={e => e.stopPropagation()}>
           {filteredQuickActions.map((action) => (
             <Link key={action.label} href={action.href} prefetch={true} onClick={() => setIsQuickActionOpen(false)} aria-label={`Add new ${action.label}`} className="glass-card-static p-4 flex flex-col items-center justify-center gap-2.5 no-underline transition-all active:scale-95 shadow-lg bg-[--bg-surface] animate-fade-in" style={{ border: `1px solid ${action.color}30` }}>
               <div className="text-2xl filter drop-shadow-[0_4px_10px_rgba(0,0,0,0.1)]" aria-hidden="true">{action.icon}</div>
@@ -294,6 +330,7 @@ export default function Sidebar() {
             onClick={toggleCollapse} 
             className="p-1.5 rounded-lg hover:bg-white/5 text-[--text-muted] hover:text-white transition-colors"
             title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             {isCollapsed ? (
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" /></svg>
@@ -327,6 +364,7 @@ export default function Sidebar() {
         aria-hidden={!isMoreOpen}
       >
         <div
+          id="more-navigation-dialog"
           role="dialog"
           aria-modal="true"
           aria-label="More navigation"
@@ -388,8 +426,8 @@ export default function Sidebar() {
           const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href + "/"));
           return (
             <Link key={item.label} href={item.href} prefetch={true} className={`flex-1 flex flex-col items-center justify-center h-full relative transition-all active:scale-90 ${active ? "text-[--accent-primary-light]" : "text-[--text-muted]"}`}>
-              <div className={`${active ? "scale-110 -translate-y-1" : "opacity-40"} transition-all duration-300`}>{item.icon}</div>
-              <span className={`text-[11px] font-bold absolute bottom-2 transition-all duration-300 ${active ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"}`}>{item.label}</span>
+              <div className={`${active ? "scale-110 -translate-y-0.5" : "opacity-70"} transition-all duration-300`}>{item.icon}</div>
+              <span className={`text-[10px] font-semibold absolute bottom-1.5 transition-all duration-300 ${active ? "opacity-100" : "opacity-70"}`}>{item.label}</span>
             </Link>
           );
         })}
@@ -400,8 +438,10 @@ export default function Sidebar() {
              type="button"
              onClick={() => setIsQuickActionOpen(!isQuickActionOpen)}
              aria-label={isQuickActionOpen ? "Close quick actions" : "Open quick actions"}
-             className={`w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all duration-500 active:scale-95 absolute -top-4 z-[110] ${isQuickActionOpen ? "bg-rose-500 rotate-45" : "bg-gradient-to-br from-sky-500 to-cyan-400"}`}
-             style={{ boxShadow: isQuickActionOpen ? "0 8px 32px rgba(244,63,94,0.5)" : "0 8px 24px rgba(108,92,231,0.4)" }}
+            aria-expanded={isQuickActionOpen}
+            aria-controls="quick-actions-dialog"
+            className={`w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all duration-500 active:scale-95 absolute -top-4 z-[110] ${isQuickActionOpen ? "bg-rose-500 rotate-45" : "bg-gradient-to-br from-sky-500 to-cyan-400"}`}
+            style={{ boxShadow: isQuickActionOpen ? "0 8px 32px rgba(244,63,94,0.5)" : "0 8px 24px rgba(108,92,231,0.4)" }}
            >
              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16m8-8H4" /></svg>
            </button>
@@ -412,13 +452,13 @@ export default function Sidebar() {
           const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href + "/"));
           return (
             <Link key={item.label} href={item.href} prefetch={true} className={`flex-1 flex flex-col items-center justify-center h-full relative transition-all active:scale-90 ${active ? "text-[--accent-primary-light]" : "text-[--text-muted]"}`}>
-              <div className={`${active ? "scale-110 -translate-y-1" : "opacity-40"} transition-all duration-300`}>{item.icon}</div>
-              <span className={`text-[11px] font-bold absolute bottom-2 transition-all duration-300 ${active ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"}`}>{item.label}</span>
+              <div className={`${active ? "scale-110 -translate-y-0.5" : "opacity-70"} transition-all duration-300`}>{item.icon}</div>
+              <span className={`text-[10px] font-semibold absolute bottom-1.5 transition-all duration-300 ${active ? "opacity-100" : "opacity-70"}`}>{item.label}</span>
             </Link>
           );
         })}
         
-        <button type="button" onClick={() => setIsMoreOpen(true)} className={`flex-1 flex flex-col items-center justify-center h-full relative transition-all active:scale-90 ${isMoreOpen ? "text-[--accent-primary-light]" : "text-[--text-muted]"}`}>
+        <button type="button" onClick={() => setIsMoreOpen(true)} aria-label="Open more navigation" aria-expanded={isMoreOpen} aria-controls="more-navigation-dialog" className={`flex-1 flex flex-col items-center justify-center h-full relative transition-all active:scale-90 ${isMoreOpen ? "text-[--accent-primary-light]" : "text-[--text-muted]"}`}>
           <div className={`${isMoreOpen ? "scale-110 translate-y-0" : "opacity-40"} transition-all duration-300`}><svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" /></svg></div>
           <span className={`text-[11px] font-bold absolute bottom-2 transition-all duration-300 ${isMoreOpen ? "opacity-100" : "opacity-0 translate-y-2"}`}>More</span>
         </button>
