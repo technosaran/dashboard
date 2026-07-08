@@ -75,6 +75,13 @@ function getMemberAvatar(name: string | null | undefined, relationship: string |
   return null;
 }
 
+function formatTransferDate(dateValue: string | null | undefined): string {
+  if (!dateValue) return "N/A";
+  const parsed = new Date(dateValue);
+  if (Number.isNaN(parsed.getTime())) return "N/A";
+  return format(parsed, "MMM d, yyyy");
+}
+
 export default function FamilyClient() {
   const { data: { accounts, ledgerLogs } = { accounts: [], ledgerLogs: [] }, mutate: mutateFinance } = useFinanceData();
   const searchParams = useSearchParams();
@@ -226,9 +233,16 @@ export default function FamilyClient() {
   }
 
   function openSendMoney(memberId?: string) {
-    if (memberId) {
-      setTransferForm(prev => ({ ...prev, family_member_id: memberId }));
+    if (accounts.length === 0) {
+      toast.error("Add an account before sending money");
+      return;
     }
+    setTransferForm(prev => ({
+      family_member_id: memberId ?? prev.family_member_id,
+      account_id: prev.account_id || accounts[0]?.id || "",
+      amount: "",
+      note: "",
+    }));
     setShowTransferModal(true);
   }
 
@@ -369,7 +383,7 @@ export default function FamilyClient() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {members.map((member) => {
                 const balance = Number(member.balance || 0);
-                const initials = member.name.charAt(0).toUpperCase();
+                const initials = member.name.trim().charAt(0).toUpperCase() || "?";
                 const avatar = getMemberAvatar(member.name, member.relationship);
                 return (
                   <div key={member.id} className="glass-card flex flex-col justify-between gap-4 border-white/5 hover:border-purple-500/30 hover:shadow-[0_0_25px_rgba(147,51,234,0.08)] transition-all duration-300 relative group overflow-hidden">
@@ -475,7 +489,7 @@ export default function FamilyClient() {
                     return (
                       <tr key={tr.id} className="hover:bg-white/[0.02] transition-colors group">
                         <td className="py-4 px-6 text-[12px] font-bold text-white/80">
-                          {tr.transfer_date ? format(new Date(tr.transfer_date), "MMM d, yyyy") : "N/A"}
+                          {formatTransferDate(tr.transfer_date)}
                         </td>
                         <td className="py-4 px-6">
                           <span className="text-[12px] font-bold text-white">{memberName}</span>

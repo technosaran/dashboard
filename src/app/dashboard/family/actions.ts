@@ -107,32 +107,20 @@ export async function createAllowance(data: {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Unauthorized" };
 
-    if (!data.family_member_id) return { error: "Member is required" };
+    const familyMemberId = data.family_member_id?.trim();
+    if (!familyMemberId) return { error: "Member is required" };
     if (!data.amount || data.amount <= 0 || !Number.isFinite(data.amount)) {
       return { error: "Amount must be a positive number" };
     }
-    if (!data.frequency || data.frequency.trim().length === 0) {
+    const frequency = data.frequency?.trim();
+    if (!frequency) {
       return { error: "Frequency is required" };
     }
-
-    // We also need to fetch/specify the default account, or wait, does the allowance have an account ID?
-    // Wait, the new schema does NOT have account_id in family_allowances:
-    // export const familyAllowances = pgTable("family_allowances", {
-    //   id: uuid("id").defaultRandom().primaryKey(),
-    //   user_id: uuid("user_id").notNull(),
-    //   family_member_id: uuid("family_member_id").notNull(),
-    //   amount: numeric("amount").notNull(),
-    //   frequency: text("frequency").notNull(),
-    //   last_paid_at: timestamp("last_paid_at"),
-    //   created_at: timestamp("created_at").defaultNow().notNull(),
-    // });
-    // So there is NO account_id column! That's why the payAllowance RPC takes account_id as a parameter!
-    // Perfect, let's insert without account_id.
     const { error } = await supabase.from("family_allowances").insert({
       user_id: user.id,
-      family_member_id: data.family_member_id,
+      family_member_id: familyMemberId,
       amount: data.amount,
-      frequency: data.frequency,
+      frequency,
     });
 
     if (error) return { error: error.message };
@@ -156,11 +144,13 @@ export async function updateAllowance(
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Unauthorized" };
 
-    if (!id) return { error: "Allowance ID is required" };
+    const allowanceId = id?.trim();
+    if (!allowanceId) return { error: "Allowance ID is required" };
     if (!data.amount || data.amount <= 0 || !Number.isFinite(data.amount)) {
       return { error: "Amount must be a positive number" };
     }
-    if (!data.frequency || data.frequency.trim().length === 0) {
+    const frequency = data.frequency?.trim();
+    if (!frequency) {
       return { error: "Frequency is required" };
     }
 
@@ -168,9 +158,9 @@ export async function updateAllowance(
       .from("family_allowances")
       .update({
         amount: data.amount,
-        frequency: data.frequency,
+        frequency,
       })
-      .eq("id", id)
+      .eq("id", allowanceId)
       .eq("user_id", user.id);
 
     if (error) return { error: error.message };
@@ -188,12 +178,13 @@ export async function deleteAllowance(id: string) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Unauthorized" };
 
-    if (!id) return { error: "Allowance ID is required" };
+    const allowanceId = id?.trim();
+    if (!allowanceId) return { error: "Allowance ID is required" };
 
     const { error } = await supabase
       .from("family_allowances")
       .delete()
-      .eq("id", id)
+      .eq("id", allowanceId)
       .eq("user_id", user.id);
 
     if (error) return { error: error.message };
@@ -219,19 +210,24 @@ export async function processFamilyTransfer(data: {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Unauthorized" };
 
-    if (!data.family_member_id) return { error: "Recipient is required" };
-    if (!data.account_id) return { error: "Account is required" };
+    const familyMemberId = data.family_member_id?.trim();
+    const accountId = data.account_id?.trim();
+    const transferType = data.type?.trim() || "gift";
+    const note = data.note?.trim();
+
+    if (!familyMemberId) return { error: "Recipient is required" };
+    if (!accountId) return { error: "Account is required" };
     if (!data.amount || data.amount <= 0 || !Number.isFinite(data.amount)) {
       return { error: "Amount must be a positive number" };
     }
 
     const { data: rpcData, error } = await supabase.rpc("process_family_transfer_v2", {
       p_user_id: user.id,
-      p_family_member_id: data.family_member_id,
-      p_account_id: data.account_id,
+      p_family_member_id: familyMemberId,
+      p_account_id: accountId,
       p_amount: data.amount,
-      p_type: data.type || "gift",
-      p_note: data.note || undefined,
+      p_type: transferType,
+      p_note: note || undefined,
     });
 
     if (error) return { error: error.message };
@@ -254,13 +250,15 @@ export async function payAllowance(data: { allowance_id: string; account_id: str
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Unauthorized" };
 
-    if (!data.allowance_id) return { error: "Allowance ID is required" };
-    if (!data.account_id) return { error: "Account is required" };
+    const allowanceId = data.allowance_id?.trim();
+    const accountId = data.account_id?.trim();
+    if (!allowanceId) return { error: "Allowance ID is required" };
+    if (!accountId) return { error: "Account is required" };
 
     const { data: rpcData, error } = await supabase.rpc("pay_family_allowance", {
       p_user_id: user.id,
-      p_allowance_id: data.allowance_id,
-      p_account_id: data.account_id,
+      p_allowance_id: allowanceId,
+      p_account_id: accountId,
     });
 
     if (error) return { error: error.message };

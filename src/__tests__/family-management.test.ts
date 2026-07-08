@@ -114,6 +114,15 @@ describe('deleteFamilyMember', () => {
 // createAllowance
 // ===================================================================
 describe('createAllowance', () => {
+  it('should return error when member id is blank whitespace', async () => {
+    const result = await createAllowance({
+      family_member_id: '   ',
+      amount: 500,
+      frequency: 'monthly',
+    });
+    expect(result).toEqual({ error: 'Member is required' });
+  });
+
   it('should return error when amount is 0', async () => {
     const result = await createAllowance({
       family_member_id: 'member-1',
@@ -140,12 +149,31 @@ describe('createAllowance', () => {
     });
     expect(result).toEqual({ error: 'Frequency is required' });
   });
+
+  it('should return error when frequency is blank whitespace', async () => {
+    const result = await createAllowance({
+      family_member_id: 'member-1',
+      amount: 500,
+      frequency: '   ',
+    });
+    expect(result).toEqual({ error: 'Frequency is required' });
+  });
 });
 
 // ===================================================================
 // processFamilyTransfer
 // ===================================================================
 describe('processFamilyTransfer', () => {
+  it('should return error when family_member_id is blank whitespace', async () => {
+    const result = await processFamilyTransfer({
+      family_member_id: '   ',
+      account_id: 'account-1',
+      amount: 100,
+      type: 'gift',
+    });
+    expect(result).toEqual({ error: 'Recipient is required' });
+  });
+
   it('should return error when amount is 0', async () => {
     const result = await processFamilyTransfer({
       family_member_id: 'member-1',
@@ -174,5 +202,25 @@ describe('processFamilyTransfer', () => {
       type: 'gift',
     });
     expect(result).toEqual({ error: 'Account is required' });
+  });
+
+  it('should trim transfer fields before calling RPC', async () => {
+    const result = await processFamilyTransfer({
+      family_member_id: ' member-1 ',
+      account_id: ' account-1 ',
+      amount: 100,
+      type: ' gift ',
+      note: '  hello  ',
+    });
+
+    expect(result).toEqual({ success: true });
+    expect(mockRpc).toHaveBeenCalledWith('process_family_transfer_v2', {
+      p_user_id: 'test-user-id',
+      p_family_member_id: 'member-1',
+      p_account_id: 'account-1',
+      p_amount: 100,
+      p_type: 'gift',
+      p_note: 'hello',
+    });
   });
 });
