@@ -108,6 +108,25 @@ export default function LiabilitiesClient({ initialData }: { initialData?: Finan
     e.preventDefault();
     const total = parseFloat(formData.total_amount);
     const remaining = parseFloat(formData.remaining_amount);
+    const interestRate = formData.interest_rate ? parseFloat(formData.interest_rate) : null;
+    const monthlyPayment = formData.monthly_payment ? parseFloat(formData.monthly_payment) : null;
+
+    if (!Number.isFinite(total) || total <= 0) {
+      toast.error("Total principal must be greater than zero.");
+      return;
+    }
+    if (!Number.isFinite(remaining) || remaining < 0) {
+      toast.error("Remaining balance must be zero or greater.");
+      return;
+    }
+    if (interestRate !== null && (!Number.isFinite(interestRate) || interestRate < 0)) {
+      toast.error("Interest rate cannot be negative.");
+      return;
+    }
+    if (monthlyPayment !== null && (!Number.isFinite(monthlyPayment) || monthlyPayment < 0)) {
+      toast.error("Monthly EMI cannot be negative.");
+      return;
+    }
     if (remaining > total) {
       toast.error("Remaining balance cannot exceed total principal!");
       return;
@@ -119,8 +138,8 @@ export default function LiabilitiesClient({ initialData }: { initialData?: Finan
         ...libData,
         total_amount: total,
         remaining_amount: remaining,
-        interest_rate: formData.interest_rate ? parseFloat(formData.interest_rate) : null,
-        monthly_payment: formData.monthly_payment ? parseFloat(formData.monthly_payment) : null,
+        interest_rate: interestRate,
+        monthly_payment: monthlyPayment,
         due_date: formData.due_date || null,
         notes: formData.notes || null,
       };
