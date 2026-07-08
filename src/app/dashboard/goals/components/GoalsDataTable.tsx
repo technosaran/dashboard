@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { format, differenceInDays, parseISO } from "date-fns";
+import { format, differenceInDays, parseISO, isValid } from "date-fns";
 import {
   useReactTable,
   getCoreRowModel,
@@ -43,6 +43,7 @@ export default function GoalsDataTable({ goals, onEdit, onDelete, onContribute, 
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
+  const [goalFilter, setGoalFilter] = useState<"all" | "active" | "completed" | "dueSoon">("all");
 
   const columns = useMemo(
     () => [
@@ -100,10 +101,12 @@ export default function GoalsDataTable({ goals, onEdit, onDelete, onContribute, 
         cell: (info) => {
           const val = info.getValue();
           if (!val) return <span className="text-[11px] text-[--text-muted] whitespace-nowrap">No deadline</span>;
-          const days = differenceInDays(parseISO(val), new Date());
+          const parsed = parseISO(val);
+          if (!isValid(parsed)) return <span className="text-[11px] text-[--text-muted] whitespace-nowrap">No deadline</span>;
+          const days = differenceInDays(parsed, new Date());
           return (
             <div className="whitespace-nowrap">
-              <p className="text-[12px] font-bold text-white">{format(parseISO(val), "MMM d, yyyy")}</p>
+              <p className="text-[12px] font-bold text-white">{format(parsed, "MMM d, yyyy")}</p>
               <p className={`text-[9px] font-black uppercase tracking-widest mt-0.5 ${days < 0 ? 'text-danger' : days < 30 ? 'text-warning' : 'text-[--text-muted]'}`}>
                 {days < 0 ? `${Math.abs(days)} days overdue` : `${days} days left`}
               </p>
@@ -145,13 +148,48 @@ export default function GoalsDataTable({ goals, onEdit, onDelete, onContribute, 
   );
 
   const filteredGoals = useMemo(() => {
-    if (!globalFilter) return goals;
-    const lower = globalFilter.toLowerCase();
-    return goals.filter(g => 
-      g.name.toLowerCase().includes(lower) || 
-      (g.category && g.category.toLowerCase().includes(lower))
+    const lower = globalFilter.toLowerCase().trim();
+    const now = new Date();
+    return goals.filter((g) => {
+      const current = Number(g.current_amount);
+      const target = Number(g.target_amount);
+      const isCompleted = target > 0 && current >= target;
+      const deadlineDate = g.deadline ? parseISO(g.deadline) : null;
+      const dueSoon = deadlineDate && isValid(deadlineDate) ? differenceInDays(deadlineDate, now) <= 30 : false;
+
+      const matchesFilter =
+        goalFilter === "all" ||
+        (goalFilter === "active" && !isCompleted) ||
+        (goalFilter === "completed" && isCompleted) ||
+        (goalFilter === "dueSoon" && !isCompleted && dueSoon);
+      if (!matchesFilter) return false;
+
+      if (!lower) return true;
+      return g.name.toLowerCase().includes(lower) || (g.category && g.category.toLowerCase().includes(lower));
+    });
+  }, [goals, globalFilter, goalFilter]);
+
+  const summary = useMemo(() => {
+    const now = new Date();
+    return goals.reduce(
+      (acc, goal) => {
+        const current = Number(goal.current_amount);
+        const target = Number(goal.target_amount);
+        const complete = target > 0 && current >= target;
+        if (complete) acc.completed += 1;
+        else acc.active += 1;
+        if (goal.deadline) {
+          const date = parseISO(goal.deadline);
+          if (isValid(date)) {
+            const days = differenceInDays(date, now);
+            if (days >= 0 && days <= 30 && !complete) acc.dueSoon += 1;
+          }
+        }
+        return acc;
+      },
+      { active: 0, completed: 0, dueSoon: 0 }
     );
-  }, [goals, globalFilter]);
+  }, [goals]);
 
   const table = useReactTable({
     data: filteredGoals,
@@ -184,15 +222,38 @@ export default function GoalsDataTable({ goals, onEdit, onDelete, onContribute, 
   return (
     <div className="glass-card-static rounded-2xl overflow-hidden flex flex-col border border-white/5">
       <div className="p-4 md:p-5 border-b border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/[0.02]">
-        <div className="relative w-full sm:w-72">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[--text-muted]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-          <input
-            type="text"
-            placeholder="Search goals..."
-            value={globalFilter}
-            onChange={(e) => setGlobalFilter(e.target.value)}
-            className="input-premium pl-9 py-2 text-sm w-full !bg-black/20"
-          />
+        <div className="flex flex-col gap-3 w-full">
+          <div className="relative w-full sm:w-72">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[--text-muted]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            <input
+              type="text"
+              placeholder="Search goals..."
+              value={globalFilter}
+              onChange={(e) => setGlobalFilter(e.target.value)}
+              className="input-premium pl-9 py-2 text-sm w-full !bg-black/20"
+            />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { key: "all", label: "All", value: goals.length },
+              { key: "active", label: "Active", value: summary.active },
+              { key: "completed", label: "Completed", value: summary.completed },
+              { key: "dueSoon", label: "Due ≤30d", value: summary.dueSoon },
+            ].map((filter) => (
+              <button
+                key={filter.key}
+                type="button"
+                onClick={() => setGoalFilter(filter.key as typeof goalFilter)}
+                className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-[0.18em] border transition-colors ${
+                  goalFilter === filter.key
+                    ? "bg-[--accent-primary]/20 border-[--accent-primary]/40 text-white"
+                    : "bg-white/5 border-white/10 text-[--text-muted] hover:text-white"
+                }`}
+              >
+                {filter.label} ({filter.value})
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* View Mode Toggle */}
@@ -241,13 +302,16 @@ export default function GoalsDataTable({ goals, onEdit, onDelete, onContribute, 
               let deadlineText = "No deadline";
               let daysLeftColor = "text-[--text-muted]";
               if (goal.deadline) {
-                const days = differenceInDays(parseISO(goal.deadline), new Date());
-                if (days < 0) {
-                  deadlineText = `${Math.abs(days)} days overdue`;
-                  daysLeftColor = "text-rose-500 font-bold";
-                } else {
-                  deadlineText = `${days} days left`;
-                  daysLeftColor = days < 30 ? "text-amber-500 font-bold" : "text-emerald-400 font-medium";
+                const parsed = parseISO(goal.deadline);
+                if (isValid(parsed)) {
+                  const days = differenceInDays(parsed, new Date());
+                  if (days < 0) {
+                    deadlineText = `${Math.abs(days)} days overdue`;
+                    daysLeftColor = "text-rose-500 font-bold";
+                  } else {
+                    deadlineText = `${days} days left`;
+                    daysLeftColor = days < 30 ? "text-amber-500 font-bold" : "text-emerald-400 font-medium";
+                  }
                 }
               }
 
@@ -279,13 +343,16 @@ export default function GoalsDataTable({ goals, onEdit, onDelete, onContribute, 
                               let priority = "Low";
                               let priorityBadge = "bg-blue-500/10 text-blue-400 border border-blue-500/20";
                               if (goal.deadline) {
-                                const days = differenceInDays(parseISO(goal.deadline), new Date());
-                                if (days < 60) {
-                                  priority = "High";
-                                  priorityBadge = "bg-rose-500/10 text-rose-400 border border-rose-500/20";
-                                } else if (days < 180) {
-                                  priority = "Medium";
-                                  priorityBadge = "bg-amber-500/10 text-amber-400 border border-amber-500/20";
+                                const parsed = parseISO(goal.deadline);
+                                if (isValid(parsed)) {
+                                  const days = differenceInDays(parsed, new Date());
+                                  if (days < 60) {
+                                    priority = "High";
+                                    priorityBadge = "bg-rose-500/10 text-rose-400 border border-rose-500/20";
+                                  } else if (days < 180) {
+                                    priority = "Medium";
+                                    priorityBadge = "bg-amber-500/10 text-amber-400 border border-amber-500/20";
+                                  }
                                 }
                               }
                               return (
@@ -333,7 +400,9 @@ export default function GoalsDataTable({ goals, onEdit, onDelete, onContribute, 
                   {/* Actions & Footer */}
                   <div className="mt-4 pt-3 border-t border-white/5 flex justify-between items-center">
                     <span className={`text-[10px] uppercase tracking-wider font-bold ${daysLeftColor}`}>
-                      {goal.deadline ? `${format(parseISO(goal.deadline), "MMM d, yyyy")} (${deadlineText})` : "No Deadline"}
+                      {goal.deadline && isValid(parseISO(goal.deadline))
+                        ? `${format(parseISO(goal.deadline), "MMM d, yyyy")} (${deadlineText})`
+                        : "No Deadline"}
                     </span>
                     
                     <div className="flex items-center gap-1.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">

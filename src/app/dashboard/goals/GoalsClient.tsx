@@ -3,7 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { useState, useMemo, useEffect } from "react";
 import { useHasMounted } from "@/hooks/use-has-mounted";
-import { differenceInDays, parseISO, format } from "date-fns";
+import { differenceInDays, parseISO, format, isValid } from "date-fns";
 import { toast } from "react-hot-toast";
 
 import type { Tables } from "@/lib/database.types";
@@ -74,7 +74,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
       const defaultAccId = profile?.default_accounts?.goals;
       const defaultAccExists = defaultAccId && accounts.some(a => a.id === defaultAccId);
       setTimeout(() => {
-        setFormData(prev => ({ ...prev, account_id: defaultAccExists ? defaultAccId : "" }));
+        setFormData(prev => ({ ...prev, account_id: defaultAccExists ? defaultAccId : accounts[0].id }));
       }, 0);
     }
   }, [accounts, formData.account_id, profile]);
@@ -91,6 +91,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
     activeGoals.forEach(g => {
       if (g.deadline) {
         const d = parseISO(g.deadline);
+        if (!isValid(d)) return;
         const days = differenceInDays(d, new Date());
         if (days >= 0 && days < closestDays) {
           closestDays = days;
@@ -141,20 +142,31 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
 
   async function handleAddGoal(e: React.FormEvent) {
     e.preventDefault();
+    const targetAmount = parseFloat(formData.target_amount);
+    const currentAmount = parseFloat(formData.current_amount);
+    if (!Number.isFinite(targetAmount) || targetAmount <= 0) {
+      toast.error("Target amount must be greater than zero.");
+      return;
+    }
+    if (!editingGoalId && (!Number.isFinite(currentAmount) || currentAmount < 0)) {
+      toast.error("Initial saved amount cannot be negative.");
+      return;
+    }
+
     await withLock(async () => {
       let res;
       if (editingGoalId) {
         res = await updateGoal(editingGoalId, {
           name: formData.name,
-          target_amount: parseFloat(formData.target_amount),
+          target_amount: targetAmount,
           deadline: formData.deadline || undefined,
           category: formData.category
         });
       } else {
         res = await createGoal({
           ...formData,
-          target_amount: parseFloat(formData.target_amount),
-          current_amount: parseFloat(formData.current_amount),
+          target_amount: targetAmount,
+          current_amount: currentAmount,
           deadline: formData.deadline || undefined,
         });
       }
@@ -176,8 +188,13 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
       toast.error("Please select an account.");
       return;
     }
+    const amount = parseFloat(contributeAmount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      toast.error("Please enter a valid contribution amount.");
+      return;
+    }
     await withLock(async () => {
-      const res = await updateGoalAmount(selectedGoalId, parseFloat(contributeAmount), selectedAccountId);
+      const res = await updateGoalAmount(selectedGoalId, amount, selectedAccountId);
       if (!res?.error) {
         toast.success("Capital injected into savings goal");
         setShowContributeModal(false);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, differenceInDays, isValid } from "date-fns";
 import {
   useReactTable,
   getCoreRowModel,
@@ -30,6 +30,7 @@ const columnHelper = createColumnHelper<Liability>();
 export default function LiabilitiesDataTable({ liabilities, onEdit, onDelete, onAdd }: LiabilitiesDataTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
+  const [recordFilter, setRecordFilter] = useState<"all" | "open" | "dueSoon" | "highApr">("all");
 
   const columns = useMemo(
     () => [
@@ -123,12 +124,16 @@ export default function LiabilitiesDataTable({ liabilities, onEdit, onDelete, on
           if (!val) return <span className="text-[11px] text-[--text-muted]">--</span>;
           try {
             const dateObj = parseISO(val);
-            if (isNaN(dateObj.getTime())) {
+            if (!isValid(dateObj)) {
               return <span className="text-[11px] text-[--text-muted]">--</span>;
             }
+            const daysLeft = differenceInDays(dateObj, new Date());
             return (
               <div>
                 <p className="text-[12px] font-bold text-white">{format(dateObj, "MMM d, yyyy")}</p>
+                <p className={`text-[9px] font-black uppercase tracking-[0.08em] mt-0.5 ${daysLeft < 0 ? "text-rose-400" : daysLeft <= 7 ? "text-amber-400" : "text-[--text-muted]"}`}>
+                  {daysLeft < 0 ? `${Math.abs(daysLeft)}d overdue` : `${daysLeft}d left`}
+                </p>
               </div>
             );
           } catch {
@@ -163,14 +168,49 @@ export default function LiabilitiesDataTable({ liabilities, onEdit, onDelete, on
   );
 
   const filteredLiabilities = useMemo(() => {
-    if (!globalFilter) return liabilities;
-    const lower = globalFilter.toLowerCase();
-    return liabilities.filter(l => 
-      l.name.toLowerCase().includes(lower) || 
-      (l.category && l.category.toLowerCase().includes(lower)) ||
-      (l.notes && l.notes.toLowerCase().includes(lower))
+    const lower = globalFilter.toLowerCase().trim();
+    const now = new Date();
+    return liabilities.filter((l) => {
+      const remaining = Number(l.remaining_amount);
+      const dueDate = l.due_date ? parseISO(l.due_date) : null;
+      const dueSoon = dueDate && isValid(dueDate) ? differenceInDays(dueDate, now) <= 7 : false;
+      const highApr = Number(l.interest_rate || 0) >= 12;
+
+      const matchesFilter =
+        recordFilter === "all" ||
+        (recordFilter === "open" && remaining > 0) ||
+        (recordFilter === "dueSoon" && remaining > 0 && dueSoon) ||
+        (recordFilter === "highApr" && remaining > 0 && highApr);
+      if (!matchesFilter) return false;
+
+      if (!lower) return true;
+      return (
+        l.name.toLowerCase().includes(lower) ||
+        (l.category && l.category.toLowerCase().includes(lower)) ||
+        (l.notes && l.notes.toLowerCase().includes(lower))
+      );
+    });
+  }, [liabilities, globalFilter, recordFilter]);
+
+  const summary = useMemo(() => {
+    const now = new Date();
+    return liabilities.reduce(
+      (acc, liability) => {
+        const remaining = Number(liability.remaining_amount);
+        if (remaining > 0) acc.open += 1;
+        if (Number(liability.interest_rate || 0) >= 12 && remaining > 0) acc.highApr += 1;
+        if (liability.due_date) {
+          const parsed = parseISO(liability.due_date);
+          if (isValid(parsed)) {
+            const days = differenceInDays(parsed, now);
+            if (days >= 0 && days <= 7 && remaining > 0) acc.dueSoon += 1;
+          }
+        }
+        return acc;
+      },
+      { open: 0, dueSoon: 0, highApr: 0 }
     );
-  }, [liabilities, globalFilter]);
+  }, [liabilities]);
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
@@ -204,15 +244,38 @@ export default function LiabilitiesDataTable({ liabilities, onEdit, onDelete, on
   return (
     <div className="glass-card-static rounded-2xl overflow-hidden flex flex-col border border-white/5">
       <div className="p-4 md:p-5 border-b border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/[0.02]">
-        <div className="relative">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[--text-muted]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-          <input
-            type="text"
-            placeholder="Search liabilities..."
-            value={globalFilter}
-            onChange={(e) => setGlobalFilter(e.target.value)}
-            className="input-premium pl-9 py-2 text-sm w-full sm:w-64 !bg-black/20"
-          />
+        <div className="flex flex-col gap-3 w-full">
+          <div className="relative">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[--text-muted]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            <input
+              type="text"
+              placeholder="Search liabilities..."
+              value={globalFilter}
+              onChange={(e) => setGlobalFilter(e.target.value)}
+              className="input-premium pl-9 py-2 text-sm w-full sm:w-64 !bg-black/20"
+            />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { key: "all", label: "All", value: liabilities.length },
+              { key: "open", label: "Open", value: summary.open },
+              { key: "dueSoon", label: "Due ≤7d", value: summary.dueSoon },
+              { key: "highApr", label: "APR ≥12%", value: summary.highApr },
+            ].map((filter) => (
+              <button
+                key={filter.key}
+                type="button"
+                onClick={() => setRecordFilter(filter.key as typeof recordFilter)}
+                className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-[0.18em] border transition-colors ${
+                  recordFilter === filter.key
+                    ? "bg-rose-500/15 border-rose-500/40 text-white"
+                    : "bg-white/5 border-white/10 text-[--text-muted] hover:text-white"
+                }`}
+              >
+                {filter.label} ({filter.value})
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
