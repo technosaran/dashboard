@@ -9,7 +9,6 @@ import { createBond, updateBond } from "./actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { Drawer } from "@/components/ui/drawer";
-import { Tabs } from "@/components/ui/tabs";
 import { getColorByLabel } from "@/lib/chart-colours";
 
 import dynamic from "next/dynamic";
@@ -17,7 +16,6 @@ const ResponsiveContainer = dynamic(() => import("recharts").then((mod) => mod.R
 import { PieChart, Pie, Cell, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip as RechartsTooltip, Legend } from "recharts";
 
 import BondsDataTable from "./components/BondsDataTable";
-import PnLValue from "@/components/pnl-value";
 
 import type { Tables } from "@/lib/database.types";
 type Bond = Tables<"bonds">;
@@ -138,7 +136,6 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
   const [showAddModal, setShowAddModal] = useState(searchParams?.get("action") === "new");
   const [submitting, withLock] = useSubmitLock();
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [selectedBond, setSelectedBond] = useState<any | null>(null);
   const [activeView, setActiveView] = useState<"overview" | "holdings">("overview");
 
   const mounted = useHasMounted();

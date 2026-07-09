@@ -89,6 +89,7 @@ export default function LoginPage() {
         failCountRef.current = 0;
         localStorage.removeItem("failCount");
         localStorage.removeItem("lockoutUntil");
+        window.location.href = "/dashboard";
       }
     } catch {
       setError("An unexpected error occurred. Please try again.");

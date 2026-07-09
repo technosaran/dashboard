@@ -42,12 +42,7 @@ export function SWRProvider({ children, initialData }: SWRProviderProps) {
           forexTransactions: initialData.forexTransactions,
         },
       }
-    : {
-        finance_summary: { profile: null, accounts: [], transactions: [], ledgerLogs: [] },
-        finance_investments: { investments: [], mutualFunds: [], bonds: [], alternativeAssets: [], stockTrades: [], mutualFundTrades: [], bondTransactions: [], fnoTrades: [] },
-        finance_cashflow: { incomes: [], expenses: [], budgets: [], goals: [], liabilities: [] },
-        finance_forex: { forexAccounts: [], forexTrades: [], forexTransactions: [] },
-      };
+    : undefined;
 
   return (
     <SWRConfig value={{ fallback }}>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { format } from "date-fns";
-import { useMemo, memo, useState, useEffect } from "react";
+import { useMemo, memo, useState } from "react";
 import Greeting from "@/components/greeting";
 
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";

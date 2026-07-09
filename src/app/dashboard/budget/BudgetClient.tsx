@@ -20,7 +20,6 @@ const XAxis = dynamic(() => import("recharts").then((mod) => mod.XAxis), { ssr: 
 const YAxis = dynamic(() => import("recharts").then((mod) => mod.YAxis), { ssr: false });
 const RechartsTooltip = dynamic(() => import("recharts").then((mod) => mod.Tooltip), { ssr: false });
 
-import { Tabs } from "@/components/ui/tabs";
 import { Drawer } from "@/components/ui/drawer";
 import { Copy, Trash2, Edit2, Plus, Check } from "lucide-react";
 

@@ -25,8 +25,8 @@ vi.mock("@/lib/redis", () => {
   };
 });
 
-import { RateLimiter, RATE_LIMIT_PRESETS } from "@/lib/rate-limiter";
-import { getRedisClient, isRedisHealthy } from "@/lib/redis";
+import { RateLimiter } from "@/lib/rate-limiter";
+import { isRedisHealthy } from "@/lib/redis";
 
 describe("RateLimiter", () => {
   beforeEach(() => {

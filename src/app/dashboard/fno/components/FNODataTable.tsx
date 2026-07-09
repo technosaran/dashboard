@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { format, parseISO } from "date-fns";
 import {
   useReactTable,
   getCoreRowModel,
@@ -176,6 +175,7 @@ export default function FNODataTable({ trades, onCloseTrade, onDeleteTrade, onAd
 
 
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data: trades,
     columns,

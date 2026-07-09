@@ -12,7 +12,7 @@ import {
   SortingState,
 } from "@tanstack/react-table";
 import { EmptyState } from "@/components/empty-state";
-import { ArrowUpDown, ArrowUp, ArrowDown, Edit2, Trash2 } from "lucide-react";
+import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import type { Tables } from "@/lib/database.types";
 import PnLValue from "@/components/pnl-value";
 import { getTableHeaderClass, getTableCellClass } from "@/lib/utils";
@@ -134,6 +134,7 @@ export default function AlternativeAssetsDataTable({ assets, onEdit, onDelete, o
 
   const [sorting, setSorting] = useState<SortingState>([]);
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data: assets,
     columns,

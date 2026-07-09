@@ -19,6 +19,8 @@ const nextConfig: NextConfig = {
   // Build optimizations
   productionBrowserSourceMaps: false,
 
+  serverExternalPackages: ["@react-pdf/renderer"],
+
   // Static redirect: root → dashboard (no force-dynamic needed)
   redirects: async () => [
     {

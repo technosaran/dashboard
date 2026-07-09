@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Environment Variables Validation Script.
  * Implements requirement 7.12: environment configuration validation before deployment or dev starts.

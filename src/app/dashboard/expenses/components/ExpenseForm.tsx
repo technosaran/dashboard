@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 type Account = {
   id: string;
@@ -35,8 +35,8 @@ type FieldErrors = {
 };
 
 export default function ExpenseForm({
-  isOpen,
-  onClose,
+  isOpen: _isOpen,
+  onClose: _onClose,
   onSubmit,
   submitting,
   accounts,
@@ -46,7 +46,7 @@ export default function ExpenseForm({
   editingExpense,
 }: ExpenseFormProps) {
   const [formData, setFormData] = useState({
-    description: editingExpense?.description ?? "",
+    description: editingExpense ? editingExpense.description : "",
     amount: editingExpense ? String(editingExpense.amount) : "",
     category: editingExpense?.category ?? "Food",
     date: editingExpense?.date ?? defaultDate,
@@ -57,8 +57,9 @@ export default function ExpenseForm({
   const [errors, setErrors] = useState<FieldErrors>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
-  // Re-populate when editingExpense changes (e.g. user opens a different row)
-  useEffect(() => {
+  const [prevEditingExpenseId, setPrevEditingExpenseId] = useState<string | undefined>(undefined);
+  if (editingExpense?.id !== prevEditingExpenseId) {
+    setPrevEditingExpenseId(editingExpense?.id);
     if (editingExpense) {
       setFormData({
         description: editingExpense.description,
@@ -68,7 +69,7 @@ export default function ExpenseForm({
         account_id: editingExpense.account_id ?? defaultAccountId ?? "",
       });
     }
-  }, [editingExpense?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }
 
   function validate(data: typeof formData): FieldErrors {
     const errs: FieldErrors = {};

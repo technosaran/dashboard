@@ -4,7 +4,6 @@
  * Provides factory functions to create mock objects for testing
  */
 
-import { SupabaseClient } from '@supabase/supabase-js';
 import { vi } from 'vitest';
 
 /**

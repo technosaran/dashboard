@@ -194,9 +194,30 @@ export default function TransactionsClient() {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 15;
 
-  useEffect(() => {
+  const [prevFilters, setPrevFilters] = useState({
+    globalFilter,
+    activeTab,
+    selectedMonth,
+    selectedYear,
+    categoryFilter,
+  });
+
+  if (
+    globalFilter !== prevFilters.globalFilter ||
+    activeTab !== prevFilters.activeTab ||
+    selectedMonth !== prevFilters.selectedMonth ||
+    selectedYear !== prevFilters.selectedYear ||
+    categoryFilter !== prevFilters.categoryFilter
+  ) {
+    setPrevFilters({
+      globalFilter,
+      activeTab,
+      selectedMonth,
+      selectedYear,
+      categoryFilter,
+    });
     setCurrentPage(1);
-  }, [globalFilter, activeTab, selectedMonth, selectedYear, categoryFilter]);
+  }
 
   const paginatedTransactions = useMemo(() => {
     const startIndex = (currentPage - 1) * pageSize;

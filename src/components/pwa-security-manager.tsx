@@ -10,6 +10,7 @@ export default function PwaSecurityManager() {
         navigator.serviceWorker
           .register("/sw.js")
           .then((reg) => {
+            // eslint-disable-next-line no-console
             console.log("Service Worker registered successfully with scope: ", reg.scope);
           })
           .catch((err) => {

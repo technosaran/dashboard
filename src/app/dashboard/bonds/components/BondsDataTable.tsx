@@ -155,6 +155,7 @@ export default function BondsDataTable({ bonds, onEdit, onAdd }: BondsDataTableP
     );
   }, [bonds, globalFilter]);
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data: filteredBonds,
     columns,

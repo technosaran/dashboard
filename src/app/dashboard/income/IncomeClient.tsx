@@ -98,10 +98,10 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
   useEffect(() => {
     const isNew = searchParams.get("action") === "new";
     if (isNew && !initialized && accounts.length > 0 && defaultDate) {
-      setInitialized(true);
       const defaultAccId = profile?.default_accounts?.income;
       const account_id = (defaultAccId && accounts.some(a => a.id === defaultAccId)) ? defaultAccId : "";
       setTimeout(() => {
+        setInitialized(true);
         setFormData({
           description: "",
           amount: "",
@@ -111,17 +111,23 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
         });
       }, 0);
     } else if (!initialized && defaultDate) {
-      setInitialized(true);
       setTimeout(() => {
+        setInitialized(true);
         setFormData(prev => ({ ...prev, date: defaultDate }));
       }, 0);
     }
   }, [accounts, profile, defaultDate, initialized, searchParams]);
 
-  // Reset pagination page when filters change
-  useEffect(() => {
+  const [prevCategoryFilter, setPrevCategoryFilter] = useState(categoryFilter);
+  const [prevSelectedMonth, setPrevSelectedMonth] = useState(selectedMonth);
+  const [prevSelectedYear, setPrevSelectedYear] = useState(selectedYear);
+
+  if (categoryFilter !== prevCategoryFilter || selectedMonth !== prevSelectedMonth || selectedYear !== prevSelectedYear) {
+    setPrevCategoryFilter(categoryFilter);
+    setPrevSelectedMonth(selectedMonth);
+    setPrevSelectedYear(selectedYear);
     setCurrentPage(1);
-  }, [categoryFilter, selectedMonth, selectedYear]);
+  }
 
   const handleOpenAddModal = () => {
     const defaultAccId = profile?.default_accounts?.income;

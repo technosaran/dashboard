@@ -191,6 +191,7 @@ export default function GoalsDataTable({ goals, onEdit, onDelete, onContribute, 
     );
   }, [goals]);
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data: filteredGoals,
     columns,

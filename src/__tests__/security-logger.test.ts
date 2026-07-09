@@ -1,12 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const info = vi.fn();
-const warn = vi.fn();
-const error = vi.fn();
-const debug = vi.fn();
-const fatal = vi.fn();
-const child = vi.fn().mockReturnThis();
-
 // Define the mock inside the factory
 vi.mock("@/lib/logger", () => {
   const infoMock = vi.fn();

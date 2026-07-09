@@ -83,7 +83,7 @@ function formatTransferDate(dateValue: string | null | undefined): string {
 }
 
 export default function FamilyClient() {
-  const { data: { accounts, ledgerLogs } = { accounts: [], ledgerLogs: [] }, mutate: mutateFinance } = useFinanceData();
+  const { data: { accounts } = { accounts: [] }, mutate: mutateFinance } = useFinanceData();
   const searchParams = useSearchParams();
   const mounted = useHasMounted();
   const [submitting, withLock] = useSubmitLock();
@@ -104,8 +104,8 @@ export default function FamilyClient() {
     keepPreviousData: true,
   });
 
-  const members = familyData?.members ?? [];
-  const transfers = familyData?.transfers ?? [];
+  const members = useMemo(() => familyData?.members ?? [], [familyData?.members]);
+  const transfers = useMemo(() => familyData?.transfers ?? [], [familyData?.transfers]);
 
   const totalFamilyNetWorth = useMemo(() => {
     return members.reduce((acc, m) => acc + Number(m.balance || 0), 0);

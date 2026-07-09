@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { GET } from "@/app/api/reports/download/route";
-import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase-server";
+
+import { Readable } from "stream";
 
 // Mock dependencies
 vi.mock("@/lib/supabase-server", () => ({
@@ -9,7 +10,7 @@ vi.mock("@/lib/supabase-server", () => ({
 }));
 
 vi.mock("@react-pdf/renderer", () => ({
-  renderToStream: vi.fn().mockResolvedValue("mock-pdf-stream"),
+  renderToStream: vi.fn().mockImplementation(() => Promise.resolve(Readable.from("mock-pdf-stream"))),
 }));
 
 vi.mock("@/components/reports/FinancialStatementPDF", () => ({

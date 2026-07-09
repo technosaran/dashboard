@@ -162,6 +162,7 @@ export default function ExpenseDataTable({ expenses, accounts, onDelete, onEdit,
     [accounts, categories, getAccountCurrency, onDelete, onEdit]
   );
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data: expenses,
     columns,

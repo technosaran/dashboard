@@ -12,7 +12,7 @@ describe('useSubmitLock', () => {
 
   it('should execute the handler and return its result', async () => {
     const { result } = renderHook(() => useSubmitLock<string>());
-    const [_, withLock] = result.current;
+    const [, withLock] = result.current;
     
     const handler = vi.fn().mockResolvedValue('success');
     
@@ -53,7 +53,7 @@ describe('useSubmitLock', () => {
 
   it('should prevent concurrent executions', async () => {
     const { result } = renderHook(() => useSubmitLock());
-    const [_, withLock] = result.current;
+    const [, withLock] = result.current;
     
     let resolveHandler: (value: void | PromiseLike<void>) => void;
     const promise = new Promise<void>((resolve) => {
@@ -88,7 +88,7 @@ describe('useSubmitLock', () => {
 
   it('should release lock even if handler throws an error', async () => {
     const { result } = renderHook(() => useSubmitLock());
-    const [_, withLock] = result.current;
+    const [, withLock] = result.current;
     
     const handler = vi.fn().mockRejectedValue(new Error('Test error'));
 
@@ -96,7 +96,7 @@ describe('useSubmitLock', () => {
       await act(async () => {
         await withLock(handler);
       });
-    } catch (e) {
+    } catch {
       // Expected error
     }
 
