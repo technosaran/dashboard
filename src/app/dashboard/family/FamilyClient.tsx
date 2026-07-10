@@ -293,7 +293,7 @@ export default function FamilyClient() {
         </div>
         <div className="flex gap-3">
           <button
-            className="relative bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 shadow-[0_0_20px_rgba(147,51,234,0.25)] hover:shadow-[0_0_25px_rgba(147,51,234,0.45)] flex items-center gap-2 active:scale-95 cursor-pointer"
+            className="relative bg-gradient-to-r from-[--accent-primary] to-indigo-600 text-white px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 shadow-[0_0_20px_rgba(14,165,233,0.25)] hover:shadow-[0_0_25px_rgba(14,165,233,0.45)] flex items-center gap-2 active:scale-95 cursor-pointer"
             onClick={() => openSendMoney()}
             disabled={members.length === 0}
           >
@@ -314,7 +314,7 @@ export default function FamilyClient() {
       <section className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         {[
           { label: "Total Sent (All Time)", value: totalFamilyNetWorth, color: "text-white" },
-          { label: "Sent This Month", value: totalSentThisMonth, color: "text-purple-400" },
+          { label: "Sent This Month", value: totalSentThisMonth, color: "text-[--accent-primary]" },
           { label: "Active Members", raw: `${members.length} registered`, color: "text-emerald-400" },
         ].map((s, i) => (
           <div key={i} className="glass-card-static p-6 border-white/5 flex flex-col justify-between min-h-[110px]">
@@ -336,7 +336,7 @@ export default function FamilyClient() {
           onClick={() => setActiveTab("directory")}
           className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer ${
             activeTab === "directory"
-              ? "bg-purple-600 text-white shadow-[0_0_20px_rgba(147,51,234,0.3)]"
+              ? "bg-[--accent-primary] text-white shadow-[0_0_20px_rgba(14,165,233,0.3)]"
               : "text-[--text-muted] hover:text-white hover:bg-white/[0.02]"
           }`}
         >
@@ -347,7 +347,7 @@ export default function FamilyClient() {
           onClick={() => setActiveTab("history")}
           className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer ${
             activeTab === "history"
-              ? "bg-purple-600 text-white shadow-[0_0_20px_rgba(147,51,234,0.3)]"
+              ? "bg-[--accent-primary] text-white shadow-[0_0_20px_rgba(14,165,233,0.3)]"
               : "text-[--text-muted] hover:text-white hover:bg-white/[0.02]"
           }`}
         >
@@ -365,9 +365,9 @@ export default function FamilyClient() {
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
           {members.length === 0 ? (
             <div className="glass-card-static relative overflow-hidden p-8 md:p-16 text-center flex flex-col items-center justify-center min-h-[350px] border-white/5">
-              <div className="absolute -top-24 -left-24 w-96 h-96 bg-purple-500/10 rounded-full blur-[100px] pointer-events-none" />
+              <div className="absolute -top-24 -left-24 w-96 h-96 bg-sky-500/10 rounded-full blur-[100px] pointer-events-none" />
               <div className="relative mb-6 p-6 rounded-3xl bg-white/[0.02] border border-white/5 shadow-2xl">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500/15 to-indigo-600/15 border border-purple-500/25 flex items-center justify-center shadow-[0_0_30px_-5px_rgba(139,92,246,0.3)]">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-sky-500/15 to-indigo-600/15 border border-sky-500/25 flex items-center justify-center shadow-[0_0_30px_-5px_rgba(14,165,233,0.3)]">
                   <span className="text-3xl">👥</span>
                 </div>
               </div>
@@ -386,16 +386,16 @@ export default function FamilyClient() {
                 const initials = member.name.trim().charAt(0).toUpperCase() || "?";
                 const avatar = getMemberAvatar(member.name, member.relationship);
                 return (
-                  <div key={member.id} className="glass-card flex flex-col justify-between gap-4 border-white/5 hover:border-purple-500/30 hover:shadow-[0_0_25px_rgba(147,51,234,0.08)] transition-all duration-300 relative group overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-purple-500 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div key={member.id} className="glass-card flex flex-col justify-between gap-4 border-white/5 hover:border-sky-500/30 hover:shadow-[0_0_25px_rgba(14,165,233,0.08)] transition-all duration-300 relative group overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-[--accent-primary] to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     
                     <div className="flex items-center gap-4">
-                      <div className="relative p-[2.5px] rounded-full bg-gradient-to-tr from-purple-500 via-pink-500 to-blue-500 shadow-[0_0_15px_rgba(168,85,247,0.25)] flex-shrink-0">
+                      <div className="relative p-[2.5px] rounded-full bg-gradient-to-tr from-[--accent-primary] via-cyan-500 to-emerald-500 shadow-[0_0_15px_rgba(14,165,233,0.2)] flex-shrink-0">
                         <div className="bg-[#121214] p-[1.5px] rounded-full">
                           {avatar ? (
                             <Image src={avatar} alt={member.name} width={44} height={44} className="w-11 h-11 rounded-full object-cover" />
                           ) : (
-                            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-purple-600 to-indigo-700 flex items-center justify-center text-white font-black text-sm">
+                            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-sky-600 to-indigo-700 flex items-center justify-center text-white font-black text-sm">
                               {initials}
                             </div>
                           )}
@@ -404,7 +404,7 @@ export default function FamilyClient() {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <h3 className="text-sm font-bold text-white leading-tight truncate" title={member.name}>{member.name}</h3>
-                          <span className="shrink-0 text-[8px] font-black uppercase tracking-widest text-purple-400 bg-purple-500/10 border border-purple-500/20 px-1.5 py-0.5 rounded-md">
+                          <span className="shrink-0 text-[8px] font-black uppercase tracking-widest text-[--accent-primary] bg-sky-500/10 border border-sky-500/20 px-1.5 py-0.5 rounded-md">
                             {member.relationship ?? "Other"}
                           </span>
                         </div>
@@ -412,9 +412,9 @@ export default function FamilyClient() {
                           <span>Total Sent: <span className="font-mono font-bold text-white">{fmt.format(balance)}</span></span>
                           {member.relationship === "Child" && (
                             <button
-                              type="button"
-                              onClick={(e) => { e.stopPropagation(); openSendAllowance(member.id, "500", "Allowance Support"); }}
-                              className="text-[9.5px] font-black uppercase text-purple-400 hover:text-purple-300 bg-purple-500/10 border border-purple-500/20 px-2 py-0.5 rounded cursor-pointer transition-all active:scale-95 shrink-0"
+                               type="button"
+                               onClick={(e) => { e.stopPropagation(); openSendAllowance(member.id, "500", "Allowance Support"); }}
+                               className="text-[9.5px] font-black uppercase text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded cursor-pointer transition-all active:scale-95 shrink-0"
                             >
                               👶 Allowance
                             </button>
@@ -425,10 +425,10 @@ export default function FamilyClient() {
 
                     <div className="flex gap-2 border-t border-white/5 pt-4 mt-2">
                       <button
-                        className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(147,51,234,0.15)] hover:shadow-[0_0_20px_rgba(147,51,234,0.35)] active:scale-95 cursor-pointer"
+                        className="flex-1 bg-gradient-to-r from-[--accent-primary] to-indigo-500 text-white py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(14,165,233,0.15)] hover:shadow-[0_0_20px_rgba(14,165,233,0.35)] active:scale-95 cursor-pointer"
                         onClick={() => openSendMoney(member.id)}
                       >
-                        <Send className="w-3 h-3" />
+                        <Send className="w-3.5 h-3.5" />
                         Send Money
                       </button>
                       <button

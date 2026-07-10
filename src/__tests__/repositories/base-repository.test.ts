@@ -7,7 +7,7 @@ import { DatabaseError } from "@/lib/errors";
 // Dummy repository to test the abstract class
 class TestRepository extends SupabaseRepository<any> {
   constructor(supabase: SupabaseClient<Database>) {
-    super(supabase, "test_table");
+    super(supabase, "test_table" as any);
   }
 }
 

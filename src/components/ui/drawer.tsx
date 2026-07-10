@@ -39,7 +39,7 @@ export function Drawer({ isOpen, onClose, title, children, width = "max-w-md" }:
   return (
     <div
       className={`fixed inset-0 z-[200] transition-opacity duration-300 ${
-        isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none invisible"
       }`}
     >
       {/* Backdrop */}

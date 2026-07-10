@@ -118,7 +118,7 @@ export default function GoalsDataTable({ goals, onEdit, onDelete, onContribute, 
         id: "actions",
         header: "",
         cell: (info) => (
-          <div className="flex items-center justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity whitespace-nowrap">
+          <div className="flex items-center justify-end gap-2 opacity-80 group-hover:opacity-100 transition-opacity whitespace-nowrap">
             <button
               onClick={() => onContribute(info.row.original)}
               className="p-2 rounded-lg bg-[--accent-primary]/10 text-[--accent-primary-light] hover:bg-[--accent-primary] hover:text-white transition-colors cursor-pointer"
@@ -406,7 +406,7 @@ export default function GoalsDataTable({ goals, onEdit, onDelete, onContribute, 
                         : "No Deadline"}
                     </span>
                     
-                    <div className="flex items-center gap-1.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
                       {!isCompleted && (
                         <button
                           onClick={() => onContribute(goal)}

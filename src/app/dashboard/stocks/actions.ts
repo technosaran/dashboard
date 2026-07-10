@@ -35,74 +35,93 @@ interface TickertapeSearchResponse {
 export async function searchStocks(query: string, exchange: string = "NSE") {
   if (!query || query.length < 2) return [];
   try {
-    let stocks: TickertapeStock[] = [];
+    const stocks: TickertapeStock[] = [];
+    const seenTickers = new Set<string>();
 
-    // 1. Try Tickertape
+    const addStocks = (list: { ticker: string; name: string; type: string }[]) => {
+      for (const s of list) {
+        if (!s.ticker) continue;
+        const upperTicker = s.ticker.toUpperCase();
+        if (!seenTickers.has(upperTicker)) {
+          seenTickers.add(upperTicker);
+          stocks.push({ ticker: upperTicker, name: s.name, type: s.type });
+        }
+      }
+    };
+
+    const userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+
+    // 1. Try Tickertape (Stocks + ETFs)
     try {
       const url = `https://api.tickertape.in/search?text=${encodeURIComponent(query)}`;
-      const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" }, cache: "no-store" });
-
+      const res = await fetch(url, { headers: { "User-Agent": userAgent }, cache: "no-store" });
       if (res.ok) {
         const data = await res.json() as TickertapeSearchResponse;
-        stocks = (data?.data?.stocks ?? []).filter((q) => q.type === "stock" && q.ticker);
+        const list = (data?.data?.stocks ?? [])
+          .filter((q) => (q.type === "stock" || q.type === "etf") && q.ticker)
+          .map((q) => ({ ticker: q.ticker, name: q.name, type: q.type }));
+        addStocks(list);
       }
     } catch (e) {
       console.error("Tickertape search failed", e);
     }
 
-    // 2. Fallback to Yahoo Finance query2 if Tickertape failed (e.g. Vercel IP blocked)
-    if (stocks.length === 0) {
-      try {
-        const url = `https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(query)}&quotesCount=15&newsCount=0`;
-        const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" }, cache: "no-store" });
-        if (res.ok) {
-          const data = await res.json() as YahooSearchResponse;
-          stocks = (data?.quotes ?? [])
-            .filter((q) => q.quoteType === "EQUITY" && (q.symbol.endsWith(".NS") || q.symbol.endsWith(".BO")))
-            .map((q) => ({
-              ticker: q.symbol.replace(".NS", "").replace(".BO", ""),
-              name: q.shortname ?? q.longname ?? q.symbol,
-              type: "stock",
-            }));
-        }
-      } catch (e) {
-        console.error("Yahoo search failed", e);
+    // 2. Try Yahoo Finance query2 (EQUITY + ETF)
+    try {
+      const url = `https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(query)}&quotesCount=15&newsCount=0`;
+      const res = await fetch(url, { headers: { "User-Agent": userAgent }, cache: "no-store" });
+      if (res.ok) {
+        const data = await res.json() as YahooSearchResponse;
+        const list = (data?.quotes ?? [])
+          .filter((q) => (q.quoteType === "EQUITY" || q.quoteType === "ETF") && (q.symbol.endsWith(".NS") || q.symbol.endsWith(".BO")))
+          .map((q) => ({
+            ticker: q.symbol.replace(".NS", "").replace(".BO", ""),
+            name: q.shortname ?? q.longname ?? q.symbol,
+            type: "stock",
+          }));
+        addStocks(list);
       }
+    } catch (e) {
+      console.error("Yahoo search failed", e);
     }
 
-    // 3. Fallback to Yahoo Finance query1 if query2 failed
-    if (stocks.length === 0) {
+    // 3. Fallback to Yahoo query1
+    if (stocks.length < 3) {
       try {
         const url = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(query)}&quotesCount=15&newsCount=0`;
-        const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" }, cache: "no-store" });
+        const res = await fetch(url, { headers: { "User-Agent": userAgent }, cache: "no-store" });
         if (res.ok) {
           const data = await res.json() as YahooSearchResponse;
-          stocks = (data?.quotes ?? [])
-            .filter((q) => q.quoteType === "EQUITY" && (q.symbol.endsWith(".NS") || q.symbol.endsWith(".BO")))
+          const list = (data?.quotes ?? [])
+            .filter((q) => (q.quoteType === "EQUITY" || q.quoteType === "ETF") && (q.symbol.endsWith(".NS") || q.symbol.endsWith(".BO")))
             .map((q) => ({
               ticker: q.symbol.replace(".NS", "").replace(".BO", ""),
               name: q.shortname ?? q.longname ?? q.symbol,
               type: "stock",
             }));
+          addStocks(list);
         }
       } catch (e) {
         console.error("Yahoo query1 search failed", e);
       }
     }
 
-    // 4. Fallback to Groww Stocks API if Yahoo failed
-    if (stocks.length === 0) {
+    // 4. Fallback to Groww Stocks API
+    if (stocks.length < 3) {
       try {
         const url = `https://groww.in/v1/api/search/v3/query/global/st_p_query?page=0&query=${encodeURIComponent(query)}&size=10`;
-        const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" }, cache: "no-store" });
+        const res = await fetch(url, { headers: { "User-Agent": userAgent }, cache: "no-store" });
         if (res.ok) {
           const data = await res.json();
           const items = data?.data?.content ?? [];
-          stocks = items.filter((q: any) => q.entity_type === "Stocks" && (q.nse_scrip_code || q.bse_scrip_code)).map((q: any) => ({
-            ticker: q.nse_scrip_code || q.bse_scrip_code,
-            name: q.title || q.company_short_name || q.ticker,
-            type: "stock",
-          }));
+          const list = items
+            .filter((q: any) => q.entity_type === "Stocks" && (q.nse_scrip_code || q.bse_scrip_code))
+            .map((q: any) => ({
+              ticker: q.nse_scrip_code || q.bse_scrip_code,
+              name: q.title || q.company_short_name || q.ticker,
+              type: "stock",
+            }));
+          addStocks(list);
         }
       } catch (e) {
         console.error("Groww stock search failed", e);

@@ -148,7 +148,7 @@ export default function FNODataTable({ trades, onCloseTrade, onDeleteTrade, onAd
           id: "actions",
           header: "",
           cell: (info) => (
-            <div className="flex items-center justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+            <div className="flex items-center justify-end gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
               {info.row.original.status === 'OPEN' && onCloseTrade && (
                 <button
                   onClick={(e) => { e.stopPropagation(); onCloseTrade(info.row.original); }}

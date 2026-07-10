@@ -64,7 +64,7 @@ describe('useSubmitLock', () => {
     const handler2 = vi.fn().mockResolvedValue('ignored');
 
     // Start first execution
-    let call1Promise;
+    let call1Promise: Promise<unknown> | undefined;
     act(() => {
       call1Promise = withLock(handler1);
     });

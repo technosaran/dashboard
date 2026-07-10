@@ -48,7 +48,7 @@ export async function searchMFSchemes(query: string) {
   if (!query || query.length < 2) return [];
   const userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
   
-  // Try api.mfapi.in search
+  // 1. Try api.mfapi.in search
   try {
     const res = await fetch(`https://api.mfapi.in/mf/search?q=${encodeURIComponent(query)}`, {
         cache: "no-store",
@@ -57,18 +57,19 @@ export async function searchMFSchemes(query: string) {
     });
     if (res.ok) {
       const data = await res.json();
-      return (data || []).map((s: { schemeCode?: number; schemeName: string }) => ({
+      const results = (data || []).map((s: { schemeCode?: number; schemeName: string }) => ({
         schemeCode: s.schemeCode?.toString(),
         schemeName: s.schemeName
       }));
+      if (results.length > 0) return results;
     }
   } catch (err) {
     console.warn("MFAPI Search failed, trying Groww fallback", err);
   }
 
-  // Try Groww MF API fallback
+  // 2. Try Groww MF API fallback (removed Direct plan constraint)
   try {
-    const res = await fetch(`https://groww.in/v1/api/search/v1/derived/scheme?availableForInvestment=true&docType=scheme&plan_type=Direct&q=${encodeURIComponent(query)}`, {
+    const res = await fetch(`https://groww.in/v1/api/search/v1/derived/scheme?availableForInvestment=true&docType=scheme&q=${encodeURIComponent(query)}`, {
       cache: "no-store",
       headers: { "User-Agent": userAgent },
       signal: AbortSignal.timeout(5000)
@@ -76,17 +77,18 @@ export async function searchMFSchemes(query: string) {
     if (res.ok) {
       const data = await res.json();
       if (data && data.content && data.content.length > 0) {
-        return data.content.map((s: { scheme_code?: string; scheme_name?: string; fund_name?: string }) => ({
+        const results = data.content.map((s: { scheme_code?: string; scheme_name?: string; fund_name?: string }) => ({
           schemeCode: s.scheme_code?.toString() || "",
           schemeName: s.scheme_name || s.fund_name || ""
         })).filter((s: { schemeCode: string; schemeName: string }) => s.schemeCode && s.schemeName);
+        if (results.length > 0) return results;
       }
     }
   } catch (err) {
     console.warn("Groww MF search fallback failed, trying AMFI fallback", err);
   }
 
-  // Try AMFI search fallback using the cached text
+  // 3. Try AMFI search fallback using the cached text
   try {
     const text = await getAmfiNavText();
     if (text) {
@@ -97,12 +99,12 @@ export async function searchMFSchemes(query: string) {
         if (line.includes(";")) {
           const parts = line.split(";");
           if (parts.length >= 4 && parts[3].toLowerCase().includes(qLower)) {
-            results.push({ schemeCode: parts[0], schemeName: parts[3] });
+            results.push({ schemeCode: parts[0].trim(), schemeName: parts[3].trim() });
             if (results.length >= 15) break;
           }
         }
       }
-      return results;
+      if (results.length > 0) return results;
     }
   } catch (err) {
     console.error("AMFI search fallback failed", err);
@@ -141,9 +143,9 @@ export async function fetchLiveMFNAV(schemeCode: string) {
     console.warn(`MFAPI NAV failed for ${schemeCode}, trying Groww fallback`, err);
   }
   
-  // Try Groww MF API fallback
+  // Try Groww MF API fallback (removed Direct plan constraint)
   try {
-    const res = await fetch(`https://groww.in/v1/api/search/v1/derived/scheme?availableForInvestment=true&docType=scheme&plan_type=Direct&q=${schemeCode}`, {
+    const res = await fetch(`https://groww.in/v1/api/search/v1/derived/scheme?availableForInvestment=true&docType=scheme&q=${schemeCode}`, {
       cache: "no-store",
       headers: { "User-Agent": userAgent },
       signal: AbortSignal.timeout(5000)
@@ -151,7 +153,7 @@ export async function fetchLiveMFNAV(schemeCode: string) {
     if (res.ok) {
       const data = await res.json();
       if (data && data.content && data.content.length > 0) {
-        const matched = data.content.find((s: any) => s.scheme_code === schemeCode) || data.content[0];
+        const matched = data.content.find((s: any) => s.scheme_code === schemeCode);
         if (matched && typeof matched.nav === "number") {
           navCache.set(schemeCode, { nav: matched.nav, timestamp: now });
           return { nav: matched.nav };
@@ -170,7 +172,7 @@ export async function fetchLiveMFNAV(schemeCode: string) {
       for (const line of lines) {
         if (line.startsWith(`${schemeCode};`)) {
           const parts = line.split(";");
-          const currentNav = parseFloat(parts[4]);
+          const currentNav = parseFloat(parts[4].trim());
           if (!isNaN(currentNav)) {
             // Cache the result
             navCache.set(schemeCode, { nav: currentNav, timestamp: now });

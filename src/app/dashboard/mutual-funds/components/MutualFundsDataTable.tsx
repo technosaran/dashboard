@@ -188,7 +188,7 @@ export default function MutualFundsDataTable({ funds, onEdit, onBuy, onSell, onA
 
                   {/* Actions */}
                   <td className="px-5 py-3.5 text-right">
-                    <div className="flex items-center justify-end gap-1.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center justify-end gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => onEdit(fund)}
                         className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs font-bold text-gray-300 hover:text-white transition-all cursor-pointer"

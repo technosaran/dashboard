@@ -187,8 +187,16 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
     let updated = 0;
     try {
       for (const mf of rawMfs) {
-        if (!mf.scheme_code) continue;
-        const liveData = await fetchLiveMFNAV(mf.scheme_code);
+        let code: string | undefined = mf.scheme_code || undefined;
+        if (!code) {
+          const searchResults = await searchMFSchemes(mf.fund_name);
+          if (searchResults && searchResults.length > 0 && searchResults[0].schemeCode) {
+            code = searchResults[0].schemeCode;
+            await updateMFHolding(mf.id, { scheme_code: code, fund_symbol: code });
+          }
+        }
+        if (!code) continue;
+        const liveData = await fetchLiveMFNAV(code);
         if (liveData && (liveData.nav !== mf.current_nav || liveData.previousNav !== mf.previous_nav)) {
           const updatePayload: { current_nav: number; previous_nav?: number } = { current_nav: liveData.nav };
           if (liveData.previousNav) updatePayload.previous_nav = liveData.previousNav;
@@ -280,31 +288,45 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
     <div className="flex flex-col animate-in fade-in duration-700 w-full bg-[#121212] min-h-screen text-[#ddd]">
       {/* Coin-style Top Header */}
       <div className="flex items-center justify-between px-8 py-4 border-b border-white/5 bg-[#151515]">
-        <div className="flex items-center gap-8">
-          <button 
-            onClick={() => setActiveTab("dashboard")} 
-            className={`text-sm font-bold transition-colors tracking-wider uppercase ${activeTab === "dashboard" ? "text-[#2185d0]" : "text-gray-400 hover:text-white"}`}
-          >
-            Dashboard
-          </button>
-          <button 
-            onClick={() => setActiveTab("holdings")} 
-            className={`text-sm font-bold transition-colors tracking-wider uppercase ${activeTab === "holdings" ? "text-[#2185d0]" : "text-gray-400 hover:text-white"}`}
-          >
-            Holdings
-          </button>
-          <button 
-            onClick={() => setActiveTab("history")} 
-            className={`text-sm font-bold transition-colors tracking-wider uppercase ${activeTab === "history" ? "text-[#2185d0]" : "text-gray-400 hover:text-white"}`}
-          >
-            Transactions
-          </button>
+        <div className="flex items-center gap-6">
+          <div className="flex gap-1.5 rounded-2xl bg-white/[0.02] border border-white/5 p-1.5 max-w-fit shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]">
+            <button 
+              onClick={() => setActiveTab("dashboard")} 
+              className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${
+                activeTab === "dashboard" 
+                  ? "bg-[#2185d0] text-white shadow-[0_0_15px_rgba(33,133,208,0.35)] border border-transparent" 
+                  : "text-gray-400 hover:text-white hover:bg-white/5 border border-transparent"
+              }`}
+            >
+              Dashboard
+            </button>
+            <button 
+              onClick={() => setActiveTab("holdings")} 
+              className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${
+                activeTab === "holdings" 
+                  ? "bg-[#2185d0] text-white shadow-[0_0_15px_rgba(33,133,208,0.35)] border border-transparent" 
+                  : "text-gray-400 hover:text-white hover:bg-white/5 border border-transparent"
+              }`}
+            >
+              Holdings
+            </button>
+            <button 
+              onClick={() => setActiveTab("history")} 
+              className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${
+                activeTab === "history" 
+                  ? "bg-[#2185d0] text-white shadow-[0_0_15px_rgba(33,133,208,0.35)] border border-transparent" 
+                  : "text-gray-400 hover:text-white hover:bg-white/5 border border-transparent"
+              }`}
+            >
+              Transactions
+            </button>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <button 
             onClick={handleRefreshNAV} 
             disabled={isRefreshing || rawMfs.length === 0}
-            className="bg-transparent border border-white/10 hover:bg-white/5 text-white px-3 py-1.5 rounded text-xs font-semibold transition-colors disabled:opacity-50 flex items-center gap-2"
+            className="bg-white/5 hover:bg-white/10 border border-white/10 text-white px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 disabled:opacity-50 flex items-center gap-2 shadow-sm"
           >
             {isRefreshing ? (
               <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" strokeDasharray="32" className="opacity-25"></circle><path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" className="opacity-75"></path></svg>
@@ -323,7 +345,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
               setEditingId(null);
               setShowAddModal(true); 
             }} 
-            className="bg-[#2185d0] hover:bg-[#1678c2] text-white px-4 py-1.5 rounded text-xs font-bold transition-colors"
+            className="bg-[#2185d0] hover:bg-[#1678c2] text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 shadow-md shadow-blue-500/10 hover:shadow-blue-500/20"
           >
             Invest Now
           </button>

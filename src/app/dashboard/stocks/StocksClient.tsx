@@ -310,7 +310,7 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
     });
   }
 
-  const [activeTab, setActiveTab] = useState<"holdings" | "history">("holdings");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "holdings" | "history">("dashboard");
 
   const formatMoney = (val: number) => {
     const locale = showUSD ? "en-US" : "en-IN";
@@ -324,16 +324,34 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
         {/* Kite-style Top Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-[#151515]">
           <div className="flex items-center gap-6">
-            <div className="flex gap-4">
+            <div className="flex gap-1.5 rounded-2xl bg-white/[0.02] border border-white/5 p-1.5 max-w-fit shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]">
+              <button 
+                onClick={() => setActiveTab("dashboard")}
+                className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${
+                  activeTab === 'dashboard' 
+                    ? 'bg-[#ff5722] text-white shadow-[0_0_15px_rgba(255,87,34,0.35)] border border-transparent' 
+                    : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
+                }`}
+              >
+                Dashboard
+              </button>
               <button 
                 onClick={() => setActiveTab("holdings")}
-                className={`text-sm font-semibold transition-colors tracking-wide ${activeTab === 'holdings' ? 'text-[#ff5722]' : 'text-gray-400 hover:text-white'}`}
+                className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${
+                  activeTab === 'holdings' 
+                    ? 'bg-[#ff5722] text-white shadow-[0_0_15px_rgba(255,87,34,0.35)] border border-transparent' 
+                    : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
+                }`}
               >
                 Holdings ({activeStocks.length})
               </button>
               <button 
                 onClick={() => setActiveTab("history")}
-                className={`text-sm font-semibold transition-colors tracking-wide ${activeTab === 'history' ? 'text-[#ff5722]' : 'text-gray-400 hover:text-white'}`}
+                className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${
+                  activeTab === 'history' 
+                    ? 'bg-[#ff5722] text-white shadow-[0_0_15px_rgba(255,87,34,0.35)] border border-transparent' 
+                    : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
+                }`}
               >
                 Trade History
               </button>
@@ -343,7 +361,7 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
             <button 
               onClick={handleRefreshPrices} 
               disabled={isRefreshing || activeStocks.length === 0}
-              className="bg-transparent border border-white/10 hover:bg-white/5 text-white px-3 py-1.5 rounded text-xs font-semibold transition-colors disabled:opacity-50 flex items-center gap-2"
+              className="bg-white/5 hover:bg-white/10 border border-white/10 text-white px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 disabled:opacity-50 flex items-center gap-2 shadow-sm"
             >
               {isRefreshing ? (
                 <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" strokeDasharray="32" className="opacity-25"></circle><path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" className="opacity-75"></path></svg>
@@ -362,7 +380,7 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
                 setEditingId(null);
                 setShowAddModal(true); 
               }} 
-              className="bg-[#2185d0] hover:bg-[#1678c2] text-white px-4 py-1.5 rounded text-xs font-bold transition-colors"
+              className="bg-[#ff5722] hover:bg-[#e64a19] text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 shadow-md shadow-orange-500/10 hover:shadow-orange-500/20"
             >
               Add Trade
             </button>
@@ -370,64 +388,16 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
         </div>
 
         <div className="p-6 max-w-6xl w-full mx-auto">
-          {/* Kite-style Summary Bar */}
-          {activeStocks.length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6 bg-[#151515] p-5 border border-white/5 rounded">
-              <div>
-                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Total investment</p>
-                <p className="text-xl font-normal text-white">{formatMoney(stats.totalInvested)}</p>
-              </div>
-              <div>
-                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Current value</p>
-                <p className="text-xl font-normal text-white">{formatMoney(stats.totalCurrent)}</p>
-              </div>
-              <div>
-                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Day&apos;s P&amp;L</p>
-                <p className={`text-xl font-medium ${stats.dayPnL >= 0 ? 'text-[#4caf50]' : 'text-[#f44336]'}`}>
-                  {stats.dayPnL >= 0 ? '+' : ''}{formatMoney(stats.dayPnL)} <span className="text-xs font-semibold ml-1">({stats.dayPnL >= 0 ? '+' : ''}{stats.dayPnLPercent.toFixed(2)}%)</span>
-                </p>
-              </div>
-              <div>
-                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Total P&amp;L</p>
-                <p className={`text-xl font-medium ${stats.totalPnL >= 0 ? 'text-[#4caf50]' : 'text-[#f44336]'}`}>
-                  {stats.totalPnL >= 0 ? '+' : ''}{formatMoney(stats.totalPnL)} <span className="text-xs font-semibold ml-1">({stats.totalPnL >= 0 ? '+' : ''}{stats.totalPnLPercent.toFixed(2)}%)</span>
-                </p>
-                {stats.totalRealizedPnL !== 0 && (
-                  <div className="flex gap-3 mt-1.5 text-[9px] font-semibold text-gray-500">
-                    <span className={stats.unrealizedPnL >= 0 ? 'text-emerald-500/70' : 'text-rose-500/70'}>
-                      Unrealized: {stats.unrealizedPnL >= 0 ? '+' : ''}{formatMoney(stats.unrealizedPnL)}
-                    </span>
-                    <span className={stats.totalRealizedPnL >= 0 ? 'text-emerald-500/70' : 'text-rose-500/70'}>
-                      Realized: {stats.totalRealizedPnL >= 0 ? '+' : ''}{formatMoney(stats.totalRealizedPnL)}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {activeTab === "holdings" ? (
-            <StocksDataTable 
-              stocks={activeStocks} 
-              onEdit={startEdit} 
-              onBuy={startBuy}
-              onSell={startSell} 
-              onAdd={() => setShowAddModal(true)} 
-            />
-          ) : (
-            <StocksHistoryTable trades={stockTrades} />
-          )}
-
-          {/* Allocation Donut */}
-          {activeStocks.length > 0 && (
-            <div className="mt-8 bg-[#151515] border border-white/5 rounded p-6 max-w-md">
-              <h3 className="text-xs font-bold text-white tracking-wider uppercase mb-4">Portfolio Allocation</h3>
-              <div className="flex items-center">
-                <div className="w-[150px] h-[150px]">
-                  {mounted && pieChartData.length > 0 && (
+          {activeTab === "dashboard" && (
+            <div className="flex flex-col lg:flex-row gap-12 items-center lg:items-stretch mt-4">
+              {/* Left: Large Allocation Donut */}
+              <div className="flex-1 flex flex-col items-center justify-center bg-[#151515] p-8 border border-white/5 rounded-lg">
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">Asset Allocation</h3>
+                {mounted && pieChartData.length > 0 ? (
+                  <div className="w-[280px] h-[280px] relative">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
-                        <Pie data={pieChartData} cx="50%" cy="50%" innerRadius={45} outerRadius={60} paddingAngle={2} dataKey="value" stroke="none">
+                        <Pie data={pieChartData} cx="50%" cy="50%" innerRadius={80} outerRadius={110} paddingAngle={2} dataKey="value" stroke="none">
                           {pieChartData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} />)}
                         </Pie>
                         <RechartsTooltip 
@@ -437,17 +407,102 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
                         />
                       </PieChart>
                     </ResponsiveContainer>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                      <span className="text-gray-500 text-[10px] uppercase tracking-widest font-bold">Total Wealth</span>
+                      <span className="text-white text-2xl font-normal mt-1">
+                        {showUSD ? formatMoney(stats.totalCurrent) : stats.totalCurrent >= 10000000 ? "₹" + (stats.totalCurrent / 10000000).toFixed(2) + " Cr" : stats.totalCurrent >= 100000 ? "₹" + (stats.totalCurrent / 100000).toFixed(2) + " L" : formatMoney(stats.totalCurrent)}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-[250px] h-[250px] rounded-full border-2 border-dashed border-white/10 flex items-center justify-center">
+                    <span className="text-xs text-gray-500 font-bold uppercase tracking-wider">No Stock Holdings</span>
+                  </div>
+                )}
+                
+                {pieChartData.length > 0 && (
+                  <div className="flex flex-wrap justify-center gap-4 mt-8">
+                    {pieChartData.map((entry, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: entry.fill }} />
+                        <span className="text-xs text-gray-400 font-semibold">{entry.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Right: Stats summary */}
+              <div className="flex-1 flex flex-col justify-center bg-[#151515] p-8 border border-white/5 rounded-lg">
+                <div className="space-y-6">
+                  <div>
+                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Current value</p>
+                    <p className="text-3xl font-normal text-white">{formatMoney(stats.totalCurrent)}</p>
+                  </div>
+                  
+                  <div>
+                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Invested value</p>
+                    <p className="text-xl font-normal text-white/90">{formatMoney(stats.totalInvested)}</p>
+                  </div>
+
+                  <div className="h-px w-full bg-white/5" />
+
+                  <div className="grid grid-cols-2 gap-8">
+                    <div>
+                      <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Total returns</p>
+                      <div className={`text-lg font-bold ${stats.totalPnL >= 0 ? 'text-[#4caf50]' : 'text-[#f44336]'}`}>
+                        {stats.totalPnL >= 0 ? '+' : ''}{formatMoney(stats.totalPnL)}
+                        <div className="text-xs font-semibold mt-0.5 opacity-90">{stats.totalPnLPercent >= 0 ? '+' : ''}{stats.totalPnLPercent.toFixed(2)}%</div>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Day&apos;s returns</p>
+                      <div className={`text-lg font-bold ${stats.dayPnL >= 0 ? 'text-[#4caf50]' : 'text-[#f44336]'}`}>
+                        {stats.dayPnL >= 0 ? '+' : ''}{formatMoney(stats.dayPnL)}
+                        <div className="text-xs font-semibold mt-0.5 opacity-90">{stats.dayPnLPercent >= 0 ? '+' : ''}{stats.dayPnLPercent.toFixed(2)}%</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {stats.totalRealizedPnL !== 0 && (
+                    <>
+                      <div className="h-px w-full bg-white/5" />
+                      <div className="grid grid-cols-2 gap-8 text-xs font-semibold text-gray-400">
+                        <div>
+                          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Unrealized P&amp;L</p>
+                          <span className={stats.unrealizedPnL >= 0 ? 'text-emerald-400' : 'text-rose-500'}>
+                            {stats.unrealizedPnL >= 0 ? '+' : ''}{formatMoney(stats.unrealizedPnL)}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Realized P&amp;L</p>
+                          <span className={stats.totalRealizedPnL >= 0 ? 'text-emerald-400' : 'text-rose-500'}>
+                            {stats.totalRealizedPnL >= 0 ? '+' : ''}{formatMoney(stats.totalRealizedPnL)}
+                          </span>
+                        </div>
+                      </div>
+                    </>
                   )}
                 </div>
-                <div className="ml-6 flex-1 flex flex-col gap-2">
-                  {pieChartData.slice(0, 5).map((entry, index) => (
-                    <div key={index} className="flex items-center gap-2 text-xs">
-                      <div className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: entry.fill }} />
-                      <span className="text-gray-400 font-semibold truncate max-w-[120px]">{entry.name}</span>
-                    </div>
-                  ))}
-                </div>
               </div>
+            </div>
+          )}
+
+          {activeTab === "holdings" && (
+            <div className="animate-in fade-in">
+              <StocksDataTable 
+                stocks={activeStocks} 
+                onEdit={startEdit} 
+                onBuy={startBuy}
+                onSell={startSell} 
+                onAdd={() => setShowAddModal(true)} 
+              />
+            </div>
+          )}
+
+          {activeTab === "history" && (
+            <div className="animate-in fade-in">
+              <StocksHistoryTable trades={stockTrades} />
             </div>
           )}
         </div>

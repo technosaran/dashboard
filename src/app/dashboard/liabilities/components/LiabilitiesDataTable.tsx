@@ -145,7 +145,7 @@ export default function LiabilitiesDataTable({ liabilities, onEdit, onDelete, on
         id: "actions",
         header: "",
         cell: (info) => (
-          <div className="flex items-center justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center justify-end gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
             <button
               onClick={() => onEdit(info.row.original)}
               className="p-2 rounded-lg bg-white/5 text-[--text-muted] hover:bg-white/10 hover:text-white transition-colors"

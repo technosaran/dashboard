@@ -326,23 +326,34 @@ export default function ForexClient({ initialData, showUSD = false }: { initialD
           </div>
         </div>
 
-        <div className="flex border-b border-white/10 overflow-x-auto custom-scrollbar">
-          {["overview", "accounts", "pnl", "transactions"].map(tab => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab as any)}
-              className={`px-6 py-3 text-sm font-bold transition-colors border-b-2 whitespace-nowrap ${
-                activeTab === tab
-                  ? "border-[--accent-primary] text-[--accent-primary]"
-                  : "border-transparent text-[--text-muted] hover:text-white"
-              }`}
-            >
-              {tab === "overview" && "Overview"}
-              {tab === "accounts" && `Accounts (${filteredForexAccounts.length})`}
-              {tab === "pnl" && "P&L Summaries"}
-              {tab === "transactions" && "Transactions"}
-            </button>
-          ))}
+        {/* Premium Segmented Switcher */}
+        <div className="flex p-1 bg-white/[0.02] border border-white/5 rounded-2xl max-w-fit shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)] overflow-x-auto no-scrollbar">
+          {[
+            { key: "overview", label: "Overview" },
+            { key: "accounts", label: `Accounts (${filteredForexAccounts.length})` },
+            { key: "pnl", label: "P&L Summaries" },
+            { key: "transactions", label: "Transactions" }
+          ].map((tab) => {
+            const isActive = activeTab === tab.key;
+            
+            // Cyan Theme for Forex
+            const activeStyles = "bg-cyan-600 text-white shadow-[0_0_20px_rgba(6,182,212,0.3)]";
+
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveTab(tab.key as any)}
+                className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center gap-2 whitespace-nowrap active:scale-95 cursor-pointer ${
+                  isActive
+                    ? `${activeStyles} border border-transparent`
+                    : "text-[--text-muted] hover:text-white hover:bg-white/5 border border-transparent"
+                }`}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
 
         {activeTab === "overview" && (

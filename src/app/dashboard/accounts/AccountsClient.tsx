@@ -569,8 +569,23 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
             )}
             {filteredAccounts.map((a) => {
               const style = TYPE_STYLES[a.type] || TYPE_STYLES.checking;
+              const glowRgb = {
+                checking: "14, 165, 233",
+                savings: "16, 185, 129",
+                credit: "244, 63, 94",
+                investment: "56, 189, 248",
+                cash: "245, 158, 11"
+              }[a.type] || "148, 163, 184";
+              
               return (
-                <div key={a.id} className="glass-card rich-border flex flex-col min-h-[260px] p-6 relative overflow-hidden transition-transform hover:-translate-y-1">
+                <div 
+                  key={a.id} 
+                  className="glass-card rich-border flex flex-col min-h-[260px] p-6 relative overflow-hidden transition-transform hover:-translate-y-1"
+                  style={{
+                    ['--hover-border-color' as any]: style.color,
+                    ['--hover-glow-shadow' as any]: `0 12px 30px -10px rgba(${glowRgb}, 0.25)`
+                  }}
+                >
                   <div className="absolute top-0 left-0 right-0 h-[3px]" style={{ background: style.gradient }} />
                   <div className="flex justify-between items-start mb-6">
                      <div><span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider" style={{ background: style.badge, color: style.color, border: `1px solid ${style.badgeBorder}` }}>{a.type}</span><div className="flex items-center gap-3 mt-4">{a.bank_name ? <BankLogo bankName={a.bank_name} size={48} /> : <CategoryIcon type={a.type} className="w-12 h-12" />}<span className="text-base font-bold text-[--text-secondary]">{a.bank_name || a.name}</span></div></div>

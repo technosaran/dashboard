@@ -1,7 +1,7 @@
 "use client";
 
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { useHasMounted } from "@/hooks/use-has-mounted";
 import { format, parseISO, subMonths } from "date-fns";
 import { useFinanceData } from "@/hooks/use-finance-data";
@@ -13,6 +13,8 @@ import DashboardDesktop from "./components/DashboardDesktop";
 import OnboardingWizard from "@/components/onboarding-wizard";
 import { useUser } from "@/context/user-context";
 import LoadingSkeleton from "./loading";
+import { fetchLiveStockPrice, updateInvestment } from "@/app/dashboard/stocks/actions";
+import { fetchLiveMFNAV, updateMFHolding, searchMFSchemes } from "@/app/dashboard/mutual-funds/actions";
 
 type TrendMapEntry = {
   name: string;
@@ -66,6 +68,62 @@ export default function DashboardClient() {
     }
     setShowOnboarding(false);
   };
+
+  const refreshedRef = useRef(false);
+  const { mutate } = useFinanceData();
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (refreshedRef.current) return;
+    
+    const runBackgroundRefresh = async () => {
+      refreshedRef.current = true;
+      let updated = 0;
+      try {
+        // 1. Sync Stocks
+        const activeStocks = investments.filter(i => i.type === "stock" && Number(i.quantity) > 0);
+        for (const stock of activeStocks) {
+          if (!stock.symbol) continue;
+          const liveData = await fetchLiveStockPrice(stock.symbol);
+          if (liveData && (liveData.price !== stock.current_price || liveData.previousClose !== stock.previous_close)) {
+            const updatePayload: { current_price: number; previous_close?: number } = { current_price: liveData.price };
+            if (liveData.previousClose) updatePayload.previous_close = liveData.previousClose;
+            await updateInvestment(stock.id, updatePayload);
+            updated++;
+          }
+        }
+
+        // 2. Sync Mutual Funds
+        const rawMfs = mutualFunds.filter(m => Number(m.units) > 0);
+        for (const mf of rawMfs) {
+          let code: string | undefined = mf.scheme_code || undefined;
+          if (!code) {
+            const searchResults = await searchMFSchemes(mf.fund_name);
+            if (searchResults && searchResults.length > 0 && searchResults[0].schemeCode) {
+              code = searchResults[0].schemeCode;
+              await updateMFHolding(mf.id, { scheme_code: code, fund_symbol: code });
+            }
+          }
+          if (!code) continue;
+          const liveData = await fetchLiveMFNAV(code);
+          if (liveData && (liveData.nav !== mf.current_nav || liveData.previousNav !== mf.previous_nav)) {
+            const updatePayload: { current_nav: number; previous_nav?: number } = { current_nav: liveData.nav };
+            if (liveData.previousNav) updatePayload.previous_nav = liveData.previousNav;
+            await updateMFHolding(mf.id, updatePayload);
+            updated++;
+          }
+        }
+
+        if (updated > 0) {
+          mutate();
+        }
+      } catch (err) {
+        console.error("Failed to run dashboard background sync:", err);
+      }
+    };
+
+    runBackgroundRefresh();
+  }, [investments, mutualFunds, isLoading, mutate]);
 
   const netWorthData = useNetWorth();
 

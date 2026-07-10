@@ -443,31 +443,39 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
           </div>
         </div>
 
-        {/* Tab Switcher */}
-        <div className="flex border-b border-white/10">
-          <button
-            onClick={() => setActiveView("overview")}
-            className={`px-6 py-3 text-sm font-bold transition-colors border-b-2 ${
-              activeView === "overview"
-                ? "border-[--accent-primary] text-[--accent-primary]"
-                : "border-transparent text-[--text-muted] hover:text-white"
-            }`}
-          >
-            Overview
-          </button>
-          <button
-            onClick={() => setActiveView("holdings")}
-            className={`px-6 py-3 text-sm font-bold transition-colors border-b-2 flex items-center gap-2 ${
-              activeView === "holdings"
-                ? "border-[--accent-primary] text-[--accent-primary]"
-                : "border-transparent text-[--text-muted] hover:text-white"
-            }`}
-          >
-            Bond Holdings
-            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white/10 text-[9px] text-white">
-              {bonds.length}
-            </span>
-          </button>
+        {/* Premium Segmented Switcher */}
+        <div className="flex p-1 bg-white/[0.02] border border-white/5 rounded-2xl max-w-fit shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]">
+          {[
+            { key: "overview", label: "Overview" },
+            { key: "holdings", label: "Bond Holdings", badge: bonds.length }
+          ].map((tab) => {
+            const isActive = activeView === tab.key;
+            
+            // Premium Gold/Yellow Theme for Bonds
+            const activeStyles = "bg-amber-600 text-white shadow-[0_0_20px_rgba(217,119,6,0.3)]";
+
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveView(tab.key as any)}
+                className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center gap-2 whitespace-nowrap active:scale-95 cursor-pointer ${
+                  isActive
+                    ? `${activeStyles} border border-transparent`
+                    : "text-[--text-muted] hover:text-white hover:bg-white/5 border border-transparent"
+                }`}
+              >
+                {tab.label}
+                {tab.badge !== undefined && (
+                  <span className={`flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1.5 text-[8px] font-black ${
+                    isActive ? "bg-white/20 text-white" : "bg-white/10 text-white"
+                  }`}>
+                    {tab.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
         {/* View Content */}

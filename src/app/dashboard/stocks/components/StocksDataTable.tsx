@@ -154,7 +154,7 @@ export default function StocksDataTable({ stocks, onEdit, onBuy, onSell, onAdd }
         id: "actions",
         header: "",
         cell: (info) => (
-          <div className="flex items-center justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center justify-end gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
             <button
               onClick={(e) => { e.stopPropagation(); onEdit(info.row.original); }}
               className="px-2.5 py-1 rounded bg-white/5 hover:bg-white/10 text-xs font-bold text-gray-300 hover:text-white transition-all cursor-pointer"
