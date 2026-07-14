@@ -148,7 +148,7 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, accou
             </span>
           </div>
           <div>
-            <span className="text-[8px] font-black uppercase tracking-wider text-[--text-muted] block mb-0.5">Month Outflow</span>
+            <span className="text-[9px] font-black uppercase tracking-wider text-[--text-muted] block mb-0.5">Month Outflow</span>
             <span className="text-[13px] font-extrabold text-rose-400">
               -₹{stats.monthlySpend.toLocaleString(undefined, { maximumFractionDigits: 0 })}
             </span>
@@ -160,7 +160,7 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, accou
       <div className="flex flex-col gap-2.5">
         <div className="flex items-center justify-between px-1">
           <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Fast Logs</h3>
-          <span className="text-[8px] text-[--text-muted] font-bold">Frequent entries</span>
+          <span className="text-[9px] text-[--text-muted] font-bold">Frequent entries</span>
         </div>
         <div className="grid grid-cols-3 gap-2">
           {enabledModules.includes("Expenses") && (
@@ -198,7 +198,7 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, accou
       <div className="flex flex-col gap-2.5">
         <div className="flex items-center justify-between px-1">
           <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Assets & Markets</h3>
-          <span className="text-[8px] text-[--text-muted] font-bold">Investments</span>
+          <span className="text-[9px] text-[--text-muted] font-bold">Investments</span>
         </div>
         <div className="grid grid-cols-2 gap-2">
           {filteredSecondaryActions.map((action) => (
@@ -214,7 +214,7 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, accou
               </div>
               <div className="flex flex-col min-w-0">
                 <span className="text-[11px] font-bold text-white tracking-tight leading-snug">{action.label}</span>
-                <span className="text-[8.5px] text-[--text-muted] font-medium truncate w-full">{action.desc}</span>
+                <span className="text-[9px] text-[--text-muted] font-medium truncate w-full">{action.desc}</span>
               </div>
             </Link>
           ))}

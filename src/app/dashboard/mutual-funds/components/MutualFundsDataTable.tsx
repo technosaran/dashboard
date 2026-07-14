@@ -96,7 +96,7 @@ export default function MutualFundsDataTable({ funds, onEdit, onBuy, onSell, onA
   const totalPnLPct = totalInvested > 0 ? (totalPnL / totalInvested) * 100 : 0;
 
   return (
-    <div className="glass-card-static rounded-2xl overflow-hidden flex flex-col border border-white/5 bg-[#151515] w-full">
+    <div className="glass-card-static rounded-2xl overflow-hidden flex flex-col border border-white/5 bg-[var(--bg-card)] w-full">
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse min-w-[1000px]">
           <thead>
@@ -133,7 +133,7 @@ export default function MutualFundsDataTable({ funds, onEdit, onBuy, onSell, onA
                         <span className="text-[13px] font-bold text-white block truncate max-w-[250px]" title={fund.fund_name}>
                           {fund.fund_name}
                         </span>
-                        <span className="text-[8px] font-black text-purple-400 bg-purple-500/10 border border-purple-500/20 px-1.5 py-0.5 rounded uppercase tracking-wider mt-1 inline-block">
+                        <span className="text-[9px] font-black text-purple-400 bg-purple-500/10 border border-purple-500/20 px-1.5 py-0.5 rounded uppercase tracking-wider mt-1 inline-block">
                           {fund.category || "Equity"}
                         </span>
                       </div>
@@ -142,7 +142,7 @@ export default function MutualFundsDataTable({ funds, onEdit, onBuy, onSell, onA
 
                   {/* Type */}
                   <td className="px-5 py-3.5 text-center">
-                    <span className="text-[8px] font-black text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-2 py-0.5 rounded uppercase tracking-wider">
+                    <span className="text-[9px] font-black text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-2 py-0.5 rounded uppercase tracking-wider">
                       {fund.investment_type || "SIP"}
                     </span>
                   </td>

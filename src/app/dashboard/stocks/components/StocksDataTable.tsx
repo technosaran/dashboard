@@ -213,7 +213,7 @@ export default function StocksDataTable({ stocks, onEdit, onBuy, onSell, onAdd }
   }
 
   return (
-    <div className="bg-[#0a0a0a] rounded-md border border-white/10 flex flex-col">
+    <div className="bg-[var(--bg-deep)] rounded-md border border-white/10 flex flex-col">
 
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse min-w-[800px]">

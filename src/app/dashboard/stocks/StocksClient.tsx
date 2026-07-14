@@ -319,17 +319,17 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
   };
 
   return (
-    <div className="flex w-full bg-[#121212] min-h-screen">
+    <div className="flex w-full bg-[var(--bg-base)] min-h-screen">
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
         {/* Kite-style Top Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-[#151515]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-[var(--bg-card)]">
           <div className="flex items-center gap-6">
             <div className="flex gap-1.5 rounded-2xl bg-white/[0.02] border border-white/5 p-1.5 max-w-fit shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]">
               <button 
                 onClick={() => setActiveTab("dashboard")}
                 className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${
                   activeTab === 'dashboard' 
-                    ? 'bg-[#ff5722] text-white shadow-[0_0_15px_rgba(255,87,34,0.35)] border border-transparent' 
+                    ? 'bg-[var(--accent-primary)] text-white shadow-[0_0_15px_var(--accent-primary)/0.35] border border-transparent' 
                     : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
                 }`}
               >
@@ -339,7 +339,7 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
                 onClick={() => setActiveTab("holdings")}
                 className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${
                   activeTab === 'holdings' 
-                    ? 'bg-[#ff5722] text-white shadow-[0_0_15px_rgba(255,87,34,0.35)] border border-transparent' 
+                    ? 'bg-[var(--accent-primary)] text-white shadow-[0_0_15px_var(--accent-primary)/0.35] border border-transparent' 
                     : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
                 }`}
               >
@@ -349,7 +349,7 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
                 onClick={() => setActiveTab("history")}
                 className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${
                   activeTab === 'history' 
-                    ? 'bg-[#ff5722] text-white shadow-[0_0_15px_rgba(255,87,34,0.35)] border border-transparent' 
+                    ? 'bg-[var(--accent-primary)] text-white shadow-[0_0_15px_var(--accent-primary)/0.35] border border-transparent' 
                     : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
                 }`}
               >
@@ -380,7 +380,7 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
                 setEditingId(null);
                 setShowAddModal(true); 
               }} 
-              className="bg-[#ff5722] hover:bg-[#e64a19] text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 shadow-md shadow-orange-500/10 hover:shadow-orange-500/20"
+              className="bg-[var(--accent-primary)] hover:brightness-90 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 shadow-md shadow-[var(--accent-primary)]/10 hover:shadow-[var(--accent-primary)]/20"
             >
               Add Trade
             </button>
@@ -391,7 +391,7 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
           {activeTab === "dashboard" && (
             <div className="flex flex-col lg:flex-row gap-12 items-center lg:items-stretch mt-4">
               {/* Left: Large Allocation Donut */}
-              <div className="flex-1 flex flex-col items-center justify-center bg-[#151515] p-8 border border-white/5 rounded-lg">
+              <div className="flex-1 flex flex-col items-center justify-center bg-[var(--bg-card)] p-8 border border-white/5 rounded-lg">
                 <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">Asset Allocation</h3>
                 {mounted && pieChartData.length > 0 ? (
                   <div className="w-[280px] h-[280px] relative">
@@ -401,7 +401,7 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
                           {pieChartData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} />)}
                         </Pie>
                         <RechartsTooltip 
-                          contentStyle={{ backgroundColor: "#1e1e1e", border: "1px solid #333", borderRadius: "4px" }}
+                          contentStyle={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border-primary)", borderRadius: "4px" }}
                           itemStyle={{ color: "#fff", fontSize: "11px" }}
                           formatter={(value) => [`${formatMoney(Number(value))}`, "Value"]}
                         />
@@ -433,7 +433,7 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
               </div>
 
               {/* Right: Stats summary */}
-              <div className="flex-1 flex flex-col justify-center bg-[#151515] p-8 border border-white/5 rounded-lg">
+              <div className="flex-1 flex flex-col justify-center bg-[var(--bg-card)] p-8 border border-white/5 rounded-lg">
                 <div className="space-y-6">
                   <div>
                     <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Current value</p>
@@ -450,14 +450,14 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
                   <div className="grid grid-cols-2 gap-8">
                     <div>
                       <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Total returns</p>
-                      <div className={`text-lg font-bold ${stats.totalPnL >= 0 ? 'text-[#4caf50]' : 'text-[#f44336]'}`}>
+                      <div className={`text-lg font-bold ${stats.totalPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                         {stats.totalPnL >= 0 ? '+' : ''}{formatMoney(stats.totalPnL)}
                         <div className="text-xs font-semibold mt-0.5 opacity-90">{stats.totalPnLPercent >= 0 ? '+' : ''}{stats.totalPnLPercent.toFixed(2)}%</div>
                       </div>
                     </div>
                     <div>
                       <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Day&apos;s returns</p>
-                      <div className={`text-lg font-bold ${stats.dayPnL >= 0 ? 'text-[#4caf50]' : 'text-[#f44336]'}`}>
+                      <div className={`text-lg font-bold ${stats.dayPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                         {stats.dayPnL >= 0 ? '+' : ''}{formatMoney(stats.dayPnL)}
                         <div className="text-xs font-semibold mt-0.5 opacity-90">{stats.dayPnLPercent >= 0 ? '+' : ''}{stats.dayPnLPercent.toFixed(2)}%</div>
                       </div>
@@ -518,7 +518,7 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
           {/* Custom Kite style modal header override inside Content */}
           <div className="p-0 -mx-6 -mt-6">
             <div className={`p-4 rounded-t flex items-center justify-between ${
-              formData.trade_type === "buy" ? "bg-[#4185f4]" : "bg-[#ff5722]"
+              formData.trade_type === "buy" ? "bg-[#4185f4]" : "bg-[var(--accent-primary)]"
             } text-white`}>
               <div>
                 <span className="text-base font-bold uppercase tracking-wider">{editingId ? "Modify" : formData.trade_type === "buy" ? "Buy" : "Sell"} {formData.symbol || "Stock"}</span>
@@ -530,7 +530,7 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
               </div>
             </div>
 
-            <div className="p-5 space-y-5 bg-[#151515]">
+            <div className="p-5 space-y-5 bg-[var(--bg-card)]">
               {/* Product selector: CNC vs MIS */}
               <div className="flex gap-2">
                 <button 
@@ -775,7 +775,7 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
                     disabled={submitting} 
                     className={`flex-1 py-2 rounded text-xs font-bold transition-all text-white shadow-md active:scale-[0.98] ${
                       editingId ? "bg-indigo-600 hover:bg-indigo-700" :
-                      formData.trade_type === 'sell' ? "bg-[#ff5722] hover:bg-[#e64a19]" : "bg-[#4185f4] hover:bg-[#3574d3]"
+                      formData.trade_type === 'sell' ? "bg-[var(--accent-primary)] hover:brightness-90" : "bg-[#4185f4] hover:bg-[#3574d3]"
                     }`}
                   >
                     {submitting ? "Processing..." : (editingId ? "Modify" : formData.trade_type === 'buy' ? "Buy" : "Sell")}

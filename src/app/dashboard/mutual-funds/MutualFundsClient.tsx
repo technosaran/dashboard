@@ -285,16 +285,16 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
   const formatMoney = (val: number) => val.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   return (
-    <div className="flex flex-col animate-in fade-in duration-700 w-full bg-[#121212] min-h-screen text-[#ddd]">
+    <div className="flex flex-col animate-in fade-in duration-700 w-full bg-[var(--bg-base)] min-h-screen text-[#ddd]">
       {/* Coin-style Top Header */}
-      <div className="flex items-center justify-between px-8 py-4 border-b border-white/5 bg-[#151515]">
+      <div className="flex items-center justify-between px-8 py-4 border-b border-white/5 bg-[var(--bg-card)]">
         <div className="flex items-center gap-6">
           <div className="flex gap-1.5 rounded-2xl bg-white/[0.02] border border-white/5 p-1.5 max-w-fit shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]">
             <button 
               onClick={() => setActiveTab("dashboard")} 
               className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${
                 activeTab === "dashboard" 
-                  ? "bg-[#2185d0] text-white shadow-[0_0_15px_rgba(33,133,208,0.35)] border border-transparent" 
+                  ? "bg-[var(--accent-primary)] text-white shadow-[0_0_15px_rgba(var(--accent-primary-rgb),0.35)] border border-transparent" 
                   : "text-gray-400 hover:text-white hover:bg-white/5 border border-transparent"
               }`}
             >
@@ -304,7 +304,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
               onClick={() => setActiveTab("holdings")} 
               className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${
                 activeTab === "holdings" 
-                  ? "bg-[#2185d0] text-white shadow-[0_0_15px_rgba(33,133,208,0.35)] border border-transparent" 
+                  ? "bg-[var(--accent-primary)] text-white shadow-[0_0_15px_rgba(var(--accent-primary-rgb),0.35)] border border-transparent" 
                   : "text-gray-400 hover:text-white hover:bg-white/5 border border-transparent"
               }`}
             >
@@ -314,7 +314,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
               onClick={() => setActiveTab("history")} 
               className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${
                 activeTab === "history" 
-                  ? "bg-[#2185d0] text-white shadow-[0_0_15px_rgba(33,133,208,0.35)] border border-transparent" 
+                  ? "bg-[var(--accent-primary)] text-white shadow-[0_0_15px_rgba(var(--accent-primary-rgb),0.35)] border border-transparent" 
                   : "text-gray-400 hover:text-white hover:bg-white/5 border border-transparent"
               }`}
             >
@@ -345,7 +345,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
               setEditingId(null);
               setShowAddModal(true); 
             }} 
-            className="bg-[#2185d0] hover:bg-[#1678c2] text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 shadow-md shadow-blue-500/10 hover:shadow-blue-500/20"
+            className="bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 shadow-md shadow-[var(--accent-primary)]/10 hover:shadow-[var(--accent-primary)]/20"
           >
             Invest Now
           </button>
@@ -356,7 +356,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
         {activeTab === "dashboard" && (
           <div className="flex flex-col lg:flex-row gap-12 items-center lg:items-stretch mt-4">
             {/* Left: Large Allocation Donut */}
-            <div className="flex-1 flex flex-col items-center justify-center bg-[#151515] p-8 border border-white/5 rounded-lg">
+            <div className="flex-1 flex flex-col items-center justify-center bg-[var(--bg-card)] p-8 border border-white/5 rounded-lg">
               <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">Asset Allocation</h3>
               {mounted && pieChartData.length > 0 ? (
                 <div className="w-[280px] h-[280px] relative">
@@ -396,7 +396,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
             </div>
 
             {/* Right: Coin Stats summary */}
-            <div className="flex-1 flex flex-col justify-center bg-[#151515] p-8 border border-white/5 rounded-lg">
+            <div className="flex-1 flex flex-col justify-center bg-[var(--bg-card)] p-8 border border-white/5 rounded-lg">
               <div className="space-y-6">
                 <div>
                   <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Current value</p>
@@ -460,7 +460,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
           {/* Custom Coin styling */}
           <div className="p-0 -mx-6 -mt-6">
             <div className={`p-4 rounded-t flex items-center justify-between ${
-              formData.trade_type === "buy" ? "bg-[#2185d0]" : "bg-[#ff5722]"
+              formData.trade_type === "buy" ? "bg-[var(--accent-primary)]" : "bg-[#ff5722]"
             } text-white`}>
               <div>
                 <span className="text-base font-bold uppercase tracking-wider">{editingId ? "Modify" : formData.trade_type === "buy" ? "Invest" : "Redeem"} {formData.fund_name || "Fund"}</span>
@@ -472,15 +472,15 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
               </div>
             </div>
 
-            <div className="p-5 space-y-5 bg-[#151515]">
+            <div className="p-5 space-y-5 bg-[var(--bg-card)]">
               {/* Investment type toggle (SIP vs Lumpsum) */}
               {!editingId && formData.trade_type === "buy" && (
-                <div className="flex bg-[#202020] rounded p-1 border border-white/5">
+                <div className="flex bg-[var(--bg-card)] rounded p-1 border border-white/5">
                   <button 
                     type="button"
                     onClick={() => setFormData({ ...formData, investment_type: "SIP" })}
                     className={`flex-1 py-1.5 rounded text-xs font-semibold transition-all ${
-                      formData.investment_type === "SIP" ? "bg-[#2185d0] text-white shadow-md" : "text-gray-500 hover:text-white"
+                      formData.investment_type === "SIP" ? "bg-[var(--accent-primary)] text-white shadow-md" : "text-gray-500 hover:text-white"
                     }`}
                   >
                     SIP Mode
@@ -489,7 +489,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                     type="button"
                     onClick={() => setFormData({ ...formData, investment_type: "LUMPSUM" })}
                     className={`flex-1 py-1.5 rounded text-xs font-semibold transition-all ${
-                      formData.investment_type === "LUMPSUM" ? "bg-[#2185d0] text-white shadow-md" : "text-gray-500 hover:text-white"
+                      formData.investment_type === "LUMPSUM" ? "bg-[var(--accent-primary)] text-white shadow-md" : "text-gray-500 hover:text-white"
                     }`}
                   >
                     Lumpsum Mode
@@ -504,7 +504,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                     <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Search Fund</label>
                     <div className="relative">
                       <input 
-                        className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]" 
+                        className="w-full bg-[var(--bg-card)] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[var(--accent-primary)]" 
                         placeholder="e.g. Parag Parikh Flexi Cap" 
                         value={searchQuery || formData.fund_name} 
                         onChange={e => {
@@ -519,7 +519,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                       )}
                     </div>
                     {showSearchDropdown && searchResults.length > 0 && (
-                      <div className="absolute z-50 left-0 right-0 top-[100%] mt-1 bg-[#202020] border border-white/10 rounded shadow-xl overflow-hidden max-h-48 overflow-y-auto custom-scrollbar">
+                      <div className="absolute z-50 left-0 right-0 top-[100%] mt-1 bg-[var(--bg-card)] border border-white/10 rounded shadow-xl overflow-hidden max-h-48 overflow-y-auto custom-scrollbar">
                         {searchResults.map((res, i) => (
                           <div 
                             key={i} 
@@ -538,7 +538,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                           >
                             <div className="flex items-center justify-between">
                               <span className="text-xs font-bold text-white truncate max-w-[80%]">{res.schemeName}</span>
-                              <span className="text-[10px] font-bold text-[#2185d0]">{res.schemeCode}</span>
+                              <span className="text-[10px] font-bold text-[var(--accent-primary)]">{res.schemeCode}</span>
                             </div>
                           </div>
                         ))}
@@ -552,7 +552,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                     <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">AMC/Provider</label>
                     <input 
                       required 
-                      className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]" 
+                      className="w-full bg-[var(--bg-card)] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[var(--accent-primary)]" 
                       placeholder="e.g. PPFAS" 
                       value={formData.amc_name} 
                       onChange={e => setFormData({...formData, amc_name: e.target.value})} 
@@ -561,7 +561,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                   <div className="space-y-1">
                     <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Scheme Code</label>
                     <input 
-                      className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]" 
+                      className="w-full bg-[var(--bg-card)] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[var(--accent-primary)]" 
                       placeholder="e.g. 122639" 
                       value={formData.scheme_code} 
                       onChange={e => setFormData({...formData, scheme_code: e.target.value})} 
@@ -576,7 +576,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                       required 
                       type="number" 
                       step="any" 
-                      className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]" 
+                      className="w-full bg-[var(--bg-card)] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[var(--accent-primary)]" 
                       value={formData.units} 
                       onChange={e => setFormData({...formData, units: e.target.value})} 
                       inputMode="decimal" 
@@ -590,7 +590,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                       required 
                       type="number" 
                       step="any" 
-                      className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]" 
+                      className="w-full bg-[var(--bg-card)] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[var(--accent-primary)]" 
                       value={formData.nav} 
                       onChange={e => setFormData({...formData, nav: e.target.value})} 
                       inputMode="decimal" 
@@ -605,7 +605,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                       required 
                       type="number" 
                       step="any" 
-                      className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]" 
+                      className="w-full bg-[var(--bg-card)] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[var(--accent-primary)]" 
                       value={formData.current_nav} 
                       onChange={e => setFormData({...formData, current_nav: e.target.value})} 
                       inputMode="decimal" 
@@ -614,7 +614,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                   <div className="space-y-1">
                     <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Category</label>
                     <select 
-                      className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]" 
+                      className="w-full bg-[var(--bg-card)] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[var(--accent-primary)]" 
                       value={formData.category} 
                       onChange={e => setFormData({...formData, category: e.target.value})}
                     >
@@ -635,7 +635,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                         <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Date</label>
                         <input 
                           type="date" 
-                          className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]" 
+                          className="w-full bg-[var(--bg-card)] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[var(--accent-primary)]" 
                           value={formData.date} 
                           onChange={e => setFormData({...formData, date: e.target.value})} 
                         />
@@ -645,7 +645,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                         <input 
                           type="number" 
                           step="any" 
-                          className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]" 
+                          className="w-full bg-[var(--bg-card)] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[var(--accent-primary)]" 
                           placeholder="0.00"
                           value={charges} 
                           onChange={e => setCharges(e.target.value)} 
@@ -658,7 +658,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                         {formData.trade_type === 'buy' ? 'Deduct From' : 'Deposit To'}
                       </label>
                       <select 
-                        className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]" 
+                        className="w-full bg-[var(--bg-card)] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[var(--accent-primary)]" 
                         value={formData.account_id} 
                         onChange={e => setFormData({...formData, account_id: e.target.value})}
                       >
@@ -706,7 +706,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                     disabled={submitting} 
                     className={`flex-1 py-2 rounded text-xs font-bold transition-all text-white shadow-md active:scale-[0.98] ${
                       editingId ? "bg-indigo-600 hover:bg-indigo-700" :
-                      formData.trade_type === 'sell' ? "bg-[#ff5722] hover:bg-[#e64a19]" : "bg-[#2185d0] hover:bg-[#1678c2]"
+                      formData.trade_type === 'sell' ? "bg-[#ff5722] hover:bg-[#e64a19]" : "bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)]"
                     }`}
                   >
                     {submitting ? "Processing..." : (editingId ? "Modify" : formData.trade_type === 'buy' ? "Invest Now" : "Redeem Now")}

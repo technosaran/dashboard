@@ -51,14 +51,14 @@ export function Drawer({ isOpen, onClose, title, children, width = "max-w-md" }:
 
       {/* Sliding Panel */}
       <div
-        className={`absolute top-0 right-0 h-full w-full ${width} bg-[#0a0a0a] border-l border-white/10 shadow-2xl flex flex-col transform transition-transform duration-300 ease-out ${
+        className={`absolute top-0 right-0 h-full w-full ${width} bg-[var(--bg-base)] border-l border-white/10 shadow-2xl flex flex-col transform transition-transform duration-300 ease-out ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[--accent-primary] via-purple-500 to-emerald-500" />
         
         {/* Header */}
-        <div className="px-6 py-4 border-b border-white/5 flex flex-col gap-0.5 shrink-0 relative z-10 bg-[#0a0a0a]">
+        <div className="px-6 py-4 border-b border-white/5 flex flex-col gap-0.5 shrink-0 relative z-10 bg-[var(--bg-base)]">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-black text-white tracking-tight">{title}</h2>
             <button
