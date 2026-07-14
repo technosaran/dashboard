@@ -118,24 +118,24 @@ export default function GoalsDataTable({ goals, onEdit, onDelete, onContribute, 
         id: "actions",
         header: "",
         cell: (info) => (
-          <div className="flex items-center justify-end gap-2 opacity-80 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+          <div className="flex items-center justify-end gap-2 whitespace-nowrap">
             <button
               onClick={() => onContribute(info.row.original)}
-              className="p-2 rounded-lg bg-[--accent-primary]/10 text-[--accent-primary-light] hover:bg-[--accent-primary] hover:text-white transition-colors cursor-pointer"
+              className="p-2 rounded-lg bg-[--accent-primary]/10 text-[--accent-primary-light] cursor-pointer"
               title="Contribute"
             >
               <PlusCircle className="w-4 h-4" />
             </button>
             <button
               onClick={() => onEdit(info.row.original)}
-              className="p-2 rounded-lg bg-white/5 text-[--text-muted] hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
+              className="p-2 rounded-lg bg-white/5 text-[--text-muted] cursor-pointer"
               title="Edit Goal"
             >
               <Edit className="w-4 h-4" />
             </button>
             <button
               onClick={() => onDelete(info.row.original.id)}
-              className="p-2 rounded-lg bg-danger/10 text-danger hover:bg-danger hover:text-white transition-colors cursor-pointer"
+              className="p-2 rounded-lg bg-danger/10 text-danger cursor-pointer"
               title="Delete Goal"
             >
               <Trash2 className="w-4 h-4" />
@@ -248,7 +248,7 @@ export default function GoalsDataTable({ goals, onEdit, onDelete, onContribute, 
                 className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-[0.18em] border transition-colors ${
                   goalFilter === filter.key
                     ? "bg-[--accent-primary]/20 border-[--accent-primary]/40 text-white"
-                    : "bg-white/5 border-white/10 text-[--text-muted] hover:text-white"
+                    : "bg-white/5 border-white/10 text-[--text-muted]"
                 }`}
               >
                 {filter.label} ({filter.value})
@@ -263,7 +263,7 @@ export default function GoalsDataTable({ goals, onEdit, onDelete, onContribute, 
             type="button"
             onClick={() => setViewMode("cards")}
             className={`p-2 rounded-lg transition-all flex items-center gap-1.5 text-xs font-bold cursor-pointer ${
-              viewMode === "cards" ? "bg-[--accent-primary] text-white shadow-md" : "text-[--text-muted] hover:text-white"
+              viewMode === "cards" ? "bg-[--accent-primary] text-white shadow-md" : "text-[--text-muted]"
             }`}
             title="Card milestones view"
           >
@@ -274,7 +274,7 @@ export default function GoalsDataTable({ goals, onEdit, onDelete, onContribute, 
             type="button"
             onClick={() => setViewMode("table")}
             className={`p-2 rounded-lg transition-all flex items-center gap-1.5 text-xs font-bold cursor-pointer ${
-              viewMode === "table" ? "bg-[--accent-primary] text-white shadow-md" : "text-[--text-muted] hover:text-white"
+              viewMode === "table" ? "bg-[--accent-primary] text-white shadow-md" : "text-[--text-muted]"
             }`}
             title="List view"
           >
@@ -321,7 +321,7 @@ export default function GoalsDataTable({ goals, onEdit, onDelete, onContribute, 
                   key={goal.id} 
                   className={`p-5 rounded-2xl border ${
                     isCompleted ? "border-emerald-500/20 bg-emerald-500/[0.02]" : "border-white/10 bg-[#141414]"
-                  } hover:border-[--accent-primary]/30 transition-all duration-300 flex flex-col justify-between min-h-[220px] shadow-lg relative group`}
+                  } transition-all duration-300 flex flex-col justify-between min-h-[220px] shadow-lg relative`}
                 >
                   <div>
                     {/* Header */}
@@ -406,29 +406,29 @@ export default function GoalsDataTable({ goals, onEdit, onDelete, onContribute, 
                         : "No Deadline"}
                     </span>
                     
-                    <div className="flex items-center gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center gap-1.5">
                       {!isCompleted && (
                         <button
                           onClick={() => onContribute(goal)}
-                          className="bg-purple-600 hover:bg-purple-700 text-white p-2.5 rounded-xl transition-all active:scale-95 cursor-pointer"
+                          className="bg-purple-600 text-white p-2.5 rounded-xl cursor-pointer"
                           title="Contribute"
                         >
-                          <PlusCircle className="w-4 h-4" />
+                          <PlusCircle className="w-3.5 h-3.5" />
                         </button>
                       )}
                       <button
                         onClick={() => onEdit(goal)}
-                        className="bg-[#1e1e1e] hover:bg-white/5 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white p-2.5 rounded-xl transition-all active:scale-95 cursor-pointer"
+                        className="bg-[#1e1e1e] border border-white/10 text-gray-300 p-2.5 rounded-xl cursor-pointer"
                         title="Edit Goal"
                       >
-                        <Edit className="w-4 h-4" />
+                        <Edit className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => onDelete(goal.id)}
-                        className="bg-rose-500/10 hover:bg-rose-600 border border-rose-500/20 hover:border-rose-600 text-rose-400 hover:text-white p-2.5 rounded-xl transition-all active:scale-95 cursor-pointer"
+                        className="bg-rose-500/10 border border-rose-500/20 text-rose-400 p-2.5 rounded-xl cursor-pointer"
                         title="Delete Goal"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>
@@ -454,7 +454,7 @@ export default function GoalsDataTable({ goals, onEdit, onDelete, onContribute, 
             </thead>
             <tbody className="divide-y divide-white/5">
               {table.getRowModel().rows.map((row) => (
-                <tr key={row.id} className="group hover:bg-white/[0.02] transition-colors">
+                <tr key={row.id}>
                   {row.getVisibleCells().map((cell) => (
                     <td key={cell.id} className={`px-5 py-3.5 align-middle ${getTableCellClass(cell.column.id)}`}>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}

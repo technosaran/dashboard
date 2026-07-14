@@ -171,7 +171,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
         });
       }
       if (!res?.error) {
-        toast.success(editingGoalId ? "Target parameters updated successfully" : "New financial milestone established successfully");
+        toast.success(editingGoalId ? "Financial goal updated successfully" : "New financial goal added successfully");
         setShowAddModal(false);
         setFormData({ name: "", target_amount: "", current_amount: "0", deadline: "", category: "Others", account_id: "" });
         setEditingGoalId(null);
@@ -196,7 +196,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
     await withLock(async () => {
       const res = await updateGoalAmount(selectedGoalId, amount, selectedAccountId);
       if (!res?.error) {
-        toast.success("Capital injected into savings goal");
+        toast.success("Contribution added to goal successfully");
         setShowContributeModal(false);
         setContributeAmount("");
         mutate();
@@ -216,7 +216,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
     await withLock(async () => {
       const res = await deleteGoal(deletingGoalId);
       if (!res?.error) {
-        toast.success("Milestone deleted from registry");
+        toast.success("Goal deleted successfully");
         setShowDeleteConfirm(false);
         setDeletingGoalId(null);
         mutate();

@@ -109,7 +109,7 @@ export default function LedgerDataTable({
                   setIsReverting(null);
                 }}
                 disabled={isReverting === log.id}
-                className="text-[9px] font-black uppercase tracking-widest text-rose-500 hover:text-white bg-rose-500/5 hover:bg-rose-500 border border-rose-500/10 px-2.5 py-1.5 rounded-lg transition-all disabled:opacity-50 cursor-pointer whitespace-nowrap"
+                className="text-[9px] font-black uppercase tracking-widest text-rose-500 bg-rose-500/5 border border-rose-500/10 px-2.5 py-1.5 rounded-lg disabled:opacity-50 cursor-pointer whitespace-nowrap"
               >
                 {isReverting === log.id ? "..." : "Revert"}
               </button>
@@ -274,7 +274,7 @@ export default function LedgerDataTable({
           </thead>
           <tbody className="divide-y divide-white/10">
             {table.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="transition-colors hover:bg-white/[0.02] border-b border-white/5">
+              <tr key={row.id} className="border-b border-white/5">
                 {row.getVisibleCells().map((cell) => (
                   <td key={cell.id} className={`px-6 py-4.5 ${getTableCellClass(cell.column.id)}`}>
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -329,7 +329,7 @@ export default function LedgerDataTable({
                       setIsReverting(null);
                     }}
                     disabled={isReverting === log.id}
-                    className="text-[9px] font-black uppercase tracking-widest text-danger hover:text-white bg-danger/10 hover:bg-danger/20 border border-danger/20 px-2 py-1 rounded transition-all disabled:opacity-50"
+                    className="text-[9px] font-black uppercase tracking-widest text-danger bg-danger/10 border border-danger/20 px-2 py-1 rounded disabled:opacity-50"
                   >
                     {isReverting === log.id ? "..." : "Revert"}
                   </button>

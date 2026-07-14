@@ -530,7 +530,7 @@ export default function TransactionsClient() {
                   const currency = getAccountCurrency(t.account_id);
 
                   return (
-                    <tr key={t.id} className="group hover:bg-white/[0.02] transition-colors">
+                    <tr key={t.id}>
                       <td className="px-5 py-3.5 align-middle">
                         <p className="text-[13px] font-bold text-white">
                           {t.date ? format(parseISO(t.date), "MMM d, yy") : "—"}

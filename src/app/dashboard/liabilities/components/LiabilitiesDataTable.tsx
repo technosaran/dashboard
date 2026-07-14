@@ -145,17 +145,17 @@ export default function LiabilitiesDataTable({ liabilities, onEdit, onDelete, on
         id: "actions",
         header: "",
         cell: (info) => (
-          <div className="flex items-center justify-end gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center justify-end gap-2">
             <button
               onClick={() => onEdit(info.row.original)}
-              className="p-2 rounded-lg bg-white/5 text-[--text-muted] hover:bg-white/10 hover:text-white transition-colors"
+              className="p-2 rounded-lg bg-white/5 text-[--text-muted]"
               title="Edit Liability"
             >
               <Edit className="w-4 h-4" />
             </button>
             <button
               onClick={() => onDelete(info.row.original.id)}
-              className="p-2 rounded-lg bg-danger/10 text-danger hover:bg-danger hover:text-white transition-colors"
+              className="p-2 rounded-lg bg-danger/10 text-danger"
               title="Delete Liability"
             >
               <Trash2 className="w-4 h-4" />
@@ -294,7 +294,7 @@ export default function LiabilitiesDataTable({ liabilities, onEdit, onDelete, on
           </thead>
           <tbody className="divide-y divide-white/5">
             {table.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="group hover:bg-white/[0.02] transition-colors">
+              <tr key={row.id}>
                 {row.getVisibleCells().map((cell) => (
                   <td key={cell.id} className={`px-5 py-3.5 align-middle ${getTableCellClass(cell.column.id)}`}>
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}

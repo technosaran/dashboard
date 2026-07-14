@@ -123,6 +123,25 @@ export default function FamilyClient() {
     }, 0);
   }, [transfers]);
 
+  const avgTransferAmount = useMemo(() => {
+    if (!transfers.length) return 0;
+    const total = transfers.reduce((acc, t) => acc + Number(t.amount || 0), 0);
+    return total / transfers.length;
+  }, [transfers]);
+
+  const topBeneficiary = useMemo(() => {
+    if (!members.length) return null;
+    const sorted = [...members].sort((a, b) => Number(b.balance || 0) - Number(a.balance || 0));
+    const top = sorted[0];
+    if (!top || Number(top.balance || 0) === 0) return null;
+    const percentage = totalFamilyNetWorth > 0 ? Math.round((Number(top.balance) / totalFamilyNetWorth) * 100) : 0;
+    return {
+      name: top.name,
+      amount: Number(top.balance),
+      percentage,
+    };
+  }, [members, totalFamilyNetWorth]);
+
   /* ── Tab state ── */
   const [activeTab, setActiveTab] = useState<"directory" | "history">("directory");
   const [historySearch, setHistorySearch] = useState("");
@@ -183,11 +202,11 @@ export default function FamilyClient() {
       if (editingMember) {
         const res = await updateFamilyMember(editingMember.id, memberForm);
         if (res.error) { toast.error(res.error); return; }
-        toast.success("Member updated");
+        toast.success("Family member updated successfully");
       } else {
         const res = await addFamilyMember(memberForm);
         if (res.error) { toast.error(res.error); return; }
-        toast.success("Member added");
+        toast.success("Family member added successfully");
       }
       resetMemberForm();
       setShowMemberModal(false);
@@ -201,7 +220,7 @@ export default function FamilyClient() {
     await withLock(async () => {
       const res = await deleteFamilyMember(id);
       if (res.error) { toast.error(res.error); return; }
-      toast.success("Member deleted");
+      toast.success("Family member deleted successfully");
       mutate();
       mutateFinance();
     });
@@ -217,7 +236,7 @@ export default function FamilyClient() {
         note: transferForm.note || undefined,
       });
       if (res.error) { toast.error(res.error); return; }
-      toast.success("Money sent successfully");
+      toast.success("Transfer recorded successfully");
       resetTransferForm();
       setShowTransferModal(false);
       mutate();
@@ -293,7 +312,7 @@ export default function FamilyClient() {
         </div>
         <div className="flex gap-3">
           <button
-            className="relative bg-gradient-to-r from-[--accent-primary] to-indigo-600 text-white px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 shadow-[0_0_20px_rgba(14,165,233,0.25)] hover:shadow-[0_0_25px_rgba(14,165,233,0.45)] flex items-center gap-2 active:scale-95 cursor-pointer"
+            className="relative bg-gradient-to-r from-pink-500 to-rose-600 text-white px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 shadow-[0_0_20px_rgba(236,72,153,0.3)] hover:shadow-[0_0_25px_rgba(236,72,153,0.5)] flex items-center gap-2 active:scale-95 cursor-pointer"
             onClick={() => openSendMoney()}
             disabled={members.length === 0}
           >
@@ -311,21 +330,41 @@ export default function FamilyClient() {
       </div>
 
       {/* ═══ STATS OVERVIEW ═══ */}
-      <section className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
-          { label: "Total Sent (All Time)", value: totalFamilyNetWorth, color: "text-white" },
-          { label: "Sent This Month", value: totalSentThisMonth, color: "text-[--accent-primary]" },
-          { label: "Active Members", raw: `${members.length} registered`, color: "text-emerald-400" },
+          {
+            label: "Total Support (All Time)",
+            value: fmt.format(Number(totalFamilyNetWorth)),
+            subtext: "Cumulative family transfers",
+            color: "text-white",
+          },
+          {
+            label: "Sent This Month",
+            value: fmt.format(Number(totalSentThisMonth)),
+            subtext: "Current month outflow",
+            color: "text-pink-400",
+          },
+          {
+            label: "Avg. Transfer Size",
+            value: transfers.length > 0 ? fmt.format(avgTransferAmount) : "—",
+            subtext: transfers.length > 0 ? `Across ${transfers.length} transaction${transfers.length === 1 ? "" : "s"}` : "No transfers recorded",
+            color: "text-rose-400",
+          },
+          {
+            label: "Primary Beneficiary",
+            value: topBeneficiary ? topBeneficiary.name : "—",
+            subtext: topBeneficiary ? `${fmt.format(topBeneficiary.amount)} (${topBeneficiary.percentage}% share)` : "No support recorded yet",
+            color: "text-fuchsia-400",
+          },
         ].map((s, i) => (
-          <div key={i} className="glass-card-static p-6 border-white/5 flex flex-col justify-between min-h-[110px]">
+          <div key={i} className="glass-card-static p-6 border-white/5 flex flex-col justify-between min-h-[120px]">
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">{s.label}</p>
-            {s.raw ? (
-              <p className={`text-2xl font-black tracking-tight ${s.color} mt-3`}>{s.raw}</p>
-            ) : (
-              <p className={`text-3xl font-black tracking-tight ${s.color} mt-3`}>
-                {fmt.format(Number(s.value))}
-              </p>
-            )}
+            <p className={`text-2xl font-black tracking-tight truncate ${s.color} mt-2`} title={s.value}>
+              {s.value}
+            </p>
+            <p className="text-[11px] font-medium text-[--text-secondary] mt-1 truncate">
+              {s.subtext}
+            </p>
           </div>
         ))}
       </section>
@@ -336,7 +375,7 @@ export default function FamilyClient() {
           onClick={() => setActiveTab("directory")}
           className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer ${
             activeTab === "directory"
-              ? "bg-[--accent-primary] text-white shadow-[0_0_20px_rgba(14,165,233,0.3)]"
+              ? "bg-gradient-to-r from-pink-500 to-rose-600 text-white shadow-[0_0_20px_rgba(236,72,153,0.35)]"
               : "text-[--text-muted] hover:text-white hover:bg-white/[0.02]"
           }`}
         >
@@ -347,17 +386,12 @@ export default function FamilyClient() {
           onClick={() => setActiveTab("history")}
           className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer ${
             activeTab === "history"
-              ? "bg-[--accent-primary] text-white shadow-[0_0_20px_rgba(14,165,233,0.3)]"
+              ? "bg-gradient-to-r from-pink-500 to-rose-600 text-white shadow-[0_0_20px_rgba(236,72,153,0.35)]"
               : "text-[--text-muted] hover:text-white hover:bg-white/[0.02]"
           }`}
         >
           <History className="w-3.5 h-3.5" />
           Transfer History
-          <span className={`flex h-4 items-center justify-center rounded-full text-[8px] font-black px-1.5 ${
-            activeTab === "history" ? "bg-white/20 text-white" : "bg-white/10 text-white"
-          }`}>
-            {transfers.length}
-          </span>
         </button>
       </div>
 
@@ -365,9 +399,9 @@ export default function FamilyClient() {
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
           {members.length === 0 ? (
             <div className="glass-card-static relative overflow-hidden p-8 md:p-16 text-center flex flex-col items-center justify-center min-h-[350px] border-white/5">
-              <div className="absolute -top-24 -left-24 w-96 h-96 bg-sky-500/10 rounded-full blur-[100px] pointer-events-none" />
+              <div className="absolute -top-24 -left-24 w-96 h-96 bg-pink-500/10 rounded-full blur-[100px] pointer-events-none" />
               <div className="relative mb-6 p-6 rounded-3xl bg-white/[0.02] border border-white/5 shadow-2xl">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-sky-500/15 to-indigo-600/15 border border-sky-500/25 flex items-center justify-center shadow-[0_0_30px_-5px_rgba(14,165,233,0.3)]">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-pink-500/15 to-rose-600/15 border border-pink-500/25 flex items-center justify-center shadow-[0_0_30px_-5px_rgba(236,72,153,0.3)]">
                   <span className="text-3xl">👥</span>
                 </div>
               </div>
@@ -376,7 +410,7 @@ export default function FamilyClient() {
                 Add family members to keep track of allowances, support, and gifts.
               </p>
               <div className="mt-8 flex justify-center">
-                <button onClick={() => { resetMemberForm(); setShowMemberModal(true); }} className="btn-primary">Add Member</button>
+                <button onClick={() => { resetMemberForm(); setShowMemberModal(true); }} className="bg-gradient-to-r from-pink-500 to-rose-600 text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 shadow-[0_0_20px_rgba(236,72,153,0.3)] active:scale-95 cursor-pointer">Add Member</button>
               </div>
             </div>
           ) : (
@@ -386,16 +420,16 @@ export default function FamilyClient() {
                 const initials = member.name.trim().charAt(0).toUpperCase() || "?";
                 const avatar = getMemberAvatar(member.name, member.relationship);
                 return (
-                  <div key={member.id} className="glass-card flex flex-col justify-between gap-4 border-white/5 hover:border-sky-500/30 hover:shadow-[0_0_25px_rgba(14,165,233,0.08)] transition-all duration-300 relative group overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-[--accent-primary] to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div key={member.id} className="glass-card flex flex-col justify-between gap-4 border-white/5 hover:border-pink-500/30 hover:shadow-[0_0_25px_rgba(236,72,153,0.12)] transition-all duration-300 relative group overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-pink-500 via-rose-500 to-fuchsia-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     
                     <div className="flex items-center gap-4">
-                      <div className="relative p-[2.5px] rounded-full bg-gradient-to-tr from-[--accent-primary] via-cyan-500 to-emerald-500 shadow-[0_0_15px_rgba(14,165,233,0.2)] flex-shrink-0">
+                      <div className="relative p-[2.5px] rounded-full bg-gradient-to-tr from-pink-500 via-rose-500 to-fuchsia-500 shadow-[0_0_15px_rgba(236,72,153,0.25)] flex-shrink-0">
                         <div className="bg-[#121214] p-[1.5px] rounded-full">
                           {avatar ? (
                             <Image src={avatar} alt={member.name} width={44} height={44} className="w-11 h-11 rounded-full object-cover" />
                           ) : (
-                            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-sky-600 to-indigo-700 flex items-center justify-center text-white font-black text-sm">
+                            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-pink-600 to-rose-700 flex items-center justify-center text-white font-black text-sm">
                               {initials}
                             </div>
                           )}
@@ -404,7 +438,7 @@ export default function FamilyClient() {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <h3 className="text-sm font-bold text-white leading-tight truncate" title={member.name}>{member.name}</h3>
-                          <span className="shrink-0 text-[8px] font-black uppercase tracking-widest text-[--accent-primary] bg-sky-500/10 border border-sky-500/20 px-1.5 py-0.5 rounded-md">
+                          <span className="shrink-0 text-[8px] font-black uppercase tracking-widest text-pink-400 bg-pink-500/10 border border-pink-500/20 px-1.5 py-0.5 rounded-md">
                             {member.relationship ?? "Other"}
                           </span>
                         </div>
@@ -414,7 +448,7 @@ export default function FamilyClient() {
                             <button
                                type="button"
                                onClick={(e) => { e.stopPropagation(); openSendAllowance(member.id, "500", "Allowance Support"); }}
-                               className="text-[9.5px] font-black uppercase text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded cursor-pointer transition-all active:scale-95 shrink-0"
+                               className="text-[9.5px] font-black uppercase text-pink-400 hover:text-pink-300 bg-pink-500/10 border border-pink-500/20 px-2 py-0.5 rounded cursor-pointer transition-all active:scale-95 shrink-0"
                             >
                               👶 Allowance
                             </button>
@@ -425,7 +459,7 @@ export default function FamilyClient() {
 
                     <div className="flex gap-2 border-t border-white/5 pt-4 mt-2">
                       <button
-                        className="flex-1 bg-gradient-to-r from-[--accent-primary] to-indigo-500 text-white py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(14,165,233,0.15)] hover:shadow-[0_0_20px_rgba(14,165,233,0.35)] active:scale-95 cursor-pointer"
+                        className="flex-1 bg-gradient-to-r from-pink-500 to-rose-600 text-white py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(236,72,153,0.25)] hover:shadow-[0_0_20px_rgba(236,72,153,0.45)] active:scale-95 cursor-pointer"
                         onClick={() => openSendMoney(member.id)}
                       >
                         <Send className="w-3.5 h-3.5" />
@@ -467,7 +501,6 @@ export default function FamilyClient() {
                   className="input-premium pl-9 py-2 text-sm w-full sm:w-64 !bg-black/20"
                 />
               </div>
-              <p className="text-[10px] font-black text-[--text-muted] uppercase tracking-widest">{filteredTransfers.length} Records</p>
             </div>
 
             <div className="overflow-x-auto">
@@ -487,7 +520,7 @@ export default function FamilyClient() {
                     const accountName = accounts.find(a => a.id === tr.account_id)?.name || "Unknown Account";
 
                     return (
-                      <tr key={tr.id} className="hover:bg-white/[0.02] transition-colors group">
+                      <tr key={tr.id}>
                         <td className="py-4 px-6 text-[12px] font-bold text-white/80">
                           {formatTransferDate(tr.transfer_date)}
                         </td>
@@ -556,7 +589,7 @@ export default function FamilyClient() {
               </select>
             </div>
             <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
-              <button className="btn-primary" onClick={handleAddEditMember} disabled={submitting || !memberForm.name.trim()} style={{ flex: 1, fontWeight: 800 }}>
+              <button className="bg-gradient-to-r from-pink-500 to-rose-600 text-white px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 shadow-[0_0_20px_rgba(236,72,153,0.3)] active:scale-95 cursor-pointer disabled:opacity-50" onClick={handleAddEditMember} disabled={submitting || !memberForm.name.trim()} style={{ flex: 1 }}>
                 {submitting ? "Saving..." : editingMember ? "Update" : "Add Member"}
               </button>
               <button className="btn-secondary" onClick={() => { setShowMemberModal(false); resetMemberForm(); }} style={{ fontWeight: 700 }}>
@@ -627,10 +660,10 @@ export default function FamilyClient() {
             </div>
             <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
               <button
-                className="btn-success"
+                className="bg-gradient-to-r from-pink-500 to-rose-600 text-white px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 shadow-[0_0_20px_rgba(236,72,153,0.3)] active:scale-95 cursor-pointer disabled:opacity-50"
                 onClick={handleSendMoney}
                 disabled={submitting || !transferForm.family_member_id || !transferForm.account_id || !transferForm.amount}
-                style={{ flex: 1, fontWeight: 800 }}
+                style={{ flex: 1 }}
               >
                 {submitting ? "Sending..." : "Send Money"}
               </button>

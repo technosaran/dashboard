@@ -149,7 +149,7 @@ export default function LiabilitiesClient({ initialData }: { initialData?: Finan
         : await addLiability({ ...payload, account_id });
 
       if (!res.error) {
-        toast.success(editingId ? "Liability updated" : "Liability recorded");
+        toast.success(editingId ? "Liability updated successfully" : "Liability added successfully");
         setShowAddModal(false);
         setEditingId(null);
         setFormData({ name: "", category: "Personal Loan", total_amount: "", remaining_amount: "", interest_rate: "", monthly_payment: "", due_date: "", notes: "", account_id: "" });

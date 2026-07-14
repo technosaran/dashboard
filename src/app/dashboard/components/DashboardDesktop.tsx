@@ -270,7 +270,7 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                     <div className="flex-1 min-w-0 space-y-2.5 w-full">
                       <p className="text-[11px] font-semibold text-[--text-muted] mb-3">Portfolio allocation</p>
                       {portfolioData.map((item) => (
-                        <div key={item.name} className="flex justify-between items-center group gap-3 min-w-0 py-1.5 hover:bg-white/[0.02] px-2 rounded-lg transition-colors">
+                        <div key={item.name} className="flex justify-between items-center gap-3 min-w-0 py-1.5 px-2 rounded-lg">
                           <div className="flex items-center gap-2.5 min-w-0">
                             <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: item.color }} />
                             <span className="text-[11px] font-bold text-[--text-secondary] truncate group-hover:text-white transition-colors">{item.name}</span>
@@ -438,7 +438,7 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                 {recentLogs.slice(0, 4).map((log) => {
                   const isOut = ["DELETE", "TRANSFER_OUT", "SEND_MONEY", "ADJUST_DOWN"].includes(log.action_type);
                   return (
-                    <div key={log.id} className="flex items-center justify-between gap-4 p-5 hover:bg-white/[0.015] transition-all group">
+                    <div key={log.id} className="flex items-center justify-between gap-4 p-5">
                       <div className="flex min-w-0 items-center gap-4">
                         <div className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-center text-lg flex-shrink-0 group-hover:scale-105 transition-transform">
                           {log.action_type === "CREATE" ? "✨" : isOut ? "📉" : "📈"}
@@ -504,7 +504,7 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                 <span className="text-[11px] font-bold text-sky-400">Add Account</span>
               </Link>
               {/* #4 — fallback "Browse all" tile ensures even grid when modules are limited */}
-              <Link href="/dashboard/settings" className="flex flex-col items-center justify-center p-4 bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 rounded-2xl text-center transition-all group hover:-translate-y-1">
+              <Link href="/dashboard/settings" className="flex flex-col items-center justify-center p-4 bg-white/[0.02] border border-white/5 rounded-2xl text-center">
                 <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">⚙️</span>
                 <span className="text-[11px] font-bold text-[--text-muted]">Settings</span>
               </Link>
@@ -527,7 +527,7 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                   const notStarted = saved === 0;
                   
                   return (
-                    <div key={goal.id} className="p-4 rounded-2xl bg-white/[0.01] border border-white/5 hover:bg-white/[0.03] transition-all">
+                    <div key={goal.id} className="p-4 rounded-2xl bg-white/[0.01] border border-white/5">
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex flex-col">
                           <span className="text-[13px] font-bold text-white">{goal.name}</span>

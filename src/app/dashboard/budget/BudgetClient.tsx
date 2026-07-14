@@ -208,7 +208,7 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
           await withLock(async () => {
              const res = await deleteBudget(budget.id);
              if (!res.error) {
-               toast.success(`${category} budget cleared`);
+               toast.success(`${category} budget cleared successfully`);
                mutate();
              } else {
                toast.error(res.error);
@@ -229,7 +229,7 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
           period_year: selectedYear
         });
         if (!res.error) {
-          toast.success(`${category} budget updated`);
+          toast.success(`${category} budget updated successfully`);
           mutate();
         } else {
           toast.error(res.error);

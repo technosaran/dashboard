@@ -154,23 +154,23 @@ export default function StocksDataTable({ stocks, onEdit, onBuy, onSell, onAdd }
         id: "actions",
         header: "",
         cell: (info) => (
-          <div className="flex items-center justify-end gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center justify-end gap-2">
             <button
               onClick={(e) => { e.stopPropagation(); onEdit(info.row.original); }}
-              className="px-2.5 py-1 rounded bg-white/5 hover:bg-white/10 text-xs font-bold text-gray-300 hover:text-white transition-all cursor-pointer"
+              className="px-2.5 py-1 rounded bg-white/5 text-xs font-bold text-gray-300 cursor-pointer"
               title="Edit holding details"
             >
               ✏️
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); onBuy(info.row.original); }}
-              className="px-3 py-1 rounded bg-blue-500/10 hover:bg-blue-500 text-blue-500 hover:text-white transition-colors text-xs font-semibold cursor-pointer"
+              className="px-3 py-1 rounded bg-blue-500/10 text-blue-400 text-xs font-semibold cursor-pointer"
             >
               Buy
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); onSell(info.row.original); }}
-              className="px-3 py-1 rounded bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white transition-colors text-xs font-semibold cursor-pointer"
+              className="px-3 py-1 rounded bg-rose-500/10 text-rose-400 text-xs font-semibold cursor-pointer"
             >
               Sell
             </button>
@@ -230,7 +230,7 @@ export default function StocksDataTable({ stocks, onEdit, onBuy, onSell, onAdd }
           </thead>
           <tbody className="divide-y divide-white/5">
             {table.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="group hover:bg-white/[0.02] transition-colors cursor-pointer">
+              <tr key={row.id} className="cursor-pointer">
                 {row.getVisibleCells().map((cell) => (
                   <td key={cell.id} className={`px-4 py-3 align-middle ${getTableCellClass(cell.column.id)}`}>
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}

@@ -363,7 +363,7 @@ export default function AlternativeAssetsClient({ initialData, isSubComponent = 
                   {assetLogs.map((log) => {
                     const isPositive = log.action_type === "CREATE" || log.action_type === "ADJUST_UP";
                     return (
-                      <tr key={log.id} className="hover:bg-white/[0.02] transition-colors group">
+                      <tr key={log.id}>
                         <td className="py-4 px-6">
                           <p className="text-[12px] font-bold text-white/80">{log.created_at ? format(new Date(log.created_at), "MMM d, yyyy") : "N/A"}</p>
                           <p className="text-[10px] font-bold text-[--text-muted] mt-0.5">{log.created_at ? format(new Date(log.created_at), "HH:mm:ss") : ""}</p>

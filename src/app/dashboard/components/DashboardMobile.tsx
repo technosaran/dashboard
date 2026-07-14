@@ -205,8 +205,7 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, accou
             <Link 
               key={action.label} 
               href={action.href} 
-              prefetch={true} 
-              className="glass-card-static p-3 flex items-center gap-3 no-underline transition-all active:scale-[0.97] bg-white/[0.01] hover:bg-white/[0.02] border border-white/5 shadow-sm rounded-2xl animate-fade-in"
+              className="glass-card-static p-3 flex items-center gap-3 no-underline transition-all active:scale-[0.97] bg-white/[0.01] border border-white/5 shadow-sm rounded-2xl animate-fade-in"
               style={{ borderLeft: `3px solid ${action.color}40` }}
             >
               <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-lg shrink-0">

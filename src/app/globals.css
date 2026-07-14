@@ -254,16 +254,8 @@ input, textarea, [contenteditable="true"] {
               box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.glass-card:hover {
-  border-color: var(--hover-border-color, var(--border-strong));
-}
-
 .glass-card-static {
   transition: border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.glass-card-static:hover {
-  border-color: var(--border-strong);
 }
 
 @media (max-width: 640px) {
@@ -991,11 +983,6 @@ select:focus {
   border-color: var(--border-default);
 }
 
-.theme-google .glass-card:hover {
-  border-color: var(--accent-primary);
-  box-shadow: var(--shadow-glow);
-}
-
 /* White Grids and Border Layout Overrides, Scoped to Exclude the Sidebar Aside */
 .theme-google :not(aside):not(aside *).border:not([class*="border-"]),
 .theme-google :not(aside):not(aside *).border-t:not([class*="border-"]),
@@ -1090,12 +1077,9 @@ select:focus {
   outline: none !important;
 }
 
-/* Global table row hover transitions */
+/* Global table row static layout */
 .theme-google :not(aside):not(aside *) tbody tr {
-  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
-.theme-google :not(aside):not(aside *) tbody tr:hover {
-  background-color: rgba(255, 255, 255, 0.02) !important;
+  transition: none !important;
 }
 
 /* Prevent layout-shifting hover transforms on cards and rows */

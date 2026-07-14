@@ -449,7 +449,7 @@ export default function ForexClient({ initialData, showUSD = false }: { initialD
                 </thead>
                 <tbody className="divide-y divide-white/5">
                   {filteredForexTrades.map(trade => (
-                    <tr key={trade.id} className="hover:bg-white/[0.02] transition-colors group">
+                    <tr key={trade.id}>
                       <td className="px-5 py-4 text-sm font-medium text-white">{format(new Date(trade.trade_date || trade.created_at || 0), "MMM d, yyyy")}</td>
                       <td className="px-5 py-4 text-xs font-bold text-[--text-muted]">{getAccountLabel(trade.forex_account_id)}</td>
                       <td className="px-5 py-4 text-xs text-[--text-muted]">{trade.notes || "—"}</td>
@@ -491,7 +491,7 @@ export default function ForexClient({ initialData, showUSD = false }: { initialD
                   {filteredForexTransactions.map((tx) => {
                     const matchingLog = ledgerLogs?.find(log => log.source_type === 'forex' && log.source_id === tx.id);
                     return (
-                      <tr key={tx.id} className="hover:bg-white/[0.02] transition-colors group">
+                      <tr key={tx.id}>
                         <td className="px-5 py-4">
                           <p className="text-[12px] font-bold text-white/80">{matchingLog?.created_at ? format(new Date(matchingLog.created_at || new Date().toISOString()), "MMM d, yyyy") : "N/A"}</p>
                         </td>

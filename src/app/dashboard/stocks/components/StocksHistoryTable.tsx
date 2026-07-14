@@ -184,7 +184,7 @@ export default function StocksHistoryTable({ trades }: StocksHistoryTableProps) 
           </thead>
           <tbody className="divide-y divide-white/5">
             {table.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="group hover:bg-white/[0.02] transition-colors cursor-pointer">
+              <tr key={row.id} className="cursor-pointer">
                 {row.getVisibleCells().map((cell) => (
                   <td key={cell.id} className={`px-4 py-3 align-middle ${getTableCellClass(cell.column.id)}`}>
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}

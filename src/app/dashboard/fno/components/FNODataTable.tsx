@@ -148,11 +148,11 @@ export default function FNODataTable({ trades, onCloseTrade, onDeleteTrade, onAd
           id: "actions",
           header: "",
           cell: (info) => (
-            <div className="flex items-center justify-end gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
+            <div className="flex items-center justify-end gap-2">
               {info.row.original.status === 'OPEN' && onCloseTrade && (
                 <button
                   onClick={(e) => { e.stopPropagation(); onCloseTrade(info.row.original); }}
-                  className="px-3 py-1 rounded bg-[#2185d0]/10 text-[#2185d0] hover:bg-[#2185d0] hover:text-white transition-colors text-xs font-semibold"
+                  className="px-3 py-1 rounded bg-[#2185d0]/10 text-[#2185d0] text-xs font-semibold"
                 >
                   Exit
                 </button>
@@ -160,7 +160,7 @@ export default function FNODataTable({ trades, onCloseTrade, onDeleteTrade, onAd
               {onDeleteTrade && (
                 <button
                   onClick={(e) => { e.stopPropagation(); onDeleteTrade(info.row.original.id); }}
-                  className="px-3 py-1 rounded bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-colors text-xs font-semibold"
+                  className="px-3 py-1 rounded bg-rose-500/10 text-rose-500 text-xs font-semibold"
                 >
                   Delete
                 </button>
@@ -223,7 +223,7 @@ export default function FNODataTable({ trades, onCloseTrade, onDeleteTrade, onAd
           </thead>
           <tbody className="divide-y divide-white/5">
             {table.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="group hover:bg-white/[0.02] transition-colors cursor-pointer">
+              <tr key={row.id} className="cursor-pointer">
                 {row.getVisibleCells().map((cell) => (
                   <td key={cell.id} className={`px-4 py-3 align-middle ${getTableCellClass(cell.column.id)}`}>
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}

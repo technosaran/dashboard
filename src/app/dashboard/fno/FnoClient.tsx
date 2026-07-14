@@ -108,7 +108,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
           charges: fnoCharges
         });
         if (!res.error) {
-          toast.success("FnO Trade logged successfully!");
+          toast.success("F&O trade logged successfully");
           setShowLogForm(false);
           setLogFormData({
             symbol: "", instrument_type: "FUT", strike_price: "", expiry_date: "",
@@ -153,7 +153,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
       try {
         const res = await deleteFnoTrade(id);
         if (!res.error) {
-          toast.success("Trade deleted");
+          toast.success("F&O trade deleted successfully");
           mutate();
         } else toast.error(res.error);
       } catch (err) {

@@ -124,7 +124,7 @@ export default function MutualFundsDataTable({ funds, onEdit, onBuy, onSell, onA
               const logo = getAMCLogoUrl(amc);
 
               return (
-                <tr key={fund.id} className="hover:bg-white/[0.02] transition-colors group">
+                <tr key={fund.id}>
                   {/* Fund Name */}
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-3">
@@ -188,23 +188,23 @@ export default function MutualFundsDataTable({ funds, onEdit, onBuy, onSell, onA
 
                   {/* Actions */}
                   <td className="px-5 py-3.5 text-right">
-                    <div className="flex items-center justify-end gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center justify-end gap-1.5">
                       <button
                         onClick={() => onEdit(fund)}
-                        className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs font-bold text-gray-300 hover:text-white transition-all cursor-pointer"
+                        className="p-1.5 rounded-lg bg-white/5 text-xs font-bold text-gray-300 cursor-pointer"
                         title="Edit details"
                       >
                         ✏️
                       </button>
                       <button
                         onClick={() => onBuy(fund)}
-                        className="px-2 py-1 rounded bg-[--accent-primary]/10 hover:bg-[--accent-primary] text-[--accent-primary] hover:text-white transition-all text-[9px] font-black uppercase tracking-wider cursor-pointer"
+                        className="px-2 py-1 rounded bg-[--accent-primary]/10 text-[--accent-primary] text-[9px] font-black uppercase tracking-wider cursor-pointer"
                       >
                         Buy
                       </button>
                       <button
                         onClick={() => onSell(fund)}
-                        className="px-2 py-1 rounded border border-rose-500/30 hover:bg-rose-500 text-rose-500 hover:text-white transition-all text-[9px] font-black uppercase tracking-wider cursor-pointer"
+                        className="px-2 py-1 rounded border border-rose-500/30 text-rose-400 text-[9px] font-black uppercase tracking-wider cursor-pointer"
                       >
                         Redeem
                       </button>

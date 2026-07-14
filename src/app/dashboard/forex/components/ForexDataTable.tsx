@@ -36,7 +36,7 @@ export default function ForexDataTable({ accounts, onDelete, onAdd }: ForexDataT
         header: "Broker Account",
         cell: (info) => (
           <div className="flex flex-col max-w-[200px]">
-            <p className="text-[13px] font-bold text-white truncate hover:text-clip hover:absolute hover:bg-black hover:z-10 hover:p-1 hover:rounded-md hover:border hover:border-white/10" title={info.getValue()}>{info.getValue()}</p>
+            <p className="text-[13px] font-bold text-white truncate" title={info.getValue()}>{info.getValue()}</p>
             <p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] truncate">{info.row.original.broker_name}</p>
           </div>
         ),
@@ -99,11 +99,11 @@ export default function ForexDataTable({ accounts, onDelete, onAdd }: ForexDataT
         id: "actions",
         header: "",
         cell: (info) => (
-          <div className="flex items-center justify-end gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center justify-end gap-2">
             <button
               onClick={() => onDelete(info.row.original.id)}
-              className="p-2 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-colors"
-              title="Delete Account"
+              className="p-2 rounded-lg bg-rose-500/10 text-rose-500"
+              title="Close Trade"
             >
               <Trash2 className="w-4 h-4" />
             </button>
@@ -184,7 +184,7 @@ export default function ForexDataTable({ accounts, onDelete, onAdd }: ForexDataT
           </thead>
           <tbody className="divide-y divide-white/5">
             {table.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="group hover:bg-white/[0.02] transition-colors">
+              <tr key={row.id}>
                 {row.getVisibleCells().map((cell) => (
                   <td key={cell.id} className={`px-5 py-3.5 align-middle ${getTableCellClass(cell.column.id)}`}>
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}

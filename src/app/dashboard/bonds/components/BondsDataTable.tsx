@@ -130,10 +130,10 @@ export default function BondsDataTable({ bonds, onEdit, onAdd }: BondsDataTableP
         id: "actions",
         header: "",
         cell: (info) => (
-          <div className="flex items-center justify-end gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center justify-end gap-2">
             <button
               onClick={() => onEdit(info.row.original)}
-              className="p-2 rounded-lg bg-white/5 text-[--text-muted] hover:bg-[--accent-primary] hover:text-white transition-colors"
+              className="p-2 rounded-lg bg-white/5 text-[--text-muted]"
               title="Edit Bond"
             >
               <Edit className="w-4 h-4" />
@@ -335,7 +335,7 @@ export default function BondsDataTable({ bonds, onEdit, onAdd }: BondsDataTableP
                       <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">ISIN: {bond.isin}</span>
                       <button 
                         onClick={() => onEdit(bond)} 
-                        className="bg-white/5 hover:bg-purple-600 hover:text-white px-3 py-1 rounded text-xs font-bold transition-all border border-white/10 hover:border-purple-500 flex items-center gap-1 cursor-pointer"
+                        className="bg-white/5 px-3 py-1 rounded text-xs font-bold border border-white/10 flex items-center gap-1 cursor-pointer"
                       >
                         <Edit className="w-3.5 h-3.5" /> Edit
                       </button>
@@ -363,7 +363,7 @@ export default function BondsDataTable({ bonds, onEdit, onAdd }: BondsDataTableP
             </thead>
             <tbody className="divide-y divide-white/5">
               {table.getRowModel().rows.map((row) => (
-                <tr key={row.id} className="group hover:bg-white/[0.02] transition-colors">
+                <tr key={row.id}>
                   {row.getVisibleCells().map((cell) => (
                     <td key={cell.id} className={`px-5 py-3.5 align-middle ${getTableCellClass(cell.column.id)}`}>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}

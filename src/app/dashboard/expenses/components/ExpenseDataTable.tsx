@@ -141,7 +141,7 @@ export default function ExpenseDataTable({ expenses, accounts, onDelete, onEdit,
               <button
                 type="button"
                 onClick={() => onEdit(info.row.original)}
-                className="p-2 rounded-xl bg-white/5 border border-white/10 text-[--text-muted] hover:text-[--accent-primary-light] hover:bg-[--accent-primary]/10 transition-all"
+                className="p-2 rounded-xl bg-white/5 border border-white/10 text-[--text-muted]"
                 title="Edit Expense"
               >
                 <Pencil className="w-3.5 h-3.5" />
@@ -150,7 +150,7 @@ export default function ExpenseDataTable({ expenses, accounts, onDelete, onEdit,
             <button
               type="button"
               onClick={() => onDelete(info.row.original.id)}
-              className="p-2 rounded-xl bg-white/5 border border-white/10 text-[--text-muted] hover:text-rose-400 hover:bg-rose-500/10 transition-all"
+              className="p-2 rounded-xl bg-white/5 border border-white/10 text-[--text-muted]"
               title="Delete Transaction"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -243,7 +243,7 @@ export default function ExpenseDataTable({ expenses, accounts, onDelete, onEdit,
             </thead>
             <tbody className="divide-y divide-white/10">
               {table.getRowModel().rows.map((row) => (
-                <tr key={row.id} className="transition-colors hover:bg-white/[0.02] border-b border-white/5 group">
+                <tr key={row.id} className="border-b border-white/5">
                   {row.getVisibleCells().map((cell) => (
                     <td key={cell.id} className={`px-6 py-4 whitespace-nowrap ${getTableCellClass(cell.column.id)}`}>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}

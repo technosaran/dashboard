@@ -679,7 +679,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
                   const currency = account?.currency || "INR";
 
                   return (
-                    <tr key={log.id} className="hover:bg-white/[0.02] transition-colors group">
+                    <tr key={log.id}>
                       <td className="p-4 whitespace-nowrap">
                         <p className="text-xs font-bold text-white tracking-tight">
                           {log.created_at ? format(new Date(log.created_at), "MMM d, yyyy") : "—"}

@@ -113,14 +113,14 @@ export default function AlternativeAssetsDataTable({ assets, onEdit, onDelete, o
           <div className="flex items-center justify-end gap-2">
             <button
               onClick={() => onEdit(info.row.original.id)}
-              className="px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs font-bold text-gray-300 hover:text-white transition-all cursor-pointer"
+              className="px-2.5 py-1.5 rounded-lg bg-white/5 text-xs font-bold text-gray-300 cursor-pointer"
               title="Edit Asset"
             >
               Adjust
             </button>
             <button
               onClick={() => onDelete(info.row.original.id, info.row.original.name)}
-              className="px-2.5 py-1.5 rounded-lg border border-rose-500/20 bg-rose-500/5 hover:bg-rose-500 hover:text-white text-rose-400 transition-all text-xs font-bold cursor-pointer"
+              className="px-2.5 py-1.5 rounded-lg border border-rose-500/20 bg-rose-500/5 text-rose-400 text-xs font-bold cursor-pointer"
               title="Delete Asset"
             >
               Delete
@@ -182,7 +182,7 @@ export default function AlternativeAssetsDataTable({ assets, onEdit, onDelete, o
           </thead>
           <tbody className="divide-y divide-white/5">
             {table.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="group hover:bg-white/[0.02] transition-colors">
+              <tr key={row.id}>
                 {row.getVisibleCells().map((cell) => (
                   <td key={cell.id} className={`px-5 py-3.5 align-middle ${getTableCellClass(cell.column.id)}`}>
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}

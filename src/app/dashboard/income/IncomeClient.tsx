@@ -584,7 +584,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
                     const theme = INCOME_CATEGORIES.find(c => c.label === inc.category) || INCOME_CATEGORIES[6];
                     const account = accounts.find(a => a.id === inc.account_id);
                     return (
-                      <tr key={inc.id} className="hover:bg-white/[0.015] transition-colors group text-[--text-primary]">
+                      <tr key={inc.id} className="text-[--text-primary]">
                         <td className="px-4 md:px-6 py-5 whitespace-nowrap">
                           <p className="text-[13px] font-bold">{inc.date ? format(parseISO(inc.date), "MMM d, yy") : "N/A"}</p>
                           <p className="text-[9px] text-success/60 font-bold uppercase">Credit</p>
