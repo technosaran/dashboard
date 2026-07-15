@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, startTransition, useMemo } from "react";
 import { mutate as globalMutate } from "swr";
 import { useUser } from "@/context/user-context";
-import { resetUserData, updateSettings } from "./actions";
+import { resetUserData, updateSettings, seedUserData } from "./actions";
 import { toast } from "react-hot-toast";
 import { useFinanceData } from "@/hooks/use-finance-data";
 import type { FinanceData } from "@/hooks/use-finance-data";
@@ -27,6 +27,28 @@ export default function SettingsPage() {
 
   const [diagnostics, setDiagnostics] = useState<{ name: string; status: string; latency: string; code: number; error?: string }[]>([]);
   const [runningDiagnostics, setRunningDiagnostics] = useState(false);
+  const [isSeeding, setIsSeeding] = useState(false);
+
+  const handleSeedDemoData = async () => {
+    setIsSeeding(true);
+    const toastId = toast.loading("Seeding realistic 6-month transaction logs...");
+    try {
+      const result = await seedUserData();
+      if (result.error) {
+        toast.error(`Seeding failed: ${result.error}`, { id: toastId });
+      } else {
+        toast.success(result.message || "Data seeded successfully!", { id: toastId });
+        setTimeout(() => {
+          window.location.href = "/dashboard?seed=success";
+        }, 1500);
+      }
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      toast.error(`A system error occurred: ${message}`, { id: toastId });
+    } finally {
+      setIsSeeding(false);
+    }
+  };
 
   const runDiagnostics = async () => {
     setRunningDiagnostics(true);
@@ -499,6 +521,21 @@ export default function SettingsPage() {
                 <h2 className="text-base font-bold text-rose-500">Danger Zone</h2>
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-rose-500/60 mt-0.5">Destructive Actions</p>
               </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 p-5 rounded-2xl bg-amber-500/5 border border-amber-500/10 mb-6">
+              <div>
+                <h3 className="text-sm font-bold text-[--text-primary]">Seed Demo Data</h3>
+                <p className="text-xs text-[--text-muted] mt-1">Populate portfolio with 6 months of realistic human transactional history (USD/INR separate).</p>
+              </div>
+              <button 
+                type="button" 
+                onClick={handleSeedDemoData} 
+                disabled={isSeeding}
+                className="bg-amber-500 text-black font-bold h-11 px-6 rounded-xl hover:brightness-110 disabled:opacity-50 whitespace-nowrap shadow-xl"
+              >
+                {isSeeding ? "Seeding..." : "Seed 6 Months Data"}
+              </button>
             </div>
 
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 p-5 rounded-2xl bg-rose-500/5 border border-rose-500/10">
