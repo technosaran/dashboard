@@ -345,15 +345,15 @@ export default function FamilyClient() {
             color: "text-pink-400",
           },
           {
-            label: "Avg. Transfer Size",
-            value: transfers.length > 0 ? fmt.format(avgTransferAmount) : "—",
-            subtext: transfers.length > 0 ? `Across ${transfers.length} transaction${transfers.length === 1 ? "" : "s"}` : "No transfers recorded",
+            label: "Active Members",
+            value: members.length.toString(),
+            subtext: members.length === 1 ? "Registered family member" : "Registered family members",
             color: "text-rose-400",
           },
           {
-            label: "Primary Beneficiary",
-            value: topBeneficiary ? topBeneficiary.name : "—",
-            subtext: topBeneficiary ? `${fmt.format(topBeneficiary.amount)} (${topBeneficiary.percentage}% share)` : "No support recorded yet",
+            label: "Avg. Transfer Size",
+            value: transfers.length > 0 ? fmt.format(avgTransferAmount) : "—",
+            subtext: "Average size of family transfers",
             color: "text-fuchsia-400",
           },
         ].map((s, i) => (

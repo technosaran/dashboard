@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { format } from "date-fns";
-import { memo, useState, useMemo } from "react";
+import { memo, useState, useMemo, useEffect } from "react";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { MODULE_KEYS } from "@/lib/modules";
 
@@ -25,6 +25,7 @@ type DashboardStats = {
   totalAssetsINR?: number;
   totalAssetsUSD?: number;
   forexBalance?: number;
+  cryptoBalance?: number;
   debtBalance: number;
 };
 
@@ -78,6 +79,12 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, accou
   }, [profile]);
 
   const [showUSD, setShowUSD] = useState(false);
+
+  useEffect(() => {
+    if (profile?.base_currency) {
+      setShowUSD(profile.base_currency === "USD");
+    }
+  }, [profile?.base_currency]);
 
   const getAccountCurrency = (accountId: string | null) => {
     if (!accountId) return "INR";

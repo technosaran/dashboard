@@ -52,26 +52,9 @@ export default function ForexClient({ initialData, showUSD = false }: { initialD
   const [fundsForm, setFundsForm] = useState({ forex_account_id: "", bank_account_id: "", amount: "", notes: "" });
   const [accountForm, setAccountForm] = useState({ broker_name: "", account_label: "", account_number: "", currency: "USD", notes: "" });
 
-  const filteredForexAccounts = useMemo(() => 
-    forexAccounts.filter(a => showUSD ? a.currency === "USD" : a.currency !== "USD"),
-    [forexAccounts, showUSD]
-  );
-
-  const filteredForexTrades = useMemo(() => 
-    forexTrades.filter(t => {
-      const fx = forexAccounts.find(a => a.id === t.forex_account_id);
-      return fx && (showUSD ? fx.currency === "USD" : fx.currency !== "USD");
-    }),
-    [forexTrades, forexAccounts, showUSD]
-  );
-
-  const filteredForexTransactions = useMemo(() => 
-    forexTransactions.filter(tx => {
-      const fx = forexAccounts.find(a => a.id === tx.forex_account_id);
-      return fx && (showUSD ? fx.currency === "USD" : fx.currency !== "USD");
-    }),
-    [forexTransactions, forexAccounts, showUSD]
-  );
+  const filteredForexAccounts = useMemo(() => forexAccounts, [forexAccounts]);
+  const filteredForexTrades = useMemo(() => forexTrades, [forexTrades]);
+  const filteredForexTransactions = useMemo(() => forexTransactions, [forexTransactions]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -301,27 +284,27 @@ export default function ForexClient({ initialData, showUSD = false }: { initialD
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           <div className="glass-card-static p-6 border-white/5">
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Total Balance</p>
-            <p className="text-2xl md:text-3xl font-black text-white">{showUSD ? "$" : "₹"}{stats.totalBalance.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+            <p className="text-2xl md:text-3xl font-black text-white">${stats.totalBalance.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
             <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Across Brokers</p>
           </div>
           <div className="glass-card-static p-6 border-white/5">
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Total P&amp;L</p>
-            <PnLValue amount={stats.totalPnL} size="lg" showIcon currency={showUSD ? "USD" : "INR"} />
+            <PnLValue amount={stats.totalPnL} size="lg" showIcon currency="USD" />
             <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Trading Performance</p>
           </div>
           <div className="glass-card-static p-6 border-white/5">
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Today&apos;s P&amp;L</p>
-            <PnLValue amount={stats.dailyPnlSum} size="lg" showIcon currency={showUSD ? "USD" : "INR"} />
+            <PnLValue amount={stats.dailyPnlSum} size="lg" showIcon currency="USD" />
             <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Daily Return</p>
           </div>
           <div className="glass-card-static p-6 border-white/5">
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Deposited</p>
-            <p className="text-2xl md:text-3xl font-black text-[--accent-primary-light]">{showUSD ? "$" : "₹"}{stats.totalDeposited.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+            <p className="text-2xl md:text-3xl font-black text-[--accent-primary-light]">${stats.totalDeposited.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
             <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Total Inflow</p>
           </div>
           <div className="glass-card-static p-6 border-white/5 bg-gradient-to-br from-[--accent-primary]/10 to-transparent">
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Withdrawn</p>
-            <p className="text-xl md:text-2xl font-black text-amber-400">{showUSD ? "$" : "₹"}{stats.totalWithdrawn.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+            <p className="text-xl md:text-2xl font-black text-amber-400">${stats.totalWithdrawn.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
             <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Total Outflow</p>
           </div>
         </div>
@@ -378,10 +361,10 @@ export default function ForexClient({ initialData, showUSD = false }: { initialD
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
                         <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 12 }} dy={10} />
-                        <YAxis axisLine={false} tickLine={false} tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 12 }} tickFormatter={(val: any) => (showUSD ? "$" : "₹") + Number(val).toLocaleString()} />
+                        <YAxis axisLine={false} tickLine={false} tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 12 }} tickFormatter={(val: any) => "$" + Number(val).toLocaleString()} />
                         <RechartsTooltip 
                           contentStyle={{ backgroundColor: "rgba(10,10,10,0.9)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px" }}
-                          formatter={(val: any) => [(showUSD ? "$" : "₹") + Number(val).toLocaleString(), "P&L"]}
+                          formatter={(val: any) => ["$" + Number(val).toLocaleString(), "P&L"]}
                         />
                         <Area type="monotone" dataKey="PnL" stroke="var(--accent-primary)" strokeWidth={3} fillOpacity={1} fill="url(#colorPnL)" />
                       </AreaChart>
@@ -405,10 +388,10 @@ export default function ForexClient({ initialData, showUSD = false }: { initialD
                       <BarChart data={brokerAllocData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
                         <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 12 }} dy={10} />
-                        <YAxis axisLine={false} tickLine={false} tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 12 }} tickFormatter={(val: any) => (showUSD ? "$" : "₹") + Number(val).toLocaleString()} />
+                        <YAxis axisLine={false} tickLine={false} tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 12 }} tickFormatter={(val: any) => "$" + Number(val).toLocaleString()} />
                         <RechartsTooltip 
                           contentStyle={{ backgroundColor: "rgba(10,10,10,0.9)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px" }}
-                          formatter={(val: any, name: any) => [(showUSD ? "$" : "₹") + Number(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), name]}
+                          formatter={(val: any, name: any) => ["$" + Number(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), name]}
                         />
                         <Legend wrapperStyle={{ paddingTop: "20px" }} />
                         <Bar dataKey="Balance" fill="#06B6D4" radius={[4, 4, 0, 0]} />

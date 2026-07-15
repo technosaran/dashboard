@@ -148,7 +148,8 @@ export default function DashboardClient() {
       liquidBalance,
       totalAssets,
       totalAssetsINR,
-      totalAssetsUSD
+      totalAssetsUSD,
+      cryptoBalance
     } = netWorthData;
 
     const stockCount = investments.filter((inv) => Number(inv.quantity) > 0).length;
@@ -272,6 +273,7 @@ export default function DashboardClient() {
       forexBalance,
       forexBalanceINR,
       forexBalanceUSD,
+      cryptoBalance,
       monthlySpend, 
       monthlyIncome, 
       expenseTrend: expenseTrend.reverse(), 

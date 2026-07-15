@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { format } from "date-fns";
-import { useMemo, memo, useState } from "react";
+import { useMemo, memo, useState, useEffect } from "react";
 import Greeting from "@/components/greeting";
 
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
@@ -80,6 +80,7 @@ export type DashboardStats = {
   forexBalance: number;
   forexBalanceINR: number;
   forexBalanceUSD: number;
+  cryptoBalance: number;
 };
 
 type Props = {
@@ -123,6 +124,12 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
 
   const [showUSD, setShowUSD] = useState(false);
 
+  useEffect(() => {
+    if (profile?.base_currency) {
+      setShowUSD(profile.base_currency === "USD");
+    }
+  }, [profile?.base_currency]);
+
   const getAccountCurrency = (accountId: string | null) => {
     if (!accountId) return "INR";
     const acc = accounts.find(a => a.id === accountId);
@@ -136,7 +143,8 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
     const rawData = showUSD ? [
         { name: 'Cash', value: stats.cashBalanceUSD, fill: getChartColour(0), color: getChartColour(0) },
         { name: 'Stocks', value: stats.stockBalanceUSD, fill: getChartColour(1), color: getChartColour(1) },
-        { name: 'Forex', value: stats.forexBalanceUSD, fill: getChartColour(3), color: getChartColour(3) }
+        { name: 'Forex', value: stats.forexBalanceUSD, fill: getChartColour(3), color: getChartColour(3) },
+        { name: 'Crypto', value: stats.cryptoBalance, fill: getChartColour(4), color: getChartColour(4) }
     ] : [
         { name: 'Cash', value: stats.cashBalanceINR, fill: getChartColour(0), color: getChartColour(0) },
         { name: 'Stocks', value: stats.stockBalanceINR, fill: getChartColour(1), color: getChartColour(1) },
@@ -159,6 +167,7 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
     stats.cashBalanceUSD,
     stats.stockBalanceUSD,
     stats.forexBalanceUSD,
+    stats.cryptoBalance,
     stats.cashBalanceINR,
     stats.stockBalanceINR,
     stats.forexBalanceINR,

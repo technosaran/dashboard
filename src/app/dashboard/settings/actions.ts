@@ -141,9 +141,7 @@ export async function checkApiHealth() {
     { name: "Groww Mutual Funds API", url: "https://groww.in/v1/api/search/v1/derived/scheme?availableForInvestment=true&docType=scheme&plan_type=Direct&q=HDFC" },
     { name: "Yahoo Finance Chart API (v8)", url: "https://query1.finance.yahoo.com/v8/finance/chart/RELIANCE.NS" },
     { name: "Yahoo Finance Search API", url: "https://query2.finance.yahoo.com/v1/finance/search?q=RELIANCE" },
-    { name: "Tickertape Stocks API", url: "https://api.tickertape.in/search?text=RELIANCE" },
-    { name: "Open Exchange Rates API", url: "https://open.er-api.com/v6/latest/USD" },
-    { name: "Frankfurter Forex Fallback API", url: "https://api.frankfurter.app/latest?from=USD&to=INR" }
+    { name: "Tickertape Stocks API", url: "https://api.tickertape.in/search?text=RELIANCE" }
   ];
 
   const results = [];
