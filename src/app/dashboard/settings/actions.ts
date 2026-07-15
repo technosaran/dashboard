@@ -85,49 +85,6 @@ export async function resetUserData() {
   }
 }
 
-export async function seedUserData() {
-  try {
-    const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
-    if (authError) {
-      console.error("Auth retrieval error during seed:", authError);
-      return { error: `Authentication failed: ${authError.message}` };
-    }
-    
-    if (!user) {
-      console.error("No active user session found for data seed.");
-      return { error: "Unauthorized: No active session found. Please log in again." };
-    }
-
-    console.log(`Executing seed_everything_v16 RPC for user: ${user.id}`);
-    const { data, error } = await (supabase.rpc as any)("seed_everything_v16", { p_user_id: user.id });
-
-    if (error) {
-      console.warn("seed_everything_v16 RPC failed, attempting generate_sample_data fallback...", error);
-      const { data: fallbackData, error: fallbackError } = await (supabase.rpc as any)("generate_sample_data");
-      
-      if (fallbackError) {
-        console.error("All seed RPCs failed:", fallbackError);
-        return { error: `Database seed error: ${fallbackError.message} (${fallbackError.code})` };
-      }
-      
-      console.log("Fallback generate_sample_data completed. Revalidating Next.js cache paths...");
-      revalidatePath("/", "layout");
-      return { success: true, message: "Sample USD data seeded successfully." };
-    }
-
-    console.log("Database comprehensive seed completed. Revalidating Next.js cache paths...");
-    revalidatePath("/", "layout");
-    return { success: true, message: "Comprehensive portfolio data seeded successfully." };
-  } catch (error: unknown) {
-    const err = error as Error;
-    console.error("Unhandled exception during seedUserData server action:", err);
-    return { error: `System exception: ${err.message || "Unknown error"}` };
-  }
-}
-
-
 type ProfileSettings = {
   enabled_modules?: string[];
   default_accounts?: Record<string, string | null>;

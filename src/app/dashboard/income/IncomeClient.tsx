@@ -428,37 +428,6 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
               <option key={y} value={y} className="bg-[--bg-surface]">{y}</option>
             ))}
           </select>
-          <button type="button" 
-            onClick={() => {
-              try {
-                exportToCSV(
-                  incomes.map(i => ({
-                    date: i.date ? format(parseISO(i.date), "yyyy-MM-dd") : "",
-                    description: i.description,
-                    category: i.category,
-                    amount: Number(i.amount),
-                    account: accounts.find(a => a.id === i.account_id)?.name || "Direct Log"
-                  })),
-                  "income_data",
-                  [
-                    { key: "date", label: "Date" },
-                    { key: "description", label: "Description" },
-                    { key: "category", label: "Category" },
-                    { key: "amount", label: "Amount" },
-                    { key: "account", label: "Account" }
-                  ]
-                );
-                toast.success("Income data exported successfully");
-              } catch {
-                toast.error("Failed to export data");
-              }
-            }}
-            className="btn-secondary flex-1 md:flex-none gap-2"
-            title="Export to CSV"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M12 4v12m0 0l-4-4m4 4l4-4M3 16v2a2 2 0 002 2h14a2 2 0 002-2v-2" /></svg>
-            Export
-          </button>
           <button type="button" onClick={handleOpenAddModal} className="btn-primary flex-1 md:flex-none gap-2">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
             Log Income

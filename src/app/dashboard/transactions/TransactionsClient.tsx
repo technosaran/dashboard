@@ -375,26 +375,6 @@ export default function TransactionsClient() {
             </select>
           </div>
 
-          {/* Exports Group */}
-          <div className="flex items-center gap-2">
-            <button 
-              type="button" 
-              onClick={handleExportCSV}
-              className="btn-secondary !h-11 px-4 text-xs font-bold flex items-center gap-2"
-            >
-              <Download className="w-4 h-4" />
-              <span>Export</span>
-            </button>
-            <button 
-              type="button" 
-              onClick={handleExportPDF}
-              className="btn-secondary !h-11 px-4 text-xs font-bold flex items-center gap-2"
-            >
-              <Download className="w-4 h-4" />
-              <span>PDF Statement</span>
-            </button>
-          </div>
-
           {/* Action Logs Group */}
           <div className="flex items-center gap-2">
             <button 
