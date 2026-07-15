@@ -7,10 +7,9 @@ import { format, parseISO } from "date-fns";
 import { useFinanceData } from "@/hooks/use-finance-data";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { Drawer } from "@/components/ui/drawer";
-import { Trash2, Plus, Download } from "lucide-react";
+import { Trash2, Plus } from "lucide-react";
 import { addIncome, deleteIncome } from "@/app/dashboard/income/actions";
 import { addExpense, deleteExpense } from "@/app/dashboard/expenses/actions";
-import { exportToCSV } from "@/lib/export-csv";
 
 const INCOME_CATEGORIES = [
   { label: "Salary", icon: "🏢" },
@@ -247,33 +246,7 @@ export default function TransactionsClient() {
     return { totalIncome, totalExpense, netFlow, savingsRate };
   }, [transactions, selectedMonth, selectedYear]);
 
-  const handleExportCSV = () => {
-    const data = filteredTransactions.map(t => ({
-      date: t.date ? format(parseISO(t.date), "yyyy-MM-dd") : "",
-      description: t.description,
-      type: t.type.toUpperCase(),
-      category: t.category || "Others",
-      amount: t.amount,
-      account: accounts.find(a => a.id === t.account_id)?.name || "N/A"
-    }));
 
-    exportToCSV(
-      data,
-      `transactions_${selectedYear}_${selectedMonth}`,
-      [
-        { key: "date", label: "Date" },
-        { key: "description", label: "Description" },
-        { key: "type", label: "Type" },
-        { key: "category", label: "Category" },
-        { key: "amount", label: "Amount" },
-        { key: "account", label: "Account" }
-      ]
-    );
-  };
-
-  const handleExportPDF = () => {
-    window.open(`/api/reports/download?month=${selectedMonth}&year=${selectedYear}`, "_blank");
-  };
 
   async function handleDelete(id: string, type: "income" | "expense") {
     setDeletingId(id);

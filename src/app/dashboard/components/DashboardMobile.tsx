@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { format } from "date-fns";
-import { memo, useState, useMemo, useEffect } from "react";
+import { memo, useMemo, useState } from "react";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { MODULE_KEYS } from "@/lib/modules";
 
@@ -78,13 +78,9 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, accou
     return populated;
   }, [profile]);
 
-  const [showUSD, setShowUSD] = useState(false);
-
-  useEffect(() => {
-    if (profile?.base_currency) {
-      setShowUSD(profile.base_currency === "USD");
-    }
-  }, [profile?.base_currency]);
+  const [isToggled, setIsToggled] = useState(false);
+  const baseIsUSD = profile?.base_currency === "USD";
+  const showUSD = isToggled ? !baseIsUSD : baseIsUSD;
 
   const getAccountCurrency = (accountId: string | null) => {
     if (!accountId) return "INR";
@@ -126,7 +122,7 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, accou
         
         <div 
           className="flex flex-col cursor-pointer group/nw select-none"
-          onClick={() => setShowUSD(!showUSD)}
+          onClick={() => setIsToggled(prev => !prev)}
           title="Click to toggle currency"
         >
           <div className="flex items-center gap-1.5">

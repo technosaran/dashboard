@@ -15,8 +15,6 @@ import dynamic from "next/dynamic";
 const ResponsiveContainer = dynamic(() => import("recharts").then((mod) => mod.ResponsiveContainer), { ssr: false });
 import { PieChart, Pie, Cell, AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip } from "recharts";
 import { CHART_SERIES_COLOURS, getCategoryColour } from "@/lib/chart-colours";
-import { exportToCSV } from "@/lib/export-csv";
-
 import ExpenseDataTable from "./components/ExpenseDataTable";
 import ExpenseForm from "./components/ExpenseForm";
 

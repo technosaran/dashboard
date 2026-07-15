@@ -129,18 +129,7 @@ export default function FamilyClient() {
     return total / transfers.length;
   }, [transfers]);
 
-  const topBeneficiary = useMemo(() => {
-    if (!members.length) return null;
-    const sorted = [...members].sort((a, b) => Number(b.balance || 0) - Number(a.balance || 0));
-    const top = sorted[0];
-    if (!top || Number(top.balance || 0) === 0) return null;
-    const percentage = totalFamilyNetWorth > 0 ? Math.round((Number(top.balance) / totalFamilyNetWorth) * 100) : 0;
-    return {
-      name: top.name,
-      amount: Number(top.balance),
-      percentage,
-    };
-  }, [members, totalFamilyNetWorth]);
+
 
   /* ── Tab state ── */
   const [activeTab, setActiveTab] = useState<"directory" | "history">("directory");

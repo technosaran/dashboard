@@ -26,7 +26,7 @@ import { AreaChart, Area, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip as
 
 import ForexDataTable from "./components/ForexDataTable";
 
-export default function ForexClient({ initialData, showUSD = false }: { initialData?: FinanceData; showUSD?: boolean }) {
+export default function ForexClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { profile, accounts, forexAccounts, forexTrades, forexTransactions, ledgerLogs }, mutate } = useFinanceData(initialData);
   const searchParams = useSearchParams();
   const action = searchParams?.get("action");

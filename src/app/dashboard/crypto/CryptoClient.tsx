@@ -6,14 +6,12 @@ import { useFinanceData } from "@/hooks/use-finance-data";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { Drawer } from "@/components/ui/drawer";
 import { getColorByLabel } from "@/lib/chart-colours";
-import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import {
   createCryptoHolding,
   updateCryptoHolding,
   deleteCryptoHolding,
   fetchBinancePrice,
-  refreshAllCryptoPrices,
-  type CryptoMarketData
+  refreshAllCryptoPrices
 } from "./actions";
 
 import dynamic from "next/dynamic";
@@ -436,7 +434,7 @@ export default function CryptoClient() {
                     <h2 className={`text-2xl font-black mt-1 ${stats.dayPnL >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
                       {stats.dayPnL >= 0 ? "+" : ""}{formatMoney(stats.dayPnL)} ({stats.dayPnLPercent.toFixed(2)}%)
                     </h2>
-                    <span className="text-[10px] text-gray-400">Today's Valuation Shift</span>
+                    <span className="text-[10px] text-gray-400">{"Today's Valuation Shift"}</span>
                   </div>
                 </div>
               </div>

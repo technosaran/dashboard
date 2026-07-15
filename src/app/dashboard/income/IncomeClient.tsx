@@ -14,8 +14,6 @@ import { Drawer } from "@/components/ui/drawer";
 import Link from "next/link";
 import { EmptyState } from "@/components/empty-state";
 
-import { exportToCSV } from "@/lib/export-csv";
-
 import { CHART_COLOURS, CHART_SERIES_COLOURS } from "@/lib/chart-colours";
 function getColorByLabel(label: string | null | undefined) {
   if (!label) return CHART_COLOURS[0];
