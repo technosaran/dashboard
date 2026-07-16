@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { format } from "date-fns";
 import { useMemo, memo, useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import Greeting from "@/components/greeting";
 
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
@@ -176,6 +177,59 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
     stats.bondBalance,
   ]);
 
+  const chartData = useMemo(() => {
+    const rate = showUSD && stats.netWorthINR > 0 ? (stats.netWorthUSD / stats.netWorthINR) : 1;
+    return stats.trendData.map(d => ({
+      ...d,
+      income: d.income * rate,
+      expense: d.expense * rate,
+      netWorth: (d as any).netWorth ? (d as any).netWorth * rate : 0,
+      investments: (d as any).investments ? (d as any).investments * rate : 0,
+    }));
+  }, [stats.trendData, showUSD, stats.netWorthINR, stats.netWorthUSD]);
+
+  const CustomPieTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0];
+      return (
+        <div className="border border-white/10 bg-slate-950/80 shadow-[0_12px_40px_rgba(0,0,0,0.6)] backdrop-blur-md px-4 py-3 rounded-2xl flex flex-col gap-1 z-50">
+          <div className="flex items-center gap-2">
+            <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: data.payload.color || data.payload.fill || data.color }} />
+            <span className="text-[11px] font-bold text-white uppercase tracking-wider">{data.name}</span>
+          </div>
+          <span className="text-xs font-black text-[--text-secondary] tabular-nums mt-1" style={{ color: data.payload.color || data.payload.fill || data.color }}>
+            {showUSD ? "$" : "₹"}{Number(data.value || 0).toLocaleString()} ({data.payload.percentage}%)
+          </span>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const CustomChartTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="border border-white/10 bg-slate-950/80 shadow-[0_12px_40px_rgba(0,0,0,0.6)] backdrop-blur-md px-4 py-3 rounded-2xl flex flex-col gap-1.5 z-50">
+          <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[--text-muted]">{label}</p>
+          <div className="flex flex-col gap-1">
+            {payload.map((pld: any) => (
+              <div key={pld.name} className="flex items-center gap-4 justify-between min-w-[120px]">
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: pld.stroke || pld.color || pld.fill }} />
+                  <span className="text-[11px] text-[--text-secondary] font-medium capitalize">{pld.name}</span>
+                </div>
+                <span className="text-xs font-black tabular-nums" style={{ color: pld.stroke || pld.color || pld.fill }}>
+                  {showUSD ? "$" : "₹"}{Number(pld.value || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="hidden md:flex flex-col gap-8 animate-fade-in relative z-20 pb-10">
       
@@ -211,7 +265,13 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
       )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="glass-card-static rich-border group relative overflow-hidden p-8 md:p-10 lg:col-span-3">
+        <motion.div 
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          whileHover={{ y: -2 }}
+          className="glass-card-static rich-border group relative overflow-hidden p-8 md:p-10 lg:col-span-3 hover:border-sky-500/20 hover:shadow-[0_20px_50px_rgba(14,165,233,0.15)] transition-all duration-300"
+        >
           <div className="absolute top-0 left-0 right-0 h-[4px] bg-gradient-to-r from-[--accent-primary] via-purple-500 to-emerald-500 animate-pulse-glow" />
           <div className="flex flex-col lg:flex-row items-center justify-between gap-10">
             <div className="relative z-10 w-full lg:w-auto">
@@ -228,23 +288,33 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                   </svg>
                 </div>
-                <h2 
-                  key={showUSD ? 'usd' : 'inr'} 
-                  className={`animate-fade-in bg-clip-text bg-gradient-to-r text-[clamp(2.2rem,5vw,3.5rem)] font-[950] leading-none tracking-[-0.04em] text-transparent [font-family:'Outfit',sans-serif] whitespace-nowrap overflow-x-auto no-scrollbar transition-all duration-500 ${
-                    showUSD 
-                      ? "from-white via-sky-200 to-indigo-300 drop-shadow-[0_10px_35px_rgba(99,102,241,0.3)]" 
-                      : "from-white via-white to-slate-300 drop-shadow-[0_10px_35px_rgba(14,165,233,0.3)]"
-                  }`}
-                >
-                  {showUSD 
-                    ? `$${stats.netWorthUSD.toLocaleString(undefined, { minimumFractionDigits: 0 })}` 
-                    : `₹${stats.netWorthINR.toLocaleString(undefined, { minimumFractionDigits: 0 })}`
-                  }
-                </h2>
+                <AnimatePresence mode="wait">
+                  <motion.h2 
+                    key={showUSD ? 'usd' : 'inr'} 
+                    initial={{ opacity: 0, y: 10, filter: "blur(4px)" }}
+                    animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                    exit={{ opacity: 0, y: -10, filter: "blur(4px)" }}
+                    transition={{ duration: 0.25, ease: "easeInOut" }}
+                    className={`bg-clip-text bg-gradient-to-r text-[clamp(2.2rem,5vw,3.5rem)] font-[950] leading-none tracking-[-0.04em] text-transparent [font-family:'Outfit',sans-serif] whitespace-nowrap overflow-x-auto no-scrollbar transition-all duration-500 ${
+                      showUSD 
+                        ? "from-white via-sky-200 to-indigo-300 drop-shadow-[0_10px_35px_rgba(99,102,241,0.3)]" 
+                        : "from-white via-white to-slate-300 drop-shadow-[0_10px_35px_rgba(14,165,233,0.3)]"
+                    }`}
+                  >
+                    {showUSD 
+                      ? `$${stats.netWorthUSD.toLocaleString(undefined, { minimumFractionDigits: 0 })}` 
+                      : `₹${stats.netWorthINR.toLocaleString(undefined, { minimumFractionDigits: 0 })}`
+                    }
+                  </motion.h2>
+                </AnimatePresence>
               </div>
 
               <div className="mt-8 flex flex-wrap items-center gap-4 sm:gap-6">
-                <div className="flex items-center gap-3 bg-emerald-500/5 border border-emerald-500/10 px-5 py-3.5 rounded-2xl transition-all hover:bg-emerald-500/10">
+                <motion.div 
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="flex items-center gap-3 bg-emerald-500/5 border border-emerald-500/10 px-5 py-3.5 rounded-2xl transition-all hover:bg-emerald-500/10 cursor-default"
+                >
                   <div className="w-9 h-9 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 text-base shadow-inner">📈</div>
                   <div className="flex flex-col">
                     <span className="text-[11px] font-semibold text-[--text-muted]">Liquid assets</span>
@@ -255,9 +325,13 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                       }
                     </span>
                   </div>
-                </div>
+                </motion.div>
                 {!showUSD && stats.debtBalance > 0 && (
-                  <div className="flex items-center gap-3 bg-rose-500/5 border border-rose-500/10 px-5 py-3.5 rounded-2xl transition-all hover:bg-rose-500/10">
+                  <motion.div 
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="flex items-center gap-3 bg-rose-500/5 border border-rose-500/10 px-5 py-3.5 rounded-2xl transition-all hover:bg-rose-500/10 cursor-default"
+                  >
                     <div className="w-9 h-9 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-400 text-base shadow-inner">📉</div>
                     <div className="flex flex-col">
                       <span className="text-[11px] font-semibold text-[--text-muted]">Outstanding debt</span>
@@ -265,7 +339,7 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                         -₹{stats.debtBalance.toLocaleString()}
                       </span>
                     </div>
-                  </div>
+                  </motion.div>
                 )}
               </div>
             </div>
@@ -301,10 +375,7 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                               <Cell key={`cell-${index}`} fill={entry.fill} stroke="none" />
                             ))}
                           </Pie>
-                          <Tooltip 
-                            contentStyle={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "12px" }}
-                            formatter={(value) => showUSD ? `$${Number(value || 0).toLocaleString()}` : `₹${Number(value || 0).toLocaleString()}`}
-                          />
+                          <Tooltip content={<CustomPieTooltip />} />
                         </PieChart>
                       </ResponsiveContainer>
                       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
@@ -322,7 +393,7 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -382,7 +453,7 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
 
               <div className="h-[280px] w-full">
                 <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
-                  <AreaChart data={stats.trendData} margin={{ left: -10, right: 10, top: 10, bottom: 0 }}>
+                  <AreaChart data={chartData} margin={{ left: -10, right: 10, top: 10, bottom: 0 }}>
                     <defs>
                       <linearGradient id="incomeGlow" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="var(--accent-primary)" stopOpacity={0.25} />
@@ -403,17 +474,17 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 10, fontWeight: 700 }} dy={10} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 10 }} dx={-10} />
-                    <Tooltip 
-                      contentStyle={{ 
-                        background: 'var(--bg-surface)', 
-                        border: '1px solid var(--border-default)', 
-                        borderRadius: '16px',
-                        boxShadow: 'var(--shadow-lg)',
-                        fontWeight: 700
+                    <YAxis 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fill: 'var(--text-muted)', fontSize: 10 }} 
+                      dx={-10}
+                      tickFormatter={(value) => {
+                        const formatted = Intl.NumberFormat(showUSD ? 'en-US' : 'en-IN', { notation: 'compact', maximumFractionDigits: 1 }).format(value);
+                        return showUSD ? `$${formatted}` : `₹${formatted}`;
                       }}
-                      formatter={(value) => `₹${Number(value || 0).toLocaleString()}`}
                     />
+                    <Tooltip content={<CustomChartTooltip />} />
                     {activeChartMetric === "cashflow" && enabledModules.includes("Income") && (
                       <Area type="monotone" dataKey="income" stroke="var(--accent-primary)" strokeWidth={3} fillOpacity={1} fill="url(#incomeGlow)" />
                     )}
