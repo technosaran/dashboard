@@ -43,6 +43,7 @@ export const accounts = pgTable("accounts", {
   account_number: text("account_number"),
   color: text("color"),
   created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
 });
 
 // ---------------------------------------------------------------------------
@@ -61,6 +62,7 @@ export const transactions = pgTable("transactions", {
   source_id: uuid("source_id"),
   ledger_log_id: uuid("ledger_log_id"),
   created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow(),
 });
 
 // ---------------------------------------------------------------------------
@@ -74,6 +76,7 @@ export const transfers = pgTable("transfers", {
   amount: numeric("amount").notNull(),
   note: text("note"),
   created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow(),
 });
 
 // ---------------------------------------------------------------------------
@@ -107,6 +110,7 @@ export const incomes = pgTable("incomes", {
   category: text("category").notNull(),
   date: timestamp("date").defaultNow(),
   created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
 });
 
 // ---------------------------------------------------------------------------
@@ -126,6 +130,7 @@ export const expenses = pgTable("expenses", {
   recurrence_end_date: timestamp("recurrence_end_date"),
   last_generated_date: timestamp("last_generated_date"),
   created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
 });
 
 // ---------------------------------------------------------------------------
@@ -453,4 +458,16 @@ export const familyTransfers = pgTable("family_transfers", {
   type: text("type").notNull(),
   transfer_date: timestamp("transfer_date").defaultNow().notNull(),
   note: text("note"),
+});
+
+// ---------------------------------------------------------------------------
+// recipients
+// ---------------------------------------------------------------------------
+export const recipients = pgTable("recipients", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  user_id: uuid("user_id").notNull(),
+  name: text("name").notNull(),
+  relationship: text("relationship"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
 });

@@ -31,7 +31,10 @@ BEGIN
     SELECT 1 FROM pg_policies 
     WHERE schemaname = 'public' AND tablename = table_name AND policyname = policy_name
   ) THEN
-    IF with_check_expr IS NOT NULL THEN
+    IF cmd = 'INSERT' THEN
+      EXECUTE format('CREATE POLICY %I ON public.%I FOR INSERT WITH CHECK (%s);', 
+        policy_name, table_name, COALESCE(with_check_expr, using_expr));
+    ELSIF with_check_expr IS NOT NULL THEN
       EXECUTE format('CREATE POLICY %I ON public.%I FOR %s USING (%s) WITH CHECK (%s);', 
         policy_name, table_name, cmd, using_expr, with_check_expr);
     ELSE
