@@ -431,6 +431,11 @@ export type Database = {
           date: string | null
           description: string
           id: string
+          is_recurring: boolean | null
+          last_generated_date: string | null
+          recurrence_day: number | null
+          recurrence_end_date: string | null
+          recurrence_frequency: string | null
           user_id: string
         }
         Insert: {
@@ -441,6 +446,11 @@ export type Database = {
           date?: string | null
           description: string
           id?: string
+          is_recurring?: boolean | null
+          last_generated_date?: string | null
+          recurrence_day?: number | null
+          recurrence_end_date?: string | null
+          recurrence_frequency?: string | null
           user_id: string
         }
         Update: {
@@ -451,6 +461,11 @@ export type Database = {
           date?: string | null
           description?: string
           id?: string
+          is_recurring?: boolean | null
+          last_generated_date?: string | null
+          recurrence_day?: number | null
+          recurrence_end_date?: string | null
+          recurrence_frequency?: string | null
           user_id?: string
         }
         Relationships: [

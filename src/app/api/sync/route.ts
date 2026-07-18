@@ -184,11 +184,121 @@ export async function GET(request: Request) {
       }
     }
 
+    // 6. Auto-Execute Recurring Incomes
+    let incomesGenerated = 0;
+    const recurringIncomes = await db
+      .select()
+      .from(schema.incomes)
+      .where(eq(schema.incomes.is_recurring, true));
+
+    for (const inc of recurringIncomes) {
+      const lastGen = inc.last_generated_date 
+        ? new Date(inc.last_generated_date) 
+        : inc.date 
+          ? new Date(inc.date) 
+          : new Date(inc.created_at || now);
+
+      if (inc.recurrence_end_date && now > new Date(inc.recurrence_end_date)) {
+        continue;
+      }
+
+      let isDue = false;
+      const diffMs = now.getTime() - lastGen.getTime();
+      const diffDays = diffMs / (1000 * 60 * 60 * 24);
+
+      if (inc.recurrence_frequency === "daily" && diffDays >= 1) {
+        isDue = true;
+      } else if (inc.recurrence_frequency === "weekly" && diffDays >= 7) {
+        isDue = true;
+      } else if (inc.recurrence_frequency === "monthly") {
+        const monthsDiff = (now.getFullYear() - lastGen.getFullYear()) * 12 + (now.getMonth() - lastGen.getMonth());
+        if (monthsDiff >= 1) {
+          const targetDay = inc.recurrence_day || 1;
+          if (now.getDate() >= targetDay) {
+            isDue = true;
+          }
+        }
+      } else if (inc.recurrence_frequency === "yearly") {
+        const yearsDiff = now.getFullYear() - lastGen.getFullYear();
+        if (yearsDiff >= 1 && now.getMonth() >= lastGen.getMonth() && now.getDate() >= lastGen.getDate()) {
+          isDue = true;
+        }
+      }
+
+      if (isDue) {
+        try {
+          await db.transaction(async (tx) => {
+            // Add to balance and write logs if associated account is specified
+            if (inc.account_id) {
+              const [account] = await tx
+                .select()
+                .from(schema.accounts)
+                .where(eq(schema.accounts.id, inc.account_id))
+                .for("update");
+
+              if (account) {
+                const oldBalance = Number(account.balance);
+                const newBalance = oldBalance + Number(inc.amount);
+
+                await tx
+                  .update(schema.accounts)
+                  .set({ balance: newBalance.toString() })
+                  .where(eq(schema.accounts.id, inc.account_id));
+
+                await tx.insert(schema.ledgerLogs).values({
+                  user_id: inc.user_id,
+                  account_id: inc.account_id,
+                  account_name: account.name,
+                  action_type: "ADJUST_UP",
+                  amount: inc.amount,
+                  previous_balance: oldBalance.toString(),
+                  new_balance: newBalance.toString(),
+                  details: `Recurring Income: ${inc.description} (${inc.category})`,
+                  source_type: "income",
+                });
+
+                await tx.insert(schema.transactions).values({
+                  user_id: inc.user_id,
+                  account_id: inc.account_id,
+                  description: inc.description,
+                  amount: inc.amount,
+                  type: "income",
+                  category: inc.category,
+                  date: now,
+                });
+              }
+            }
+
+            // Create generated transaction record
+            await tx.insert(schema.incomes).values({
+              user_id: inc.user_id,
+              account_id: inc.account_id,
+              description: inc.description,
+              amount: inc.amount,
+              category: inc.category,
+              date: now,
+              is_recurring: false,
+            });
+
+            // Update recurrence tracker template
+            await tx
+              .update(schema.incomes)
+              .set({ last_generated_date: now })
+              .where(eq(schema.incomes.id, inc.id));
+          });
+          incomesGenerated++;
+        } catch (err) {
+          console.error(`Failed to process transaction for recurring income: ${inc.id}`, err);
+        }
+      }
+    }
+
     return NextResponse.json({
       success: true,
       stocks_updated: stocksUpdated,
       mfs_updated: mfsUpdated,
       expenses_generated: expensesGenerated,
+      incomes_generated: incomesGenerated,
     });
   } catch (error) {
     console.error("Error in sync api:", error);

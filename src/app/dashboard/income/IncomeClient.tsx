@@ -90,6 +90,10 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
     category: "Salary",
     date: "",
     account_id: "",
+    is_recurring: false,
+    recurrence_frequency: "monthly",
+    recurrence_day: 1,
+    recurrence_end_date: "",
   });
 
   const [initialized, setInitialized] = useState(false);
@@ -105,7 +109,11 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
           amount: "",
           category: "Salary",
           date: defaultDate,
-          account_id
+          account_id,
+          is_recurring: false,
+          recurrence_frequency: "monthly",
+          recurrence_day: 1,
+          recurrence_end_date: "",
         });
       }, 0);
     } else if (!initialized && defaultDate) {
@@ -135,7 +143,11 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
       amount: "",
       category: "Salary",
       date: defaultDate,
-      account_id
+      account_id,
+      is_recurring: false,
+      recurrence_frequency: "monthly",
+      recurrence_day: 1,
+      recurrence_end_date: "",
     });
     setShowAddModal(true);
   };
@@ -277,7 +289,17 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
           ? `${yyyy}-${mm}-${String(today.getDate()).padStart(2, '0')}`
           : `${yyyy}-${mm}-01`;
 
-        setFormData({ description: "", amount: "", category: "Salary", date: defaultDate, account_id: "" });
+        setFormData({
+          description: "",
+          amount: "",
+          category: "Salary",
+          date: defaultDate,
+          account_id: "",
+          is_recurring: false,
+          recurrence_frequency: "monthly",
+          recurrence_day: 1,
+          recurrence_end_date: "",
+        });
         setShowAddModal(false);
         mutate();
       } else {
@@ -785,9 +807,73 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
                 </div>
               ) : null;
             })()}
+
+            <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]" htmlFor="inc-recurring">
+                  Recurring Income
+                </label>
+                <input
+                  type="checkbox"
+                  id="inc-recurring"
+                  className="w-4 h-4 rounded border-white/10 bg-white/5 text-emerald-500 focus:ring-emerald-500/20 cursor-pointer"
+                  checked={formData.is_recurring}
+                  onChange={e => setFormData({ ...formData, is_recurring: e.target.checked })}
+                />
+              </div>
+
+              {formData.is_recurring && (
+                <div className="grid grid-cols-3 gap-3 pt-2 border-t border-white/5 animate-in fade-in duration-200">
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-bold text-[--text-muted]" htmlFor="inc-frequency">
+                      Frequency
+                    </label>
+                    <select
+                      id="inc-frequency"
+                      className="input-premium !h-9 text-[11px] text-white"
+                      value={formData.recurrence_frequency}
+                      onChange={e => setFormData({ ...formData, recurrence_frequency: e.target.value })}
+                    >
+                      <option value="daily">Daily</option>
+                      <option value="weekly">Weekly</option>
+                      <option value="monthly">Monthly</option>
+                      <option value="yearly">Yearly</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-bold text-[--text-muted]" htmlFor="inc-rec-day">
+                      Day Due
+                    </label>
+                    <input
+                      type="number"
+                      id="inc-rec-day"
+                      min="1"
+                      max="31"
+                      className="input-premium !h-9 text-[11px] text-white"
+                      value={formData.recurrence_day}
+                      onChange={e => setFormData({ ...formData, recurrence_day: parseInt(e.target.value) || 1 })}
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-bold text-[--text-muted]" htmlFor="inc-end-date">
+                      End Date
+                    </label>
+                    <input
+                      type="date"
+                      id="inc-end-date"
+                      className="input-premium !h-9 text-[11px] text-white"
+                      value={formData.recurrence_end_date}
+                      onChange={e => setFormData({ ...formData, recurrence_end_date: e.target.value })}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
             
             <div className="pt-2 mt-4">
-              <button type="submit" disabled={submitting} className="btn-primary w-full h-10 shadow-xl shadow-[--accent-primary]/20 text-[10px] font-black uppercase tracking-widest">
+              <button type="submit" disabled={submitting} className="btn-primary w-full h-10 shadow-xl shadow-[--accent-primary]/20 text-[10px] font-black uppercase tracking-widest cursor-pointer">
                 {submitting ? "Deploying..." : "Finalize Entry"}
               </button>
             </div>

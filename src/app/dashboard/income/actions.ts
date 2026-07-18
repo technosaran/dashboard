@@ -10,6 +10,10 @@ export async function addIncome(formData: {
   category: string;
   date: string;
   account_id?: string;
+  is_recurring?: boolean;
+  recurrence_frequency?: string;
+  recurrence_day?: number;
+  recurrence_end_date?: string;
 }) {
   try {
     const supabase = await createClient();
@@ -50,7 +54,7 @@ export async function addIncome(formData: {
       return { error: error.message };
     }
 
-    const result = data as { success: boolean, error?: string } | null;
+    const result = data as { success: boolean, error?: string, income_id?: string } | null;
     if (!result) {
       return { error: "Failed to communicate with database" };
     }
@@ -58,8 +62,27 @@ export async function addIncome(formData: {
       return { error: result.error || "Failed to process income transaction" };
     }
 
+    // If marked as recurring, perform secondary update
+    if (result.success && formData.is_recurring && result.income_id) {
+      const { error: updateErr } = await supabase
+        .from("incomes")
+        .update({
+          is_recurring: true,
+          recurrence_frequency: formData.recurrence_frequency || "monthly",
+          recurrence_day: formData.recurrence_day || 1,
+          recurrence_end_date: formData.recurrence_end_date ? parseToISODate(formData.recurrence_end_date) : null
+        })
+        .eq("id", result.income_id);
+      if (updateErr) {
+        console.error("Failed to update income recurrence:", updateErr);
+      }
+    }
+
     // Global revalidation
     revalidatePath("/dashboard", "layout");
+    revalidatePath("/dashboard/income");
+    revalidatePath("/dashboard/accounts");
+    revalidatePath("/dashboard/ledger");
     
     return { success: true };
   } catch (err) {

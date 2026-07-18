@@ -109,6 +109,11 @@ export const incomes = pgTable("incomes", {
   amount: numeric("amount").notNull(),
   category: text("category").notNull(),
   date: timestamp("date").defaultNow(),
+  is_recurring: boolean("is_recurring").default(false),
+  recurrence_frequency: text("recurrence_frequency"),
+  recurrence_day: integer("recurrence_day"),
+  recurrence_end_date: timestamp("recurrence_end_date"),
+  last_generated_date: timestamp("last_generated_date"),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 });

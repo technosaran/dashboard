@@ -281,12 +281,10 @@ export default function TransactionsClient() {
         category: formData.category,
         date: formData.date,
         account_id: formData.account_id || undefined,
-        ...(modalType === "expense" ? {
-          is_recurring: formData.is_recurring,
-          recurrence_frequency: formData.recurrence_frequency,
-          recurrence_day: formData.recurrence_day,
-          recurrence_end_date: formData.recurrence_end_date || undefined
-        } : {})
+        is_recurring: formData.is_recurring,
+        recurrence_frequency: formData.recurrence_frequency,
+        recurrence_day: formData.recurrence_day,
+        recurrence_end_date: formData.recurrence_end_date || undefined
       };
 
       const res = modalType === "income" 
@@ -735,16 +733,16 @@ export default function TransactionsClient() {
                 ) : null;
               })()}
 
-              {modalType === "expense" && (
+              {(modalType === "expense" || modalType === "income") && (
                 <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 space-y-3">
                   <div className="flex items-center justify-between">
                     <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]" htmlFor="tx-recurring">
-                      Recurring Expense
+                      Recurring {modalType === "expense" ? "Expense" : "Income"}
                     </label>
                     <input
                       type="checkbox"
                       id="tx-recurring"
-                      className="w-4 h-4 rounded border-white/10 bg-white/5 text-rose-500 focus:ring-rose-500/20"
+                      className={`w-4 h-4 rounded border-white/10 bg-white/5 ${modalType === 'income' ? 'text-emerald-500 focus:ring-emerald-500/20' : 'text-rose-500 focus:ring-rose-500/20'}`}
                       checked={formData.is_recurring}
                       onChange={e => setFormData({ ...formData, is_recurring: e.target.checked })}
                     />
