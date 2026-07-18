@@ -136,8 +136,8 @@ function parseSms(text: string, sender: string) {
   }
 
   // 1. Amount Extraction
-  // Matches Rs. 100, Rs.100, Rs 100, INR 100.50, spent Rs100, debited by Rs.100 etc.
-  const amountRegex = /(?:Rs\.?|INR|debited by|credited by|spent)\s*([\d,]+(?:\.\d{2})?)/i;
+  // Matches Rs. 100, Rs.100, Rs 100, INR 100.50, spent Rs100, debited by Rs.100, ₹100 etc.
+  const amountRegex = /(?:Rs\.?|INR|debited by|credited by|spent|₹)\s*([\d,]+(?:\.\d{2})?)/i;
   const amountMatch = text.match(amountRegex);
   if (!amountMatch) return null;
   const amount = parseFloat(amountMatch[1].replace(/,/g, ""));

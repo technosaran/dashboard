@@ -113,7 +113,7 @@ async function syncUserGmail(
   const accessToken = tokenData.access_token;
 
   // 2. Fetch unread transaction-related emails from last 7 days
-  const query = 'is:unread (subject:debited OR subject:credited OR subject:spent OR subject:received OR "GPay" OR "Amazon Pay" OR "Paytm")';
+  const query = 'is:unread (subject:debited OR subject:credited OR subject:spent OR subject:received OR subject:alert OR subject:transaction OR subject:successful OR subject:confirmed OR "GPay" OR "Amazon Pay" OR "Paytm" OR "payment" OR "recharge" OR "debited" OR "credited" OR "spent" OR "₹" OR "Rs")';
   const listRes = await fetch(
     `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(query)}&maxResults=15`,
     {
@@ -289,7 +289,7 @@ function parseEmailText(text: string) {
   }
 
   // 1. Amount Extraction
-  const amountRegex = /(?:Rs\.?|INR|debited by|credited by|spent|amount of)\s*([\d,]+(?:\.\d{2})?)/i;
+  const amountRegex = /(?:Rs\.?|INR|debited by|credited by|spent|amount of|₹)\s*([\d,]+(?:\.\d{2})?)/i;
   const amountMatch = text.match(amountRegex);
   if (!amountMatch) return null;
   const amount = parseFloat(amountMatch[1].replace(/,/g, ""));
