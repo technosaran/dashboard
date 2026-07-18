@@ -94,6 +94,8 @@ type ProfileSettings = {
   username?: string;
   sms_sync_token?: string | null;
   gmail_refresh_token?: string | null;
+  telegram_chat_id?: string | null;
+  telegram_link_code?: string | null;
 };
 
 type SafeJson = string | number | boolean | null | { [key: string]: SafeJson | undefined } | SafeJson[];
@@ -114,6 +116,8 @@ export async function updateSettings(settings: ProfileSettings) {
     if (settings.username !== undefined) payload.username = settings.username;
     if (settings.sms_sync_token !== undefined) payload.sms_sync_token = settings.sms_sync_token;
     if (settings.gmail_refresh_token !== undefined) payload.gmail_refresh_token = settings.gmail_refresh_token;
+    if (settings.telegram_chat_id !== undefined) payload.telegram_chat_id = settings.telegram_chat_id;
+    if (settings.telegram_link_code !== undefined) payload.telegram_link_code = settings.telegram_link_code;
 
     if (Object.keys(payload).length === 0) return { success: true };
 
@@ -129,6 +133,32 @@ export async function updateSettings(settings: ProfileSettings) {
     return { success: true };
   } catch (err) {
     console.error("Error in updateSettings:", err);
+    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+  }
+}
+
+export async function generateTelegramLinkCode() {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Unauthorized" };
+
+    const code = `tg-${Math.floor(100000 + Math.random() * 900000)}`;
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({ telegram_link_code: code })
+      .eq("id", user.id);
+
+    if (error) {
+      console.error("Failed to generate Telegram link code:", error);
+      return { error: error.message };
+    }
+
+    revalidatePath("/dashboard/settings");
+    return { success: true, code };
+  } catch (err) {
+    console.error("Error in generateTelegramLinkCode:", err);
     return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
   }
 }
