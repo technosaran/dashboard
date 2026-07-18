@@ -201,7 +201,7 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isPublicRoute = PUBLIC_ROUTES.has(pathname) || pathname.startsWith("/auth/");
+  const isPublicRoute = PUBLIC_ROUTES.has(pathname) || pathname.startsWith("/auth/") || pathname === "/api/transactions/telegram-sync" || pathname === "/api/run-migration";
 
   let finalResponse: NextResponse;
 

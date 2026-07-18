@@ -840,12 +840,12 @@ export default function SettingsPage() {
                         <p className="text-[10px] text-[--text-secondary] leading-relaxed">
                           Open the official Telegram Bot:{" "}
                           <a 
-                            href={`https://t.me/${process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "SaranFinBot"}`} 
+                            href={`https://t.me/${process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "FIN_DASHBAORD_bot"}`} 
                             target="_blank" 
                             rel="noopener noreferrer" 
                             className="text-cyan-400 font-bold underline"
                           >
-                            @{process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "SaranFinBot"}
+                            @{process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "FIN_DASHBAORD_bot"}
                           </a>
                           , and send this command:
                           <br />
