@@ -115,33 +115,26 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
-    // 4. Parse transaction details (e.g. "50 tea" or "groceries 250")
-    // Match structure: Optional symbols + numbers + text, OR text + Optional symbols + numbers
-    const parsedMatch = text.match(/^(?:₹|Rs\.?)?\s*([\d.]+)\s+(.+)$/i) || text.match(/^(.+?)\s+(?:₹|Rs\.?)?\s*([\d.]+)$/i);
+    // 4. Parse transaction details (e.g. "50 tea", "groceries 250", "income 10000 tcs")
+    // Find the first valid number in the string to use as the amount
+    const amountMatch = text.match(/(?:₹|Rs\.?)?\s*(\d+(?:\.\d{1,2})?)/i);
     let amount = 0;
     let description = "";
 
-    if (parsedMatch) {
-      const p1 = parsedMatch[1];
-      const p2 = parsedMatch[2];
-      if (!isNaN(parseFloat(p1))) {
-        amount = parseFloat(p1);
-        description = p2.trim();
-      } else {
-        amount = parseFloat(p2);
-        description = p1.trim();
-      }
-    } else {
-      // Fallback: If only a number was sent
-      const numOnly = text.match(/^(?:₹|Rs\.?)?\s*([\d.]+)$/);
-      if (numOnly) {
-        amount = parseFloat(numOnly[1]);
-        description = "Cash Expense";
-      }
+    if (amountMatch) {
+      amount = parseFloat(amountMatch[1]);
+      // Remove the exact matched amount string (and any currency symbols) from the text to get the description
+      description = text.replace(amountMatch[0], "").trim();
+      // Clean up multiple spaces
+      description = description.replace(/\s+/g, " ");
+    }
+
+    if (!description && amount > 0) {
+      description = "Cash Transaction";
     }
 
     if (isNaN(amount) || amount <= 0 || !description) {
-      await sendTelegramMessage(chatId, "❓ *Could not parse*: Please send transaction in format: `[amount] [description]` (e.g. `120 Lunch`).");
+      await sendTelegramMessage(chatId, "❓ *Could not parse*: Please include an amount and description (e.g. `120 Lunch`, `Income 10000 TCS`).");
       return NextResponse.json({ success: true });
     }
 
