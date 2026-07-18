@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createPublicClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
 
 // Helper to send message back to Telegram user
 async function sendTelegramMessage(chatId: string, text: string) {
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
     // Use public client with service-level RPC execution or secure link mapping
-    const supabase = createPublicClient(supabaseUrl, supabaseKey);
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
     // 1. Handle Account Link command (/link tg-123456 or /start tg-123456)
     const linkMatch = text.match(/^\/(?:link|start)\s+(tg-\d+)/i);
@@ -178,7 +178,7 @@ export async function POST(req: NextRequest) {
     if (accounts && accounts.length > 0) {
       const defaultAccounts = (profile.default_accounts as Record<string, string | null>) || {};
       const defaultId = type === "expense" ? defaultAccounts.expenses : defaultAccounts.income;
-      if (defaultId && accounts.some((acc) => acc.id === defaultId)) {
+      if (defaultId && accounts.some((acc: any) => acc.id === defaultId)) {
         resolvedAccountId = defaultId;
       } else {
         resolvedAccountId = accounts[0].id; // Fallback to first account

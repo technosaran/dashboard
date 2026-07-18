@@ -19,6 +19,8 @@ type FinanceData = {
     default_accounts?: Record<string, string | null>;
     sms_sync_token?: string | null;
     is_gmail_linked?: boolean;
+    telegram_chat_id?: string | null;
+    telegram_link_code?: string | null;
   } | null;
   accounts: Tables<"accounts">[];
   transactions: Tables<"transactions">[];

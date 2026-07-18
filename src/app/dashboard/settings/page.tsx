@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, startTransition, useMemo } from "react";
 import { mutate as globalMutate } from "swr";
 import { useUser } from "@/context/user-context";
-import { resetUserData, updateSettings } from "./actions";
+import { resetUserData, updateSettings, generateTelegramLinkCode } from "./actions";
 import { toast } from "react-hot-toast";
 import { useFinanceData } from "@/hooks/use-finance-data";
 import type { FinanceData } from "@/hooks/use-finance-data";
@@ -583,7 +583,7 @@ export default function SettingsPage() {
             <p className="text-xs text-[--text-muted]">Link third-party platforms and mobile automation tools to automate transaction capturing.</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* SMS Webhook Card */}
             <div className="glass-card-static p-6 border border-white/5 bg-gradient-to-b from-white/[0.01] to-transparent flex flex-col justify-between">
               <div>
@@ -781,6 +781,108 @@ export default function SettingsPage() {
                     className="btn-primary px-4 py-2 text-xs font-black uppercase tracking-wider cursor-pointer"
                   >
                     Connect Gmail
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Telegram Cash Tracker Card */}
+            <div className="glass-card-static p-6 border border-white/5 bg-gradient-to-b from-white/[0.01] to-transparent flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/25 flex items-center justify-center text-xl shadow-[0_0_15px_rgba(6,182,212,0.15)]">
+                      💬
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-black text-white">Telegram Bot</h3>
+                      <p className="text-[10px] text-[--text-muted] mt-0.5">Cash Tracker Sync</p>
+                    </div>
+                  </div>
+                  {profile?.telegram_chat_id ? (
+                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center gap-1.5 shadow-[0_0_10px_rgba(16,185,129,0.1)]">
+                      <span className="relative flex h-1.5 w-1.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                      </span>
+                      Linked
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-white/5 border border-white/10 text-[--text-muted]">
+                      Disconnected
+                    </span>
+                  )}
+                </div>
+
+                <p className="text-xs text-[--text-secondary] leading-relaxed mb-6">
+                  Log cash or custom expenses instantly by texting your private Telegram Bot. Text <code className="text-cyan-400 font-mono">120 Lunch</code> or <code className="text-cyan-400 font-mono">50 Tea</code>.
+                </p>
+
+                {profile?.telegram_chat_id ? (
+                  <div className="space-y-4">
+                    <div className="p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10 text-emerald-400 text-xs">
+                      <p className="font-bold">✓ Bot is Active</p>
+                      <p className="text-[10px] text-[--text-secondary] mt-0.5">Linked Telegram Chat ID: <code className="font-mono">{profile.telegram_chat_id}</code></p>
+                    </div>
+                    
+                    <div className="pt-2 text-[11px] text-[--text-secondary] leading-relaxed space-y-1.5">
+                      <p className="font-bold text-white">Quick Chat Commands:</p>
+                      <p>• Text <code className="font-mono text-cyan-400">120 tea</code> to log ₹120 for tea.</p>
+                      <p>• Text <code className="font-mono text-cyan-400">/help</code> inside chat to see formatting guidelines.</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {profile?.telegram_link_code ? (
+                      <div className="p-4 rounded-xl bg-cyan-500/5 border border-cyan-500/10 space-y-3">
+                        <p className="text-[10px] font-black uppercase tracking-[0.15em] text-cyan-400">Your Linking Code</p>
+                        <div className="text-lg font-black text-white font-mono tracking-wider">{profile.telegram_link_code}</div>
+                        <p className="text-[10px] text-[--text-secondary] leading-relaxed">
+                          Search for your bot on Telegram, send a message starting with:
+                          <br />
+                          <code className="text-cyan-400 font-mono font-bold">/link {profile.telegram_link_code}</code>
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-[11px] text-[--text-muted]">
+                        Generate a link code to connect your private Telegram bot to this account.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-6 border-t border-white/5 mt-6 flex justify-end">
+                {profile?.telegram_chat_id ? (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!confirm("Are you sure you want to disconnect Telegram bot sync?")) return;
+                      const res = await updateSettings({ telegram_chat_id: null });
+                      if (res.error) toast.error(res.error);
+                      else {
+                        toast.success("Telegram disconnected.");
+                        mutate();
+                      }
+                    }}
+                    className="px-4 py-2 rounded-xl bg-rose-500/5 hover:bg-rose-500/10 border border-rose-500/10 text-xs font-bold text-rose-400 active:scale-95 transition-all cursor-pointer"
+                  >
+                    Disconnect Bot
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const res = await generateTelegramLinkCode();
+                      if (res.error) toast.error(res.error);
+                      else {
+                        toast.success("Link code generated!");
+                        mutate();
+                      }
+                    }}
+                    className="btn-primary px-4 py-2 text-xs font-black uppercase tracking-wider cursor-pointer"
+                  >
+                    {profile?.telegram_link_code ? "Regenerate Code" : "Generate Code"}
                   </button>
                 )}
               </div>
