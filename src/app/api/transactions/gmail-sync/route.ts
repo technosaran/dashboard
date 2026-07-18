@@ -299,6 +299,16 @@ function parseEmailText(text: string) {
     return null;
   }
 
+  // Ignore non-transactional alerts (reminders, hold removals, security, nominees, promotions)
+  if (/due today|due tomorrow|bill payment is due|earn up to|reward|gift card|hold for|hold of|nominee|security alert|sign-in|verification/i.test(text)) {
+    return null;
+  }
+
+  // Ignore failed/declined transactions
+  if (/declined|failed|failed to|rejected|unsuccessful/i.test(text)) {
+    return null;
+  }
+
   // 1. Amount Extraction
   const amountRegex = /(?:Rs\.?|INR|debited by|credited by|spent|amount of|₹)\s*([\d,]+(?:\.\d{2})?)/i;
   const amountMatch = text.match(amountRegex);
@@ -322,6 +332,12 @@ function parseEmailText(text: string) {
   const merchantMatch = text.match(merchantRegex);
   if (merchantMatch && merchantMatch[1].trim().length > 0) {
     merchant = merchantMatch[1].trim();
+  } else if (/amazon/i.test(text)) {
+    merchant = "Amazon Pay";
+  } else if (/sbi|state bank/i.test(text)) {
+    merchant = "SBI Bank";
+  } else if (/airtel/i.test(text)) {
+    merchant = "Airtel";
   }
 
   // Limit merchant name to a clean string
