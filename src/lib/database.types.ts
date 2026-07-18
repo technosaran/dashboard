@@ -783,6 +783,8 @@ export type Database = {
           default_accounts: Json
           sms_sync_token: string | null
           gmail_refresh_token: string | null
+          telegram_chat_id: string | null
+          telegram_link_code: string | null
         }
         Insert: {
           created_at?: string | null
@@ -796,6 +798,8 @@ export type Database = {
           default_accounts?: Json
           sms_sync_token?: string | null
           gmail_refresh_token?: string | null
+          telegram_chat_id?: string | null
+          telegram_link_code?: string | null
         }
         Update: {
           created_at?: string | null
@@ -809,6 +813,8 @@ export type Database = {
           default_accounts?: Json
           sms_sync_token?: string | null
           gmail_refresh_token?: string | null
+          telegram_chat_id?: string | null
+          telegram_link_code?: string | null
         }
         Relationships: []
       }
