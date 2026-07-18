@@ -159,7 +159,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // 2. CSRF Protection Check
-  if (pathname.startsWith("/api/")) {
+  if (pathname.startsWith("/api/") && pathname !== "/api/transactions/telegram-sync" && pathname !== "/api/run-migration") {
     const csrfResponse = await csrfMiddleware(request);
     if (csrfResponse) {
       SecurityLogger.logEvent({
