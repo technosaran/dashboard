@@ -86,8 +86,8 @@ export async function csrfMiddleware(request: NextRequest): Promise<NextResponse
 
   // Skip CSRF check for API routes that use other auth mechanisms
   const pathname = request.nextUrl.pathname;
-  if (pathname.startsWith("/api/sync")) {
-    // Sync endpoint uses Bearer token authentication
+  if (pathname.startsWith("/api/sync") || pathname.startsWith("/api/transactions/")) {
+    // Sync and transaction endpoints use Bearer tokens or secure sync tokens
     return null;
   }
 
