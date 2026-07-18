@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(new URL("/dashboard/settings?gmail=error&reason=missing_server_credentials", req.url));
     }
 
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || req.nextUrl.origin;
+    const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || req.nextUrl.origin).replace(/\/$/, "");
     const redirectUri = `${siteUrl}/api/auth/google/callback`;
 
     // 1. Exchange authorization code for tokens

@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
   }
 
   // Construct target redirect URI using NEXT_PUBLIC_SITE_URL
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || req.nextUrl.origin;
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || req.nextUrl.origin).replace(/\/$/, "");
   const redirectUri = `${siteUrl}/api/auth/google/callback`;
 
   // Scopes requested (Gmail read-only to fetch transaction alerts)
