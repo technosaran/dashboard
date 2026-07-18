@@ -37,6 +37,52 @@ export default function SettingsPage() {
   const [lastSaved, setLastSaved] = useState<string | null>(null);
   const prevIsSyncingRef = useRef(false);
   const [activeTab, setActiveTab] = useState<TabKey>("profile");
+  const [isGmailSyncing, setIsGmailSyncing] = useState(false);
+
+  const handleGmailSync = async () => {
+    setIsGmailSyncing(true);
+    try {
+      const res = await fetch("/api/transactions/gmail-sync", { method: "POST" });
+      const resData = await res.json();
+      if (!res.ok) {
+        toast.error(resData.error || "Gmail sync failed");
+      } else {
+        if (resData.count > 0) {
+          toast.success(`Sync successful! Processed ${resData.count} new transaction alerts.`);
+          mutate();
+        } else {
+          toast.success("Sync completed. No new transaction alerts found.");
+        }
+      }
+    } catch {
+      toast.error("An error occurred during Gmail synchronization");
+    } finally {
+      setIsGmailSyncing(false);
+    }
+  };
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const gmailStatus = params.get("gmail");
+      if (gmailStatus) {
+        setActiveTab("integrations");
+        
+        const url = new URL(window.location.href);
+        url.searchParams.delete("gmail");
+        url.searchParams.delete("reason");
+        window.history.replaceState({}, "", url.toString());
+
+        if (gmailStatus === "success") {
+          toast.success("Gmail account linked successfully!");
+          mutate();
+        } else {
+          const reason = params.get("reason") || "Unknown error";
+          toast.error(`Failed to link Gmail: ${reason}`);
+        }
+      }
+    }
+  }, [mutate]);
 
   const [diagnostics, setDiagnostics] = useState<{ name: string; status: string; latency: string; code: number; error?: string }[]>([]);
   const [runningDiagnostics, setRunningDiagnostics] = useState(false);
@@ -637,6 +683,93 @@ export default function SettingsPage() {
                   className="btn-primary px-6 py-3 font-black text-xs uppercase tracking-wider shadow-lg shadow-[--accent-primary]/25 inline-flex items-center gap-2 cursor-pointer"
                 >
                   Enable SMS Webhook Sync
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Gmail Auto-Sync Card */}
+          <div className="glass-card-static p-6 border-white/5 bg-gradient-to-b from-white/[0.01] to-transparent">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/25 flex items-center justify-center text-2xl">
+                ✉️
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-white">Gmail Auto-Sync</h3>
+                <p className="text-xs text-[--text-muted] mt-0.5">Secure Google OAuth 2.0 sync. Works automatically on both iOS & Android.</p>
+              </div>
+            </div>
+
+            {profile?.is_gmail_linked ? (
+              <div className="space-y-6">
+                {/* Active status banner */}
+                <div className="p-3.5 rounded-xl bg-emerald-500/5 border border-emerald-500/15 flex items-start gap-3">
+                  <div className="mt-0.5 p-0.5 rounded bg-emerald-500/20 text-emerald-400">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-white">Status: Connected</p>
+                    <p className="text-[10px] text-[--text-secondary] mt-0.5">Your dashboard will scan unread transaction alert emails and log them in real-time.</p>
+                  </div>
+                </div>
+
+                {/* Integration Details / Manual Scan */}
+                <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                  <div>
+                    <p className="text-xs font-bold text-white">On-Demand Sync Scan</p>
+                    <p className="text-[10px] text-[--text-muted] mt-0.5">Manually scan your unread bank notifications now.</p>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={isGmailSyncing}
+                    onClick={handleGmailSync}
+                    className="px-4 py-2 rounded-xl bg-[--accent-primary]/10 border border-[--accent-primary]/25 text-xs font-bold text-[--accent-primary] hover:bg-[--accent-primary]/20 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
+                  >
+                    {isGmailSyncing ? (
+                      <span className="w-3.5 h-3.5 border-2 border-[--accent-primary] border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                      </svg>
+                    )}
+                    Sync Emails Now
+                  </button>
+                </div>
+
+                {/* Disconnect button */}
+                <div className="pt-6 border-t border-white/5 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!confirm("Are you sure you want to disconnect Gmail auto-sync?")) return;
+                      const res = await updateSettings({ gmail_refresh_token: null });
+                      if (res.error) toast.error(res.error);
+                      else {
+                        toast.success("Gmail account disconnected successfully");
+                        mutate();
+                      }
+                    }}
+                    className="px-4 py-2 rounded-xl bg-rose-500/5 hover:bg-rose-500/10 border border-rose-500/10 text-xs font-bold text-rose-400 active:scale-95 transition-all cursor-pointer"
+                  >
+                    Disconnect Gmail
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-6 text-center py-6">
+                <p className="text-xs text-[--text-secondary] leading-relaxed max-w-md mx-auto">
+                  Scan transaction alert emails from Paytm, GPay, Amazon Pay, and your bank. Fully secure, works in the background on all mobile devices (iOS & Android).
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    window.location.href = "/api/auth/google";
+                  }}
+                  className="btn-primary px-6 py-3 font-black text-xs uppercase tracking-wider shadow-lg shadow-[--accent-primary]/25 inline-flex items-center gap-2 cursor-pointer"
+                >
+                  Link Gmail Account
                 </button>
               </div>
             )}

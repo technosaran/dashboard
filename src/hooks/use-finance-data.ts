@@ -18,6 +18,7 @@ type FinanceData = {
     enabled_modules: string[]; 
     default_accounts?: Record<string, string | null>;
     sms_sync_token?: string | null;
+    is_gmail_linked?: boolean;
   } | null;
   accounts: Tables<"accounts">[];
   transactions: Tables<"transactions">[];

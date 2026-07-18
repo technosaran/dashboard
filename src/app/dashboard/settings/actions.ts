@@ -93,6 +93,7 @@ type ProfileSettings = {
   timezone?: string;
   username?: string;
   sms_sync_token?: string | null;
+  gmail_refresh_token?: string | null;
 };
 
 type SafeJson = string | number | boolean | null | { [key: string]: SafeJson | undefined } | SafeJson[];
@@ -112,6 +113,7 @@ export async function updateSettings(settings: ProfileSettings) {
     if (settings.timezone !== undefined) payload.timezone = settings.timezone;
     if (settings.username !== undefined) payload.username = settings.username;
     if (settings.sms_sync_token !== undefined) payload.sms_sync_token = settings.sms_sync_token;
+    if (settings.gmail_refresh_token !== undefined) payload.gmail_refresh_token = settings.gmail_refresh_token;
 
     if (Object.keys(payload).length === 0) return { success: true };
 
