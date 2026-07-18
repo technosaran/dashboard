@@ -17,6 +17,7 @@ type FinanceData = {
     timezone: string;
     enabled_modules: string[]; 
     default_accounts?: Record<string, string | null>;
+    sms_sync_token?: string | null;
   } | null;
   accounts: Tables<"accounts">[];
   transactions: Tables<"transactions">[];

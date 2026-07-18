@@ -781,6 +781,7 @@ export type Database = {
           timezone: string
           enabled_modules: Json
           default_accounts: Json
+          sms_sync_token: string | null
         }
         Insert: {
           created_at?: string | null
@@ -792,6 +793,7 @@ export type Database = {
           timezone?: string
           enabled_modules?: Json
           default_accounts?: Json
+          sms_sync_token?: string | null
         }
         Update: {
           created_at?: string | null
@@ -803,6 +805,7 @@ export type Database = {
           timezone?: string
           enabled_modules?: Json
           default_accounts?: Json
+          sms_sync_token?: string | null
         }
         Relationships: []
       }

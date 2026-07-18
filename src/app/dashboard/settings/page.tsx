@@ -16,7 +16,7 @@ const ReportDownloadButton = dynamic(
   { ssr: false }
 );
 
-type TabKey = "profile" | "modules" | "defaults" | "exports" | "danger" | "status";
+type TabKey = "profile" | "modules" | "defaults" | "exports" | "danger" | "status" | "integrations";
 
 export default function SettingsPage() {
   const { username, setUsername, loading, isSyncing } = useUser();
@@ -314,6 +314,7 @@ export default function SettingsPage() {
           { key: "profile", label: "Profile" },
           { key: "modules", label: "Modules" },
           { key: "defaults", label: "Defaults" },
+          { key: "integrations", label: "Integrations" },
           { key: "exports", label: "Data Exports" },
           { key: "status", label: "System Status" },
           { key: "danger", label: "Danger Zone" },
@@ -524,6 +525,121 @@ export default function SettingsPage() {
                 Reset All Data
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Integrations Tab */}
+      {activeTab === "integrations" && (
+        <div className="max-w-2xl animate-fade-in-up space-y-6">
+          <div className="glass-card-static p-6 border-white/5 bg-gradient-to-b from-white/[0.01] to-transparent">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-12 h-12 rounded-2xl bg-[--accent-primary]/10 border border-[--accent-primary]/25 flex items-center justify-center text-2xl">
+                📱
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-white">SMS Webhook Integration</h3>
+                <p className="text-xs text-[--text-muted] mt-0.5">Auto-track Google Pay, Amazon Pay, and Bank Card transactions via incoming SMS.</p>
+              </div>
+            </div>
+
+            {profile?.sms_sync_token ? (
+              <div className="space-y-6">
+                {/* Active status banner */}
+                <div className="p-3.5 rounded-xl bg-emerald-500/5 border border-emerald-500/15 flex items-start gap-3">
+                  <div className="mt-0.5 p-0.5 rounded bg-emerald-500/20 text-emerald-400">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-white">Status: Active & Listening</p>
+                    <p className="text-[10px] text-[--text-secondary] mt-0.5">Your personal endpoint is ready to receive transaction webhook requests from your device.</p>
+                  </div>
+                </div>
+
+                {/* Webhook URL input group */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Your Webhook URL</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={typeof window !== "undefined" ? `${window.location.origin}/api/transactions/sms-sync?token=${profile.sms_sync_token}` : `/api/transactions/sms-sync?token=${profile.sms_sync_token}`}
+                      className="flex-1 bg-[#151515] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-[--text-secondary] outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const url = typeof window !== "undefined" ? `${window.location.origin}/api/transactions/sms-sync?token=${profile.sms_sync_token}` : `/api/transactions/sms-sync?token=${profile.sms_sync_token}`;
+                        navigator.clipboard.writeText(url);
+                        toast.success("Webhook URL copied to clipboard");
+                      }}
+                      className="px-4 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-white hover:bg-white/10 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer border"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H5.25m11.9-3.664A2.251 2.251 0 0015 2.25h-1.5a2.251 2.251 0 00-2.15 1.586m5.8 0c.065.21.1.433.1.664v.75h-6V4.5c0-.231.035-.454.1-.664M6.75 7.5h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21h10.5a2.25 2.25 0 002.25-2.25V7.5a2.25 2.25 0 00-2.25-2.25H6.75A2.25 2.25 0 004.5 7.5v11.25A2.25 2.25 0 006.75 21z" />
+                      </svg>
+                      Copy URL
+                    </button>
+                  </div>
+                </div>
+
+                {/* Setup guide */}
+                <div className="pt-4 border-t border-white/5 space-y-4">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-white">How to Set Up:</h4>
+                  <div className="space-y-3.5 text-[11px] text-[--text-secondary] leading-relaxed">
+                    <div className="flex gap-3">
+                      <span className="w-5 h-5 rounded-full bg-white/5 border border-white/10 flex items-center justify-center font-bold text-white text-[10px] flex-shrink-0 mt-0.5">1</span>
+                      <p>Download a free automation app on your Android device, such as <strong>MacroDroid</strong> or a dedicated <strong>SMS Forwarder to Webhook</strong> app from the Play Store.</p>
+                    </div>
+                    <div className="flex gap-3">
+                      <span className="w-5 h-5 rounded-full bg-white/5 border border-white/10 flex items-center justify-center font-bold text-white text-[10px] flex-shrink-0 mt-0.5">2</span>
+                      <p>Create a rule to trigger when a new SMS contains transaction keywords (e.g., <code>debited</code>, <code>spent</code>, <code>credited</code>) from bank/UPI alerts.</p>
+                    </div>
+                    <div className="flex gap-3">
+                      <span className="w-5 h-5 rounded-full bg-white/5 border border-white/10 flex items-center justify-center font-bold text-white text-[10px] flex-shrink-0 mt-0.5">3</span>
+                      <p>Set the action to perform a **HTTP POST (JSON)** request to your copied Webhook URL. The JSON body should include the SMS message content in a field named <code>text</code>.</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Rotate Token button */}
+                <div className="pt-6 border-t border-white/5 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!confirm("Are you sure you want to rotate your token? Your existing forwarding setup will stop working until you update it with the new URL.")) return;
+                      const newToken = Array.from({length: 32}, () => Math.floor(Math.random()*16).toString(16)).join("");
+                      const res = await updateSettings({ sms_sync_token: newToken });
+                      if (res.error) toast.error(res.error);
+                      else toast.success("Sync token rotated successfully");
+                    }}
+                    className="px-4 py-2 rounded-xl bg-rose-500/5 hover:bg-rose-500/10 border border-rose-500/10 text-xs font-bold text-rose-400 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
+                  >
+                    Rotate Sync Token
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-6 text-center py-6">
+                <p className="text-xs text-[--text-secondary] leading-relaxed max-w-md mx-auto">
+                  Automatically register transactions on your dashboard in real-time as they happen. Link your device using a secure private webhook URL.
+                </p>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const newToken = Array.from({length: 32}, () => Math.floor(Math.random()*16).toString(16)).join("");
+                    const res = await updateSettings({ sms_sync_token: newToken });
+                    if (res.error) toast.error(res.error);
+                    else toast.success("SMS Sync enabled successfully");
+                  }}
+                  className="btn-primary px-6 py-3 font-black text-xs uppercase tracking-wider shadow-lg shadow-[--accent-primary]/25 inline-flex items-center gap-2 cursor-pointer"
+                >
+                  Enable SMS Webhook Sync
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

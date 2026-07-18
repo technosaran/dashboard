@@ -92,6 +92,7 @@ type ProfileSettings = {
   theme?: string;
   timezone?: string;
   username?: string;
+  sms_sync_token?: string | null;
 };
 
 type SafeJson = string | number | boolean | null | { [key: string]: SafeJson | undefined } | SafeJson[];
@@ -110,6 +111,7 @@ export async function updateSettings(settings: ProfileSettings) {
     if (settings.theme !== undefined) payload.theme = settings.theme;
     if (settings.timezone !== undefined) payload.timezone = settings.timezone;
     if (settings.username !== undefined) payload.username = settings.username;
+    if (settings.sms_sync_token !== undefined) payload.sms_sync_token = settings.sms_sync_token;
 
     if (Object.keys(payload).length === 0) return { success: true };
 
