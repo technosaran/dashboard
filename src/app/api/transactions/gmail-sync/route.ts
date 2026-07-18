@@ -114,6 +114,8 @@ async function syncUserGmail(
 
   // 2. Fetch unread transaction-related emails from last 7 days
   const query = 'is:unread (subject:debited OR subject:credited OR subject:spent OR subject:received OR subject:alert OR subject:transaction OR subject:successful OR subject:confirmed OR "GPay" OR "Amazon Pay" OR "Paytm" OR "payment" OR "recharge" OR "debited" OR "credited" OR "spent" OR "₹" OR "Rs")';
+  console.log("[Gmail Sync Debug] Running search with query:", query);
+  
   const listRes = await fetch(
     `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(query)}&maxResults=15`,
     {
@@ -123,10 +125,13 @@ async function syncUserGmail(
 
   const listData = await listRes.json();
   if (!listRes.ok) {
+    console.error("[Gmail Sync Debug] Fetch list failed:", listData);
     throw new Error(`Gmail fetch message list failed: ${listData.error?.message || "Unknown"}`);
   }
 
   const messages = listData.messages || [];
+  console.log("[Gmail Sync Debug] Total unread emails found matching criteria:", messages.length, messages);
+  
   if (messages.length === 0) {
     return { userId, success: true, count: 0, message: "No unread transaction emails found" };
   }
@@ -156,9 +161,14 @@ async function syncUserGmail(
       const message = await msgRes.json();
 
       if (!msgRes.ok) {
-        console.error(`Failed to fetch message details for ${msgRef.id}`);
+        console.error(`[Gmail Sync Debug] Failed to fetch details for msg ${msgRef.id}`);
         continue;
       }
+
+      const subject = message.payload?.headers?.find((h: any) => h.name?.toLowerCase() === 'subject')?.value;
+      console.log(`\n[Gmail Sync Debug] Processing message: ${msgRef.id}`);
+      console.log(`[Gmail Sync Debug] Subject: "${subject}"`);
+      console.log(`[Gmail Sync Debug] Snippet: "${message.snippet}"`);
 
       // Extract email body text
       let bodyText = message.snippet || "";
@@ -171,6 +181,12 @@ async function syncUserGmail(
 
       // Parse email content
       const parsed = parseEmailText(bodyText);
+      console.log("[Gmail Sync Debug] Parser outcome:", parsed);
+      
+      if (!parsed) {
+        console.log("[Gmail Sync Debug] Extraction failed. Raw preview:", bodyText.substring(0, 180).replace(/\s+/g, " ") + "...");
+      }
+
       if (parsed) {
         const { amount, type, merchant, accountEnding } = parsed;
 
