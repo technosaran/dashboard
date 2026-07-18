@@ -146,6 +146,7 @@ type TransferData = {
   to_account_id: string;
   amount: number;
   note: string | null;
+  converted_amount?: number;
 };
 
 export async function createTransfer(data: TransferData) {
@@ -165,12 +166,39 @@ export async function createTransfer(data: TransferData) {
       return { error: "Transfer amount must be a positive number" };
     }
 
+    // Fetch accounts to check currencies
+    const { data: fromAccount, error: fromErr } = await supabase
+      .from("accounts")
+      .select("currency")
+      .eq("id", data.from_account_id)
+      .eq("user_id", user.id)
+      .single();
+
+    const { data: toAccount, error: toErr } = await supabase
+      .from("accounts")
+      .select("currency")
+      .eq("id", data.to_account_id)
+      .eq("user_id", user.id)
+      .single();
+
+    if (fromErr || toErr || !fromAccount || !toAccount) {
+      return { error: "Failed to retrieve account details for verification" };
+    }
+
+    const isCrossCurrency = fromAccount.currency !== toAccount.currency;
+    if (isCrossCurrency) {
+      if (data.converted_amount === undefined || data.converted_amount <= 0 || !Number.isFinite(data.converted_amount)) {
+        return { error: "Converted amount is required and must be a positive number for cross-currency transfers" };
+      }
+    }
+
     const { data: rpcData, error } = await supabase.rpc("process_transfer", {
       p_user_id: user.id,
       p_from_account_id: data.from_account_id,
       p_to_account_id: data.to_account_id,
       p_amount: data.amount,
-      p_note: data.note || undefined
+      p_note: data.note || undefined,
+      p_converted_amount: isCrossCurrency ? data.converted_amount : undefined
     });
 
     if (error) return { error: error.message };

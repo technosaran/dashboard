@@ -692,7 +692,7 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
                           value={formData.deduct_from_account} 
                           onChange={e => setFormData({...formData, deduct_from_account: e.target.value})}
                         >
-                          <option value="">No Transaction (Track Only)</option>
+                          <option value="" disabled>Select Account</option>
                           {accounts.map(acc => (
                             <option key={acc.id} value={acc.id}>{acc.name} (₹{acc.balance.toLocaleString()})</option>
                           ))}

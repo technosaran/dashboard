@@ -274,13 +274,17 @@ export default function TransactionsClient() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!formData.account_id) {
+      toast.error("Please select a transaction account");
+      return;
+    }
     await withLock(async () => {
       const payload = {
         description: formData.description,
         amount: parseFloat(formData.amount),
         category: formData.category,
         date: formData.date,
-        account_id: formData.account_id || undefined,
+        account_id: formData.account_id,
         is_recurring: formData.is_recurring,
         recurrence_frequency: formData.recurrence_frequency,
         recurrence_day: formData.recurrence_day,
@@ -715,7 +719,7 @@ export default function TransactionsClient() {
                     name="account_id"
                     aria-label="Select associated transaction account"
                   >
-                    <option value="">No Account (Track only)</option>
+                    <option value="" disabled>Select Account</option>
                     {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
                   </select>
                 </div>

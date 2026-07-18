@@ -13,6 +13,7 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import { Drawer } from "@/components/ui/drawer";
 import Link from "next/link";
 import { EmptyState } from "@/components/empty-state";
+import CompanyLogo from "@/components/company-logo";
 
 import { CHART_COLOURS, CHART_SERIES_COLOURS } from "@/lib/chart-colours";
 function getColorByLabel(label: string | null | undefined) {
@@ -274,6 +275,10 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!formData.account_id) {
+      toast.error("Please select a deposit account");
+      return;
+    }
     await withLock(async () => {
       const result = await addIncome({ 
         ...formData, 
@@ -348,7 +353,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Deposit into Account</label>
               <select className="input-premium" value={formData.account_id} onChange={e => setFormData({ ...formData, account_id: e.target.value })} aria-label="Select credit account" id="income-account" name="account_id">
-                <option value="">No Deposit (Track only)</option>
+                <option value="" disabled>Select Deposit Account</option>
                 {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
               </select>
               {formData.account_id && (() => {
@@ -580,7 +585,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
                         </td>
                         <td className="px-4 md:px-6 py-4">
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-lg flex-shrink-0">{theme.icon}</div>
+                            <CompanyLogo companyName={inc.description} category={inc.category} size={40} />
                             <p className="text-[13px] font-medium group-hover:text-success transition-colors truncate max-w-[120px] md:max-w-none">{inc.description}</p>
                           </div>
                         </td>
@@ -630,9 +635,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
                 <div key={inc.id} className="p-4 flex flex-col gap-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-lg flex-shrink-0">
-                        {theme.icon}
-                      </div>
+                      <CompanyLogo companyName={inc.description} category={inc.category} size={40} />
                       <div className="flex flex-col min-w-0">
                         <span className="text-[13px] font-bold text-[--text-primary] truncate">{inc.description}</span>
                         <span className="text-[9px] text-[--text-muted] uppercase font-bold">{inc.date ? format(parseISO(inc.date), "MMM d, yyyy") : "—"}</span>
@@ -789,8 +792,8 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
               
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Account</label>
-                <select className="input-premium py-2 text-xs" value={formData.account_id} onChange={e => setFormData({ ...formData, account_id: e.target.value })} aria-label="Select deposit account" id="income-account" name="account_id">
-                  <option value="" className="bg-[--bg-surface]">Suspense</option>
+                <select className="input-premium py-2 text-xs" value={formData.account_id} onChange={e => setFormData({...formData, account_id: e.target.value})} aria-label="Select deposit account" id="income-account" name="account_id">
+                  <option value="" disabled className="bg-[--bg-surface]">Select Deposit Account</option>
                   {accounts.map(acc => <option key={acc.id} value={acc.id} className="bg-[--bg-surface]">{acc.name}</option>)}
                 </select>
               </div>

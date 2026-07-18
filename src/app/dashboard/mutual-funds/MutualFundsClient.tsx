@@ -662,7 +662,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                         value={formData.account_id} 
                         onChange={e => setFormData({...formData, account_id: e.target.value})}
                       >
-                        <option value="">No Account (Track Only)</option>
+                        <option value="" disabled>Select Account</option>
                         {accounts.map(acc => (
                           <option key={acc.id} value={acc.id}>{acc.name} (₹{acc.balance.toLocaleString()})</option>
                         ))}

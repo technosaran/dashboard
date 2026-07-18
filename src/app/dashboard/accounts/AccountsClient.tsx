@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, memo } from "react";
+import { useMemo, useState, useEffect, useRef, memo } from "react";
 import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { toast } from "react-hot-toast";
@@ -88,10 +88,36 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
   const [editingId, setEditingId] = useState<string | null>(null);
   const [bankSearch, setBankSearch] = useState("");
   const [bankResults, setBankResults] = useState<Bank[]>([]);
+  const searchContainerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        setBankResults([]);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
   const [submitting, withLock] = useSubmitLock();
   const [showTransferModal, setShowTransferModal] = useState(searchParams.get("action") === "transfer");
   const [transferFromId, setTransferFromId] = useState<string | null>(null);
   const [transferData, setTransferData] = useState({ to_account_id: "", amount: "", note: "" });
+  const [conversionRate, setConversionRate] = useState("");
+
+  const fromAccount = useMemo(() => accounts.find(a => a.id === transferFromId), [accounts, transferFromId]);
+  const toAccount = useMemo(() => accounts.find(a => a.id === transferData.to_account_id), [accounts, transferData.to_account_id]);
+  const isCrossCurrency = useMemo(() => {
+    return !!(fromAccount && toAccount && fromAccount.currency !== toAccount.currency);
+  }, [fromAccount, toAccount]);
+
+  const calculatedConvertedAmount = useMemo(() => {
+    if (!transferData.amount || !conversionRate) return 0;
+    const amt = parseFloat(transferData.amount);
+    const rate = parseFloat(conversionRate);
+    if (isNaN(amt) || isNaN(rate) || amt <= 0 || rate <= 0) return 0;
+    return amt * rate;
+  }, [transferData.amount, conversionRate]);
   const [showAdjustModal, setShowAdjustModal] = useState(false);
   const [adjustingAccountId, setAdjustingAccountId] = useState<string | null>(null);
   const [adjustData, setAdjustData] = useState({ amount: "", note: "", type: "add" as "add" | "subtract" });
@@ -130,6 +156,8 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
 
   function resetForm() {
     setFormData({ name: "", type: "checking", balance: "0", currency: "INR", bank_name: "" });
+    setBankSearch("");
+    setBankResults([]);
     setShowForm(false);
     setEditingId(null);
   }
@@ -151,6 +179,8 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
 
   function startEdit(account: Account) {
     setFormData({ name: account.name, type: account.type, balance: account.balance.toString(), currency: account.currency, bank_name: account.bank_name || "" });
+    setBankSearch(account.bank_name || "");
+    setBankResults([]);
     setEditingId(account.id);
     setShowForm(true);
   }
@@ -198,10 +228,23 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
     e.preventDefault();
     if (!transferFromId) return;
     await withLock(async () => {
-      const res = await createTransfer({ from_account_id: transferFromId, to_account_id: transferData.to_account_id, amount: parseFloat(transferData.amount), note: transferData.note || null });
+      const payload: any = {
+        from_account_id: transferFromId,
+        to_account_id: transferData.to_account_id,
+        amount: parseFloat(transferData.amount),
+        note: transferData.note || null
+      };
+      if (isCrossCurrency) {
+        payload.converted_amount = calculatedConvertedAmount;
+      }
+      const res = await createTransfer(payload);
       if (!res?.error) {
         toast.success("Inter-account transfer executed successfully");
         setShowTransferModal(false);
+        // Reset states
+        setTransferFromId(null);
+        setTransferData({ to_account_id: "", amount: "", note: "" });
+        setConversionRate("");
         mutate();
       } else {
         toast.error(res.error);
@@ -766,11 +809,26 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
               <input type="number" value={formData.balance} onChange={e => setFormData({...formData, balance: e.target.value})} className="input-premium" placeholder="0.00" autoComplete="new-password" inputMode="decimal" />
             </div>
           )}
-          <div className="relative space-y-3">
+          <div ref={searchContainerRef} className="relative space-y-3">
             <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Bank Institution</label>
-            <input value={bankSearch} onChange={e => handleBankSearch(e.target.value)} className="input-premium" placeholder="Search Banks..." autoComplete="new-password" />
+            <input 
+              value={bankSearch} 
+              onChange={e => handleBankSearch(e.target.value)} 
+              onFocus={() => {
+                if (bankSearch) {
+                  const results = searchBanks(bankSearch);
+                  setBankResults(results);
+                }
+              }}
+              className="input-premium" 
+              placeholder="Search Banks..." 
+              autoComplete="off" 
+            />
             {bankResults.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-[--bg-elevated] border border-white/10 rounded-xl shadow-2xl z-50 overflow-y-auto max-h-48 custom-scrollbar">
+              <div 
+                className="absolute top-full left-0 right-0 mt-2 border border-white/10 rounded-xl shadow-2xl z-50 overflow-y-auto max-h-48 custom-scrollbar"
+                style={{ backgroundColor: "rgba(21, 27, 38, 0.98)", backdropFilter: "blur(12px)" }}
+              >
                 {bankResults.slice(0, 10).map(b => (
                   <button
                     key={b.name}
@@ -836,30 +894,87 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
 
       <Drawer
         isOpen={showTransferModal}
-        onClose={() => setShowTransferModal(false)}
+        onClose={() => {
+          setShowTransferModal(false);
+          setTransferFromId(null);
+          setTransferData({ to_account_id: "", amount: "", note: "" });
+          setConversionRate("");
+        }}
         title="Inter-Account Transfer"
       >
         <form onSubmit={handleTransfer} className="space-y-4">
-          <div className="space-y-3">
-            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">SOURCE ACCOUNT</label>
-            <select aria-label="Select source account" id="transfer-source" name="from_account" required value={transferFromId || ""} onChange={e => setTransferFromId(e.target.value)} className="input-premium h-14">
-              <option value="">Select source</option>
-              {accounts.map(a => <option key={a.id} value={a.id} style={{background: "var(--bg-surface)"}}>{a.name} ({getCurrencySymbol(a.currency)}{a.balance.toLocaleString()})</option>)}
-            </select>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">SOURCE ACCOUNT</label>
+              <select aria-label="Select source account" id="transfer-source" name="from_account" required value={transferFromId || ""} onChange={e => setTransferFromId(e.target.value)} className="input-premium text-xs">
+                <option value="">Select source</option>
+                {accounts.map(a => <option key={a.id} value={a.id} style={{background: "var(--bg-surface)"}}>{a.name} ({getCurrencySymbol(a.currency)}{a.balance.toLocaleString()})</option>)}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">DESTINATION ACCOUNT</label>
+              <select aria-label="Select destination account" id="transfer-destination" name="to_account" required value={transferData.to_account_id} onChange={e => setTransferData({...transferData, to_account_id: e.target.value})} className="input-premium text-xs">
+                <option value="">Select target</option>
+                {accounts.map(a => a.id !== transferFromId && <option key={a.id} value={a.id} style={{background: "var(--bg-surface)"}}>{a.name} ({getCurrencySymbol(a.currency)}{a.balance.toLocaleString()})</option>)}
+              </select>
+            </div>
           </div>
-          <div className="space-y-3">
-            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">DESTINATION ACCOUNT</label>
-            <select aria-label="Select destination account" id="transfer-destination" name="to_account" required value={transferData.to_account_id} onChange={e => setTransferData({...transferData, to_account_id: e.target.value})} className="input-premium h-14">
-              <option value="">Select target</option>
-              {accounts.map(a => a.id !== transferFromId && <option key={a.id} value={a.id} style={{background: "var(--bg-surface)"}}>{a.name} ({getCurrencySymbol(a.currency)}{a.balance.toLocaleString()})</option>)}
-            </select>
+
+          <div className={isCrossCurrency ? "grid grid-cols-2 gap-4" : "space-y-2"}>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">AMOUNT</label>
+              <input required type="number" step="0.01" value={transferData.amount} onChange={e => setTransferData({...transferData, amount: e.target.value})} className="input-premium text-base font-black" placeholder="0.00" autoComplete="new-password" inputMode="decimal" />
+            </div>
+            {isCrossCurrency && (
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">CONVERSION RATE</label>
+                <input required type="number" step="0.0001" value={conversionRate} onChange={e => setConversionRate(e.target.value)} className="input-premium text-base font-black bg-white/[0.02]" placeholder="e.g. 83.50" autoComplete="off" inputMode="decimal" />
+              </div>
+            )}
           </div>
-          <div className="space-y-3">
-            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">AMOUNT</label>
-            <input required type="number" step="0.01" value={transferData.amount} onChange={e => setTransferData({...transferData, amount: e.target.value})} className="input-premium !h-14 text-xl font-black" placeholder="0.00" autoComplete="new-password" inputMode="decimal" />
+
+          {/* Conditional Multi-Currency Conversion Section */}
+          {isCrossCurrency && (
+            <div className="p-3.5 rounded-2xl bg-gradient-to-br from-amber-500/10 to-amber-500/5 border border-amber-500/20 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="flex items-center gap-1.5 text-amber-400">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span className="text-[9px] font-black uppercase tracking-wider">Multi-Currency: {fromAccount?.currency} to {toAccount?.currency}</span>
+              </div>
+
+              {transferData.amount && conversionRate && parseFloat(transferData.amount) > 0 && parseFloat(conversionRate) > 0 && (
+                <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 space-y-2 text-xs">
+                  <div className="flex justify-between items-center text-[10px] text-[--text-muted]">
+                    <span>Calculation</span>
+                    <span>{parseFloat(transferData.amount).toFixed(2)} {fromAccount?.currency} × {parseFloat(conversionRate).toFixed(4)}</span>
+                  </div>
+                  <div className="flex justify-between items-center font-bold text-emerald-400 border-t border-white/5 pt-2">
+                    <span>Total Converted Value</span>
+                    <span>{calculatedConvertedAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })} {toAccount?.currency}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Note / Description</label>
+            <input 
+              value={transferData.note} 
+              onChange={e => setTransferData({...transferData, note: e.target.value})} 
+              className="input-premium" 
+              placeholder="What is this transfer for?" 
+              autoComplete="off" 
+            />
           </div>
-          <div className="pt-2 mt-4">
-            <button type="submit" disabled={submitting || !transferFromId || !transferData.to_account_id || !transferData.amount} className="btn-primary w-full h-11 shadow-xl shadow-[--accent-primary]/20 text-[11px] font-black uppercase tracking-widest disabled:opacity-50">
+
+          <div className="pt-2">
+            <button 
+              type="submit" 
+              disabled={submitting || !transferFromId || !transferData.to_account_id || !transferData.amount || (isCrossCurrency && !conversionRate)} 
+              className="btn-primary w-full h-11 shadow-xl shadow-[--accent-primary]/20 text-[11px] font-black uppercase tracking-widest disabled:opacity-50"
+            >
               {submitting ? "Processing..." : "Execute Transfer"}
             </button>
           </div>

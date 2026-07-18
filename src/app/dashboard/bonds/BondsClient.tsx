@@ -651,7 +651,7 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
                 <div className="space-y-3">
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Deduct From Account</label>
                   <select className="input-premium" value={formData.account_id} onChange={e => setFormData({...formData, account_id: e.target.value})}>
-                    <option value="">No Transaction (Track Only)</option>
+                    <option value="" disabled>Select Account</option>
                     {accounts.map(acc => (
                       <option key={acc.id} value={acc.id}>{acc.name} (₹{acc.balance.toLocaleString()})</option>
                     ))}

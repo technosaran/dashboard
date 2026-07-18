@@ -309,8 +309,9 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
     return `₹${value.toLocaleString()}`;
   };
 
-  return (
+return (
     <div className="flex flex-col gap-8 animate-in fade-in duration-700">
+      {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[--text-primary]">Budget Planner</h1>
@@ -330,446 +331,420 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
         </div>
       </div>
 
-      {totalBudgeted === 0 && totalSpent === 0 && totalIncome === 0 ? (
-        <div className="glass-card-static relative overflow-hidden p-8 md:p-16 text-center flex flex-col items-center justify-center min-h-[450px]">
-          <div className="absolute -top-24 -left-24 w-96 h-96 bg-[--accent-primary]/10 rounded-full blur-[100px] pointer-events-none" />
-          <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-indigo-500/10 rounded-full blur-[100px] pointer-events-none" />
-          <div className="relative mb-6 p-6 rounded-3xl bg-white/[0.02] border border-white/5 shadow-2xl">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[--accent-primary]/15 to-indigo-500/15 border border-[--accent-primary]/25 flex items-center justify-center shadow-[0_0_30px_-5px_rgba(14,165,233,0.3)] animate-pulse">
-              <svg className="w-8 h-8 text-[--accent-primary-light]" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>
+      {/* Top Key Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div className="glass-card-static p-5 border-white/5 bg-gradient-to-b from-white/[0.01] to-transparent">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2">Planned spend</p>
+          <p className="text-2xl font-black text-white">₹{totalBudgeted.toLocaleString()}</p>
+          <p className="text-[9px] text-[--text-muted] mt-1 opacity-60">Total monthly limit</p>
+        </div>
+        <div className="glass-card-static p-5 border-white/5 bg-gradient-to-b from-white/[0.01] to-transparent">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2">Actual spend</p>
+          <p className={`text-2xl font-black ${totalSpent > totalBudgeted && totalBudgeted > 0 ? "text-rose-400" : "text-white"}`}>₹{totalSpent.toLocaleString()}</p>
+          <p className="text-[9px] text-[--text-muted] mt-1 opacity-60">Real-time outflow</p>
+        </div>
+        <div className="glass-card-static p-5 border-white/5 bg-gradient-to-b from-white/[0.01] to-transparent">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2">Margin</p>
+          <p className={`text-2xl font-black ${totalBudgeted - totalSpent >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+            ₹{(totalBudgeted - totalSpent).toLocaleString()}
+          </p>
+          <p className="text-[9px] text-[--text-muted] mt-1 opacity-60">Remaining balance</p>
+        </div>
+        <div className="glass-card-static p-5 border-white/5 bg-gradient-to-b from-white/[0.01] to-transparent">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2">Daily allowance</p>
+          <p className={`text-2xl font-black ${(daysInMonth - daysPassed) > 0 && (totalBudgeted - totalSpent) > 0 ? "text-sky-400" : "text-slate-500"}`}>
+            ₹{((daysInMonth - daysPassed) > 0 && (totalBudgeted - totalSpent) > 0 ? (totalBudgeted - totalSpent) / (daysInMonth - daysPassed) : 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+          </p>
+          <p className="text-[9px] text-[--text-muted] mt-1 opacity-60">Safe spend / day</p>
+        </div>
+        <div className="glass-card-static p-5 border-white/5 bg-gradient-to-br from-[--accent-primary]/10 to-transparent col-span-2 md:col-span-1">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2">Monthly income</p>
+          <p className="text-2xl font-black text-[--accent-primary-light]">₹{totalIncome.toLocaleString()}</p>
+          <p className="text-[9px] text-[--text-muted] mt-1 opacity-60">Total revenue stream</p>
+        </div>
+      </div>
+
+      {/* Main Responsive Grid Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* LEFT COLUMN: Category Budgets (col-span-2) */}
+        <div className="lg:col-span-2 space-y-6">
+          
+          {/* Section Header & Management Actions */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white/[0.01] p-4.5 rounded-2xl border border-white/5 gap-4">
+            <div>
+              <h3 className="text-sm font-bold text-[--text-primary]">Category Allocations</h3>
+              <p className="text-xs text-[--text-muted] mt-0.5">Define and monitor maximum monthly spending limits per segment.</p>
             </div>
-          </div>
-          <h3 className="text-2xl md:text-3xl font-black text-[--text-primary] tracking-tight">No Budget Data for This Period</h3>
-          <p className="text-sm text-[--text-muted] mt-3 max-w-lg mx-auto font-medium leading-relaxed">Set spending limits by category to monitor your fiscal discipline. Start by allocating budgets for the selected month below.</p>
-          <div className="mt-8 flex justify-center">
-             <button 
-               onClick={() => setActiveView("categories")} 
-               className="btn-primary flex items-center gap-2 group shadow-lg hover:shadow-[--accent-primary]/25 transition-all duration-300"
-             >
-               <Plus className="w-4 h-4 transition-transform group-hover:scale-110" />
-               <span>Set Allocations</span>
-             </button>
-          </div>
-        </div>
-      ) : (
-      <>
-        {/* Top Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          <div className="glass-card-static p-6 border-white/5">
-            <p className="text-xs font-semibold text-[--text-muted] mb-3">Planned spend</p>
-            <p className="text-2xl md:text-3xl font-black text-white">₹{totalBudgeted.toLocaleString()}</p>
-            <p className="text-[11px] text-[--text-muted] mt-2 opacity-60">Total budget</p>
-          </div>
-          <div className="glass-card-static p-6 border-white/5">
-            <p className="text-xs font-semibold text-[--text-muted] mb-3">Actual spend</p>
-            <p className={`text-2xl md:text-3xl font-black ${totalSpent > totalBudgeted && totalBudgeted > 0 ? "text-danger" : "text-white"}`}>₹{totalSpent.toLocaleString()}</p>
-            <p className="text-[11px] text-[--text-muted] mt-2 opacity-60">Real-time outflow</p>
-          </div>
-          <div className="glass-card-static p-6 border-white/5">
-            <p className="text-xs font-semibold text-[--text-muted] mb-3">Margin</p>
-            <p className={`text-2xl md:text-3xl font-black ${totalBudgeted - totalSpent >= 0 ? "text-success" : "text-danger"}`}>
-              ₹{(totalBudgeted - totalSpent).toLocaleString()}
-            </p>
-            <p className="text-[11px] text-[--text-muted] mt-2 opacity-60">Remaining budget</p>
-          </div>
-          <div className="glass-card-static p-6 border-white/5">
-            <p className="text-xs font-semibold text-[--text-muted] mb-3">Daily allowance</p>
-            <p className={`text-2xl md:text-3xl font-black ${(daysInMonth - daysPassed) > 0 && (totalBudgeted - totalSpent) > 0 ? "text-emerald-400" : "text-slate-500"}`}>
-              ₹{((daysInMonth - daysPassed) > 0 && (totalBudgeted - totalSpent) > 0 ? (totalBudgeted - totalSpent) / (daysInMonth - daysPassed) : 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
-            </p>
-            <p className="text-[11px] text-[--text-muted] mt-2 opacity-60">Safe spend / day</p>
-          </div>
-          <div className="glass-card-static p-6 border-white/5 bg-gradient-to-br from-[--accent-primary]/10 to-transparent">
-            <p className="text-xs font-semibold text-[--text-muted] mb-3">Monthly income</p>
-            <p className="text-2xl md:text-3xl font-black text-[--accent-primary-light]">₹{totalIncome.toLocaleString()}</p>
-            <p className="text-[11px] text-[--text-muted] mt-2 opacity-60">Revenue stream</p>
-          </div>
-        </div>
-
-        {/* Tab Switcher */}
-        {/* Premium Segmented Toggle Bar */}
-        <div className="flex flex-wrap gap-1.5 rounded-2xl bg-white/[0.02] border border-white/5 p-1.5 max-w-fit shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]">
-          {[
-            { key: "overview", label: "Overview" },
-            { key: "categories", label: "Category Allocations", badge: overBudgetCategories.length > 0 ? overBudgetCategories.length : undefined },
-          ].map((tab) => {
-            const isActive = activeView === tab.key;
-            
-            let activeStyles = "bg-[--accent-primary] text-white shadow-[0_0_20px_rgba(99,102,241,0.3)]";
-            if (tab.key === "categories") activeStyles = "bg-rose-500 text-white shadow-[0_0_20px_rgba(244,63,94,0.3)]";
-
-            return (
+            <div className="flex flex-wrap gap-2">
               <button
-                key={tab.key}
                 type="button"
-                onClick={() => setActiveView(tab.key as any)}
-                className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center gap-2 whitespace-nowrap active:scale-95 cursor-pointer ${
-                  isActive
-                    ? `${activeStyles} border border-transparent`
-                    : "text-[--text-muted] hover:text-white hover:bg-white/5 border border-transparent"
-                }`}
+                onClick={handleCarryOver}
+                disabled={submitting}
+                className="btn-secondary !h-9 px-3.5 text-[10px] font-black uppercase tracking-wider flex items-center gap-2 group transition-all duration-200"
+                title="Carry over last month's budget limits"
               >
-                {tab.label}
-                {tab.badge !== undefined && (
-                  <span className={`flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1 text-[9px] font-black ${
-                    isActive ? "bg-white/20 text-white" : "bg-white/10 text-white"
-                  }`}>
-                    {tab.badge}
-                  </span>
-                )}
+                <Copy className="w-3.5 h-3.5 text-[--text-secondary] group-hover:text-[--accent-primary-light] transition-colors" />
+                <span>Carry Over</span>
               </button>
-            );
-          })}
-        </div>
 
-        {/* View Content */}
-        {activeView === "overview" ? (
-          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Trend Chart */}
-              <div className="glass-card-static p-6 lg:col-span-2 min-h-[400px] flex flex-col">
-                <div className="flex justify-between items-start mb-6">
-                  <div>
-                    <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[--text-muted]">Budget vs Spent (6 Mo)</h3>
-                    <p className="text-2xl font-black mt-2 text-white">Burn Trajectory</p>
-                  </div>
-                </div>
-                <div className="flex-1 min-h-[250px] w-full mt-4 -ml-4">
-                  {mounted && (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={trendData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                        <defs>
-                          <linearGradient id="colorBudget" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#10B981" stopOpacity={0.3}/>
-                            <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
-                          </linearGradient>
-                          <linearGradient id="colorSpent" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#EF4444" stopOpacity={0.3}/>
-                            <stop offset="95%" stopColor="#EF4444" stopOpacity={0}/>
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
-                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 12 }} dy={10} />
-                        <YAxis tickFormatter={formatCurrency} axisLine={false} tickLine={false} tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 12 }} dx={-10} />
-                        <RechartsTooltip 
-                          contentStyle={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "12px", boxShadow: "var(--shadow-lg)" }}
-                          itemStyle={{ color: "var(--text-primary)", fontWeight: "bold" }}
-                          formatter={(value: unknown) => [`₹${Number(value).toLocaleString()}`, ""]}
-                        />
-                        <Area type="monotone" dataKey="Budget" stroke="#10B981" strokeWidth={3} fillOpacity={1} fill="url(#colorBudget)" />
-                        <Area type="monotone" dataKey="Spent" stroke="#EF4444" strokeWidth={3} fillOpacity={1} fill="url(#colorSpent)" />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  )}
-                </div>
-              </div>
-
-              {/* Allocation Pie Chart */}
-              <div className="glass-card-static p-6 flex flex-col items-center justify-center relative min-h-[400px]">
-                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[--text-muted] absolute top-6 left-6">Target Allocation</h3>
-                <div className="w-full h-[250px] mt-8">
-                  {mounted && pieData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={85} paddingAngle={5} dataKey="value">
-                          {pieData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} stroke="rgba(255,255,255,0.05)" strokeWidth={2} />)}
-                        </Pie>
-                        <RechartsTooltip 
-                          contentStyle={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "12px" }}
-                          itemStyle={{ color: "var(--text-primary)", fontWeight: "bold" }}
-                          formatter={(value: unknown) => [`₹${Number(value).toLocaleString()}`, "Budget"]}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center text-[--text-muted]">
-                       <span className="text-3xl mb-2">📊</span>
-                       <span className="text-xs uppercase tracking-widest font-black">No Budget Data</span>
-                    </div>
-                  )}
-                </div>
-                {pieData.length > 0 && (
-                  <div className="flex flex-wrap justify-center gap-3 mt-4 w-full">
-                    {pieData.slice(0, 5).map((entry, index) => (
-                      <div key={index} className="flex items-center gap-1.5 text-xs">
-                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: entry.fill }} />
-                        <span className="text-[--text-secondary] font-medium">{entry.name}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Bottom Row Stats */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="glass-card-static p-8 relative overflow-hidden">
-                <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-[80px] pointer-events-none ${isBurningFast && totalBudgeted > 0 ? 'bg-danger/20' : 'bg-success/20'}`} />
-                <h3 className="text-sm font-black uppercase tracking-[0.3em] text-[--text-muted] mb-8">Pacing & Trajectory</h3>
-                <div className="grid grid-cols-2 gap-8 mb-8">
-                  <div>
-                    <p className="text-4xl font-black text-white">{daysInMonth - daysPassed}</p>
-                    <p className="text-[9px] font-bold uppercase tracking-widest text-[--text-muted] mt-1">Days Remaining</p>
-                  </div>
-                  <div>
-                    <p className={`text-4xl font-black ${isBurningFast && totalBudgeted > 0 ? 'text-danger' : 'text-success'}`}>{budgetBurnRatePercent.toFixed(0)}%</p>
-                    <p className="text-[9px] font-bold uppercase tracking-widest text-[--text-muted] mt-1">Budget Burned</p>
-                  </div>
-                </div>
-                {totalBudgeted > 0 && (
-                  <>
-                    <div className="p-4 rounded-xl bg-white/5 border border-white/10 flex items-start gap-4">
-                      <div className={`mt-1 p-1.5 rounded-lg ${isBurningFast ? 'bg-danger/20 text-danger' : 'bg-success/20 text-success'}`}>
-                        {isBurningFast ? (
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                        ) : (
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                        )}
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-[--text-primary]">
-                          {isBurningFast ? "Spending too fast" : "Pacing well"}
-                        </p>
-                        <p className="text-xs text-[--text-secondary] mt-1">
-                          {isBurningFast 
-                            ? `You've spent ${budgetBurnRatePercent.toFixed(0)}% of your budget, but only ${monthProgressPercent.toFixed(0)}% of the month has passed.`
-                            : `You are spending slower than the month is passing (${monthProgressPercent.toFixed(0)}% passed). Great job!`
-                          }
-                        </p>
-                      </div>
-                    </div>
-                    {predictiveDeplDate && budgetBurnRatePercent > 15 && (
-                      <div className="mt-4 p-4 rounded-xl bg-indigo-500/5 border border-indigo-500/10 flex items-start gap-4 animate-fade-in">
-                        <div className="mt-0.5 text-base text-indigo-400">
-                          🔮
-                        </div>
-                        <div>
-                          <p className="text-xs font-bold text-white">Predictive Spending Assistant</p>
-                          <p className="text-[11px] text-[--text-secondary] mt-1 leading-relaxed">
-                            Based on your current burn velocity, your budget is projected to run out on <span className="font-bold text-white">{format(predictiveDeplDate, "MMM d, yyyy")}</span>.
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-              <div className="glass-card-static p-8">
-                <h3 className="text-sm font-black uppercase tracking-[0.3em] text-[--text-muted] mb-8">Savings Potential</h3>
-                <div className="flex flex-col items-center justify-center py-6 text-center">
-                   <p className="text-5xl font-black text-white mb-2">₹{(totalIncome - totalSpent).toLocaleString()}</p>
-                   <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[--accent-primary-light]">Theoretical Surplus</p>
-                   <div className="mt-8 grid grid-cols-2 gap-8 w-full border-t border-white/5 pt-8">
-                      <div>
-                        <p className="text-[20px] font-black text-success">
-                          {totalIncome > 0 ? ((totalIncome - totalSpent) / totalIncome * 100).toFixed(1) : 0}%
-                        </p>
-                        <p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mt-1">Savings Rate</p>
-                      </div>
-                      <div>
-                        <p className="text-[20px] font-black text-warning">
-                          {totalIncome > 0 ? (totalSpent / totalIncome * 100).toFixed(1) : 0}%
-                        </p>
-                        <p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] mt-1">Expense Ratio</p>
-                      </div>
-                   </div>
-                </div>
-              </div>
+              {currentBudgets.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleClearAll}
+                  disabled={submitting}
+                  className="h-9 px-3.5 rounded-lg border border-rose-500/20 bg-rose-500/5 hover:bg-rose-500/10 hover:border-rose-500/40 text-rose-400 hover:text-rose-300 text-[10px] font-black uppercase tracking-wider flex items-center gap-2 transition-all duration-200 group"
+                  title="Clear all budget limits for this month"
+                >
+                  <Trash2 className="w-3.5 h-3.5 transition-transform group-hover:scale-110" />
+                  <span>Clear All</span>
+                </button>
+              )}
             </div>
           </div>
-        ) : (
-          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {overBudgetCategories.length > 0 && (
-              <div className="glass-card-static p-8 border-danger/30 bg-gradient-to-br from-danger/5 to-transparent">
-                <h3 className="text-sm font-black uppercase tracking-[0.3em] text-danger mb-4 flex items-center gap-2">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                  Over Budget Alerts
-                </h3>
-                <div className="space-y-4">
-                  {overBudgetCategories.map(cat => {
-                    const budget = currentBudgets.find(b => b.category === cat.label);
-                    const limit = Number(budget?.amount || 0);
-                    const spent = actualSpending[cat.label] || 0;
-                    const overage = spent - limit;
-                    return (
-                      <div key={cat.label} className="flex justify-between items-center bg-danger/10 p-3 rounded-xl border border-danger/20">
-                        <div className="flex items-center gap-2">
-                          <span>{cat.icon}</span>
-                          <span className="text-sm font-bold text-white">{cat.label}</span>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-black text-danger">₹{overage.toLocaleString()} over</p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
 
-            {/* Category Budgeting */}
-            <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white/[0.01] p-5 rounded-2xl border border-white/5 gap-4">
-                <div>
-                  <h3 className="text-sm font-bold text-[--text-primary]">Allocation by segment</h3>
-                  <p className="text-xs text-[--text-muted] mt-1">Set maximum monthly limits per expense type.</p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={handleCarryOver}
-                    disabled={submitting}
-                    className="btn-secondary !h-9 px-3.5 text-[10px] font-black uppercase tracking-wider flex items-center gap-2 group transition-all duration-200"
-                    title="Carry over last month's budget limits"
-                  >
-                    <Copy className="w-3.5 h-3.5 text-[--text-secondary] group-hover:text-[--accent-primary-light] transition-colors" />
-                    <span>Carry Over</span>
-                  </button>
-
-                  {currentBudgets.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={handleClearAll}
-                      disabled={submitting}
-                      className="h-9 px-3.5 rounded-lg border border-rose-500/20 bg-rose-500/5 hover:bg-rose-500/10 hover:border-rose-500/40 text-rose-400 hover:text-rose-300 text-[10px] font-black uppercase tracking-wider flex items-center gap-2 transition-all duration-200 group"
-                      title="Clear all budget limits for this month"
-                    >
-                      <Trash2 className="w-3.5 h-3.5 transition-transform group-hover:scale-110" />
-                      <span>Clear All</span>
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {dynamicCategories.map(cat => {
+          {/* Over Budget Alerts Banner */}
+          {overBudgetCategories.length > 0 && (
+            <div className="glass-card-static p-4.5 border-rose-500/20 bg-gradient-to-br from-rose-500/5 to-transparent">
+              <h3 className="text-xs font-black uppercase tracking-[0.2em] text-rose-400 mb-3.5 flex items-center gap-2">
+                <svg className="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                Over Budget Warnings
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {overBudgetCategories.map(cat => {
                   const budget = currentBudgets.find(b => b.category === cat.label);
-                  const spent = actualSpending[cat.label] || 0;
                   const limit = Number(budget?.amount || 0);
-                  const percent = limit > 0 ? (spent / limit) * 100 : 0;
-
+                  const spent = actualSpending[cat.label] || 0;
+                  const overage = spent - limit;
                   return (
-                    <div key={cat.label} className="glass-card-static p-5 flex flex-col justify-between border-white/5 bg-gradient-to-b from-white/[0.01] to-transparent hover:from-white/[0.02] transition-all duration-300 min-h-[190px]">
-                      <div>
-                        {/* Card Header */}
-                        <div className="flex justify-between items-start gap-2 mb-4">
-                          <div className="flex items-center gap-3">
-                            <div className="relative w-12 h-12 flex-shrink-0 flex items-center justify-center">
-                              {limit > 0 ? (
-                                <>
-                                  <svg className="w-full h-full transform -rotate-90 absolute">
-                                    <circle cx="24" cy="24" r="20" className="stroke-white/5" strokeWidth="3" fill="transparent" />
-                                    <circle
-                                      cx="24"
-                                      cy="24"
-                                      r="20"
-                                      className={`transition-all duration-1000 ${
-                                        percent > 90 ? "stroke-rose-500" : percent > 75 ? "stroke-amber-500" : "stroke-cyan-400"
-                                      }`}
-                                      strokeWidth="3"
-                                      fill="transparent"
-                                      strokeDasharray={125.6}
-                                      strokeDashoffset={125.6 * (1 - Math.min(percent, 100) / 100)}
-                                    />
-                                  </svg>
-                                  <span className="text-xl z-10">{cat.icon}</span>
-                                </>
-                              ) : (
-                                <span className="text-xl p-2 bg-white/[0.02] rounded-2xl border border-white/5 shadow-inner">{cat.icon}</span>
-                              )}
-                            </div>
-                            <div>
-                              <p className="text-sm font-black text-white">{cat.label}</p>
-                              <p className="text-[10px] font-bold text-[--text-muted] uppercase tracking-wider mt-0.5">
-                                Spent: ₹{spent.toLocaleString()}
-                              </p>
-                            </div>
-                          </div>
-
-                          {/* Status Tag */}
-                          {limit > 0 ? (
-                            percent > 100 ? (
-                              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-400 border border-rose-500/20">Over limit</span>
-                            ) : percent > 80 ? (
-                              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20">Near limit</span>
-                            ) : (
-                              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">On track</span>
-                            )
-                          ) : (
-                            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-white/5 text-[--text-muted] border border-white/10">No limit</span>
-                          )}
-                        </div>
+                    <div key={cat.label} className="flex justify-between items-center bg-rose-500/5 p-2.5 rounded-xl border border-rose-500/10 text-xs">
+                      <div className="flex items-center gap-2">
+                        <span>{cat.icon}</span>
+                        <span className="font-bold text-white">{cat.label}</span>
                       </div>
-
-                      {/* Progress Bar */}
-                      {limit > 0 && (
-                        <div className="my-4">
-                          <div className="flex justify-between text-[10px] font-bold text-[--text-muted] mb-1.5">
-                            <span>{percent.toFixed(0)}% used</span>
-                            <span>Limit: ₹{limit.toLocaleString()}</span>
-                          </div>
-                          <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden flex relative border border-white/5">
-                            <div 
-                              className={`h-full transition-all duration-1000 ${
-                                percent > 90 
-                                  ? "bg-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.5)] animate-pulse" 
-                                  : percent > 75 
-                                    ? "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.4)]" 
-                                    : "bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.3)]"
-                              }`} 
-                              style={{ width: `${Math.min(percent, 100)}%` }} 
-                            />
-                            <div 
-                              className="absolute top-0 bottom-0 w-0.5 bg-sky-400/80 shadow-[0_0_8px_rgba(56,189,248,0.8)] z-10" 
-                              style={{ left: `${monthProgressPercent}%` }}
-                              title={`Time Progress: ${monthProgressPercent.toFixed(0)}%`}
-                            />
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="mt-4 pt-4 border-t border-white/5 flex justify-between items-center">
-                        <span className="text-[11px] text-[--text-muted] font-medium">
-                          {limit > 0 ? (
-                            <>
-                              Limit: <span className="font-bold text-white">₹{limit.toLocaleString()}</span>
-                            </>
-                          ) : (
-                            "No limit set"
-                          )}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setDrawerCategory(cat.label);
-                            setDrawerIcon(cat.icon);
-                            setDrawerAmount(limit ? limit.toString() : "");
-                            setDrawerSpent(spent);
-                            setDrawerOpen(true);
-                          }}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border ${
-                            limit > 0
-                              ? "bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white border-white/5 hover:border-white/10 active:scale-95"
-                              : "bg-[--accent-primary]/10 hover:bg-[--accent-primary]/25 text-[--accent-primary-light] hover:text-white border-[--accent-primary]/10 hover:border-[--accent-primary]/25 active:scale-95"
-                          }`}
-                        >
-                          {limit > 0 ? (
-                            <Edit2 className="w-3 h-3 transition-transform" />
-                          ) : (
-                            <Plus className="w-3 h-3 transition-transform" />
-                          )}
-                          <span>{limit > 0 ? "Adjust" : "Set Limit"}</span>
-                        </button>
-                      </div>
+                      <span className="font-black text-rose-400">₹{overage.toLocaleString()} over</span>
                     </div>
                   );
                 })}
               </div>
             </div>
+          )}
+
+          {/* 6-Month Trend Chart */}
+          <div className="glass-card-static p-5 min-h-[300px] flex flex-col border-white/5 bg-gradient-to-b from-white/[0.01] to-transparent">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h3 className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">6-Month Budget vs Spend Trajectory</h3>
+                <p className="text-[11px] text-[--text-secondary] mt-0.5">Visual representation of total spending velocity compared to planning targets.</p>
+              </div>
+            </div>
+            <div className="flex-1 min-h-[200px] w-full mt-2 -ml-4">
+              {mounted && (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={trendData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorBudget" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10B981" stopOpacity={0.2}/>
+                        <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
+                      </linearGradient>
+                      <linearGradient id="colorSpent" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#EF4444" stopOpacity={0.2}/>
+                        <stop offset="95%" stopColor="#EF4444" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.03)" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 10 }} dy={10} />
+                    <YAxis tickFormatter={formatCurrency} axisLine={false} tickLine={false} tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 10 }} dx={-10} />
+                    <RechartsTooltip 
+                      contentStyle={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "12px", boxShadow: "var(--shadow-lg)" }}
+                      itemStyle={{ color: "var(--text-primary)", fontWeight: "bold", fontSize: 12 }}
+                      formatter={(value: unknown) => [`₹${Number(value).toLocaleString()}`, ""]}
+                    />
+                    <Area type="monotone" dataKey="Budget" stroke="#10B981" strokeWidth={2} fillOpacity={1} fill="url(#colorBudget)" />
+                    <Area type="monotone" dataKey="Spent" stroke="#EF4444" strokeWidth={2} fillOpacity={1} fill="url(#colorSpent)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
+            </div>
           </div>
-        )}
-      </>
-      )}
+
+          {/* Allocation Segment Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {dynamicCategories.map(cat => {
+              const budget = currentBudgets.find(b => b.category === cat.label);
+              const spent = actualSpending[cat.label] || 0;
+              const limit = Number(budget?.amount || 0);
+              const percent = limit > 0 ? (spent / limit) * 100 : 0;
+
+              return (
+                <div key={cat.label} className="glass-card-static p-4.5 flex flex-col justify-between border-white/5 bg-gradient-to-b from-white/[0.01] to-transparent hover:from-white/[0.02] transition-all duration-300 min-h-[175px]">
+                  <div>
+                    {/* Card Header */}
+                    <div className="flex justify-between items-start gap-2 mb-3.5">
+                      <div className="flex items-center gap-3">
+                        <div className="relative w-11 h-11 flex-shrink-0 flex items-center justify-center">
+                          {limit > 0 ? (
+                            <>
+                              <svg className="w-full h-full transform -rotate-90 absolute">
+                                <circle cx="22" cy="22" r="18" className="stroke-white/5" strokeWidth="2.5" fill="transparent" />
+                                <circle
+                                  cx="22"
+                                  cy="22"
+                                  r="18"
+                                  className={`transition-all duration-1000 ${
+                                    percent > 90 ? "stroke-rose-500" : percent > 75 ? "stroke-amber-500" : "stroke-cyan-400"
+                                  }`}
+                                  strokeWidth="2.5"
+                                  fill="transparent"
+                                  strokeDasharray={113}
+                                  strokeDashoffset={113 * (1 - Math.min(percent, 100) / 100)}
+                                />
+                              </svg>
+                              <span className="text-lg z-10">{cat.icon}</span>
+                            </>
+                          ) : (
+                            <span className="text-lg p-2 bg-white/[0.02] rounded-2xl border border-white/5 shadow-inner">{cat.icon}</span>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-xs font-black text-white">{cat.label}</p>
+                          <p className="text-[9px] font-bold text-[--text-muted] uppercase tracking-wider mt-0.5">
+                            Spent: ₹{spent.toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Status Tag */}
+                      {limit > 0 ? (
+                        percent > 100 ? (
+                          <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-400 border border-rose-500/20">Over limit</span>
+                        ) : percent > 80 ? (
+                          <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20">Near limit</span>
+                        ) : (
+                          <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">On track</span>
+                        )
+                      ) : (
+                        <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-white/5 text-[--text-muted] border border-white/10">No limit</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Progress Bar with month progress pacing line */}
+                  {limit > 0 && (
+                    <div className="my-2.5">
+                      <div className="flex justify-between text-[9px] font-black uppercase tracking-wider text-[--text-muted] mb-1">
+                        <span>{percent.toFixed(0)}% used</span>
+                        <span>Limit: ₹{limit.toLocaleString()}</span>
+                      </div>
+                      <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden flex relative border border-white/5">
+                        <div 
+                          className={`h-full transition-all duration-1000 ${
+                            percent > 90 
+                              ? "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]" 
+                              : percent > 75 
+                                ? "bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.4)]" 
+                                : "bg-cyan-500 shadow-[0_0_6px_rgba(6,182,212,0.3)]"
+                          }`} 
+                          style={{ width: `${Math.min(percent, 100)}%` }} 
+                        />
+                        <div 
+                          className="absolute top-0 bottom-0 w-0.5 bg-sky-400/80 shadow-[0_0_6px_rgba(56,189,248,0.8)] z-10" 
+                          style={{ left: `${monthProgressPercent}%` }}
+                          title={`Month progress line: ${monthProgressPercent.toFixed(0)}% passed`}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="mt-3.5 pt-3 border-t border-white/5 flex justify-between items-center">
+                    <span className="text-[10px] text-[--text-muted] font-medium">
+                      {limit > 0 ? (
+                        <>
+                          Target: <span className="font-bold text-white">₹{limit.toLocaleString()}</span>
+                        </>
+                      ) : (
+                        "No limit set"
+                      )}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDrawerCategory(cat.label);
+                        setDrawerIcon(cat.icon);
+                        setDrawerAmount(limit ? limit.toString() : "");
+                        setDrawerSpent(spent);
+                        setDrawerOpen(true);
+                      }}
+                      className={`px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer border ${
+                        limit > 0
+                          ? "bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white border-white/5 hover:border-white/10 active:scale-95"
+                          : "bg-[--accent-primary]/10 hover:bg-[--accent-primary]/25 text-[--accent-primary-light] hover:text-white border-[--accent-primary]/10 hover:border-[--accent-primary]/25 active:scale-95"
+                      }`}
+                    >
+                      {limit > 0 ? (
+                        <Edit2 className="w-2.5 h-2.5" />
+                      ) : (
+                        <Plus className="w-2.5 h-2.5" />
+                      )}
+                      <span>{limit > 0 ? "Adjust" : "Set Limit"}</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN: Analytics, Legend, and pacing details (col-span-1) */}
+        <div className="space-y-6">
+          
+          {/* Status Color Legend Card */}
+          <div className="glass-card-static p-5 border-white/5 bg-gradient-to-b from-white/[0.01] to-transparent">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Status Legend</h3>
+            <div className="space-y-2.5 text-[11px] text-[--text-secondary]">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-cyan-400" />
+                  <span>On Track</span>
+                </div>
+                <span className="text-[10px] text-[--text-muted] font-medium">&lt; 75% limit</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-amber-500" />
+                  <span>Near Limit</span>
+                </div>
+                <span className="text-[10px] text-[--text-muted] font-medium">75% - 90% limit</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-rose-500" />
+                  <span>Over Limit</span>
+                </div>
+                <span className="text-[10px] text-[--text-muted] font-medium">&gt; 90% limit</span>
+              </div>
+              <div className="pt-3 border-t border-white/5 flex items-start gap-2.5">
+                <span className="w-0.5 h-4 bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.8)] inline-block mt-0.5" />
+                <div>
+                  <p className="font-bold text-white text-[10px] uppercase tracking-wider">Month Progress Line</p>
+                  <p className="text-[10px] text-[--text-muted] mt-1 leading-relaxed">The thin blue line shows calendar progress. Keep your colored spent bar behind it to pace yourself perfectly through the month.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Pacing & Trajectory Card */}
+          <div className="glass-card-static p-5 relative overflow-hidden border-white/5 bg-gradient-to-b from-white/[0.01] to-transparent">
+            <div className={`absolute top-0 right-0 w-28 h-28 rounded-full blur-[70px] pointer-events-none ${isBurningFast && totalBudgeted > 0 ? 'bg-rose-500/10' : 'bg-emerald-500/10'}`} />
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-5">Pacing & Velocity</h3>
+            <div className="grid grid-cols-2 gap-4 mb-5">
+              <div>
+                <p className="text-3xl font-black text-white">{daysInMonth - daysPassed}</p>
+                <p className="text-[9px] font-bold uppercase tracking-widest text-[--text-muted] mt-1">Days Remaining</p>
+              </div>
+              <div>
+                <p className={`text-3xl font-black ${isBurningFast && totalBudgeted > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>{budgetBurnRatePercent.toFixed(0)}%</p>
+                <p className="text-[9px] font-bold uppercase tracking-widest text-[--text-muted] mt-1">Budget Burned</p>
+              </div>
+            </div>
+            
+            {totalBudgeted > 0 && (
+              <div className="space-y-3">
+                <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex items-start gap-3">
+                  <div className={`mt-0.5 p-1 rounded-lg ${isBurningFast ? 'bg-rose-500/10 text-rose-400' : 'bg-emerald-500/10 text-emerald-400'}`}>
+                    {isBurningFast ? (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                    ) : (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-[--text-primary]">
+                      {isBurningFast ? "Spending too fast" : "Pacing well"}
+                    </p>
+                    <p className="text-[10px] text-[--text-secondary] mt-0.5 leading-relaxed">
+                      {isBurningFast 
+                        ? `You are running ahead of calendar pacing (${monthProgressPercent.toFixed(0)}% days passed).`
+                        : `Your burn velocity is slower than calendar progress (${monthProgressPercent.toFixed(0)}% passed).`
+                      }
+                    </p>
+                  </div>
+                </div>
+                
+                {predictiveDeplDate && budgetBurnRatePercent > 15 && (
+                  <div className="p-3 rounded-xl bg-indigo-500/5 border border-indigo-500/10 flex items-start gap-3">
+                    <div className="text-xs mt-0.5">🔮</div>
+                    <div>
+                      <p className="text-[10px] font-bold text-white">Projected Exhaustion</p>
+                      <p className="text-[10px] text-[--text-secondary] mt-0.5 leading-relaxed">
+                        Based on velocity, your budget will run out on <span className="font-bold text-white">{format(predictiveDeplDate, "MMM d, yyyy")}</span>.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Target Allocation Pie Chart */}
+          <div className="glass-card-static p-5 flex flex-col items-center justify-center relative min-h-[280px] border-white/5 bg-gradient-to-b from-white/[0.01] to-transparent">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] absolute top-5 left-5">Target Allocation</h3>
+            <div className="w-full h-[160px] mt-4">
+              {mounted && pieData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={pieData} cx="50%" cy="50%" innerRadius={45} outerRadius={60} paddingAngle={4} dataKey="value">
+                      {pieData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} stroke="rgba(255,255,255,0.05)" strokeWidth={2} />)}
+                    </Pie>
+                    <RechartsTooltip 
+                      contentStyle={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "12px", fontSize: 11 }}
+                      itemStyle={{ color: "var(--text-primary)", fontWeight: "bold" }}
+                      formatter={(value: unknown) => [`₹${Number(value).toLocaleString()}`, "Budget"]}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center text-[--text-muted]">
+                   <span className="text-xl mb-1">📊</span>
+                   <span className="text-[9px] uppercase tracking-widest font-black">No Budget Limits</span>
+                </div>
+              )}
+            </div>
+            {pieData.length > 0 && (
+              <div className="flex flex-wrap justify-center gap-2 mt-2 w-full">
+                {pieData.slice(0, 4).map((entry, index) => (
+                  <div key={index} className="flex items-center gap-1.5 text-[9px]">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: entry.fill }} />
+                    <span className="text-[--text-secondary] font-medium">{entry.name}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Savings Potential */}
+          <div className="glass-card-static p-5 text-center border-white/5 bg-gradient-to-b from-white/[0.01] to-transparent">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Savings Potential</h3>
+            <p className="text-3xl font-black text-white">₹{(totalIncome - totalSpent).toLocaleString()}</p>
+            <p className="text-[9px] font-black uppercase tracking-[0.25em] text-[--accent-primary-light] mt-1">Theoretical Surplus</p>
+            <div className="mt-5 grid grid-cols-2 gap-4 border-t border-white/5 pt-4">
+               <div>
+                 <p className="text-lg font-black text-emerald-400">
+                   {totalIncome > 0 ? ((totalIncome - totalSpent) / totalIncome * 100).toFixed(1) : 0}%
+                 </p>
+                 <p className="text-[9px] font-black uppercase tracking-wider text-[--text-muted] mt-0.5">Savings Rate</p>
+               </div>
+               <div>
+                 <p className="text-lg font-black text-amber-500">
+                   {totalIncome > 0 ? (totalSpent / totalIncome * 100).toFixed(1) : 0}%
+                 </p>
+                 <p className="text-[9px] font-black uppercase tracking-wider text-[--text-muted] mt-0.5">Expense Ratio</p>
+               </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
 
       {/* Slide-out Category Allocation Drawer */}
       {drawerOpen && (

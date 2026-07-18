@@ -93,6 +93,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
         if (isNaN(qty) || qty <= 0) { toast.error("Valid quantity required"); return; }
         if (isNaN(price) || price < 0) { toast.error("Valid entry price required"); return; }
         if (fnoCharges < 0) { toast.error("Charges cannot be negative"); return; }
+        if (!logFormData.account_id) { toast.error("Please select a margin account"); return; }
 
         const res = await logFnoTrade({
           symbol: logFormData.symbol.toUpperCase().trim(),
@@ -102,7 +103,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
           trade_type: logFormData.trade_type,
           quantity: qty,
           entry_price: price,
-          account_id: logFormData.account_id || undefined,
+          account_id: logFormData.account_id,
           notes: logFormData.notes || undefined,
           trade_date: logFormData.trade_date,
           charges: fnoCharges
@@ -426,7 +427,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
                       value={logFormData.account_id} 
                       onChange={e => setLogFormData({...logFormData, account_id: e.target.value})}
                     >
-                      <option value="">No Account (Track Only)</option>
+                      <option value="" disabled>Select Account</option>
                       {accounts.map(acc => (
                         <option key={acc.id} value={acc.id}>{acc.name} (₹{acc.balance.toLocaleString()})</option>
                       ))}
