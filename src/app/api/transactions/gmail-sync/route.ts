@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
       const publicSupabase = createPublicClient(supabaseUrl, supabaseKey);
       const { data: profiles, error: pError } = await publicSupabase
         .from("profiles")
-        .select("id, gmail_refresh_token, default_accounts")
+        .select("id, gmail_refresh_token, default_accounts, sms_sync_token")
         .not("gmail_refresh_token", "is", null);
 
       if (pError || !profiles || profiles.length === 0) {
@@ -37,7 +37,8 @@ export async function POST(req: NextRequest) {
             return await syncUserGmail(
               prof.id,
               prof.gmail_refresh_token!,
-              (prof.default_accounts as Record<string, string | null>) || {}
+              (prof.default_accounts as Record<string, string | null>) || {},
+              prof.sms_sync_token
             );
           } catch (err: unknown) {
             const error = err as Error;
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest) {
 
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
-        .select("gmail_refresh_token, default_accounts")
+        .select("gmail_refresh_token, default_accounts, sms_sync_token")
         .eq("id", user.id)
         .single();
 
@@ -70,7 +71,7 @@ export async function POST(req: NextRequest) {
       refreshToken = profile.gmail_refresh_token;
       defaultAccounts = (profile.default_accounts as Record<string, string | null>) || {};
 
-      const syncResult = await syncUserGmail(userId, refreshToken, defaultAccounts);
+      const syncResult = await syncUserGmail(userId, refreshToken, defaultAccounts, profile.sms_sync_token);
       return NextResponse.json(syncResult);
     }
   } catch (error: unknown) {
@@ -84,7 +85,8 @@ export async function POST(req: NextRequest) {
 async function syncUserGmail(
   userId: string,
   refreshToken: string,
-  defaultAccounts: Record<string, string | null>
+  defaultAccounts: Record<string, string | null>,
+  smsSyncToken: string | null
 ) {
   const clientId = process.env.GOOGLE_CLIENT_ID!;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET!;
@@ -220,16 +222,9 @@ async function syncUserGmail(
         const rpcName = type === "expense" ? "record_expense_by_sms" : "record_income_by_sms";
         const cleanDate = new Date().toISOString().split("T")[0];
 
-        // Fetch user's sms_sync_token to auth the secure definer
-        const { data: prof } = await supabase
-          .from("profiles")
-          .select("sms_sync_token")
-          .eq("id", userId)
-          .single();
-
-        if (prof && prof.sms_sync_token) {
+        if (smsSyncToken) {
           const { data: rpcData, error: rpcError } = await supabase.rpc(rpcName, {
-            p_token: prof.sms_sync_token,
+            p_token: smsSyncToken,
             p_description: merchant,
             p_amount: amount,
             p_category: type === "expense" ? "Food" : "Salary",
