@@ -577,177 +577,194 @@ export default function SettingsPage() {
 
       {/* Integrations Tab */}
       {activeTab === "integrations" && (
-        <div className="max-w-2xl animate-fade-in-up space-y-6">
-          <div className="glass-card-static p-6 border-white/5 bg-gradient-to-b from-white/[0.01] to-transparent">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-12 h-12 rounded-2xl bg-[--accent-primary]/10 border border-[--accent-primary]/25 flex items-center justify-center text-2xl">
-                📱
-              </div>
+        <div className="max-w-5xl animate-fade-in-up space-y-8">
+          <div className="flex flex-col gap-2">
+            <h2 className="text-xl font-black text-white tracking-wide">Connected Integrations</h2>
+            <p className="text-xs text-[--text-muted]">Link third-party platforms and mobile automation tools to automate transaction capturing.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* SMS Webhook Card */}
+            <div className="glass-card-static p-6 border border-white/5 bg-gradient-to-b from-white/[0.01] to-transparent flex flex-col justify-between">
               <div>
-                <h3 className="text-lg font-black text-white">SMS Webhook Integration</h3>
-                <p className="text-xs text-[--text-muted] mt-0.5">Auto-track Google Pay, Amazon Pay, and Bank Card transactions via incoming SMS.</p>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-[--accent-primary]/10 border border-[--accent-primary]/25 flex items-center justify-center text-xl shadow-[0_0_15px_rgba(6,182,212,0.15)]">
+                      📱
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-black text-white">SMS Webhook</h3>
+                      <p className="text-[10px] text-[--text-muted] mt-0.5">Android Sync</p>
+                    </div>
+                  </div>
+                  {profile?.sms_sync_token ? (
+                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center gap-1.5 shadow-[0_0_10px_rgba(16,185,129,0.1)]">
+                      <span className="relative flex h-1.5 w-1.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                      </span>
+                      Listening
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-white/5 border border-white/10 text-[--text-muted]">
+                      Inactive
+                    </span>
+                  )}
+                </div>
+
+                <p className="text-xs text-[--text-secondary] leading-relaxed mb-6">
+                  Track GPay, Amazon Pay, Paytm, and bank transactions instantly by forwarding incoming banking SMS alerts using Android automation tools.
+                </p>
+
+                {profile?.sms_sync_token ? (
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Your Personal Webhook URL</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          readOnly
+                          value={typeof window !== "undefined" ? `${window.location.origin}/api/transactions/sms-sync?token=${profile.sms_sync_token}` : `/api/transactions/sms-sync?token=${profile.sms_sync_token}`}
+                          className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-[--text-secondary] outline-none font-mono text-[10px]"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const url = typeof window !== "undefined" ? `${window.location.origin}/api/transactions/sms-sync?token=${profile.sms_sync_token}` : `/api/transactions/sms-sync?token=${profile.sms_sync_token}`;
+                            navigator.clipboard.writeText(url);
+                            toast.success("Webhook URL copied!");
+                          }}
+                          className="px-3.5 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-white hover:bg-white/10 active:scale-95 transition-all flex items-center justify-center cursor-pointer"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 7.5V6.108c0-1.135.845-2.098 1.976-2.192.373-.03.748-.057 1.123-.08M15.75 18H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08M15.75 18.75v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5A3.375 3.375 0 006.375 7.5H5.25m11.9-3.664A2.251 2.251 0 0015 2.25h-1.5a2.251 2.251 0 00-2.15 1.586m5.8 0c.065.21.1.433.1.664v.75h-6V4.5c0-.231.035-.454.1-.664M6.75 7.5h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21h10.5a2.25 2.25 0 002.25-2.25V7.5a2.25 2.25 0 00-2.25-2.25H6.75A2.25 2.25 0 004.5 7.5v11.25A2.25 2.25 0 006.75 21z" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="pt-4 border-t border-white/5 space-y-3.5">
+                      <h4 className="text-[10px] font-black uppercase tracking-[0.15em] text-white">Setup Instructions:</h4>
+                      <div className="space-y-3 text-[11px] text-[--text-secondary] leading-relaxed">
+                        <div className="flex gap-3">
+                          <span className="w-5 h-5 rounded-full bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center font-black text-cyan-400 text-[10px] flex-shrink-0">1</span>
+                          <p>Install **MacroDroid** or **SMS Forwarder** from the Android Google Play Store.</p>
+                        </div>
+                        <div className="flex gap-3">
+                          <span className="w-5 h-5 rounded-full bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center font-black text-cyan-400 text-[10px] flex-shrink-0">2</span>
+                          <p>Create a rule to trigger when you receive an SMS containing `debited`, `spent`, or `credited` keywords.</p>
+                        </div>
+                        <div className="flex gap-3">
+                          <span className="w-5 h-5 rounded-full bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center font-black text-cyan-400 text-[10px] flex-shrink-0">3</span>
+                          <p>Forward this SMS via a **POST** request to your Webhook URL with a JSON parameter `text`.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
               </div>
-            </div>
 
-            {profile?.sms_sync_token ? (
-              <div className="space-y-6">
-                {/* Active status banner */}
-                <div className="p-3.5 rounded-xl bg-emerald-500/5 border border-emerald-500/15 flex items-start gap-3">
-                  <div className="mt-0.5 p-0.5 rounded bg-emerald-500/20 text-emerald-400">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-white">Status: Active & Listening</p>
-                    <p className="text-[10px] text-[--text-secondary] mt-0.5">Your personal endpoint is ready to receive transaction webhook requests from your device.</p>
-                  </div>
-                </div>
-
-                {/* Webhook URL input group */}
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Your Webhook URL</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      readOnly
-                      value={typeof window !== "undefined" ? `${window.location.origin}/api/transactions/sms-sync?token=${profile.sms_sync_token}` : `/api/transactions/sms-sync?token=${profile.sms_sync_token}`}
-                      className="flex-1 bg-[#151515] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-[--text-secondary] outline-none"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const url = typeof window !== "undefined" ? `${window.location.origin}/api/transactions/sms-sync?token=${profile.sms_sync_token}` : `/api/transactions/sms-sync?token=${profile.sms_sync_token}`;
-                        navigator.clipboard.writeText(url);
-                        toast.success("Webhook URL copied to clipboard");
-                      }}
-                      className="px-4 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-white hover:bg-white/10 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer border"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H5.25m11.9-3.664A2.251 2.251 0 0015 2.25h-1.5a2.251 2.251 0 00-2.15 1.586m5.8 0c.065.21.1.433.1.664v.75h-6V4.5c0-.231.035-.454.1-.664M6.75 7.5h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21h10.5a2.25 2.25 0 002.25-2.25V7.5a2.25 2.25 0 00-2.25-2.25H6.75A2.25 2.25 0 004.5 7.5v11.25A2.25 2.25 0 006.75 21z" />
-                      </svg>
-                      Copy URL
-                    </button>
-                  </div>
-                </div>
-
-                {/* Setup guide */}
-                <div className="pt-4 border-t border-white/5 space-y-4">
-                  <h4 className="text-xs font-black uppercase tracking-wider text-white">How to Set Up:</h4>
-                  <div className="space-y-3.5 text-[11px] text-[--text-secondary] leading-relaxed">
-                    <div className="flex gap-3">
-                      <span className="w-5 h-5 rounded-full bg-white/5 border border-white/10 flex items-center justify-center font-bold text-white text-[10px] flex-shrink-0 mt-0.5">1</span>
-                      <p>Download a free automation app on your Android device, such as <strong>MacroDroid</strong> or a dedicated <strong>SMS Forwarder to Webhook</strong> app from the Play Store.</p>
-                    </div>
-                    <div className="flex gap-3">
-                      <span className="w-5 h-5 rounded-full bg-white/5 border border-white/10 flex items-center justify-center font-bold text-white text-[10px] flex-shrink-0 mt-0.5">2</span>
-                      <p>Create a rule to trigger when a new SMS contains transaction keywords (e.g., <code>debited</code>, <code>spent</code>, <code>credited</code>) from bank/UPI alerts.</p>
-                    </div>
-                    <div className="flex gap-3">
-                      <span className="w-5 h-5 rounded-full bg-white/5 border border-white/10 flex items-center justify-center font-bold text-white text-[10px] flex-shrink-0 mt-0.5">3</span>
-                      <p>Set the action to perform a **HTTP POST (JSON)** request to your copied Webhook URL. The JSON body should include the SMS message content in a field named <code>text</code>.</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Rotate Token button */}
-                <div className="pt-6 border-t border-white/5 flex justify-end">
+              <div className="pt-6 border-t border-white/5 mt-6 flex justify-end">
+                {profile?.sms_sync_token ? (
                   <button
                     type="button"
                     onClick={async () => {
-                      if (!confirm("Are you sure you want to rotate your token? Your existing forwarding setup will stop working until you update it with the new URL.")) return;
+                      if (!confirm("Are you sure you want to rotate your webhook token? Your current forwarding setup on your phone will stop working until you update it.")) return;
                       const newToken = Array.from({length: 32}, () => Math.floor(Math.random()*16).toString(16)).join("");
                       const res = await updateSettings({ sms_sync_token: newToken });
                       if (res.error) toast.error(res.error);
-                      else toast.success("Sync token rotated successfully");
+                      else toast.success("Token rotated successfully!");
                     }}
-                    className="px-4 py-2 rounded-xl bg-rose-500/5 hover:bg-rose-500/10 border border-rose-500/10 text-xs font-bold text-rose-400 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
+                    className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-[--text-secondary] hover:text-white hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
                   >
-                    Rotate Sync Token
+                    Rotate Token
                   </button>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-6 text-center py-6">
-                <p className="text-xs text-[--text-secondary] leading-relaxed max-w-md mx-auto">
-                  Automatically register transactions on your dashboard in real-time as they happen. Link your device using a secure private webhook URL.
-                </p>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    const newToken = Array.from({length: 32}, () => Math.floor(Math.random()*16).toString(16)).join("");
-                    const res = await updateSettings({ sms_sync_token: newToken });
-                    if (res.error) toast.error(res.error);
-                    else toast.success("SMS Sync enabled successfully");
-                  }}
-                  className="btn-primary px-6 py-3 font-black text-xs uppercase tracking-wider shadow-lg shadow-[--accent-primary]/25 inline-flex items-center gap-2 cursor-pointer"
-                >
-                  Enable SMS Webhook Sync
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Gmail Auto-Sync Card */}
-          <div className="glass-card-static p-6 border-white/5 bg-gradient-to-b from-white/[0.01] to-transparent">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/25 flex items-center justify-center text-2xl">
-                ✉️
-              </div>
-              <div>
-                <h3 className="text-lg font-black text-white">Gmail Auto-Sync</h3>
-                <p className="text-xs text-[--text-muted] mt-0.5">Secure Google OAuth 2.0 sync. Works automatically on both iOS & Android.</p>
-              </div>
-            </div>
-
-            {profile?.is_gmail_linked ? (
-              <div className="space-y-6">
-                {/* Active status banner */}
-                <div className="p-3.5 rounded-xl bg-emerald-500/5 border border-emerald-500/15 flex items-start gap-3">
-                  <div className="mt-0.5 p-0.5 rounded bg-emerald-500/20 text-emerald-400">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-white">Status: Connected</p>
-                    <p className="text-[10px] text-[--text-secondary] mt-0.5">Your dashboard will scan unread transaction alert emails and log them in real-time.</p>
-                  </div>
-                </div>
-
-                {/* Integration Details / Manual Scan */}
-                <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                  <div>
-                    <p className="text-xs font-bold text-white">On-Demand Sync Scan</p>
-                    <p className="text-[10px] text-[--text-muted] mt-0.5">Manually scan your unread bank notifications now.</p>
-                  </div>
-                  <button
-                    type="button"
-                    disabled={isGmailSyncing}
-                    onClick={handleGmailSync}
-                    className="px-4 py-2 rounded-xl bg-[--accent-primary]/10 border border-[--accent-primary]/25 text-xs font-bold text-[--accent-primary] hover:bg-[--accent-primary]/20 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
-                  >
-                    {isGmailSyncing ? (
-                      <span className="w-3.5 h-3.5 border-2 border-[--accent-primary] border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
-                      </svg>
-                    )}
-                    Sync Emails Now
-                  </button>
-                </div>
-
-                {/* Disconnect button */}
-                <div className="pt-6 border-t border-white/5 flex justify-end">
+                ) : (
                   <button
                     type="button"
                     onClick={async () => {
-                      if (!confirm("Are you sure you want to disconnect Gmail auto-sync?")) return;
+                      const newToken = Array.from({length: 32}, () => Math.floor(Math.random()*16).toString(16)).join("");
+                      const res = await updateSettings({ sms_sync_token: newToken });
+                      if (res.error) toast.error(res.error);
+                      else toast.success("SMS webhook sync enabled!");
+                    }}
+                    className="btn-primary px-4 py-2 text-xs font-black uppercase tracking-wider cursor-pointer"
+                  >
+                    Enable Webhook
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Gmail Auto-Sync Card */}
+            <div className="glass-card-static p-6 border border-white/5 bg-gradient-to-b from-white/[0.01] to-transparent flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/25 flex items-center justify-center text-xl shadow-[0_0_15px_rgba(244,63,94,0.15)]">
+                      ✉️
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-black text-white">Gmail Auto-Sync</h3>
+                      <p className="text-[10px] text-[--text-muted] mt-0.5">iOS & Android Sync</p>
+                    </div>
+                  </div>
+                  {profile?.is_gmail_linked ? (
+                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center gap-1.5 shadow-[0_0_10px_rgba(16,185,129,0.1)]">
+                      <span className="relative flex h-1.5 w-1.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                      </span>
+                      Connected
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-white/5 border border-white/10 text-[--text-muted]">
+                      Disconnected
+                    </span>
+                  )}
+                </div>
+
+                <p className="text-xs text-[--text-secondary] leading-relaxed mb-6">
+                  Link your Google account securely via OAuth 2.0 to scan transaction alert emails in the background. Works universally for iPhone and Android.
+                </p>
+
+                {profile?.is_gmail_linked ? (
+                  <div className="space-y-6">
+                    <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-xs font-black text-white">Manual Inbox Scan</p>
+                        <p className="text-[10px] text-[--text-muted] mt-0.5">Scan your recent unread alerts right now.</p>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={isGmailSyncing}
+                        onClick={handleGmailSync}
+                        className="px-4 py-2 rounded-xl bg-rose-500/10 border border-rose-500/25 text-xs font-black text-rose-400 hover:bg-rose-500/20 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
+                      >
+                        {isGmailSyncing ? (
+                          <span className="w-3.5 h-3.5 border-2 border-rose-500 border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                          </svg>
+                        )}
+                        Scan Now
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="pt-6 border-t border-white/5 mt-6 flex justify-end">
+                {profile?.is_gmail_linked ? (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!confirm("Are you sure you want to unlink your Gmail account?")) return;
                       const res = await updateSettings({ gmail_refresh_token: null });
                       if (res.error) toast.error(res.error);
                       else {
-                        toast.success("Gmail account disconnected successfully");
+                        toast.success("Gmail disconnected.");
                         mutate();
                       }
                     }}
@@ -755,24 +772,19 @@ export default function SettingsPage() {
                   >
                     Disconnect Gmail
                   </button>
-                </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      window.location.href = "/api/auth/google";
+                    }}
+                    className="btn-primary px-4 py-2 text-xs font-black uppercase tracking-wider cursor-pointer"
+                  >
+                    Connect Gmail
+                  </button>
+                )}
               </div>
-            ) : (
-              <div className="space-y-6 text-center py-6">
-                <p className="text-xs text-[--text-secondary] leading-relaxed max-w-md mx-auto">
-                  Scan transaction alert emails from Paytm, GPay, Amazon Pay, and your bank. Fully secure, works in the background on all mobile devices (iOS & Android).
-                </p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    window.location.href = "/api/auth/google";
-                  }}
-                  className="btn-primary px-6 py-3 font-black text-xs uppercase tracking-wider shadow-lg shadow-[--accent-primary]/25 inline-flex items-center gap-2 cursor-pointer"
-                >
-                  Link Gmail Account
-                </button>
-              </div>
-            )}
+            </div>
           </div>
         </div>
       )}
