@@ -37,8 +37,8 @@ export async function POST(req: NextRequest) {
     const text = String(body.message.text).trim();
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
-    // Use public client with service-level RPC execution or secure link mapping
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
+    // Use service role key to bypass RLS for webhook profile lookup
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // 1. Handle Account Link command (/link tg-123456 or /start tg-123456)
