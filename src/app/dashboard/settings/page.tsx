@@ -838,14 +838,23 @@ export default function SettingsPage() {
                         <p className="text-[10px] font-black uppercase tracking-[0.15em] text-cyan-400">Your Linking Code</p>
                         <div className="text-lg font-black text-white font-mono tracking-wider">{profile.telegram_link_code}</div>
                         <p className="text-[10px] text-[--text-secondary] leading-relaxed">
-                          Search for your bot on Telegram, send a message starting with:
+                          Open the official Telegram Bot:{" "}
+                          <a 
+                            href={`https://t.me/${process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "SaranFinBot"}`} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="text-cyan-400 font-bold underline"
+                          >
+                            @{process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "SaranFinBot"}
+                          </a>
+                          , and send this command:
                           <br />
-                          <code className="text-cyan-400 font-mono font-bold">/link {profile.telegram_link_code}</code>
+                          <code className="text-cyan-400 font-mono font-bold mt-1.5 block">/link {profile.telegram_link_code}</code>
                         </p>
                       </div>
                     ) : (
                       <p className="text-[11px] text-[--text-muted]">
-                        Generate a link code to connect your private Telegram bot to this account.
+                        Generate a link code to connect the official Telegram bot to this account.
                       </p>
                     )}
                   </div>
