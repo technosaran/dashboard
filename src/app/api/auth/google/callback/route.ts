@@ -22,8 +22,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(new URL("/dashboard/settings?gmail=error&reason=missing_server_credentials", req.url));
     }
 
-    const origin = req.nextUrl.origin;
-    const redirectUri = `${origin}/api/auth/google/callback`;
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || req.nextUrl.origin;
+    const redirectUri = `${siteUrl}/api/auth/google/callback`;
 
     // 1. Exchange authorization code for tokens
     const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {

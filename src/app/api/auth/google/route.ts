@@ -8,9 +8,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Google OAuth Client ID is not configured on the server" }, { status: 500 });
   }
 
-  // Construct target redirect URI
-  const origin = req.nextUrl.origin;
-  const redirectUri = `${origin}/api/auth/google/callback`;
+  // Construct target redirect URI using NEXT_PUBLIC_SITE_URL
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || req.nextUrl.origin;
+  const redirectUri = `${siteUrl}/api/auth/google/callback`;
 
   // Scopes requested (Gmail read-only to fetch transaction alerts)
   const scope = "https://www.googleapis.com/auth/gmail.readonly";
