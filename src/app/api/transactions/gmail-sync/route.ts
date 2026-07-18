@@ -190,7 +190,7 @@ async function syncUserGmail(
       }
 
       if (parsed) {
-        const { amount, type, merchant, accountEnding } = parsed;
+        const { amount, type, merchant, accountEnding, category } = parsed;
 
         // Resolve bank account ending digits
         let resolvedAccountId: string | null = null;
@@ -227,7 +227,7 @@ async function syncUserGmail(
             p_token: smsSyncToken,
             p_description: merchant,
             p_amount: amount,
-            p_category: type === "expense" ? "Food" : "Salary",
+            p_category: category,
             p_date: cleanDate,
             p_account_id: resolvedAccountId,
           });
@@ -338,6 +338,20 @@ function parseEmailText(text: string) {
     merchant = "SBI Bank";
   } else if (/airtel/i.test(text)) {
     merchant = "Airtel";
+  } else if (/zomato/i.test(text)) {
+    merchant = "Zomato";
+  } else if (/swiggy/i.test(text)) {
+    merchant = "Swiggy";
+  } else if (/uber/i.test(text)) {
+    merchant = "Uber";
+  } else if (/ola/i.test(text)) {
+    merchant = "Ola";
+  } else if (/netflix/i.test(text)) {
+    merchant = "Netflix";
+  } else if (/spotify/i.test(text)) {
+    merchant = "Spotify";
+  } else if (/youtube/i.test(text)) {
+    merchant = "YouTube";
   }
 
   // Limit merchant name to a clean string
@@ -353,10 +367,29 @@ function parseEmailText(text: string) {
     accountEnding = accountMatch[1];
   }
 
+  // 5. Category Resolution
+  let category = type === "expense" ? "Food" : "Salary";
+  if (type === "expense") {
+    if (/zomato|swiggy|restaurant|eat|food|dining|deli|pizza|burger/i.test(text)) {
+      category = "Food";
+    } else if (/uber|ola|ride|cab|taxi|metro|fuel|petrol|diesel|bus|train/i.test(text)) {
+      category = "Transport";
+    } else if (/netflix|spotify|youtube|apple|game|playstation|movie|show|entertainment/i.test(text)) {
+      category = "Entertainment";
+    } else if (/rent|home|room|housing/i.test(text)) {
+      category = "Housing";
+    } else if (/electricity|water|gas|broadband|wifi|recharge|mobile|bill|airtel|jio|vi\s|bsnl/i.test(text)) {
+      category = "Utilities";
+    } else {
+      category = "Other";
+    }
+  }
+
   return {
     amount,
     type,
     merchant,
     accountEnding,
+    category
   };
 }
