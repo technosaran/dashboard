@@ -10,6 +10,7 @@ import type { FinanceData } from "@/hooks/use-finance-data";
 import { MODULE_KEYS, MODULE_DISPLAY_LABELS } from "@/lib/modules";
 import dynamic from "next/dynamic";
 import { exportToCSV } from "@/lib/export-csv";
+import QRCode from "react-qr-code";
 
 const ReportDownloadButton = dynamic(
   () => import("../components/ReportDownloadButton"),
@@ -643,20 +644,45 @@ export default function SettingsPage() {
                       </div>
                     </div>
 
-                    <div className="pt-4 border-t border-white/5 space-y-3.5">
-                      <h4 className="text-[10px] font-black uppercase tracking-[0.15em] text-white">Setup Instructions:</h4>
-                      <div className="space-y-3 text-[11px] text-[--text-secondary] leading-relaxed">
-                        <div className="flex gap-3">
-                          <span className="w-5 h-5 rounded-full bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center font-black text-cyan-400 text-[10px] flex-shrink-0">1</span>
-                          <p>Install **MacroDroid** or **SMS Forwarder** from the Android Google Play Store.</p>
+                    <div className="pt-4 border-t border-white/5 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-[10px] font-black uppercase tracking-[0.15em] text-white">Setup Guide</h4>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const url = typeof window !== "undefined" ? `${window.location.origin}/api/transactions/sms-sync?token=${profile.sms_sync_token}` : `/api/transactions/sms-sync?token=${profile.sms_sync_token}`;
+                            const curl = `curl -X POST ${url} -H "Content-Type: application/json" -d "{\\"text\\":\\"debited 100 for food\\"}"`;
+                            navigator.clipboard.writeText(curl);
+                            toast.success("cURL test command copied!");
+                          }}
+                          className="text-[9px] font-bold text-cyan-400 hover:text-cyan-300 underline underline-offset-2 flex items-center gap-1 cursor-pointer"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                          Copy Test cURL
+                        </button>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 relative overflow-hidden">
+                          <div className="absolute top-0 right-0 p-2 opacity-10 text-4xl">📥</div>
+                          <span className="inline-block w-4 h-4 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[9px] font-black flex items-center justify-center mb-2">1</span>
+                          <p className="text-[10px] text-[--text-secondary] font-medium leading-relaxed">
+                            Install <span className="text-white font-bold">MacroDroid</span> from the Android Play Store.
+                          </p>
                         </div>
-                        <div className="flex gap-3">
-                          <span className="w-5 h-5 rounded-full bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center font-black text-cyan-400 text-[10px] flex-shrink-0">2</span>
-                          <p>Create a rule to trigger when you receive an SMS containing `debited`, `spent`, or `credited` keywords.</p>
+                        <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 relative overflow-hidden">
+                          <div className="absolute top-0 right-0 p-2 opacity-10 text-4xl">⚡</div>
+                          <span className="inline-block w-4 h-4 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[9px] font-black flex items-center justify-center mb-2">2</span>
+                          <p className="text-[10px] text-[--text-secondary] font-medium leading-relaxed">
+                            Create a trigger for SMS received with keywords like <span className="font-mono text-cyan-400">debited</span> or <span className="font-mono text-cyan-400">spent</span>.
+                          </p>
                         </div>
-                        <div className="flex gap-3">
-                          <span className="w-5 h-5 rounded-full bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center font-black text-cyan-400 text-[10px] flex-shrink-0">3</span>
-                          <p>Forward this SMS via a **POST** request to your Webhook URL with a JSON parameter `text`.</p>
+                        <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 relative overflow-hidden">
+                          <div className="absolute top-0 right-0 p-2 opacity-10 text-4xl">🚀</div>
+                          <span className="inline-block w-4 h-4 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[9px] font-black flex items-center justify-center mb-2">3</span>
+                          <p className="text-[10px] text-[--text-secondary] font-medium leading-relaxed">
+                            Add a <span className="text-white font-bold">HTTP POST</span> action to your Webhook URL sending <span className="font-mono text-cyan-400">text</span> body.
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -834,23 +860,32 @@ export default function SettingsPage() {
                 ) : (
                   <div className="space-y-4">
                     {profile?.telegram_link_code ? (
-                      <div className="p-4 rounded-xl bg-cyan-500/5 border border-cyan-500/10 space-y-3">
-                        <p className="text-[10px] font-black uppercase tracking-[0.15em] text-cyan-400">Your Linking Code</p>
-                        <div className="text-lg font-black text-white font-mono tracking-wider">{profile.telegram_link_code}</div>
-                        <p className="text-[10px] text-[--text-secondary] leading-relaxed">
-                          Open the official Telegram Bot:{" "}
+                      <div className="p-5 rounded-xl bg-cyan-500/5 border border-cyan-500/10 flex flex-col md:flex-row gap-5 items-center">
+                        <div className="p-2 bg-white rounded-xl shadow-lg flex-shrink-0">
+                          <QRCode 
+                            value={`https://t.me/${process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "FIN_DASHBAORD_bot"}?start=${profile.telegram_link_code}`}
+                            size={100}
+                            level="M"
+                          />
+                        </div>
+                        <div className="flex-1 text-center md:text-left space-y-3">
+                          <div>
+                            <p className="text-[10px] font-black uppercase tracking-[0.15em] text-cyan-400 mb-1">Link via QR or Click</p>
+                            <p className="text-[11px] text-[--text-secondary] leading-relaxed">
+                              Scan this QR code with your phone camera, or click the button below to instantly link your Telegram account.
+                            </p>
+                          </div>
+                          
                           <a 
-                            href={`https://t.me/${process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "FIN_DASHBAORD_bot"}`} 
+                            href={`https://t.me/${process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "FIN_DASHBAORD_bot"}?start=${profile.telegram_link_code}`} 
                             target="_blank" 
                             rel="noopener noreferrer" 
-                            className="text-cyan-400 font-bold underline"
+                            className="inline-flex w-full md:w-auto items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0088cc] hover:bg-[#0088cc]/90 text-white text-xs font-black uppercase tracking-wider transition-all shadow-[0_0_15px_rgba(0,136,204,0.3)] active:scale-95"
                           >
-                            @{process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "FIN_DASHBAORD_bot"}
+                            <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.19-.08-.05-.19-.02-.27 0-.11.03-1.9 1.22-5.36 3.56-.51.35-.96.52-1.38.51-.46-.01-1.35-.26-2.01-.48-.81-.27-1.46-.41-1.4-.87.03-.24.35-.49.96-.75 3.75-1.63 6.24-2.7 7.48-3.21 3.56-1.48 4.3-1.74 4.79-1.75.11 0 .35.03.5.15.13.11.17.26.19.4z"/></svg>
+                            Link Account Now
                           </a>
-                          , and send this command:
-                          <br />
-                          <code className="text-cyan-400 font-mono font-bold mt-1.5 block">/link {profile.telegram_link_code}</code>
-                        </p>
+                        </div>
                       </div>
                     ) : (
                       <p className="text-[11px] text-[--text-muted]">
@@ -896,6 +931,38 @@ export default function SettingsPage() {
                 )}
               </div>
             </div>
+            
+            {/* WhatsApp Sync (Coming Soon) */}
+            <div className="glass-card-static p-6 border border-white/5 bg-gradient-to-b from-white/[0.01] to-transparent flex flex-col justify-between opacity-50 grayscale select-none">
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-xl">
+                      📱
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-black text-white flex items-center gap-2">WhatsApp Sync <span className="px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-white/10 text-white">Coming Soon</span></h3>
+                      <p className="text-[10px] text-[--text-secondary] mt-0.5">Automated WhatsApp AI Integration</p>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-xs text-[--text-secondary] leading-relaxed mb-6">
+                  Link your WhatsApp to log transactions and query your financial data seamlessly through our official WhatsApp AI assistant.
+                </p>
+              </div>
+
+              <div className="pt-6 border-t border-white/5 mt-6 flex justify-end">
+                <button
+                  type="button"
+                  disabled
+                  className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-white/30 cursor-not-allowed"
+                >
+                  Locked
+                </button>
+              </div>
+            </div>
+            
           </div>
         </div>
       )}
