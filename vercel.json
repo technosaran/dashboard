@@ -1,8 +1,0 @@
-{
-  "crons": [
-    {
-      "path": "/api/transactions/gmail-sync?secret=finance_dashboard_gmail_sync_secret_2026",
-      "schedule": "0 * * * *"
-    }
-  ]
-}
