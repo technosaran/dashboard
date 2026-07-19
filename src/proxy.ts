@@ -101,12 +101,12 @@ function createPassThroughResponse(requestHeaders: Headers) {
 }
 
 /**
- * Next.js middleware for authentication and security headers
+ * Next.js proxy middleware for authentication and security headers
  * - Handles Supabase authentication
  * - Applies comprehensive security headers
  * - Manages route protection
  */
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Skip proxy for static assets
