@@ -54,6 +54,9 @@ export const metadata: Metadata = {
   other: {
     "mobile-web-app-capable": "yes",
   },
+  verification: {
+    google: "SkukBAPEh1pI8zCu3LY6HPF2orVLqHVXBRYkLDtiPD8",
+  },
 };
 
 import { Toaster } from "react-hot-toast";

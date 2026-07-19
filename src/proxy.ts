@@ -201,7 +201,7 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isPublicRoute = PUBLIC_ROUTES.has(pathname) || pathname.startsWith("/auth/") || pathname === "/api/transactions/telegram-sync" || pathname === "/api/transactions/sms-sync" || pathname === "/api/run-migration";
+  const isPublicRoute = PUBLIC_ROUTES.has(pathname) || pathname.startsWith("/auth/") || pathname === "/api/transactions/telegram-sync" || pathname === "/api/transactions/sms-sync" || pathname === "/api/run-migration" || pathname === "/api/cron/telegram-alerts";
 
   let finalResponse: NextResponse;
 
@@ -213,6 +213,15 @@ export async function proxy(request: NextRequest) {
     finalResponse = NextResponse.redirect(new URL("/dashboard", request.url));
   } else {
     finalResponse = supabaseResponse;
+  }
+
+  // CRITICAL: Copy refreshed auth cookies from supabaseResponse onto any redirect response.
+  // When getUser() refreshes an expired access token, the new tokens are written to supabaseResponse.
+  // If we created a new redirect response above, those cookies would be lost, causing session expiry.
+  if (finalResponse !== supabaseResponse) {
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      finalResponse.cookies.set(cookie.name, cookie.value);
+    });
   }
 
   // Attach Rate Limit headers to successful API response
