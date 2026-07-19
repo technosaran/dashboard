@@ -9,7 +9,7 @@ const reportsRateLimiter = new RateLimiter(RATE_LIMIT_PRESETS.reports);
 const authRateLimiter = new RateLimiter(RATE_LIMIT_PRESETS.auth);
 const generalRateLimiter = new RateLimiter(RATE_LIMIT_PRESETS.general);
 
-const PUBLIC_ROUTES = new Set(["/", "/login", "/reset-password", "/reset-password/update"]);
+const PUBLIC_ROUTES = new Set(["/", "/login", "/reset-password", "/reset-password/update", "/privacy", "/terms"]);
 
 function isStaticAsset(pathname: string) {
   return (
