@@ -217,11 +217,45 @@ async function syncUserGmail(
           }
         }
 
-        // Log transaction via postgres security definer bypass triggers
-        const rpcName = type === "expense" ? "record_expense_by_sms" : "record_income_by_sms";
-        const cleanDate = new Date().toISOString().split("T")[0];
+        // Resolve exact transaction date from email internal timestamp
+        let cleanDate = new Date().toISOString().split("T")[0];
+        if (message.internalDate) {
+          const timestamp = parseInt(message.internalDate, 10);
+          if (!isNaN(timestamp) && timestamp > 0) {
+            cleanDate = new Date(timestamp).toISOString().split("T")[0];
+          }
+        }
 
-        if (smsSyncToken) {
+        // Robust Deduplication Check: prevent recording duplicate transactions when syncing multiple times
+        // Check both specific table (expenses/income) and main transactions table by exact amount within ±3 days
+        const dateObj = new Date(cleanDate);
+        const minDate = new Date(dateObj.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+        const maxDate = new Date(dateObj.getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+        const tableName = type === "expense" ? "expenses" : "income";
+
+        const [{ data: existingTable }, { data: existingTx }] = await Promise.all([
+          supabase
+            .from(tableName)
+            .select("id")
+            .eq("user_id", userId)
+            .eq("amount", amount)
+            .gte("date", minDate)
+            .lte("date", maxDate)
+            .limit(1),
+          supabase
+            .from("transactions")
+            .select("id")
+            .eq("user_id", userId)
+            .eq("amount", amount)
+            .gte("date", minDate)
+            .lte("date", maxDate)
+            .limit(1),
+        ]);
+
+        if ((existingTable && existingTable.length > 0) || (existingTx && existingTx.length > 0)) {
+          logger.debug(`[Gmail Sync Debug] Duplicate transaction skipped (${merchant} ₹${amount} near ${cleanDate})`);
+        } else if (smsSyncToken) {
+          const rpcName = type === "expense" ? "record_expense_by_sms" : "record_income_by_sms";
           const { data: rpcData, error: rpcError } = await supabase.rpc(rpcName, {
             p_token: smsSyncToken,
             p_description: merchant,
@@ -237,9 +271,9 @@ async function syncUserGmail(
         }
       }
 
-      // 5. Mark message as read (remove UNREAD label)
+      // 5. Mark message as read using correct single-message modify endpoint
       await fetch(
-        `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msgRef.id}/batchModify`,
+        `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msgRef.id}/modify`,
         {
           method: "POST",
           headers: {
@@ -300,6 +334,11 @@ function parseEmailText(text: string) {
 
   // Ignore non-transactional alerts (reminders, hold removals, security, nominees, promotions)
   if (/due today|due tomorrow|bill payment is due|earn up to|reward|gift card|hold for|hold of|nominee|security alert|sign-in|verification/i.test(text)) {
+    return null;
+  }
+
+  // Ignore statements, portfolios, promotional offers, balance alerts, and non-transaction summaries
+  if (/statement for the period|portfolio valuation|save up to|discount|promo code|cashback up to|available balance is|total balance|minimum due|credit limit|login attempt|statement of account/i.test(text)) {
     return null;
   }
 

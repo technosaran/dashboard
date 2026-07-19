@@ -101,12 +101,16 @@ function getLogoSources(bankName: string): string[] {
   if (!domain) return [];
 
   return [
-    // 1. Hunter.io — free, no API key, high-quality real logos
+    // 1. Clearbit 512px — high definition vector/raster official logos
+    `https://logo.clearbit.com/${domain}?size=512`,
+    // 2. Unavatar — multi-service high-def logo aggregator
+    `https://unavatar.io/${domain}?fallback=false`,
+    // 3. Hunter.io — free, no API key
     `https://logos.hunter.io/${domain}`,
-    // 2. CompanyEnrich — free, no API key, CDN-backed
+    // 4. CompanyEnrich — free, no API key, CDN-backed
     `https://companyenrich.com/api/logo/${domain}`,
-    // 3. Google high-res favicon — reliable fallback
-    `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
+    // 5. Google high-res favicon — reliable fallback
+    `https://www.google.com/s2/favicons?domain=${domain}&sz=256`,
   ];
 }
 
@@ -249,6 +253,7 @@ export default function BankLogo({ bankName, size = 40, className = "" }: BankLo
           alt={`${bankName} logo`}
           width={size}
           height={size}
+          unoptimized
           sizes={`${size}px`}
           onLoad={handleImgLoad}
           onError={handleImgError}
@@ -258,7 +263,7 @@ export default function BankLogo({ bankName, size = 40, className = "" }: BankLo
             width: `${size}px`,
             height: `${size}px`,
             objectFit: "contain",
-            padding: `${Math.max(size * 0.15, 6)}px`,
+            padding: `${Math.max(size * 0.1, 4)}px`,
             borderRadius: "var(--radius-md, 12px)",
             opacity: imgLoaded ? 1 : 0,
             transition: "opacity 0.3s ease",

@@ -14,6 +14,7 @@ import { EmptyState } from "@/components/empty-state";
 import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import type { Tables } from "@/lib/database.types";
 import { getTableHeaderClass, getTableCellClass } from "@/lib/utils";
+import { AMCAvatar } from "./MutualFundsDataTable";
 
 type MFTrade = Tables<"mutual_fund_trades">;
 
@@ -46,8 +47,11 @@ export default function MFHistoryTable({ trades }: MFHistoryTableProps) {
       columnHelper.accessor("fund_name", {
         header: "Scheme Name",
         cell: (info) => (
-          <div className="flex flex-col">
-            <span className="text-sm font-medium text-[--text-primary] max-w-[300px] truncate" title={info.getValue()}>{info.getValue()}</span>
+          <div className="flex items-center gap-2.5">
+            <AMCAvatar amcName="" fundName={info.getValue() || ""} />
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-[--text-primary] max-w-[300px] truncate" title={info.getValue()}>{info.getValue()}</span>
+            </div>
           </div>
         ),
       }),
@@ -169,13 +173,13 @@ export default function MFHistoryTable({ trades }: MFHistoryTableProps) {
         />
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse min-w-[800px]">
+      <div className="w-full">
+        <table className="w-full text-left border-collapse">
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id} className="border-b border-white/10">
                 {headerGroup.headers.map((header) => (
-                  <th key={header.id} className={`px-4 py-3 text-xs font-normal text-[--text-muted] whitespace-nowrap bg-white/[0.02] ${getTableHeaderClass(header.column.id)}`}>
+                  <th key={header.id} className={`px-3 py-3 text-xs font-normal text-[--text-muted] whitespace-nowrap bg-white/[0.02] ${getTableHeaderClass(header.column.id)}`}>
                     {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                   </th>
                 ))}

@@ -352,7 +352,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
         </div>
       </div>
 
-      <div className="p-6 max-w-6xl w-full mx-auto">
+      <div className="p-4 sm:p-6 w-full">
         {activeTab === "dashboard" && (
           <div className="flex flex-col lg:flex-row gap-12 items-center lg:items-stretch mt-4">
             {/* Left: Large Allocation Donut */}

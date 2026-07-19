@@ -15,55 +15,82 @@ interface MutualFundsDataTableProps {
   onAdd: () => void;
 }
 
-function getAMCLogoUrl(amcName: string): string {
-  const amc = (amcName || "").toLowerCase();
-  if (amc.includes('hdfc')) return 'https://logo.clearbit.com/hdfcfund.com';
-  if (amc.includes('sbi')) return 'https://logo.clearbit.com/sbimf.com';
-  if (amc.includes('icici')) return 'https://logo.clearbit.com/icicipruamc.com';
-  if (amc.includes('axis')) return 'https://logo.clearbit.com/axismf.com';
-  if (amc.includes('kotak')) return 'https://logo.clearbit.com/kotakmf.com';
-  if (amc.includes('aditya birla') || amc.includes('birla')) return 'https://logo.clearbit.com/mutualfund.adityabirlacapital.com';
-  if (amc.includes('nippon')) return 'https://logo.clearbit.com/nipponindiaim.com';
-  if (amc.includes('franklin')) return 'https://logo.clearbit.com/franklintempletonindia.com';
-  if (amc.includes('dsp')) return 'https://logo.clearbit.com/dspim.com';
-  if (amc.includes('mirae')) return 'https://logo.clearbit.com/miraeassetmf.co.in';
-  if (amc.includes('parag parikh') || amc.includes('ppfas')) return 'https://logo.clearbit.com/amc.ppfas.com';
-  if (amc.includes('motilal')) return 'https://logo.clearbit.com/motilaloswalmf.com';
-  if (amc.includes('tata')) return 'https://logo.clearbit.com/tatamutualfund.com';
-  if (amc.includes('uti')) return 'https://logo.clearbit.com/utimf.com';
-  if (amc.includes('bandhan') || amc.includes('idfc')) return 'https://logo.clearbit.com/bandhanmutual.com';
-  if (amc.includes('edelweiss')) return 'https://logo.clearbit.com/edelweissmf.com';
-  if (amc.includes('sundaram')) return 'https://logo.clearbit.com/sundarammutual.com';
-  if (amc.includes('quant')) return 'https://logo.clearbit.com/quantmutual.com';
-  if (amc.includes('canara')) return 'https://logo.clearbit.com/canararobeco.com';
-  if (amc.includes('invesco')) return 'https://logo.clearbit.com/invescomutualfund.com';
-  if (amc.includes('lic')) return 'https://logo.clearbit.com/licmf.com';
-  if (amc.includes('mahindra')) return 'https://logo.clearbit.com/mahindramanulife.com';
-  if (amc.includes('union')) return 'https://logo.clearbit.com/unionmf.com';
-  if (amc.includes('taurus')) return 'https://logo.clearbit.com/taurusmutualfund.com';
-  if (amc.includes('navi')) return 'https://logo.clearbit.com/navi.com';
-  if (amc.includes('groww')) return 'https://logo.clearbit.com/groww.in';
-  return '';
+export function getAMCLogoDomain(amcName: string, fundName?: string): { domain: string; badge: string; color: string } {
+  const text = `${amcName || ""} ${fundName || ""}`.toLowerCase();
+  if (text.includes("uti")) return { domain: "utimf.com", badge: "UTI", color: "from-purple-600 to-indigo-700" };
+  if (text.includes("sbi")) return { domain: "sbimf.com", badge: "SBI", color: "from-blue-600 to-cyan-700" };
+  if (text.includes("icici")) return { domain: "icicipruamc.com", badge: "ICICI", color: "from-orange-500 to-red-600" };
+  if (text.includes("hdfc")) return { domain: "hdfcfund.com", badge: "HDFC", color: "from-red-600 to-rose-700" };
+  if (text.includes("axis")) return { domain: "axismf.com", badge: "AXIS", color: "from-rose-700 to-pink-800" };
+  if (text.includes("kotak")) return { domain: "kotakmf.com", badge: "KOTAK", color: "from-red-500 to-orange-600" };
+  if (text.includes("birla") || text.includes("aditya")) return { domain: "mutualfund.adityabirlacapital.com", badge: "ABSL", color: "from-red-600 to-amber-600" };
+  if (text.includes("nippon")) return { domain: "nipponindiaim.com", badge: "NIPPON", color: "from-red-600 to-rose-600" };
+  if (text.includes("franklin")) return { domain: "franklintempletonindia.com", badge: "FT", color: "from-teal-600 to-blue-700" };
+  if (text.includes("dsp")) return { domain: "dspim.com", badge: "DSP", color: "from-blue-700 to-indigo-800" };
+  if (text.includes("mirae")) return { domain: "miraeassetmf.co.in", badge: "MIRAE", color: "from-orange-600 to-amber-700" };
+  if (text.includes("parag") || text.includes("ppfas")) return { domain: "amc.ppfas.com", badge: "PPFAS", color: "from-emerald-600 to-teal-700" };
+  if (text.includes("motilal")) return { domain: "motilaloswalmf.com", badge: "MO", color: "from-amber-600 to-yellow-700" };
+  if (text.includes("tata")) return { domain: "tatamutualfund.com", badge: "TATA", color: "from-blue-600 to-sky-700" };
+  if (text.includes("bandhan") || text.includes("idfc")) return { domain: "bandhanmutual.com", badge: "BANDHAN", color: "from-amber-500 to-orange-600" };
+  if (text.includes("edelweiss")) return { domain: "edelweissmf.com", badge: "EDEL", color: "from-blue-500 to-indigo-600" };
+  if (text.includes("sundaram")) return { domain: "sundarammutual.com", badge: "SUND", color: "from-blue-600 to-blue-800" };
+  if (text.includes("quant")) return { domain: "quantmutual.com", badge: "QUANT", color: "from-teal-500 to-emerald-600" };
+  if (text.includes("canara")) return { domain: "canararobeco.com", badge: "CANARA", color: "from-blue-700 to-cyan-800" };
+  if (text.includes("invesco")) return { domain: "invescomutualfund.com", badge: "INVESCO", color: "from-blue-800 to-indigo-900" };
+  if (text.includes("lic")) return { domain: "licmf.com", badge: "LIC", color: "from-yellow-600 to-amber-700" };
+  if (text.includes("mahindra")) return { domain: "mahindramanulife.com", badge: "MAH", color: "from-red-600 to-rose-700" };
+  if (text.includes("groww")) return { domain: "groww.in", badge: "GROWW", color: "from-emerald-500 to-teal-600" };
+  if (text.includes("zerodha")) return { domain: "zerodhafundhouse.com", badge: "ZFH", color: "from-blue-500 to-sky-600" };
+  if (text.includes("navi")) return { domain: "navi.com", badge: "NAVI", color: "from-emerald-600 to-green-700" };
+  if (text.includes("hsbc")) return { domain: "assetmanagement.hsbc.co.in", badge: "HSBC", color: "from-red-700 to-rose-800" };
+  if (text.includes("nj")) return { domain: "njmutualfund.com", badge: "NJ", color: "from-purple-600 to-indigo-700" };
+  if (text.includes("white oak") || text.includes("whiteoak")) return { domain: "whiteoakamc.com", badge: "WO", color: "from-slate-700 to-gray-800" };
+  if (text.includes("baroda") || text.includes("bnp")) return { domain: "barodabnpparibasmf.in", badge: "BNP", color: "from-emerald-700 to-teal-800" };
+  if (text.includes("pgim")) return { domain: "pgimindiamf.com", badge: "PGIM", color: "from-blue-800 to-indigo-900" };
+  if (text.includes("boi") || text.includes("bank of india")) return { domain: "boimf.in", badge: "BOI", color: "from-orange-600 to-red-700" };
+  
+  const defaultBadge = (amcName || fundName || "MF").substring(0, 3).toUpperCase();
+  return { domain: "", badge: defaultBadge, color: "from-indigo-600 to-purple-700" };
 }
 
-function AMCAvatar({ amcName, logoUrl }: { amcName: string; logoUrl: string }) {
-  const [error, setError] = useState(false);
-  const initials = amcName.substring(0, 2).toUpperCase();
-  if (logoUrl && !error) {
+export function AMCAvatar({ amcName, fundName }: { amcName: string; fundName: string }) {
+  const [imgStage, setImgStage] = useState<0 | 1 | 2>(0);
+  const info = getAMCLogoDomain(amcName, fundName);
+
+  const primaryUrl = info.domain ? `https://logo.clearbit.com/${info.domain}?size=512` : "";
+  const secondaryUrl = info.domain ? `https://www.google.com/s2/favicons?domain=${info.domain}&sz=128` : "";
+
+  if (primaryUrl && imgStage === 0) {
     return (
       <Image 
-        src={logoUrl} 
-        alt={amcName} 
+        src={primaryUrl} 
+        alt={info.badge} 
         width={40}
         height={40}
-        className="w-10 h-10 rounded-full bg-white object-contain flex-shrink-0 border border-white/10"
-        onError={() => setError(true)}
+        unoptimized
+        className="w-10 h-10 rounded-full bg-white object-contain p-1 flex-shrink-0 border border-white/10 shadow-sm"
+        onError={() => setImgStage(1)}
       />
     );
   }
+
+  if (secondaryUrl && imgStage === 1) {
+    return (
+      <Image 
+        src={secondaryUrl} 
+        alt={info.badge} 
+        width={40}
+        height={40}
+        unoptimized
+        className="w-10 h-10 rounded-full bg-white object-contain p-1 flex-shrink-0 border border-white/10 shadow-sm"
+        onError={() => setImgStage(2)}
+      />
+    );
+  }
+
   return (
-    <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xs font-semibold text-gray-300 flex-shrink-0">
-      {initials}
+    <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${info.color} border border-white/20 flex items-center justify-center text-[10px] font-black text-white flex-shrink-0 shadow-md tracking-tighter`}>
+      {info.badge}
     </div>
   );
 }
@@ -97,19 +124,19 @@ export default function MutualFundsDataTable({ funds, onEdit, onBuy, onSell, onA
 
   return (
     <div className="glass-card-static rounded-2xl overflow-hidden flex flex-col border border-white/5 bg-[var(--bg-card)] w-full">
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse min-w-[1000px]">
+      <div className="w-full">
+        <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="border-b border-white/5 bg-black/40 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">
-              <th className="px-5 py-4">Fund Name</th>
-              <th className="px-5 py-4 text-center">Type</th>
-              <th className="px-5 py-4 text-right">Units</th>
-              <th className="px-5 py-4 text-right">Avg. NAV</th>
-              <th className="px-5 py-4 text-right">Current NAV</th>
-              <th className="px-5 py-4 text-right">Invested Value</th>
-              <th className="px-5 py-4 text-right">Current Value</th>
-              <th className="px-5 py-4 text-right">P&L / Return</th>
-              <th className="px-5 py-4 text-right">Actions</th>
+            <tr className="border-b border-white/5 bg-black/40 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.15em] text-[--text-muted]">
+              <th className="px-3 sm:px-4 py-3.5">Fund Name</th>
+              <th className="px-2 sm:px-3 py-3.5 text-center">Type</th>
+              <th className="px-2 sm:px-3 py-3.5 text-right">Units</th>
+              <th className="px-2 sm:px-3 py-3.5 text-right">Avg. NAV</th>
+              <th className="px-2 sm:px-3 py-3.5 text-right">Current NAV</th>
+              <th className="px-2 sm:px-3 py-3.5 text-right">Invested Value</th>
+              <th className="px-2 sm:px-3 py-3.5 text-right">Current Value</th>
+              <th className="px-3 sm:px-4 py-3.5 text-right">P&L / Return</th>
+              <th className="px-3 sm:px-4 py-3.5 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
@@ -121,16 +148,15 @@ export default function MutualFundsDataTable({ funds, onEdit, onBuy, onSell, onA
               const isPositive = pnl >= 0;
 
               const amc = fund.amc_name || "";
-              const logo = getAMCLogoUrl(amc);
 
               return (
                 <tr key={fund.id}>
                   {/* Fund Name */}
-                  <td className="px-5 py-3.5">
-                    <div className="flex items-center gap-3">
-                      <AMCAvatar amcName={amc} logoUrl={logo} />
+                  <td className="px-3 sm:px-4 py-3">
+                    <div className="flex items-center gap-2.5">
+                      <AMCAvatar amcName={amc} fundName={fund.fund_name} />
                       <div className="min-w-0">
-                        <span className="text-[13px] font-bold text-white block truncate max-w-[250px]" title={fund.fund_name}>
+                        <span className="text-xs sm:text-[13px] font-bold text-white block truncate max-w-[180px] lg:max-w-[260px]" title={fund.fund_name}>
                           {fund.fund_name}
                         </span>
                         <span className="text-[9px] font-black text-purple-400 bg-purple-500/10 border border-purple-500/20 px-1.5 py-0.5 rounded uppercase tracking-wider mt-1 inline-block">
@@ -141,39 +167,39 @@ export default function MutualFundsDataTable({ funds, onEdit, onBuy, onSell, onA
                   </td>
 
                   {/* Type */}
-                  <td className="px-5 py-3.5 text-center">
-                    <span className="text-[9px] font-black text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-2 py-0.5 rounded uppercase tracking-wider">
+                  <td className="px-2 sm:px-3 py-3 text-center">
+                    <span className="text-[9px] font-black text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-1.5 sm:px-2 py-0.5 rounded uppercase tracking-wider">
                       {fund.investment_type || "SIP"}
                     </span>
                   </td>
 
                   {/* Units */}
-                  <td className="px-5 py-3.5 text-right font-mono text-xs text-white">
+                  <td className="px-2 sm:px-3 py-3 text-right font-mono text-xs text-white">
                     {Number(fund.units).toFixed(3)}
                   </td>
 
                   {/* Avg NAV */}
-                  <td className="px-5 py-3.5 text-right font-mono text-xs text-[--text-secondary]">
+                  <td className="px-2 sm:px-3 py-3 text-right font-mono text-xs text-[--text-secondary]">
                     ₹{formatMoney(Number(fund.avg_nav))}
                   </td>
 
                   {/* Current NAV */}
-                  <td className="px-5 py-3.5 text-right font-mono text-xs text-white">
+                  <td className="px-2 sm:px-3 py-3 text-right font-mono text-xs text-white">
                     ₹{formatMoney(Number(fund.current_nav))}
                   </td>
 
                   {/* Invested Value */}
-                  <td className="px-5 py-3.5 text-right font-mono text-xs text-[--text-secondary]">
+                  <td className="px-2 sm:px-3 py-3 text-right font-mono text-xs text-[--text-secondary]">
                     ₹{formatMoney(invested)}
                   </td>
 
                   {/* Current Value */}
-                  <td className="px-5 py-3.5 text-right font-mono text-xs text-white font-bold">
+                  <td className="px-2 sm:px-3 py-3 text-right font-mono text-xs text-white font-bold">
                     ₹{formatMoney(current)}
                   </td>
 
                   {/* P&L */}
-                  <td className="px-5 py-3.5 text-right">
+                  <td className="px-3 sm:px-4 py-3 text-right">
                     <div 
                       className="text-xs font-black inline-flex flex-col items-end"
                       style={{
@@ -187,24 +213,24 @@ export default function MutualFundsDataTable({ funds, onEdit, onBuy, onSell, onA
                   </td>
 
                   {/* Actions */}
-                  <td className="px-5 py-3.5 text-right">
-                    <div className="flex items-center justify-end gap-1.5">
+                  <td className="px-3 sm:px-4 py-3 text-right">
+                    <div className="flex items-center justify-end gap-1">
                       <button
                         onClick={() => onEdit(fund)}
-                        className="p-1.5 rounded-lg bg-white/5 text-xs font-bold text-gray-300 cursor-pointer"
+                        className="p-1 sm:p-1.5 rounded-lg bg-white/5 text-xs font-bold text-gray-300 cursor-pointer"
                         title="Edit details"
                       >
                         ✏️
                       </button>
                       <button
                         onClick={() => onBuy(fund)}
-                        className="px-2 py-1 rounded bg-[--accent-primary]/10 text-[--accent-primary] text-[9px] font-black uppercase tracking-wider cursor-pointer"
+                        className="px-1.5 sm:px-2 py-1 rounded bg-[--accent-primary]/10 text-[--accent-primary] text-[9px] font-black uppercase tracking-wider cursor-pointer"
                       >
                         Buy
                       </button>
                       <button
                         onClick={() => onSell(fund)}
-                        className="px-2 py-1 rounded border border-rose-500/30 text-rose-400 text-[9px] font-black uppercase tracking-wider cursor-pointer"
+                        className="px-1.5 sm:px-2 py-1 rounded border border-rose-500/30 text-rose-400 text-[9px] font-black uppercase tracking-wider cursor-pointer"
                       >
                         Redeem
                       </button>
@@ -218,10 +244,10 @@ export default function MutualFundsDataTable({ funds, onEdit, onBuy, onSell, onA
           {/* Zerodha-Style Summary Row */}
           <tfoot>
             <tr className="border-t-2 border-white/10 bg-black/60 font-black text-xs">
-              <td className="px-5 py-4 text-white uppercase tracking-wider" colSpan={5}>Total Holdings ({funds.length})</td>
-              <td className="px-5 py-4 text-right font-mono text-white">₹{formatMoney(totalInvested)}</td>
-              <td className="px-5 py-4 text-right font-mono text-white">₹{formatMoney(totalCurrent)}</td>
-              <td className="px-5 py-4 text-right">
+              <td className="px-3 sm:px-4 py-3.5 text-white uppercase tracking-wider" colSpan={5}>Total Holdings ({funds.length})</td>
+              <td className="px-2 sm:px-3 py-3.5 text-right font-mono text-white">₹{formatMoney(totalInvested)}</td>
+              <td className="px-2 sm:px-3 py-3.5 text-right font-mono text-white">₹{formatMoney(totalCurrent)}</td>
+              <td className="px-3 sm:px-4 py-3.5 text-right">
                 <div 
                   className="font-mono font-black inline-flex flex-col items-end"
                   style={{
@@ -233,7 +259,7 @@ export default function MutualFundsDataTable({ funds, onEdit, onBuy, onSell, onA
                   <span className="text-[10px] opacity-80 mt-0.5">{totalPnL >= 0 ? '+' : ''}{totalPnLPct.toFixed(2)}%</span>
                 </div>
               </td>
-              <td className="px-5 py-4"></td>
+              <td className="px-3 sm:px-4 py-3.5"></td>
             </tr>
           </tfoot>
         </table>

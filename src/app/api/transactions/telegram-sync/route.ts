@@ -883,6 +883,36 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ success: true });
         }
 
+        // Robust Deduplication check across a ±3 day window
+        const dateObj = new Date(cleanDate);
+        const minDate = new Date(dateObj.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+        const maxDate = new Date(dateObj.getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+        const tableName = smsData.type === "expense" ? "expenses" : "income";
+
+        const [{ data: existingTable }, { data: existingTx }] = await Promise.all([
+          supabase
+            .from(tableName)
+            .select("id")
+            .eq("user_id", profile.id)
+            .eq("amount", smsData.amount)
+            .gte("date", minDate)
+            .lte("date", maxDate)
+            .limit(1),
+          supabase
+            .from("transactions")
+            .select("id")
+            .eq("user_id", profile.id)
+            .eq("amount", smsData.amount)
+            .gte("date", minDate)
+            .lte("date", maxDate)
+            .limit(1),
+        ]);
+
+        if ((existingTable && existingTable.length > 0) || (existingTx && existingTx.length > 0)) {
+          await sendTelegramMessage(chatId, `ℹ️ *Duplicate Ignored*: A transaction for ₹${smsData.amount} around ${cleanDate} already exists.`);
+          return NextResponse.json({ success: true });
+        }
+
         let category = smsData.type === "expense" ? "Other" : "Salary";
         const merchantLower = smsData.merchant.toLowerCase();
 

@@ -161,10 +161,15 @@ export async function GET(request: Request) {
     // ===================================================
     // 8. FETCH AND MAP TRANSACTIONS
     // ===================================================
+    // ===================================================
+    // 8. FETCH AND MAP TRANSACTIONS & PARTICULARS FILTERING
+    // ===================================================
     const pad = (n: number) => String(n).padStart(2, "0");
     const lastDay = new Date(year, month, 0).getDate();
-    const startDate = `${year}-${pad(month)}-01T00:00:00.000Z`;
-    const endDate = `${year}-${pad(month)}-${pad(lastDay)}T23:59:59.999Z`;
+    const customStart = searchParams.get("startDate");
+    const customEnd = searchParams.get("endDate");
+    const startDate = customStart || `${year}-${pad(month)}-01T00:00:00.000Z`;
+    const endDate = customEnd || `${year}-${pad(month)}-${pad(lastDay)}T23:59:59.999Z`;
 
     const txns = await transactionRepo.findByDateRange(user.id, startDate, endDate);
     const sortedTxns = [...txns].sort((a, b) => {
@@ -184,12 +189,17 @@ export async function GET(request: Request) {
       };
     });
 
-    // 9. Render React PDF to stream
+    const modulesParam = searchParams.get("modules") || "all";
+    const selectedModules = new Set(modulesParam.split(","));
+    const hasModule = (m: string) => selectedModules.has("all") || selectedModules.has(m);
+
     const monthNames = [
       "January", "February", "March", "April", "May", "June",
       "July", "August", "September", "October", "November", "December"
     ];
-    const statementPeriod = `${monthNames[month - 1]} ${year}`;
+    const statementPeriod = customStart && customEnd
+      ? `${customStart.split("T")[0]} to ${customEnd.split("T")[0]}`
+      : `${monthNames[month - 1]} ${year}`;
     const generatedAt = new Date().toLocaleDateString("en-IN", {
       day: "2-digit",
       month: "2-digit",
@@ -198,6 +208,83 @@ export async function GET(request: Request) {
       minute: "2-digit"
     });
 
+    const filteredAccounts = hasModule("accounts") ? mappedAccounts : [];
+    const filteredTxns = hasModule("transactions") ? mappedTxns : [];
+    const filteredInrStocks = hasModule("stocks") ? inrStocksList : [];
+    const filteredInrMutualFunds = hasModule("mutual_funds") ? inrMutualFundsList : [];
+    const filteredInrBonds = hasModule("bonds") ? inrBondsList : [];
+    const filteredInrAlternativeAssets = hasModule("alternative_assets") ? inrAlternativeAssetsList : [];
+    const filteredInrLiabilities = hasModule("liabilities") ? inrLiabilitiesList : [];
+    const filteredUsdStocks = hasModule("usd_portfolio") ? usdStocksList : [];
+    const filteredUsdCrypto = hasModule("usd_portfolio") ? usdCryptoList : [];
+
+    // Check if CSV format is requested
+    if (searchParams.get("format") === "csv") {
+      const csvRows: string[] = [];
+      csvRows.push(`FINANCE OS DATA EXPORT (${statementPeriod})`);
+      csvRows.push(`Generated For,${userName}`);
+      csvRows.push("");
+
+      if (hasModule("accounts")) {
+        csvRows.push("--- BANK & CREDIT ACCOUNTS ---");
+        csvRows.push("Account Name,Type,Currency,Balance");
+        filteredAccounts.forEach(a => csvRows.push(`"${(a.name || "").replace(/"/g, '""')}","${a.type || ""}",${a.currency || "INR"},${a.balance || 0}`));
+        csvRows.push("");
+      }
+
+      if (hasModule("transactions")) {
+        csvRows.push("--- TRANSACTIONS & LEDGER ---");
+        csvRows.push("Date,Description,Type,Category,Account,Amount,Currency");
+        filteredTxns.forEach(t => csvRows.push(`"${t.date}","${(t.description || "").replace(/"/g, '""')}","${t.type || ""}","${(t.category || "").replace(/"/g, '""')}","${(t.account_name || "").replace(/"/g, '""')}",${t.amount},${t.currency}`));
+        csvRows.push("");
+      }
+
+      if (hasModule("stocks")) {
+        csvRows.push("--- STOCKS & EQUITY ---");
+        csvRows.push("Symbol,Name,Quantity,Buy Price,Current Price,Value");
+        filteredInrStocks.forEach(s => csvRows.push(`"${s.symbol || ""}","${(s.name || "").replace(/"/g, '""')}",${s.quantity},${s.buy_price},${s.current_price},${s.value}`));
+        csvRows.push("");
+      }
+
+      if (hasModule("mutual_funds")) {
+        csvRows.push("--- MUTUAL FUNDS ---");
+        csvRows.push("Fund Name,Category,Units,Avg NAV,Current NAV,Value");
+        filteredInrMutualFunds.forEach(m => csvRows.push(`"${(m.fund_name || "").replace(/"/g, '""')}","${m.category || ""}",${m.units},${m.avg_nav},${m.current_nav},${m.value}`));
+        csvRows.push("");
+      }
+
+      if (hasModule("bonds")) {
+        csvRows.push("--- BONDS & FIXED INCOME ---");
+        csvRows.push("Bond Name,Issuer,Quantity,Purchase Price,Current Price,Value,Coupon Rate");
+        filteredInrBonds.forEach(b => csvRows.push(`"${(b.bond_name || "").replace(/"/g, '""')}","${(b.issuer || "").replace(/"/g, '""')}",${b.quantity},${b.purchase_price},${b.current_price},${b.value},${b.coupon_rate}%`));
+        csvRows.push("");
+      }
+
+      if (hasModule("alternative_assets")) {
+        csvRows.push("--- ALTERNATIVE ASSETS ---");
+        csvRows.push("Name,Category,Purchase Price,Current Value");
+        filteredInrAlternativeAssets.forEach(a => csvRows.push(`"${(a.name || "").replace(/"/g, '""')}","${a.category || ""}",${a.purchase_price},${a.current_value}`));
+        csvRows.push("");
+      }
+
+      if (hasModule("liabilities")) {
+        csvRows.push("--- LIABILITIES & LOANS ---");
+        csvRows.push("Name,Category,Total Amount,Remaining Amount,Interest Rate,Monthly Payment");
+        filteredInrLiabilities.forEach(l => csvRows.push(`"${(l.name || "").replace(/"/g, '""')}","${l.category || ""}",${l.total_amount},${l.remaining_amount},${l.interest_rate}%,${l.monthly_payment}`));
+        csvRows.push("");
+      }
+
+      const csvString = csvRows.join("\n");
+      const filenamePeriod = statementPeriod.replace(/[^a-zA-Z0-9]/g, "-");
+      return new Response(csvString, {
+        headers: {
+          "Content-Type": "text/csv; charset=utf-8",
+          "Content-Disposition": `attachment; filename="Finance-Data-Export-${filenamePeriod}.csv"`,
+        },
+      });
+    }
+
+    // 9. Render React PDF to stream
     const stream = await renderToStream(
       React.createElement(FinancialStatementPDF, {
         statementPeriod,
@@ -215,22 +302,23 @@ export async function GET(request: Request) {
           totalLiabilities: 0,
           liquidAssets: usdLiquidAssets,
         },
-        accounts: mappedAccounts,
-        transactions: mappedTxns,
-        inrStocks: inrStocksList,
-        inrMutualFunds: inrMutualFundsList,
-        inrBonds: inrBondsList,
-        inrAlternativeAssets: inrAlternativeAssetsList,
-        inrLiabilities: inrLiabilitiesList,
-        usdStocks: usdStocksList,
-        usdCrypto: usdCryptoList,
+        accounts: filteredAccounts,
+        transactions: filteredTxns,
+        inrStocks: filteredInrStocks,
+        inrMutualFunds: filteredInrMutualFunds,
+        inrBonds: filteredInrBonds,
+        inrAlternativeAssets: filteredInrAlternativeAssets,
+        inrLiabilities: filteredInrLiabilities,
+        usdStocks: filteredUsdStocks,
+        usdCrypto: filteredUsdCrypto,
       }) as any
     );
 
+    const filenamePeriod = statementPeriod.replace(/[^a-zA-Z0-9]/g, "-");
     return new Response(stream as any, {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="Financial-Statement-${month}-${year}.pdf"`,
+        "Content-Disposition": `attachment; filename="Financial-Statement-${filenamePeriod}.pdf"`,
       },
     });
   } catch (error) {

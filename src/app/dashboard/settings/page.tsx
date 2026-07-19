@@ -14,7 +14,6 @@ import ProfileTab from "./components/ProfileTab";
 import ModulesTab from "./components/ModulesTab";
 import DefaultsTab from "./components/DefaultsTab";
 import IntegrationsTab from "./components/IntegrationsTab";
-import DataExportsTab from "./components/DataExportsTab";
 import SystemStatusTab from "./components/SystemStatusTab";
 import DangerZoneTab from "./components/DangerZoneTab";
 
@@ -377,7 +376,6 @@ export default function SettingsPage() {
           { key: "modules", label: "Modules" },
           { key: "defaults", label: "Defaults" },
           { key: "integrations", label: "Integrations" },
-          { key: "exports", label: "Data Exports" },
           { key: "status", label: "System Status" },
           { key: "danger", label: "Danger Zone" },
         ].map((tab) => {
@@ -435,20 +433,6 @@ export default function SettingsPage() {
           isGmailSyncing={isGmailSyncing}
           handleGmailSync={handleGmailSync}
           mutate={mutate}
-        />
-      )}
-
-      {activeTab === "exports" && (
-        <DataExportsTab
-          transactions={transactions}
-          accounts={accounts}
-          incomes={incomes}
-          expenses={expenses}
-          stockTrades={stockTrades}
-          mutualFundTrades={mutualFundTrades}
-          bondTransactions={bondTransactions}
-          forexTrades={forexTrades}
-          fnoTrades={fnoTrades}
         />
       )}
 

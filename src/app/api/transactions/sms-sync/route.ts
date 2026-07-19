@@ -162,6 +162,39 @@ export async function POST(req: NextRequest) {
     const rpcName = type === "expense" ? "record_expense_by_sms" : "record_income_by_sms";
     const cleanDate = new Date().toISOString().split("T")[0];
 
+    // Robust Deduplication check across a ±3 day window across both specific and main transaction tables
+    const dateObj = new Date(cleanDate);
+    const minDate = new Date(dateObj.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+    const maxDate = new Date(dateObj.getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+    const tableName = type === "expense" ? "expenses" : "income";
+
+    const [{ data: existingTable }, { data: existingTx }] = await Promise.all([
+      supabase
+        .from(tableName)
+        .select("id")
+        .eq("user_id", userId)
+        .eq("amount", amount)
+        .gte("date", minDate)
+        .lte("date", maxDate)
+        .limit(1),
+      supabase
+        .from("transactions")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("amount", amount)
+        .gte("date", minDate)
+        .lte("date", maxDate)
+        .limit(1),
+    ]);
+
+    if ((existingTable && existingTable.length > 0) || (existingTx && existingTx.length > 0)) {
+      return NextResponse.json({
+        success: true,
+        duplicate: true,
+        message: "Duplicate transaction ignored",
+      });
+    }
+
     const { data: rpcData, error: rpcError } = await supabase.rpc(rpcName, {
       p_token: token,
       p_description: merchant,

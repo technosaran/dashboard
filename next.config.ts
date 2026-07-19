@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "www.google.com", pathname: "/s2/favicons/**" },
       { protocol: "https", hostname: "icons.duckduckgo.com" },
       { protocol: "https", hostname: "logo.clearbit.com" },
+      { protocol: "https", hostname: "unavatar.io" },
     ],
   },
   turbopack: {
