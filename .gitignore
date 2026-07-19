@@ -48,3 +48,7 @@ eslint-output.txt
 eslint-check.txt
 knip-output.txt
 push_out*.txt
+
+# playwright
+/playwright-report/
+/test-results/

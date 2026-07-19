@@ -55,12 +55,6 @@ export default function LedgerDataTable({
   const [isReverting, setIsReverting] = useState<string | null>(null);
   const [sorting, setSorting] = useState<SortingState>([]);
 
-  const getVoucherType = (type: string) => {
-    if (type === "CREATE" || type === "TRANSFER_IN" || type === "ADJUST_UP") return "RECEIPT";
-    if (type === "DELETE" || type === "TRANSFER_OUT" || type === "SEND_MONEY" || type === "ADJUST_DOWN") return "PAYMENT";
-    return "JOURNAL";
-  };
-
   const getSourceLabel = (srcType: string | null) => {
     if (!srcType) return "Manual";
     switch (srcType.toLowerCase()) {
@@ -133,26 +127,7 @@ export default function LedgerDataTable({
           );
         }
       }),
-      columnHelper.display({
-        id: "action_badge",
-        header: "Action",
-        cell: (info) => getActionBadge(info.row.original)
-      }),
-      columnHelper.accessor("action_type", {
-        header: "Voucher",
-        cell: (info) => {
-          const val = info.getValue();
-          const vType = getVoucherType(val);
-          return (
-            <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-[4px] ${
-              vType === "RECEIPT" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
-              vType === "PAYMENT" ? "bg-rose-500/10 text-rose-400 border border-rose-500/20" : "bg-blue-500/10 text-blue-400 border border-blue-500/20"
-            } whitespace-nowrap`}>
-              {vType}
-            </span>
-          );
-        }
-      }),
+
       columnHelper.accessor("details", {
         header: "Particulars",
         cell: (info) => {
@@ -217,7 +192,7 @@ export default function LedgerDataTable({
         }
       }),
     ],
-    [getLogCurrency, isDebitLog, isCreditLog, formatMoney, onRevert, isReverting, getActionBadge]
+    [getLogCurrency, isDebitLog, isCreditLog, formatMoney, onRevert, isReverting]
   );
 
   // eslint-disable-next-line react-hooks/incompatible-library

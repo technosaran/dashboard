@@ -590,7 +590,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
                           </div>
                         </td>
                         <td className="px-4 md:px-6 py-5 whitespace-nowrap">
-                          <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-[0.1em] bg-success/5 border border-success/10 text-success">{inc.category}</span>
+                          <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-[0.1em] bg-success/5 border border-success/10 text-success" style={{color: theme.color}}>{inc.category}</span>
                         </td>
                         <td className="px-4 md:px-6 py-5 whitespace-nowrap hidden sm:table-cell">
                           <div className="flex items-center gap-2">

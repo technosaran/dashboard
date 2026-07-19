@@ -139,10 +139,12 @@ export default function CompanyLogo({ companyName, category, size = 40, classNam
 
       {/* Real company logo image loaded on the fly */}
       {showImage && (
-        <img
+        <Image
           src={sources[srcIndex]}
           alt={companyName || "Company logo"}
-          className={`absolute inset-0 w-full h-full object-contain bg-white transition-opacity duration-300 ${
+          fill
+          unoptimized
+          className={`object-contain bg-white transition-opacity duration-300 ${
             imgLoaded ? "opacity-100" : "opacity-0"
           }`}
           onError={handleImgError}

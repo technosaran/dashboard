@@ -40,7 +40,6 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
   const { data: { budgets, expenses, incomes }, mutate } = useFinanceData(initialData);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [activeView, setActiveView] = useState<"overview" | "categories">("overview");
   
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerCategory, setDrawerCategory] = useState<string>("");

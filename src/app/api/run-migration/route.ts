@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Client } from "pg";
 import fs from "fs";
 import path from "path";
+import logger from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -24,10 +25,10 @@ export async function GET(req: NextRequest) {
     const migrationPath = path.join(process.cwd(), "supabase", "migrations", "20260718210000_telegram_integration.sql");
     const sql = fs.readFileSync(migrationPath, "utf8");
 
-    console.log("Executing Telegram migration SQL...");
+    logger.info("Executing Telegram migration SQL...");
     await client.query(sql);
     
-    console.log("Reloading PostgREST schema cache...");
+    logger.info("Reloading PostgREST schema cache...");
     await client.query("NOTIFY pgrst, 'reload schema';");
     
     await client.end();

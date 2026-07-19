@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase-server";
 import { createClient as createPublicClient } from "@supabase/supabase-js";
+import logger from "@/lib/logger";
 
 export async function POST(req: NextRequest) {
   try {
@@ -116,7 +117,7 @@ async function syncUserGmail(
 
   // 2. Fetch unread transaction-related emails from last 7 days
   const query = 'is:unread (subject:debited OR subject:credited OR subject:spent OR subject:received OR subject:alert OR subject:transaction OR subject:successful OR subject:confirmed OR "GPay" OR "Amazon Pay" OR "Paytm" OR "payment" OR "recharge" OR "debited" OR "credited" OR "spent" OR "₹" OR "Rs")';
-  console.log("[Gmail Sync Debug] Running search with query:", query);
+  logger.debug(`[Gmail Sync Debug] Running search with query: ${query}`);
   
   const listRes = await fetch(
     `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(query)}&maxResults=15`,
@@ -132,7 +133,7 @@ async function syncUserGmail(
   }
 
   const messages = listData.messages || [];
-  console.log("[Gmail Sync Debug] Total unread emails found matching criteria:", messages.length, messages);
+  logger.debug(`[Gmail Sync Debug] Total unread emails found matching criteria: ${messages.length}`);
   
   if (messages.length === 0) {
     return { userId, success: true, count: 0, message: "No unread transaction emails found" };
@@ -168,9 +169,7 @@ async function syncUserGmail(
       }
 
       const subject = message.payload?.headers?.find((h: any) => h.name?.toLowerCase() === 'subject')?.value;
-      console.log(`\n[Gmail Sync Debug] Processing message: ${msgRef.id}`);
-      console.log(`[Gmail Sync Debug] Subject: "${subject}"`);
-      console.log(`[Gmail Sync Debug] Snippet: "${message.snippet}"`);
+      logger.debug(`[Gmail Sync Debug] Processing message: ${msgRef.id}, Subject: "${subject}", Snippet: "${message.snippet}"`);
 
       // Extract email body text
       let bodyText = message.snippet || "";
@@ -183,10 +182,10 @@ async function syncUserGmail(
 
       // Parse email content
       const parsed = parseEmailText(bodyText);
-      console.log("[Gmail Sync Debug] Parser outcome:", parsed);
+      logger.debug(`[Gmail Sync Debug] Parser outcome: ${JSON.stringify(parsed)}`);
       
       if (!parsed) {
-        console.log("[Gmail Sync Debug] Extraction failed. Raw preview:", bodyText.substring(0, 180).replace(/\s+/g, " ") + "...");
+        logger.debug(`[Gmail Sync Debug] Extraction failed. Raw preview: ${bodyText.substring(0, 180).replace(/\s+/g, " ")}...`);
       }
 
       if (parsed) {
