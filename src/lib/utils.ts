@@ -29,19 +29,20 @@ export function parseToISODate(dateStr: string | null | undefined): string {
       }
       return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
     }
-    // If third part is 4 digits (DD-MM-YYYY or MM-DD-YYYY)
-    if (parts[2].length === 4) {
+    // If third part is 4 or 2 digits (DD-MM-YYYY / DD-MM-YY or MM-DD-YYYY / MM-DD-YY)
+    if (parts[2].length === 4 || parts[2].length === 2) {
+      const yearStr = parts[2].length === 2 ? String(2000 + Number(parts[2])) : parts[2];
       const p0 = Number(parts[0]);
       const p1 = Number(parts[1]);
       if (p0 > 12) {
-        // First part is day, second is month (DD-MM-YYYY)
-        return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+        // First part is day, second is month (DD-MM-YYYY / DD-MM-YY)
+        return `${yearStr}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
       } else if (p1 > 12) {
-        // Second part is day, first is month (MM-DD-YYYY)
-        return `${parts[2]}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
+        // Second part is day, first is month (MM-DD-YYYY / MM-DD-YY)
+        return `${yearStr}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
       } else {
         // Ambiguous (both <= 12), default to DD-MM-YYYY
-        return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+        return `${yearStr}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
       }
     }
   }
@@ -103,5 +104,28 @@ export function getTableCellClass(columnId?: string): string {
   }
 
   return "text-left";
+}
+
+const DEFAULT_EXCHANGE_RATES: Record<string, number> = {
+  USD: 85.0,
+  EUR: 92.0,
+  GBP: 108.0,
+  AED: 23.1,
+  SGD: 63.0,
+  CAD: 61.5,
+  AUD: 55.0,
+  JPY: 0.55,
+  INR: 1.0,
+};
+
+export async function getExchangeRate(baseCurrency: string, targetCurrency: string = "INR"): Promise<number> {
+  const base = baseCurrency.toUpperCase().trim();
+  const target = targetCurrency.toUpperCase().trim();
+  if (base === target) return 1.0;
+  
+  if (target === "INR" && DEFAULT_EXCHANGE_RATES[base]) {
+    return DEFAULT_EXCHANGE_RATES[base];
+  }
+  return 85.0; // Clean fallback for USD/general foreign currencies if unknown
 }
 

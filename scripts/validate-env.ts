@@ -17,6 +17,9 @@ const OPTIONAL_VARS = [
   { name: "REDIS_URL", description: "Redis connection URL for caching and rate limiting" },
   { name: "CRON_SECRET", description: "Authorization secret for API cron/sync endpoints" },
   { name: "NEXT_PUBLIC_SITE_URL", description: "Base URL of the application site" },
+  { name: "TELEGRAM_BOT_TOKEN", description: "Telegram Bot Token for webhook notifications" },
+  // Note: TELEGRAM_WEBHOOK_SECRET must also be registered with Telegram via setWebhook secret_token parameter
+  { name: "TELEGRAM_WEBHOOK_SECRET", description: "Secret token validated via X-Telegram-Bot-Api-Secret-Token header on webhook requests" },
 ];
 
 function loadEnvFiles() {

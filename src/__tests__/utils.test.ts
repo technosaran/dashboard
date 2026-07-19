@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { cn, parseToISODate } from '@/lib/utils';
+import { cn, parseToISODate, getExchangeRate } from '@/lib/utils';
 
 describe('cn (class name merger)', () => {
   it('should merge class names', () => {
@@ -61,6 +61,29 @@ describe('parseToISODate', () => {
     expect(parseToISODate(undefined)).toBe(today);
     expect(parseToISODate('')).toBe(today);
     expect(parseToISODate('   ')).toBe(today);
+  });
+
+  it('should parse 2-digit year DD-MM-YY format correctly', () => {
+    expect(parseToISODate('31-05-26')).toBe('2026-05-31');
+    expect(parseToISODate('15/08/25')).toBe('2025-08-15');
+  });
+});
+
+describe('getExchangeRate', () => {
+  it('should return 1.0 when base currency matches target currency', async () => {
+    expect(await getExchangeRate('INR', 'INR')).toBe(1.0);
+    expect(await getExchangeRate('usd', 'USD')).toBe(1.0);
+  });
+
+  it('should return default exchange rate for known major currencies to INR', async () => {
+    expect(await getExchangeRate('USD', 'INR')).toBe(85.0);
+    expect(await getExchangeRate('EUR', 'INR')).toBe(92.0);
+    expect(await getExchangeRate('GBP', 'INR')).toBe(108.0);
+    expect(await getExchangeRate('AED', 'INR')).toBe(23.1);
+  });
+
+  it('should return clean fallback rate for unknown currencies', async () => {
+    expect(await getExchangeRate('XYZ', 'INR')).toBe(85.0);
   });
 });
 

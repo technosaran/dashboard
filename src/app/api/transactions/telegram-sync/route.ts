@@ -1,7 +1,46 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import logger from "@/lib/logger";
-import { redisGet, redisSet, redisDel } from "@/lib/redis";
+import { redisGet, redisSet, redisDel, isRedisConfigured } from "@/lib/redis";
+import { getExchangeRate } from "@/lib/utils";
+
+// Helper to send message back to Telegram user with automatic fallback if Markdown entities fail to parse
+async function sendTelegramMessage(chatId: string, text: string) {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  if (!token) {
+    console.error("Missing TELEGRAM_BOT_TOKEN in environment variables");
+    return;
+  }
+
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text,
+        parse_mode: "Markdown",
+      }),
+    });
+    if (!res.ok) {
+      const errBody = await res.text();
+      console.error(`Telegram API error (${res.status}): ${errBody}`);
+      // If Telegram failed due to Markdown entity parsing issues (e.g., unescaped underscores/asterisks), retry sending as plain text
+      if (res.status === 400 && /can't parse entities/i.test(errBody)) {
+        await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text,
+          }),
+        });
+      }
+    }
+  } catch (error) {
+    console.error("Failed to send Telegram message:", error);
+  }
+}
 
 // Helper to check budget and send instant Telegram push warning if over 80%
 async function checkAndNotifyBudget(supabase: any, userId: string, chatId: string, category: string, newAmount: number) {
@@ -40,36 +79,16 @@ async function checkAndNotifyBudget(supabase: any, userId: string, chatId: strin
   }
 }
 
-// Helper to send message back to Telegram user
-async function sendTelegramMessage(chatId: string, text: string) {
-  const token = process.env.TELEGRAM_BOT_TOKEN;
-  if (!token) {
-    console.error("Missing TELEGRAM_BOT_TOKEN in environment variables");
-    return;
-  }
-
-  try {
-    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text,
-        parse_mode: "Markdown",
-      }),
-    });
-  } catch (error) {
-    console.error("Failed to send Telegram message:", error);
-  }
-}
-
 // Helper to evaluate basic inline math equations (e.g. "120 + 45 + 30" or "50 * 4")
 function evaluateInlineMath(text: string): { amount: number; cleanedText: string } | null {
+  // Exclude hyphenated date strings like YYYY-MM-DD or DD-MM-YYYY from being mistaken for subtraction when alone
+  if (/\b(?:\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4})\b/.test(text) && !/[\+\*\/]/.test(text)) {
+    return null;
+  }
   const mathRegex = /(\d+(?:\.\d{1,2})?(?:\s*[\+\-\*\/]\s*\d+(?:\.\d{1,2})?)+)/;
   const match = text.match(mathRegex);
   if (match) {
     try {
-      // Safe evaluation of basic math operations using Function
       const sanitized = match[1].replace(/[^0-9\+\-\*\/\.\s]/g, "");
       const result = new Function(`return ${sanitized}`)();
       if (typeof result === "number" && !isNaN(result) && result > 0) {
@@ -85,7 +104,7 @@ function evaluateInlineMath(text: string): { amount: number; cleanedText: string
   return null;
 }
 
-// Helper to extract natural language date references (e.g., "yesterday", "2 days ago", "2026-07-15")
+// Helper to extract natural language date references (e.g., "yesterday", "2 days ago", "2026-07-15", "19-07-2026") and strip them from text
 function parseNaturalDate(text: string): { date: string; cleanedText: string } {
   const today = new Date();
   const cleanToday = today.toISOString().split("T")[0];
@@ -97,6 +116,22 @@ function parseNaturalDate(text: string): { date: string; cleanedText: string } {
       date: explicitMatch[1],
       cleanedText: text.replace(explicitMatch[0], "").trim().replace(/\s+/g, " "),
     };
+  }
+
+  // Check for DD-MM-YYYY or DD-MM-YY (common in Indian bank SMS)
+  const ddMmMatch = text.match(/\b(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})\b/);
+  if (ddMmMatch) {
+    const day = parseInt(ddMmMatch[1], 10);
+    const month = parseInt(ddMmMatch[2], 10);
+    const yearStr = ddMmMatch[3];
+    const year = yearStr.length === 2 ? 2000 + parseInt(yearStr, 10) : parseInt(yearStr, 10);
+    if (day >= 1 && day <= 31 && month >= 1 && month <= 12 && year >= 2000 && year <= 2100) {
+      const formattedDate = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      return {
+        date: formattedDate,
+        cleanedText: text.replace(ddMmMatch[0], "").trim().replace(/\s+/g, " "),
+      };
+    }
   }
 
   // Check for "yesterday" / "kal"
@@ -125,7 +160,7 @@ function parseNaturalDate(text: string): { date: string; cleanedText: string } {
 }
 
 // Helper to detect and clean pasted Bank SMS / UPI notification alerts
-function parseBankSmsOrNotification(text: string, sender: string = "SMS"): {
+function parseBankSmsOrNotification(text: string): {
   amount: number;
   type: "expense" | "income";
   merchant: string;
@@ -135,10 +170,12 @@ function parseBankSmsOrNotification(text: string, sender: string = "SMS"): {
     return null;
   }
 
-  const amountRegex = /(?:Rs\.?|INR|debited by|credited by|spent|paid|received|₹|\$|€|£)\s*([\d,]+(?:\.\d{2})?)/i;
+  const amountRegex = /(?:(?:Rs\.?|INR|₹|\$|€|£)\s*([\d,]+(?:\.\d{1,2})?)|(?:debited|credited|spent|paid|received)(?:\s+(?:by|with|for|amount of|INR|Rs\.?|₹))?\s*([\d,]+(?:\.\d{1,2})?))/i;
   const amountMatch = text.match(amountRegex);
   if (!amountMatch) return null;
-  const amount = parseFloat(amountMatch[1].replace(/,/g, ""));
+  const rawAmtStr = amountMatch[1] || amountMatch[2];
+  if (!rawAmtStr) return null;
+  const amount = parseFloat(rawAmtStr.replace(/,/g, ""));
   if (isNaN(amount) || amount <= 0) return null;
 
   let type: "expense" | "income" = "expense";
@@ -147,21 +184,20 @@ function parseBankSmsOrNotification(text: string, sender: string = "SMS"): {
   }
 
   let merchant = "Online Transaction";
-  const merchantRegex = /(?:at|to|vpa|transfer to|spent on|paid to|from)\s+([A-Za-z0-9\s*#&-]+?)(?:\s+on|\s+using|\s+vpa|Ref|Ref\.?|UPI|ending|A\/c|\.|\d{2}-\d{2}-\d{4})/i;
+  const merchantRegex = /(?:at|to|vpa|transfer to|spent on|paid to|from|towards)\s+([A-Za-z0-9\s*#&-]+?)(?:\s+on|\s+using|\s+vpa|Ref|Ref\.?|UPI|ending|A\/c|\.|\d{2}-\d{2}-\d{4}|$)/i;
   const merchantMatch = text.match(merchantRegex);
   if (merchantMatch && merchantMatch[1].trim().length > 0) {
     merchant = merchantMatch[1].trim();
   } else {
-    // Look for common merchant names in text or use clean fallback
     const words = text.split(/\s+/);
-    const cleanWords = words.filter(w => w.length > 2 && !/^(Rs|INR|debited|credited|from|account|card|bank|ending|avail|bal|balance|ref|upi|via)$/i.test(w));
+    const cleanWords = words.filter(w => w.length > 2 && !/^(Rs|INR|debited|credited|from|account|card|bank|ending|avail|bal|balance|ref|upi|via|with|amount)$/i.test(w));
     if (cleanWords.length > 0) merchant = cleanWords.slice(0, 3).join(" ");
   }
 
   if (merchant.length > 40) merchant = merchant.substring(0, 40) + "...";
 
   let accountEnding: string | null = null;
-  const accountRegex = /(?:A\/c|account|card|ending|ending in|ending with|xx|x)\s*(\d{4})/i;
+  const accountRegex = /(?:A\/c|account|card|ending|ending in|ending with|xx|x|no\.?\s*)\s*(\d{4})/i;
   const accountMatch = text.match(accountRegex);
   if (accountMatch) accountEnding = accountMatch[1];
 
@@ -170,8 +206,26 @@ function parseBankSmsOrNotification(text: string, sender: string = "SMS"): {
 
 export async function POST(req: NextRequest) {
   try {
+    const webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
+    if (webhookSecret) {
+      const secretToken = req.headers.get("x-telegram-bot-api-secret-token");
+      if (secretToken !== webhookSecret) {
+        return NextResponse.json({ error: "Unauthorized webhook request" }, { status: 401 });
+      }
+    }
+
     const body = await req.json();
     logger.info(`[Telegram Webhook] Received update: ${JSON.stringify(body)}`);
+
+    // Basic idempotency check via update_id to prevent duplicate deliveries on retry
+    if (body?.update_id) {
+      const updateIdKey = `telegram_update_${body.update_id}`;
+      const isDuplicate = await redisGet(updateIdKey);
+      if (isDuplicate) {
+        return NextResponse.json({ success: true, message: "Duplicate update skipped" });
+      }
+      await redisSet(updateIdKey, "1", 300); // 5-minute TTL
+    }
 
     if (!body.message || !body.message.chat) {
       return NextResponse.json({ success: true, message: "No message chat found" });
@@ -238,7 +292,7 @@ export async function POST(req: NextRequest) {
 
       await sendTelegramMessage(
         chatId,
-        `🎉 *Success!* Bot linked to account *${profile.username || "Saran"}*.\n\n` +
+        `🎉 *Success!* Bot linked to account *${profile.username || "User"}*.\n\n` +
         `🚀 *What can you do now?*\n` +
         `• Log quick expenses: \`50 Tea\` or \`120+45+30 Lunch\`\n` +
         `• Check balances: \`/balance\`\n` +
@@ -264,29 +318,50 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
+    // Run parseNaturalDate first to extract dates like 2026-07-15 before evaluateInlineMath ever sees them
+    const initialDateParsed = parseNaturalDate(rawText);
+    const mathEval = evaluateInlineMath(initialDateParsed.cleanedText);
+    let text = mathEval ? mathEval.cleanedText : initialDateParsed.cleanedText;
+
+    // Parallelize user context reads: accounts, family members, goals upfront via Promise.all
+    const [{ data: accounts }, { data: familyMembers }, { data: goals }] = await Promise.all([
+      supabase.from("accounts").select("id, name, notes").eq("user_id", profile.id),
+      supabase.from("family_members").select("id, name, relationship").eq("user_id", profile.id),
+      supabase.from("goals").select("id, name").eq("user_id", profile.id),
+    ]);
+
+    const resolveAccount = (type: "expense" | "income", queryText?: string, accountEnding?: string | null): string | null => {
+      if (!accounts || accounts.length === 0) return null;
+      if (accountEnding && accountEnding.length >= 4) {
+        const matched = accounts.find(a => a.name.includes(accountEnding) || (a.notes && a.notes.includes(accountEnding)));
+        if (matched) return matched.id;
+      }
+      if (queryText) {
+        const lowerQ = queryText.toLowerCase();
+        for (const acc of accounts) {
+          const accLower = acc.name.toLowerCase().trim();
+          if (accLower.length >= 3 && new RegExp(`\\b${accLower.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}\\b`, 'i').test(lowerQ)) {
+            return acc.id;
+          }
+        }
+      }
+      const defaultAccounts = (profile.default_accounts as Record<string, string | null>) || {};
+      const defaultId = type === "expense" ? defaultAccounts.expenses : defaultAccounts.income;
+      if (defaultId && accounts.some((acc: any) => acc.id === defaultId)) {
+        return defaultId;
+      }
+      return accounts[0]?.id || null;
+    };
+
     // ─── CHECK PENDING FOLLOW-UP STATE FROM REDIS ───
     const pendingKey = `telegram_pending_${chatId}`;
     const pendingDataStr = await redisGet(pendingKey);
-    if (pendingDataStr) {
+    if (isRedisConfigured() && pendingDataStr) {
       try {
         const pendingData = JSON.parse(pendingDataStr);
         if (pendingData.pending) {
-          const cleanDate = new Date().toISOString().split("T")[0];
-          const { data: accounts } = await supabase.from("accounts").select("id, name, notes").eq("user_id", profile.id);
-          const resolveAccount = (type: "expense" | "income", queryText?: string) => {
-            if (!accounts || accounts.length === 0) return null;
-            if (queryText) {
-              const lowerQ = queryText.toLowerCase();
-              for (const acc of accounts) {
-                if (lowerQ.includes(acc.name.toLowerCase())) return acc.id;
-              }
-            }
-            const defaultAccounts = (profile.default_accounts as Record<string, string | null>) || {};
-            const defaultId = type === "expense" ? defaultAccounts.expenses : defaultAccounts.income;
-            return defaultId && accounts.some((acc: any) => acc.id === defaultId) ? defaultId : accounts[0].id;
-          };
-
-          const replyLower = rawText.toLowerCase().trim();
+          const { date: pendingDate, cleanedText: pendingCleanReply } = parseNaturalDate(text);
+          const replyLower = pendingCleanReply.toLowerCase().trim();
 
           // If waiting to know if amount is CREDIT or DEBIT
           if (pendingData.reason === "unknown_type") {
@@ -294,9 +369,9 @@ export async function POST(req: NextRequest) {
             const isReplyDebit = /\b(debit|dr|dr\.|spent|paid|outflow|expense|bought)\b/.test(replyLower) && !/\b(credit|cr|income|received|salary)\b/.test(replyLower);
 
             if (isReplyCredit || isReplyDebit) {
-              const type: "expense" | "income" = isReplyCredit ? "income" : "expense";
-              let category = type === "expense" ? "Other" : "Salary";
-              if (type === "expense") {
+              const txType: "expense" | "income" = isReplyCredit ? "income" : "expense";
+              let category = txType === "expense" ? "Other" : "Salary";
+              if (txType === "expense") {
                 if (/food|lunch|dinner|breakfast|swiggy|zomato|tea/i.test(replyLower)) category = "Food";
                 else if (/cab|uber|petrol|fuel|travel/i.test(replyLower)) category = "Transport";
                 else if (/shopping|amazon|myntra/i.test(replyLower)) category = "Shopping";
@@ -308,28 +383,39 @@ export async function POST(req: NextRequest) {
                 else if (/refund/i.test(replyLower)) category = "Refund";
               }
 
-              const description = pendingData.description || (type === "expense" ? "General Expense" : "General Income");
-              const targetAccount = resolveAccount(type, replyLower);
-              const rpcName = type === "expense" ? "record_expense" : "record_income";
+              const description = pendingData.description || (txType === "expense" ? "General Expense" : "General Income");
+              const targetAccount = resolveAccount(txType, replyLower);
+              if (!targetAccount) {
+                await sendTelegramMessage(chatId, "❌ *No Bank Account*: Please add a bank account in your dashboard before logging transactions.");
+                return NextResponse.json({ success: true });
+              }
 
-              await supabase.rpc(rpcName, {
+              const rpcName = txType === "expense" ? "record_expense" : "record_income";
+              const { data: rpcData, error: rpcError } = await supabase.rpc(rpcName, {
                 p_user_id: profile.id,
                 p_description: `[Telegram] ${description}`,
                 p_amount: pendingData.amount,
                 p_category: category,
-                p_date: cleanDate,
+                p_date: pendingDate,
                 p_account_id: targetAccount,
               });
 
-              await redisDel(pendingKey);
-              if (type === "expense") await checkAndNotifyBudget(supabase, profile.id, chatId, category, pendingData.amount);
+              if (rpcError) throw rpcError;
+              if (rpcData && typeof rpcData === "object" && "success" in rpcData && (rpcData as any).success === false) {
+                throw new Error((rpcData as any).error || "Failed to log transaction.");
+              }
 
-              const symbol = type === "expense" ? "💸" : "💰";
+              await redisDel(pendingKey);
+              if (txType === "expense") await checkAndNotifyBudget(supabase, profile.id, chatId, category, pendingData.amount);
+
+              const symbol = txType === "expense" ? "💸" : "💰";
+              const accObj = accounts?.find((a: any) => a.id === targetAccount);
               await sendTelegramMessage(
                 chatId,
-                `${symbol} *Confirmed & Logged ${type === "expense" ? "Expense" : "Income"}*:\n` +
+                `${symbol} *Confirmed & Logged ${txType === "expense" ? "Expense" : "Income"}*:\n` +
                 `• *Amount*: ₹${pendingData.amount}\n` +
                 `• *Category*: ${category}\n` +
+                `• *Account*: ${accObj?.name || "Default"}\n` +
                 `• *Desc*: ${description}`
               );
               return NextResponse.json({ success: true });
@@ -338,55 +424,64 @@ export async function POST(req: NextRequest) {
 
           // If waiting for AMOUNT (user had typed a description without a number)
           if (pendingData.reason === "unknown_amount") {
-            const numbers = (rawText.match(/\d+(?:\.\d{1,2})?/g) || []).map(Number);
+            const numbers = (text.match(/\d+(?:\.\d{1,2})?/g) || []).map(Number);
             if (numbers.length > 0 && numbers[0] > 0) {
               const amount = numbers[0];
               const description = pendingData.description || "General Entry";
               const descLower = description.toLowerCase();
               const isIncome = /\b(received|income|salary|credited|credit|earned|refund|got)\b/.test(descLower) && !/\b(paid|spent|sent|debited|debit)\b/.test(descLower);
-              const type: "expense" | "income" = isIncome ? "income" : "expense";
-              let category = type === "expense" ? "Other" : "Salary";
-              if (type === "expense") {
+              const txType: "expense" | "income" = isIncome ? "income" : "expense";
+              let category = txType === "expense" ? "Other" : "Salary";
+              if (txType === "expense") {
                 if (/food|lunch|dinner|swiggy|zomato|tea/i.test(descLower)) category = "Food";
                 else if (/cab|uber|petrol|fuel/i.test(descLower)) category = "Transport";
                 else if (/shopping|amazon/i.test(descLower)) category = "Shopping";
               }
-              const targetAccount = resolveAccount(type, descLower);
-              const rpcName = type === "expense" ? "record_expense" : "record_income";
+              const targetAccount = resolveAccount(txType, descLower);
+              if (!targetAccount) {
+                await sendTelegramMessage(chatId, "❌ *No Bank Account*: Please add a bank account in your dashboard before logging transactions.");
+                return NextResponse.json({ success: true });
+              }
 
-              await supabase.rpc(rpcName, {
+              const rpcName = txType === "expense" ? "record_expense" : "record_income";
+              const { data: rpcData, error: rpcError } = await supabase.rpc(rpcName, {
                 p_user_id: profile.id,
                 p_description: `[Telegram] ${description}`,
                 p_amount: amount,
                 p_category: category,
-                p_date: cleanDate,
+                p_date: pendingDate,
                 p_account_id: targetAccount,
               });
 
-              await redisDel(pendingKey);
-              if (type === "expense") await checkAndNotifyBudget(supabase, profile.id, chatId, category, amount);
+              if (rpcError) throw rpcError;
+              if (rpcData && typeof rpcData === "object" && "success" in rpcData && (rpcData as any).success === false) {
+                throw new Error((rpcData as any).error || "Failed to log transaction.");
+              }
 
+              await redisDel(pendingKey);
+              if (txType === "expense") await checkAndNotifyBudget(supabase, profile.id, chatId, category, amount);
+
+              const accObj = accounts?.find((a: any) => a.id === targetAccount);
               await sendTelegramMessage(
                 chatId,
-                `${type === "expense" ? "💸" : "💰"} *Confirmed & Logged ${type === "expense" ? "Expense" : "Income"}*:\n` +
+                `${txType === "expense" ? "💸" : "💰"} *Confirmed & Logged ${txType === "expense" ? "Expense" : "Income"}*:\n` +
                 `• *Amount*: ₹${amount}\n` +
                 `• *Category*: ${category}\n` +
+                `• *Account*: ${accObj?.name || "Default"}\n` +
                 `• *Desc*: ${description}`
               );
               return NextResponse.json({ success: true });
             }
           }
         }
-      } catch (e) {
+      } catch (e: any) {
         console.error("Error processing pending state:", e);
+        await sendTelegramMessage(chatId, `❌ *Error processing reply*: ${e.message || "Unknown error."}`);
+        return NextResponse.json({ success: true });
       }
     }
 
-    // Check for inline math expression first (`120 + 45 + 30 lunch`)
-    const mathEval = evaluateInlineMath(rawText);
-    const text = mathEval ? mathEval.cleanedText : rawText;
-
-    const lowerText = text.toLowerCase();
+    let lowerText = text.toLowerCase();
     const commandText = lowerText.replace(/^\//, "").trim();
 
     // 3. Handle System & Inquiry Commands (/help, /balance, /summary, /recent, /undo, /goals, /budget, /unlink)
@@ -435,12 +530,6 @@ export async function POST(req: NextRequest) {
 
     // ─── Command: /balance ───
     if (commandText === "balance" || commandText === "balances") {
-      const { data: accounts } = await supabase
-        .from("accounts")
-        .select("name, balance, type, currency")
-        .eq("user_id", profile.id)
-        .order("balance", { ascending: false });
-
       if (!accounts || accounts.length === 0) {
         await sendTelegramMessage(chatId, "💳 *No Active Accounts*: You haven't added any bank accounts yet. Add one in your dashboard to start tracking balances.");
         return NextResponse.json({ success: true });
@@ -449,9 +538,10 @@ export async function POST(req: NextRequest) {
       let totalNetWorth = 0;
       let msg = "💳 *Your Account Balances*\n\n";
       for (const acc of accounts) {
-        const bal = parseFloat(acc.balance) || 0;
+        const bal = parseFloat((acc as any).balance || 0);
         totalNetWorth += bal;
-        const icon = acc.type === "Bank" ? "🏦" : acc.type === "Credit Card" ? "💳" : acc.type === "Wallet" ? "📱" : "💵";
+        const type = (acc as any).type || "Bank";
+        const icon = type === "Bank" ? "🏦" : type === "Credit Card" ? "💳" : type === "Wallet" ? "📱" : "💵";
         msg += `${icon} *${acc.name}*: ₹${bal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}\n`;
       }
       msg += `\n🌟 *Total Net Worth*: ₹${totalNetWorth.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`;
@@ -537,7 +627,7 @@ export async function POST(req: NextRequest) {
     if (commandText === "undo" || commandText === "delete") {
       const { data: lastTx } = await supabase
         .from("transactions")
-        .select("id, description, amount, type, account_id, category")
+        .select("id, description, amount, type, account_id, category, source_id, source_type, ledger_log_id")
         .eq("user_id", profile.id)
         .order("created_at", { ascending: false })
         .limit(1)
@@ -548,19 +638,59 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true });
       }
 
-      // Revert account balance if account_id is present
-      if (lastTx.account_id) {
-        const { data: acc } = await supabase.from("accounts").select("balance").eq("id", lastTx.account_id).maybeSingle();
-        if (acc) {
-          const currentBal = parseFloat(acc.balance) || 0;
-          const amt = parseFloat(lastTx.amount) || 0;
-          const newBal = lastTx.type === "income" ? currentBal - amt : currentBal + amt;
-          await supabase.from("accounts").update({ balance: newBal }).eq("id", lastTx.account_id);
+      // 1. Revert atomically if we have a ledger_log_id
+      if (lastTx.ledger_log_id) {
+        const { data: rpcRes, error: rpcErr } = await supabase.rpc("revert_ledger_log", {
+          p_log_id: lastTx.ledger_log_id,
+          p_user_id: profile.id
+        });
+        if (rpcErr) {
+          await sendTelegramMessage(chatId, `❌ *Undo Failed*: ${rpcErr.message}`);
+          return NextResponse.json({ success: true });
+        }
+        const result = rpcRes as { success: boolean; error?: string } | null;
+        if (result && result.success === false) {
+          await sendTelegramMessage(chatId, `❌ *Undo Failed*: ${result.error || "Database rejected revert."}`);
+          return NextResponse.json({ success: true });
+        }
+      } else {
+        // 2. Check if a ledger log exists by source_id
+        const { data: logs } = await supabase
+          .from("ledger_logs")
+          .select("id")
+          .eq("source_id", lastTx.source_id || lastTx.id)
+          .eq("user_id", profile.id)
+          .order("created_at", { ascending: false });
+
+        if (logs && logs.length > 0) {
+          const { data: rpcRes, error: rpcErr } = await supabase.rpc("revert_ledger_log", {
+            p_log_id: logs[0].id,
+            p_user_id: profile.id
+          });
+          if (rpcErr || (rpcRes && (rpcRes as any).success === false)) {
+            const errMsg = rpcErr ? rpcErr.message : (rpcRes as any)?.error || "Failed to revert transaction.";
+            await sendTelegramMessage(chatId, `❌ *Undo Failed*: ${errMsg}`);
+            return NextResponse.json({ success: true });
+          }
+        } else {
+          // 3. Fallback direct table cleanup
+          if (lastTx.account_id) {
+            const { data: acc } = await supabase.from("accounts").select("balance").eq("id", lastTx.account_id).maybeSingle();
+            if (acc) {
+              const currentBal = parseFloat(acc.balance) || 0;
+              const amt = parseFloat(lastTx.amount) || 0;
+              const newBal = lastTx.type === "income" ? currentBal - amt : currentBal + amt;
+              await supabase.from("accounts").update({ balance: newBal }).eq("id", lastTx.account_id);
+            }
+          }
+          if (lastTx.source_id && lastTx.source_type === "expense") {
+            await supabase.from("expenses").delete().eq("id", lastTx.source_id).eq("user_id", profile.id);
+          } else if (lastTx.source_id && lastTx.source_type === "income") {
+            await supabase.from("incomes").delete().eq("id", lastTx.source_id).eq("user_id", profile.id);
+          }
+          await supabase.from("transactions").delete().eq("id", lastTx.id).eq("user_id", profile.id);
         }
       }
-
-      // Delete from transactions table
-      await supabase.from("transactions").delete().eq("id", lastTx.id);
 
       await sendTelegramMessage(
         chatId,
@@ -571,11 +701,6 @@ export async function POST(req: NextRequest) {
 
     // ─── Command: /goals ───
     if (commandText === "goals") {
-      const { data: goals } = await supabase
-        .from("goals")
-        .select("name, target_amount, current_amount, target_date")
-        .eq("user_id", profile.id);
-
       if (!goals || goals.length === 0) {
         await sendTelegramMessage(chatId, "🎯 *No Active Goals*: Create a goal in your dashboard or contribute directly using `goal 5000 Vacation`.");
         return NextResponse.json({ success: true });
@@ -583,8 +708,8 @@ export async function POST(req: NextRequest) {
 
       let msg = "🎯 *Your Savings Goals*\n\n";
       for (const g of goals) {
-        const target = parseFloat(g.target_amount) || 1;
-        const current = parseFloat(g.current_amount) || 0;
+        const target = parseFloat((g as any).target_amount) || 1;
+        const current = parseFloat((g as any).current_amount) || 0;
         const pct = Math.min(100, Math.round((current / target) * 100));
         const progressBar = "█".repeat(Math.floor(pct / 10)) + "░".repeat(10 - Math.floor(pct / 10));
         msg += `*${g.name}*\n\`[${progressBar}] ${pct}%\` (₹${current.toLocaleString("en-IN")} / ₹${target.toLocaleString("en-IN")})\n\n`;
@@ -642,11 +767,17 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true });
       }
 
+      const safeQuery = query.replace(/[,().%_\\]/g, " ").trim();
+      if (!safeQuery || safeQuery.length < 2) {
+        await sendTelegramMessage(chatId, "🔍 *Search Usage*:\nPlease enter a valid search term without special characters.");
+        return NextResponse.json({ success: true });
+      }
+
       const { data: results } = await supabase
         .from("transactions")
         .select("date, description, category, amount, type")
         .eq("user_id", profile.id)
-        .or(`description.ilike.%${query}%,category.ilike.%${query}%`)
+        .or(`description.ilike.%${safeQuery}%,category.ilike.%${safeQuery}%`)
         .order("date", { ascending: false })
         .limit(10);
 
@@ -729,41 +860,29 @@ export async function POST(req: NextRequest) {
     }
 
     // 4. Universal Smart Parser & Auto-Sensing Engine
+    // Extract date and update text to have date tokens stripped so numbers in date (like `2` or `2026`) aren't parsed as amount
     const dateParsed = parseNaturalDate(text);
     const cleanDate = dateParsed.date;
+    text = dateParsed.cleanedText;
+    lowerText = text.toLowerCase();
 
-    // Fetch user context: accounts, family members, goals
-    const { data: accounts } = await supabase.from("accounts").select("id, name, notes").eq("user_id", profile.id);
-    const { data: familyMembers } = await supabase.from("family_members").select("id, name, relationship").eq("user_id", profile.id);
-    const { data: goals } = await supabase.from("goals").select("id, name").eq("user_id", profile.id);
+    // Check if the text is OTP / verification alert
+    if (/otp|verification|verification code|password|one time password/i.test(text)) {
+      await sendTelegramMessage(chatId, "ℹ️ *Notice*: Ignored OTP / verification alert.");
+      return NextResponse.json({ success: true });
+    }
 
-    const resolveAccount = (type: "expense" | "income", queryText?: string, accountEnding?: string | null) => {
-      if (!accounts || accounts.length === 0) return null;
-      // If bank SMS had a 4-digit card/account ending
-      if (accountEnding) {
-        const matched = accounts.find(a => a.name.includes(accountEnding) || (a.notes && a.notes.includes(accountEnding)));
-        if (matched) return matched.id;
-      }
-      // If user mentioned an account by name (e.g. savings, hdfc, icici, cash)
-      if (queryText) {
-        const lowerQ = queryText.toLowerCase();
-        for (const acc of accounts) {
-          if (lowerQ.includes(acc.name.toLowerCase())) {
-            return acc.id;
-          }
-        }
-      }
-      const defaultAccounts = (profile.default_accounts as Record<string, string | null>) || {};
-      const defaultId = type === "expense" ? defaultAccounts.expenses : defaultAccounts.income;
-      return defaultId && accounts.some((acc: any) => acc.id === defaultId) ? defaultId : accounts[0].id;
-    };
-
-    // Check if the text is a pasted Bank SMS or Notification (long sentence or keywords like debited/credited/av bal)
-    const isPastedSmsOrNotification = /debited|credited|av bal|avail bal|vpa|spent on|card ending|a\/c no|account no/i.test(text);
+    // Check if the text is a pasted Bank SMS or Notification
+    const isPastedSmsOrNotification = /(?:debited|credited|av bal|avail bal|vpa|spent on|card ending|a\/c no|account no|payment of|spent via|received in)/i.test(text) && text.length > 20;
     if (isPastedSmsOrNotification) {
       const smsData = parseBankSmsOrNotification(text);
       if (smsData) {
         const targetAccount = resolveAccount(smsData.type, text, smsData.accountEnding);
+        if (!targetAccount) {
+          await sendTelegramMessage(chatId, "❌ *No Bank Account*: Please add a bank account in your dashboard before logging transactions.");
+          return NextResponse.json({ success: true });
+        }
+
         let category = smsData.type === "expense" ? "Other" : "Salary";
         const merchantLower = smsData.merchant.toLowerCase();
 
@@ -776,7 +895,7 @@ export async function POST(req: NextRequest) {
         }
 
         const rpcName = smsData.type === "expense" ? "record_expense" : "record_income";
-        const { error: rpcError } = await supabase.rpc(rpcName, {
+        const { data: rpcData, error: rpcError } = await supabase.rpc(rpcName, {
           p_user_id: profile.id,
           p_description: `[SMS Alert] ${smsData.merchant}`,
           p_amount: smsData.amount,
@@ -786,6 +905,9 @@ export async function POST(req: NextRequest) {
         });
 
         if (rpcError) throw rpcError;
+        if (rpcData && typeof rpcData === "object" && "success" in rpcData && (rpcData as any).success === false) {
+          throw new Error((rpcData as any).error || "Failed to record SMS alert transaction.");
+        }
 
         if (smsData.type === "expense") {
           await checkAndNotifyBudget(supabase, profile.id, chatId, category, smsData.amount);
@@ -801,13 +923,16 @@ export async function POST(req: NextRequest) {
           `• *Account*: ${accObj?.name || "Default Bank"}`
         );
         return NextResponse.json({ success: true });
+      } else {
+        await sendTelegramMessage(chatId, "ℹ️ *Could not parse Bank Alert*: We detected a bank or payment notification, but couldn't safely extract the exact amount or merchant. Please log it manually like: `450 Swiggy`.");
+        return NextResponse.json({ success: true });
       }
     }
 
     const rawTokens = text.trim().split(/\s+/);
     const firstWord = rawTokens[0].toLowerCase();
 
-    // Extract all numbers from text
+    // Extract all remaining numbers from text
     const numbers = (text.match(/\d+(?:\.\d{1,2})?/g) || []).map(Number);
     const primaryAmount = numbers[0] || 0;
 
@@ -815,12 +940,18 @@ export async function POST(req: NextRequest) {
       // ─── A. Explicit Command Router OR Auto-Sensed Family Transfer ───
       const isExplicitFamily = firstWord === "family";
       const hasTransferKeywords = /\b(send|sent|transfer|transferred|gave|give|paid to|received from|got from|allowance|pocket money)\b/i.test(text);
-      const mentionedFamilyMember = familyMembers?.find((m: any) => 
-        lowerText.includes(m.name.toLowerCase()) || 
-        (m.relationship && lowerText.includes(m.relationship.toLowerCase()))
-      );
+      const mentionedFamilyMember = familyMembers?.find((m: any) => {
+        if (!m.name || m.name.trim().length < 2) return false;
+        const nameRegex = new RegExp(`\\b${m.name.trim().replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}\\b`, 'i');
+        if (nameRegex.test(text)) return true;
+        if (m.relationship && m.relationship.trim().length >= 3) {
+          const relRegex = new RegExp(`\\b${m.relationship.trim().replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}\\b`, 'i');
+          if (relRegex.test(text)) return true;
+        }
+        return false;
+      });
 
-      if (isExplicitFamily || (primaryAmount > 0 && (hasTransferKeywords || mentionedFamilyMember))) {
+      if (isExplicitFamily || (mentionedFamilyMember && primaryAmount > 0 && hasTransferKeywords)) {
         let amount = primaryAmount;
         let type = /received|from|got/i.test(lowerText) && !/sent|to/i.test(lowerText) ? "received" : "sent";
         let targetMember = mentionedFamilyMember;
@@ -848,7 +979,7 @@ export async function POST(req: NextRequest) {
           note = `[Telegram] ${type === "sent" ? "Sent to" : "Received from"} ${targetMember.name}`;
         } else if (!targetMember) {
           const nameMatch = text.match(/\b(?:send|sent|transfer|to|from|gave)\s+([a-zA-Z]+)/i);
-          const probableName = nameMatch ? nameMatch[1].charAt(0).toUpperCase() + nameMatch[1].slice(1) : "Saran";
+          const probableName = nameMatch ? nameMatch[1].charAt(0).toUpperCase() + nameMatch[1].slice(1) : "Member";
           const { data: newMem, error: createErr } = await supabase.from("family_members").insert({
             user_id: profile.id,
             name: probableName,
@@ -859,7 +990,7 @@ export async function POST(req: NextRequest) {
           targetMember = newMem;
         }
 
-        if (amount <= 0) throw new Error("Please specify a valid amount for the transfer (e.g. `send saran 2000 savings2`).");
+        if (amount <= 0) throw new Error("Please specify a valid amount for the transfer (e.g. `send saran 2000`).");
 
         const targetAccount = resolveAccount(type === "sent" ? "expense" : "income", text);
         if (!targetAccount) throw new Error("No active bank account found to process transfer.");
@@ -876,7 +1007,9 @@ export async function POST(req: NextRequest) {
         });
 
         if (error) throw error;
-        if (rpcRes && rpcRes.success === false) throw new Error(rpcRes.error || "Transfer failed inside database.");
+        if (rpcRes && typeof rpcRes === "object" && "success" in rpcRes && (rpcRes as any).success === false) {
+          throw new Error((rpcRes as any).error || "Transfer failed inside database.");
+        }
 
         const accObj = accounts?.find((a: any) => a.id === targetAccount);
         await sendTelegramMessage(chatId, `💜 *Family Transfer Recorded*:\n• *Member*: ${targetMember.name} (${targetMember.relationship})\n• *Action*: ${type === "sent" ? "Sent" : "Received"} ₹${amount}\n• *Account*: ${accObj?.name || "Default"}\n• *Note*: ${cleanedNote || "None"}`);
@@ -885,8 +1018,10 @@ export async function POST(req: NextRequest) {
 
       // ─── B. Explicit OR Auto-Sensed Stock Trade ───
       const isExplicitStock = firstWord === "stock";
-      const hasStockKeywords = /\b(share|shares|stock|stocks|equities|nse|bse)\b/i.test(text);
-      if (isExplicitStock || (hasStockKeywords && numbers.length >= 2)) {
+      const hasSpecificStockVerb = /\b(bought shares? of|sold shares? of|bought stock|sold stock|equities|nse|bse)\b/i.test(text);
+      const hasStockKeywords = /\b(share|shares|stock|stocks)\b/i.test(text);
+      const possibleTicker = text.split(/\s+/).find(w => /^[A-Z]{2,10}$/.test(w) && !["BUY", "SELL", "STOCK", "SHARES", "THE", "AND", "FOR", "WITH", "FROM", "TO"].includes(w));
+      if (isExplicitStock || (numbers.length >= 2 && (hasSpecificStockVerb || (hasStockKeywords && possibleTicker)))) {
         const tradeType = /sell|sold/i.test(lowerText) ? "sell" : "buy";
         let quantity = numbers[0] || 0;
         let price = numbers[1] || numbers[0] || 0;
@@ -909,7 +1044,9 @@ export async function POST(req: NextRequest) {
         if (quantity <= 0 || price <= 0) throw new Error("Please specify valid quantity and price: `stock buy 10 AAPL 150`.");
 
         const targetAccount = resolveAccount(tradeType === "buy" ? "expense" : "income", text);
-        const { error } = await supabase.rpc("record_investment", {
+        if (!targetAccount) throw new Error("No bank account found to record stock trade.");
+
+        const { data: rpcData, error } = await supabase.rpc("record_investment", {
           p_user_id: profile.id,
           p_name: symbol,
           p_type: "stock",
@@ -926,6 +1063,9 @@ export async function POST(req: NextRequest) {
           p_charges: 0
         });
         if (error) throw error;
+        if (rpcData && typeof rpcData === "object" && "success" in rpcData && (rpcData as any).success === false) {
+          throw new Error((rpcData as any).error || "Failed to record stock trade.");
+        }
         await sendTelegramMessage(chatId, `📈 *Stock Trade Recorded*:\n• *Action*: ${tradeType.toUpperCase()}\n• *Symbol*: ${symbol}\n• *Qty*: ${quantity} @ ₹${price}\n• *Total*: ₹${(quantity * price).toFixed(2)}`);
         return NextResponse.json({ success: true });
       }
@@ -945,7 +1085,9 @@ export async function POST(req: NextRequest) {
         }
 
         const targetAccount = resolveAccount(tradeType === "sell" ? "income" : "expense", text);
-        const { error } = await supabase.rpc("record_mf_investment_v4", {
+        if (!targetAccount) throw new Error("No bank account found to record mutual fund investment.");
+
+        const { data: rpcData, error } = await supabase.rpc("record_mf_investment_v4", {
           p_user_id: profile.id,
           p_fund_name: fund,
           p_scheme_code: "TELEGRAM_MF",
@@ -960,6 +1102,9 @@ export async function POST(req: NextRequest) {
           p_trade_type: tradeType === "sell" ? "sell" : "buy"
         });
         if (error) throw error;
+        if (rpcData && typeof rpcData === "object" && "success" in rpcData && (rpcData as any).success === false) {
+          throw new Error((rpcData as any).error || "Failed to record mutual fund trade.");
+        }
         await sendTelegramMessage(chatId, `🏦 *Mutual Fund Recorded*:\n• *Type*: ${tradeType.toUpperCase()}\n• *Amount*: ₹${amount}\n• *Fund*: ${fund}`);
         return NextResponse.json({ success: true });
       }
@@ -980,12 +1125,15 @@ export async function POST(req: NextRequest) {
         }
 
         const targetAccount = resolveAccount("expense", text);
+        if (!targetAccount) throw new Error("No bank account found to record forex trade.");
+
+        const exchangeRate = await getExchangeRate(currency, "INR");
         const { error } = await supabase.from("forex_trades").insert({
           user_id: profile.id,
           currency_pair: `INR/${currency}`,
           trade_type: tradeType,
           amount: amount,
-          exchange_rate: 83.5,
+          exchange_rate: exchangeRate,
           date: cleanDate,
           account_id: targetAccount
         });
@@ -1009,11 +1157,19 @@ export async function POST(req: NextRequest) {
         if (!targetGoal && goals && goals.length > 0) targetGoal = goals[0];
 
         if (targetGoal) {
-          const { error } = await supabase.rpc("contribute_to_goal", {
+          const targetAccount = resolveAccount("expense", text);
+          if (!targetAccount) throw new Error("No bank account found for goal contribution.");
+
+          const { data: rpcData, error: rpcError } = await supabase.rpc("contribute_to_goal", {
             p_goal_id: targetGoal.id,
-            p_amount: amount
+            p_amount: amount,
+            p_user_id: profile.id,
+            p_account_id: targetAccount
           });
-          if (error) throw error;
+          if (rpcError) throw rpcError;
+          if (rpcData && typeof rpcData === "object" && "success" in rpcData && (rpcData as any).success === false) {
+            throw new Error((rpcData as any).error || "Failed to contribute to goal.");
+          }
           await sendTelegramMessage(chatId, `🎯 *Goal Contribution*:\n• *Amount*: ₹${amount}\n• *Goal*: ${targetGoal.name}`);
           return NextResponse.json({ success: true });
         }
@@ -1022,6 +1178,13 @@ export async function POST(req: NextRequest) {
       // ─── F. Universal Auto-Categorized Income & Expense Engine ───
       if (primaryAmount <= 0) {
         if (text.length > 2 && !/help|balance|summary|recent|undo|goals|budget/i.test(text)) {
+          if (!isRedisConfigured()) {
+            await sendTelegramMessage(
+              chatId,
+              `🤖 *Amount Needed*: I see you want to log "${text}". Since multi-step conversation caching (Redis) is not configured on this server, please resend your transaction with the amount in one line (e.g. \`450 ${text}\`).`
+            );
+            return NextResponse.json({ success: true });
+          }
           await redisSet(pendingKey, JSON.stringify({ pending: true, reason: "unknown_amount", description: text }), 600);
           await sendTelegramMessage(chatId, `🤖 *Amount Needed*: I see you want to log "${text}". How much was it?\n\n💡 _Reply with just the number (e.g. \`450\`)_`);
           return NextResponse.json({ success: true });
@@ -1035,6 +1198,16 @@ export async function POST(req: NextRequest) {
 
       // If text is purely digits or neither debit/credit/category can be deduced, ask smart clarifying question
       if ((!isIncomeExplicit && !isExpenseExplicit) || /^\d+(?:\.\d{1,2})?$/.test(text.trim())) {
+        if (!isRedisConfigured()) {
+          await sendTelegramMessage(
+            chatId,
+            `🤖 *Need Clarification for ₹${primaryAmount.toLocaleString("en-IN")}*:\n` +
+            `Since multi-step conversation caching (Redis) is not configured on this server, please resend your complete transaction in one line:\n` +
+            `• \`credit ${primaryAmount} salary\`\n` +
+            `• \`debit ${primaryAmount} food\``
+          );
+          return NextResponse.json({ success: true });
+        }
         const descStr = text.replace(new RegExp(`\\b${primaryAmount}\\b`), "").trim() || "General Transaction";
         await redisSet(pendingKey, JSON.stringify({ pending: true, reason: "unknown_type", amount: primaryAmount, description: descStr }), 600);
         await sendTelegramMessage(
@@ -1049,10 +1222,10 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true });
       }
 
-      const type: "expense" | "income" = isIncomeExplicit ? "income" : "expense";
+      const txType: "expense" | "income" = isIncomeExplicit ? "income" : "expense";
       
-      let category = type === "expense" ? "Other" : "Salary";
-      if (type === "expense") {
+      let category = txType === "expense" ? "Other" : "Salary";
+      if (txType === "expense") {
         if (/zomato|swiggy|restaurant|eat|lunch|dinner|breakfast|snack|tea|coffee|chai|cafe|food|dining|grocery|groceries|zepto|blinkit|milk|veg/i.test(lowerText)) category = "Food";
         else if (/uber|ola|rapido|cab|taxi|ride|auto|metro|petrol|diesel|fuel|parking|toll|bus|train|flight/i.test(lowerText)) category = "Transport";
         else if (/netflix|prime|hotstar|spotify|movie|pvr|show|game|playstation|steam|subscription/i.test(lowerText)) category = "Entertainment";
@@ -1068,11 +1241,15 @@ export async function POST(req: NextRequest) {
         else category = "Others";
       }
 
-      const description = text.replace(new RegExp(`\\b${primaryAmount}\\b`), "").trim().replace(/\s+/g, " ") || (type === "expense" ? "General Expense" : "General Income");
-      const targetAccount = resolveAccount(type, text);
+      const description = text.replace(new RegExp(`\\b${primaryAmount}\\b`), "").trim().replace(/\s+/g, " ") || (txType === "expense" ? "General Expense" : "General Income");
+      const targetAccount = resolveAccount(txType, text);
+      if (!targetAccount) {
+        await sendTelegramMessage(chatId, "❌ *No Bank Account*: Please add a bank account in your dashboard before logging transactions.");
+        return NextResponse.json({ success: true });
+      }
 
-      const rpcName = type === "expense" ? "record_expense" : "record_income";
-      const { error: rpcError } = await supabase.rpc(rpcName, {
+      const rpcName = txType === "expense" ? "record_expense" : "record_income";
+      const { data: rpcData, error: rpcError } = await supabase.rpc(rpcName, {
         p_user_id: profile.id,
         p_description: `[Telegram] ${description}`,
         p_amount: primaryAmount,
@@ -1082,16 +1259,19 @@ export async function POST(req: NextRequest) {
       });
 
       if (rpcError) throw rpcError;
+      if (rpcData && typeof rpcData === "object" && "success" in rpcData && (rpcData as any).success === false) {
+        throw new Error((rpcData as any).error || "Database rejected transaction.");
+      }
 
-      if (type === "expense") {
+      if (txType === "expense") {
         await checkAndNotifyBudget(supabase, profile.id, chatId, category, primaryAmount);
       }
 
-      const symbol = type === "expense" ? "💸" : "💰";
+      const symbol = txType === "expense" ? "💸" : "💰";
       const accObj = accounts?.find((a: any) => a.id === targetAccount);
       await sendTelegramMessage(
         chatId,
-        `${symbol} *Logged ${type === "expense" ? "Expense" : "Income"}*:\n` +
+        `${symbol} *Logged ${txType === "expense" ? "Expense" : "Income"}*:\n` +
         `• *Amount*: ₹${primaryAmount}\n` +
         `• *Category*: ${category}\n` +
         `• *Account*: ${accObj?.name || "Default"}\n` +
@@ -1108,4 +1288,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message || error }, { status: 500 });
   }
 }
-

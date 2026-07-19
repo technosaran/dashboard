@@ -8,7 +8,7 @@ async function sendTelegramMessage(chatId: string, text: string) {
   if (!token) return;
 
   try {
-    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -17,6 +17,20 @@ async function sendTelegramMessage(chatId: string, text: string) {
         parse_mode: "Markdown",
       }),
     });
+    if (!res.ok) {
+      const errBody = await res.text();
+      console.error(`Telegram API error (${res.status}): ${errBody}`);
+      if (res.status === 400 && /can't parse entities/i.test(errBody)) {
+        await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text,
+          }),
+        });
+      }
+    }
   } catch (error) {
     console.error("Failed to send Telegram message:", error);
   }

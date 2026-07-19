@@ -69,6 +69,17 @@ export function getRedisClient(): Redis | null {
   }
 }
 
+let hasLoggedRedisWarning = false;
+
+export function isRedisConfigured(): boolean {
+  const isConfigured = Boolean(process.env.REDIS_URL && process.env.REDIS_URL.trim() !== '');
+  if (!isConfigured && !hasLoggedRedisWarning) {
+    console.warn('[Redis] REDIS_URL not configured. Multi-step pending-state Telegram flows and distributed rate limiting will not work reliably across Vercel serverless instances.');
+    hasLoggedRedisWarning = true;
+  }
+  return isConfigured;
+}
+
 export function isRedisHealthy(): boolean {
   return isRedisAvailable && redisClient !== null && redisClient.status === 'ready';
 }

@@ -101,12 +101,12 @@ function createPassThroughResponse(requestHeaders: Headers) {
 }
 
 /**
- * Next.js proxy middleware for authentication and security headers
+ * Next.js middleware for authentication and security headers
  * - Handles Supabase authentication
  * - Applies comprehensive security headers
  * - Manages route protection
  */
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Skip proxy for static assets
@@ -127,7 +127,7 @@ export async function proxy(request: NextRequest) {
 
   if (pathname.startsWith("/api/")) {
     let limiter = generalRateLimiter;
-    if (pathname.startsWith("/api/sync")) {
+    if (pathname.startsWith("/api/sync") || pathname.includes("-sync")) {
       limiter = syncRateLimiter;
     } else if (pathname.startsWith("/api/reports")) {
       limiter = reportsRateLimiter;
@@ -159,7 +159,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // 2. CSRF Protection Check
-  if (pathname.startsWith("/api/") && pathname !== "/api/transactions/telegram-sync" && pathname !== "/api/run-migration") {
+  if (pathname.startsWith("/api/") && pathname !== "/api/transactions/telegram-sync" && pathname !== "/api/transactions/sms-sync" && pathname !== "/api/run-migration") {
     const csrfResponse = await csrfMiddleware(request);
     if (csrfResponse) {
       SecurityLogger.logEvent({
@@ -201,7 +201,7 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isPublicRoute = PUBLIC_ROUTES.has(pathname) || pathname.startsWith("/auth/") || pathname === "/api/transactions/telegram-sync" || pathname === "/api/run-migration";
+  const isPublicRoute = PUBLIC_ROUTES.has(pathname) || pathname.startsWith("/auth/") || pathname === "/api/transactions/telegram-sync" || pathname === "/api/transactions/sms-sync" || pathname === "/api/run-migration";
 
   let finalResponse: NextResponse;
 
