@@ -141,6 +141,23 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Helper function to auto-categorize merchants from SMS
+    let category = type === "expense" ? "Other" : "Salary";
+    const merchLower = merchant.toLowerCase();
+    if (type === "expense") {
+      if (/zomato|swiggy|restaurant|eat|lunch|dinner|breakfast|snack|tea|coffee|chai|cafe|food|dining|grocery|groceries|zepto|blinkit|milk/i.test(merchLower)) category = "Food";
+      else if (/uber|ola|rapido|cab|taxi|ride|auto|metro|petrol|diesel|fuel|parking|flight/i.test(merchLower)) category = "Transport";
+      else if (/amazon|flipkart|myntra|ajio|croma|clothes|shoes|shopping/i.test(merchLower)) category = "Shopping";
+      else if (/netflix|prime|hotstar|spotify|movie|pvr|show|subscription/i.test(merchLower)) category = "Entertainment";
+      else if (/electricity|water|gas|wifi|broadband|airtel|jio|vi|recharge|mobile|bill/i.test(merchLower)) category = "Utilities";
+      else if (/doctor|hospital|medicine|pharmacy|apollo|1mg|gym|fitness/i.test(merchLower)) category = "Health";
+    } else {
+      if (/salary|paycheck/i.test(merchLower)) category = "Salary";
+      else if (/freelance|project|consulting/i.test(merchLower)) category = "Work";
+      else if (/gift|reward|cashback/i.test(merchLower)) category = "Gift";
+      else if (/refund/i.test(merchLower)) category = "Refund";
+    }
+
     // 4. Log the transaction using SQL security definer helper functions
     const rpcName = type === "expense" ? "record_expense_by_sms" : "record_income_by_sms";
     const cleanDate = new Date().toISOString().split("T")[0];
@@ -149,7 +166,7 @@ export async function POST(req: NextRequest) {
       p_token: token,
       p_description: merchant,
       p_amount: amount,
-      p_category: type === "expense" ? "Food" : "Salary", // Default fallback categories
+      p_category: category,
       p_date: cleanDate,
       p_account_id: resolvedAccountId,
     });
@@ -162,7 +179,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (type === "expense") {
-      await notifySmsBudgetAlert(supabase, token, "Food", amount);
+      await notifySmsBudgetAlert(supabase, token, category, amount);
     }
 
     return NextResponse.json({
@@ -201,8 +218,8 @@ function parseSms(text: string, sender: string) {
   // 2. Type Extraction (debit vs credit)
   let type: "expense" | "income" = "expense";
   if (
-    /credited|received|deposited|added|refunded/i.test(text) &&
-    !/spent|debited|withdrawn/i.test(text)
+    /credited|received|deposited|added|refunded|\bcredit\b|\bcr\.?\b/i.test(text) &&
+    !/spent|debited|withdrawn|paid|\bdebit\b|\bdr\.?\b/i.test(text)
   ) {
     type = "income";
   }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import logger from "@/lib/logger";
+import { redisGet, redisSet, redisDel } from "@/lib/redis";
 
 // Helper to check budget and send instant Telegram push warning if over 80%
 async function checkAndNotifyBudget(supabase: any, userId: string, chatId: string, category: string, newAmount: number) {
@@ -84,6 +85,45 @@ function evaluateInlineMath(text: string): { amount: number; cleanedText: string
   return null;
 }
 
+// Helper to extract natural language date references (e.g., "yesterday", "2 days ago", "2026-07-15")
+function parseNaturalDate(text: string): { date: string; cleanedText: string } {
+  const today = new Date();
+  const cleanToday = today.toISOString().split("T")[0];
+
+  // Check for explicit YYYY-MM-DD
+  const explicitMatch = text.match(/\b(\d{4}-\d{2}-\d{2})\b/);
+  if (explicitMatch) {
+    return {
+      date: explicitMatch[1],
+      cleanedText: text.replace(explicitMatch[0], "").trim().replace(/\s+/g, " "),
+    };
+  }
+
+  // Check for "yesterday" / "kal"
+  if (/\b(?:yesterday|kal)\b/i.test(text)) {
+    const yesterday = new Date(today.getTime() - 86400000);
+    return {
+      date: yesterday.toISOString().split("T")[0],
+      cleanedText: text.replace(/\b(?:yesterday|kal)\b/gi, "").trim().replace(/\s+/g, " "),
+    };
+  }
+
+  // Check for "N days ago"
+  const daysAgoMatch = text.match(/\b(\d+)\s+days?\s+ago\b/i);
+  if (daysAgoMatch) {
+    const days = parseInt(daysAgoMatch[1], 10);
+    if (!isNaN(days) && days > 0 && days <= 60) {
+      const pastDate = new Date(today.getTime() - days * 86400000);
+      return {
+        date: pastDate.toISOString().split("T")[0],
+        cleanedText: text.replace(daysAgoMatch[0], "").trim().replace(/\s+/g, " "),
+      };
+    }
+  }
+
+  return { date: cleanToday, cleanedText: text };
+}
+
 // Helper to detect and clean pasted Bank SMS / UPI notification alerts
 function parseBankSmsOrNotification(text: string, sender: string = "SMS"): {
   amount: number;
@@ -102,7 +142,7 @@ function parseBankSmsOrNotification(text: string, sender: string = "SMS"): {
   if (isNaN(amount) || amount <= 0) return null;
 
   let type: "expense" | "income" = "expense";
-  if (/credited|received|deposited|added|refunded/i.test(text) && !/spent|debited|withdrawn|paid/i.test(text)) {
+  if (/credited|received|deposited|added|refunded|\bcredit\b|\bcr\.?\b/i.test(text) && !/spent|debited|withdrawn|paid|\bdebit\b|\bdr\.?\b/i.test(text)) {
     type = "income";
   }
 
@@ -224,6 +264,124 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
+    // ─── CHECK PENDING FOLLOW-UP STATE FROM REDIS ───
+    const pendingKey = `telegram_pending_${chatId}`;
+    const pendingDataStr = await redisGet(pendingKey);
+    if (pendingDataStr) {
+      try {
+        const pendingData = JSON.parse(pendingDataStr);
+        if (pendingData.pending) {
+          const cleanDate = new Date().toISOString().split("T")[0];
+          const { data: accounts } = await supabase.from("accounts").select("id, name, notes").eq("user_id", profile.id);
+          const resolveAccount = (type: "expense" | "income", queryText?: string) => {
+            if (!accounts || accounts.length === 0) return null;
+            if (queryText) {
+              const lowerQ = queryText.toLowerCase();
+              for (const acc of accounts) {
+                if (lowerQ.includes(acc.name.toLowerCase())) return acc.id;
+              }
+            }
+            const defaultAccounts = (profile.default_accounts as Record<string, string | null>) || {};
+            const defaultId = type === "expense" ? defaultAccounts.expenses : defaultAccounts.income;
+            return defaultId && accounts.some((acc: any) => acc.id === defaultId) ? defaultId : accounts[0].id;
+          };
+
+          const replyLower = rawText.toLowerCase().trim();
+
+          // If waiting to know if amount is CREDIT or DEBIT
+          if (pendingData.reason === "unknown_type") {
+            const isReplyCredit = /\b(credit|cr|cr\.|income|received|salary|inflow|got|deposit)\b/.test(replyLower) && !/\b(debit|dr|spent|paid|outflow|expense)\b/.test(replyLower);
+            const isReplyDebit = /\b(debit|dr|dr\.|spent|paid|outflow|expense|bought)\b/.test(replyLower) && !/\b(credit|cr|income|received|salary)\b/.test(replyLower);
+
+            if (isReplyCredit || isReplyDebit) {
+              const type: "expense" | "income" = isReplyCredit ? "income" : "expense";
+              let category = type === "expense" ? "Other" : "Salary";
+              if (type === "expense") {
+                if (/food|lunch|dinner|breakfast|swiggy|zomato|tea/i.test(replyLower)) category = "Food";
+                else if (/cab|uber|petrol|fuel|travel/i.test(replyLower)) category = "Transport";
+                else if (/shopping|amazon|myntra/i.test(replyLower)) category = "Shopping";
+                else if (/movie|netflix|entertainment/i.test(replyLower)) category = "Entertainment";
+                else if (/bill|recharge|electricity/i.test(replyLower)) category = "Utilities";
+              } else {
+                if (/salary/i.test(replyLower)) category = "Salary";
+                else if (/gift/i.test(replyLower)) category = "Gift";
+                else if (/refund/i.test(replyLower)) category = "Refund";
+              }
+
+              const description = pendingData.description || (type === "expense" ? "General Expense" : "General Income");
+              const targetAccount = resolveAccount(type, replyLower);
+              const rpcName = type === "expense" ? "record_expense" : "record_income";
+
+              await supabase.rpc(rpcName, {
+                p_user_id: profile.id,
+                p_description: `[Telegram] ${description}`,
+                p_amount: pendingData.amount,
+                p_category: category,
+                p_date: cleanDate,
+                p_account_id: targetAccount,
+              });
+
+              await redisDel(pendingKey);
+              if (type === "expense") await checkAndNotifyBudget(supabase, profile.id, chatId, category, pendingData.amount);
+
+              const symbol = type === "expense" ? "💸" : "💰";
+              await sendTelegramMessage(
+                chatId,
+                `${symbol} *Confirmed & Logged ${type === "expense" ? "Expense" : "Income"}*:\n` +
+                `• *Amount*: ₹${pendingData.amount}\n` +
+                `• *Category*: ${category}\n` +
+                `• *Desc*: ${description}`
+              );
+              return NextResponse.json({ success: true });
+            }
+          }
+
+          // If waiting for AMOUNT (user had typed a description without a number)
+          if (pendingData.reason === "unknown_amount") {
+            const numbers = (rawText.match(/\d+(?:\.\d{1,2})?/g) || []).map(Number);
+            if (numbers.length > 0 && numbers[0] > 0) {
+              const amount = numbers[0];
+              const description = pendingData.description || "General Entry";
+              const descLower = description.toLowerCase();
+              const isIncome = /\b(received|income|salary|credited|credit|earned|refund|got)\b/.test(descLower) && !/\b(paid|spent|sent|debited|debit)\b/.test(descLower);
+              const type: "expense" | "income" = isIncome ? "income" : "expense";
+              let category = type === "expense" ? "Other" : "Salary";
+              if (type === "expense") {
+                if (/food|lunch|dinner|swiggy|zomato|tea/i.test(descLower)) category = "Food";
+                else if (/cab|uber|petrol|fuel/i.test(descLower)) category = "Transport";
+                else if (/shopping|amazon/i.test(descLower)) category = "Shopping";
+              }
+              const targetAccount = resolveAccount(type, descLower);
+              const rpcName = type === "expense" ? "record_expense" : "record_income";
+
+              await supabase.rpc(rpcName, {
+                p_user_id: profile.id,
+                p_description: `[Telegram] ${description}`,
+                p_amount: amount,
+                p_category: category,
+                p_date: cleanDate,
+                p_account_id: targetAccount,
+              });
+
+              await redisDel(pendingKey);
+              if (type === "expense") await checkAndNotifyBudget(supabase, profile.id, chatId, category, amount);
+
+              await sendTelegramMessage(
+                chatId,
+                `${type === "expense" ? "💸" : "💰"} *Confirmed & Logged ${type === "expense" ? "Expense" : "Income"}*:\n` +
+                `• *Amount*: ₹${amount}\n` +
+                `• *Category*: ${category}\n` +
+                `• *Desc*: ${description}`
+              );
+              return NextResponse.json({ success: true });
+            }
+          }
+        }
+      } catch (e) {
+        console.error("Error processing pending state:", e);
+      }
+    }
+
     // Check for inline math expression first (`120 + 45 + 30 lunch`)
     const mathEval = evaluateInlineMath(rawText);
     const text = mathEval ? mathEval.cleanedText : rawText;
@@ -239,12 +397,15 @@ export async function POST(req: NextRequest) {
         "*📊 Quick Reports & Actions*\n" +
         "• `/balance` — Check active bank accounts & total net worth\n" +
         "• `/summary` — Current month income, expenses & savings rate\n" +
+        "• `/report` — Intelligence report: top categories, highest expense & savings\n" +
+        "• `/search <keyword>` — Search recent transactions (e.g. `/search swiggy`)\n" +
         "• `/recent` — View last 5 transactions\n" +
         "• `/undo` — Delete the last logged transaction\n" +
         "• `/goals` — View savings goals progress\n" +
         "• `/budget` — Check monthly spending budget vs actuals\n\n" +
         "*⚡ Smart Transaction Logging*\n" +
-        "• `50 Tea` or `Income 5000 Salary`\n" +
+        "• `50 Tea` or `credit 5000 Salary` (Smart Credit/Debit sensing)\n" +
+        "• `450 yesterday Swiggy` or `1200 2 days ago Groceries` (Natural Dates!)\n" +
         "• `120 + 45 + 30 Lunch` (Supports inline math!)\n" +
         "• Forward or paste any Bank SMS/Notification directly into chat!\n\n" +
         "*💼 Investments & Transfers*\n" +
@@ -473,8 +634,103 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
+    // ─── Command: /search <keyword> ───
+    if (commandText.startsWith("search") || commandText.startsWith("find")) {
+      const query = rawText.replace(/^\/(?:search|find)\s*/i, "").trim();
+      if (!query || query.length < 2) {
+        await sendTelegramMessage(chatId, "🔍 *Search Usage*:\nType `/search swiggy` or `/search uber` to instantly find matching recent transactions.");
+        return NextResponse.json({ success: true });
+      }
+
+      const { data: results } = await supabase
+        .from("transactions")
+        .select("date, description, category, amount, type")
+        .eq("user_id", profile.id)
+        .or(`description.ilike.%${query}%,category.ilike.%${query}%`)
+        .order("date", { ascending: false })
+        .limit(10);
+
+      if (!results || results.length === 0) {
+        await sendTelegramMessage(chatId, `🔍 *No results found* for "${query}" in your transactions.`);
+        return NextResponse.json({ success: true });
+      }
+
+      let totalFound = 0;
+      let msg = `🔍 *Search Results for "${query}"*\n\n`;
+      for (const r of results) {
+        const amt = parseFloat(r.amount) || 0;
+        if (r.type === "expense") totalFound += amt;
+        const icon = r.type === "expense" ? "💸" : "💰";
+        const dtStr = new Date(r.date).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+        msg += `${icon} *${dtStr}*: ${r.description || r.category} — ₹${amt.toLocaleString("en-IN")}\n`;
+      }
+      if (totalFound > 0) {
+        msg += `\n🌟 *Total Expense Matched*: ₹${totalFound.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`;
+      }
+      await sendTelegramMessage(chatId, msg);
+      return NextResponse.json({ success: true });
+    }
+
+    // ─── Command: /report or /analytics ───
+    if (commandText === "report" || commandText === "analytics") {
+      const now = new Date();
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
+      const { data: monthTxs } = await supabase
+        .from("transactions")
+        .select("amount, type, category, description")
+        .eq("user_id", profile.id)
+        .gte("date", firstDay);
+
+      let totalIncome = 0;
+      let totalExpense = 0;
+      const catMap: Record<string, number> = {};
+      let highestTx = { description: "None", amount: 0 };
+
+      if (monthTxs) {
+        for (const t of monthTxs) {
+          const amt = parseFloat(t.amount) || 0;
+          if (t.type === "income") {
+            totalIncome += amt;
+          } else {
+            totalExpense += amt;
+            const cat = t.category || "Other";
+            catMap[cat] = (catMap[cat] || 0) + amt;
+            if (amt > highestTx.amount) {
+              highestTx = { description: t.description || t.category || "Expense", amount: amt };
+            }
+          }
+        }
+      }
+
+      const savings = totalIncome - totalExpense;
+      const savingsRate = totalIncome > 0 ? Math.round((savings / totalIncome) * 100) : 0;
+      const sortedCats = Object.entries(catMap).sort((a, b) => b[1] - a[1]).slice(0, 3);
+
+      let msg = `📈 *${now.toLocaleString("default", { month: "long" })} Financial Intelligence Report*\n\n` +
+        `💰 *Total Income*: ₹${totalIncome.toLocaleString("en-IN")}\n` +
+        `💸 *Total Expense*: ₹${totalExpense.toLocaleString("en-IN")}\n` +
+        `🔥 *Savings Rate*: ${savingsRate}% (₹${savings.toLocaleString("en-IN")})\n\n` +
+        `🏆 *Top 3 Spending Categories*:\n`;
+
+      const medals = ["🥇", "🥈", "🥉"];
+      if (sortedCats.length === 0) msg += `_No expenses logged yet._\n`;
+      else {
+        sortedCats.forEach(([cat, amt], idx) => {
+          msg += `${medals[idx] || "▪️"} *${cat}*: ₹${amt.toLocaleString("en-IN")}\n`;
+        });
+      }
+
+      if (highestTx.amount > 0) {
+        msg += `\n💡 *Highest Single Expense*:\n${highestTx.description} (₹${highestTx.amount.toLocaleString("en-IN")})`;
+      }
+
+      await sendTelegramMessage(chatId, msg);
+      return NextResponse.json({ success: true });
+    }
+
     // 4. Universal Smart Parser & Auto-Sensing Engine
-    const cleanDate = new Date().toISOString().split("T")[0];
+    const dateParsed = parseNaturalDate(text);
+    const cleanDate = dateParsed.date;
 
     // Fetch user context: accounts, family members, goals
     const { data: accounts } = await supabase.from("accounts").select("id, name, notes").eq("user_id", profile.id);
@@ -765,12 +1021,35 @@ export async function POST(req: NextRequest) {
 
       // ─── F. Universal Auto-Categorized Income & Expense Engine ───
       if (primaryAmount <= 0) {
-        await sendTelegramMessage(chatId, "❓ *Could not understand*: Please include an amount and description (e.g. `120 Lunch`, `send saran 2000 savings2`, or `stock buy 10 AAPL 150`).");
+        if (text.length > 2 && !/help|balance|summary|recent|undo|goals|budget/i.test(text)) {
+          await redisSet(pendingKey, JSON.stringify({ pending: true, reason: "unknown_amount", description: text }), 600);
+          await sendTelegramMessage(chatId, `🤖 *Amount Needed*: I see you want to log "${text}". How much was it?\n\n💡 _Reply with just the number (e.g. \`450\`)_`);
+          return NextResponse.json({ success: true });
+        }
+        await sendTelegramMessage(chatId, "❓ *Could not understand*: Please include an amount and description (e.g. `120 Lunch`, `credit 5000 salary`, or `stock buy 10 AAPL 150`).");
         return NextResponse.json({ success: true });
       }
 
-      const isIncome = /\b(received|income|salary|credited|earned|refund|dividend|bonus|cashback|got)\b/i.test(lowerText) && !/\b(paid|spent|sent|debited|to)\b/i.test(lowerText);
-      const type: "expense" | "income" = isIncome ? "income" : "expense";
+      const isIncomeExplicit = /\b(received|income|salary|credited|credit|cr\.?|cr|earned|refund|dividend|bonus|cashback|got|deposit)\b/i.test(lowerText) && !/\b(paid|spent|sent|debited|debit|dr\.?|dr|to|outflow)\b/i.test(lowerText);
+      const isExpenseExplicit = /\b(paid|spent|sent|debited|debit|dr\.?|dr|bought|purchase|expense|outflow|charge)\b/i.test(lowerText) || /zomato|swiggy|restaurant|eat|lunch|dinner|breakfast|snack|tea|coffee|chai|cafe|food|dining|grocery|groceries|zepto|blinkit|milk|uber|ola|rapido|cab|taxi|ride|auto|metro|petrol|diesel|fuel|parking|netflix|prime|hotstar|spotify|movie|pvr|show|rent|house|electricity|water|gas|wifi|broadband|airtel|jio|recharge|amazon|flipkart|myntra|ajio|clothes|shoes|doctor|hospital|medicine|pharmacy|gym/i.test(lowerText);
+
+      // If text is purely digits or neither debit/credit/category can be deduced, ask smart clarifying question
+      if ((!isIncomeExplicit && !isExpenseExplicit) || /^\d+(?:\.\d{1,2})?$/.test(text.trim())) {
+        const descStr = text.replace(new RegExp(`\\b${primaryAmount}\\b`), "").trim() || "General Transaction";
+        await redisSet(pendingKey, JSON.stringify({ pending: true, reason: "unknown_type", amount: primaryAmount, description: descStr }), 600);
+        await sendTelegramMessage(
+          chatId,
+          `🤖 *Need Clarification for ₹${primaryAmount.toLocaleString("en-IN")}*:\n` +
+          `Was this money spent (debit) or received (credit)?\n\n` +
+          `💡 *Reply with one of these:*\n` +
+          `• \`credit salary\` (or just \`credit\`)\n` +
+          `• \`debit food\` (or just \`debit\`)\n` +
+          `• \`send rahul\` (if family transfer)`
+        );
+        return NextResponse.json({ success: true });
+      }
+
+      const type: "expense" | "income" = isIncomeExplicit ? "income" : "expense";
       
       let category = type === "expense" ? "Other" : "Salary";
       if (type === "expense") {
