@@ -14,10 +14,10 @@ export default function TermsOfServicePage() {
         <div className="flex items-center justify-between border-b border-white/10 pb-6 mb-10">
           <Link href="/login" className="flex items-center gap-2.5 group">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white font-black text-lg shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition-transform">
-              F
+              A
             </div>
             <div>
-              <span className="text-lg font-black text-white tracking-tight">FinanceOS</span>
+              <span className="text-lg font-black text-white tracking-tight">arthaX</span>
               <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest -mt-0.5">Terms of Service</span>
             </div>
           </Link>
@@ -50,7 +50,7 @@ export default function TermsOfServicePage() {
               1. Acceptance of Terms
             </h2>
             <p className="text-sm">
-              By accessing, registering an account, or using <strong className="text-white font-semibold">FinanceOS</strong> (&ldquo;Service&rdquo;), you agree to be bound by these Terms of Service. If you do not agree to these terms, you must not access or use the application console.
+              By accessing, registering an account, or using <strong className="text-white font-semibold">arthaX</strong> (&ldquo;Service&rdquo;), you agree to be bound by these Terms of Service. If you do not agree to these terms, you must not access or use the application console.
             </p>
           </section>
 
@@ -59,11 +59,11 @@ export default function TermsOfServicePage() {
               2. Description of Service & Financial Disclaimer
             </h2>
             <p className="text-sm">
-              FinanceOS is a personal wealth, portfolio tracking, and analytical management tool designed to help you aggregate bank transactions, mutual fund schemes, stock holdings, and budget analytics.
+              arthaX is a personal wealth, portfolio tracking, and analytical management tool designed to help you aggregate bank transactions, mutual fund schemes, stock holdings, and budget analytics.
             </p>
             <p className="bg-amber-950/20 border border-amber-500/20 rounded-2xl p-4 text-xs sm:text-sm text-amber-200">
               <strong className="font-bold block mb-1 uppercase tracking-wide">Not Financial Advice Disclaimer:</strong>
-              FinanceOS is strictly a data visualization, accounting, and portfolio tracking software. We are NOT a registered broker-dealer, investment advisor, tax authority, or financial institution. Nothing displayed on this dashboard constitutes personalized investment advice, a recommendation to buy or sell securities, or legal/tax counsel. You bear full responsibility for your financial decisions and calculations.
+              arthaX is strictly a data visualization, accounting, and portfolio tracking software. We are NOT a registered broker-dealer, investment advisor, tax authority, or financial institution. Nothing displayed on this dashboard constitutes personalized investment advice, a recommendation to buy or sell securities, or legal/tax counsel. You bear full responsibility for your financial decisions and calculations.
             </p>
           </section>
 
@@ -81,7 +81,7 @@ export default function TermsOfServicePage() {
               4. Prohibited Uses
             </h2>
             <p className="text-sm">
-              You agree not to use FinanceOS for any unlawful purposes, including but not limited to money laundering, fraudulent accounting practices, unauthorized scraping of financial institutions, or attempting to compromise or bypass the Row-Level Security infrastructure of our database servers.
+              You agree not to use arthaX for any unlawful purposes, including but not limited to money laundering, fraudulent accounting practices, unauthorized scraping of financial institutions, or attempting to compromise or bypass the Row-Level Security infrastructure of our database servers.
             </p>
           </section>
 
@@ -90,7 +90,7 @@ export default function TermsOfServicePage() {
               5. Limitation of Liability
             </h2>
             <p className="text-sm">
-              To the maximum extent permitted by applicable law, FinanceOS and its developers shall not be held liable for any direct, indirect, incidental, consequential, or trading losses arising out of your use of the service, temporary network downtimes, or discrepancies in third-party API data (e.g., market quotes, mutual fund NAV updates, or bank alert processing).
+              To the maximum extent permitted by applicable law, arthaX and its developers shall not be held liable for any direct, indirect, incidental, consequential, or trading losses arising out of your use of the service, temporary network downtimes, or discrepancies in third-party API data (e.g., market quotes, mutual fund NAV updates, or bank alert processing).
             </p>
           </section>
 
@@ -107,7 +107,7 @@ export default function TermsOfServicePage() {
                 <span className="text-sm font-semibold text-white">saransci2006@gmail.com</span>
               </div>
               <a
-                href="mailto:saransci2006@gmail.com?subject=Terms%20of%20Service%20Inquiry%20-%20FinanceOS"
+                href="mailto:saransci2006@gmail.com?subject=Terms%20of%20Service%20Inquiry%20-%20arthaX"
                 className="text-xs font-bold text-cyan-400 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 px-4 py-2 rounded-xl transition-colors text-center"
               >
                 Send Inquiry
@@ -118,7 +118,7 @@ export default function TermsOfServicePage() {
 
         {/* Footer */}
         <div className="text-center text-xs text-gray-500 mt-8">
-          © {new Date().getFullYear()} FinanceOS Wealth Terminal. All rights reserved. •{" "}
+          © {new Date().getFullYear()} arthaX Wealth Terminal. All rights reserved. •{" "}
           <Link href="/privacy" className="hover:text-gray-300 underline">
             Privacy Policy
           </Link>

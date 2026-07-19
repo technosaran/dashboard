@@ -14,10 +14,10 @@ export default function PrivacyPolicyPage() {
         <div className="flex items-center justify-between border-b border-white/10 pb-6 mb-10">
           <Link href="/login" className="flex items-center gap-2.5 group">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white font-black text-lg shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition-transform">
-              F
+              A
             </div>
             <div>
-              <span className="text-lg font-black text-white tracking-tight">FinanceOS</span>
+              <span className="text-lg font-black text-white tracking-tight">arthaX</span>
               <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest -mt-0.5">Privacy & Security</span>
             </div>
           </Link>
@@ -50,7 +50,7 @@ export default function PrivacyPolicyPage() {
               1. Introduction & Overview
             </h2>
             <p>
-              Welcome to <strong className="text-white font-semibold">FinanceOS</strong> (&ldquo;we,&rdquo; &ldquo;our,&rdquo; or &ldquo;us&rdquo;). We respect your privacy and are committed to protecting your personal wealth data, transaction logs, and authentication credentials. This Privacy Policy details how our personal wealth terminal collects, processes, encrypts, and safeguards your information when you use our web application and associated Google OAuth services.
+              Welcome to <strong className="text-white font-semibold">arthaX</strong> (&ldquo;we,&rdquo; &ldquo;our,&rdquo; or &ldquo;us&rdquo;). We respect your privacy and are committed to protecting your personal wealth data, transaction logs, and authentication credentials. This Privacy Policy details how our personal wealth terminal collects, processes, encrypts, and safeguards your information when you use our web application and associated Google OAuth services.
             </p>
           </section>
 
@@ -59,7 +59,7 @@ export default function PrivacyPolicyPage() {
               2. Information We Collect
             </h2>
             <p>
-              When using FinanceOS, we collect and process the following categories of data:
+              When using arthaX, we collect and process the following categories of data:
             </p>
             <ul className="list-disc pl-5 space-y-2 text-sm text-gray-300">
               <li>
@@ -79,7 +79,7 @@ export default function PrivacyPolicyPage() {
               3. Google API Services Disclosure
             </h2>
             <p className="bg-cyan-950/20 border border-cyan-500/20 rounded-2xl p-4 text-xs sm:text-sm text-cyan-200">
-              FinanceOS&apos;s use and transfer to any other app of information received from Google APIs will adhere to the{" "}
+              arthaX&apos;s use and transfer to any other app of information received from Google APIs will adhere to the{" "}
               <a
                 href="https://developers.google.com/terms/api-services-user-data-policy#additional_requirements_for_specific_api_scopes"
                 target="_blank"
@@ -134,7 +134,7 @@ export default function PrivacyPolicyPage() {
                 <span className="text-sm font-semibold text-white">saransci2006@gmail.com</span>
               </div>
               <a
-                href="mailto:saransci2006@gmail.com?subject=Privacy%20Policy%20Inquiry%20-%20FinanceOS"
+                href="mailto:saransci2006@gmail.com?subject=Privacy%20Policy%20Inquiry%20-%20arthaX"
                 className="text-xs font-bold text-cyan-400 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 px-4 py-2 rounded-xl transition-colors text-center"
               >
                 Send Email Inquiry
@@ -145,7 +145,7 @@ export default function PrivacyPolicyPage() {
 
         {/* Footer */}
         <div className="text-center text-xs text-gray-500 mt-8">
-          © {new Date().getFullYear()} FinanceOS Wealth Terminal. All rights reserved. •{" "}
+          © {new Date().getFullYear()} arthaX Wealth Terminal. All rights reserved. •{" "}
           <Link href="/terms" className="hover:text-gray-300 underline">
             Terms of Service
           </Link>

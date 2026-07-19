@@ -8,6 +8,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/',
       disallow: ['/dashboard/', '/api/'],
     },
-    sitemap: 'https://finance-os.app/sitemap.xml',
+    sitemap: 'https://technosaranfin.vercel.app/sitemap.xml',
   }
 }

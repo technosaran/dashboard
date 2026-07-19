@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Login",
-  description: "Sign in to access your premium financial dashboard. Securely manage your wealth, track net worth, and monitor your portfolio.",
+  title: "Login | arthaX",
+  description: "Sign in to arthaX — your personal wealth management terminal. Track stocks, mutual funds, expenses, income and automate bank transaction alerts.",
   alternates: {
     canonical: "/login",
   },
   openGraph: {
-    title: "Login",
-    description: "Sign in to access your premium financial dashboard.",
-    url: "https://finance-os.app/login",
+    title: "Login | arthaX",
+    description: "Sign in to arthaX — your personal wealth management terminal.",
+    url: "https://technosaranfin.vercel.app/login",
   },
 };
 

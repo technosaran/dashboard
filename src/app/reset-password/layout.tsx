@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Reset Password",
     description: "Securely reset your password.",
-    url: "https://finance-os.app/reset-password",
+    url: "https://technosaranfin.vercel.app/reset-password",
   },
 };
 

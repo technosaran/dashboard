@@ -2,7 +2,7 @@
 import type { MetadataRoute } from 'next'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://finance-os.app'
+  const baseUrl = 'https://technosaranfin.vercel.app'
   
   return [
     {

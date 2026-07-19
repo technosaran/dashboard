@@ -140,7 +140,7 @@ export default function LoginPage() {
               </svg>
             </div>
             <div className="login-logo-text">
-              <span className="login-logo-name !text-white">FinanceOS</span>
+              <span className="login-logo-name !text-white">arthaX</span>
               <span className="login-logo-sub text-white/50">Personal Wealth Terminal</span>
             </div>
           </div>
@@ -225,14 +225,14 @@ export default function LoginPage() {
               </svg>
             </div>
             <div className="login-logo-text">
-              <span className="login-logo-name !text-white text-lg">FinanceOS</span>
+              <span className="login-logo-name !text-white text-lg">arthaX</span>
               <span className="login-logo-sub text-white/50 text-[9px] tracking-wider">Console</span>
             </div>
           </div>
 
-          <h1 className="login-title">Welcome Back</h1>
+          <h1 className="login-title">Welcome to arthaX</h1>
           <p className="login-subtitle">
-            Sign in to access your financial dashboard
+            Your personal wealth management terminal — track stocks, mutual funds, expenses, income, and automate bank transaction alerts with enterprise-grade security.
           </p>
 
           <button
@@ -389,7 +389,7 @@ export default function LoginPage() {
 
           {/* Footer */}
           <div className="login-footer flex flex-col items-center gap-1.5 mt-6">
-            <span className="text-white/40">FinanceOS Wealth Dashboard</span>
+            <span className="text-white/40">arthaX Wealth Dashboard</span>
             <div className="flex items-center gap-3 text-[11px] font-semibold text-gray-500">
               <Link href="/privacy" className="hover:text-gray-300 transition-colors underline">
                 Privacy Policy

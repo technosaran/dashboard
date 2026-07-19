@@ -9,29 +9,29 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "Premium Financial Control",
-    template: "%s | Portfolio"
+    default: "arthaX — Personal Wealth Terminal",
+    template: "%s | arthaX"
   },
-  description: "Your private wealth dashboard. Track net worth, cash flow, and portfolio performance at a glance.",
-  keywords: ["personal finance", "stock tracker", "wealth management", "budgeting", "net worth", "investment dashboard"],
-  authors: [{ name: "Wealth Team" }],
+  description: "arthaX is a personal wealth management terminal to track stocks, mutual funds, expenses, income, budgets, and automate bank transaction alerts with enterprise-grade security.",
+  keywords: ["arthaX", "personal finance", "stock tracker", "wealth management", "budgeting", "net worth", "investment dashboard", "mutual funds"],
+  authors: [{ name: "TechnoSaran" }],
   creator: "TechnoSaran",
   publisher: "TechnoSaran",
-  metadataBase: new URL("https://finance-os.app"),
+  metadataBase: new URL("https://technosaranfin.vercel.app"),
   alternates: {
     canonical: "/",
   },
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://finance-os.app",
-    title: "Private Wealth Dashboard",
-    description: "Institutional-grade wealth management for elite traders and investors.",
-    siteName: "Portfolio",
+    url: "https://technosaranfin.vercel.app",
+    title: "arthaX — Personal Wealth Terminal",
+    description: "Track stocks, mutual funds, expenses, income and automate bank transaction alerts with enterprise-grade security.",
+    siteName: "arthaX",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Wealth Refined",
+    title: "arthaX — Personal Wealth Terminal",
     description: "Track your global financial footprint from a single premium console.",
     creator: "@technosaran",
   },
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Portfolio",
+    title: "arthaX",
   },
   icons: {
     icon: [

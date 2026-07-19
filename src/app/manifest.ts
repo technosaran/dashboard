@@ -5,9 +5,9 @@ export default function manifest(): MetadataRoute.Manifest {
   const version = "2.0.8"; // This can be dynamic based on your build or package.json
   
   return {
-    name: 'Wealth Dashboard',
-    short_name: 'Dashboard',
-    description: 'Premium personal finance dashboard — manage accounts, track wealth, send money',
+    name: 'arthaX — Wealth Terminal',
+    short_name: 'arthaX',
+    description: 'arthaX personal wealth terminal — track stocks, mutual funds, expenses, income, and automate transaction alerts',
     start_url: '/dashboard',
     display: 'standalone',
     background_color: '#06080f',
