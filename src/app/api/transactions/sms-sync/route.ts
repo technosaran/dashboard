@@ -1,6 +1,56 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+async function notifySmsBudgetAlert(supabase: any, token: string, category: string, newAmount: number) {
+  try {
+    const { data: profile } = await supabase.from("profiles").select("id, telegram_chat_id").eq("sms_sync_token", token).maybeSingle();
+    if (!profile?.telegram_chat_id) return;
+
+    const { data: budget } = await supabase.from("budgets").select("amount").eq("user_id", profile.id).eq("category", category).maybeSingle();
+    if (!budget) return;
+
+    const limit = parseFloat(budget.amount) || 0;
+    if (limit <= 0) return;
+
+    const now = new Date();
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
+    const { data: txs } = await supabase
+      .from("transactions")
+      .select("amount")
+      .eq("user_id", profile.id)
+      .eq("type", "expense")
+      .eq("category", category)
+      .gte("date", firstDay);
+
+    let totalSpent = 0;
+    if (txs) {
+      for (const t of txs) {
+        totalSpent += parseFloat(t.amount) || 0;
+      }
+    }
+
+    const pct = Math.round((totalSpent / limit) * 100);
+    if (pct >= 80) {
+      const tokenEnv = process.env.TELEGRAM_BOT_TOKEN;
+      if (tokenEnv) {
+        const statusIcon = pct >= 100 ? "🚨" : "⚠️";
+        const msg = `${statusIcon} *Budget Warning (${category})*\n[Auto-SMS] You just spent ₹${newAmount.toLocaleString("en-IN")}.\nYour monthly ${category} spending is now ₹${totalSpent.toLocaleString("en-IN")} out of ₹${limit.toLocaleString("en-IN")} (${pct}% of limit)!`;
+        await fetch(`https://api.telegram.org/bot${tokenEnv}/sendMessage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chat_id: profile.telegram_chat_id,
+            text: msg,
+            parse_mode: "Markdown",
+          }),
+        });
+      }
+    }
+  } catch (err) {
+    console.error("SMS budget notification error:", err);
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -109,6 +159,10 @@ export async function POST(req: NextRequest) {
         { error: rpcError?.message || rpcData?.error || "Transaction RPC failed" },
         { status: 500 }
       );
+    }
+
+    if (type === "expense") {
+      await notifySmsBudgetAlert(supabase, token, "Food", amount);
     }
 
     return NextResponse.json({

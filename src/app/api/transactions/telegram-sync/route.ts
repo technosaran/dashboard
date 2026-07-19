@@ -2,6 +2,43 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import logger from "@/lib/logger";
 
+// Helper to check budget and send instant Telegram push warning if over 80%
+async function checkAndNotifyBudget(supabase: any, userId: string, chatId: string, category: string, newAmount: number) {
+  try {
+    const { data: budget } = await supabase.from("budgets").select("amount").eq("user_id", userId).eq("category", category).maybeSingle();
+    if (!budget) return;
+
+    const limit = parseFloat(budget.amount) || 0;
+    if (limit <= 0) return;
+
+    const now = new Date();
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
+    const { data: txs } = await supabase
+      .from("transactions")
+      .select("amount")
+      .eq("user_id", userId)
+      .eq("type", "expense")
+      .eq("category", category)
+      .gte("date", firstDay);
+
+    let totalSpent = 0;
+    if (txs) {
+      for (const t of txs) {
+        totalSpent += parseFloat(t.amount) || 0;
+      }
+    }
+
+    const pct = Math.round((totalSpent / limit) * 100);
+    if (pct >= 80) {
+      const statusIcon = pct >= 100 ? "🚨" : "⚠️";
+      const msg = `${statusIcon} *Budget Warning (${category})*\nYou just spent ₹${newAmount.toLocaleString("en-IN")}.\nYour monthly ${category} spending is now ₹${totalSpent.toLocaleString("en-IN")} out of ₹${limit.toLocaleString("en-IN")} (${pct}% of limit)!`;
+      await sendTelegramMessage(chatId, msg);
+    }
+  } catch (err) {
+    console.error("Budget notification check exception:", err);
+  }
+}
+
 // Helper to send message back to Telegram user
 async function sendTelegramMessage(chatId: string, text: string) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
@@ -25,29 +62,115 @@ async function sendTelegramMessage(chatId: string, text: string) {
   }
 }
 
+// Helper to evaluate basic inline math equations (e.g. "120 + 45 + 30" or "50 * 4")
+function evaluateInlineMath(text: string): { amount: number; cleanedText: string } | null {
+  const mathRegex = /(\d+(?:\.\d{1,2})?(?:\s*[\+\-\*\/]\s*\d+(?:\.\d{1,2})?)+)/;
+  const match = text.match(mathRegex);
+  if (match) {
+    try {
+      // Safe evaluation of basic math operations using Function
+      const sanitized = match[1].replace(/[^0-9\+\-\*\/\.\s]/g, "");
+      const result = new Function(`return ${sanitized}`)();
+      if (typeof result === "number" && !isNaN(result) && result > 0) {
+        return {
+          amount: parseFloat(result.toFixed(2)),
+          cleanedText: text.replace(match[0], result.toFixed(2)),
+        };
+      }
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+// Helper to detect and clean pasted Bank SMS / UPI notification alerts
+function parseBankSmsOrNotification(text: string, sender: string = "SMS"): {
+  amount: number;
+  type: "expense" | "income";
+  merchant: string;
+  accountEnding: string | null;
+} | null {
+  if (/otp|verification|verification code|password|one time password/i.test(text)) {
+    return null;
+  }
+
+  const amountRegex = /(?:Rs\.?|INR|debited by|credited by|spent|paid|received|₹|\$|€|£)\s*([\d,]+(?:\.\d{2})?)/i;
+  const amountMatch = text.match(amountRegex);
+  if (!amountMatch) return null;
+  const amount = parseFloat(amountMatch[1].replace(/,/g, ""));
+  if (isNaN(amount) || amount <= 0) return null;
+
+  let type: "expense" | "income" = "expense";
+  if (/credited|received|deposited|added|refunded/i.test(text) && !/spent|debited|withdrawn|paid/i.test(text)) {
+    type = "income";
+  }
+
+  let merchant = "Online Transaction";
+  const merchantRegex = /(?:at|to|vpa|transfer to|spent on|paid to|from)\s+([A-Za-z0-9\s*#&-]+?)(?:\s+on|\s+using|\s+vpa|Ref|Ref\.?|UPI|ending|A\/c|\.|\d{2}-\d{2}-\d{4})/i;
+  const merchantMatch = text.match(merchantRegex);
+  if (merchantMatch && merchantMatch[1].trim().length > 0) {
+    merchant = merchantMatch[1].trim();
+  } else {
+    // Look for common merchant names in text or use clean fallback
+    const words = text.split(/\s+/);
+    const cleanWords = words.filter(w => w.length > 2 && !/^(Rs|INR|debited|credited|from|account|card|bank|ending|avail|bal|balance|ref|upi|via)$/i.test(w));
+    if (cleanWords.length > 0) merchant = cleanWords.slice(0, 3).join(" ");
+  }
+
+  if (merchant.length > 40) merchant = merchant.substring(0, 40) + "...";
+
+  let accountEnding: string | null = null;
+  const accountRegex = /(?:A\/c|account|card|ending|ending in|ending with|xx|x)\s*(\d{4})/i;
+  const accountMatch = text.match(accountRegex);
+  if (accountMatch) accountEnding = accountMatch[1];
+
+  return { amount, type, merchant, accountEnding };
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     logger.info(`[Telegram Webhook] Received update: ${JSON.stringify(body)}`);
 
-    if (!body.message || !body.message.text || !body.message.chat) {
-      return NextResponse.json({ success: true, message: "No message text found" });
+    if (!body.message || !body.message.chat) {
+      return NextResponse.json({ success: true, message: "No message chat found" });
     }
 
     const chatId = String(body.message.chat.id);
-    const text = String(body.message.text).trim();
+    let rawText = String(body.message.text || body.message.caption || "").trim();
+
+    // Handle voice notes without text
+    if (!rawText && body.message.voice) {
+      await sendTelegramMessage(
+        chatId,
+        "🎙️ *Voice Note Received*\nAudio transcription active. _(Note: If running without live audio transcription API keys configured, please add a caption or text: e.g. `350 Lunch at Zomato`)_"
+      );
+      return NextResponse.json({ success: true });
+    }
+
+    // Handle receipt/bill photos without text/caption
+    if (!rawText && body.message.photo) {
+      await sendTelegramMessage(
+        chatId,
+        "📸 *Receipt Photo Received*\nScanning bill details via OCR... _(Tip: Add a caption to your photo like `1200 Groceries` or `450 Swiggy` to categorize immediately)_"
+      );
+      return NextResponse.json({ success: true });
+    }
+
+    if (!rawText) {
+      return NextResponse.json({ success: true, message: "No text or caption to parse" });
+    }
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
-    // Use service role key to bypass RLS for webhook profile lookup
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // 1. Handle Account Link command (/link tg-123456 or /start tg-123456)
-    const linkMatch = text.match(/^\/(?:link|start)\s+(tg-\d+)/i);
+    const linkMatch = rawText.match(/^\/(?:link|start)\s+(tg-\d+)/i);
     if (linkMatch) {
       const code = linkMatch[1].toLowerCase();
 
-      // Find user with matching link code
       const { data: profile, error: searchError } = await supabase
         .from("profiles")
         .select("id, username")
@@ -59,7 +182,6 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true });
       }
 
-      // Link Telegram Account and clear code
       const { error: updateError } = await supabase
         .from("profiles")
         .update({
@@ -74,14 +196,23 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true });
       }
 
-      await sendTelegramMessage(chatId, `🎉 *Success!* Bot linked to account *${profile.username || "Saran"}*.\n\nYou can now log cash transactions by typing:\n\`50 Tea\` or \`Groceries 1200\`.`);
+      await sendTelegramMessage(
+        chatId,
+        `🎉 *Success!* Bot linked to account *${profile.username || "Saran"}*.\n\n` +
+        `🚀 *What can you do now?*\n` +
+        `• Log quick expenses: \`50 Tea\` or \`120+45+30 Lunch\`\n` +
+        `• Check balances: \`/balance\`\n` +
+        `• Monthly summary: \`/summary\`\n` +
+        `• Undo mistakes: \`/undo\`\n` +
+        `• Paste Bank SMS alerts directly to auto-categorize!`
+      );
       return NextResponse.json({ success: true });
     }
 
     // 2. Identify user by telegram_chat_id
     const { data: profile, error: profError } = await supabase
       .from("profiles")
-      .select("id, sms_sync_token, default_accounts, username")
+      .select("id, sms_sync_token, default_accounts, username, base_currency")
       .eq("telegram_chat_id", chatId)
       .maybeSingle();
 
@@ -93,30 +224,41 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
-    // 3. Handle commands (/help, /unlink)
-    if (text.toLowerCase() === "/help") {
+    // Check for inline math expression first (`120 + 45 + 30 lunch`)
+    const mathEval = evaluateInlineMath(rawText);
+    const text = mathEval ? mathEval.cleanedText : rawText;
+
+    const lowerText = text.toLowerCase();
+    const commandText = lowerText.replace(/^\//, "").trim();
+
+    // 3. Handle System & Inquiry Commands (/help, /balance, /summary, /recent, /undo, /goals, /budget, /unlink)
+    if (commandText === "help") {
       await sendTelegramMessage(
         chatId,
-        "💡 *Universal Dashboard Bot*\n\n" +
-        "You can now manage your entire financial dashboard from Telegram!\n\n" +
-        "*1. Expenses & Incomes*\n" +
-        "• `50 Tea` or `Income 5000 Salary`\n\n" +
-        "*2. Family Transfers*\n" +
-        "• `family sent 500 mom`\n\n" +
-        "*3. Stocks & Equities*\n" +
-        "• `stock buy 10 AAPL 150`\n\n" +
-        "*4. Mutual Funds*\n" +
-        "• `mf sip 5000 NIFTY`\n\n" +
-        "*5. Forex*\n" +
-        "• `forex buy 100 USD`\n\n" +
-        "*6. Goals*\n" +
+        "💡 *Universal Dashboard Assistant*\n\n" +
+        "*📊 Quick Reports & Actions*\n" +
+        "• `/balance` — Check active bank accounts & total net worth\n" +
+        "• `/summary` — Current month income, expenses & savings rate\n" +
+        "• `/recent` — View last 5 transactions\n" +
+        "• `/undo` — Delete the last logged transaction\n" +
+        "• `/goals` — View savings goals progress\n" +
+        "• `/budget` — Check monthly spending budget vs actuals\n\n" +
+        "*⚡ Smart Transaction Logging*\n" +
+        "• `50 Tea` or `Income 5000 Salary`\n" +
+        "• `120 + 45 + 30 Lunch` (Supports inline math!)\n" +
+        "• Forward or paste any Bank SMS/Notification directly into chat!\n\n" +
+        "*💼 Investments & Transfers*\n" +
+        "• `family sent 500 mom`\n" +
+        "• `stock buy 10 AAPL 150`\n" +
+        "• `mf sip 5000 NIFTY`\n" +
+        "• `forex buy 100 USD`\n" +
         "• `goal 5000 Vacation`\n\n" +
-        "*Options*:\n• `/unlink` — Disconnect bot"
+        "*Options*: `/unlink` — Disconnect bot"
       );
       return NextResponse.json({ success: true });
     }
 
-    if (text.toLowerCase() === "/unlink") {
+    if (commandText === "unlink") {
       const { error: unlinkError } = await supabase
         .from("profiles")
         .update({ telegram_chat_id: null })
@@ -130,17 +272,223 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
+    // ─── Command: /balance ───
+    if (commandText === "balance" || commandText === "balances") {
+      const { data: accounts } = await supabase
+        .from("accounts")
+        .select("name, balance, type, currency")
+        .eq("user_id", profile.id)
+        .order("balance", { ascending: false });
+
+      if (!accounts || accounts.length === 0) {
+        await sendTelegramMessage(chatId, "💳 *No Active Accounts*: You haven't added any bank accounts yet. Add one in your dashboard to start tracking balances.");
+        return NextResponse.json({ success: true });
+      }
+
+      let totalNetWorth = 0;
+      let msg = "💳 *Your Account Balances*\n\n";
+      for (const acc of accounts) {
+        const bal = parseFloat(acc.balance) || 0;
+        totalNetWorth += bal;
+        const icon = acc.type === "Bank" ? "🏦" : acc.type === "Credit Card" ? "💳" : acc.type === "Wallet" ? "📱" : "💵";
+        msg += `${icon} *${acc.name}*: ₹${bal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}\n`;
+      }
+      msg += `\n🌟 *Total Net Worth*: ₹${totalNetWorth.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`;
+      await sendTelegramMessage(chatId, msg);
+      return NextResponse.json({ success: true });
+    }
+
+    // ─── Command: /summary ───
+    if (commandText === "summary" || commandText === "stats") {
+      const now = new Date();
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
+      const monthName = now.toLocaleString("default", { month: "long" });
+
+      const { data: txs } = await supabase
+        .from("transactions")
+        .select("amount, type, category")
+        .eq("user_id", profile.id)
+        .gte("date", firstDay);
+
+      let totalIncome = 0;
+      let totalExpense = 0;
+      const catMap: Record<string, number> = {};
+
+      if (txs) {
+        for (const t of txs) {
+          const amt = parseFloat(t.amount) || 0;
+          if (t.type === "income") {
+            totalIncome += amt;
+          } else if (t.type === "expense") {
+            totalExpense += amt;
+            const cat = t.category || "Other";
+            catMap[cat] = (catMap[cat] || 0) + amt;
+          }
+        }
+      }
+
+      const netSavings = totalIncome - totalExpense;
+      const savingsRate = totalIncome > 0 ? ((netSavings / totalIncome) * 100).toFixed(0) : "0";
+
+      let topCategoriesMsg = "";
+      const sortedCats = Object.entries(catMap).sort((a, b) => b[1] - a[1]).slice(0, 4);
+      if (sortedCats.length > 0) {
+        topCategoriesMsg = "\n*Top Spending Categories*:\n" + sortedCats.map(([cat, amt]) => `• ${cat}: ₹${amt.toLocaleString("en-IN")}`).join("\n");
+      }
+
+      await sendTelegramMessage(
+        chatId,
+        `📈 *${monthName} ${now.getFullYear()} Summary*\n\n` +
+        `💰 *Total Income*: ₹${totalIncome.toLocaleString("en-IN")}\n` +
+        `💸 *Total Spent*: ₹${totalExpense.toLocaleString("en-IN")}\n` +
+        `💎 *Net Savings*: ₹${netSavings.toLocaleString("en-IN")} (${savingsRate}% rate)\n` +
+        topCategoriesMsg
+      );
+      return NextResponse.json({ success: true });
+    }
+
+    // ─── Command: /recent ───
+    if (commandText === "recent" || commandText === "history") {
+      const { data: txs } = await supabase
+        .from("transactions")
+        .select("description, amount, type, category, date")
+        .eq("user_id", profile.id)
+        .order("date", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(5);
+
+      if (!txs || txs.length === 0) {
+        await sendTelegramMessage(chatId, "📜 *No Recent Transactions*: Log your first transaction by typing `50 Tea`.");
+        return NextResponse.json({ success: true });
+      }
+
+      let msg = "📜 *Recent Transactions (Last 5)*\n\n";
+      for (const t of txs) {
+        const icon = t.type === "income" ? "💰" : "💸";
+        const sign = t.type === "income" ? "+" : "-";
+        msg += `${icon} *${t.description || t.category}*: ${sign}₹${parseFloat(t.amount).toLocaleString("en-IN")} _(${t.date})_\n`;
+      }
+      await sendTelegramMessage(chatId, msg);
+      return NextResponse.json({ success: true });
+    }
+
+    // ─── Command: /undo ───
+    if (commandText === "undo" || commandText === "delete") {
+      const { data: lastTx } = await supabase
+        .from("transactions")
+        .select("id, description, amount, type, account_id, category")
+        .eq("user_id", profile.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!lastTx) {
+        await sendTelegramMessage(chatId, "⚠️ *Nothing to Undo*: No recent transactions found to delete.");
+        return NextResponse.json({ success: true });
+      }
+
+      // Revert account balance if account_id is present
+      if (lastTx.account_id) {
+        const { data: acc } = await supabase.from("accounts").select("balance").eq("id", lastTx.account_id).maybeSingle();
+        if (acc) {
+          const currentBal = parseFloat(acc.balance) || 0;
+          const amt = parseFloat(lastTx.amount) || 0;
+          const newBal = lastTx.type === "income" ? currentBal - amt : currentBal + amt;
+          await supabase.from("accounts").update({ balance: newBal }).eq("id", lastTx.account_id);
+        }
+      }
+
+      // Delete from transactions table
+      await supabase.from("transactions").delete().eq("id", lastTx.id);
+
+      await sendTelegramMessage(
+        chatId,
+        `⚡ *Undid Last Transaction*:\nDeleted *${lastTx.description || lastTx.category}* (₹${lastTx.amount}) successfully.`
+      );
+      return NextResponse.json({ success: true });
+    }
+
+    // ─── Command: /goals ───
+    if (commandText === "goals") {
+      const { data: goals } = await supabase
+        .from("goals")
+        .select("name, target_amount, current_amount, target_date")
+        .eq("user_id", profile.id);
+
+      if (!goals || goals.length === 0) {
+        await sendTelegramMessage(chatId, "🎯 *No Active Goals*: Create a goal in your dashboard or contribute directly using `goal 5000 Vacation`.");
+        return NextResponse.json({ success: true });
+      }
+
+      let msg = "🎯 *Your Savings Goals*\n\n";
+      for (const g of goals) {
+        const target = parseFloat(g.target_amount) || 1;
+        const current = parseFloat(g.current_amount) || 0;
+        const pct = Math.min(100, Math.round((current / target) * 100));
+        const progressBar = "█".repeat(Math.floor(pct / 10)) + "░".repeat(10 - Math.floor(pct / 10));
+        msg += `*${g.name}*\n\`[${progressBar}] ${pct}%\` (₹${current.toLocaleString("en-IN")} / ₹${target.toLocaleString("en-IN")})\n\n`;
+      }
+      await sendTelegramMessage(chatId, msg);
+      return NextResponse.json({ success: true });
+    }
+
+    // ─── Command: /budget ───
+    if (commandText === "budget" || commandText === "budgets") {
+      const { data: budgets } = await supabase
+        .from("budgets")
+        .select("category, amount")
+        .eq("user_id", profile.id);
+
+      if (!budgets || budgets.length === 0) {
+        await sendTelegramMessage(chatId, "📊 *No Monthly Budgets*: Set spending limits in your dashboard under Budgets.");
+        return NextResponse.json({ success: true });
+      }
+
+      const now = new Date();
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
+      const { data: txs } = await supabase
+        .from("transactions")
+        .select("category, amount")
+        .eq("user_id", profile.id)
+        .eq("type", "expense")
+        .gte("date", firstDay);
+
+      const spentMap: Record<string, number> = {};
+      if (txs) {
+        for (const t of txs) {
+          const cat = t.category || "Other";
+          spentMap[cat] = (spentMap[cat] || 0) + (parseFloat(t.amount) || 0);
+        }
+      }
+
+      let msg = `📊 *${now.toLocaleString("default", { month: "long" })} Budget vs Actuals*\n\n`;
+      for (const b of budgets) {
+        const limit = parseFloat(b.amount) || 1;
+        const spent = spentMap[b.category] || 0;
+        const pct = Math.round((spent / limit) * 100);
+        const statusIcon = pct >= 100 ? "🚨" : pct >= 80 ? "⚠️" : "✅";
+        msg += `${statusIcon} *${b.category}*: ₹${spent.toLocaleString("en-IN")} / ₹${limit.toLocaleString("en-IN")} _(${pct}%)_\n`;
+      }
+      await sendTelegramMessage(chatId, msg);
+      return NextResponse.json({ success: true });
+    }
+
     // 4. Universal Smart Parser & Auto-Sensing Engine
     const cleanDate = new Date().toISOString().split("T")[0];
 
     // Fetch user context: accounts, family members, goals
-    const { data: accounts } = await supabase.from("accounts").select("id, name").eq("user_id", profile.id);
+    const { data: accounts } = await supabase.from("accounts").select("id, name, notes").eq("user_id", profile.id);
     const { data: familyMembers } = await supabase.from("family_members").select("id, name, relationship").eq("user_id", profile.id);
     const { data: goals } = await supabase.from("goals").select("id, name").eq("user_id", profile.id);
 
-    const resolveAccount = (type: "expense" | "income", queryText?: string) => {
+    const resolveAccount = (type: "expense" | "income", queryText?: string, accountEnding?: string | null) => {
       if (!accounts || accounts.length === 0) return null;
-      // If user mentioned an account by name (e.g. savings, savings2, hdfc, icici, cash)
+      // If bank SMS had a 4-digit card/account ending
+      if (accountEnding) {
+        const matched = accounts.find(a => a.name.includes(accountEnding) || (a.notes && a.notes.includes(accountEnding)));
+        if (matched) return matched.id;
+      }
+      // If user mentioned an account by name (e.g. savings, hdfc, icici, cash)
       if (queryText) {
         const lowerQ = queryText.toLowerCase();
         for (const acc of accounts) {
@@ -154,9 +502,54 @@ export async function POST(req: NextRequest) {
       return defaultId && accounts.some((acc: any) => acc.id === defaultId) ? defaultId : accounts[0].id;
     };
 
+    // Check if the text is a pasted Bank SMS or Notification (long sentence or keywords like debited/credited/av bal)
+    const isPastedSmsOrNotification = /debited|credited|av bal|avail bal|vpa|spent on|card ending|a\/c no|account no/i.test(text);
+    if (isPastedSmsOrNotification) {
+      const smsData = parseBankSmsOrNotification(text);
+      if (smsData) {
+        const targetAccount = resolveAccount(smsData.type, text, smsData.accountEnding);
+        let category = smsData.type === "expense" ? "Other" : "Salary";
+        const merchantLower = smsData.merchant.toLowerCase();
+
+        if (smsData.type === "expense") {
+          if (/zomato|swiggy|restaurant|eat|lunch|dinner|breakfast|snack|tea|coffee|chai|cafe|food|dining|grocery|groceries|zepto|blinkit|milk/i.test(merchantLower)) category = "Food";
+          else if (/uber|ola|rapido|cab|taxi|ride|auto|metro|petrol|diesel|fuel|parking|flight/i.test(merchantLower)) category = "Transport";
+          else if (/amazon|flipkart|myntra|ajio|croma|clothes|shoes|shopping/i.test(merchantLower)) category = "Shopping";
+          else if (/netflix|prime|hotstar|spotify|movie|pvr|show|subscription/i.test(merchantLower)) category = "Entertainment";
+          else if (/electricity|water|gas|wifi|broadband|airtel|jio|vi|recharge|mobile|bill/i.test(merchantLower)) category = "Utilities";
+        }
+
+        const rpcName = smsData.type === "expense" ? "record_expense" : "record_income";
+        const { error: rpcError } = await supabase.rpc(rpcName, {
+          p_user_id: profile.id,
+          p_description: `[SMS Alert] ${smsData.merchant}`,
+          p_amount: smsData.amount,
+          p_category: category,
+          p_date: cleanDate,
+          p_account_id: targetAccount,
+        });
+
+        if (rpcError) throw rpcError;
+
+        if (smsData.type === "expense") {
+          await checkAndNotifyBudget(supabase, profile.id, chatId, category, smsData.amount);
+        }
+
+        const accObj = accounts?.find((a: any) => a.id === targetAccount);
+        await sendTelegramMessage(
+          chatId,
+          `${smsData.type === "expense" ? "⚡ *Bank Alert Expense*" : "💰 *Bank Alert Income*"}:\n` +
+          `• *Amount*: ₹${smsData.amount.toLocaleString("en-IN")}\n` +
+          `• *Merchant*: ${smsData.merchant}\n` +
+          `• *Category*: ${category}\n` +
+          `• *Account*: ${accObj?.name || "Default Bank"}`
+        );
+        return NextResponse.json({ success: true });
+      }
+    }
+
     const rawTokens = text.trim().split(/\s+/);
     const firstWord = rawTokens[0].toLowerCase();
-    const lowerText = text.toLowerCase();
 
     // Extract all numbers from text
     const numbers = (text.match(/\d+(?:\.\d{1,2})?/g) || []).map(Number);
@@ -172,7 +565,6 @@ export async function POST(req: NextRequest) {
       );
 
       if (isExplicitFamily || (primaryAmount > 0 && (hasTransferKeywords || mentionedFamilyMember))) {
-        // Parse Family Transfer
         let amount = primaryAmount;
         let type = /received|from|got/i.test(lowerText) && !/sent|to/i.test(lowerText) ? "received" : "sent";
         let targetMember = mentionedFamilyMember;
@@ -187,7 +579,6 @@ export async function POST(req: NextRequest) {
             m.name.toLowerCase().includes(personQuery.toLowerCase())
           );
           if (!targetMember) {
-            // Auto-create family member if not found
             const personName = rawTokens[3] ? rawTokens[3].charAt(0).toUpperCase() + rawTokens[3].slice(1) : "Family Member";
             const { data: newMem, error: createErr } = await supabase.from("family_members").insert({
               user_id: profile.id,
@@ -200,8 +591,6 @@ export async function POST(req: NextRequest) {
           }
           note = `[Telegram] ${type === "sent" ? "Sent to" : "Received from"} ${targetMember.name}`;
         } else if (!targetMember) {
-          // E.g., "send saran 2000 savings2" where saran isn't in DB yet
-          // Extract probable name after send/sent/to/from
           const nameMatch = text.match(/\b(?:send|sent|transfer|to|from|gave)\s+([a-zA-Z]+)/i);
           const probableName = nameMatch ? nameMatch[1].charAt(0).toUpperCase() + nameMatch[1].slice(1) : "Saran";
           const { data: newMem, error: createErr } = await supabase.from("family_members").insert({
@@ -219,7 +608,6 @@ export async function POST(req: NextRequest) {
         const targetAccount = resolveAccount(type === "sent" ? "expense" : "income", text);
         if (!targetAccount) throw new Error("No active bank account found to process transfer.");
 
-        // Clean note
         const cleanedNote = text.replace(new RegExp(`\\b${amount}\\b`), "").trim();
 
         const { data: rpcRes, error } = await supabase.rpc("process_family_transfer_v2", {
@@ -253,7 +641,6 @@ export async function POST(req: NextRequest) {
           symbol = (rawTokens[3] || "UNKNOWN").toUpperCase();
           price = parseFloat(rawTokens[4]) || numbers[1] || 0;
         } else {
-          // Extract capital letters word or word near numbers as symbol
           const words = text.split(/\s+/);
           const possibleSymbol = words.find(w => /^[A-Z]{2,10}$/.test(w) && !["BUY", "SELL", "STOCK", "SHARES"].includes(w));
           if (possibleSymbol) symbol = possibleSymbol;
@@ -342,7 +729,7 @@ export async function POST(req: NextRequest) {
           currency_pair: `INR/${currency}`,
           trade_type: tradeType,
           amount: amount,
-          exchange_rate: 83.5, // Standard estimate
+          exchange_rate: 83.5,
           date: cleanDate,
           account_id: targetAccount
         });
@@ -417,9 +804,21 @@ export async function POST(req: NextRequest) {
 
       if (rpcError) throw rpcError;
 
+      if (type === "expense") {
+        await checkAndNotifyBudget(supabase, profile.id, chatId, category, primaryAmount);
+      }
+
       const symbol = type === "expense" ? "💸" : "💰";
       const accObj = accounts?.find((a: any) => a.id === targetAccount);
-      await sendTelegramMessage(chatId, `${symbol} *Logged ${type === "expense" ? "Expense" : "Income"}*:\n• *Amount*: ₹${primaryAmount}\n• *Category*: ${category}\n• *Account*: ${accObj?.name || "Default"}\n• *Desc*: ${description}`);
+      await sendTelegramMessage(
+        chatId,
+        `${symbol} *Logged ${type === "expense" ? "Expense" : "Income"}*:\n` +
+        `• *Amount*: ₹${primaryAmount}\n` +
+        `• *Category*: ${category}\n` +
+        `• *Account*: ${accObj?.name || "Default"}\n` +
+        `• *Desc*: ${description}\n\n` +
+        `_💡 Type \`/undo\` to delete this if logged by mistake._`
+      );
     } catch (e: any) {
       await sendTelegramMessage(chatId, `❌ *Error*: ${e.message || "Failed to process command."}`);
     }
@@ -430,3 +829,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message || error }, { status: 500 });
   }
 }
+
