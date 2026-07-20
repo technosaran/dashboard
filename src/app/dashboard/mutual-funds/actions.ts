@@ -303,7 +303,7 @@ export async function updateMFHolding(id: string, data: {
 
     const { error } = await supabase
       .from("mutual_funds")
-      .update(payload)
+      .update(payload as any)
       .eq("id", id)
       .eq("user_id", user.id);
 
