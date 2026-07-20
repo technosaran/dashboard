@@ -86,8 +86,9 @@ function applySecurityHeaders(response: NextResponse, headers: ReturnType<typeof
   // Cross-Origin-Resource-Policy - Restricts resource loading
   response.headers.set("Cross-Origin-Resource-Policy", "same-origin");
   
-  // Cross-Origin-Embedder-Policy - Prevents cross-origin resource embedding
-  response.headers.set("Cross-Origin-Embedder-Policy", "require-corp");
+  // Cross-Origin-Embedder-Policy - credentialless allows cross-origin resources
+  // (Google Fonts, Supabase, OAuth redirects) while still providing isolation
+  response.headers.set("Cross-Origin-Embedder-Policy", "credentialless");
   
   return response;
 }
@@ -147,7 +148,7 @@ export async function proxy(request: NextRequest) {
       return applySecurityHeaders(res, securityHeaders);
     }
   } else if ((pathname.startsWith("/login") || pathname.startsWith("/reset-password")) && request.method === "POST") {
-    const rateLimitResult = await authRateLimiter.check(ip);
+    rateLimitResult = await authRateLimiter.check(ip);
     if (!rateLimitResult.allowed) {
       SecurityLogger.logRateLimitViolation(ip, pathname);
       const res = NextResponse.redirect(new URL("/login?error=Too%20many%20login%20attempts", request.url));
@@ -220,7 +221,14 @@ export async function proxy(request: NextRequest) {
   // If we created a new redirect response above, those cookies would be lost, causing session expiry.
   if (finalResponse !== supabaseResponse) {
     supabaseResponse.cookies.getAll().forEach((cookie) => {
-      finalResponse.cookies.set(cookie.name, cookie.value);
+      finalResponse.cookies.set(cookie.name, cookie.value, {
+        path: cookie.path,
+        domain: cookie.domain,
+        httpOnly: cookie.httpOnly,
+        secure: cookie.secure,
+        sameSite: cookie.sameSite as "lax" | "strict" | "none" | undefined,
+        maxAge: cookie.maxAge,
+      });
     });
   }
 

@@ -37,19 +37,23 @@ export class AuthService {
    */
   public async verifySession(): Promise<SessionVerification> {
     try {
-      const { data: { session }, error } = await this.supabaseClient.auth.getSession();
+      // Use getUser() instead of getSession() for server-verified authentication.
+      // getSession() only reads from local storage and is NOT guaranteed to be valid.
+      const { data: { user }, error } = await this.supabaseClient.auth.getUser();
       
-      if (error || !session) {
+      if (error || !user) {
         return { valid: false };
       }
 
-      const expiresAt = session.expires_at 
+      // Fetch session separately for expiry info (non-critical)
+      const { data: { session } } = await this.supabaseClient.auth.getSession();
+      const expiresAt = session?.expires_at 
         ? new Date(session.expires_at * 1000) 
         : undefined;
 
       return {
         valid: true,
-        user: session.user,
+        user,
         expiresAt,
       };
     } catch (error) {

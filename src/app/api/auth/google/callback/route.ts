@@ -6,9 +6,15 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const code = searchParams.get("code");
     const errorParam = searchParams.get("error");
+    const state = searchParams.get("state");
+    const storedState = req.cookies.get("gmail_oauth_state")?.value;
 
     if (errorParam) {
       return NextResponse.redirect(new URL("/dashboard/settings?gmail=error&reason=" + encodeURIComponent(errorParam), req.url));
+    }
+
+    if (!state || state !== storedState) {
+      return NextResponse.redirect(new URL("/dashboard/settings?gmail=error&reason=csrf_state_mismatch", req.url));
     }
 
     if (!code) {

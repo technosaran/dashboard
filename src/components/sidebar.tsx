@@ -224,7 +224,7 @@ export default function Sidebar() {
 
   const filteredNav = useMemo(() => {
     return nav.filter(item => {
-      if (["Dashboard", "Accounts", "Wallet", "Settings", "Family"].includes(item.label)) return true;
+      if (["Dashboard", "Accounts", "Settings"].includes(item.label)) return true;
 
       if (item.label === "Investments") {
         return enabledModules.includes("Stocks") || enabledModules.includes("Mutual Funds") || enabledModules.includes("Bonds") || enabledModules.includes("FnO") || enabledModules.includes("Forex");

@@ -111,8 +111,12 @@ export async function GET(request: Request) {
         }
       } else if (exp.recurrence_frequency === "yearly") {
         const yearsDiff = now.getFullYear() - lastGen.getFullYear();
-        if (yearsDiff >= 1 && now.getMonth() >= lastGen.getMonth() && now.getDate() >= lastGen.getDate()) {
+        if (yearsDiff > 1) {
           isDue = true;
+        } else if (yearsDiff === 1) {
+          if (now.getMonth() > lastGen.getMonth() || (now.getMonth() === lastGen.getMonth() && now.getDate() >= lastGen.getDate())) {
+            isDue = true;
+          }
         }
       }
 
@@ -220,8 +224,12 @@ export async function GET(request: Request) {
         }
       } else if (inc.recurrence_frequency === "yearly") {
         const yearsDiff = now.getFullYear() - lastGen.getFullYear();
-        if (yearsDiff >= 1 && now.getMonth() >= lastGen.getMonth() && now.getDate() >= lastGen.getDate()) {
+        if (yearsDiff > 1) {
           isDue = true;
+        } else if (yearsDiff === 1) {
+          if (now.getMonth() > lastGen.getMonth() || (now.getMonth() === lastGen.getMonth() && now.getDate() >= lastGen.getDate())) {
+            isDue = true;
+          }
         }
       }
 

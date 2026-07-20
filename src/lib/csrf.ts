@@ -35,7 +35,7 @@ export async function setCsrfToken(token?: string): Promise<string> {
   const cookieStore = await cookies();
   
   cookieStore.set(CSRF_TOKEN_NAME, csrfToken, {
-    httpOnly: true,
+    httpOnly: false, // Must be readable by client JS for getClientCsrfToken fallback
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     maxAge: CSRF_COOKIE_MAX_AGE,
@@ -146,16 +146,21 @@ function timingSafeEqual(a: string | null | undefined, b: string | null | undefi
   if (!a || !b) {
     return false;
   }
+  
+  let mismatch = 0;
+  let targetA = a;
+  let targetB = b;
+  
   if (a.length !== b.length) {
-    return false;
+    mismatch = 1;
+    targetB = a; // Pad to same length to ensure timing is consistent
   }
 
-  let result = 0;
-  for (let i = 0; i < a.length; i++) {
-    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  for (let i = 0; i < targetA.length; i++) {
+    mismatch |= targetA.charCodeAt(i) ^ targetB.charCodeAt(i);
   }
 
-  return result === 0;
+  return mismatch === 0;
 }
 
 /**

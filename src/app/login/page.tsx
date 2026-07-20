@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { login } from "./actions";
 import { createClient } from "@/lib/supabase-browser";
 import Link from "next/link";
@@ -11,6 +12,7 @@ const MAX_ATTEMPTS = 3;
 const LOCKOUT_DURATION_MS = 15000; // 15 seconds initial lockout
 
 export default function LoginPage() {
+  const searchParams = useSearchParams();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [focused, setFocused] = useState<string | null>(null);
@@ -64,6 +66,18 @@ export default function LoginPage() {
     }
   }, [startLockout]);
 
+  // Read error from URL query params (e.g., after failed Google OAuth redirect)
+  useEffect(() => {
+    const urlError = searchParams.get("error");
+    if (urlError) {
+      setError(decodeURIComponent(urlError));
+      // Clean up the URL without triggering a navigation
+      const url = new URL(window.location.href);
+      url.searchParams.delete("error");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, [searchParams]);
+
   async function handleGoogleLogin() {
     setError("");
     setLoading(true);
@@ -78,6 +92,12 @@ export default function LoginPage() {
       if (error) {
         setError(error.message || "Failed to sign in with Google.");
         setLoading(false);
+      } else {
+        // Safety net: if redirect doesn't happen within 5s (e.g., popup blocker),
+        // reset the loading state so the user can try again
+        setTimeout(() => {
+          setLoading(false);
+        }, 5000);
       }
     } catch {
       setError("An unexpected error occurred during Google sign-in.");

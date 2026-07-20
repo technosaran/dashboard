@@ -20,6 +20,19 @@ export async function GET(req: NextRequest) {
   googleOAuthUrl.searchParams.append("scope", scope);
   googleOAuthUrl.searchParams.append("access_type", "offline"); // Crucial to obtain a refresh token
   googleOAuthUrl.searchParams.append("prompt", "consent"); // Force consent to guarantee a new refresh token
+  
+  // CSRF Protection: Generate a state token and store it in a cookie
+  const state = crypto.randomUUID();
+  googleOAuthUrl.searchParams.append("state", state);
 
-  return NextResponse.redirect(googleOAuthUrl.toString());
+  const response = NextResponse.redirect(googleOAuthUrl.toString());
+  response.cookies.set("gmail_oauth_state", state, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 10, // 10 minutes
+  });
+
+  return response;
 }

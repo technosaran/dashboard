@@ -130,6 +130,13 @@ async function handleCronAlerts(req: NextRequest) {
         }
       }
 
+      const currency = profile.base_currency || "INR";
+      const formatCurr = (amt: number) => new Intl.NumberFormat('en-IN', { 
+        style: 'currency', 
+        currency: currency, 
+        maximumFractionDigits: 0 
+      }).format(amt);
+
       let budgetAlertsMsg = "";
       if (budgets) {
         for (const b of budgets) {
@@ -138,7 +145,7 @@ async function handleCronAlerts(req: NextRequest) {
           const pct = Math.round((spent / limit) * 100);
           if (pct >= 85) {
             const statusIcon = pct >= 100 ? "🚨" : "⚠️";
-            budgetAlertsMsg += `${statusIcon} *${b.category} Budget*: ${pct}% used (₹${spent.toLocaleString("en-IN")} / ₹${limit.toLocaleString("en-IN")})\n`;
+            budgetAlertsMsg += `${statusIcon} *${b.category} Budget*: ${pct}% used (${formatCurr(spent)} / ${formatCurr(limit)})\n`;
           }
         }
       }
@@ -147,13 +154,13 @@ async function handleCronAlerts(req: NextRequest) {
       let msg = `🌙 *Daily Evening Check-in* _(${profile.username || "Saran"})_\n\n`;
       if (todaySpent > 0 || todayIncome > 0) {
         msg += `📊 *Today's Activity*:\n` +
-               `• *Spent Today*: ₹${todaySpent.toLocaleString("en-IN")} _(${txCount} transactions)_\n` +
-               `• *Income Today*: ₹${todayIncome.toLocaleString("en-IN")}\n\n`;
+               `• *Spent Today*: ${formatCurr(todaySpent)} _(${txCount} transactions)_\n` +
+               `• *Income Today*: ${formatCurr(todayIncome)}\n\n`;
       } else {
         msg += `✨ *Zero Spending Day!* You logged 0 expenses today. Keep up the disciplined habits.\n\n`;
       }
 
-      msg += `💳 *Total Net Worth*: ₹${netBalance.toLocaleString("en-IN")}\n`;
+      msg += `💳 *Total Net Worth*: ${formatCurr(netBalance)}\n`;
 
       if (budgetAlertsMsg) {
         msg += `\n*Monthly Budget Warnings*:\n` + budgetAlertsMsg;

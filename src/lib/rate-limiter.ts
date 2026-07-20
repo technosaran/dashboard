@@ -21,6 +21,18 @@ export interface RateLimitResult {
 // In-memory fallback store for when Redis is unavailable
 const memoryStore = new Map<string, number[]>();
 
+// Periodically clean up memoryStore to prevent memory leaks
+const gcInterval = setInterval(() => {
+  const now = Date.now();
+  // Assume a safe max window of 1 hour (3600000 ms) for cleanup
+  for (const [key, timestamps] of memoryStore.entries()) {
+    if (timestamps.length === 0 || now - timestamps[timestamps.length - 1] > 3600000) {
+      memoryStore.delete(key);
+    }
+  }
+}, 60000);
+if (gcInterval.unref) gcInterval.unref();
+
 export class RateLimiter {
   private maxRequests: number;
   private windowMs: number;

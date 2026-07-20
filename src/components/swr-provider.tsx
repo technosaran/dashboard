@@ -19,7 +19,7 @@ export function SWRProvider({ children, initialData }: SWRProviderProps) {
         target.tagName === "INPUT" &&
         (target.type === "number" || target.inputMode === "decimal")
       ) {
-        // Allowed keys: Backspace, Tab, Enter, Escape, ArrowLeft, ArrowRight, ArrowUp, ArrowDown, Delete, Home, End, Period
+        // Allowed keys: Backspace, Tab, Enter, Escape, ArrowLeft, ArrowRight, ArrowUp, ArrowDown, Delete, Home, End, Period, Minus
         const allowedKeys = [
           "Backspace",
           "Tab",
@@ -33,11 +33,16 @@ export function SWRProvider({ children, initialData }: SWRProviderProps) {
           "Home",
           "End",
           ".",
+          "-",
         ];
 
         if (allowedKeys.includes(e.key)) {
           // If decimal point, make sure there isn't already one
           if (e.key === "." && target.value.includes(".")) {
+            e.preventDefault();
+          }
+          // If minus, only allow at the start and only one
+          if (e.key === "-" && (target.selectionStart !== 0 || target.value.includes("-"))) {
             e.preventDefault();
           }
           return;

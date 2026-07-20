@@ -325,7 +325,7 @@ export async function POST(req: NextRequest) {
 
     // Parallelize user context reads: accounts, family members, goals upfront via Promise.all
     const [{ data: accounts }, { data: familyMembers }, { data: goals }] = await Promise.all([
-      supabase.from("accounts").select("id, name, notes").eq("user_id", profile.id),
+      supabase.from("accounts").select("id, name, notes, balance, type").eq("user_id", profile.id),
       supabase.from("family_members").select("id, name, relationship").eq("user_id", profile.id),
       supabase.from("goals").select("id, name").eq("user_id", profile.id),
     ]);
