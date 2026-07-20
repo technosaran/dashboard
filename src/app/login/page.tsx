@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { login } from "./actions";
+import { login, signup } from "./actions";
 import { createClient } from "@/lib/supabase-browser";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -15,6 +15,7 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
   const [focused, setFocused] = useState<string | null>(null);
   const [lockoutUntil, setLockoutUntil] = useState<number | null>(null);
   const [lockoutSeconds, setLockoutSeconds] = useState(0);
@@ -115,7 +116,10 @@ export default function LoginPage() {
     setLoading(true);
     
     try {
-      const result = await login(new FormData(e.currentTarget));
+      const result = isSignUp 
+        ? await signup(new FormData(e.currentTarget))
+        : await login(new FormData(e.currentTarget));
+        
       if (result?.error) {
         failCountRef.current += 1;
         localStorage.setItem("failCount", failCountRef.current.toString());
@@ -373,11 +377,11 @@ export default function LoginPage() {
                     <circle className="login-spinner-track" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3.5" />
                     <path className="login-spinner-head" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                   </svg>
-                  Signing in…
+                  {isSignUp ? "Signing up…" : "Signing in…"}
                 </span>
               ) : (
                 <span className="login-submit-inner">
-                  Sign in
+                  {isSignUp ? "Sign up" : "Sign in"}
                   <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                     <path d="M5 12h14M13 6l6 6-6 6" />
                   </svg>
@@ -386,8 +390,20 @@ export default function LoginPage() {
               <div className="login-submit-shimmer" />
             </button>
 
+            {/* Toggle Sign In / Sign Up */}
+            <div style={{ textAlign: "center", marginTop: "1rem", fontSize: "13px", color: "var(--text-muted)" }}>
+              {isSignUp ? "Already have an account? " : "Don't have an account? "}
+              <button 
+                type="button" 
+                onClick={() => setIsSignUp(!isSignUp)}
+                style={{ background: "none", border: "none", color: "var(--brand-primary)", cursor: "pointer", fontWeight: "bold" }}
+              >
+                {isSignUp ? "Sign in" : "Sign up"}
+              </button>
+            </div>
+
             {/* Private Banner */}
-            <div className="login-private-banner">
+            <div className="login-private-banner" style={{ marginTop: "1.5rem" }}>
               <div className="login-private-badge">
                 <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />

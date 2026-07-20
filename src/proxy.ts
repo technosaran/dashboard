@@ -221,14 +221,8 @@ export async function proxy(request: NextRequest) {
   // If we created a new redirect response above, those cookies would be lost, causing session expiry.
   if (finalResponse !== supabaseResponse) {
     supabaseResponse.cookies.getAll().forEach((cookie) => {
-      finalResponse.cookies.set(cookie.name, cookie.value, {
-        path: cookie.path,
-        domain: cookie.domain,
-        httpOnly: cookie.httpOnly,
-        secure: cookie.secure,
-        sameSite: cookie.sameSite as "lax" | "strict" | "none" | undefined,
-        maxAge: cookie.maxAge,
-      });
+      // Pass the entire cookie object to preserve all attributes including `expires` and `maxAge`
+      finalResponse.cookies.set(cookie.name, cookie.value, cookie);
     });
   }
 
