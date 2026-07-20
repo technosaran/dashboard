@@ -16,13 +16,14 @@ import DefaultsTab from "./components/DefaultsTab";
 import IntegrationsTab from "./components/IntegrationsTab";
 import SystemStatusTab from "./components/SystemStatusTab";
 import DangerZoneTab from "./components/DangerZoneTab";
+import SecurityTab from "./components/SecurityTab";
 
 const ReportDownloadButton = dynamic(
   () => import("../components/ReportDownloadButton"),
   { ssr: false }
 );
 
-type TabKey = "profile" | "modules" | "defaults" | "integrations" | "exports" | "status" | "danger";
+type TabKey = "profile" | "modules" | "defaults" | "integrations" | "exports" | "status" | "security" | "danger";
 
 export default function SettingsPage() {
   const { username, setUsername, loading, isSyncing } = useUser();
@@ -376,6 +377,7 @@ export default function SettingsPage() {
           { key: "modules", label: "Modules" },
           { key: "defaults", label: "Defaults" },
           { key: "integrations", label: "Integrations" },
+          { key: "security", label: "Security" },
           { key: "status", label: "System Status" },
           { key: "danger", label: "Danger Zone" },
         ].map((tab) => {
@@ -442,6 +444,10 @@ export default function SettingsPage() {
           runningDiagnostics={runningDiagnostics}
           runDiagnostics={runDiagnostics}
         />
+      )}
+
+      {activeTab === "security" && (
+        <SecurityTab />
       )}
 
       {activeTab === "danger" && (

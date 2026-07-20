@@ -34,7 +34,7 @@ function createSecurityHeaders(nonce: string) {
       : `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://va.vercel-scripts.com`,
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com data:",
-    "img-src 'self' data: blob: https://logos.hunter.io https://companyenrich.com https://www.google.com https://icons.duckduckgo.com https://*.yahoo.com https://*.yahooapis.com https://logo.clearbit.com https://unavatar.io",
+    "img-src 'self' data: blob: https://companyenrich.com https://www.google.com https://icons.duckduckgo.com https://*.yahoo.com https://*.yahooapis.com https://logo.uplead.com https://icon.horse",
     "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.yahoo.com https://*.yahooapis.com https://api.mfapi.in https://www.alphavantage.co https://va.vercel-scripts.com",
     "frame-ancestors 'none'",
     "base-uri 'self'",
@@ -188,7 +188,18 @@ export async function proxy(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
+
+          // CRITICAL FIX: Rebuild cookie header for downstream route handlers.
+          // This prevents the "double-refresh" bug where a route handler receives
+          // the old expired token and invalidates the newly refreshed session.
+          const updatedCookies = request.cookies
+            .getAll()
+            .map((c) => `${c.name}=${c.value}`)
+            .join("; ");
+          requestHeaders.set("cookie", updatedCookies);
+
           supabaseResponse = createPassThroughResponse(requestHeaders);
+          
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
           );

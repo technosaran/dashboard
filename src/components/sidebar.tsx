@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
 import { useEffect, useState, useMemo, useRef } from "react";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useFinanceData } from "@/hooks/use-finance-data";
 import { MODULE_KEYS } from "@/lib/modules";
 import type { ModuleKey } from "@/lib/modules";
@@ -179,6 +180,7 @@ export default function Sidebar() {
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [isQuickActionOpen, setIsQuickActionOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isLogoutOpen, setIsLogoutOpen] = useState(false);
   const quickActionDialogRef = useRef<HTMLDivElement | null>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
@@ -280,10 +282,14 @@ export default function Sidebar() {
     firstFocusable?.focus();
   }, [isQuickActionOpen]);
 
-  async function handleLogout() {
+  async function confirmLogout() {
     const supabase = createClient();
     await supabase.auth.signOut();
     window.location.href = "/login";
+  }
+
+  function handleLogout() {
+    setIsLogoutOpen(true);
   }
 
   const filteredQuickActions = useMemo(() => {
@@ -302,6 +308,16 @@ export default function Sidebar() {
 
   return (
     <>
+      <ConfirmDialog
+        isOpen={isLogoutOpen}
+        onClose={() => setIsLogoutOpen(false)}
+        onConfirm={confirmLogout}
+        title="Sign Out"
+        description="Are you sure you want to securely sign out of your terminal?"
+        confirmLabel="Sign Out"
+        variant="danger"
+      />
+
       {/* Universal Quick Action Hub */}
       <div className={`md:hidden fixed inset-0 z-[100] bg-black/80 backdrop-blur-md transition-all duration-500 ${isQuickActionOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`} onClick={() => setIsQuickActionOpen(false)} aria-hidden={!isQuickActionOpen}>
         <div id="quick-actions-dialog" role="dialog" aria-modal="true" aria-label="Quick actions" ref={quickActionDialogRef} className={`absolute bottom-[calc(var(--mobile-bottom-nav-height)+0.5rem)] left-4 right-4 max-h-[75vh] overflow-y-auto no-scrollbar grid grid-cols-2 gap-2.5 sm:gap-3 transition-all duration-500 ${isQuickActionOpen ? "translate-y-0 scale-100" : "translate-y-16 scale-90"}`} onClick={e => e.stopPropagation()}>
@@ -368,45 +384,48 @@ export default function Sidebar() {
           role="dialog"
           aria-modal="true"
           aria-label="More navigation"
-          className={`fixed bottom-0 left-0 right-0 rounded-t-[32px] p-5 pb-[calc(env(safe-area-inset-bottom,0px)+6rem)] max-h-[85vh] overflow-y-auto no-scrollbar transition-all duration-500 transform ${isMoreOpen ? "translate-y-0" : "translate-y-full"}`}
+          className={`fixed bottom-0 left-0 right-0 rounded-t-[32px] max-h-[85vh] flex flex-col transition-all duration-500 transform ${isMoreOpen ? "translate-y-0" : "translate-y-full"}`}
           onClick={(e) => e.stopPropagation()}
           style={{ background: "var(--bg-surface)", boxShadow: "0 -20px 60px rgba(15, 23, 42, 0.15)", borderTop: "1px solid var(--border-default)" }}
         >
-          {/* drag handle */}
-          <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-6" />
-          <p className="text-xs font-semibold text-[--text-muted] mb-4 px-1">More sections</p>
-          {/* #6 — list layout for readability instead of tiny 3-col grid */}
-          <div className="flex flex-col gap-1 mb-5">
-            {moreNav.map((item, idx) => {
-              const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href + "/"));
-              return (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  prefetch={true}
-                  onClick={() => setIsMoreOpen(false)}
-                  // #25 — auto-focus first item when sheet opens
-                  ref={idx === 0 ? (el) => { if (isMoreOpen && el) el.focus(); } : undefined}
-                  className={`flex items-center gap-4 px-4 py-3.5 rounded-2xl no-underline transition-all active:scale-[0.98] ${active ? "bg-[--accent-primary]/10 text-[--accent-primary-light]" : "text-[--text-secondary] hover:bg-white/[0.04]"}`}
-                >
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${active ? "bg-[--accent-primary]/15 text-[--accent-primary-light]" : "bg-white/[0.05] text-[--text-muted]"}`}>
-                    {item.icon}
-                  </div>
-                  {/* #6 — readable 13px label, sentence case */}
-                  <span className="text-[13px] font-semibold">{item.label}</span>
-                  {active && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-[--accent-primary]" />}
-                </Link>
-              );
-            })}
+          {/* Sticky Header with Drag Handle */}
+          <div className="pt-5 pb-4 px-5 sticky top-0 z-10" style={{ background: "var(--bg-surface)", borderRadius: "32px 32px 0 0" }}>
+            <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-4" />
+            <p className="text-xs font-semibold text-[--text-muted] px-1">More sections</p>
           </div>
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-5 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 font-bold text-sm active:scale-[0.98] transition-all"
-          >
-            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-            Sign out
-          </button>
+
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto no-scrollbar px-5 pb-[calc(env(safe-area-inset-bottom,0px)+6rem)]">
+            <div className="flex flex-col gap-1 mb-5">
+              {moreNav.map((item, idx) => {
+                const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href + "/"));
+                return (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    prefetch={true}
+                    onClick={() => setIsMoreOpen(false)}
+                    ref={idx === 0 ? (el) => { if (isMoreOpen && el) el.focus(); } : undefined}
+                    className={`flex items-center gap-4 px-4 py-3.5 rounded-2xl no-underline transition-all active:scale-[0.98] ${active ? "bg-[--accent-primary]/10 text-[--accent-primary-light]" : "text-[--text-secondary] hover:bg-white/[0.04]"}`}
+                  >
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${active ? "bg-[--accent-primary]/15 text-[--accent-primary-light]" : "bg-white/[0.05] text-[--text-muted]"}`}>
+                      {item.icon}
+                    </div>
+                    <span className="text-[13px] font-semibold">{item.label}</span>
+                    {active && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-[--accent-primary]" />}
+                  </Link>
+                );
+              })}
+            </div>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-5 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 font-bold text-sm active:scale-[0.98] transition-all"
+            >
+              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+              Sign out
+            </button>
+          </div>
         </div>
       </div>
 

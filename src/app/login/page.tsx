@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
-import { login, signup } from "./actions";
+import { useSearchParams, useRouter } from "next/navigation";
+import { login, signup, verifyMFA } from "./actions";
 import { createClient } from "@/lib/supabase-browser";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import zxcvbn from "zxcvbn";
 import "./login.css";
 
 const MAX_ATTEMPTS = 3;
@@ -13,12 +14,17 @@ const LOCKOUT_DURATION_MS = 15000; // 15 seconds initial lockout
 
 export default function LoginPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
+  const [passwordInput, setPasswordInput] = useState("");
   const [focused, setFocused] = useState<string | null>(null);
   const [lockoutUntil, setLockoutUntil] = useState<number | null>(null);
   const [lockoutSeconds, setLockoutSeconds] = useState(0);
+  const [requiresMfa, setRequiresMfa] = useState(false);
+  const [mfaFactorId, setMfaFactorId] = useState("");
+  const [mfaCode, setMfaCode] = useState("");
   const failCountRef = useRef(0);
   const lockoutTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -120,6 +126,13 @@ export default function LoginPage() {
         ? await signup(new FormData(e.currentTarget))
         : await login(new FormData(e.currentTarget));
         
+      if (result?.requiresMFA) {
+        setRequiresMfa(true);
+        setMfaFactorId(result.factorId);
+        setLoading(false);
+        return;
+      }
+        
       if (result?.error) {
         failCountRef.current += 1;
         localStorage.setItem("failCount", failCountRef.current.toString());
@@ -131,12 +144,14 @@ export default function LoginPage() {
           const multiplier = Math.pow(2, failCountRef.current - MAX_ATTEMPTS);
           startLockout(LOCKOUT_DURATION_MS * multiplier);
         }
-      } else {
         // Reset on success
         failCountRef.current = 0;
         localStorage.removeItem("failCount");
         localStorage.removeItem("lockoutUntil");
-        window.location.href = "/dashboard";
+        
+        // Use Next.js router to avoid race conditions with Set-Cookie
+        router.refresh();
+        router.push("/dashboard");
       }
     } catch {
       setError("An unexpected error occurred. Please try again.");
@@ -144,7 +159,38 @@ export default function LoginPage() {
     }
   }
 
+  async function handleVerifyMfa(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (lockoutUntil && Date.now() < lockoutUntil) return;
+
+    setError("");
+    setLoading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("factorId", mfaFactorId);
+      formData.append("code", mfaCode);
+
+      const result = await verifyMFA(formData);
+      if (result?.error) {
+        failCountRef.current += 1;
+        setError(result.error);
+        setLoading(false);
+        if (failCountRef.current >= MAX_ATTEMPTS) {
+          startLockout(LOCKOUT_DURATION_MS * Math.pow(2, failCountRef.current - MAX_ATTEMPTS));
+        }
+      } else {
+        router.refresh();
+        router.push("/dashboard");
+      }
+    } catch {
+      setError("An unexpected error occurred during verification.");
+      setLoading(false);
+    }
+  }
+
   const isLockedOut = lockoutSeconds > 0;
+  const passwordStrength = zxcvbn(passwordInput);
 
   return (
     <div className="login-page">
@@ -254,10 +300,41 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <h1 className="login-title">Welcome to arthaX</h1>
+          <h1 className="login-title">
+            {isSignUp ? "Create Account" : "Welcome to arthaX"}
+          </h1>
           <p className="login-subtitle">
-            Your personal wealth management terminal — track stocks, mutual funds, expenses, income, and automate bank transaction alerts with enterprise-grade security.
+            {isSignUp 
+              ? "Join arthaX to start tracking your personal wealth with enterprise-grade security."
+              : "Your personal wealth management terminal — track stocks, mutual funds, expenses, income, and automate bank transaction alerts with enterprise-grade security."
+            }
           </p>
+
+          {/* Segmented Toggle */}
+          <div className="flex bg-white/5 p-1 rounded-xl mb-6 relative z-10 w-full mx-auto border border-white/10" style={{ maxWidth: '400px' }}>
+            <div 
+              className="absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-lg transition-all duration-300 ease-in-out z-0"
+              style={{ 
+                transform: isSignUp ? "translateX(100%)" : "translateX(0)", 
+                background: isSignUp ? "#10b981" : "var(--brand-primary)",
+                boxShadow: isSignUp ? "0 2px 10px rgba(16, 185, 129, 0.3)" : "0 2px 10px rgba(0, 112, 243, 0.3)"
+              }}
+            />
+            <button 
+              type="button" 
+              onClick={() => { setIsSignUp(false); setError(""); }}
+              className={`flex-1 py-2 text-sm font-semibold rounded-lg z-10 transition-colors ${!isSignUp ? "text-white" : "text-white/50 hover:text-white/80"}`}
+            >
+              Sign In
+            </button>
+            <button 
+              type="button" 
+              onClick={() => { setIsSignUp(true); setError(""); }}
+              className={`flex-1 py-2 text-sm font-semibold rounded-lg z-10 transition-colors ${isSignUp ? "text-white" : "text-white/50 hover:text-white/80"}`}
+            >
+              Sign Up
+            </button>
+          </div>
 
           <button
             type="button"
@@ -280,6 +357,57 @@ export default function LoginPage() {
             <span className="login-divider-line" />
           </div>
 
+          {requiresMfa ? (
+            <form method="post" onSubmit={handleVerifyMfa} className="login-form animate-fade-in-up">
+              <div className="login-field login-field--focused">
+                <label className="login-label">Authenticator Code</label>
+                <div className="login-input-wrap">
+                  <span className="login-input-icon">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  </span>
+                  <input
+                    name="code"
+                    type="text"
+                    required
+                    maxLength={6}
+                    placeholder="000000"
+                    value={mfaCode}
+                    onChange={(e) => setMfaCode(e.target.value.replace(/[^0-9]/g, ''))}
+                    disabled={isLockedOut}
+                    className="input-premium tracking-[0.5em] text-center font-mono text-xl"
+                  />
+                </div>
+                <p className="text-xs text-[--text-muted] mt-3 text-center">Open your Authenticator app and enter the 6-digit code.</p>
+              </div>
+
+              {error && (
+                <div className="login-error animate-fade-in">
+                  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 8v4M12 16h.01" />
+                  </svg>
+                  {error}
+                </div>
+              )}
+
+              {isLockedOut && (
+                <div className="login-lockout animate-fade-in">
+                  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 6v6l4 2" />
+                  </svg>
+                  Too many failed attempts. Try again in {lockoutSeconds}s
+                </div>
+              )}
+
+              <button type="submit" disabled={loading || isLockedOut || mfaCode.length !== 6} className="btn-primary w-full mt-4 h-12 text-sm">
+                {loading ? "Verifying..." : "Verify Code"}
+              </button>
+              <button type="button" onClick={() => { setRequiresMfa(false); setMfaCode(""); setError(""); }} disabled={loading} className="btn-secondary w-full mt-3 h-12 text-sm">
+                Cancel
+              </button>
+            </form>
+          ) : (
           <form method="post" onSubmit={handleSubmit} className="login-form">
             {/* Email field */}
             <div className={`login-field ${focused === "email" ? "login-field--focused" : ""}`}>
@@ -328,10 +456,49 @@ export default function LoginPage() {
                   autoComplete="current-password"
                   placeholder="••••••••"
                   disabled={isLockedOut}
+                  value={passwordInput}
+                  onChange={(e) => setPasswordInput(e.target.value)}
                   onFocus={() => setFocused("password")}
                   onBlur={() => setFocused(null)}
                 />
               </div>
+
+              {/* Password Strength Meter (Only on Signup) */}
+              {isSignUp && passwordInput && (
+                <div className="mt-3 text-xs animate-fade-in">
+                  <div className="flex justify-between mb-1.5 font-semibold">
+                    <span className="text-[--text-muted]">Password Strength</span>
+                    <span className={
+                      passwordStrength.score === 0 ? "text-rose-500" :
+                      passwordStrength.score === 1 ? "text-rose-400" :
+                      passwordStrength.score === 2 ? "text-amber-400" :
+                      passwordStrength.score === 3 ? "text-emerald-400" :
+                      "text-emerald-500 font-bold"
+                    }>
+                      {["Very Weak", "Weak", "Fair", "Strong", "Very Strong"][passwordStrength.score]}
+                    </span>
+                  </div>
+                  <div className="flex gap-1 h-1.5">
+                    {[0,1,2,3].map((idx) => (
+                      <div 
+                        key={idx}
+                        className={`flex-1 rounded-full transition-all duration-300 ${
+                          passwordStrength.score > idx 
+                            ? (passwordStrength.score < 3 ? "bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.3)]" : "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.3)]") 
+                            : (passwordStrength.score === 0 && idx === 0 ? "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.3)]" : "bg-white/10")
+                        }`} 
+                      />
+                    ))}
+                  </div>
+                  {passwordStrength.feedback.warning && (
+                    <p className="text-rose-400 mt-1.5 text-[10px]">{passwordStrength.feedback.warning}</p>
+                  )}
+                  {passwordInput.length > 0 && passwordInput.length < 12 && (
+                    <p className="text-rose-400 mt-1.5 text-[10px]">At least 12 characters required.</p>
+                  )}
+                </div>
+              )}
+
               <div style={{ textAlign: "right", marginTop: "0.5rem" }}>
                 <Link href="/reset-password" style={{ fontSize: "11px", color: "var(--text-muted)", textDecoration: "none" }}>
                   Forgot password?
@@ -369,6 +536,8 @@ export default function LoginPage() {
               style={{
                 opacity: (loading || isLockedOut) ? 0.65 : 1,
                 cursor: (loading || isLockedOut) ? "not-allowed" : "pointer",
+                background: isSignUp ? "#10b981" : "",
+                boxShadow: isSignUp ? "0 4px 14px 0 rgba(16, 185, 129, 0.39)" : "",
               }}
             >
               {loading ? (
@@ -390,17 +559,7 @@ export default function LoginPage() {
               <div className="login-submit-shimmer" />
             </button>
 
-            {/* Toggle Sign In / Sign Up */}
-            <div style={{ textAlign: "center", marginTop: "1rem", fontSize: "13px", color: "var(--text-muted)" }}>
-              {isSignUp ? "Already have an account? " : "Don't have an account? "}
-              <button 
-                type="button" 
-                onClick={() => setIsSignUp(!isSignUp)}
-                style={{ background: "none", border: "none", color: "var(--brand-primary)", cursor: "pointer", fontWeight: "bold" }}
-              >
-                {isSignUp ? "Sign in" : "Sign up"}
-              </button>
-            </div>
+            {/* Removed bottom text toggle, replaced by segmented control up top */}
 
             {/* Private Banner */}
             <div className="login-private-banner" style={{ marginTop: "1.5rem" }}>
@@ -422,6 +581,7 @@ export default function LoginPage() {
             </div>
 
           </form>
+          )}
 
           {/* Footer */}
           <div className="login-footer flex flex-col items-center gap-1.5 mt-6">

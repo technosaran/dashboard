@@ -101,16 +101,16 @@ function getLogoSources(bankName: string): string[] {
   if (!domain) return [];
 
   return [
-    // 1. Clearbit 512px — high definition vector/raster official logos
-    `https://logo.clearbit.com/${domain}?size=512`,
-    // 2. Unavatar — multi-service high-def logo aggregator
+    // 1. Uplead Logo API - High resolution and reliable
+    `https://logo.uplead.com/${domain}`,
+    // 2. Icon Horse - Good for high resolution icons
+    `https://icon.horse/icon/${domain}`,
+    // 3. Unavatar - Multi-service high-def logo aggregator
     `https://unavatar.io/${domain}?fallback=false`,
-    // 3. Hunter.io — free, no API key
+    // 4. Hunter.io - Free, no API key
     `https://logos.hunter.io/${domain}`,
-    // 4. CompanyEnrich — free, no API key, CDN-backed
-    `https://companyenrich.com/api/logo/${domain}`,
-    // 5. Google high-res favicon — reliable fallback
-    `https://www.google.com/s2/favicons?domain=${domain}&sz=256`,
+    // 5. Google Favicon (fallback, requested at 128px to avoid aggressive upscaling blur)
+    `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
   ];
 }
 

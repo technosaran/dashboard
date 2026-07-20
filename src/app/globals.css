@@ -527,8 +527,8 @@ body {
 .table-responsive-wrapper {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  margin: 0 -1.25rem;
-  padding: 0 1.25rem;
+  margin: 0 calc(-1 * var(--page-padding-x));
+  padding: 0 var(--page-padding-x);
   scrollbar-color: var(--border-default) transparent;
 }
 

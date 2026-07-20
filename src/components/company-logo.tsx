@@ -95,10 +95,8 @@ export default function CompanyLogo({ companyName, category, size = 40, classNam
   const sources = useMemo(() => {
     if (!domain) return [];
     return [
-      `https://logo.clearbit.com/${domain}?size=512`,
-      `https://unavatar.io/${domain}?fallback=false`,
-      `https://logos.hunter.io/${domain}`,
-      `https://www.google.com/s2/favicons?domain=${domain}&sz=256`,
+      `https://logo.uplead.com/${domain}`,
+      `https://icon.horse/icon/${domain}`,
     ];
   }, [domain]);
 
