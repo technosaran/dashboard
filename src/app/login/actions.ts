@@ -65,7 +65,7 @@ export async function login(formData: FormData) {
 
   const supabase = await createClient();
 
-  const { data, error } = await supabase.auth.signInWithPassword({
+  const { error } = await supabase.auth.signInWithPassword({
     email: emailStr,
     password,
   });
@@ -74,17 +74,6 @@ export async function login(formData: FormData) {
     await recordFailedAttempt(emailStr);
     console.error("Login error:", error);
     return { error: error.message || "Invalid email or password." };
-  }
-
-  // Check if MFA is enrolled
-  if (data?.session) {
-    const { data: factors, error: factorsError } = await supabase.auth.mfa.listFactors();
-    if (!factorsError && factors && factors.all.length > 0) {
-      const totpFactor = factors.all.find(f => f.factor_type === 'totp' && f.status === 'verified');
-      if (totpFactor) {
-        return { requiresMFA: true, factorId: totpFactor.id };
-      }
-    }
   }
 
   await clearFailedAttempts(emailStr);
@@ -121,32 +110,5 @@ export async function signup(formData: FormData) {
     return { error: error.message || "Failed to create account." };
   }
 
-  return { success: true };
-}
-
-export async function verifyMFA(formData: FormData) {
-  const factorId = formData.get("factorId");
-  const code = formData.get("code");
-  
-  if (!factorId || typeof factorId !== "string") return { error: "Missing factor ID." };
-  if (!code || typeof code !== "string") return { error: "Missing verification code." };
-  
-  const supabase = await createClient();
-  const challenge = await supabase.auth.mfa.challenge({ factorId });
-  
-  if (challenge.error) {
-    return { error: challenge.error.message };
-  }
-  
-  const verify = await supabase.auth.mfa.verify({
-    factorId,
-    challengeId: challenge.data.id,
-    code: code.trim(),
-  });
-  
-  if (verify.error) {
-    return { error: verify.error.message || "Invalid authentication code." };
-  }
-  
   return { success: true };
 }

@@ -288,25 +288,27 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                   </svg>
                 </div>
-                <AnimatePresence mode="wait">
-                  <motion.h2 
-                    key={showUSD ? 'usd' : 'inr'} 
-                    initial={{ opacity: 0, y: 10, filter: "blur(4px)" }}
-                    animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                    exit={{ opacity: 0, y: -10, filter: "blur(4px)" }}
-                    transition={{ duration: 0.25, ease: "easeInOut" }}
-                    className={`bg-clip-text bg-gradient-to-r text-[clamp(2.2rem,5vw,3.5rem)] font-[950] leading-none tracking-[-0.04em] text-transparent [font-family:'Outfit',sans-serif] whitespace-nowrap overflow-x-auto no-scrollbar transition-all duration-500 ${
-                      showUSD 
-                        ? "from-white via-sky-200 to-indigo-300 drop-shadow-[0_10px_35px_rgba(99,102,241,0.3)]" 
-                        : "from-white via-white to-slate-300 drop-shadow-[0_10px_35px_rgba(14,165,233,0.3)]"
-                    }`}
-                  >
+                <div className="relative">
+                  <AnimatePresence mode="popLayout">
+                    <motion.h2 
+                      key={showUSD ? 'usd' : 'inr'} 
+                      initial={{ opacity: 0, y: 15, filter: "blur(4px)" }}
+                      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                      exit={{ opacity: 0, y: -15, filter: "blur(4px)" }}
+                      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                      className={`bg-clip-text bg-gradient-to-r text-[clamp(2.2rem,5vw,3.5rem)] font-[950] leading-none tracking-[-0.04em] text-transparent [font-family:'Outfit',sans-serif] whitespace-nowrap overflow-x-auto no-scrollbar transition-all duration-500 ${
+                        showUSD 
+                          ? "from-white via-sky-200 to-indigo-300 drop-shadow-[0_10px_35px_rgba(99,102,241,0.3)]" 
+                          : "from-white via-white to-slate-300 drop-shadow-[0_10px_35px_rgba(14,165,233,0.3)]"
+                      }`}
+                    >
                     {showUSD 
                       ? `$${stats.netWorthUSD.toLocaleString(undefined, { minimumFractionDigits: 0 })}` 
                       : `₹${stats.netWorthINR.toLocaleString(undefined, { minimumFractionDigits: 0 })}`
                     }
                   </motion.h2>
-                </AnimatePresence>
+                  </AnimatePresence>
+                </div>
               </div>
 
               <div className="mt-8 flex flex-wrap items-center gap-4 sm:gap-6">
