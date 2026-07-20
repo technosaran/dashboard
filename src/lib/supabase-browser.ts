@@ -22,14 +22,9 @@ export function createClient() {
     {
       realtime: {
         params: {
-          eventsPerSecond: 10, // Supabase default — matches free/pro tier server-side limit
+          eventsPerSecond: 10,
         },
-        heartbeatIntervalMs: 15000, // More frequent keepalive for stable connection
-      },
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true,
+        heartbeatIntervalMs: 15000,
       },
       global: {
         headers: {
