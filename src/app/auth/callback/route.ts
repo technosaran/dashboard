@@ -28,9 +28,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(redirectUrl);
     } else {
       console.error("OAuth callback exchangeCodeForSession error:", error);
+      return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent("Auth error: " + error.message)}`);
     }
   }
 
   // If code exchange failed or no code present, redirect back to login
-  return NextResponse.redirect(`${origin}/login?error=Google%20authentication%20failed`);
+  const errParam = searchParams.get("error_description") || "Google authentication failed";
+  return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(errParam)}`);
 }
