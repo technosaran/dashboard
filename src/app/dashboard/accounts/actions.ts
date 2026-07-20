@@ -51,7 +51,7 @@ export async function updateAccount(id: string, data: Record<string, unknown>) {
 
     const { error } = await supabase
       .from("accounts")
-      .update(safeData)
+      .update(safeData as any)
       .eq("id", id)
       .eq("user_id", user.id);
 
