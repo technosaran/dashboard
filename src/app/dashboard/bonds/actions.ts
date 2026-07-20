@@ -182,7 +182,7 @@ export async function updateBond(id: string, data: {
 
     const { error } = await supabase
       .from("bonds")
-      .update(payload)
+      .update(payload as any)
       .eq("id", id)
       .eq("user_id", user.id);
 
