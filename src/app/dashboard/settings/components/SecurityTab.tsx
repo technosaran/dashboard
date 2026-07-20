@@ -19,7 +19,7 @@ export default function SecurityTab() {
     async function loadMfaStatus() {
       const status = await getMFAStatus();
       setIsMfaEnabled(status.isEnabled);
-      setFactorId(status.factorId);
+      setFactorId(status.factorId || null);
       setLoading(false);
     }
     loadMfaStatus();

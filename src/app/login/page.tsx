@@ -126,9 +126,9 @@ export default function LoginPage() {
         ? await signup(new FormData(e.currentTarget))
         : await login(new FormData(e.currentTarget));
         
-      if (result?.requiresMFA) {
+      if (result && 'requiresMFA' in result && result.requiresMFA) {
         setRequiresMfa(true);
-        setMfaFactorId(result.factorId);
+        setMfaFactorId('factorId' in result ? (result.factorId as string) : "");
         setLoading(false);
         return;
       }
