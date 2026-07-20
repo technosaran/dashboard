@@ -84,7 +84,7 @@ export async function updateAlternativeAsset(id: string, formData: AlternativeAs
 
     const { error } = await supabase
       .from("alternative_assets")
-      .update(payload)
+      .update(payload as any)
       .eq("id", id)
       .eq("user_id", user.id);
 
