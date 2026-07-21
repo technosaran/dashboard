@@ -71,9 +71,9 @@ export default function SystemStatusTab({
               className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-colors"
             >
               <div className="flex flex-col gap-1">
-                <span className="text-[13px] font-bold text-white">{api.name}</span>
+                <span className="text-sm font-bold text-white">{api.name}</span>
                 {api.error && (
-                  <span className="text-[10px] text-rose-400 font-mono max-w-sm truncate" title={api.error}>
+                  <span className="text-xs text-rose-400 font-mono max-w-sm truncate" title={api.error}>
                     Error: {api.error}
                   </span>
                 )}
@@ -81,7 +81,7 @@ export default function SystemStatusTab({
               <div className="flex items-center gap-4">
                 <span className="text-xs text-[--text-muted] font-mono">{api.latency}</span>
                 <span
-                  className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-[4px] border ${
+                  className={`text-xs font-black uppercase tracking-wider px-2 py-0.5 rounded-[4px] border ${
                     api.status === "Healthy"
                       ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
                       : api.status === "Rate Limited"

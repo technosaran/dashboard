@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { format } from "date-fns";
 import { memo, useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { MODULE_KEYS } from "@/lib/modules";
 
@@ -98,12 +99,12 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, accou
       {/* Console Header */}
       <div className="flex items-center justify-between pt-2 px-1">
         <div className="flex flex-col">
-          <span className="text-[10px] font-black uppercase tracking-[0.25em] text-[--accent-primary]">Console</span>
+          <span className="text-xs font-black uppercase tracking-[0.25em] text-[--accent-primary]">Console</span>
           <h2 className="text-lg font-black text-white tracking-tighter">Dashboard</h2>
         </div>
         <div className="flex items-center gap-2 bg-white/[0.02] border border-white/5 px-2.5 py-1 rounded-full">
           <span className={`w-1.5 h-1.5 rounded-full ${isValidating ? 'animate-pulse bg-yellow-400 shadow-[0_0_10px_rgba(250,204,21,0.5)]' : 'bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]'}`} />
-          <span className="text-[11px] font-semibold text-[--text-muted]">{isValidating ? "Syncing" : "Synced"}</span>
+          <span className="text-xs font-semibold text-[--text-muted]">{isValidating ? "Syncing" : "Synced"}</span>
         </div>
       </div>
 
@@ -114,8 +115,8 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, accou
         <div className="absolute -left-16 -bottom-16 w-32 h-32 bg-purple-500/5 blur-3xl rounded-full" />
         
         <div className="flex items-center justify-between">
-          <p className="text-[11px] font-semibold text-[--text-muted]">Net worth</p>
-          <span className="text-[11px] font-semibold text-[--accent-primary] bg-[--accent-primary]/10 px-2 py-0.5 rounded-full border border-[--accent-primary]/10">
+          <p className="text-xs font-semibold text-[--text-muted]">Net worth</p>
+          <span className="text-xs font-semibold text-[--accent-primary] bg-[--accent-primary]/10 px-2 py-0.5 rounded-full border border-[--accent-primary]/10">
             Live
           </span>
         </div>
@@ -126,33 +127,43 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, accou
           title="Click to toggle currency"
         >
           <div className="flex items-center gap-1.5">
-            <p className="text-[11px] font-semibold text-[--text-muted] transition-colors group-hover/nw:text-[--text-primary]">
+            <p className="text-xs font-semibold text-[--text-muted] transition-colors group-hover/nw:text-[--text-primary]">
               Net worth ({showUSD ? 'USD' : 'INR'})
             </p>
             <svg className="w-3 h-3 text-[--text-muted] opacity-50 group-hover/nw:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
             </svg>
           </div>
-          
-          <h1 className="text-3xl font-[900] tracking-tight text-white mt-1">
-            {showUSD 
-              ? `$${stats.netWorthUSD.toLocaleString(undefined, { minimumFractionDigits: 0 })}`
-              : `₹${stats.netWorthINR.toLocaleString(undefined, { minimumFractionDigits: 0 })}`
-            }
-          </h1>
+          <div className="relative flex items-center justify-start h-[2.5rem] mt-1 w-[300px]">
+            <AnimatePresence>
+              <motion.h1 
+                key={showUSD ? 'usd' : 'inr'}
+                initial={{ opacity: 0, y: 15, filter: "blur(4px)" }}
+                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                exit={{ opacity: 0, y: -15, filter: "blur(4px)" }}
+                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                className="absolute left-0 text-3xl font-[900] tracking-tight text-white whitespace-nowrap"
+              >
+                {showUSD 
+                  ? `$${stats.netWorthUSD.toLocaleString(undefined, { minimumFractionDigits: 0 })}`
+                  : `₹${stats.netWorthINR.toLocaleString(undefined, { minimumFractionDigits: 0 })}`
+                }
+              </motion.h1>
+            </AnimatePresence>
+          </div>
         </div>
 
         {/* Quick Month Cashflow Inflow vs Outflow */}
         <div className="grid grid-cols-2 gap-4 mt-6 pt-4 border-t border-white/5">
           <div>
-            <span className="text-[11px] font-semibold text-[--text-muted] block mb-0.5">Month inflow</span>
-            <span className="text-[13px] font-extrabold text-emerald-400">
+            <span className="text-xs font-semibold text-[--text-muted] block mb-0.5">Month inflow</span>
+            <span className="text-sm font-extrabold text-emerald-400">
               +₹{stats.monthlyIncome.toLocaleString(undefined, { maximumFractionDigits: 0 })}
             </span>
           </div>
           <div>
-            <span className="text-[9px] font-black uppercase tracking-wider text-[--text-muted] block mb-0.5">Month Outflow</span>
-            <span className="text-[13px] font-extrabold text-rose-400">
+            <span className="text-[0.5625rem] font-black uppercase tracking-wider text-[--text-muted] block mb-0.5">Month Outflow</span>
+            <span className="text-sm font-extrabold text-rose-400">
               -₹{stats.monthlySpend.toLocaleString(undefined, { maximumFractionDigits: 0 })}
             </span>
           </div>
@@ -162,8 +173,8 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, accou
       {/* Primary Fast Record actions */}
       <div className="flex flex-col gap-2.5">
         <div className="flex items-center justify-between px-1">
-          <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Fast Logs</h3>
-          <span className="text-[9px] text-[--text-muted] font-bold">Frequent entries</span>
+          <h3 className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Fast Logs</h3>
+          <span className="text-[0.5625rem] text-[--text-muted] font-bold">Frequent entries</span>
         </div>
         <div className="grid grid-cols-3 gap-2">
           {enabledModules.includes("Expenses") && (
@@ -173,7 +184,7 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, accou
               className="glass-card-static flex flex-col items-center justify-center p-3.5 rounded-2xl bg-rose-500/5 hover:bg-rose-500/10 border border-rose-500/15 active:scale-95 transition-all text-center no-underline"
             >
               <span className="text-2xl mb-1 filter drop-shadow-[0_4px_8px_rgba(239,68,68,0.25)]">🔴</span>
-              <span className="text-[10px] font-black uppercase tracking-wider text-rose-400">Expense</span>
+              <span className="text-xs font-black uppercase tracking-wider text-rose-400">Expense</span>
             </Link>
           )}
           {enabledModules.includes("Income") && (
@@ -183,7 +194,7 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, accou
               className="glass-card-static flex flex-col items-center justify-center p-3.5 rounded-2xl bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/15 active:scale-95 transition-all text-center no-underline"
             >
               <span className="text-2xl mb-1 filter drop-shadow-[0_4px_8px_rgba(16,185,129,0.25)]">🟢</span>
-              <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400">Income</span>
+              <span className="text-xs font-black uppercase tracking-wider text-emerald-400">Income</span>
             </Link>
           )}
           <Link 
@@ -192,7 +203,7 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, accou
             className="glass-card-static flex flex-col items-center justify-center p-3.5 rounded-2xl bg-sky-500/5 hover:bg-sky-500/10 border border-sky-500/15 active:scale-95 transition-all text-center no-underline"
           >
             <span className="text-2xl mb-1 filter drop-shadow-[0_4px_8px_rgba(14,165,233,0.25)]">🔄</span>
-            <span className="text-[10px] font-black uppercase tracking-wider text-sky-400">Transfer</span>
+            <span className="text-xs font-black uppercase tracking-wider text-sky-400">Transfer</span>
           </Link>
         </div>
       </div>
@@ -200,8 +211,8 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, accou
       {/* Assets & Trades registration */}
       <div className="flex flex-col gap-2.5">
         <div className="flex items-center justify-between px-1">
-          <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Assets & Markets</h3>
-          <span className="text-[9px] text-[--text-muted] font-bold">Investments</span>
+          <h3 className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Assets & Markets</h3>
+          <span className="text-[0.5625rem] text-[--text-muted] font-bold">Investments</span>
         </div>
         <div className="grid grid-cols-2 gap-2">
           {filteredSecondaryActions.map((action) => (
@@ -215,8 +226,8 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, accou
                 {action.icon}
               </div>
               <div className="flex flex-col min-w-0">
-                <span className="text-[11px] font-bold text-white tracking-tight leading-snug">{action.label}</span>
-                <span className="text-[9px] text-[--text-muted] font-medium truncate w-full">{action.desc}</span>
+                <span className="text-xs font-bold text-white tracking-tight leading-snug">{action.label}</span>
+                <span className="text-[0.5625rem] text-[--text-muted] font-medium truncate w-full">{action.desc}</span>
               </div>
             </Link>
           ))}
@@ -227,8 +238,8 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, accou
       {enabledModules.includes("Ledger") && (
         <div className="flex flex-col gap-2.5 px-0.5">
           <div className="flex items-center justify-between">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Financial Pulse</h3>
-            <Link href="/dashboard/ledger" className="text-[9px] font-black uppercase tracking-wider text-[--accent-primary] no-underline">Statement</Link>
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Financial Pulse</h3>
+            <Link href="/dashboard/ledger" className="text-[0.5625rem] font-black uppercase tracking-wider text-[--accent-primary] no-underline">Statement</Link>
           </div>
           <div className="space-y-2">
             {recentLogs.slice(0, 4).map((log) => {
@@ -241,8 +252,8 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, accou
                         {log.action_type === "CREATE" ? "✨" : isOut ? "📉" : "📈"}
                       </div>
                       <div className="flex min-w-0 flex-col">
-                        <span className="truncate text-[11px] font-bold text-white leading-tight">{log.details}</span>
-                        <span className="truncate text-[11px] font-medium text-[--text-muted] mt-0.5">{log.created_at ? format(new Date(log.created_at), "MMM d, HH:mm") : "—"} · {log.account_name}</span>
+                        <span className="truncate text-xs font-bold text-white leading-tight">{log.details}</span>
+                        <span className="truncate text-xs font-medium text-[--text-muted] mt-0.5">{log.created_at ? format(new Date(log.created_at), "MMM d, HH:mm") : "—"} · {log.account_name}</span>
                       </div>
                     </div>
                    <span className={`shrink-0 text-[11.5px] font-black tabular-nums ${isOut ? "text-rose-400" : "text-emerald-400"}`}>
@@ -252,7 +263,7 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, accou
                );
             })}
             {recentLogs.length === 0 && (
-              <div className="py-8 text-center glass-card-static text-[9px] uppercase font-bold tracking-[0.2em] text-[--text-muted] border-dashed rounded-2xl">
+              <div className="py-8 text-center glass-card-static text-[0.5625rem] uppercase font-bold tracking-[0.2em] text-[--text-muted] border-dashed rounded-2xl">
                 Ready for data entry
               </div>
             )}

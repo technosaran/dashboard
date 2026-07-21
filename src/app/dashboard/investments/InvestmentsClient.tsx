@@ -188,7 +188,7 @@ export default function InvestmentsClient() {
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white uppercase italic">
             Investments Portfolio
           </h1>
-          <p className="text-[10px] text-[--text-muted] font-black uppercase tracking-[0.4em] mt-2 ml-1">Asset Allocation & Performance</p>
+          <p className="text-xs text-[--text-muted] font-black uppercase tracking-[0.4em] mt-2 ml-1">Asset Allocation & Performance</p>
         </div>
       </div>
 
@@ -232,28 +232,28 @@ export default function InvestmentsClient() {
             <h2 className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">INR Portfolio (Stocks, Mutual Funds, Bonds, Alt Assets)</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="glass-card-static p-6 border-white/5">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Total Invested</p>
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Total Invested</p>
                 <p className="text-2xl md:text-3xl font-black text-white">{formatINR(portfolioStats.inr.totalInvested)}</p>
-                <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">INR Principal</p>
+                <p className="text-[0.5625rem] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">INR Principal</p>
               </div>
               <div className="glass-card-static p-6 border-white/5">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Current Value</p>
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Current Value</p>
                 <p className="text-2xl md:text-3xl font-black text-white">{formatINR(portfolioStats.inr.totalCurrent)}</p>
-                <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Market Value</p>
+                <p className="text-[0.5625rem] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Market Value</p>
               </div>
               <div className="glass-card-static p-6 border-white/5">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Portfolio P&amp;L</p>
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Portfolio P&amp;L</p>
                 <p className={`text-2xl md:text-3xl font-black ${portfolioStats.inr.totalPnL >= 0 ? "text-emerald-400" : "text-rose-500"}`}>
                   {portfolioStats.inr.totalPnL >= 0 ? "+" : ""}{formatINR(portfolioStats.inr.totalPnL)}
                 </p>
-                <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Total Return</p>
+                <p className="text-[0.5625rem] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Total Return</p>
               </div>
               <div className="glass-card-static p-6 border-white/5">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Percentage ROI</p>
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Percentage ROI</p>
                 <p className={`text-2xl md:text-3xl font-black ${portfolioStats.inr.totalPnL >= 0 ? "text-emerald-400" : "text-rose-500"}`}>
                   {portfolioStats.inr.totalPnL >= 0 ? "+" : ""}{portfolioStats.inr.totalPnLPercent.toFixed(2)}%
                 </p>
-                <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Net Gain/Loss %</p>
+                <p className="text-[0.5625rem] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Net Gain/Loss %</p>
               </div>
             </div>
           </div>
@@ -264,28 +264,28 @@ export default function InvestmentsClient() {
               <h2 className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">USD Portfolio (Forex Trading)</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="glass-card-static p-6 border-white/5">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Total Invested</p>
+                  <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Total Invested</p>
                   <p className="text-2xl md:text-3xl font-black text-white">{formatUSD(portfolioStats.usd.totalInvested)}</p>
-                  <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Forex Capital</p>
+                  <p className="text-[0.5625rem] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Forex Capital</p>
                 </div>
                 <div className="glass-card-static p-6 border-white/5">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Current Balance</p>
+                  <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Current Balance</p>
                   <p className="text-2xl md:text-3xl font-black text-white">{formatUSD(portfolioStats.usd.totalCurrent)}</p>
-                  <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Forex Equity</p>
+                  <p className="text-[0.5625rem] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Forex Equity</p>
                 </div>
                 <div className="glass-card-static p-6 border-white/5">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Forex P&amp;L</p>
+                  <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Forex P&amp;L</p>
                   <p className={`text-2xl md:text-3xl font-black ${portfolioStats.usd.totalPnL >= 0 ? "text-emerald-400" : "text-rose-500"}`}>
                     {portfolioStats.usd.totalPnL >= 0 ? "+" : ""}{formatUSD(portfolioStats.usd.totalPnL)}
                   </p>
-                  <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Net Profit/Loss</p>
+                  <p className="text-[0.5625rem] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Net Profit/Loss</p>
                 </div>
                 <div className="glass-card-static p-6 border-white/5">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Percentage ROI</p>
+                  <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Percentage ROI</p>
                   <p className={`text-2xl md:text-3xl font-black ${portfolioStats.usd.totalPnL >= 0 ? "text-emerald-400" : "text-rose-500"}`}>
                     {portfolioStats.usd.totalPnL >= 0 ? "+" : ""}{portfolioStats.usd.totalPnLPercent.toFixed(2)}%
                   </p>
-                  <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Forex ROI %</p>
+                  <p className="text-[0.5625rem] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Forex ROI %</p>
                 </div>
               </div>
             </div>
@@ -297,28 +297,28 @@ export default function InvestmentsClient() {
               <h2 className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Crypto Portfolio ($ USDT)</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="glass-card-static p-6 border-white/5">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Total Invested</p>
+                  <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Total Invested</p>
                   <p className="text-2xl md:text-3xl font-black text-white">{formatUSD(portfolioStats.crypto.totalInvested)}</p>
-                  <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Crypto Capital</p>
+                  <p className="text-[0.5625rem] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Crypto Capital</p>
                 </div>
                 <div className="glass-card-static p-6 border-white/5">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Current Value</p>
+                  <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Current Value</p>
                   <p className="text-2xl md:text-3xl font-black text-white">{formatUSD(portfolioStats.crypto.totalCurrent)}</p>
-                  <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Market Value</p>
+                  <p className="text-[0.5625rem] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Market Value</p>
                 </div>
                 <div className="glass-card-static p-6 border-white/5">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Crypto P&amp;L</p>
+                  <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Crypto P&amp;L</p>
                   <p className={`text-2xl md:text-3xl font-black ${portfolioStats.crypto.totalPnL >= 0 ? "text-emerald-400" : "text-rose-500"}`}>
                     {portfolioStats.crypto.totalPnL >= 0 ? "+" : ""}{formatUSD(portfolioStats.crypto.totalPnL)}
                   </p>
-                  <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Net Profit/Loss</p>
+                  <p className="text-[0.5625rem] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Net Profit/Loss</p>
                 </div>
                 <div className="glass-card-static p-6 border-white/5">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Portfolio ROI</p>
+                  <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Portfolio ROI</p>
                   <p className={`text-2xl md:text-3xl font-black ${portfolioStats.crypto.totalPnL >= 0 ? "text-emerald-400" : "text-rose-500"}`}>
                     {portfolioStats.crypto.totalPnL >= 0 ? "+" : ""}{portfolioStats.crypto.totalPnLPercent.toFixed(2)}%
                   </p>
-                  <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Crypto ROI %</p>
+                  <p className="text-[0.5625rem] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Crypto ROI %</p>
                 </div>
               </div>
             </div>

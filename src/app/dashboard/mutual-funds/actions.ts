@@ -2,6 +2,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase-server";
+import { getFriendlyErrorMessage } from "@/lib/action-utils";
 import { revalidatePath } from "next/cache";
 import { parseToISODate } from "@/lib/utils";
 
@@ -261,14 +262,14 @@ export async function recordMFInvestment(data: {
             p_trade_type: data.trade_type || "buy"
         });
 
-        if (error) return { error: error.message };
+        if (error) return { error: getFriendlyErrorMessage(error) };
         revalidatePath("/dashboard/mutual-funds");
         revalidatePath("/dashboard/ledger");
         revalidatePath("/dashboard");
         return res;
     } catch (err) {
         console.error("Error in recordMFInvestment:", err);
-        return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+        return { error: getFriendlyErrorMessage(err) };
     }
 }
 
@@ -307,12 +308,12 @@ export async function updateMFHolding(id: string, data: {
       .eq("id", id)
       .eq("user_id", user.id);
 
-    if (error) return { error: error.message };
+    if (error) return { error: getFriendlyErrorMessage(error) };
 
     revalidatePath("/dashboard/mutual-funds");
-    return { success: true };
+    return { success: true, message: "M F Holding updated successfully" };
   } catch (err) {
     console.error("Error in updateMFHolding:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }

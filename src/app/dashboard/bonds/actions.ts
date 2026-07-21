@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase-server";
+import { getFriendlyErrorMessage } from "@/lib/action-utils";
 import { revalidatePath } from "next/cache";
 
 type BondFormData = {
@@ -110,7 +111,7 @@ export async function createBond(data: BondFormData) {
       p_notes: data.notes || null,
     });
 
-    if (error) return { error: error.message };
+    if (error) return { error: getFriendlyErrorMessage(error) };
 
     const result = rpcResult as { success: boolean; error?: string } | null;
     if (!result) return { error: "Failed to communicate with database" };
@@ -120,10 +121,10 @@ export async function createBond(data: BondFormData) {
     revalidatePath("/dashboard/accounts");
     revalidatePath("/dashboard/ledger");
     revalidatePath("/dashboard");
-    return { success: true };
+    return { success: true, message: "Bond created successfully" };
   } catch (err) {
     console.error("Error in createBond:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }
 
@@ -186,13 +187,13 @@ export async function updateBond(id: string, data: {
       .eq("id", id)
       .eq("user_id", user.id);
 
-    if (error) return { error: error.message };
+    if (error) return { error: getFriendlyErrorMessage(error) };
 
     revalidatePath("/dashboard/bonds");
-    return { success: true };
+    return { success: true, message: "Bond updated successfully" };
   } catch (err) {
     console.error("Error in updateBond:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }
 

@@ -119,7 +119,7 @@ export default function ExpenseForm({
 
   const fieldError = (field: keyof FieldErrors) =>
     touched[field] && errors[field] ? (
-      <p role="alert" className="text-[11px] text-rose-400 mt-1">{errors[field]}</p>
+      <p role="alert" className="text-xs text-rose-400 mt-1">{errors[field]}</p>
     ) : null;
 
   return (
@@ -128,7 +128,7 @@ export default function ExpenseForm({
       <div className="grid grid-cols-2 gap-4">
         {/* Description */}
         <div className="space-y-1.5">
-          <label htmlFor="expense-description" className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">
+          <label htmlFor="expense-description" className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">
             {["Food", "Shopping", "Entertainment"].includes(formData.category) ? "Merchant / Store" : "Description"}
           </label>
           <input
@@ -151,7 +151,7 @@ export default function ExpenseForm({
 
         {/* Amount */}
         <div className="space-y-1.5">
-          <label htmlFor="expense-amount" className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Amount</label>
+          <label htmlFor="expense-amount" className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Amount</label>
           <input
             type="number"
             required
@@ -175,14 +175,14 @@ export default function ExpenseForm({
 
       {/* Category Chips */}
       <div className="space-y-1.5">
-        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Category</label>
+        <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Category</label>
         <div className="flex flex-wrap gap-2 pt-0.5">
           {categories.map((c) => (
             <button
               key={c.label}
               type="button"
               onClick={() => setFormData({ ...formData, category: c.label })}
-              className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider border transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider border transition-all cursor-pointer ${
                 formData.category === c.label
                   ? "bg-rose-500/10 border-rose-500/30 text-rose-400 font-bold shadow-[0_2px_10px_rgba(244,63,94,0.15)]"
                   : "bg-white/5 border-white/10 text-[--text-muted] hover:text-white"
@@ -199,7 +199,7 @@ export default function ExpenseForm({
       <div className="grid grid-cols-2 gap-4">
         {/* Date */}
         <div className="space-y-1.5">
-          <label htmlFor="expense-date" className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Date</label>
+          <label htmlFor="expense-date" className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Date</label>
           <input
             type="date"
             required
@@ -218,7 +218,7 @@ export default function ExpenseForm({
 
         {/* Account */}
         <div className="space-y-1.5">
-          <label htmlFor="expense-account" className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Account</label>
+          <label htmlFor="expense-account" className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Account</label>
           <select
             id="expense-account"
             name="account_id"
@@ -244,7 +244,7 @@ export default function ExpenseForm({
       {formData.account_id && (() => {
         const sel = accounts.find((a) => a.id === formData.account_id);
         return sel ? (
-          <div className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between text-[11px] text-[--text-secondary] animate-fade-in">
+          <div className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between text-xs text-[--text-secondary] animate-fade-in">
             <span>Selected balance</span>
             <span className="font-bold text-white">{sel.currency === "USD" ? "$" : "₹"}{sel.balance.toLocaleString()}</span>
           </div>
@@ -255,7 +255,7 @@ export default function ExpenseForm({
         <button
           type="submit"
           disabled={submitting}
-          className="btn-primary w-full h-11 shadow-xl shadow-[--accent-primary]/20 text-[11px] font-black uppercase tracking-widest animate-fade-in"
+          className="btn-primary w-full h-11 shadow-xl shadow-[--accent-primary]/20 text-xs font-black uppercase tracking-widest animate-fade-in"
         >
           {submitting ? "Processing…" : editingExpense ? "Save Changes" : "Confirm Record"}
         </button>

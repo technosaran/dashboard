@@ -197,7 +197,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
     await withLock(async () => {
       const res = await deleteAccount(deletingAccountId);
       if (!res?.error) {
-        toast.success("Account permanently removed from portfolio");
+        toast.success(res.message || "Account permanently removed from portfolio");
         mutate();
       } else {
         toast.error(res.error);
@@ -215,7 +215,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
       const finalAmount = adjustData.type === "subtract" ? -amount : amount;
       const res = await adjustBalance(adjustingAccountId, finalAmount, adjustData.note);
       if (!res?.error) {
-        toast.success("Account balance adjusted successfully");
+        toast.success(res.message || "Account balance adjusted successfully");
         setShowAdjustModal(false);
         mutate();
       } else {
@@ -239,7 +239,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
       }
       const res = await createTransfer(payload);
       if (!res?.error) {
-        toast.success("Inter-account transfer executed successfully");
+        toast.success(res.message || "Inter-account transfer executed successfully");
         setShowTransferModal(false);
         // Reset states
         setTransferFromId(null);
@@ -313,7 +313,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
         <div className="flex items-center gap-4">
           <div>
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[--text-primary]">Accounts Portfolio</h1>
-            <p className="text-[13px] md:text-sm mt-1 font-medium text-[--text-muted]">Manage your financial footprint</p>
+            <p className="text-sm md:text-sm mt-1 font-medium text-[--text-muted]">Manage your financial footprint</p>
           </div>
           <div className={`status-dot scale-90 ${isValidating ? 'animate-pulse bg-yellow-400' : 'bg-emerald-400 opacity-50'}`} />
         </div>
@@ -359,7 +359,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
 
             {/* Quick Initialize suggestions */}
             <div className="mt-10 pt-8 border-t border-white/5 w-full max-w-md">
-              <p className="text-[10px] font-black text-[--text-muted] uppercase tracking-[0.2em] mb-4">Or Quick-start with a template</p>
+              <p className="text-xs font-black text-[--text-muted] uppercase tracking-[0.2em] mb-4">Or Quick-start with a template</p>
               <div className="flex flex-wrap justify-center gap-2">
                 <button 
                   type="button"
@@ -398,7 +398,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
           <>
           {/* Portfolio Balance Card with Integrated Chart */}
           <div className="glass-card-static rich-border relative overflow-hidden p-6 md:p-10">
-            <p className="text-[10px] md:text-xs font-bold uppercase tracking-[0.3em] text-[--text-muted] mb-4">Portfolio Assets</p>
+            <p className="text-xs md:text-xs font-bold uppercase tracking-[0.3em] text-[--text-muted] mb-4">Portfolio Assets</p>
             
             {/* Desktop: Side-by-side layout */}
             <div className="hidden lg:grid lg:grid-cols-[2fr_1fr] lg:gap-6 lg:items-center mb-8">
@@ -410,7 +410,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
                   title="Click to toggle currency"
                 >
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[10px] font-black tracking-widest text-[--text-muted] uppercase transition-colors group-hover/nw:text-[--text-primary]">
+                    <span className="text-xs font-black tracking-widest text-[--text-muted] uppercase transition-colors group-hover/nw:text-[--text-primary]">
                       Total Balance ({displayedCurrency})
                     </span>
                     <svg className="w-3 h-3 text-[--text-muted] opacity-50 group-hover/nw:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -441,7 +441,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
                           {a.bank_name ? <BankLogo bankName={a.bank_name!} size={32} /> : <CategoryIcon type={a.type} className="w-8 h-8" />}
                         </div>
                         <div className="flex flex-col min-w-0 flex-1 text-left">
-                          <p className="font-bold text-[10px] text-[--text-secondary] truncate">{a.name}</p>
+                          <p className="font-bold text-xs text-[--text-secondary] truncate">{a.name}</p>
                           <p className="font-black text-sm" style={{ color: color }}>{getCurrencySymbol(a.currency)}{a.balance.toLocaleString()}</p>
                         </div>
                       </div>
@@ -451,8 +451,8 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
               </div>
 
               {/* Right: Chart - Takes 1/3 of space */}
-              <div className="relative h-[280px]">
-                <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+              <div className="relative w-full h-[280px]">
+                <ResponsiveContainer width="99%" height="100%" minWidth={1} minHeight={1}>
                   <PieChart>
                     <Pie 
                       data={chartData} 
@@ -477,7 +477,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
-                  <p className="text-[8px] uppercase font-black text-[--text-muted] mb-1 tracking-widest">Net Value</p>
+                  <p className="text-[0.5rem] uppercase font-black text-[--text-muted] mb-1 tracking-widest">Net Value</p>
                   <div className="flex flex-col gap-2">
                     <p key={displayedCurrency} className="text-base font-black text-[--text-primary] leading-tight">
                       {getCurrencySymbol(displayedCurrency)}{totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
@@ -494,7 +494,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
                 onClick={() => setShowUSD(!showUSD)}
               >
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[10px] font-black tracking-widest text-[--text-muted] uppercase transition-colors group-hover/nw:text-[--text-primary]">
+                  <span className="text-xs font-black tracking-widest text-[--text-muted] uppercase transition-colors group-hover/nw:text-[--text-primary]">
                     Total Balance ({displayedCurrency})
                   </span>
                   <svg className="w-3 h-3 text-[--text-muted] opacity-50 group-hover/nw:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -514,8 +514,8 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
               </div>
 
               {/* Chart below balance on mobile */}
-              <div className="relative h-[280px] md:h-[350px] mb-6">
-                <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+              <div className="relative w-full h-[280px] md:h-[350px] mb-6">
+                <ResponsiveContainer width="99%" height="100%" minWidth={1} minHeight={1}>
                   <PieChart>
                     <Pie 
                       data={chartData} 
@@ -540,7 +540,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
-                  <p className="text-[9px] md:text-[11px] uppercase font-black text-[--text-muted] mb-1 tracking-widest">Net Value</p>
+                  <p className="text-[0.5625rem] md:text-xs uppercase font-black text-[--text-muted] mb-1 tracking-widest">Net Value</p>
                   <div className="flex flex-col gap-2">
                     <p key={displayedCurrency} className="text-lg md:text-2xl font-black text-[--text-primary] leading-tight">
                       {getCurrencySymbol(displayedCurrency)}{totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
@@ -563,8 +563,8 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
                         {a.bank_name ? <BankLogo bankName={a.bank_name!} size={40} /> : <CategoryIcon type={a.type} className="w-10 h-10" />}
                       </div>
                       <div className="flex flex-col min-w-0 flex-1 text-left">
-                        <p className="font-bold text-[11px] md:text-xs text-[--text-secondary] truncate">{a.name}</p>
-                        <p className="font-black text-[13px] md:text-sm" style={{ color: color }}>{getCurrencySymbol(a.currency)}{a.balance.toLocaleString()}</p>
+                        <p className="font-bold text-xs md:text-xs text-[--text-secondary] truncate">{a.name}</p>
+                        <p className="font-black text-sm md:text-sm" style={{ color: color }}>{getCurrencySymbol(a.currency)}{a.balance.toLocaleString()}</p>
                       </div>
                     </div>
                   );
@@ -631,14 +631,14 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
                 >
                   <div className="absolute top-0 left-0 right-0 h-[3px]" style={{ background: style.gradient }} />
                   <div className="flex justify-between items-start mb-6">
-                     <div><span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider" style={{ background: style.badge, color: style.color, border: `1px solid ${style.badgeBorder}` }}>{a.type}</span><div className="flex items-center gap-3 mt-4">{a.bank_name ? <BankLogo bankName={a.bank_name} size={48} /> : <CategoryIcon type={a.type} className="w-12 h-12" />}<span className="text-base font-bold text-[--text-secondary]">{a.bank_name || a.name}</span></div></div>
+                     <div><span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider" style={{ background: style.badge, color: style.color, border: `1px solid ${style.badgeBorder}` }}>{a.type}</span><div className="flex items-center gap-3 mt-4">{a.bank_name ? <BankLogo bankName={a.bank_name} size={48} /> : <CategoryIcon type={a.type} className="w-12 h-12" />}<span className="text-base font-bold text-[--text-secondary]">{a.bank_name || a.name}</span></div></div>
                      {a.name !== "Cash" && <button type="button" onClick={() => startEdit(a)} className="p-2 rounded-xl bg-white/5 border border-white/10 text-[--text-muted] hover:text-white transition-all"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>}
                   </div>
                   <div className="mt-auto">
                     <h3 className="text-lg font-bold truncate">{a.name}</h3>
                     <p className="text-2xl font-black mt-1" style={{ color: style.color }}>{getCurrencySymbol(a.currency)} {a.balance.toLocaleString()}</p>
                     <div className="flex gap-2 mt-6">
-                      <button type="button" onClick={() => { setAdjustingAccountId(a.id); setShowAdjustModal(true); }} className="flex-1 h-11 rounded-xl font-bold text-[11px] transition-all flex items-center justify-center gap-2" style={{ background: style.iconBg, color: style.color, border: `1px solid ${style.badgeBorder}` }}>
+                      <button type="button" onClick={() => { setAdjustingAccountId(a.id); setShowAdjustModal(true); }} className="flex-1 h-11 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2" style={{ background: style.iconBg, color: style.color, border: `1px solid ${style.badgeBorder}` }}>
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
                         Adjust ±
                       </button>
@@ -727,7 +727,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
                         <p className="text-xs font-bold text-white tracking-tight">
                           {log.created_at ? format(new Date(log.created_at), "MMM d, yyyy") : "—"}
                         </p>
-                        <p className="text-[10px] font-mono text-[--text-muted] mt-0.5 tracking-widest uppercase">
+                        <p className="text-xs font-mono text-[--text-muted] mt-0.5 tracking-widest uppercase">
                           {log.created_at ? format(new Date(log.created_at), "hh:mm a") : ""}
                         </p>
                       </td>
@@ -785,18 +785,18 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-3">
-            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Account Label</label>
+            <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Account Label</label>
             <input required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="input-premium" placeholder="e.g. Primary Savings" autoComplete="new-password" />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Asset Category</label>
+              <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Asset Category</label>
               <select aria-label="Select asset category" id="account-type" name="type" value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})} className="input-premium">
                 {Object.keys(TYPE_STYLES).map(t => <option key={t} value={t} style={{background: "var(--bg-surface)"}}>{t.toUpperCase()}</option>)}
               </select>
             </div>
             <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Currency</label>
+              <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Currency</label>
               <select aria-label="Select currency" id="account-currency" name="currency" value={formData.currency} onChange={e => setFormData({...formData, currency: e.target.value})} className="input-premium">
                 <option value="INR" style={{background: "var(--bg-surface)"}}>INR (₹)</option>
                 <option value="USD" style={{background: "var(--bg-surface)"}}>USD ($)</option>
@@ -805,12 +805,12 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
           </div>
           {!editingId && (
             <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Opening Balance</label>
+              <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Opening Balance</label>
               <input type="number" value={formData.balance} onChange={e => setFormData({...formData, balance: e.target.value})} className="input-premium" placeholder="0.00" autoComplete="new-password" inputMode="decimal" />
             </div>
           )}
           <div ref={searchContainerRef} className="relative space-y-3">
-            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Bank Institution</label>
+            <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Bank Institution</label>
             <input 
               value={bankSearch} 
               onChange={e => handleBankSearch(e.target.value)} 
@@ -839,7 +839,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
                     <BankLogo bankName={b.name} size={28} />
                     <div>
                       <p className="font-bold text-sm text-white">{b.name}</p>
-                      <p className="text-[10px] text-[--text-muted]">{b.domain}</p>
+                      <p className="text-xs text-[--text-muted]">{b.domain}</p>
                     </div>
                   </button>
                 ))}
@@ -847,7 +847,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
             )}
           </div>
           <div className="pt-2 mt-4">
-            <button type="submit" disabled={submitting} className="btn-primary w-full h-11 shadow-xl shadow-[--accent-primary]/20 transition-all text-[11px] font-black uppercase tracking-widest">
+            <button type="submit" disabled={submitting} className="btn-primary w-full h-11 shadow-xl shadow-[--accent-primary]/20 transition-all text-xs font-black uppercase tracking-widest">
               {submitting ? "Processing Registry..." : (editingId ? "Update Portfolio" : "Activate Account")}
             </button>
           </div>
@@ -877,15 +877,15 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
             </button>
           </div>
           <div className="space-y-3">
-            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Amount</label>
+            <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Amount</label>
             <input required type="number" step="0.01" value={adjustData.amount} onChange={e => setAdjustData({...adjustData, amount: e.target.value})} className="input-premium !h-14 text-xl font-black" placeholder="0.00" autoComplete="new-password" inputMode="decimal" />
           </div>
           <div className="space-y-3">
-            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Reason / Note</label>
+            <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Reason / Note</label>
             <input value={adjustData.note} onChange={e => setAdjustData({...adjustData, note: e.target.value})} className="input-premium" placeholder="Why the change?" autoComplete="new-password" />
           </div>
           <div className="pt-2 mt-4">
-            <button type="submit" disabled={submitting} className="btn-primary w-full h-11 text-[11px] font-black uppercase tracking-widest shadow-xl shadow-[--accent-primary]/20">
+            <button type="submit" disabled={submitting} className="btn-primary w-full h-11 text-xs font-black uppercase tracking-widest shadow-xl shadow-[--accent-primary]/20">
               {submitting ? "Processing..." : "Finalize Adjustment"}
             </button>
           </div>
@@ -905,14 +905,14 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
         <form onSubmit={handleTransfer} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">SOURCE ACCOUNT</label>
+              <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">SOURCE ACCOUNT</label>
               <select aria-label="Select source account" id="transfer-source" name="from_account" required value={transferFromId || ""} onChange={e => setTransferFromId(e.target.value)} className="input-premium text-xs">
                 <option value="">Select source</option>
                 {accounts.map(a => <option key={a.id} value={a.id} style={{background: "var(--bg-surface)"}}>{a.name} ({getCurrencySymbol(a.currency)}{a.balance.toLocaleString()})</option>)}
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">DESTINATION ACCOUNT</label>
+              <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">DESTINATION ACCOUNT</label>
               <select aria-label="Select destination account" id="transfer-destination" name="to_account" required value={transferData.to_account_id} onChange={e => setTransferData({...transferData, to_account_id: e.target.value})} className="input-premium text-xs">
                 <option value="">Select target</option>
                 {accounts.map(a => a.id !== transferFromId && <option key={a.id} value={a.id} style={{background: "var(--bg-surface)"}}>{a.name} ({getCurrencySymbol(a.currency)}{a.balance.toLocaleString()})</option>)}
@@ -922,12 +922,12 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
 
           <div className={isCrossCurrency ? "grid grid-cols-2 gap-4" : "space-y-2"}>
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">AMOUNT</label>
+              <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">AMOUNT</label>
               <input required type="number" step="0.01" value={transferData.amount} onChange={e => setTransferData({...transferData, amount: e.target.value})} className="input-premium text-base font-black" placeholder="0.00" autoComplete="new-password" inputMode="decimal" />
             </div>
             {isCrossCurrency && (
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">CONVERSION RATE</label>
+                <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">CONVERSION RATE</label>
                 <input required type="number" step="0.0001" value={conversionRate} onChange={e => setConversionRate(e.target.value)} className="input-premium text-base font-black bg-white/[0.02]" placeholder="e.g. 83.50" autoComplete="off" inputMode="decimal" />
               </div>
             )}
@@ -940,12 +940,12 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
-                <span className="text-[9px] font-black uppercase tracking-wider">Multi-Currency: {fromAccount?.currency} to {toAccount?.currency}</span>
+                <span className="text-[0.5625rem] font-black uppercase tracking-wider">Multi-Currency: {fromAccount?.currency} to {toAccount?.currency}</span>
               </div>
 
               {transferData.amount && conversionRate && parseFloat(transferData.amount) > 0 && parseFloat(conversionRate) > 0 && (
                 <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 space-y-2 text-xs">
-                  <div className="flex justify-between items-center text-[10px] text-[--text-muted]">
+                  <div className="flex justify-between items-center text-xs text-[--text-muted]">
                     <span>Calculation</span>
                     <span>{parseFloat(transferData.amount).toFixed(2)} {fromAccount?.currency} × {parseFloat(conversionRate).toFixed(4)}</span>
                   </div>
@@ -959,7 +959,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
           )}
 
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Note / Description</label>
+            <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Note / Description</label>
             <input 
               value={transferData.note} 
               onChange={e => setTransferData({...transferData, note: e.target.value})} 
@@ -973,7 +973,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
             <button 
               type="submit" 
               disabled={submitting || !transferFromId || !transferData.to_account_id || !transferData.amount || (isCrossCurrency && !conversionRate)} 
-              className="btn-primary w-full h-11 shadow-xl shadow-[--accent-primary]/20 text-[11px] font-black uppercase tracking-widest disabled:opacity-50"
+              className="btn-primary w-full h-11 shadow-xl shadow-[--accent-primary]/20 text-xs font-black uppercase tracking-widest disabled:opacity-50"
             >
               {submitting ? "Processing..." : "Execute Transfer"}
             </button>

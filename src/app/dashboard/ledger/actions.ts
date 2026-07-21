@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase-server";
+import { getFriendlyErrorMessage } from "@/lib/action-utils";
 import { revalidatePath } from "next/cache";
 
 export async function revertLedgerTransaction(logId: string) {
@@ -41,9 +42,9 @@ export async function revertLedgerTransaction(logId: string) {
     revalidatePath("/dashboard/accounts");
     revalidatePath("/dashboard/family");
 
-    return { success: true };
+    return { success: true, message: "Revert Ledger Transaction successful" };
   } catch (err) {
     console.error("Error in revertLedgerTransaction:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }

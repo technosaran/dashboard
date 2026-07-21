@@ -3,6 +3,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase-server";
+import { getFriendlyErrorMessage } from "@/lib/action-utils";
 import { revalidatePath } from "next/cache";
 
 export async function resetUserData() {
@@ -77,7 +78,7 @@ export async function resetUserData() {
     // Revalidate all major paths to ensure no stale data from layout or nested routes
     revalidatePath("/", "layout");
     
-    return { success: true };
+    return { success: true, message: "Reset User Data successful" };
   } catch (error: unknown) {
     const err = error as Error;
     console.error("Unhandled exception during resetUserData server action:", err);
@@ -119,21 +120,21 @@ export async function updateSettings(settings: ProfileSettings) {
     if (settings.telegram_chat_id !== undefined) payload.telegram_chat_id = settings.telegram_chat_id;
     if (settings.telegram_link_code !== undefined) payload.telegram_link_code = settings.telegram_link_code;
 
-    if (Object.keys(payload).length === 0) return { success: true };
+    if (Object.keys(payload).length === 0) return { success: true, message: "Settings updated successfully" };
 
     const { error } = await supabase
       .from("profiles")
       .update(payload as any)
       .eq("id", user.id);
 
-    if (error) return { error: error.message };
+    if (error) return { error: getFriendlyErrorMessage(error) };
     
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/settings");
-    return { success: true };
+    return { success: true, message: "Settings updated successfully" };
   } catch (err) {
     console.error("Error in updateSettings:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }
 
@@ -159,7 +160,7 @@ export async function generateTelegramLinkCode() {
     return { success: true, code };
   } catch (err) {
     console.error("Error in generateTelegramLinkCode:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }
 

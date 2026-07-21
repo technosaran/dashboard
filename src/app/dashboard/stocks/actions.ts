@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase-server";
+import { getFriendlyErrorMessage } from "@/lib/action-utils";
 import { revalidatePath } from "next/cache";
 import { parseToISODate } from "@/lib/utils";
 
@@ -292,10 +293,10 @@ export async function createInvestment(data: {
     revalidatePath("/dashboard/stocks");
     revalidatePath("/dashboard/ledger");
     revalidatePath("/dashboard");
-    return { success: true };
+    return { success: true, message: "Investment created successfully" };
   } catch (err) {
     console.error("Error in createInvestment:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }
 
@@ -335,13 +336,13 @@ export async function updateInvestment(id: string, data: {
       .eq("id", id)
       .eq("user_id", user.id);
 
-    if (error) return { error: error.message };
+    if (error) return { error: getFriendlyErrorMessage(error) };
 
     revalidatePath("/dashboard/stocks");
-    return { success: true };
+    return { success: true, message: "Investment updated successfully" };
   } catch (err) {
     console.error("Error in updateInvestment:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }
 
@@ -357,7 +358,7 @@ export async function deleteInvestment(id: string) {
       p_entity_id: id
     });
 
-    if (error) return { error: error.message };
+    if (error) return { error: getFriendlyErrorMessage(error) };
     const res = data as { success: boolean; error?: string };
     if (!res?.success) return { error: res?.error || "Failed to delete investment atomically" };
 
@@ -365,9 +366,9 @@ export async function deleteInvestment(id: string) {
     revalidatePath("/dashboard/ledger");
     revalidatePath("/dashboard/accounts");
     revalidatePath("/dashboard");
-    return { success: true };
+    return { success: true, message: "Investment deleted successfully" };
   } catch (err) {
     console.error("Error in deleteInvestment:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }

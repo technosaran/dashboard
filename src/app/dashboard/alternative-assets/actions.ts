@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase-server";
+import { getFriendlyErrorMessage } from "@/lib/action-utils";
 import { revalidatePath } from "next/cache";
 
 export async function addAlternativeAsset(formData: {
@@ -45,17 +46,17 @@ export async function addAlternativeAsset(formData: {
       p_account_id: formData.account_id || null
     });
 
-    if (error) return { error: error.message };
+    if (error) return { error: getFriendlyErrorMessage(error) };
     if (!rpcData?.success) return { error: rpcData?.error || "Failed to add alternative asset" };
 
     revalidatePath("/dashboard/alternative-assets");
     revalidatePath("/dashboard/ledger");
     revalidatePath("/dashboard/accounts");
     revalidatePath("/dashboard");
-    return { success: true };
+    return { success: true, message: "Alternative Asset added successfully" };
   } catch (err) {
     console.error("Error in addAlternativeAsset:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }
 
@@ -88,12 +89,12 @@ export async function updateAlternativeAsset(id: string, formData: AlternativeAs
       .eq("id", id)
       .eq("user_id", user.id);
 
-    if (error) return { error: error.message };
+    if (error) return { error: getFriendlyErrorMessage(error) };
     revalidatePath("/dashboard/alternative-assets");
-    return { success: true };
+    return { success: true, message: "Alternative Asset updated successfully" };
   } catch (err) {
     console.error("Error in updateAlternativeAsset:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }
 
@@ -109,7 +110,7 @@ export async function deleteAlternativeAsset(id: string) {
       p_entity_id: id
     });
 
-    if (error) return { error: error.message };
+    if (error) return { error: getFriendlyErrorMessage(error) };
     const res = data as { success: boolean; error?: string } | null;
     if (!res?.success) return { error: res?.error || "Failed to delete asset atomically" };
 
@@ -117,10 +118,10 @@ export async function deleteAlternativeAsset(id: string) {
     revalidatePath("/dashboard/ledger");
     revalidatePath("/dashboard/accounts");
     revalidatePath("/dashboard");
-    return { success: true };
+    return { success: true, message: "Alternative Asset deleted successfully" };
   } catch (err) {
     console.error("Error in deleteAlternativeAsset:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }
 
@@ -135,7 +136,7 @@ export async function revertLedgerLog(logId: string) {
       p_user_id: user.id
     });
 
-    if (error) return { error: error.message };
+    if (error) return { error: getFriendlyErrorMessage(error) };
     
     revalidatePath("/dashboard/alternative-assets");
     revalidatePath("/dashboard/liabilities");
@@ -145,9 +146,9 @@ export async function revertLedgerLog(logId: string) {
     revalidatePath("/dashboard/mutual-funds");
     revalidatePath("/dashboard");
     
-    return { success: true };
+    return { success: true, message: "Revert Ledger Log successful" };
   } catch (err) {
     console.error("Error in revertLedgerLog:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }

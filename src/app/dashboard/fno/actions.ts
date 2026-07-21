@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase-server";
+import { getFriendlyErrorMessage } from "@/lib/action-utils";
 import { revalidatePath } from "next/cache";
 
 export async function logFnoTrade(data: {
@@ -44,7 +45,7 @@ export async function logFnoTrade(data: {
     p_charges: data.charges || 0
   });
 
-  if (error) return { error: error.message };
+  if (error) return { error: getFriendlyErrorMessage(error) };
   const typedRes = res as { success: boolean; error?: string };
   if (!typedRes?.success) return { error: typedRes?.error || "Failed to log trade" };
 
@@ -52,7 +53,7 @@ export async function logFnoTrade(data: {
   revalidatePath("/dashboard/ledger");
   revalidatePath("/dashboard/accounts");
   revalidatePath("/dashboard");
-  return { success: true };
+  return { success: true, message: "Log Fno Trade successful" };
 }
 
 export async function closeFnoTrade(
@@ -75,7 +76,7 @@ export async function closeFnoTrade(
     p_close_date: data.close_date || new Date().toISOString().split("T")[0]
   });
 
-  if (error) return { error: error.message };
+  if (error) return { error: getFriendlyErrorMessage(error) };
   const typedRes = res as { success: boolean; error?: string };
   if (!typedRes?.success) return { error: typedRes?.error || "Failed to close position" };
 
@@ -83,7 +84,7 @@ export async function closeFnoTrade(
   revalidatePath("/dashboard/ledger");
   revalidatePath("/dashboard/accounts");
   revalidatePath("/dashboard");
-  return { success: true };
+  return { success: true, message: "Close Fno Trade successful" };
 }
 
 export async function deleteFnoTrade(tradeId: string) {
@@ -96,7 +97,7 @@ export async function deleteFnoTrade(tradeId: string) {
     p_trade_id: tradeId
   });
 
-  if (error) return { error: error.message };
+  if (error) return { error: getFriendlyErrorMessage(error) };
   const typedRes = res as { success: boolean; error?: string };
   if (!typedRes?.success) return { error: typedRes?.error || "Failed to delete trade" };
 
@@ -104,5 +105,5 @@ export async function deleteFnoTrade(tradeId: string) {
   revalidatePath("/dashboard/ledger");
   revalidatePath("/dashboard/accounts");
   revalidatePath("/dashboard");
-  return { success: true };
+  return { success: true, message: "Fno Trade deleted successfully" };
 }

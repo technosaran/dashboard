@@ -114,7 +114,7 @@ export default function StocksDataTable({ stocks, onEdit, onBuy, onSell, onAdd }
               }}
             >
               <div>{isPositive ? '+' : ''}{formatMoney(pnl)}</div>
-              <div className="text-[10px] opacity-90">{isPositive ? '+' : ''}{pct.toFixed(2)}%</div>
+              <div className="text-xs opacity-90">{isPositive ? '+' : ''}{pct.toFixed(2)}%</div>
             </div>
           );
         },

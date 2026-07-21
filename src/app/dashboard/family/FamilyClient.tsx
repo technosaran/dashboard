@@ -295,7 +295,7 @@ export default function FamilyClient() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
         <div>
           <h1 className="text-3xl font-black tracking-tight text-white uppercase italic">Family Tracker</h1>
-          <p className="text-[10px] text-[--text-muted] font-black uppercase tracking-[0.3em] mt-1.5">
+          <p className="text-xs text-[--text-muted] font-black uppercase tracking-[0.3em] mt-1.5">
             Log and monitor money sent to family members
           </p>
         </div>
@@ -347,11 +347,11 @@ export default function FamilyClient() {
           },
         ].map((s, i) => (
           <div key={i} className="glass-card-static p-6 border-white/5 flex flex-col justify-between min-h-[120px]">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">{s.label}</p>
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">{s.label}</p>
             <p className={`text-2xl font-black tracking-tight truncate ${s.color} mt-2`} title={s.value}>
               {s.value}
             </p>
-            <p className="text-[11px] font-medium text-[--text-secondary] mt-1 truncate">
+            <p className="text-xs font-medium text-[--text-secondary] mt-1 truncate">
               {s.subtext}
             </p>
           </div>
@@ -427,7 +427,7 @@ export default function FamilyClient() {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <h3 className="text-sm font-bold text-white leading-tight truncate" title={member.name}>{member.name}</h3>
-                          <span className="shrink-0 text-[8px] font-black uppercase tracking-widest text-pink-400 bg-pink-500/10 border border-pink-500/20 px-1.5 py-0.5 rounded-md">
+                          <span className="shrink-0 text-[0.5rem] font-black uppercase tracking-widest text-pink-400 bg-pink-500/10 border border-pink-500/20 px-1.5 py-0.5 rounded-md">
                             {member.relationship ?? "Other"}
                           </span>
                         </div>
@@ -495,7 +495,7 @@ export default function FamilyClient() {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse min-w-[800px]">
                 <thead>
-                  <tr className="border-b border-white/5 text-[9px] text-[--text-muted] uppercase font-black tracking-widest bg-black/40">
+                  <tr className="border-b border-white/5 text-[0.5625rem] text-[--text-muted] uppercase font-black tracking-widest bg-black/40">
                     <th className="py-4 px-6">Date</th>
                     <th className="py-4 px-6">Recipient</th>
                     <th className="py-4 px-6">From Account</th>
@@ -523,7 +523,7 @@ export default function FamilyClient() {
                           <span className="text-[12px] text-[--text-muted]" title={tr.note || ""}>{tr.note || "—"}</span>
                         </td>
                         <td className="py-4 px-6 text-right tabular-nums">
-                          <span className="text-[13px] font-black text-rose-400">
+                          <span className="text-sm font-black text-rose-400">
                             -{fmt.format(Number(tr.amount))}
                           </span>
                         </td>
@@ -532,7 +532,7 @@ export default function FamilyClient() {
                   })}
                   {filteredTransfers.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="py-12 text-center text-[11px] font-bold text-[--text-muted] uppercase tracking-[0.3em]">
+                      <td colSpan={5} className="py-12 text-center text-xs font-bold text-[--text-muted] uppercase tracking-[0.3em]">
                         No historical records detected
                       </td>
                     </tr>

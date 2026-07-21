@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase-server";
+import { getFriendlyErrorMessage } from "@/lib/action-utils";
 import { revalidatePath } from "next/cache";
 
 type RpcResult = {
@@ -30,12 +31,12 @@ export async function addFamilyMember(data: { name: string; relationship: string
       balance: 0,
     });
 
-    if (error) return { error: error.message };
+    if (error) return { error: getFriendlyErrorMessage(error) };
     revalidatePath("/dashboard/family");
-    return { success: true };
+    return { success: true, message: "Family Member added successfully" };
   } catch (err) {
     console.error("Error in addFamilyMember:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }
 
@@ -62,12 +63,12 @@ export async function updateFamilyMember(id: string, data: { name: string; relat
       .eq("id", id)
       .eq("user_id", user.id);
 
-    if (error) return { error: error.message };
+    if (error) return { error: getFriendlyErrorMessage(error) };
     revalidatePath("/dashboard/family");
-    return { success: true };
+    return { success: true, message: "Family Member updated successfully" };
   } catch (err) {
     console.error("Error in updateFamilyMember:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }
 
@@ -85,13 +86,13 @@ export async function deleteFamilyMember(id: string) {
       .eq("id", id)
       .eq("user_id", user.id);
 
-    if (error) return { error: error.message };
+    if (error) return { error: getFriendlyErrorMessage(error) };
 
     revalidatePath("/dashboard/family");
-    return { success: true };
+    return { success: true, message: "Family Member deleted successfully" };
   } catch (err) {
     console.error("Error in deleteFamilyMember:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }
 
@@ -123,12 +124,12 @@ export async function createAllowance(data: {
       frequency,
     });
 
-    if (error) return { error: error.message };
+    if (error) return { error: getFriendlyErrorMessage(error) };
     revalidatePath("/dashboard/family");
-    return { success: true };
+    return { success: true, message: "Allowance created successfully" };
   } catch (err) {
     console.error("Error in createAllowance:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }
 
@@ -163,12 +164,12 @@ export async function updateAllowance(
       .eq("id", allowanceId)
       .eq("user_id", user.id);
 
-    if (error) return { error: error.message };
+    if (error) return { error: getFriendlyErrorMessage(error) };
     revalidatePath("/dashboard/family");
-    return { success: true };
+    return { success: true, message: "Allowance updated successfully" };
   } catch (err) {
     console.error("Error in updateAllowance:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }
 
@@ -187,12 +188,12 @@ export async function deleteAllowance(id: string) {
       .eq("id", allowanceId)
       .eq("user_id", user.id);
 
-    if (error) return { error: error.message };
+    if (error) return { error: getFriendlyErrorMessage(error) };
     revalidatePath("/dashboard/family");
-    return { success: true };
+    return { success: true, message: "Allowance deleted successfully" };
   } catch (err) {
     console.error("Error in deleteAllowance:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }
 
@@ -230,17 +231,17 @@ export async function processFamilyTransfer(data: {
       p_note: note || undefined,
     });
 
-    if (error) return { error: error.message };
+    if (error) return { error: getFriendlyErrorMessage(error) };
     const res = rpcData as RpcResult | null;
     if (!res?.success) return { error: res?.error || "Transfer failed" };
 
     revalidatePath("/dashboard/family");
     revalidatePath("/dashboard/accounts");
     revalidatePath("/dashboard/ledger");
-    return { success: true };
+    return { success: true, message: "Process Family Transfer successful" };
   } catch (err) {
     console.error("Error in processFamilyTransfer:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }
 
@@ -261,16 +262,16 @@ export async function payAllowance(data: { allowance_id: string; account_id: str
       p_account_id: accountId,
     });
 
-    if (error) return { error: error.message };
+    if (error) return { error: getFriendlyErrorMessage(error) };
     const res = rpcData as RpcResult | null;
     if (!res?.success) return { error: res?.error || "Payment failed" };
 
     revalidatePath("/dashboard/family");
     revalidatePath("/dashboard/accounts");
     revalidatePath("/dashboard/ledger");
-    return { success: true };
+    return { success: true, message: "Pay Allowance successful" };
   } catch (err) {
     console.error("Error in payAllowance:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }

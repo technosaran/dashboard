@@ -49,7 +49,7 @@ export default function ModulesTab({ enabledModules, toggleModule }: ModulesTabP
               >
                 <div className="flex items-center gap-3">
                   <span className="text-base select-none">{MODULE_ICONS[module] || "⚙️"}</span>
-                  <span className="text-[13px] font-bold text-white">{displayLabel}</span>
+                  <span className="text-sm font-bold text-white">{displayLabel}</span>
                 </div>
                 <button
                   type="button"
@@ -69,7 +69,7 @@ export default function ModulesTab({ enabledModules, toggleModule }: ModulesTabP
           })}
         </div>
 
-        <p className="text-[10px] text-[--text-muted] mt-6 italic font-medium px-2">
+        <p className="text-xs text-[--text-muted] mt-6 italic font-medium px-2">
           * Disabling a module hides it from the UI but preserves all existing data and historical records.
         </p>
       </div>

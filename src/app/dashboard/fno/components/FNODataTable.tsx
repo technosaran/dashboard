@@ -40,7 +40,7 @@ export default function FNODataTable({ trades, onCloseTrade, onDeleteTrade, onAd
           <div className="flex flex-col">
             <span className="text-sm font-medium text-[--text-primary]" title={info.getValue()}>
               {info.getValue()}
-              <span className={`ml-2 px-1 py-0.5 rounded text-[9px] font-semibold tracking-wider ${
+              <span className={`ml-2 px-1 py-0.5 rounded text-[0.5625rem] font-semibold tracking-wider ${
                 info.row.original.instrument_type === 'FUT' ? 'bg-[#2185d0]/10 text-[#2185d0]' :
                 info.row.original.instrument_type === 'CE' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'
               }`}>
@@ -48,7 +48,7 @@ export default function FNODataTable({ trades, onCloseTrade, onDeleteTrade, onAd
               </span>
             </span>
             {info.row.original.strike_price && (
-              <span className="text-[10px] text-[--text-muted]">Strike: {info.row.original.strike_price}</span>
+              <span className="text-xs text-[--text-muted]">Strike: {info.row.original.strike_price}</span>
             )}
           </div>
         ),
@@ -58,7 +58,7 @@ export default function FNODataTable({ trades, onCloseTrade, onDeleteTrade, onAd
         cell: (info) => {
           const isBuy = info.getValue() === 'BUY';
           return (
-            <span className={`text-[11px] font-medium px-1.5 py-0.5 rounded ${isBuy ? 'bg-[#2185d0]/10 text-[#2185d0]' : 'bg-rose-500/10 text-rose-500'}`}>
+            <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${isBuy ? 'bg-[#2185d0]/10 text-[#2185d0]' : 'bg-rose-500/10 text-rose-500'}`}>
               {info.getValue()}
             </span>
           );
@@ -250,14 +250,14 @@ export default function FNODataTable({ trades, onCloseTrade, onDeleteTrade, onAd
               <div className="flex items-start justify-between gap-3">
                 <div className="flex flex-col min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-[13px] font-bold text-white truncate">{trade.symbol}</span>
-                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                    <span className="text-sm font-bold text-white truncate">{trade.symbol}</span>
+                    <span className={`px-1.5 py-0.5 rounded text-xs font-bold ${
                       trade.instrument_type === "FUT" ? "bg-sky-500/10 text-sky-400" :
                       trade.instrument_type === "CE" ? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-400"
                     }`}>{trade.instrument_type}</span>
-                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${isBuy ? "bg-sky-500/10 text-sky-400" : "bg-rose-500/10 text-rose-400"}`}>{trade.trade_type}</span>
+                    <span className={`px-1.5 py-0.5 rounded text-xs font-bold ${isBuy ? "bg-sky-500/10 text-sky-400" : "bg-rose-500/10 text-rose-400"}`}>{trade.trade_type}</span>
                   </div>
-                  {trade.strike_price && <span className="text-[11px] text-[--text-muted]">Strike: {trade.strike_price}</span>}
+                  {trade.strike_price && <span className="text-xs text-[--text-muted]">Strike: {trade.strike_price}</span>}
                 </div>
                 <span className={`text-[14px] font-black tabular-nums shrink-0 ${isPosive ? "text-emerald-400" : "text-rose-400"}`}>
                   {isPosive ? "+" : ""}{formatMoney(livePnl)}
@@ -265,15 +265,15 @@ export default function FNODataTable({ trades, onCloseTrade, onDeleteTrade, onAd
               </div>
               <div className="grid grid-cols-3 gap-2 text-center bg-white/[0.02] rounded-xl p-2.5 border border-white/5">
                 <div>
-                  <p className="text-[10px] text-[--text-muted] mb-0.5">Qty</p>
+                  <p className="text-xs text-[--text-muted] mb-0.5">Qty</p>
                   <p className="text-[12px] font-bold text-white">{trade.quantity}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-[--text-muted] mb-0.5">Avg</p>
+                  <p className="text-xs text-[--text-muted] mb-0.5">Avg</p>
                   <p className="text-[12px] font-bold text-white">₹{formatMoney(Number(trade.entry_price))}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-[--text-muted] mb-0.5">{trade.status === "OPEN" ? "LTP" : "Exit"}</p>
+                  <p className="text-xs text-[--text-muted] mb-0.5">{trade.status === "OPEN" ? "LTP" : "Exit"}</p>
                   <p className="text-[12px] font-bold text-white">
                     {trade.status === "OPEN" ? (ltp ? `₹${formatMoney(ltp)}` : "—") : (trade.exit_price ? `₹${formatMoney(Number(trade.exit_price))}` : "—")}
                   </p>
@@ -282,10 +282,10 @@ export default function FNODataTable({ trades, onCloseTrade, onDeleteTrade, onAd
               {showActions && (
                 <div className="flex gap-2 pt-1">
                   {trade.status === "OPEN" && onCloseTrade && (
-                    <button onClick={() => onCloseTrade(trade)} className="flex-1 h-9 rounded-xl bg-sky-500/10 text-sky-400 border border-sky-500/20 text-[11px] font-bold transition-all active:scale-95">Exit Position</button>
+                    <button onClick={() => onCloseTrade(trade)} className="flex-1 h-9 rounded-xl bg-sky-500/10 text-sky-400 border border-sky-500/20 text-xs font-bold transition-all active:scale-95">Exit Position</button>
                   )}
                   {onDeleteTrade && (
-                    <button onClick={() => onDeleteTrade(trade.id)} className="flex-1 h-9 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[11px] font-bold transition-all active:scale-95">Delete</button>
+                    <button onClick={() => onDeleteTrade(trade.id)} className="flex-1 h-9 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 text-xs font-bold transition-all active:scale-95">Delete</button>
                   )}
                 </div>
               )}

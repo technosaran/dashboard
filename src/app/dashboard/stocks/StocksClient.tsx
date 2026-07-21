@@ -248,7 +248,11 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
   useEffect(() => {
     if (activeStocks.length > 0 && !refreshedRef.current) {
       refreshedRef.current = true;
-      handleRefreshPrices();
+      const today = new Date().toISOString().split("T")[0];
+      if (localStorage.getItem("last_stocks_refresh") !== today) {
+        localStorage.setItem("last_stocks_refresh", today);
+        handleRefreshPrices();
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeStocks]);
@@ -408,7 +412,7 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
                       </PieChart>
                     </ResponsiveContainer>
                     <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                      <span className="text-gray-500 text-[10px] uppercase tracking-widest font-bold">Total Wealth</span>
+                      <span className="text-gray-500 text-xs uppercase tracking-widest font-bold">Total Wealth</span>
                       <span className="text-white text-2xl font-normal mt-1">
                         {showUSD ? formatMoney(stats.totalCurrent) : stats.totalCurrent >= 10000000 ? "₹" + (stats.totalCurrent / 10000000).toFixed(2) + " Cr" : stats.totalCurrent >= 100000 ? "₹" + (stats.totalCurrent / 100000).toFixed(2) + " L" : formatMoney(stats.totalCurrent)}
                       </span>
@@ -436,12 +440,12 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
               <div className="flex-1 flex flex-col justify-center bg-[var(--bg-card)] p-8 border border-white/5 rounded-lg">
                 <div className="space-y-6">
                   <div>
-                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Current value</p>
+                    <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Current value</p>
                     <p className="text-3xl font-normal text-white">{formatMoney(stats.totalCurrent)}</p>
                   </div>
                   
                   <div>
-                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Invested value</p>
+                    <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Invested value</p>
                     <p className="text-xl font-normal text-white/90">{formatMoney(stats.totalInvested)}</p>
                   </div>
 
@@ -449,14 +453,14 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
 
                   <div className="grid grid-cols-2 gap-8">
                     <div>
-                      <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Total returns</p>
+                      <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Total returns</p>
                       <div className={`text-lg font-bold ${stats.totalPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                         {stats.totalPnL >= 0 ? '+' : ''}{formatMoney(stats.totalPnL)}
                         <div className="text-xs font-semibold mt-0.5 opacity-90">{stats.totalPnLPercent >= 0 ? '+' : ''}{stats.totalPnLPercent.toFixed(2)}%</div>
                       </div>
                     </div>
                     <div>
-                      <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Day&apos;s returns</p>
+                      <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Day&apos;s returns</p>
                       <div className={`text-lg font-bold ${stats.dayPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                         {stats.dayPnL >= 0 ? '+' : ''}{formatMoney(stats.dayPnL)}
                         <div className="text-xs font-semibold mt-0.5 opacity-90">{stats.dayPnLPercent >= 0 ? '+' : ''}{stats.dayPnLPercent.toFixed(2)}%</div>
@@ -469,13 +473,13 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
                       <div className="h-px w-full bg-white/5" />
                       <div className="grid grid-cols-2 gap-8 text-xs font-semibold text-gray-400">
                         <div>
-                          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Unrealized P&amp;L</p>
+                          <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Unrealized P&amp;L</p>
                           <span className={stats.unrealizedPnL >= 0 ? 'text-emerald-400' : 'text-rose-500'}>
                             {stats.unrealizedPnL >= 0 ? '+' : ''}{formatMoney(stats.unrealizedPnL)}
                           </span>
                         </div>
                         <div>
-                          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Realized P&amp;L</p>
+                          <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Realized P&amp;L</p>
                           <span className={stats.totalRealizedPnL >= 0 ? 'text-emerald-400' : 'text-rose-500'}>
                             {stats.totalRealizedPnL >= 0 ? '+' : ''}{formatMoney(stats.totalRealizedPnL)}
                           </span>
@@ -522,7 +526,7 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
             } text-white`}>
               <div>
                 <span className="text-base font-bold uppercase tracking-wider">{editingId ? "Modify" : formData.trade_type === "buy" ? "Buy" : "Sell"} {formData.symbol || "Stock"}</span>
-                <span className="ml-2 text-[10px] bg-white/20 px-1.5 py-0.5 rounded font-black tracking-widest">NSE</span>
+                <span className="ml-2 text-xs bg-white/20 px-1.5 py-0.5 rounded font-black tracking-widest">NSE</span>
               </div>
               <div className="text-right">
                 <span className="text-xs text-white/70">LTP</span>
@@ -552,7 +556,7 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
                 {/* Autocomplete Stock Search (if adding new from scratch) */}
                 {!formData.symbol ? (
                   <div className="space-y-1.5 relative">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Search Stock Symbol / Company</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Search Stock Symbol / Company</label>
                     <div className="relative">
                       <input 
                         autoFocus
@@ -578,9 +582,9 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
                           >
                             <div>
                               <div className="text-xs font-bold text-white">{res.symbol}</div>
-                              <div className="text-[10px] text-gray-400 truncate max-w-[220px]">{res.name}</div>
+                              <div className="text-xs text-gray-400 truncate max-w-[220px]">{res.name}</div>
                             </div>
-                            <span className="text-[9px] bg-white/10 px-1.5 py-0.5 rounded text-gray-400 font-semibold">Select</span>
+                            <span className="text-[0.5625rem] bg-white/10 px-1.5 py-0.5 rounded text-gray-400 font-semibold">Select</span>
                           </div>
                         ))}
                       </div>
@@ -593,7 +597,7 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
                       <span className="text-2xl p-2 bg-white/[0.02] rounded-xl border border-white/5">📈</span>
                       <div>
                         <p className="text-xs font-bold text-white">{formData.symbol}</p>
-                        <p className="text-[10px] text-gray-500 font-medium">{formData.name}</p>
+                        <p className="text-xs text-gray-500 font-medium">{formData.name}</p>
                       </div>
                     </div>
                     {!editingId && (
@@ -602,7 +606,7 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
                         onClick={() => {
                           setFormData(prev => ({ ...prev, symbol: "", name: "" }));
                         }}
-                        className="text-[10px] bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white px-2 py-1 rounded transition-all font-bold"
+                        className="text-xs bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white px-2 py-1 rounded transition-all font-bold"
                       >
                         Change Stock
                       </button>
@@ -612,7 +616,7 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
 
                 {/* Averaging helper note */}
                 {formData.symbol && !editingId && formData.trade_type === "buy" && investments.some(i => i.symbol === formData.symbol && i.type === "stock" && Number(i.quantity) > 0) && (
-                  <div className="p-3 rounded-xl bg-sky-500/5 border border-sky-500/10 text-[10px] text-sky-400 leading-relaxed flex items-start gap-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <div className="p-3 rounded-xl bg-sky-500/5 border border-sky-500/10 text-xs text-sky-400 leading-relaxed flex items-start gap-2 animate-in fade-in slide-in-from-top-2 duration-300">
                     <span>💡</span>
                     <span>You already own this stock. Buying more will automatically merge the shares and recalculate your <strong>weighted average buy price</strong>.</span>
                   </div>
@@ -621,7 +625,7 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
                 {/* Qty & Price row */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Qty.</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Qty.</label>
                     <input 
                       required 
                       type="number" 
@@ -633,7 +637,7 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">
                       {formData.trade_type === 'buy' ? 'Buy Price' : 'Sell Price'}
                     </label>
                     <input 
@@ -651,7 +655,7 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
                 {/* LTP Price row */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">LTP (Latest price)</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">LTP (Latest price)</label>
                     <input 
                       required 
                       type="number" 
@@ -663,10 +667,10 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Order Type</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Order Type</label>
                     <div className="flex border border-white/10 rounded overflow-hidden">
-                      <button type="button" className="flex-1 py-1.5 bg-[#2185d0] text-white text-[10px] font-bold uppercase">Limit</button>
-                      <button type="button" disabled className="flex-1 py-1.5 text-gray-500 text-[10px] font-bold uppercase cursor-not-allowed">Market</button>
+                      <button type="button" className="flex-1 py-1.5 bg-[#2185d0] text-white text-xs font-bold uppercase">Limit</button>
+                      <button type="button" disabled className="flex-1 py-1.5 text-gray-500 text-xs font-bold uppercase cursor-not-allowed">Market</button>
                     </div>
                   </div>
                 </div>
@@ -675,7 +679,7 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
                   <>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Date</label>
+                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Date</label>
                         <input 
                           type="date" 
                           className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]" 
@@ -684,7 +688,7 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">
+                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">
                           {formData.trade_type === 'buy' ? 'Deduct From' : 'Deposit To'}
                         </label>
                         <select 
@@ -702,7 +706,7 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Brokerage &amp; Charges (₹)</label>
+                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Brokerage &amp; Charges (₹)</label>
                         <input 
                           type="number" 
                           step="any"
@@ -712,7 +716,7 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Notes</label>
+                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Notes</label>
                         <input 
                           type="text"
                           className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]" 
@@ -727,8 +731,8 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
 
                 {/* Live Premium Margin Calculator & Order Slip */}
                 {((parseFloat(formData.quantity) || 0) > 0) && (
-                  <div className="glass-card-static border border-white/5 p-4 rounded-xl space-y-2.5 text-[11px] bg-white/[0.01] animate-fade-in">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-[--text-muted] block border-b border-white/5 pb-1.5">
+                  <div className="glass-card-static border border-white/5 p-4 rounded-xl space-y-2.5 text-xs bg-white/[0.01] animate-fade-in">
+                    <span className="text-xs font-black uppercase tracking-widest text-[--text-muted] block border-b border-white/5 pb-1.5">
                       Order Slip Preview
                     </span>
                     <div className="flex justify-between">

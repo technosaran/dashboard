@@ -36,15 +36,15 @@ export default function ForexDataTable({ accounts, onDelete, onAdd }: ForexDataT
         header: "Broker Account",
         cell: (info) => (
           <div className="flex flex-col max-w-[200px]">
-            <p className="text-[13px] font-bold text-white truncate" title={info.getValue()}>{info.getValue()}</p>
-            <p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] truncate">{info.row.original.broker_name}</p>
+            <p className="text-sm font-bold text-white truncate" title={info.getValue()}>{info.getValue()}</p>
+            <p className="text-[0.5625rem] font-black uppercase tracking-widest text-[--text-muted] truncate">{info.row.original.broker_name}</p>
           </div>
         ),
       }),
       columnHelper.accessor("account_number", {
         header: "Acc No.",
         cell: (info) => (
-          <span className="text-[11px] font-mono text-[--text-secondary]">
+          <span className="text-xs font-mono text-[--text-secondary]">
             {info.getValue() || "N/A"}
           </span>
         ),
@@ -57,8 +57,8 @@ export default function ForexDataTable({ accounts, onDelete, onAdd }: ForexDataT
           const outAmt = Number(info.row.original.total_withdrawn);
           return (
             <div className="flex flex-col">
-              <span className="text-[11px] font-bold text-[--text-secondary]">{info.row.original.currency === 'USD' ? '$' : '₹'}{inAmt.toLocaleString()} in</span>
-              <span className="text-[11px] text-[--text-muted]">{info.row.original.currency === 'USD' ? '$' : '₹'}{outAmt.toLocaleString()} out</span>
+              <span className="text-xs font-bold text-[--text-secondary]">{info.row.original.currency === 'USD' ? '$' : '₹'}{inAmt.toLocaleString()} in</span>
+              <span className="text-xs text-[--text-muted]">{info.row.original.currency === 'USD' ? '$' : '₹'}{outAmt.toLocaleString()} out</span>
             </div>
           );
         },
@@ -74,7 +74,7 @@ export default function ForexDataTable({ accounts, onDelete, onAdd }: ForexDataT
         cell: (info) => {
           const bal = Number(info.row.original.balance);
           return (
-            <span className="text-[13px] font-bold text-white">
+            <span className="text-sm font-bold text-white">
               {info.row.original.currency === 'USD' ? '$' : '₹'}{bal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           );
@@ -175,7 +175,7 @@ export default function ForexDataTable({ accounts, onDelete, onAdd }: ForexDataT
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id} className="border-b border-white/5 bg-black/40">
                 {headerGroup.headers.map((header) => (
-                  <th key={header.id} className={`px-5 py-3 text-[11px] font-semibold text-[--text-muted] whitespace-nowrap ${getTableHeaderClass(header.column.id)}`}>
+                  <th key={header.id} className={`px-5 py-3 text-xs font-semibold text-[--text-muted] whitespace-nowrap ${getTableHeaderClass(header.column.id)}`}>
                     {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                   </th>
                 ))}
@@ -212,8 +212,8 @@ export default function ForexDataTable({ accounts, onDelete, onAdd }: ForexDataT
               <div key={acc.id} className="p-4 flex flex-col gap-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex flex-col min-w-0">
-                    <span className="text-[13px] font-bold text-white truncate">{acc.account_label}</span>
-                    <span className="text-[11px] text-[--text-muted]">{acc.broker_name}{acc.account_number ? ` · ${acc.account_number}` : ""}</span>
+                    <span className="text-sm font-bold text-white truncate">{acc.account_label}</span>
+                    <span className="text-xs text-[--text-muted]">{acc.broker_name}{acc.account_number ? ` · ${acc.account_number}` : ""}</span>
                   </div>
                   <span className={`text-[14px] font-black tabular-nums shrink-0 ${isPos ? "text-emerald-400" : "text-rose-400"}`}>
                     {isPos ? "+" : ""}{sym}{Math.abs(pnl).toLocaleString(undefined, { minimumFractionDigits: 2 })}
@@ -221,20 +221,20 @@ export default function ForexDataTable({ accounts, onDelete, onAdd }: ForexDataT
                 </div>
                 <div className="grid grid-cols-3 gap-2 bg-white/[0.02] rounded-xl p-2.5 border border-white/5 text-center">
                   <div>
-                    <p className="text-[10px] text-[--text-muted] mb-0.5">Balance</p>
+                    <p className="text-xs text-[--text-muted] mb-0.5">Balance</p>
                     <p className="text-[12px] font-bold text-white">{sym}{Number(acc.balance).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-[--text-muted] mb-0.5">Deposited</p>
+                    <p className="text-xs text-[--text-muted] mb-0.5">Deposited</p>
                     <p className="text-[12px] font-bold text-white">{sym}{Number(acc.total_deposited).toLocaleString()}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-[--text-muted] mb-0.5">Withdrawn</p>
+                    <p className="text-xs text-[--text-muted] mb-0.5">Withdrawn</p>
                     <p className="text-[12px] font-bold text-white">{sym}{Number(acc.total_withdrawn).toLocaleString()}</p>
                   </div>
                 </div>
                 <div className="flex justify-end pt-1">
-                  <button onClick={() => onDelete(acc.id)} className="px-3 py-1.5 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[11px] font-bold active:scale-95 transition-all">Delete</button>
+                  <button onClick={() => onDelete(acc.id)} className="px-3 py-1.5 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 text-xs font-bold active:scale-95 transition-all">Delete</button>
                 </div>
               </div>
             );

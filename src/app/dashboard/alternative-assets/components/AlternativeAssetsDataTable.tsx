@@ -53,8 +53,8 @@ export default function AlternativeAssetsDataTable({ assets, onEdit, onDelete, o
                 {category.icon}
               </div>
               <div className="flex flex-col max-w-[200px]">
-                <p className="text-[13px] font-bold text-white truncate" title={info.getValue()}>{info.getValue()}</p>
-                <p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] truncate">{info.row.original.category}</p>
+                <p className="text-sm font-bold text-white truncate" title={info.getValue()}>{info.getValue()}</p>
+                <p className="text-[0.5625rem] font-black uppercase tracking-widest text-[--text-muted] truncate">{info.row.original.category}</p>
               </div>
             </div>
           );
@@ -76,7 +76,7 @@ export default function AlternativeAssetsDataTable({ assets, onEdit, onDelete, o
           </button>
         ),
         cell: (info) => (
-          <span className="text-[13px] font-mono text-[--text-secondary]">
+          <span className="text-sm font-mono text-[--text-secondary]">
             ₹{Number(info.getValue()).toLocaleString()}
           </span>
         ),
@@ -90,7 +90,7 @@ export default function AlternativeAssetsDataTable({ assets, onEdit, onDelete, o
           </button>
         ),
         cell: (info) => (
-          <span className="text-[13px] font-bold text-white">
+          <span className="text-sm font-bold text-white">
             ₹{Number(info.getValue()).toLocaleString()}
           </span>
         ),
@@ -173,7 +173,7 @@ export default function AlternativeAssetsDataTable({ assets, onEdit, onDelete, o
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id} className="border-b border-white/5 bg-black/40">
                 {headerGroup.headers.map((header) => (
-                  <th key={header.id} className={`px-5 py-3 text-[11px] font-semibold text-[--text-muted] whitespace-nowrap ${getTableHeaderClass(header.column.id)}`}>
+                  <th key={header.id} className={`px-5 py-3 text-xs font-semibold text-[--text-muted] whitespace-nowrap ${getTableHeaderClass(header.column.id)}`}>
                     {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                   </th>
                 ))}
@@ -208,8 +208,8 @@ export default function AlternativeAssetsDataTable({ assets, onEdit, onDelete, o
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-lg shrink-0">{category.icon}</div>
                   <div className="flex flex-col min-w-0">
-                    <span className="text-[13px] font-bold text-white truncate">{asset.name}</span>
-                    <span className="text-[11px] text-[--text-muted]">{asset.category}</span>
+                    <span className="text-sm font-bold text-white truncate">{asset.name}</span>
+                    <span className="text-xs text-[--text-muted]">{asset.category}</span>
                   </div>
                 </div>
                 <span className={`text-[14px] font-black tabular-nums shrink-0 ${isPos ? "text-emerald-400" : "text-rose-400"}`}>
@@ -218,17 +218,17 @@ export default function AlternativeAssetsDataTable({ assets, onEdit, onDelete, o
               </div>
               <div className="grid grid-cols-2 gap-2 bg-white/[0.02] rounded-xl p-2.5 border border-white/5 text-center">
                 <div>
-                  <p className="text-[10px] text-[--text-muted] mb-0.5">Cost</p>
+                  <p className="text-xs text-[--text-muted] mb-0.5">Cost</p>
                   <p className="text-[12px] font-bold text-white">₹{cost.toLocaleString()}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-[--text-muted] mb-0.5">Current</p>
+                  <p className="text-xs text-[--text-muted] mb-0.5">Current</p>
                   <p className="text-[12px] font-bold text-white">₹{current.toLocaleString()}</p>
                 </div>
               </div>
               <div className="flex justify-end gap-2 pt-1">
-                <button onClick={() => onEdit(asset.id)} className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-[11px] font-medium text-[--text-secondary] active:scale-95 transition-all">Edit</button>
-                <button onClick={() => onDelete(asset.id, asset.name)} className="px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[11px] font-medium active:scale-95 transition-all">Delete</button>
+                <button onClick={() => onEdit(asset.id)} className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs font-medium text-[--text-secondary] active:scale-95 transition-all">Edit</button>
+                <button onClick={() => onDelete(asset.id, asset.name)} className="px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-medium active:scale-95 transition-all">Delete</button>
               </div>
             </div>
           );

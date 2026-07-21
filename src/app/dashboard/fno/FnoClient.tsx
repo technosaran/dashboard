@@ -219,11 +219,11 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
               {activePositions.length > 0 && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-6 bg-[#151515] p-5 border border-white/5 rounded">
                   <div>
-                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Total invested</p>
+                    <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Total invested</p>
                     <p className="text-xl font-normal text-white">₹{formatMoney(stats.activeCost)}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Unrealized P&L</p>
+                    <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Unrealized P&L</p>
                     <p className={`text-xl font-medium ${stats.totalUnrealizedPnL >= 0 ? 'text-[#4caf50]' : 'text-[#f44336]'}`}>
                       {stats.totalUnrealizedPnL >= 0 ? '+' : ''}{formatMoney(stats.totalUnrealizedPnL)}
                     </p>
@@ -244,7 +244,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
               {closedHistory.length > 0 && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-6 bg-[#151515] p-5 border border-white/5 rounded">
                   <div>
-                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Realized P&L</p>
+                    <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Realized P&L</p>
                     <p className={`text-xl font-medium ${stats.totalRealizedPnL >= 0 ? 'text-[#4caf50]' : 'text-[#f44336]'}`}>
                       {stats.totalRealizedPnL >= 0 ? '+' : ''}{formatMoney(stats.totalRealizedPnL)}
                     </p>
@@ -306,7 +306,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
             } text-white`}>
               <div>
                 <span className="text-base font-bold uppercase tracking-wider">{logFormData.trade_type === "BUY" ? "Buy" : "Sell"} {logFormData.symbol || "FnO"}</span>
-                <span className="ml-2 text-[10px] bg-white/20 px-1.5 py-0.5 rounded font-black tracking-widest">{logFormData.instrument_type}</span>
+                <span className="ml-2 text-xs bg-white/20 px-1.5 py-0.5 rounded font-black tracking-widest">{logFormData.instrument_type}</span>
               </div>
             </div>
 
@@ -331,7 +331,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
               <form onSubmit={handleLogSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Instrument Symbol</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Instrument Symbol</label>
                     <input 
                       required 
                       className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white uppercase outline-none focus:border-[#2185d0]" 
@@ -341,7 +341,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Instrument Type</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Instrument Type</label>
                     <select 
                       className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]" 
                       value={logFormData.instrument_type} 
@@ -356,7 +356,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
 
                 {logFormData.instrument_type !== "FUT" && (
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Strike Price</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Strike Price</label>
                     <input 
                       required 
                       type="number" 
@@ -372,7 +372,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Quantity (Lot Size)</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Quantity (Lot Size)</label>
                     <input 
                       required 
                       type="number" 
@@ -385,7 +385,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Avg. Price</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Avg. Price</label>
                     <input 
                       required 
                       type="number" 
@@ -400,7 +400,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Trade Date</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Trade Date</label>
                     <input 
                       required 
                       type="date" 
@@ -410,7 +410,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Expiry Date (Optional)</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Expiry Date (Optional)</label>
                     <input 
                       type="date" 
                       className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]" 
@@ -421,7 +421,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
                 </div>
                 <div className="grid grid-cols-3 gap-4">
                   <div className="col-span-2 space-y-1">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Deduct Margin Account</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Deduct Margin Account</label>
                     <select 
                       className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]" 
                       value={logFormData.account_id} 
@@ -434,7 +434,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
                     </select>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Charges (₹)</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Charges (₹)</label>
                     <input 
                       type="number" 
                       step="any" 
@@ -448,7 +448,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Notes</label>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Notes</label>
                   <textarea 
                     className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0] resize-none h-12" 
                     placeholder="Optional notes..."
@@ -519,13 +519,13 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
             <div className="p-4 rounded-t flex items-center justify-between bg-[#ff5722] text-white">
               <div>
                 <span className="text-base font-bold uppercase tracking-wider">Exit {selectedTrade.symbol}</span>
-                <span className="ml-2 text-[10px] bg-white/20 px-1.5 py-0.5 rounded font-black tracking-widest">{selectedTrade.instrument_type}</span>
+                <span className="ml-2 text-xs bg-white/20 px-1.5 py-0.5 rounded font-black tracking-widest">{selectedTrade.instrument_type}</span>
               </div>
             </div>
 
             <div className="p-5 space-y-5 bg-[#151515]">
               <div className="bg-[#202020] p-4 rounded border border-white/5">
-                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Entry details</p>
+                <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Entry details</p>
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-gray-300 font-bold">{selectedTrade.quantity} Lot / Qty</span>
                   <span className="text-white font-bold">@ ₹{formatMoney(Number(selectedTrade.entry_price))}</span>
@@ -535,7 +535,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
               <form onSubmit={handleCloseSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Exit Price</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Exit Price</label>
                     <input 
                       required 
                       type="number" 
@@ -548,7 +548,7 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Exit Date</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Exit Date</label>
                     <input 
                       required 
                       type="date" 

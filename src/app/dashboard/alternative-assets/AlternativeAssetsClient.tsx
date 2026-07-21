@@ -135,7 +135,7 @@ export default function AlternativeAssetsClient({ initialData, isSubComponent = 
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div>
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[--text-primary]">Alternative Assets</h1>
-            <p className="text-[13px] md:text-sm mt-1 text-[--text-secondary]">Tangible wealth, physical assets, private equity, and holdings.</p>
+            <p className="text-sm md:text-sm mt-1 text-[--text-secondary]">Tangible wealth, physical assets, private equity, and holdings.</p>
           </div>
           <button 
             type="button" 
@@ -178,31 +178,31 @@ export default function AlternativeAssetsClient({ initialData, isSubComponent = 
         {!isSubComponent && (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             <div className="glass-card-static p-6 border-white/5">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Asset Valuation</p>
+              <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Asset Valuation</p>
               <p className="text-2xl md:text-3xl font-black text-white">₹{stats.totalValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
-              <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Total Market Value</p>
+              <p className="text-[0.5625rem] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Total Market Value</p>
             </div>
             <div className="glass-card-static p-6 border-white/5">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Acquisition Cost</p>
+              <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Acquisition Cost</p>
               <p className="text-2xl md:text-3xl font-black text-[--text-secondary]">₹{stats.totalCost.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
-              <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Total Invested</p>
+              <p className="text-[0.5625rem] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Total Invested</p>
             </div>
             <div className="glass-card-static p-6 border-white/5">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Portfolio Growth</p>
+              <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Portfolio Growth</p>
               <PnLValue amount={stats.netGrowth} size="lg" showIcon currency="INR" />
-              <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Absolute Return</p>
+              <p className="text-[0.5625rem] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Absolute Return</p>
             </div>
             <div className="glass-card-static p-6 border-white/5">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Yield (ROI)</p>
+              <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Yield (ROI)</p>
               <p className={`text-2xl md:text-3xl font-black ${stats.netGrowth >= 0 ? "text-success" : "text-danger"}`}>
                 {stats.netGrowth >= 0 ? "+" : ""}{stats.growthPercent.toFixed(2)}%
               </p>
-              <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Relative Return</p>
+              <p className="text-[0.5625rem] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Relative Return</p>
             </div>
             <div className="glass-card-static p-6 border-white/5 bg-gradient-to-br from-[--accent-primary]/10 to-transparent">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Asset Count</p>
+              <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Asset Count</p>
               <p className="text-xl md:text-2xl font-black text-white">{alternativeAssets.length}</p>
-              <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Active Holdings</p>
+              <p className="text-[0.5625rem] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Active Holdings</p>
             </div>
           </div>
         )}
@@ -234,7 +234,7 @@ export default function AlternativeAssetsClient({ initialData, isSubComponent = 
                 >
                   {tab.label}
                   {tab.badge !== undefined && (
-                    <span className={`flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1 text-[9px] font-black ${
+                    <span className={`flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1 text-[0.5625rem] font-black ${
                       isActive ? "bg-white/20 text-white" : "bg-white/10 text-white"
                     }`}>
                       {tab.badge}
@@ -347,12 +347,12 @@ export default function AlternativeAssetsClient({ initialData, isSubComponent = 
           <div className="glass-card-static rounded-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="p-5 border-b border-white/5 flex items-center justify-between">
               <h3 className="text-sm font-black uppercase tracking-widest text-white">Asset Audit Trail</h3>
-              <p className="text-[10px] font-black text-[--text-muted] uppercase tracking-widest">{assetLogs.length} Records</p>
+              <p className="text-xs font-black text-[--text-muted] uppercase tracking-widest">{assetLogs.length} Records</p>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse min-w-[800px]">
                 <thead>
-                  <tr className="border-b border-white/5 text-[9px] text-[--text-muted] uppercase font-black tracking-widest bg-black/40">
+                  <tr className="border-b border-white/5 text-[0.5625rem] text-[--text-muted] uppercase font-black tracking-widest bg-black/40">
                     <th className="py-4 px-6">Timestamp</th>
                     <th className="py-4 px-6">Action</th>
                     <th className="py-4 px-6">Details</th>
@@ -366,10 +366,10 @@ export default function AlternativeAssetsClient({ initialData, isSubComponent = 
                       <tr key={log.id}>
                         <td className="py-4 px-6">
                           <p className="text-[12px] font-bold text-white/80">{log.created_at ? format(new Date(log.created_at), "MMM d, yyyy") : "N/A"}</p>
-                          <p className="text-[10px] font-bold text-[--text-muted] mt-0.5">{log.created_at ? format(new Date(log.created_at), "HH:mm:ss") : ""}</p>
+                          <p className="text-xs font-bold text-[--text-muted] mt-0.5">{log.created_at ? format(new Date(log.created_at), "HH:mm:ss") : ""}</p>
                         </td>
                         <td className="py-4 px-6">
-                          <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest ${
+                          <span className={`px-2 py-0.5 rounded-md text-[0.5625rem] font-black uppercase tracking-widest ${
                             log.action_type === "CREATE" ? "bg-emerald-500/10 text-emerald-400" :
                             log.action_type === "DELETE" ? "bg-rose-500/10 text-rose-400" :
                             "bg-blue-500/10 text-blue-400"
@@ -381,7 +381,7 @@ export default function AlternativeAssetsClient({ initialData, isSubComponent = 
                           <p className="text-[12px] font-bold text-white">{log.details}</p>
                         </td>
                         <td className="py-4 px-6 text-right tabular-nums">
-                          <p className={`text-[13px] font-black ${isPositive ? "text-emerald-400" : "text-rose-400"}`}>
+                          <p className={`text-sm font-black ${isPositive ? "text-emerald-400" : "text-rose-400"}`}>
                             {log.amount ? `${isPositive ? "+" : "-"}₹${log.amount.toLocaleString()}` : "—"}
                           </p>
                         </td>
@@ -390,7 +390,7 @@ export default function AlternativeAssetsClient({ initialData, isSubComponent = 
                   })}
                   {assetLogs.length === 0 && (
                     <tr>
-                      <td colSpan={4} className="py-12 text-center text-[11px] font-bold text-[--text-muted] uppercase tracking-[0.3em]">No historical records detected</td>
+                      <td colSpan={4} className="py-12 text-center text-xs font-bold text-[--text-muted] uppercase tracking-[0.3em]">No historical records detected</td>
                     </tr>
                   )}
                 </tbody>
@@ -411,11 +411,11 @@ export default function AlternativeAssetsClient({ initialData, isSubComponent = 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Asset Name</label>
+                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Asset Name</label>
                   <input required className="input-premium !h-10 text-xs" placeholder="e.g. 2BHK Apartment" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} autoComplete="new-password" />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Classification</label>
+                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Classification</label>
                   <select aria-label="Select asset category" className="input-premium !h-10 text-xs text-white" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
                     {CATEGORIES.map(c => <option key={c.label} value={c.label}>{c.label}</option>)}
                   </select>
@@ -424,22 +424,22 @@ export default function AlternativeAssetsClient({ initialData, isSubComponent = 
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Acquisition Cost (₹)</label>
+                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Acquisition Cost (₹)</label>
                   <input required type="number" className="input-premium !h-10 text-xs tabular-nums" value={formData.purchase_price} onChange={e => setFormData({...formData, purchase_price: e.target.value})} autoComplete="new-password" inputMode="decimal" />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Current Valuation (₹)</label>
+                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Current Valuation (₹)</label>
                   <input required type="number" className="input-premium !h-10 text-xs tabular-nums" value={formData.current_value} onChange={e => setFormData({...formData, current_value: e.target.value})} autoComplete="new-password" inputMode="decimal" />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Acquisition Date</label>
+                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Acquisition Date</label>
                   <input type="date" className="input-premium !h-10 text-xs" value={formData.purchase_date} onChange={e => setFormData({...formData, purchase_date: e.target.value})} autoComplete="new-password" />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Source Account (Optional)</label>
+                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Source Account (Optional)</label>
                   <select aria-label="Select account" className="input-premium !h-10 text-xs text-white" value={formData.account_id} onChange={e => setFormData({...formData, account_id: e.target.value})}>
                     <option value="">No Transaction</option>
                     {accounts.map(acc => (
@@ -451,7 +451,7 @@ export default function AlternativeAssetsClient({ initialData, isSubComponent = 
 
               <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Notes / Location</label>
+                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Notes / Location</label>
                   <input type="text" className="input-premium !h-10 text-xs" placeholder="Optional notes..." value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} autoComplete="new-password" />
                 </div>
               </div>

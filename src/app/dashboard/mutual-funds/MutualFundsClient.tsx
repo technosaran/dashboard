@@ -221,7 +221,11 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
   useEffect(() => {
     if (rawMfs.length > 0 && !refreshedRef.current) {
       refreshedRef.current = true;
-      handleRefreshNAV();
+      const today = new Date().toISOString().split("T")[0];
+      if (localStorage.getItem("last_mf_refresh") !== today) {
+        localStorage.setItem("last_mf_refresh", today);
+        handleRefreshNAV();
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rawMfs]);
@@ -373,7 +377,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                     </PieChart>
                   </ResponsiveContainer>
                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                    <span className="text-gray-500 text-[10px] uppercase tracking-widest font-bold">Total Wealth</span>
+                    <span className="text-gray-500 text-xs uppercase tracking-widest font-bold">Total Wealth</span>
                     <span className="text-white text-2xl font-normal mt-1">₹{stats.totalCurrentValue >= 10000000 ? (stats.totalCurrentValue/10000000).toFixed(2) + 'Cr' : stats.totalCurrentValue >= 100000 ? (stats.totalCurrentValue/100000).toFixed(2) + 'L' : formatMoney(stats.totalCurrentValue)}</span>
                   </div>
                 </div>
@@ -399,12 +403,12 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
             <div className="flex-1 flex flex-col justify-center bg-[var(--bg-card)] p-8 border border-white/5 rounded-lg">
               <div className="space-y-6">
                 <div>
-                  <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Current value</p>
+                  <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Current value</p>
                   <p className="text-3xl font-normal text-white">₹{formatMoney(stats.totalCurrentValue)}</p>
                 </div>
                 
                 <div>
-                  <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Invested value</p>
+                  <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Invested value</p>
                   <p className="text-xl font-normal text-white/90">₹{formatMoney(stats.totalInvested)}</p>
                 </div>
 
@@ -412,14 +416,14 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
 
                 <div className="grid grid-cols-2 gap-8">
                   <div>
-                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Total returns</p>
+                    <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Total returns</p>
                     <div className={`text-lg font-bold ${stats.totalPnL >= 0 ? 'text-[#4caf50]' : 'text-[#f44336]'}`}>
                       {stats.totalPnL >= 0 ? '+' : ''}₹{formatMoney(stats.totalPnL)}
                       <div className="text-xs font-semibold mt-0.5 opacity-90">{stats.totalPnLPercent >= 0 ? '+' : ''}{stats.totalPnLPercent.toFixed(2)}%</div>
                     </div>
                   </div>
                   <div>
-                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Day&apos;s returns</p>
+                    <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Day&apos;s returns</p>
                     <div className={`text-lg font-bold ${stats.dayPnL >= 0 ? 'text-[#4caf50]' : 'text-[#f44336]'}`}>
                       {stats.dayPnL >= 0 ? '+' : ''}₹{formatMoney(stats.dayPnL)}
                       <div className="text-xs font-semibold mt-0.5 opacity-90">{stats.dayPnLPercent >= 0 ? '+' : ''}{stats.dayPnLPercent.toFixed(2)}%</div>
@@ -464,7 +468,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
             } text-white`}>
               <div>
                 <span className="text-base font-bold uppercase tracking-wider">{editingId ? "Modify" : formData.trade_type === "buy" ? "Invest" : "Redeem"} {formData.fund_name || "Fund"}</span>
-                <span className="ml-2 text-[10px] bg-white/20 px-1.5 py-0.5 rounded font-black tracking-widest">COIN</span>
+                <span className="ml-2 text-xs bg-white/20 px-1.5 py-0.5 rounded font-black tracking-widest">COIN</span>
               </div>
               <div className="text-right">
                 <span className="text-xs text-white/70">LTP NAV</span>
@@ -501,7 +505,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                 {/* Search Fund (Only when adding from scratch) */}
                 {!formData.scheme_code && (
                   <div className="space-y-2 relative">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Search Fund</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Search Fund</label>
                     <div className="relative">
                       <input 
                         className="w-full bg-[var(--bg-card)] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[var(--accent-primary)]" 
@@ -538,7 +542,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                           >
                             <div className="flex items-center justify-between">
                               <span className="text-xs font-bold text-white truncate max-w-[80%]">{res.schemeName}</span>
-                              <span className="text-[10px] font-bold text-[var(--accent-primary)]">{res.schemeCode}</span>
+                              <span className="text-xs font-bold text-[var(--accent-primary)]">{res.schemeCode}</span>
                             </div>
                           </div>
                         ))}
@@ -549,7 +553,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">AMC/Provider</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">AMC/Provider</label>
                     <input 
                       required 
                       className="w-full bg-[var(--bg-card)] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[var(--accent-primary)]" 
@@ -559,7 +563,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Scheme Code</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Scheme Code</label>
                     <input 
                       className="w-full bg-[var(--bg-card)] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[var(--accent-primary)]" 
                       placeholder="e.g. 122639" 
@@ -571,7 +575,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Units</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Units</label>
                     <input 
                       required 
                       type="number" 
@@ -583,7 +587,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">
                       {formData.trade_type === 'buy' ? 'Purchase NAV' : 'Redemption NAV'}
                     </label>
                     <input 
@@ -600,7 +604,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Current NAV</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Current NAV</label>
                     <input 
                       required 
                       type="number" 
@@ -612,7 +616,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Category</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Category</label>
                     <select 
                       className="w-full bg-[var(--bg-card)] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[var(--accent-primary)]" 
                       value={formData.category} 
@@ -632,7 +636,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Date</label>
+                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Date</label>
                         <input 
                           type="date" 
                           className="w-full bg-[var(--bg-card)] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[var(--accent-primary)]" 
@@ -641,7 +645,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Stamp Duty / Charges (₹)</label>
+                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Stamp Duty / Charges (₹)</label>
                         <input 
                           type="number" 
                           step="any" 
@@ -654,7 +658,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                       </div>
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">
+                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">
                         {formData.trade_type === 'buy' ? 'Deduct From' : 'Deposit To'}
                       </label>
                       <select 

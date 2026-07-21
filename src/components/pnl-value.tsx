@@ -41,7 +41,7 @@ export default function PnLValue({
       : "text-[--text-secondary]";
 
   const sizeClasses = {
-    sm: "text-[11px] font-bold",
+    sm: "text-xs font-bold",
     md: "text-[14px] font-black",
     lg: "text-xl md:text-2xl font-black"
   };
@@ -67,7 +67,7 @@ export default function PnLValue({
       </span>
       {percentage !== undefined && (
         <span 
-          className={`text-[10px] font-black opacity-60 tabular-nums ${colorClass}`}
+          className={`text-xs font-black opacity-60 tabular-nums ${colorClass}`}
           style={glowStyle}
         >
           ({isPositive ? "+" : ""}{percentage.toFixed(2)}%)

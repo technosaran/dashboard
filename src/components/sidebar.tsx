@@ -142,7 +142,7 @@ function NavItem({ label, href, icon, pathname, isCollapsed }: (typeof nav)[0] &
       <span className={`transition-transform duration-300 ${active ? "text-[--accent-primary-light] scale-110" : "text-[--text-muted] group-hover:text-[--text-primary] group-hover:scale-105"}`} aria-hidden="true">
         {icon}
       </span>
-      {!isCollapsed && <span className="font-semibold text-[13px] tracking-tight">{label}</span>}
+      {!isCollapsed && <span className="font-semibold text-sm tracking-tight">{label}</span>}
     </Link>
   );
 }
@@ -324,11 +324,11 @@ export default function Sidebar() {
           {filteredQuickActions.map((action) => (
             <Link key={action.label} href={action.href} prefetch={true} onClick={() => setIsQuickActionOpen(false)} aria-label={`Add new ${action.label}`} className="glass-card-static p-4 flex flex-col items-center justify-center gap-2.5 no-underline transition-all active:scale-95 shadow-lg bg-[--bg-surface] animate-fade-in" style={{ border: `1px solid ${action.color}30` }}>
               <div className="text-2xl filter drop-shadow-[0_4px_10px_rgba(0,0,0,0.1)]" aria-hidden="true">{action.icon}</div>
-              <span className="text-[9px] font-black uppercase tracking-[0.2em]" style={{ color: action.color }}>{action.label}</span>
+              <span className="text-[0.5625rem] font-black uppercase tracking-[0.2em]" style={{ color: action.color }}>{action.label}</span>
             </Link>
           ))}
           <button type="button" onClick={() => setIsQuickActionOpen(false)} aria-label="Cancel quick actions" className="col-span-2 glass-card-static py-3 flex items-center justify-center bg-white/5 border-white/10 mt-1 backdrop-blur-md">
-            <span className="text-[10px] font-black uppercase tracking-widest text-[--text-muted]">Cancel</span>
+            <span className="text-xs font-black uppercase tracking-widest text-[--text-muted]">Cancel</span>
           </button>
         </div>
       </div>
@@ -356,12 +356,12 @@ export default function Sidebar() {
           </button>
         </div>
         <nav className="flex-1 px-3 pt-4 space-y-1.5 overflow-y-auto no-scrollbar">
-          {!isCollapsed && <p className="px-4 pb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[--text-muted] opacity-60">Navigation</p>}
+          {!isCollapsed && <p className="px-4 pb-2 text-xs font-semibold uppercase tracking-[0.2em] text-[--text-muted] opacity-60">Navigation</p>}
           {filteredNav.map((item) => (<NavItem key={item.href} {...item} pathname={pathname} isCollapsed={isCollapsed} />))}
         </nav>
         <div className="px-3 py-4 mt-auto pb-8 flex justify-center">
           {!isCollapsed ? (
-            <button type="button" onClick={handleLogout} className="flex w-full items-center justify-center gap-3 rounded-2xl px-4 py-3 text-[11px] font-black uppercase tracking-widest transition-all bg-rose-500 text-white shadow-lg shadow-rose-500/20 hover:bg-rose-600 hover:shadow-rose-500/30 active:scale-[0.98]">
+            <button type="button" onClick={handleLogout} className="flex w-full items-center justify-center gap-3 rounded-2xl px-4 py-3 text-xs font-black uppercase tracking-widest transition-all bg-rose-500 text-white shadow-lg shadow-rose-500/20 hover:bg-rose-600 hover:shadow-rose-500/30 active:scale-[0.98]">
               <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
               Sign Out
             </button>
@@ -411,7 +411,7 @@ export default function Sidebar() {
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${active ? "bg-[--accent-primary]/15 text-[--accent-primary-light]" : "bg-white/[0.05] text-[--text-muted]"}`}>
                       {item.icon}
                     </div>
-                    <span className="text-[13px] font-semibold">{item.label}</span>
+                    <span className="text-sm font-semibold">{item.label}</span>
                     {active && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-[--accent-primary]" />}
                   </Link>
                 );
@@ -446,7 +446,7 @@ export default function Sidebar() {
           return (
             <Link key={item.label} href={item.href} prefetch={true} className={`flex-1 flex flex-col items-center justify-center h-full relative transition-all active:scale-90 ${active ? "text-[--accent-primary-light]" : "text-[--text-muted]"}`}>
               <div className={`${active ? "scale-110 -translate-y-0.5" : "opacity-70"} transition-all duration-300`}>{item.icon}</div>
-              <span className={`text-[10px] font-semibold absolute bottom-1.5 transition-all duration-300 ${active ? "opacity-100" : "opacity-70"}`}>{item.label}</span>
+              <span className={`text-xs font-semibold absolute bottom-1.5 transition-all duration-300 ${active ? "opacity-100" : "opacity-70"}`}>{item.label}</span>
             </Link>
           );
         })}
@@ -472,14 +472,14 @@ export default function Sidebar() {
           return (
             <Link key={item.label} href={item.href} prefetch={true} className={`flex-1 flex flex-col items-center justify-center h-full relative transition-all active:scale-90 ${active ? "text-[--accent-primary-light]" : "text-[--text-muted]"}`}>
               <div className={`${active ? "scale-110 -translate-y-0.5" : "opacity-70"} transition-all duration-300`}>{item.icon}</div>
-              <span className={`text-[10px] font-semibold absolute bottom-1.5 transition-all duration-300 ${active ? "opacity-100" : "opacity-70"}`}>{item.label}</span>
+              <span className={`text-xs font-semibold absolute bottom-1.5 transition-all duration-300 ${active ? "opacity-100" : "opacity-70"}`}>{item.label}</span>
             </Link>
           );
         })}
         
         <button type="button" onClick={() => setIsMoreOpen(true)} aria-label="Open more navigation" aria-expanded={isMoreOpen} aria-controls="more-navigation-dialog" className={`flex-1 flex flex-col items-center justify-center h-full relative transition-all active:scale-90 ${isMoreOpen ? "text-[--accent-primary-light]" : "text-[--text-muted]"}`}>
           <div className={`${isMoreOpen ? "scale-110 translate-y-0" : "opacity-40"} transition-all duration-300`}><svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" /></svg></div>
-          <span className={`text-[11px] font-bold absolute bottom-2 transition-all duration-300 ${isMoreOpen ? "opacity-100" : "opacity-0 translate-y-2"}`}>More</span>
+          <span className={`text-xs font-bold absolute bottom-2 transition-all duration-300 ${isMoreOpen ? "opacity-100" : "opacity-0 translate-y-2"}`}>More</span>
         </button>
       </nav>
     </>

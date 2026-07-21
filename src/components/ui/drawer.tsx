@@ -68,7 +68,7 @@ export function Drawer({ isOpen, onClose, title, children, width = "max-w-md" }:
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
-          <p className="text-[9px] font-bold uppercase tracking-widest text-[--text-muted]">Data Entry / Actions</p>
+          <p className="text-[0.5625rem] font-bold uppercase tracking-widest text-[--text-muted]">Data Entry / Actions</p>
         </div>
 
         {/* Content Area */}

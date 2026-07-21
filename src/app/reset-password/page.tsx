@@ -93,7 +93,7 @@ export default function ResetPasswordPage() {
             </div>
             <div className="login-logo-text">
               <span className="login-logo-name !text-white text-lg">arthaX</span>
-              <span className="login-logo-sub text-white/50 text-[9px] tracking-wider">Console</span>
+              <span className="login-logo-sub text-white/50 text-[0.5625rem] tracking-wider">Console</span>
             </div>
           </div>
 
@@ -169,7 +169,7 @@ export default function ResetPasswordPage() {
           
           <div className="login-footer flex flex-col items-center gap-1.5 mt-6">
             <span className="text-white/40">arthaX Wealth Dashboard</span>
-            <div className="flex items-center gap-3 text-[11px] font-semibold text-gray-500">
+            <div className="flex items-center gap-3 text-xs font-semibold text-gray-500">
               <Link href="/privacy" className="hover:text-gray-300 transition-colors underline">
                 Privacy Policy
               </Link>

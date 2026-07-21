@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase-server";
+import { getFriendlyErrorMessage } from "@/lib/action-utils";
 import { revalidatePath } from "next/cache";
 
 export async function createAccount(data: {
@@ -24,16 +25,16 @@ export async function createAccount(data: {
       p_bank_name: data.bank_name || null
     });
 
-    if (error) return { error: error.message };
+    if (error) return { error: getFriendlyErrorMessage(error) };
     const result = rpcData as { success: boolean, error?: string } | null;
     if (!result) return { error: "Failed to communicate with database" };
     if (!result.success) return { error: result.error || "Failed to create account" };
 
     revalidatePath("/dashboard", "layout");
-    return { success: true };
+    return { success: true, message: "Account created successfully" };
   } catch (err) {
     console.error("Error in createAccount:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }
 
@@ -55,7 +56,7 @@ export async function updateAccount(id: string, data: Record<string, unknown>) {
       .eq("id", id)
       .eq("user_id", user.id);
 
-    if (error) return { error: error.message };
+    if (error) return { error: getFriendlyErrorMessage(error) };
 
     // Get account name for logging
     const { data: account } = await supabase
@@ -77,10 +78,10 @@ export async function updateAccount(id: string, data: Record<string, unknown>) {
     if (logError) console.error("Failed to log account update:", logError);
 
     revalidatePath("/dashboard", "layout");
-    return { success: true };
+    return { success: true, message: "Account updated successfully" };
   } catch (err) {
     console.error("Error in updateAccount:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }
 
@@ -108,16 +109,16 @@ export async function deleteAccount(id: string) {
       p_account_id: id
     });
 
-    if (error) return { error: error.message };
+    if (error) return { error: getFriendlyErrorMessage(error) };
     const result = rpcData as { success: boolean, error?: string } | null;
     if (!result) return { error: "Failed to communicate with database" };
     if (!result.success) return { error: result.error || "Failed to delete account" };
 
     revalidatePath("/dashboard", "layout");
-    return { success: true };
+    return { success: true, message: "Account deleted successfully" };
   } catch (err) {
     console.error("Error in deleteAccount:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }
 
@@ -201,16 +202,16 @@ export async function createTransfer(data: TransferData) {
       p_converted_amount: isCrossCurrency ? data.converted_amount : undefined
     });
 
-    if (error) return { error: error.message };
+    if (error) return { error: getFriendlyErrorMessage(error) };
     const result = rpcData as { success: boolean, error?: string } | null;
     if (!result) return { error: "Failed to execute transfer" };
     if (!result.success) return { error: result.error || "Transfer failed" };
 
     revalidatePath("/dashboard", "layout");
-    return { success: true };
+    return { success: true, message: "Transfer created successfully" };
   } catch (err) {
     console.error("Error in createTransfer:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }
 
@@ -236,15 +237,15 @@ export async function adjustBalance(id: string, amount: number, note: string) {
       p_note: note
     });
 
-    if (error) return { error: error.message };
+    if (error) return { error: getFriendlyErrorMessage(error) };
     const result = rpcData as { success: boolean, error?: string } | null;
     if (!result) return { error: "Failed to adjust balance" };
     if (!result.success) return { error: result.error || "Adjustment failed" };
 
     revalidatePath("/dashboard", "layout");
-    return { success: true };
+    return { success: true, message: "Balance adjusted successfully" };
   } catch (err) {
     console.error("Error in adjustBalance:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }

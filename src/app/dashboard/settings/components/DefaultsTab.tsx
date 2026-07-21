@@ -39,7 +39,7 @@ export default function DefaultsTab({
               <div key={section.key} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-white/[0.02] border border-white/5">
                 <div className="flex items-center gap-2.5 ml-1">
                   <span className="text-sm select-none">{section.icon}</span>
-                  <span className="text-[13px] font-bold text-white">{section.label}</span>
+                  <span className="text-sm font-bold text-white">{section.label}</span>
                 </div>
                 <select
                   aria-label={`Default account for ${section.label}`}

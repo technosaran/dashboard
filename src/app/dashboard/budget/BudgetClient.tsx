@@ -314,7 +314,7 @@ return (
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[--text-primary]">Budget Planner</h1>
-          <p className="text-[13px] md:text-sm mt-1 text-[--text-secondary]">Fiscal strategy, category limits, and monthly controls.</p>
+          <p className="text-sm md:text-sm mt-1 text-[--text-secondary]">Fiscal strategy, category limits, and monthly controls.</p>
         </div>
         <div className="flex items-center gap-3">
           <select className="btn-secondary !h-11 px-4" value={selectedMonth} onChange={e => setSelectedMonth(parseInt(e.target.value))} aria-label="Select month" id="budget-month-select" name="month">
@@ -333,33 +333,33 @@ return (
       {/* Top Key Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         <div className="glass-card-static p-5 border-white/5 bg-gradient-to-b from-white/[0.01] to-transparent">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2">Planned spend</p>
+          <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2">Planned spend</p>
           <p className="text-2xl font-black text-white">₹{totalBudgeted.toLocaleString()}</p>
-          <p className="text-[9px] text-[--text-muted] mt-1 opacity-60">Total monthly limit</p>
+          <p className="text-[0.5625rem] text-[--text-muted] mt-1 opacity-60">Total monthly limit</p>
         </div>
         <div className="glass-card-static p-5 border-white/5 bg-gradient-to-b from-white/[0.01] to-transparent">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2">Actual spend</p>
+          <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2">Actual spend</p>
           <p className={`text-2xl font-black ${totalSpent > totalBudgeted && totalBudgeted > 0 ? "text-rose-400" : "text-white"}`}>₹{totalSpent.toLocaleString()}</p>
-          <p className="text-[9px] text-[--text-muted] mt-1 opacity-60">Real-time outflow</p>
+          <p className="text-[0.5625rem] text-[--text-muted] mt-1 opacity-60">Real-time outflow</p>
         </div>
         <div className="glass-card-static p-5 border-white/5 bg-gradient-to-b from-white/[0.01] to-transparent">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2">Margin</p>
+          <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2">Margin</p>
           <p className={`text-2xl font-black ${totalBudgeted - totalSpent >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
             ₹{(totalBudgeted - totalSpent).toLocaleString()}
           </p>
-          <p className="text-[9px] text-[--text-muted] mt-1 opacity-60">Remaining balance</p>
+          <p className="text-[0.5625rem] text-[--text-muted] mt-1 opacity-60">Remaining balance</p>
         </div>
         <div className="glass-card-static p-5 border-white/5 bg-gradient-to-b from-white/[0.01] to-transparent">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2">Daily allowance</p>
+          <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2">Daily allowance</p>
           <p className={`text-2xl font-black ${(daysInMonth - daysPassed) > 0 && (totalBudgeted - totalSpent) > 0 ? "text-sky-400" : "text-slate-500"}`}>
             ₹{((daysInMonth - daysPassed) > 0 && (totalBudgeted - totalSpent) > 0 ? (totalBudgeted - totalSpent) / (daysInMonth - daysPassed) : 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
           </p>
-          <p className="text-[9px] text-[--text-muted] mt-1 opacity-60">Safe spend / day</p>
+          <p className="text-[0.5625rem] text-[--text-muted] mt-1 opacity-60">Safe spend / day</p>
         </div>
         <div className="glass-card-static p-5 border-white/5 bg-gradient-to-br from-[--accent-primary]/10 to-transparent col-span-2 md:col-span-1">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2">Monthly income</p>
+          <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-2">Monthly income</p>
           <p className="text-2xl font-black text-[--accent-primary-light]">₹{totalIncome.toLocaleString()}</p>
-          <p className="text-[9px] text-[--text-muted] mt-1 opacity-60">Total revenue stream</p>
+          <p className="text-[0.5625rem] text-[--text-muted] mt-1 opacity-60">Total revenue stream</p>
         </div>
       </div>
 
@@ -380,7 +380,7 @@ return (
                 type="button"
                 onClick={handleCarryOver}
                 disabled={submitting}
-                className="btn-secondary !h-9 px-3.5 text-[10px] font-black uppercase tracking-wider flex items-center gap-2 group transition-all duration-200"
+                className="btn-secondary !h-9 px-3.5 text-xs font-black uppercase tracking-wider flex items-center gap-2 group transition-all duration-200"
                 title="Carry over last month's budget limits"
               >
                 <Copy className="w-3.5 h-3.5 text-[--text-secondary] group-hover:text-[--accent-primary-light] transition-colors" />
@@ -392,7 +392,7 @@ return (
                   type="button"
                   onClick={handleClearAll}
                   disabled={submitting}
-                  className="h-9 px-3.5 rounded-lg border border-rose-500/20 bg-rose-500/5 hover:bg-rose-500/10 hover:border-rose-500/40 text-rose-400 hover:text-rose-300 text-[10px] font-black uppercase tracking-wider flex items-center gap-2 transition-all duration-200 group"
+                  className="h-9 px-3.5 rounded-lg border border-rose-500/20 bg-rose-500/5 hover:bg-rose-500/10 hover:border-rose-500/40 text-rose-400 hover:text-rose-300 text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all duration-200 group"
                   title="Clear all budget limits for this month"
                 >
                   <Trash2 className="w-3.5 h-3.5 transition-transform group-hover:scale-110" />
@@ -434,7 +434,7 @@ return (
             <div className="flex justify-between items-start mb-4">
               <div>
                 <h3 className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">6-Month Budget vs Spend Trajectory</h3>
-                <p className="text-[11px] text-[--text-secondary] mt-0.5">Visual representation of total spending velocity compared to planning targets.</p>
+                <p className="text-xs text-[--text-secondary] mt-0.5">Visual representation of total spending velocity compared to planning targets.</p>
               </div>
             </div>
             <div className="flex-1 min-h-[200px] w-full mt-2 -ml-4">
@@ -507,7 +507,7 @@ return (
                         </div>
                         <div>
                           <p className="text-xs font-black text-white">{cat.label}</p>
-                          <p className="text-[9px] font-bold text-[--text-muted] uppercase tracking-wider mt-0.5">
+                          <p className="text-[0.5625rem] font-bold text-[--text-muted] uppercase tracking-wider mt-0.5">
                             Spent: ₹{spent.toLocaleString()}
                           </p>
                         </div>
@@ -516,14 +516,14 @@ return (
                       {/* Status Tag */}
                       {limit > 0 ? (
                         percent > 100 ? (
-                          <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-400 border border-rose-500/20">Over limit</span>
+                          <span className="text-[0.5625rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-400 border border-rose-500/20">Over limit</span>
                         ) : percent > 80 ? (
-                          <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20">Near limit</span>
+                          <span className="text-[0.5625rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20">Near limit</span>
                         ) : (
-                          <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">On track</span>
+                          <span className="text-[0.5625rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">On track</span>
                         )
                       ) : (
-                        <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-white/5 text-[--text-muted] border border-white/10">No limit</span>
+                        <span className="text-[0.5625rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-white/5 text-[--text-muted] border border-white/10">No limit</span>
                       )}
                     </div>
                   </div>
@@ -531,7 +531,7 @@ return (
                   {/* Progress Bar with month progress pacing line */}
                   {limit > 0 && (
                     <div className="my-2.5">
-                      <div className="flex justify-between text-[9px] font-black uppercase tracking-wider text-[--text-muted] mb-1">
+                      <div className="flex justify-between text-[0.5625rem] font-black uppercase tracking-wider text-[--text-muted] mb-1">
                         <span>{percent.toFixed(0)}% used</span>
                         <span>Limit: ₹{limit.toLocaleString()}</span>
                       </div>
@@ -556,7 +556,7 @@ return (
                   )}
 
                   <div className="mt-3.5 pt-3 border-t border-white/5 flex justify-between items-center">
-                    <span className="text-[10px] text-[--text-muted] font-medium">
+                    <span className="text-xs text-[--text-muted] font-medium">
                       {limit > 0 ? (
                         <>
                           Target: <span className="font-bold text-white">₹{limit.toLocaleString()}</span>
@@ -574,7 +574,7 @@ return (
                         setDrawerSpent(spent);
                         setDrawerOpen(true);
                       }}
-                      className={`px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer border ${
+                      className={`px-2.5 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer border ${
                         limit > 0
                           ? "bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white border-white/5 hover:border-white/10 active:scale-95"
                           : "bg-[--accent-primary]/10 hover:bg-[--accent-primary]/25 text-[--accent-primary-light] hover:text-white border-[--accent-primary]/10 hover:border-[--accent-primary]/25 active:scale-95"
@@ -599,34 +599,34 @@ return (
           
           {/* Status Color Legend Card */}
           <div className="glass-card-static p-5 border-white/5 bg-gradient-to-b from-white/[0.01] to-transparent">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Status Legend</h3>
-            <div className="space-y-2.5 text-[11px] text-[--text-secondary]">
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Status Legend</h3>
+            <div className="space-y-2.5 text-xs text-[--text-secondary]">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-cyan-400" />
                   <span>On Track</span>
                 </div>
-                <span className="text-[10px] text-[--text-muted] font-medium">&lt; 75% limit</span>
+                <span className="text-xs text-[--text-muted] font-medium">&lt; 75% limit</span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-amber-500" />
                   <span>Near Limit</span>
                 </div>
-                <span className="text-[10px] text-[--text-muted] font-medium">75% - 90% limit</span>
+                <span className="text-xs text-[--text-muted] font-medium">75% - 90% limit</span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-rose-500" />
                   <span>Over Limit</span>
                 </div>
-                <span className="text-[10px] text-[--text-muted] font-medium">&gt; 90% limit</span>
+                <span className="text-xs text-[--text-muted] font-medium">&gt; 90% limit</span>
               </div>
               <div className="pt-3 border-t border-white/5 flex items-start gap-2.5">
                 <span className="w-0.5 h-4 bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.8)] inline-block mt-0.5" />
                 <div>
-                  <p className="font-bold text-white text-[10px] uppercase tracking-wider">Month Progress Line</p>
-                  <p className="text-[10px] text-[--text-muted] mt-1 leading-relaxed">The thin blue line shows calendar progress. Keep your colored spent bar behind it to pace yourself perfectly through the month.</p>
+                  <p className="font-bold text-white text-xs uppercase tracking-wider">Month Progress Line</p>
+                  <p className="text-xs text-[--text-muted] mt-1 leading-relaxed">The thin blue line shows calendar progress. Keep your colored spent bar behind it to pace yourself perfectly through the month.</p>
                 </div>
               </div>
             </div>
@@ -635,15 +635,15 @@ return (
           {/* Pacing & Trajectory Card */}
           <div className="glass-card-static p-5 relative overflow-hidden border-white/5 bg-gradient-to-b from-white/[0.01] to-transparent">
             <div className={`absolute top-0 right-0 w-28 h-28 rounded-full blur-[70px] pointer-events-none ${isBurningFast && totalBudgeted > 0 ? 'bg-rose-500/10' : 'bg-emerald-500/10'}`} />
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-5">Pacing & Velocity</h3>
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-5">Pacing & Velocity</h3>
             <div className="grid grid-cols-2 gap-4 mb-5">
               <div>
                 <p className="text-3xl font-black text-white">{daysInMonth - daysPassed}</p>
-                <p className="text-[9px] font-bold uppercase tracking-widest text-[--text-muted] mt-1">Days Remaining</p>
+                <p className="text-[0.5625rem] font-bold uppercase tracking-widest text-[--text-muted] mt-1">Days Remaining</p>
               </div>
               <div>
                 <p className={`text-3xl font-black ${isBurningFast && totalBudgeted > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>{budgetBurnRatePercent.toFixed(0)}%</p>
-                <p className="text-[9px] font-bold uppercase tracking-widest text-[--text-muted] mt-1">Budget Burned</p>
+                <p className="text-[0.5625rem] font-bold uppercase tracking-widest text-[--text-muted] mt-1">Budget Burned</p>
               </div>
             </div>
             
@@ -661,7 +661,7 @@ return (
                     <p className="text-xs font-bold text-[--text-primary]">
                       {isBurningFast ? "Spending too fast" : "Pacing well"}
                     </p>
-                    <p className="text-[10px] text-[--text-secondary] mt-0.5 leading-relaxed">
+                    <p className="text-xs text-[--text-secondary] mt-0.5 leading-relaxed">
                       {isBurningFast 
                         ? `You are running ahead of calendar pacing (${monthProgressPercent.toFixed(0)}% days passed).`
                         : `Your burn velocity is slower than calendar progress (${monthProgressPercent.toFixed(0)}% passed).`
@@ -674,8 +674,8 @@ return (
                   <div className="p-3 rounded-xl bg-indigo-500/5 border border-indigo-500/10 flex items-start gap-3">
                     <div className="text-xs mt-0.5">🔮</div>
                     <div>
-                      <p className="text-[10px] font-bold text-white">Projected Exhaustion</p>
-                      <p className="text-[10px] text-[--text-secondary] mt-0.5 leading-relaxed">
+                      <p className="text-xs font-bold text-white">Projected Exhaustion</p>
+                      <p className="text-xs text-[--text-secondary] mt-0.5 leading-relaxed">
                         Based on velocity, your budget will run out on <span className="font-bold text-white">{format(predictiveDeplDate, "MMM d, yyyy")}</span>.
                       </p>
                     </div>
@@ -687,7 +687,7 @@ return (
 
           {/* Target Allocation Pie Chart */}
           <div className="glass-card-static p-5 flex flex-col items-center justify-center relative min-h-[280px] border-white/5 bg-gradient-to-b from-white/[0.01] to-transparent">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] absolute top-5 left-5">Target Allocation</h3>
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] absolute top-5 left-5">Target Allocation</h3>
             <div className="w-full h-[160px] mt-4">
               {mounted && pieData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
@@ -705,14 +705,14 @@ return (
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center text-[--text-muted]">
                    <span className="text-xl mb-1">📊</span>
-                   <span className="text-[9px] uppercase tracking-widest font-black">No Budget Limits</span>
+                   <span className="text-[0.5625rem] uppercase tracking-widest font-black">No Budget Limits</span>
                 </div>
               )}
             </div>
             {pieData.length > 0 && (
               <div className="flex flex-wrap justify-center gap-2 mt-2 w-full">
                 {pieData.slice(0, 4).map((entry, index) => (
-                  <div key={index} className="flex items-center gap-1.5 text-[9px]">
+                  <div key={index} className="flex items-center gap-1.5 text-[0.5625rem]">
                     <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: entry.fill }} />
                     <span className="text-[--text-secondary] font-medium">{entry.name}</span>
                   </div>
@@ -723,21 +723,21 @@ return (
 
           {/* Savings Potential */}
           <div className="glass-card-static p-5 text-center border-white/5 bg-gradient-to-b from-white/[0.01] to-transparent">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Savings Potential</h3>
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Savings Potential</h3>
             <p className="text-3xl font-black text-white">₹{(totalIncome - totalSpent).toLocaleString()}</p>
-            <p className="text-[9px] font-black uppercase tracking-[0.25em] text-[--accent-primary-light] mt-1">Theoretical Surplus</p>
+            <p className="text-[0.5625rem] font-black uppercase tracking-[0.25em] text-[--accent-primary-light] mt-1">Theoretical Surplus</p>
             <div className="mt-5 grid grid-cols-2 gap-4 border-t border-white/5 pt-4">
                <div>
                  <p className="text-lg font-black text-emerald-400">
                    {totalIncome > 0 ? ((totalIncome - totalSpent) / totalIncome * 100).toFixed(1) : 0}%
                  </p>
-                 <p className="text-[9px] font-black uppercase tracking-wider text-[--text-muted] mt-0.5">Savings Rate</p>
+                 <p className="text-[0.5625rem] font-black uppercase tracking-wider text-[--text-muted] mt-0.5">Savings Rate</p>
                </div>
                <div>
                  <p className="text-lg font-black text-amber-500">
                    {totalIncome > 0 ? (totalSpent / totalIncome * 100).toFixed(1) : 0}%
                  </p>
-                 <p className="text-[9px] font-black uppercase tracking-wider text-[--text-muted] mt-0.5">Expense Ratio</p>
+                 <p className="text-[0.5625rem] font-black uppercase tracking-wider text-[--text-muted] mt-0.5">Expense Ratio</p>
                </div>
             </div>
           </div>
@@ -762,7 +762,7 @@ return (
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]" htmlFor="drawer-limit-amount">
+              <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]" htmlFor="drawer-limit-amount">
                 Budget Limit (₹)
               </label>
               <div className="relative">
@@ -782,7 +782,7 @@ return (
 
             {/* Range Slider for quick adjustments */}
             <div className="space-y-2">
-              <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">
+              <div className="flex justify-between text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">
                 <span>Adjust Slider</span>
                 <span className="text-[--accent-primary-light] font-black">
                   ₹{Number(drawerAmount || 0).toLocaleString()}
@@ -798,7 +798,7 @@ return (
                 className="w-full h-1.5 bg-white/15 rounded-lg appearance-none cursor-pointer accent-[--accent-primary]"
                 aria-label="Budget limit range slider"
               />
-              <div className="flex justify-between text-[9px] font-bold text-[--text-muted]">
+              <div className="flex justify-between text-[0.5625rem] font-bold text-[--text-muted]">
                 <span>₹0</span>
                 <span>₹{Math.max(100000, Number(drawerAmount || 0) * 1.5).toLocaleString()}</span>
               </div>
@@ -806,7 +806,7 @@ return (
 
             {/* Quick preset buttons */}
             <div className="space-y-2">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Presets</p>
+              <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Presets</p>
               <div className="flex flex-wrap gap-2">
                 {[2000, 5000, 10000, 20000, 50000].map((preset) => (
                   <button

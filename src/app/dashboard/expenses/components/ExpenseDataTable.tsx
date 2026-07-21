@@ -66,7 +66,7 @@ export default function ExpenseDataTable({ expenses, accounts, onDelete, onEdit,
           </button>
         ),
         cell: (info) => (
-          <p className="text-[13px] font-bold text-[--text-primary]">
+          <p className="text-sm font-bold text-[--text-primary]">
             {info.getValue() ? format(parseISO(info.getValue() as string), "MMM d, yy") : "—"}
           </p>
         ),
@@ -82,7 +82,7 @@ export default function ExpenseDataTable({ expenses, accounts, onDelete, onEdit,
               <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-lg flex-shrink-0">
                 {theme.icon}
               </div>
-              <p className="text-[13px] font-medium text-[--text-primary] group-hover:text-[--accent-primary] transition-colors truncate max-w-[120px] md:max-w-none">
+              <p className="text-sm font-medium text-[--text-primary] group-hover:text-[--accent-primary] transition-colors truncate max-w-[120px] md:max-w-none">
                 {info.getValue()}
               </p>
             </div>
@@ -95,7 +95,7 @@ export default function ExpenseDataTable({ expenses, accounts, onDelete, onEdit,
           const val = info.getValue();
           const theme = categories.find((c) => c.label === val) || categories[7];
           return (
-            <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-white/5 border border-white/10" style={{ color: theme.color }}>
+            <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-white/5 border border-white/10" style={{ color: theme.color }}>
               {val}
             </span>
           );
@@ -108,7 +108,7 @@ export default function ExpenseDataTable({ expenses, accounts, onDelete, onEdit,
           return (
             <div className="flex items-center gap-2">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-              <span className="text-[11px] font-medium text-[--text-secondary]">{account?.name || "Cash"}</span>
+              <span className="text-xs font-medium text-[--text-secondary]">{account?.name || "Cash"}</span>
             </div>
           );
         },
@@ -203,7 +203,7 @@ export default function ExpenseDataTable({ expenses, accounts, onDelete, onEdit,
                 key={n}
                 type="button"
                 onClick={() => setPageSize(n)}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${pageSize === n ? "bg-[--accent-primary] text-white" : "text-[--text-muted] hover:text-white"}`}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${pageSize === n ? "bg-[--accent-primary] text-white" : "text-[--text-muted] hover:text-white"}`}
               >
                 {n}
               </button>
@@ -234,7 +234,7 @@ export default function ExpenseDataTable({ expenses, accounts, onDelete, onEdit,
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id} className="border-b border-white/10">
                   {headerGroup.headers.map((header) => (
-                    <th key={header.id} className={`px-6 py-4 text-[11px] font-semibold text-[--text-muted] ${getTableHeaderClass(header.column.id)}`}>
+                    <th key={header.id} className={`px-6 py-4 text-xs font-semibold text-[--text-muted] ${getTableHeaderClass(header.column.id)}`}>
                       {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                     </th>
                   ))}
@@ -282,32 +282,32 @@ export default function ExpenseDataTable({ expenses, accounts, onDelete, onEdit,
                       {theme.icon}
                     </div>
                     <div className="flex flex-col min-w-0">
-                      <span className="text-[13px] font-bold text-white truncate">{exp.description}</span>
-                      <span className="text-[11px] text-[--text-muted]">{exp.date ? format(parseISO(exp.date), "MMM d, yyyy") : "—"}</span>
+                      <span className="text-sm font-bold text-white truncate">{exp.description}</span>
+                      <span className="text-xs text-[--text-muted]">{exp.date ? format(parseISO(exp.date), "MMM d, yyyy") : "—"}</span>
                     </div>
                   </div>
                   <div className="text-right flex flex-col items-end gap-1">
                     <span className="text-[15px] font-black tabular-nums tracking-tight text-danger">-{getAccountCurrency(exp.account_id) === 'USD' ? '$' : '₹'}{Number(exp.amount).toLocaleString()}</span>
-                    <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-white/5 border border-white/10" style={{color: theme.color}}>{exp.category}</span>
+                    <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-white/5 border border-white/10" style={{color: theme.color}}>{exp.category}</span>
                   </div>
                 </div>
                 <div className="flex items-center justify-between border-t border-white/[0.03] pt-2 mt-1">
                   <div className="flex items-center gap-1.5">
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                    <span className="text-[11px] font-medium text-[--text-secondary]">{account?.name || "Cash"}</span>
+                    <span className="text-xs font-medium text-[--text-secondary]">{account?.name || "Cash"}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     {onEdit && (
                       <button type="button"
                         onClick={() => onEdit(exp)}
-                        className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-medium text-[--text-secondary] active:bg-[--accent-primary]/10 active:text-[--accent-primary]"
+                        className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-medium text-[--text-secondary] active:bg-[--accent-primary]/10 active:text-[--accent-primary]"
                       >
                         Edit
                       </button>
                     )}
                     <button type="button"
                       onClick={() => onDelete(exp.id)}
-                      className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-medium text-[--text-secondary] active:bg-danger/10 active:text-danger"
+                      className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-medium text-[--text-secondary] active:bg-danger/10 active:text-danger"
                     >
                       Delete
                     </button>
@@ -330,7 +330,7 @@ export default function ExpenseDataTable({ expenses, accounts, onDelete, onEdit,
               type="button"
               onClick={() => table.previousPage()}
               disabled={!table.getCanPreviousPage()}
-              className="btn-secondary !h-9 !px-4 text-[11px] font-bold rounded-xl disabled:opacity-40 disabled:cursor-not-allowed"
+              className="btn-secondary !h-9 !px-4 text-xs font-bold rounded-xl disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Previous
             </button>
@@ -339,7 +339,7 @@ export default function ExpenseDataTable({ expenses, accounts, onDelete, onEdit,
               type="button"
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage()}
-              className="btn-secondary !h-9 !px-4 text-[11px] font-bold rounded-xl disabled:opacity-40 disabled:cursor-not-allowed"
+              className="btn-secondary !h-9 !px-4 text-xs font-bold rounded-xl disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Next
             </button>

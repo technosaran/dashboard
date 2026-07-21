@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase-server";
+import { getFriendlyErrorMessage } from "@/lib/action-utils";
 import { revalidatePath } from "next/cache";
 
 type GoalRpcResult = {
@@ -63,16 +64,16 @@ export async function createGoal(data: {
             p_account_id: cleanAccountId
         });
 
-        if (error) return { error: error.message };
+        if (error) return { error: getFriendlyErrorMessage(error) };
         if (!res?.success) return { error: res?.error || "Failed to create goal" };
         
         revalidatePath("/dashboard/goals");
         revalidatePath("/dashboard/ledger");
         revalidatePath("/dashboard/accounts");
-        return { success: true };
+        return { success: true, message: "Goal created successfully" };
     } catch (err) {
         console.error("Error in createGoal:", err);
-        return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+        return { error: getFriendlyErrorMessage(err) };
     }
 }
 
@@ -96,7 +97,7 @@ export async function updateGoalAmount(goalId: string, amount: number, accountId
             p_amount: amount
         });
 
-        if (error) return { error: error.message };
+        if (error) return { error: getFriendlyErrorMessage(error) };
         const res = rpcData as { success: boolean; error?: string } | null;
         if (!res) return { error: "Failed to communicate with database" };
         if (!res.success) return { error: res.error || "Contribution failed" };
@@ -104,10 +105,10 @@ export async function updateGoalAmount(goalId: string, amount: number, accountId
         revalidatePath("/dashboard/goals");
         revalidatePath("/dashboard/ledger");
         revalidatePath("/dashboard/accounts");
-        return { success: true };
+        return { success: true, message: "Goal Amount updated successfully" };
     } catch (err) {
         console.error("Error in updateGoalAmount:", err);
-        return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+        return { error: getFriendlyErrorMessage(err) };
     }
 }
 
@@ -123,17 +124,17 @@ export async function deleteGoal(id: string) {
             p_entity_id: id
         });
 
-        if (error) return { error: error.message };
+        if (error) return { error: getFriendlyErrorMessage(error) };
         const res = data as { success: boolean; error?: string } | null;
         if (!res?.success) return { error: res?.error || "Failed to delete goal atomically" };
 
         revalidatePath("/dashboard/goals");
         revalidatePath("/dashboard/ledger");
         revalidatePath("/dashboard/accounts");
-        return { success: true };
+        return { success: true, message: "Goal deleted successfully" };
     } catch (err) {
         console.error("Error in deleteGoal:", err);
-        return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+        return { error: getFriendlyErrorMessage(err) };
     }
 }
 
@@ -150,11 +151,11 @@ export async function updateGoal(id: string, data: { name: string; target_amount
             category: data.category
         }).eq("id", id).eq("user_id", user.id);
 
-        if (error) return { error: error.message };
+        if (error) return { error: getFriendlyErrorMessage(error) };
         revalidatePath("/dashboard/goals");
-        return { success: true };
+        return { success: true, message: "Goal updated successfully" };
     } catch (err) {
         console.error("Error in updateGoal:", err);
-        return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+        return { error: getFriendlyErrorMessage(err) };
     }
 }

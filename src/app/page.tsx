@@ -31,18 +31,18 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-[#03050a] text-gray-200 font-sans selection:bg-cyan-500 selection:text-black relative overflow-hidden">
       {/* Background Effects */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-gradient-to-b from-cyan-500/8 via-indigo-500/5 to-transparent blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-0 right-0 w-[600px] h-[400px] bg-gradient-to-tl from-purple-500/5 via-transparent to-transparent blur-[100px] pointer-events-none" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[1000px] h-[50vh] sm:h-[500px] bg-gradient-to-b from-cyan-500/8 via-indigo-500/5 to-transparent blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-full max-w-[600px] h-[40vh] sm:h-[400px] bg-gradient-to-tl from-purple-500/5 via-transparent to-transparent blur-[100px] pointer-events-none" />
 
       {/* Navigation */}
-      <nav className="relative z-20 max-w-6xl mx-auto px-6 py-6 flex items-center justify-between">
+      <nav className="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex items-center justify-between w-full">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-cyan-500/20">
             A
           </div>
           <div>
             <span className="text-xl font-black text-white tracking-tight">arthaX</span>
-            <span className="block text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em] -mt-0.5">Wealth Terminal</span>
+            <span className="block text-[0.5625rem] font-bold text-gray-500 uppercase tracking-[0.2em] -mt-0.5">Wealth Terminal</span>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -68,19 +68,19 @@ export default function HomePage() {
       </nav>
 
       {/* Hero Section */}
-      <main className="relative z-10 max-w-6xl mx-auto px-6 pt-16 sm:pt-24 pb-20">
+      <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-24 pb-20 w-full">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="text-center max-w-3xl mx-auto"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-bold mb-8 tracking-wide">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs sm:text-xs font-bold mb-8 tracking-wide">
             <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
             PERSONAL WEALTH MANAGEMENT TERMINAL
           </div>
 
-          <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tight leading-[1.1] mb-6">
+          <h1 className="font-black text-white tracking-tight leading-[1.1] mb-6 text-[clamp(2.5rem,6vw,4rem)]">
             Track Your Wealth
             <br />
             <span className="bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
@@ -172,7 +172,7 @@ export default function HomePage() {
           transition={{ duration: 0.5, delay: 0.3 }}
           className="mt-16 text-center"
         >
-          <p className="text-[10px] font-bold text-gray-600 uppercase tracking-[0.25em] mb-4">Built With</p>
+          <p className="text-xs font-bold text-gray-600 uppercase tracking-[0.25em] mb-4">Built With</p>
           <div className="flex items-center justify-center gap-6 flex-wrap text-xs font-semibold text-gray-500">
             <span>Next.js</span>
             <span className="text-gray-700">•</span>

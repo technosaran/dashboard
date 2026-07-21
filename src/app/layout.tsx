@@ -79,6 +79,7 @@ export default async function RootLayout({
       lang="en"
       className={cn("h-full", "antialiased", "dark", "font-sans", "theme-google")}
       suppressHydrationWarning
+      data-scroll-behavior="smooth"
     >
       <head />
       <body className="min-h-full flex flex-col overflow-x-hidden bg-[--bg-base] text-[--text-primary] font-sans relative">

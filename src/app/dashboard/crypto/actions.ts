@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase-server";
+import { getFriendlyErrorMessage } from "@/lib/action-utils";
 import { revalidatePath } from "next/cache";
 
 export type CryptoMarketData = {
@@ -48,7 +49,7 @@ export async function fetchBinancePrice(symbol: string): Promise<{ price?: numbe
     const data = await res.json();
     return { price: parseFloat(data.price) };
   } catch (err) {
-    return { error: err instanceof Error ? err.message : "Failed to fetch price" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }
 
@@ -295,10 +296,10 @@ export async function createCryptoHolding(data: {
     revalidatePath("/dashboard/investments");
     revalidatePath("/dashboard/crypto");
     revalidatePath("/dashboard");
-    return { success: true };
+    return { success: true, message: "Crypto Holding created successfully" };
   } catch (err) {
     console.error("Error in createCryptoHolding:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }
 
@@ -332,15 +333,15 @@ export async function updateCryptoHolding(id: string, data: {
       .eq("id", id)
       .eq("user_id", user.id);
 
-    if (error) return { error: error.message };
+    if (error) return { error: getFriendlyErrorMessage(error) };
 
     revalidatePath("/dashboard/investments");
     revalidatePath("/dashboard/crypto");
     revalidatePath("/dashboard");
-    return { success: true };
+    return { success: true, message: "Crypto Holding updated successfully" };
   } catch (err) {
     console.error("Error in updateCryptoHolding:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }
 
@@ -356,14 +357,14 @@ export async function deleteCryptoHolding(id: string) {
       .eq("id", id)
       .eq("user_id", user.id);
 
-    if (error) return { error: error.message };
+    if (error) return { error: getFriendlyErrorMessage(error) };
 
     revalidatePath("/dashboard/investments");
     revalidatePath("/dashboard/crypto");
     revalidatePath("/dashboard");
-    return { success: true };
+    return { success: true, message: "Crypto Holding deleted successfully" };
   } catch (err) {
     console.error("Error in deleteCryptoHolding:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }

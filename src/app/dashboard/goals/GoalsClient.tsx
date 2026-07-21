@@ -196,7 +196,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
     await withLock(async () => {
       const res = await updateGoalAmount(selectedGoalId, amount, selectedAccountId);
       if (!res?.error) {
-        toast.success("Contribution added to goal successfully");
+        toast.success(res.message || "Contribution added to goal successfully");
         setShowContributeModal(false);
         setContributeAmount("");
         mutate();
@@ -216,7 +216,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
     await withLock(async () => {
       const res = await deleteGoal(deletingGoalId);
       if (!res?.error) {
-        toast.success("Goal deleted successfully");
+        toast.success(res.message || "Goal deleted successfully");
         setShowDeleteConfirm(false);
         setDeletingGoalId(null);
         mutate();
@@ -266,31 +266,31 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
         {/* Top Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           <div className="glass-card-static p-6 border-white/5">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Total Target</p>
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Total Target</p>
             <p className="text-2xl md:text-3xl font-black text-white">₹{stats.totalTarget.toLocaleString()}</p>
-            <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Active Capital Goal</p>
+            <p className="text-[0.5625rem] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Active Capital Goal</p>
           </div>
           <div className="glass-card-static p-6 border-white/5">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Capital Secured</p>
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Capital Secured</p>
             <p className="text-2xl md:text-3xl font-black text-[--accent-primary-light]">₹{stats.totalCurrent.toLocaleString()}</p>
-            <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Total Saved</p>
+            <p className="text-[0.5625rem] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Total Saved</p>
           </div>
           <div className="glass-card-static p-6 border-white/5">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Overall Progress</p>
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Overall Progress</p>
             <p className="text-2xl md:text-3xl font-black text-success">{stats.overallProgress.toFixed(1)}%</p>
-            <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Completion Rate</p>
+            <p className="text-[0.5625rem] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Completion Rate</p>
           </div>
           <div className="glass-card-static p-6 border-white/5">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Active Trackers</p>
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Active Trackers</p>
             <p className="text-2xl md:text-3xl font-black text-white">{stats.activeCount}</p>
-            <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Open Milestones</p>
+            <p className="text-[0.5625rem] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Open Milestones</p>
           </div>
           <div className="glass-card-static p-6 border-white/5 bg-gradient-to-br from-[--accent-primary]/10 to-transparent">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Nearest Deadline</p>
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Nearest Deadline</p>
             <p className={`text-2xl md:text-3xl font-black ${stats.closestDays <= 30 ? 'text-warning' : 'text-emerald-400'}`}>
               {stats.closestDays === Infinity ? 'None' : `${stats.closestDays}d`}
             </p>
-            <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">
+            <p className="text-[0.5625rem] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">
               {stats.closestDeadline ? format(stats.closestDeadline, "MMM d, yyyy") : "No Deadlines"}
             </p>
           </div>
@@ -320,7 +320,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
               >
                 {tab.label}
                 {tab.badge !== undefined && (
-                  <span className={`flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1 text-[9px] font-black ${
+                  <span className={`flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1 text-[0.5625rem] font-black ${
                     isActive ? "bg-white/20 text-white" : "bg-white/10 text-white"
                   }`}>
                     {tab.badge}

@@ -376,7 +376,7 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
           <h1 className="text-4xl font-black tracking-tight text-white uppercase italic">Fixed Income</h1>
-          <p className="text-[10px] text-[--text-muted] font-black uppercase tracking-[0.4em] mt-2 ml-1">Bonds & Debentures</p>
+          <p className="text-xs text-[--text-muted] font-black uppercase tracking-[0.4em] mt-2 ml-1">Bonds & Debentures</p>
         </div>
         <button type="button" onClick={() => { 
           setFormData({
@@ -415,31 +415,31 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
         {/* Top Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           <div className="glass-card-static p-6 border-white/5">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Total Invested</p>
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Total Invested</p>
             <p className="text-2xl md:text-3xl font-black text-white">₹{stats.totalInvested.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
-            <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Capital Deployed</p>
+            <p className="text-[0.5625rem] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Capital Deployed</p>
           </div>
           <div className="glass-card-static p-6 border-white/5">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Current Value</p>
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Current Value</p>
             <p className="text-2xl md:text-3xl font-black text-[--accent-primary-light]">₹{stats.currentValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
-            <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Market Value</p>
+            <p className="text-[0.5625rem] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Market Value</p>
           </div>
           <div className="glass-card-static p-6 border-white/5">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Total Interest</p>
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Total Interest</p>
             <p className="text-2xl md:text-3xl font-black text-emerald-400">₹{stats.totalInterest.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
-            <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Earned So Far</p>
+            <p className="text-[0.5625rem] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Earned So Far</p>
           </div>
           <div className="glass-card-static p-6 border-white/5">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Accrued Interest</p>
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Accrued Interest</p>
             <p className="text-2xl md:text-3xl font-black text-amber-400">₹{stats.accruedInterest.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
-            <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Yet to be paid</p>
+            <p className="text-[0.5625rem] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Yet to be paid</p>
           </div>
           <div className="glass-card-static p-6 border-white/5 bg-gradient-to-br from-[--accent-primary]/10 to-transparent">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Average YTM</p>
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Average YTM</p>
             <p className="text-xl md:text-2xl font-black text-[--accent-primary] truncate">
               {stats.avgYTM > 0 ? `${stats.avgYTM.toFixed(2)}%` : "N/A"}
             </p>
-            <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Yield To Maturity</p>
+            <p className="text-[0.5625rem] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Yield To Maturity</p>
           </div>
         </div>
 
@@ -467,7 +467,7 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
               >
                 {tab.label}
                 {tab.badge !== undefined && (
-                  <span className={`flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1.5 text-[8px] font-black ${
+                  <span className={`flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1.5 text-[0.5rem] font-black ${
                     isActive ? "bg-white/20 text-white" : "bg-white/10 text-white"
                   }`}>
                     {tab.badge}
@@ -571,22 +571,22 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Bond Name</label>
+                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Bond Name</label>
                   <input required className="input-premium" placeholder="e.g. 7.18% GS 2033" value={formData.bond_name} onChange={e => setFormData({...formData, bond_name: e.target.value})} />
                 </div>
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Issuer</label>
+                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Issuer</label>
                   <input required className="input-premium" placeholder="e.g. RBI" value={formData.issuer} onChange={e => setFormData({...formData, issuer: e.target.value})} />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">ISIN</label>
+                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">ISIN</label>
                   <input required className="input-premium uppercase" placeholder="e.g. IN0020230085" value={formData.isin} onChange={e => handleIsinChange(e.target.value)} />
                 </div>
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Bond Type</label>
+                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Bond Type</label>
                   <select className="input-premium" value={formData.bond_type} onChange={e => setFormData({...formData, bond_type: e.target.value})}>
                     <option value="Government">Government</option>
                     <option value="Corporate">Corporate</option>
@@ -596,37 +596,37 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
                   </select>
                 </div>
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Platform</label>
+                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Platform</label>
                   <input className="input-premium" placeholder="e.g. Wint Wealth" value={formData.platform} onChange={e => setFormData({...formData, platform: e.target.value})} />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Quantity</label>
+                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Quantity</label>
                   <input required type="number" className="input-premium tabular-nums" value={formData.quantity} onChange={e => setFormData({...formData, quantity: e.target.value})} />
                 </div>
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Face Value (₹)</label>
+                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Face Value (₹)</label>
                   <input required type="number" step="any" className="input-premium tabular-nums" value={formData.face_value} onChange={e => setFormData({...formData, face_value: e.target.value})} />
                 </div>
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Purchase Price (₹)</label>
+                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Purchase Price (₹)</label>
                   <input required type="number" step="any" className="input-premium tabular-nums" value={formData.purchase_price} onChange={e => setFormData({...formData, purchase_price: e.target.value})} />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Coupon Rate (%)</label>
+                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Coupon Rate (%)</label>
                   <input required type="number" step="any" className="input-premium tabular-nums" value={formData.coupon_rate} onChange={e => setFormData({...formData, coupon_rate: e.target.value})} />
                 </div>
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">YTM (%)</label>
+                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">YTM (%)</label>
                   <input type="number" step="any" className="input-premium tabular-nums" placeholder="Optional" value={formData.ytm} onChange={e => setFormData({...formData, ytm: e.target.value})} />
                 </div>
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Interest Frequency</label>
+                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Interest Frequency</label>
                   <select className="input-premium" value={formData.interest_frequency} onChange={e => setFormData({...formData, interest_frequency: e.target.value})}>
                     <option value="Monthly">Monthly</option>
                     <option value="Quarterly">Quarterly</option>
@@ -638,18 +638,18 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Purchase Date</label>
+                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Purchase Date</label>
                   <input type="date" required className="input-premium" value={formData.purchase_date} onChange={e => setFormData({...formData, purchase_date: e.target.value})} />
                 </div>
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Maturity Date</label>
+                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Maturity Date</label>
                   <input type="date" required className="input-premium" value={formData.maturity_date} onChange={e => setFormData({...formData, maturity_date: e.target.value})} />
                 </div>
               </div>
 
               {!editingId && (
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Deduct From Account</label>
+                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Deduct From Account</label>
                   <select className="input-premium" value={formData.account_id} onChange={e => setFormData({...formData, account_id: e.target.value})}>
                     <option value="" disabled>Select Account</option>
                     {accounts.map(acc => (
@@ -660,7 +660,7 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
               )}
 
               <div className="pt-4 mt-8">
-                <button type="submit" disabled={submitting} className={`btn-primary w-full h-12 shadow-xl text-[11px] font-black uppercase tracking-widest shadow-[--accent-primary]/20`}>
+                <button type="submit" disabled={submitting} className={`btn-primary w-full h-12 shadow-xl text-xs font-black uppercase tracking-widest shadow-[--accent-primary]/20`}>
                   {submitting ? "Processing..." : (editingId ? "Update Bond" : "Invest in Bond")}
                 </button>
               </div>

@@ -195,7 +195,7 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
         <div className="border border-white/10 bg-slate-950/80 shadow-[0_12px_40px_rgba(0,0,0,0.6)] backdrop-blur-md px-4 py-3 rounded-2xl flex flex-col gap-1 z-50">
           <div className="flex items-center gap-2">
             <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: data.payload.color || data.payload.fill || data.color }} />
-            <span className="text-[11px] font-bold text-white uppercase tracking-wider">{data.name}</span>
+            <span className="text-xs font-bold text-white uppercase tracking-wider">{data.name}</span>
           </div>
           <span className="text-xs font-black text-[--text-secondary] tabular-nums mt-1" style={{ color: data.payload.color || data.payload.fill || data.color }}>
             {showUSD ? "$" : "₹"}{Number(data.value || 0).toLocaleString()} ({data.payload.percentage}%)
@@ -210,13 +210,13 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
     if (active && payload && payload.length) {
       return (
         <div className="border border-white/10 bg-slate-950/80 shadow-[0_12px_40px_rgba(0,0,0,0.6)] backdrop-blur-md px-4 py-3 rounded-2xl flex flex-col gap-1.5 z-50">
-          <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[--text-muted]">{label}</p>
+          <p className="text-xs font-bold uppercase tracking-[0.08em] text-[--text-muted]">{label}</p>
           <div className="flex flex-col gap-1">
             {payload.map((pld: any) => (
               <div key={pld.name} className="flex items-center gap-4 justify-between min-w-[120px]">
                 <div className="flex items-center gap-2">
                   <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: pld.stroke || pld.color || pld.fill }} />
-                  <span className="text-[11px] text-[--text-secondary] font-medium capitalize">{pld.name}</span>
+                  <span className="text-xs text-[--text-secondary] font-medium capitalize">{pld.name}</span>
                 </div>
                 <span className="text-xs font-black tabular-nums" style={{ color: pld.stroke || pld.color || pld.fill }}>
                   {showUSD ? "$" : "₹"}{Number(pld.value || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
@@ -282,21 +282,21 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
               >
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-xs font-semibold text-[--text-muted] transition-colors group-hover/nw:text-[--text-primary]">
-                    Portfolio Net Worth ({showUSD ? 'USD' : 'INR'}) {isLoading && <span className="text-[10px] italic font-normal">(loading...)</span>}
+                    Portfolio Net Worth ({showUSD ? 'USD' : 'INR'}) {isLoading && <span className="text-xs italic font-normal">(loading...)</span>}
                   </span>
                   <svg className="w-3.5 h-3.5 text-[--text-muted] opacity-50 group-hover/nw:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                   </svg>
                 </div>
-                <div className="relative">
-                  <AnimatePresence mode="popLayout">
+                <div className="relative flex items-center justify-start h-[3.5rem] md:h-[4rem] w-[280px] sm:w-[450px]">
+                  <AnimatePresence>
                     <motion.h2 
                       key={showUSD ? 'usd' : 'inr'} 
                       initial={{ opacity: 0, y: 15, filter: "blur(4px)" }}
                       animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
                       exit={{ opacity: 0, y: -15, filter: "blur(4px)" }}
                       transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                      className={`bg-clip-text bg-gradient-to-r text-[clamp(2.2rem,5vw,3.5rem)] font-[950] leading-none tracking-[-0.04em] text-transparent [font-family:'Outfit',sans-serif] whitespace-nowrap overflow-x-auto no-scrollbar transition-all duration-500 ${
+                      className={`absolute left-0 bg-clip-text bg-gradient-to-r text-[clamp(2.2rem,5vw,3.5rem)] font-[950] leading-none tracking-[-0.04em] text-transparent [font-family:'Outfit',sans-serif] whitespace-nowrap overflow-hidden transition-all duration-500 ${
                         showUSD 
                           ? "from-white via-sky-200 to-indigo-300 drop-shadow-[0_10px_35px_rgba(99,102,241,0.3)]" 
                           : "from-white via-white to-slate-300 drop-shadow-[0_10px_35px_rgba(14,165,233,0.3)]"
@@ -319,7 +319,7 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                 >
                   <div className="w-9 h-9 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 text-base shadow-inner">📈</div>
                   <div className="flex flex-col">
-                    <span className="text-[11px] font-semibold text-[--text-muted]">Liquid assets</span>
+                    <span className="text-xs font-semibold text-[--text-muted]">Liquid assets</span>
                     <span className="text-sm sm:text-base font-black text-emerald-400">
                       {showUSD 
                         ? `+$${stats.totalAssetsUSD.toLocaleString()}` 
@@ -336,7 +336,7 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                   >
                     <div className="w-9 h-9 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-400 text-base shadow-inner">📉</div>
                     <div className="flex flex-col">
-                      <span className="text-[11px] font-semibold text-[--text-muted]">Outstanding debt</span>
+                      <span className="text-xs font-semibold text-[--text-muted]">Outstanding debt</span>
                       <span className="text-sm sm:text-base font-black text-rose-500">
                         -₹{stats.debtBalance.toLocaleString()}
                       </span>
@@ -353,16 +353,16 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                 ) : (
                   <>
                     <div className="flex-1 min-w-0 space-y-2.5 w-full">
-                      <p className="text-[11px] font-semibold text-[--text-muted] mb-3">Portfolio allocation</p>
+                      <p className="text-xs font-semibold text-[--text-muted] mb-3">Portfolio allocation</p>
                       {portfolioData.map((item) => (
                         <div key={item.name} className="flex justify-between items-center gap-3 min-w-0 py-1.5 px-2 rounded-lg">
                           <div className="flex items-center gap-2.5 min-w-0">
                             <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: item.color }} />
-                            <span className="text-[11px] font-bold text-[--text-secondary] truncate group-hover:text-white transition-colors">{item.name}</span>
+                            <span className="text-xs font-bold text-[--text-secondary] truncate group-hover:text-white transition-colors">{item.name}</span>
                           </div>
                           <div className="flex items-center gap-2 flex-shrink-0 text-right">
-                            <span className="text-[9px] font-bold text-[--text-muted]">{item.percentage}%</span>
-                            <span className="text-[11px] font-black tabular-nums whitespace-nowrap" style={{ color: item.color }}>
+                            <span className="text-[0.5625rem] font-bold text-[--text-muted]">{item.percentage}%</span>
+                            <span className="text-xs font-black tabular-nums whitespace-nowrap" style={{ color: item.color }}>
                               {showUSD ? '$' : '₹'}{item.value > 10000000 ? Intl.NumberFormat(showUSD ? 'en-US' : 'en-IN', { notation: 'compact', maximumFractionDigits: 2 }).format(item.value) : item.value.toLocaleString()}
                             </span>
                           </div>
@@ -381,7 +381,7 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                         </PieChart>
                       </ResponsiveContainer>
                       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
-                        <span className="text-[11px] font-semibold text-[--text-muted]">Assets</span>
+                        <span className="text-xs font-semibold text-[--text-muted]">Assets</span>
                         <span className="text-[12px] font-black text-white mt-0.5">
                           {showUSD 
                             ? `$${Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(stats.totalAssetsUSD)}`
@@ -413,7 +413,7 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                 </div>
                 <div className="flex flex-col items-start sm:items-end gap-2 shrink-0">
                   {/* #2 — clear label above the segmented control */}
-                  <p className="text-[10px] font-semibold text-[--text-muted]">Chart type</p>
+                  <p className="text-xs font-semibold text-[--text-muted]">Chart type</p>
                   <div className="flex items-center gap-1 rounded-xl bg-white/5 border border-white/10 p-1">
                     {[
                       { key: "cashflow", label: "Cash Flow" },
@@ -424,7 +424,7 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                         key={m.key}
                         onClick={() => setActiveChartMetric(m.key as any)}
                         aria-pressed={activeChartMetric === m.key}
-                        className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                           activeChartMetric === m.key
                             ? "bg-[--accent-primary] text-white shadow-md shadow-[--accent-primary]/20"
                             : "text-[--text-muted] hover:text-white"
@@ -439,13 +439,13 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                       {enabledModules.includes("Income") && (
                         <div className="flex items-center gap-2">
                           <div className="w-2 h-2 rounded-full bg-[--accent-primary]" />
-                          <span className="text-[11px] font-medium text-white/60">Income</span>
+                          <span className="text-xs font-medium text-white/60">Income</span>
                         </div>
                       )}
                       {enabledModules.includes("Expenses") && (
                         <div className="flex items-center gap-2">
                           <div className="w-2 h-2 rounded-full bg-rose-500" />
-                          <span className="text-[11px] font-medium text-white/60">Expenses</span>
+                          <span className="text-xs font-medium text-white/60">Expenses</span>
                         </div>
                       )}
                     </div>
@@ -513,7 +513,7 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                   <h3 className="text-sm font-bold text-[--text-secondary]">Financial ledger</h3>
                   <p className="text-xs text-[--text-secondary] mt-1">Recent account activity</p>
                 </div>
-                <Link href="/dashboard/ledger" className="btn-secondary !h-9 !px-4 text-[10px]">Audit Trail</Link>
+                <Link href="/dashboard/ledger" className="btn-secondary !h-9 !px-4 text-xs">Audit Trail</Link>
               </div>
 
               <div className="divide-y divide-white/5 border border-white/5 rounded-2xl overflow-hidden">
@@ -526,8 +526,8 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                           {log.action_type === "CREATE" ? "✨" : isOut ? "📉" : "📈"}
                         </div>
                         <div className="flex min-w-0 flex-col">
-                          <span className="text-[13px] font-bold text-white group-hover:text-[--accent-primary-light] transition-colors truncate">{log.details}</span>
-                          <span className="text-[9px] font-black uppercase text-[--text-muted] tracking-wider mt-1">
+                          <span className="text-sm font-bold text-white group-hover:text-[--accent-primary-light] transition-colors truncate">{log.details}</span>
+                          <span className="text-[0.5625rem] font-black uppercase text-[--text-muted] tracking-wider mt-1">
                             {log.created_at ? format(new Date(log.created_at), "MMM d, h:mm a") : "N/A"} • {log.account_name}
                           </span>
                         </div>
@@ -541,7 +541,7 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                   );
                 })}
                 {recentLogs.length === 0 && (
-                  <div className="py-16 text-center text-[11px] font-bold uppercase text-[--text-muted] tracking-widest italic bg-white/[0.01]">
+                  <div className="py-16 text-center text-xs font-bold uppercase text-[--text-muted] tracking-widest italic bg-white/[0.01]">
                     System initialized. Waiting for transaction input logs...
                   </div>
                 )}
@@ -560,35 +560,35 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
               {enabledModules.includes("Expenses") && (
                 <Link href="/dashboard/expenses?action=new" className="flex flex-col items-center justify-center p-4 bg-rose-500/5 hover:bg-rose-500/10 border border-rose-500/10 rounded-2xl text-center transition-all group hover:-translate-y-1">
                   <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">💸</span>
-                  <span className="text-[11px] font-bold text-rose-400">Log Expense</span>
+                  <span className="text-xs font-bold text-rose-400">Log Expense</span>
                 </Link>
               )}
               {enabledModules.includes("Income") && (
                 <Link href="/dashboard/income?action=new" className="flex flex-col items-center justify-center p-4 bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/10 rounded-2xl text-center transition-all group hover:-translate-y-1">
                   <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">💼</span>
-                  <span className="text-[11px] font-bold text-emerald-400">Log Income</span>
+                  <span className="text-xs font-bold text-emerald-400">Log Income</span>
                 </Link>
               )}
               {enabledModules.includes("Stocks") && (
                 <Link href="/dashboard/stocks?action=new" className="flex flex-col items-center justify-center p-4 bg-blue-500/5 hover:bg-blue-500/10 border border-blue-500/10 rounded-2xl text-center transition-all group hover:-translate-y-1">
                   <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">📈</span>
-                  <span className="text-[11px] font-bold text-blue-400">Add Stock</span>
+                  <span className="text-xs font-bold text-blue-400">Add Stock</span>
                 </Link>
               )}
               {enabledModules.includes("Family Management") && (
                 <Link href="/dashboard/family?action=send" className="flex flex-col items-center justify-center p-4 bg-purple-500/5 hover:bg-purple-500/10 border border-purple-500/10 rounded-2xl text-center transition-all group hover:-translate-y-1">
                   <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">👨‍👩‍👧‍👦</span>
-                  <span className="text-[11px] font-bold text-purple-400">Send Family</span>
+                  <span className="text-xs font-bold text-purple-400">Send Family</span>
                 </Link>
               )}
               <Link href="/dashboard/accounts?action=new" className="flex flex-col items-center justify-center p-4 bg-sky-500/5 hover:bg-sky-500/10 border border-sky-500/10 rounded-2xl text-center transition-all group hover:-translate-y-1">
                 <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">💳</span>
-                <span className="text-[11px] font-bold text-sky-400">Add Account</span>
+                <span className="text-xs font-bold text-sky-400">Add Account</span>
               </Link>
               {/* #4 — fallback "Browse all" tile ensures even grid when modules are limited */}
               <Link href="/dashboard/settings" className="flex flex-col items-center justify-center p-4 bg-white/[0.02] border border-white/5 rounded-2xl text-center">
                 <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">⚙️</span>
-                <span className="text-[11px] font-bold text-[--text-muted]">Settings</span>
+                <span className="text-xs font-bold text-[--text-muted]">Settings</span>
               </Link>
             </div>
           </div>
@@ -612,13 +612,13 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                     <div key={goal.id} className="p-4 rounded-2xl bg-white/[0.01] border border-white/5">
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex flex-col">
-                          <span className="text-[13px] font-bold text-white">{goal.name}</span>
+                          <span className="text-sm font-bold text-white">{goal.name}</span>
                           <span className="text-xs text-[--text-muted] mt-0.5">Target: ₹{target.toLocaleString()}</span>
                         </div>
                         {notStarted ? (
-                          <span className="text-[11px] font-bold text-[--text-muted] bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">Not started</span>
+                          <span className="text-xs font-bold text-[--text-muted] bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">Not started</span>
                         ) : (
-                          <span className="text-[11px] font-black text-[--accent-primary-light] tabular-nums">{pct.toFixed(0)}%</span>
+                          <span className="text-xs font-black text-[--accent-primary-light] tabular-nums">{pct.toFixed(0)}%</span>
                         )}
                       </div>
 
@@ -645,7 +645,7 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                 {goals.length === 0 && (
                   <div className="py-12 text-center border border-dashed border-white/5 rounded-2xl">
                     <p className="text-xs text-[--text-secondary] mb-4">No active milestones registered</p>
-                    <Link href="/dashboard/goals?action=new" className="btn-secondary !h-9 text-[10px]">Establish Goal</Link>
+                    <Link href="/dashboard/goals?action=new" className="btn-secondary !h-9 text-xs">Establish Goal</Link>
                   </div>
                 )}
               </div>

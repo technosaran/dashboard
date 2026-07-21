@@ -54,7 +54,7 @@ export default function GoalsDataTable({ goals, onEdit, onDelete, onContribute, 
             <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xs flex-shrink-0">
               {GOAL_CATEGORIES.find(c => c.label === info.row.original.category)?.icon || "🎯"}
             </div>
-            <p className="text-[13px] font-bold text-white group-hover:text-[--accent-primary] transition-colors truncate">
+            <p className="text-sm font-bold text-white group-hover:text-[--accent-primary] transition-colors truncate">
               {info.getValue()}
             </p>
           </div>
@@ -63,7 +63,7 @@ export default function GoalsDataTable({ goals, onEdit, onDelete, onContribute, 
       columnHelper.accessor("category", {
         header: "Category",
         cell: (info) => (
-          <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-[0.1em] bg-white/5 border border-white/10 text-[--text-muted] whitespace-nowrap">
+          <span className="px-2 py-0.5 rounded-full text-[0.5625rem] font-black uppercase tracking-[0.1em] bg-white/5 border border-white/10 text-[--text-muted] whitespace-nowrap">
             {info.getValue() || "Others"}
           </span>
         ),
@@ -78,8 +78,8 @@ export default function GoalsDataTable({ goals, onEdit, onDelete, onContribute, 
           return (
             <div className="w-full max-w-[150px]">
               <div className="flex justify-between items-center mb-1 whitespace-nowrap">
-                <span className="text-[10px] font-bold text-white">₹{current.toLocaleString()}</span>
-                <span className="text-[9px] font-bold text-[--text-muted]">of ₹{target.toLocaleString()}</span>
+                <span className="text-xs font-bold text-white">₹{current.toLocaleString()}</span>
+                <span className="text-[0.5625rem] font-bold text-[--text-muted]">of ₹{target.toLocaleString()}</span>
               </div>
               <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
                 <div 
@@ -100,14 +100,14 @@ export default function GoalsDataTable({ goals, onEdit, onDelete, onContribute, 
         ),
         cell: (info) => {
           const val = info.getValue();
-          if (!val) return <span className="text-[11px] text-[--text-muted] whitespace-nowrap">No deadline</span>;
+          if (!val) return <span className="text-xs text-[--text-muted] whitespace-nowrap">No deadline</span>;
           const parsed = parseISO(val);
-          if (!isValid(parsed)) return <span className="text-[11px] text-[--text-muted] whitespace-nowrap">No deadline</span>;
+          if (!isValid(parsed)) return <span className="text-xs text-[--text-muted] whitespace-nowrap">No deadline</span>;
           const days = differenceInDays(parsed, new Date());
           return (
             <div className="whitespace-nowrap">
               <p className="text-[12px] font-bold text-white">{format(parsed, "MMM d, yyyy")}</p>
-              <p className={`text-[9px] font-black uppercase tracking-widest mt-0.5 ${days < 0 ? 'text-danger' : days < 30 ? 'text-warning' : 'text-[--text-muted]'}`}>
+              <p className={`text-[0.5625rem] font-black uppercase tracking-widest mt-0.5 ${days < 0 ? 'text-danger' : days < 30 ? 'text-warning' : 'text-[--text-muted]'}`}>
                 {days < 0 ? `${Math.abs(days)} days overdue` : `${days} days left`}
               </p>
             </div>
@@ -245,7 +245,7 @@ export default function GoalsDataTable({ goals, onEdit, onDelete, onContribute, 
                 key={filter.key}
                 type="button"
                 onClick={() => setGoalFilter(filter.key as typeof goalFilter)}
-                className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-[0.18em] border transition-colors ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-[0.18em] border transition-colors ${
                   goalFilter === filter.key
                     ? "bg-[--accent-primary]/20 border-[--accent-primary]/40 text-white"
                     : "bg-white/5 border-white/10 text-[--text-muted]"
@@ -337,7 +337,7 @@ export default function GoalsDataTable({ goals, onEdit, onDelete, onContribute, 
                             {goal.name}
                           </h3>
                           <div className="flex items-center gap-1.5 mt-1.5">
-                            <p className="text-[10px] text-[--text-muted] font-semibold uppercase tracking-wider">
+                            <p className="text-xs text-[--text-muted] font-semibold uppercase tracking-wider">
                               {goal.category || "Others"}
                             </p>
                             {(() => {
@@ -365,7 +365,7 @@ export default function GoalsDataTable({ goals, onEdit, onDelete, onContribute, 
                           </div>
                         </div>
                       </div>
-                      <span className={`shrink-0 px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider border ${
+                      <span className={`shrink-0 px-2 py-0.5 rounded text-[0.5rem] font-black uppercase tracking-wider border ${
                         isCompleted ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-white/5 text-[--text-muted] border-white/10"
                       }`}>
                         {isCompleted ? "Completed" : `${pct.toFixed(0)}%`}
@@ -376,7 +376,7 @@ export default function GoalsDataTable({ goals, onEdit, onDelete, onContribute, 
                     <div className="mt-4">
                       <div className="flex justify-between items-baseline mb-2">
                         <span className="text-lg font-black text-white">₹{current.toLocaleString()}</span>
-                        <span className="text-[10px] text-[--text-muted]">target ₹{target.toLocaleString()}</span>
+                        <span className="text-xs text-[--text-muted]">target ₹{target.toLocaleString()}</span>
                       </div>
                       <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden relative">
                         <div 
@@ -400,7 +400,7 @@ export default function GoalsDataTable({ goals, onEdit, onDelete, onContribute, 
 
                   {/* Actions & Footer */}
                   <div className="mt-4 pt-3 border-t border-white/5 flex justify-between items-center">
-                    <span className={`text-[10px] uppercase tracking-wider font-bold ${daysLeftColor}`}>
+                    <span className={`text-xs uppercase tracking-wider font-bold ${daysLeftColor}`}>
                       {goal.deadline && isValid(parseISO(goal.deadline))
                         ? `${format(parseISO(goal.deadline), "MMM d, yyyy")} (${deadlineText})`
                         : "No Deadline"}
@@ -445,7 +445,7 @@ export default function GoalsDataTable({ goals, onEdit, onDelete, onContribute, 
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id} className="border-b border-white/5 bg-black/40">
                   {headerGroup.headers.map((header) => (
-                    <th key={header.id} className={`px-5 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] whitespace-nowrap ${getTableHeaderClass(header.column.id)}`}>
+                    <th key={header.id} className={`px-5 py-3 text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] whitespace-nowrap ${getTableHeaderClass(header.column.id)}`}>
                       {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                     </th>
                   ))}

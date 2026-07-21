@@ -180,10 +180,10 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
     const cfg = getActionConfig(type);
     return (
       <span 
-        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] text-[9px] font-mono font-black uppercase tracking-wider border whitespace-nowrap"
+        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] text-[0.5625rem] font-mono font-black uppercase tracking-wider border whitespace-nowrap"
         style={{ backgroundColor: cfg.bg, color: cfg.text, borderColor: cfg.ring }}
       >
-        <span className="text-[11px] shrink-0" aria-hidden="true">{cfg.icon}</span>
+        <span className="text-xs shrink-0" aria-hidden="true">{cfg.icon}</span>
         {cfg.label}
       </span>
     );
@@ -195,7 +195,7 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
         <div className="flex items-center gap-4">
           <div>
             <h1 className="text-3xl font-black tracking-tight text-white uppercase italic">Ledger</h1>
-            <p className="text-[10px] text-[--text-muted] font-black uppercase tracking-[0.3em] mt-1.5">Console Statement & Balance Audit Trail</p>
+            <p className="text-xs text-[--text-muted] font-black uppercase tracking-[0.3em] mt-1.5">Console Statement & Balance Audit Trail</p>
           </div>
           <div className="inline-flex items-center gap-2 mt-1">
             <span className={`h-2 w-2 rounded-full shadow-lg ${isValidating ? "animate-pulse bg-warning shadow-warning/40" : "bg-success shadow-success/40"}`} />
@@ -207,7 +207,7 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
       <section className="bg-[#151515] p-5 rounded border border-white/10 flex flex-col gap-4">
         <div className="flex flex-wrap items-end gap-4">
           <div className="flex-1 min-w-[200px] space-y-1.5">
-            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Search Logs</label>
+            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Search Logs</label>
             <input
               type="text"
               placeholder="Search details, accounts..."
@@ -218,7 +218,7 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
           </div>
 
           <div className="flex-1 min-w-[200px] space-y-1.5">
-            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Account / Segment</label>
+            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Account / Segment</label>
             <select
               className="w-full bg-[#1e1e1e] border border-white/10 rounded px-3 py-2 text-xs text-white outline-none focus:border-[#f26522]"
               value={selectedAccountId}
@@ -232,7 +232,7 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
           </div>
 
           <div className="flex-1 min-w-[150px] space-y-1.5">
-            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">From Date</label>
+            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">From Date</label>
             <input
               type="date"
               className="w-full bg-[#1e1e1e] border border-white/10 rounded px-3 py-2 text-xs text-[#fff] [color-scheme:dark] outline-none focus:border-[#f26522]"
@@ -242,7 +242,7 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
           </div>
 
           <div className="flex-1 min-w-[150px] space-y-1.5">
-            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">To Date</label>
+            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">To Date</label>
             <input
               type="date"
               className="w-full bg-[#1e1e1e] border border-white/10 rounded px-3 py-2 text-xs text-[#fff] [color-scheme:dark] outline-none focus:border-[#f26522]"
@@ -273,12 +273,12 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
         </div>
 
         <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/5">
-          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mr-2">Quick Ranges:</span>
+          <span className="text-xs font-bold text-gray-500 uppercase tracking-wider mr-2">Quick Ranges:</span>
           {["Today", "Yesterday", "This Month", "Last 30 Days", "All Time"].map((range) => (
             <button
               key={range}
               onClick={() => selectQuickRange(range)}
-              className="px-3 py-1 bg-[#1e1e1e] hover:bg-white/5 border border-white/10 hover:border-white/20 text-gray-400 hover:text-white text-[10px] font-bold rounded transition-all"
+              className="px-3 py-1 bg-[#1e1e1e] hover:bg-white/5 border border-white/10 hover:border-white/20 text-gray-400 hover:text-white text-xs font-bold rounded transition-all"
             >
               {range}
             </button>
@@ -295,7 +295,7 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
           { label: "Closing Balance", value: closingBalance, color: "text-white" },
         ].map((s, i) => (
           <div key={i} className="p-5 rounded border border-white/10 bg-[#151515] flex flex-col justify-between min-h-[90px]">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500">{s.label}</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-gray-500">{s.label}</p>
             <p className={`text-xl font-normal tracking-tight ${s.color} mt-2`}>
               {formatMoney(s.value, "INR")}
             </p>

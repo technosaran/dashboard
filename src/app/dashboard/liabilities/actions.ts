@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase-server";
+import { getFriendlyErrorMessage } from "@/lib/action-utils";
 import { revalidatePath } from "next/cache";
 
 export async function addLiability(formData: {
@@ -51,17 +52,17 @@ export async function addLiability(formData: {
       p_account_id: formData.account_id || null
     });
 
-    if (error) return { error: error.message };
+    if (error) return { error: getFriendlyErrorMessage(error) };
     if (!rpcData?.success) return { error: rpcData?.error || "Failed to add liability" };
 
     revalidatePath("/dashboard/liabilities");
     revalidatePath("/dashboard/ledger");
     revalidatePath("/dashboard/accounts");
     revalidatePath("/dashboard");
-    return { success: true };
+    return { success: true, message: "Liability added successfully" };
   } catch (err) {
     console.error("Error in addLiability:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }
 
@@ -97,12 +98,12 @@ export async function updateLiability(id: string, formData: LiabilityUpdate) {
       .eq("id", id)
       .eq("user_id", user.id);
 
-    if (error) return { error: error.message };
+    if (error) return { error: getFriendlyErrorMessage(error) };
     revalidatePath("/dashboard/liabilities");
-    return { success: true };
+    return { success: true, message: "Liability updated successfully" };
   } catch (err) {
     console.error("Error in updateLiability:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }
 
@@ -118,16 +119,16 @@ export async function deleteLiability(id: string) {
       p_entity_id: id
     });
 
-    if (error) return { error: error.message };
+    if (error) return { error: getFriendlyErrorMessage(error) };
     const res = data as { success: boolean; error?: string } | null;
     if (!res?.success) return { error: res?.error || "Failed to delete liability atomically" };
 
     revalidatePath("/dashboard/liabilities");
     revalidatePath("/dashboard/ledger");
     revalidatePath("/dashboard/accounts");
-    return { success: true };
+    return { success: true, message: "Liability deleted successfully" };
   } catch (err) {
     console.error("Error in deleteLiability:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }

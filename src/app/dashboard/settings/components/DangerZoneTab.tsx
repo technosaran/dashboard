@@ -39,7 +39,7 @@ export default function DangerZoneTab({
           </div>
           <div>
             <h2 className="text-base font-bold text-rose-500">Danger Zone</h2>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-rose-500/60 mt-0.5">Destructive Actions</p>
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-rose-500/60 mt-0.5">Destructive Actions</p>
           </div>
         </div>
 

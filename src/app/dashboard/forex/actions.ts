@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase-server";
+import { getFriendlyErrorMessage } from "@/lib/action-utils";
 import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
@@ -16,7 +17,7 @@ async function ensureForexAccount(supabase: SupabaseClient<Database>, forexAccou
       .eq("user_id", userId)
       .maybeSingle();
 
-    if (existing) return { success: true };
+    if (existing) return { success: true, message: "Successful" };
 
     // If not, fetch standard account details
     const { data: stdAcc, error: fetchErr } = await supabase
@@ -50,9 +51,9 @@ async function ensureForexAccount(supabase: SupabaseClient<Database>, forexAccou
       return { error: "Failed to initialize forex link for standard account: " + insertErr.message };
     }
 
-    return { success: true };
+    return { success: true, message: "Successful" };
   } catch (err) {
-    return { error: err instanceof Error ? err.message : "Failed to bridge standard account to forex accounts" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }
 
@@ -78,13 +79,13 @@ export async function createForexAccount(data: {
       notes: data.notes || null,
     });
 
-    if (error) return { error: error.message };
+    if (error) return { error: getFriendlyErrorMessage(error) };
     revalidatePath("/dashboard/forex");
     revalidatePath("/dashboard");
-    return { success: true };
+    return { success: true, message: "Forex Account created successfully" };
   } catch (err) {
     console.error("Error in createForexAccount:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }
 
@@ -130,7 +131,7 @@ export async function forexDeposit(data: {
       p_notes: data.notes || null,
     });
 
-    if (error) return { error: error.message };
+    if (error) return { error: getFriendlyErrorMessage(error) };
     const result = res as { success: boolean; error?: string } | null;
     if (!result) return { error: "Failed to communicate with database" };
     if (!result.success) return { error: result.error || "Deposit failed" };
@@ -138,10 +139,10 @@ export async function forexDeposit(data: {
     revalidatePath("/dashboard/forex");
     revalidatePath("/dashboard/accounts");
     revalidatePath("/dashboard/ledger");
-    return { success: true };
+    return { success: true, message: "Forex Deposit successful" };
   } catch (err) {
     console.error("Error in forexDeposit:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }
 
@@ -187,7 +188,7 @@ export async function forexWithdraw(data: {
       p_notes: data.notes || null,
     });
 
-    if (error) return { error: error.message };
+    if (error) return { error: getFriendlyErrorMessage(error) };
     const result = res as { success: boolean; error?: string } | null;
     if (!result) return { error: "Failed to communicate with database" };
     if (!result.success) return { error: result.error || "Withdrawal failed" };
@@ -195,10 +196,10 @@ export async function forexWithdraw(data: {
     revalidatePath("/dashboard/forex");
     revalidatePath("/dashboard/accounts");
     revalidatePath("/dashboard/ledger");
-    return { success: true };
+    return { success: true, message: "Forex Withdraw successful" };
   } catch (err) {
     console.error("Error in forexWithdraw:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }
 
@@ -263,16 +264,16 @@ export async function logForexTrade(data: {
       p_notes: data.notes || null,
     });
 
-    if (error) return { error: error.message };
+    if (error) return { error: getFriendlyErrorMessage(error) };
     const result = res as { success: boolean; error?: string } | null;
     if (!result) return { error: "Failed to communicate with database" };
     if (!result.success) return { error: result.error || "Trade log failed" };
 
     revalidatePath("/dashboard/forex");
-    return { success: true };
+    return { success: true, message: "Log Forex Trade successful" };
   } catch (err) {
     console.error("Error in logForexTrade:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }
 
@@ -289,17 +290,17 @@ export async function deleteForexAccount(id: string) {
       p_entity_id: id
     });
 
-    if (error) return { error: error.message };
+    if (error) return { error: getFriendlyErrorMessage(error) };
     const res = data as { success: boolean; error?: string } | null;
     if (!res?.success) return { error: res?.error || "Failed to delete forex account atomically" };
 
     revalidatePath("/dashboard/forex");
     revalidatePath("/dashboard/ledger");
     revalidatePath("/dashboard/accounts");
-    return { success: true };
+    return { success: true, message: "Forex Account deleted successfully" };
   } catch (err) {
     console.error("Error in deleteForexAccount:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }
 
@@ -336,12 +337,12 @@ export async function updateForexAccount(id: string, data: {
       .eq("id", id)
       .eq("user_id", user.id);
 
-    if (error) return { error: error.message };
+    if (error) return { error: getFriendlyErrorMessage(error) };
     revalidatePath("/dashboard/forex");
-    return { success: true };
+    return { success: true, message: "Forex Account updated successfully" };
   } catch (err) {
     console.error("Error in updateForexAccount:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }
 
@@ -428,9 +429,9 @@ export async function updateForexTrade(id: string, data: {
     if (!result.success) return { error: result.error || "Failed to update trade atomically" };
 
     revalidatePath("/dashboard/forex");
-    return { success: true };
+    return { success: true, message: "Forex Trade updated successfully" };
   } catch (err) {
     console.error("Error in updateForexTrade:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }

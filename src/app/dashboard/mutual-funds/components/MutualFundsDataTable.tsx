@@ -89,7 +89,7 @@ export function AMCAvatar({ amcName, fundName }: { amcName: string; fundName: st
   }
 
   return (
-    <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${info.color} border border-white/20 flex items-center justify-center text-[10px] font-black text-white flex-shrink-0 shadow-md tracking-tighter`}>
+    <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${info.color} border border-white/20 flex items-center justify-center text-xs font-black text-white flex-shrink-0 shadow-md tracking-tighter`}>
       {info.badge}
     </div>
   );
@@ -127,7 +127,7 @@ export default function MutualFundsDataTable({ funds, onEdit, onBuy, onSell, onA
       <div className="w-full">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="border-b border-white/5 bg-black/40 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.15em] text-[--text-muted]">
+            <tr className="border-b border-white/5 bg-black/40 text-[0.5625rem] sm:text-xs font-black uppercase tracking-[0.15em] text-[--text-muted]">
               <th className="px-3 sm:px-4 py-3.5">Fund Name</th>
               <th className="px-2 sm:px-3 py-3.5 text-center">Type</th>
               <th className="px-2 sm:px-3 py-3.5 text-right">Units</th>
@@ -156,10 +156,10 @@ export default function MutualFundsDataTable({ funds, onEdit, onBuy, onSell, onA
                     <div className="flex items-center gap-2.5">
                       <AMCAvatar amcName={amc} fundName={fund.fund_name} />
                       <div className="min-w-0">
-                        <span className="text-xs sm:text-[13px] font-bold text-white block truncate max-w-[180px] lg:max-w-[260px]" title={fund.fund_name}>
+                        <span className="text-xs sm:text-sm font-bold text-white block truncate max-w-[180px] lg:max-w-[260px]" title={fund.fund_name}>
                           {fund.fund_name}
                         </span>
-                        <span className="text-[9px] font-black text-purple-400 bg-purple-500/10 border border-purple-500/20 px-1.5 py-0.5 rounded uppercase tracking-wider mt-1 inline-block">
+                        <span className="text-[0.5625rem] font-black text-purple-400 bg-purple-500/10 border border-purple-500/20 px-1.5 py-0.5 rounded uppercase tracking-wider mt-1 inline-block">
                           {fund.category || "Equity"}
                         </span>
                       </div>
@@ -168,7 +168,7 @@ export default function MutualFundsDataTable({ funds, onEdit, onBuy, onSell, onA
 
                   {/* Type */}
                   <td className="px-2 sm:px-3 py-3 text-center">
-                    <span className="text-[9px] font-black text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-1.5 sm:px-2 py-0.5 rounded uppercase tracking-wider">
+                    <span className="text-[0.5625rem] font-black text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-1.5 sm:px-2 py-0.5 rounded uppercase tracking-wider">
                       {fund.investment_type || "SIP"}
                     </span>
                   </td>
@@ -208,7 +208,7 @@ export default function MutualFundsDataTable({ funds, onEdit, onBuy, onSell, onA
                       }}
                     >
                       <span>{isPositive ? '+' : ''}₹{formatMoney(pnl)}</span>
-                      <span className="text-[10px] opacity-80 mt-0.5">{isPositive ? '+' : ''}{pnlPercent.toFixed(2)}%</span>
+                      <span className="text-xs opacity-80 mt-0.5">{isPositive ? '+' : ''}{pnlPercent.toFixed(2)}%</span>
                     </div>
                   </td>
 
@@ -224,13 +224,13 @@ export default function MutualFundsDataTable({ funds, onEdit, onBuy, onSell, onA
                       </button>
                       <button
                         onClick={() => onBuy(fund)}
-                        className="px-1.5 sm:px-2 py-1 rounded bg-[--accent-primary]/10 text-[--accent-primary] text-[9px] font-black uppercase tracking-wider cursor-pointer"
+                        className="px-1.5 sm:px-2 py-1 rounded bg-[--accent-primary]/10 text-[--accent-primary] text-[0.5625rem] font-black uppercase tracking-wider cursor-pointer"
                       >
                         Buy
                       </button>
                       <button
                         onClick={() => onSell(fund)}
-                        className="px-1.5 sm:px-2 py-1 rounded border border-rose-500/30 text-rose-400 text-[9px] font-black uppercase tracking-wider cursor-pointer"
+                        className="px-1.5 sm:px-2 py-1 rounded border border-rose-500/30 text-rose-400 text-[0.5625rem] font-black uppercase tracking-wider cursor-pointer"
                       >
                         Redeem
                       </button>
@@ -256,7 +256,7 @@ export default function MutualFundsDataTable({ funds, onEdit, onBuy, onSell, onA
                   }}
                 >
                   <span>{totalPnL >= 0 ? '+' : ''}₹{formatMoney(totalPnL)}</span>
-                  <span className="text-[10px] opacity-80 mt-0.5">{totalPnL >= 0 ? '+' : ''}{totalPnLPct.toFixed(2)}%</span>
+                  <span className="text-xs opacity-80 mt-0.5">{totalPnL >= 0 ? '+' : ''}{totalPnLPct.toFixed(2)}%</span>
                 </div>
               </td>
               <td className="px-3 sm:px-4 py-3.5"></td>

@@ -321,7 +321,7 @@ export default function TransactionsClient() {
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
         <div>
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white uppercase italic">Income &amp; Expenses</h1>
-          <p className="text-[10px] text-[--text-muted] font-black uppercase tracking-[0.4em] mt-2 ml-1">Cashflow &amp; Income/Expenses Log</p>
+          <p className="text-xs text-[--text-muted] font-black uppercase tracking-[0.4em] mt-2 ml-1">Cashflow &amp; Income/Expenses Log</p>
         </div>
         <div className="flex flex-wrap items-center gap-3 justify-start lg:justify-end w-full lg:w-auto">
           {/* Selectors Group */}
@@ -375,28 +375,28 @@ export default function TransactionsClient() {
       {/* Top Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="glass-card-static p-6 border-white/5">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Total Inflow</p>
+          <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Total Inflow</p>
           <p className="text-2xl md:text-3xl font-black text-emerald-400">₹{stats.totalIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-          <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Total Income</p>
+          <p className="text-[0.5625rem] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Total Income</p>
         </div>
         <div className="glass-card-static p-6 border-white/5">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Total Outflow</p>
+          <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Total Outflow</p>
           <p className="text-2xl md:text-3xl font-black text-rose-500">₹{stats.totalExpense.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-          <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Total Expenses</p>
+          <p className="text-[0.5625rem] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Total Expenses</p>
         </div>
         <div className="glass-card-static p-6 border-white/5">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Net Cashflow</p>
+          <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Net Cashflow</p>
           <p className={`text-2xl md:text-3xl font-black ${stats.netFlow >= 0 ? "text-emerald-400" : "text-rose-500"}`}>
             ₹{stats.netFlow.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
-          <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Margin</p>
+          <p className="text-[0.5625rem] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Margin</p>
         </div>
         <div className="glass-card-static p-6 border-white/5">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Savings Rate</p>
+          <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Savings Rate</p>
           <p className={`text-2xl md:text-3xl font-black ${stats.savingsRate >= 0 ? "text-emerald-400" : "text-rose-500"}`}>
             {stats.savingsRate.toFixed(1)}%
           </p>
-          <p className="text-[9px] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Efficiency</p>
+          <p className="text-[0.5625rem] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Efficiency</p>
         </div>
       </div>
 
@@ -462,12 +462,12 @@ export default function TransactionsClient() {
           <table className="w-full text-left border-collapse min-w-[800px]">
             <thead>
               <tr className="bg-black/40 border-b border-white/5">
-                <th className="px-5 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Date</th>
-                <th className="px-5 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Description</th>
-                <th className="px-5 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Category</th>
-                <th className="px-5 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Channel</th>
-                <th className="px-5 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] text-right">Value</th>
-                <th className="px-5 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] text-right">Action</th>
+                <th className="px-5 py-3 text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Date</th>
+                <th className="px-5 py-3 text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Description</th>
+                <th className="px-5 py-3 text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Category</th>
+                <th className="px-5 py-3 text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Channel</th>
+                <th className="px-5 py-3 text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] text-right">Value</th>
+                <th className="px-5 py-3 text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] text-right">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
@@ -487,10 +487,10 @@ export default function TransactionsClient() {
                   return (
                     <tr key={t.id}>
                       <td className="px-5 py-3.5 align-middle">
-                        <p className="text-[13px] font-bold text-white">
+                        <p className="text-sm font-bold text-white">
                           {t.date ? format(parseISO(t.date), "MMM d, yy") : "—"}
                         </p>
-                        <p className={`text-[9px] font-bold uppercase ${isIncome ? "text-emerald-400/80" : "text-rose-400/80"}`}>
+                        <p className={`text-[0.5625rem] font-bold uppercase ${isIncome ? "text-emerald-400/80" : "text-rose-400/80"}`}>
                           {isIncome ? "Inflow" : "Outflow"}
                         </p>
                       </td>
@@ -499,13 +499,13 @@ export default function TransactionsClient() {
                           <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-lg flex-shrink-0">
                             {icon}
                           </div>
-                          <p className="text-[13px] font-medium text-white truncate max-w-[200px]">
+                          <p className="text-sm font-medium text-white truncate max-w-[200px]">
                             {t.description}
                           </p>
                         </div>
                       </td>
                       <td className="px-5 py-3.5 align-middle">
-                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-[0.1em] border ${
+                        <span className={`px-2 py-0.5 rounded-full text-[0.5625rem] font-black uppercase tracking-[0.1em] border ${
                           isIncome 
                             ? "bg-emerald-500/5 border-emerald-500/10 text-emerald-400" 
                             : "bg-rose-500/5 border-rose-500/10 text-rose-400"
@@ -516,7 +516,7 @@ export default function TransactionsClient() {
                       <td className="px-5 py-3.5 align-middle">
                         <div className="flex items-center gap-2">
                           <div className={`w-1.5 h-1.5 rounded-full ${isIncome ? "bg-emerald-400" : "bg-rose-400"}`} />
-                          <span className="text-[11px] font-medium text-[--text-secondary]">{account?.name || "N/A"}</span>
+                          <span className="text-xs font-medium text-[--text-secondary]">{account?.name || "N/A"}</span>
                         </div>
                       </td>
                       <td className="px-5 py-3.5 align-middle text-right">
@@ -546,7 +546,7 @@ export default function TransactionsClient() {
         {/* Pagination Controls */}
         {filteredTransactions.length > pageSize && (
           <div className="flex items-center justify-between mt-4 px-5 py-3.5 border-t border-white/5">
-            <p className="text-[11px] text-[--text-muted] font-bold uppercase tracking-wider">
+            <p className="text-xs text-[--text-muted] font-bold uppercase tracking-wider">
               Showing {(currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, filteredTransactions.length)} of {filteredTransactions.length} txns
             </p>
             <div className="flex gap-2">
@@ -554,7 +554,7 @@ export default function TransactionsClient() {
                 type="button"
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="btn-secondary !h-8 !px-3 !text-[10px] font-black uppercase tracking-wider disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                className="btn-secondary !h-8 !px-3 !text-xs font-black uppercase tracking-wider disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
               >
                 Prev
               </button>
@@ -562,7 +562,7 @@ export default function TransactionsClient() {
                 type="button"
                 onClick={() => setCurrentPage(p => Math.min(Math.ceil(filteredTransactions.length / pageSize), p + 1))}
                 disabled={currentPage === Math.ceil(filteredTransactions.length / pageSize)}
-                className="btn-secondary !h-8 !px-3 !text-[10px] font-black uppercase tracking-wider disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                className="btn-secondary !h-8 !px-3 !text-xs font-black uppercase tracking-wider disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
               >
                 Next
               </button>
@@ -635,7 +635,7 @@ export default function TransactionsClient() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]" htmlFor="tx-description">
+                <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]" htmlFor="tx-description">
                   {modalType === "expense" ? "Merchant / Purpose" : "Source / Payor"}
                 </label>
                 <input 
@@ -653,7 +653,7 @@ export default function TransactionsClient() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]" htmlFor="tx-amount">
+                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]" htmlFor="tx-amount">
                     Amount (₹)
                   </label>
                   <input 
@@ -671,7 +671,7 @@ export default function TransactionsClient() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]" htmlFor="tx-date">
+                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]" htmlFor="tx-date">
                     Date
                   </label>
                   <input 
@@ -689,7 +689,7 @@ export default function TransactionsClient() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]" htmlFor="tx-category">
+                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]" htmlFor="tx-category">
                     Category
                   </label>
                   <select 
@@ -708,7 +708,7 @@ export default function TransactionsClient() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]" htmlFor="tx-account">
+                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]" htmlFor="tx-account">
                     Account
                   </label>
                   <select 
@@ -728,7 +728,7 @@ export default function TransactionsClient() {
               {formData.account_id && (() => {
                 const selectedAcc = accounts.find(a => a.id === formData.account_id);
                 return selectedAcc ? (
-                  <div className="p-2 rounded-lg bg-white/[0.02] border border-white/5 flex items-center justify-between text-[11px] text-[--text-secondary]">
+                  <div className="p-2 rounded-lg bg-white/[0.02] border border-white/5 flex items-center justify-between text-xs text-[--text-secondary]">
                     <span>Selected Balance</span>
                     <span className="font-bold text-white">
                       {selectedAcc.currency === 'USD' ? '$' : '₹'}{selectedAcc.balance.toLocaleString()}
@@ -740,7 +740,7 @@ export default function TransactionsClient() {
               {(modalType === "expense" || modalType === "income") && (
                 <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 space-y-3">
                   <div className="flex items-center justify-between">
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]" htmlFor="tx-recurring">
+                    <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]" htmlFor="tx-recurring">
                       Recurring {modalType === "expense" ? "Expense" : "Income"}
                     </label>
                     <input
@@ -755,12 +755,12 @@ export default function TransactionsClient() {
                   {formData.is_recurring && (
                     <div className="grid grid-cols-3 gap-3 pt-2 border-t border-white/5 animate-in fade-in duration-200">
                       <div className="space-y-1">
-                        <label className="text-[9px] font-bold text-[--text-muted]" htmlFor="tx-frequency">
+                        <label className="text-[0.5625rem] font-bold text-[--text-muted]" htmlFor="tx-frequency">
                           Frequency
                         </label>
                         <select
                           id="tx-frequency"
-                          className="input-premium !h-9 text-[11px] text-white"
+                          className="input-premium !h-9 text-xs text-white"
                           value={formData.recurrence_frequency}
                           onChange={e => setFormData({ ...formData, recurrence_frequency: e.target.value })}
                         >
@@ -772,7 +772,7 @@ export default function TransactionsClient() {
                       </div>
 
                       <div className="space-y-1">
-                        <label className="text-[9px] font-bold text-[--text-muted]" htmlFor="tx-rec-day">
+                        <label className="text-[0.5625rem] font-bold text-[--text-muted]" htmlFor="tx-rec-day">
                           Day Due
                         </label>
                         <input
@@ -780,20 +780,20 @@ export default function TransactionsClient() {
                           id="tx-rec-day"
                           min="1"
                           max="31"
-                          className="input-premium !h-9 text-[11px] text-white"
+                          className="input-premium !h-9 text-xs text-white"
                           value={formData.recurrence_day}
                           onChange={e => setFormData({ ...formData, recurrence_day: parseInt(e.target.value) || 1 })}
                         />
                       </div>
 
                       <div className="space-y-1">
-                        <label className="text-[9px] font-bold text-[--text-muted]" htmlFor="tx-end-date">
+                        <label className="text-[0.5625rem] font-bold text-[--text-muted]" htmlFor="tx-end-date">
                           End Date
                         </label>
                         <input
                           type="date"
                           id="tx-end-date"
-                          className="input-premium !h-9 text-[11px] text-white"
+                          className="input-premium !h-9 text-xs text-white"
                           value={formData.recurrence_end_date}
                           onChange={e => setFormData({ ...formData, recurrence_end_date: e.target.value })}
                         />

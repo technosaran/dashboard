@@ -360,7 +360,7 @@ export default function SettingsPage() {
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[--text-primary]">
             Settings
           </h1>
-          <p className="mt-1 text-[13px] md:text-sm text-[--text-secondary]">
+          <p className="mt-1 text-sm md:text-sm text-[--text-secondary]">
             Manage your account preferences, modules, and database defaults.
           </p>
         </div>

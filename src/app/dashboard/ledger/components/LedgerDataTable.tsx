@@ -103,7 +103,7 @@ export default function LedgerDataTable({
                   setIsReverting(null);
                 }}
                 disabled={isReverting === log.id}
-                className="text-[9px] font-black uppercase tracking-widest text-rose-500 bg-rose-500/5 border border-rose-500/10 px-2.5 py-1.5 rounded-lg disabled:opacity-50 cursor-pointer whitespace-nowrap"
+                className="text-[0.5625rem] font-black uppercase tracking-widest text-rose-500 bg-rose-500/5 border border-rose-500/10 px-2.5 py-1.5 rounded-lg disabled:opacity-50 cursor-pointer whitespace-nowrap"
               >
                 {isReverting === log.id ? "..." : "Revert"}
               </button>
@@ -121,7 +121,7 @@ export default function LedgerDataTable({
           const val = info.getValue();
           const label = getSourceLabel(val);
           return (
-            <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-[4px] bg-white/5 border border-white/10 text-gray-300 whitespace-nowrap">
+            <span className="text-[0.5625rem] font-black uppercase tracking-wider px-2 py-0.5 rounded-[4px] bg-white/5 border border-white/10 text-gray-300 whitespace-nowrap">
               {label}
             </span>
           );
@@ -159,7 +159,7 @@ export default function LedgerDataTable({
           const isDebit = isDebitLog(log);
           if (!isDebit || log.amount === null) return <div className="text-right text-xs text-gray-600">—</div>;
           return (
-            <div className="text-right text-[13px] font-bold text-rose-400 tabular-nums whitespace-nowrap">
+            <div className="text-right text-sm font-bold text-rose-400 tabular-nums whitespace-nowrap">
               {formatMoney(log.amount, getLogCurrency(log.account_id))}
             </div>
           );
@@ -173,7 +173,7 @@ export default function LedgerDataTable({
           const isCredit = isCreditLog(log);
           if (!isCredit || log.amount === null) return <div className="text-right text-xs text-gray-600">—</div>;
           return (
-            <div className="text-right text-[13px] font-bold text-emerald-400 tabular-nums whitespace-nowrap">
+            <div className="text-right text-sm font-bold text-emerald-400 tabular-nums whitespace-nowrap">
               {formatMoney(log.amount, getLogCurrency(log.account_id))}
             </div>
           );
@@ -185,7 +185,7 @@ export default function LedgerDataTable({
           const log = info.row.original;
           if (log.new_balance === null) return <div className="text-right text-xs text-gray-600">—</div>;
           return (
-            <div className="text-right text-[13px] font-bold text-white tabular-nums whitespace-nowrap">
+            <div className="text-right text-sm font-bold text-white tabular-nums whitespace-nowrap">
               {formatMoney(log.new_balance, getLogCurrency(log.account_id))}
             </div>
           );
@@ -222,7 +222,7 @@ export default function LedgerDataTable({
             <button
               type="button"
               onClick={onReset}
-              className="btn-secondary !h-10 !px-6 text-[10px] font-black uppercase tracking-widest rounded-xl"
+              className="btn-secondary !h-10 !px-6 text-xs font-black uppercase tracking-widest rounded-xl"
             >
               Restore Audit Stream
             </button>
@@ -240,7 +240,7 @@ export default function LedgerDataTable({
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id} className="border-b border-white/10">
                 {headerGroup.headers.map((header) => (
-                  <th key={header.id} className={`px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] ${getTableHeaderClass(header.column.id)}`}>
+                  <th key={header.id} className={`px-6 py-4 text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] ${getTableHeaderClass(header.column.id)}`}>
                     {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                   </th>
                 ))}
@@ -270,7 +270,7 @@ export default function LedgerDataTable({
             <article key={log.id} className="p-4 flex flex-col gap-3">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-[10px] font-mono text-[--text-muted] tracking-wider uppercase">
+                  <p className="text-xs font-mono text-[--text-muted] tracking-wider uppercase">
                     {log.created_at ? format(new Date(log.created_at), "MMM d, hh:mm a") : "—"}
                   </p>
                   <div className="flex items-center gap-2 mt-1">
@@ -290,7 +290,7 @@ export default function LedgerDataTable({
                     {log.amount !== null ? `${isDebit ? "-" : "+"}${formatMoney(log.amount, getLogCurrency(log.account_id))}` : "—"}
                   </p>
                   {log.new_balance !== null && (
-                    <p className="text-[9px] font-bold text-[--text-muted] mt-0.5 uppercase tracking-widest opacity-60">
+                    <p className="text-[0.5625rem] font-bold text-[--text-muted] mt-0.5 uppercase tracking-widest opacity-60">
                       Bal: {formatMoney(log.new_balance, getLogCurrency(log.account_id))}
                     </p>
                   )}
@@ -304,7 +304,7 @@ export default function LedgerDataTable({
                       setIsReverting(null);
                     }}
                     disabled={isReverting === log.id}
-                    className="text-[9px] font-black uppercase tracking-widest text-danger bg-danger/10 border border-danger/20 px-2 py-1 rounded disabled:opacity-50"
+                    className="text-[0.5625rem] font-black uppercase tracking-widest text-danger bg-danger/10 border border-danger/20 px-2 py-1 rounded disabled:opacity-50"
                   >
                     {isReverting === log.id ? "..." : "Revert"}
                   </button>
@@ -322,18 +322,18 @@ export default function LedgerDataTable({
             type="button"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
-            className="btn-secondary !h-10 !px-4 text-[10px] font-black uppercase tracking-widest rounded-xl disabled:opacity-40 disabled:cursor-not-allowed"
+            className="btn-secondary !h-10 !px-4 text-xs font-black uppercase tracking-widest rounded-xl disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Previous
           </button>
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">
+          <span className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">
             Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
           </span>
           <button
             type="button"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
-            className="btn-secondary !h-10 !px-4 text-[10px] font-black uppercase tracking-widest rounded-xl disabled:opacity-40 disabled:cursor-not-allowed"
+            className="btn-secondary !h-10 !px-4 text-xs font-black uppercase tracking-widest rounded-xl disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Next
           </button>

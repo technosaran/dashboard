@@ -76,19 +76,19 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                 <div className="w-12 h-12 rounded-xl bg-[--accent-primary]/10 border border-[--accent-primary]/20 flex items-center justify-center">
                   <span className="text-xl font-black text-[--accent-primary]">1</span>
                 </div>
-                <span className="text-[10px] font-bold text-[--text-muted] uppercase tracking-wider">Account</span>
+                <span className="text-xs font-bold text-[--text-muted] uppercase tracking-wider">Account</span>
               </div>
               <div className="flex flex-col items-center gap-2">
                 <div className="w-12 h-12 rounded-xl bg-success/10 border border-success/20 flex items-center justify-center">
                   <span className="text-xl font-black text-success">2</span>
                 </div>
-                <span className="text-[10px] font-bold text-[--text-muted] uppercase tracking-wider">Income</span>
+                <span className="text-xs font-bold text-[--text-muted] uppercase tracking-wider">Income</span>
               </div>
               <div className="flex flex-col items-center gap-2">
                 <div className="w-12 h-12 rounded-xl bg-danger/10 border border-danger/20 flex items-center justify-center">
                   <span className="text-xl font-black text-danger">3</span>
                 </div>
-                <span className="text-[10px] font-bold text-[--text-muted] uppercase tracking-wider">Expense</span>
+                <span className="text-xs font-bold text-[--text-muted] uppercase tracking-wider">Expense</span>
               </div>
             </div>
 

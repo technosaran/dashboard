@@ -45,7 +45,7 @@ export default function IntegrationsTab({
             ].map((s) => (
               <div
                 key={s.label}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[0.5625rem] font-black uppercase tracking-wider ${
                   s.active
                     ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400"
                     : "bg-white/5 border border-white/10 text-gray-500"
@@ -80,7 +80,7 @@ export default function IntegrationsTab({
                   </div>
                   <div>
                     <h3 className="text-base font-black text-white tracking-tight">SMS Auto-Sync</h3>
-                    <p className="text-[10px] text-cyan-400/70 font-semibold uppercase tracking-widest mt-0.5">
+                    <p className="text-xs text-cyan-400/70 font-semibold uppercase tracking-widest mt-0.5">
                       Android • MacroDroid
                     </p>
                   </div>
@@ -93,7 +93,7 @@ export default function IntegrationsTab({
                 {profile?.sms_sync_token && (
                   <>
                     <div className="space-y-2">
-                      <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[--text-muted]">
+                      <label className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[--text-muted]">
                         Webhook Endpoint
                       </label>
                       <div className="flex gap-2">
@@ -105,7 +105,7 @@ export default function IntegrationsTab({
                               ? `${window.location.origin}/api/transactions/sms-sync?token=${profile.sms_sync_token}`
                               : `/api/transactions/sms-sync?token=${profile.sms_sync_token}`
                           }
-                          className="flex-1 bg-black/50 border border-white/10 rounded-xl px-4 py-2.5 text-[10px] text-[--text-secondary] outline-none font-mono focus:border-cyan-500/30 transition-colors"
+                          className="flex-1 bg-black/50 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-[--text-secondary] outline-none font-mono focus:border-cyan-500/30 transition-colors"
                         />
                         <button
                           type="button"
@@ -128,7 +128,7 @@ export default function IntegrationsTab({
 
                     <div className="pt-4 border-t border-white/5">
                       <div className="flex items-center justify-between mb-3">
-                        <h4 className="text-[10px] font-black uppercase tracking-[0.15em] text-white">Quick Setup</h4>
+                        <h4 className="text-xs font-black uppercase tracking-[0.15em] text-white">Quick Setup</h4>
                         <button
                           type="button"
                           onClick={() => {
@@ -140,7 +140,7 @@ export default function IntegrationsTab({
                             navigator.clipboard.writeText(curl);
                             toast.success("cURL test command copied!");
                           }}
-                          className="text-[9px] font-bold text-cyan-400 hover:text-cyan-300 underline underline-offset-2 flex items-center gap-1 cursor-pointer"
+                          className="text-[0.5625rem] font-bold text-cyan-400 hover:text-cyan-300 underline underline-offset-2 flex items-center gap-1 cursor-pointer"
                         >
                           <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -159,10 +159,10 @@ export default function IntegrationsTab({
                             className="flex-1 p-3 rounded-xl bg-white/[0.02] border border-white/5 relative overflow-hidden hover:border-cyan-500/10 transition-colors"
                           >
                             <div className="absolute top-0 right-0 p-2 opacity-[0.06] text-3xl">{s.icon}</div>
-                            <span className="inline-flex w-5 h-5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[9px] font-black items-center justify-center mb-2">
+                            <span className="inline-flex w-5 h-5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[0.5625rem] font-black items-center justify-center mb-2">
                               {s.step}
                             </span>
-                            <p className="text-[10px] text-[--text-secondary] font-medium leading-relaxed">{s.text}</p>
+                            <p className="text-xs text-[--text-secondary] font-medium leading-relaxed">{s.text}</p>
                           </div>
                         ))}
                       </div>
@@ -180,7 +180,7 @@ export default function IntegrationsTab({
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                         <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
                       </span>
-                      <span className="text-[9px] font-black uppercase tracking-wider text-emerald-400">Live</span>
+                      <span className="text-[0.5625rem] font-black uppercase tracking-wider text-emerald-400">Live</span>
                     </div>
                     <button
                       type="button"
@@ -238,7 +238,7 @@ export default function IntegrationsTab({
                   </div>
                   <div>
                     <h3 className="text-base font-black text-white tracking-tight">Gmail Auto-Sync</h3>
-                    <p className="text-[10px] text-rose-400/70 font-semibold uppercase tracking-widest mt-0.5">
+                    <p className="text-xs text-rose-400/70 font-semibold uppercase tracking-widest mt-0.5">
                       Universal • OAuth 2.0
                     </p>
                   </div>
@@ -253,7 +253,7 @@ export default function IntegrationsTab({
                     <div className="flex-1 p-4 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between gap-4">
                       <div>
                         <p className="text-xs font-black text-white">Manual Inbox Scan</p>
-                        <p className="text-[10px] text-[--text-muted] mt-0.5">
+                        <p className="text-xs text-[--text-muted] mt-0.5">
                           Scan recent unread transaction alerts right now.
                         </p>
                       </div>
@@ -285,7 +285,7 @@ export default function IntegrationsTab({
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                         <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
                       </span>
-                      <span className="text-[9px] font-black uppercase tracking-wider text-emerald-400">Linked</span>
+                      <span className="text-[0.5625rem] font-black uppercase tracking-wider text-emerald-400">Linked</span>
                     </div>
                     <button
                       type="button"
@@ -345,7 +345,7 @@ export default function IntegrationsTab({
                   </div>
                   <div>
                     <h3 className="text-base font-black text-white tracking-tight">Telegram Bot</h3>
-                    <p className="text-[10px] text-blue-400/70 font-semibold uppercase tracking-widest mt-0.5">
+                    <p className="text-xs text-blue-400/70 font-semibold uppercase tracking-widest mt-0.5">
                       Universal • All Modules
                     </p>
                   </div>
@@ -366,17 +366,17 @@ export default function IntegrationsTab({
                           </span>
                           Bot is Active & Listening
                         </p>
-                        <p className="text-[10px] text-[--text-secondary] mt-1">
+                        <p className="text-xs text-[--text-secondary] mt-1">
                           Chat ID: <code className="font-mono text-emerald-400/80">{profile.telegram_chat_id}</code>
                         </p>
                       </div>
-                      <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-400 px-2.5 py-1 rounded-full border border-emerald-500/20">
+                      <span className="text-xs font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-400 px-2.5 py-1 rounded-full border border-emerald-500/20">
                         Universal Engine
                       </span>
                     </div>
 
                     <div>
-                      <p className="text-[10px] font-black uppercase tracking-[0.15em] text-[--text-muted] mb-2.5">
+                      <p className="text-xs font-black uppercase tracking-[0.15em] text-[--text-muted] mb-2.5">
                         Reports & Management Commands
                       </p>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">
@@ -392,13 +392,13 @@ export default function IntegrationsTab({
                             key={c.cmd}
                             className="p-2.5 rounded-lg bg-white/[0.02] border border-white/5 hover:border-cyan-500/20 transition-colors cursor-default"
                           >
-                            <code className={`text-[10px] font-mono font-bold ${c.color} block truncate`}>{c.cmd}</code>
-                            <span className="text-[9px] text-[--text-muted] uppercase tracking-wider font-bold">{c.desc}</span>
+                            <code className={`text-xs font-mono font-bold ${c.color} block truncate`}>{c.cmd}</code>
+                            <span className="text-[0.5625rem] text-[--text-muted] uppercase tracking-wider font-bold">{c.desc}</span>
                           </div>
                         ))}
                       </div>
 
-                      <p className="text-[10px] font-black uppercase tracking-[0.15em] text-[--text-muted] mb-2.5">
+                      <p className="text-xs font-black uppercase tracking-[0.15em] text-[--text-muted] mb-2.5">
                         Smart Logging & Transfers
                       </p>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
@@ -414,8 +414,8 @@ export default function IntegrationsTab({
                             key={c.cmd}
                             className="p-2.5 rounded-lg bg-white/[0.02] border border-white/5 hover:border-white/10 transition-colors cursor-default"
                           >
-                            <code className={`text-[10px] font-mono ${c.color} block truncate`}>{c.cmd}</code>
-                            <span className="text-[9px] text-[--text-muted] uppercase tracking-wider font-bold">{c.desc}</span>
+                            <code className={`text-xs font-mono ${c.color} block truncate`}>{c.cmd}</code>
+                            <span className="text-[0.5625rem] text-[--text-muted] uppercase tracking-wider font-bold">{c.desc}</span>
                           </div>
                         ))}
                       </div>
@@ -434,10 +434,10 @@ export default function IntegrationsTab({
                         </div>
                         <div className="flex-1 text-center md:text-left space-y-3">
                           <div>
-                            <p className="text-[10px] font-black uppercase tracking-[0.15em] text-blue-400 mb-1">
+                            <p className="text-xs font-black uppercase tracking-[0.15em] text-blue-400 mb-1">
                               Link via QR or Click
                             </p>
-                            <p className="text-[11px] text-[--text-secondary] leading-relaxed">
+                            <p className="text-xs text-[--text-secondary] leading-relaxed">
                               Scan with your phone camera, or click below to instantly link your Telegram.
                             </p>
                           </div>
@@ -455,7 +455,7 @@ export default function IntegrationsTab({
                         </div>
                       </div>
                     ) : (
-                      <p className="text-[11px] text-[--text-muted]">
+                      <p className="text-xs text-[--text-muted]">
                         Generate a link code to connect the official Telegram bot to this account.
                       </p>
                     )}
@@ -471,7 +471,7 @@ export default function IntegrationsTab({
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                         <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
                       </span>
-                      <span className="text-[9px] font-black uppercase tracking-wider text-emerald-400">Live</span>
+                      <span className="text-[0.5625rem] font-black uppercase tracking-wider text-emerald-400">Live</span>
                     </div>
                     <button
                       type="button"

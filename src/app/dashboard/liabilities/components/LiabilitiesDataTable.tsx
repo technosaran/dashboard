@@ -56,10 +56,10 @@ export default function LiabilitiesDataTable({ liabilities, onEdit, onDelete, on
                     strokeDashoffset={81.6 * (1 - pct / 100)}
                   />
                 </svg>
-                <span className="text-[9px] font-black text-rose-400 z-10">{pct.toFixed(0)}%</span>
+                <span className="text-[0.5625rem] font-black text-rose-400 z-10">{pct.toFixed(0)}%</span>
               </div>
               <div className="flex flex-col max-w-[200px]">
-                <p className="text-[13px] font-bold text-white group-hover:text-rose-400 transition-colors truncate">
+                <p className="text-sm font-bold text-white group-hover:text-rose-400 transition-colors truncate">
                   {info.getValue()}
                 </p>
               </div>
@@ -70,7 +70,7 @@ export default function LiabilitiesDataTable({ liabilities, onEdit, onDelete, on
       columnHelper.accessor("category", {
         header: "Category",
         cell: (info) => (
-          <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-[0.1em] bg-white/5 border border-white/10 text-[--text-muted]">
+          <span className="px-2 py-0.5 rounded-full text-[0.5625rem] font-black uppercase tracking-[0.1em] bg-white/5 border border-white/10 text-[--text-muted]">
             {info.getValue() || "Others"}
           </span>
         ),
@@ -90,8 +90,8 @@ export default function LiabilitiesDataTable({ liabilities, onEdit, onDelete, on
           return (
             <div className="w-full max-w-[150px]">
               <div className="flex justify-between items-center mb-1">
-                <span className="text-[11px] font-bold text-rose-400">₹{current.toLocaleString()}</span>
-                <span className="text-[9px] font-bold text-[--text-muted]">{pct.toFixed(0)}% paid</span>
+                <span className="text-xs font-bold text-rose-400">₹{current.toLocaleString()}</span>
+                <span className="text-[0.5625rem] font-bold text-[--text-muted]">{pct.toFixed(0)}% paid</span>
               </div>
               <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
                 <div 
@@ -107,37 +107,37 @@ export default function LiabilitiesDataTable({ liabilities, onEdit, onDelete, on
         header: "EMI",
         cell: (info) => {
           const val = info.getValue();
-          return val ? <span className="text-[12px] font-bold text-white">₹{Number(val).toLocaleString()}</span> : <span className="text-[11px] text-[--text-muted]">--</span>;
+          return val ? <span className="text-[12px] font-bold text-white">₹{Number(val).toLocaleString()}</span> : <span className="text-xs text-[--text-muted]">--</span>;
         },
       }),
       columnHelper.accessor("interest_rate", {
         header: "APR",
         cell: (info) => {
           const val = info.getValue();
-          return val ? <span className="text-[12px] font-bold text-white">{Number(val)}%</span> : <span className="text-[11px] text-[--text-muted]">--</span>;
+          return val ? <span className="text-[12px] font-bold text-white">{Number(val)}%</span> : <span className="text-xs text-[--text-muted]">--</span>;
         },
       }),
       columnHelper.accessor("due_date", {
         header: "Next Due",
         cell: (info) => {
           const val = info.getValue();
-          if (!val) return <span className="text-[11px] text-[--text-muted]">--</span>;
+          if (!val) return <span className="text-xs text-[--text-muted]">--</span>;
           try {
             const dateObj = parseISO(val);
             if (!isValid(dateObj)) {
-              return <span className="text-[11px] text-[--text-muted]">--</span>;
+              return <span className="text-xs text-[--text-muted]">--</span>;
             }
             const daysLeft = differenceInDays(dateObj, new Date());
             return (
               <div>
                 <p className="text-[12px] font-bold text-white">{format(dateObj, "MMM d, yyyy")}</p>
-                <p className={`text-[9px] font-black uppercase tracking-[0.08em] mt-0.5 ${daysLeft < 0 ? "text-rose-400" : daysLeft <= 7 ? "text-amber-400" : "text-[--text-muted]"}`}>
+                <p className={`text-[0.5625rem] font-black uppercase tracking-[0.08em] mt-0.5 ${daysLeft < 0 ? "text-rose-400" : daysLeft <= 7 ? "text-amber-400" : "text-[--text-muted]"}`}>
                   {daysLeft < 0 ? `${Math.abs(daysLeft)}d overdue` : `${daysLeft}d left`}
                 </p>
               </div>
             );
           } catch {
-            return <span className="text-[11px] text-[--text-muted]">--</span>;
+            return <span className="text-xs text-[--text-muted]">--</span>;
           }
         },
       }),
@@ -266,7 +266,7 @@ export default function LiabilitiesDataTable({ liabilities, onEdit, onDelete, on
                 key={filter.key}
                 type="button"
                 onClick={() => setRecordFilter(filter.key as typeof recordFilter)}
-                className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-[0.18em] border transition-colors ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-[0.18em] border transition-colors ${
                   recordFilter === filter.key
                     ? "bg-rose-500/15 border-rose-500/40 text-white"
                     : "bg-white/5 border-white/10 text-[--text-muted] hover:text-white"
@@ -285,7 +285,7 @@ export default function LiabilitiesDataTable({ liabilities, onEdit, onDelete, on
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id} className="border-b border-white/5 bg-black/40">
                 {headerGroup.headers.map((header) => (
-                  <th key={header.id} className={`px-5 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] whitespace-nowrap ${getTableHeaderClass(header.column.id)}`}>
+                  <th key={header.id} className={`px-5 py-3 text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] whitespace-nowrap ${getTableHeaderClass(header.column.id)}`}>
                     {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                   </th>
                 ))}

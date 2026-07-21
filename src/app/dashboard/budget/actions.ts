@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase-server";
+import { getFriendlyErrorMessage } from "@/lib/action-utils";
 import { revalidatePath } from "next/cache";
 
 export async function upsertBudget(formData: {
@@ -20,12 +21,12 @@ export async function upsertBudget(formData: {
         onConflict: "user_id,category,period_month,period_year"
       });
 
-    if (error) return { error: error.message };
+    if (error) return { error: getFriendlyErrorMessage(error) };
     revalidatePath("/dashboard/budget");
-    return { success: true };
+    return { success: true, message: "Upsert Budget successful" };
   } catch (err) {
     console.error("Error in upsertBudget:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }
 
@@ -41,15 +42,15 @@ export async function deleteBudget(id: string) {
       p_entity_id: id
     });
 
-    if (error) return { error: error.message };
+    if (error) return { error: getFriendlyErrorMessage(error) };
     const res = data as { success: boolean; error?: string } | null;
     if (!res?.success) return { error: res?.error || "Failed to delete budget atomically" };
 
     revalidatePath("/dashboard/budget");
-    return { success: true };
+    return { success: true, message: "Budget deleted successfully" };
   } catch (err) {
     console.error("Error in deleteBudget:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }
 
@@ -99,7 +100,7 @@ export async function copyPreviousMonthBudgets(
     return { success: true, count: sourceBudgets.length };
   } catch (err) {
     console.error("Error in copyPreviousMonthBudgets:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }
 
@@ -116,12 +117,12 @@ export async function clearAllBudgets(month: number, year: number) {
       .eq("period_month", month)
       .eq("period_year", year);
 
-    if (error) return { error: error.message };
+    if (error) return { error: getFriendlyErrorMessage(error) };
     revalidatePath("/dashboard/budget");
-    return { success: true };
+    return { success: true, message: "Clear All Budgets successful" };
   } catch (err) {
     console.error("Error in clearAllBudgets:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }
 
@@ -156,11 +157,11 @@ export async function setDefaultBudgets(month: number, year: number) {
         onConflict: "user_id,category,period_month,period_year"
       });
 
-    if (error) return { error: error.message };
+    if (error) return { error: getFriendlyErrorMessage(error) };
     revalidatePath("/dashboard/budget");
     return { success: true, count: defaultBudgets.length };
   } catch (err) {
     console.error("Error in setDefaultBudgets:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }

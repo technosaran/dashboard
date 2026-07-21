@@ -42,7 +42,7 @@ export function Tabs<T extends string = string>({
             {tab.label}
             {tab.badge !== undefined && (
               <span
-                className={`flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1 text-[9px] font-black ${
+                className={`flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1 text-[0.5625rem] font-black ${
                   active === tab.key ? "bg-white/20 text-white" : "bg-white/10 text-white"
                 }`}
               >
@@ -72,7 +72,7 @@ export function Tabs<T extends string = string>({
           {tab.label}
           {tab.badge !== undefined && (
             <span
-              className={`flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1 text-[9px] font-black ${
+              className={`flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1 text-[0.5625rem] font-black ${
                 active === tab.key ? "bg-[--accent-primary]/20 text-[--accent-primary]" : "bg-white/10 text-white"
               }`}
             >

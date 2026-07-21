@@ -178,7 +178,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
     await withLock(async () => {
       const res = await deleteIncome(deletingIncomeId);
       if (!res?.error) {
-        toast.success("Income entry reverted successfully");
+        toast.success(res.message || "Income entry reverted successfully");
         mutate();
       } else {
         toast.error(res.error);
@@ -321,7 +321,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
             <h1 className="text-2xl font-black text-[--text-primary]">Record Income</h1>
             <div className={`status-dot scale-70 ${isValidating ? 'animate-pulse bg-yellow-400' : 'bg-emerald-400'}`} />
           </div>
-          <Link href="/dashboard" className="text-[10px] font-black uppercase text-[--text-muted] no-underline bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg active:scale-95 transition-all">
+          <Link href="/dashboard" className="text-xs font-black uppercase text-[--text-muted] no-underline bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg active:scale-95 transition-all">
             Back
           </Link>
         </div>
@@ -329,29 +329,29 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
         <div className="glass-card-static p-5 border border-white/5 bg-white/[0.01]">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Description / Source</label>
+              <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Description / Source</label>
               <input type="text" required className="input-premium" placeholder="e.g. Monthly Salary" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} autoComplete="off" id="income-description" name="description" />
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Credit Amount</label>
+              <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Credit Amount</label>
               <input type="number" required className="input-premium" placeholder="0.00" value={formData.amount} onChange={e => setFormData({ ...formData, amount: e.target.value })} autoComplete="off" inputMode="decimal" id="income-amount" name="amount" />
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Income Stream</label>
+              <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Income Stream</label>
               <select className="input-premium" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} aria-label="Select income category" id="income-category" name="category">
                 {INCOME_CATEGORIES.map(c => <option key={c.label} value={c.label}>{c.label}</option>)}
               </select>
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Transaction Date</label>
+              <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Transaction Date</label>
               <input type="date" required className="input-premium" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} autoComplete="off" id="income-date" name="date" />
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Deposit into Account</label>
+              <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Deposit into Account</label>
               <select className="input-premium" value={formData.account_id} onChange={e => setFormData({ ...formData, account_id: e.target.value })} aria-label="Select credit account" id="income-account" name="account_id">
                 <option value="" disabled>Select Deposit Account</option>
                 {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
@@ -359,7 +359,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
               {formData.account_id && (() => {
                 const selectedAcc = accounts.find(a => a.id === formData.account_id);
                 return selectedAcc ? (
-                  <div className="mt-2 p-2 rounded-lg bg-white/[0.02] border border-white/5 flex items-center justify-between text-[11px] text-[--text-secondary]">
+                  <div className="mt-2 p-2 rounded-lg bg-white/[0.02] border border-white/5 flex items-center justify-between text-xs text-[--text-secondary]">
                     <span>Selected Balance</span>
                     <span className="font-bold text-white">
                       {selectedAcc.currency === 'USD' ? '$' : '₹'}{selectedAcc.balance.toLocaleString()}
@@ -386,7 +386,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[--text-primary]">Income Strategy</h1>
             <div className={`status-dot scale-90 ${isValidating ? 'animate-pulse bg-yellow-400' : 'bg-emerald-400 opacity-50'}`} />
           </div>
-          <p className="text-[--text-secondary] text-[13px] md:text-sm mt-1">Monitor your revenue streams and track financial growth.</p>
+          <p className="text-[--text-secondary] text-sm md:text-sm mt-1">Monitor your revenue streams and track financial growth.</p>
         </div>
          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
           {/* Desktop Month Switcher */}
@@ -401,7 +401,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
                   setSelectedMonth(prev => prev - 1);
                 }
               }}
-              className="px-2.5 py-1.5 rounded-lg text-[10px] font-black text-[--text-muted] hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+              className="px-2.5 py-1.5 rounded-lg text-xs font-black text-[--text-muted] hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
               aria-label="Previous month"
             >
               ◀
@@ -419,7 +419,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
                   setSelectedMonth(prev => prev + 1);
                 }
               }}
-              className="px-2.5 py-1.5 rounded-lg text-[10px] font-black text-[--text-muted] hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+              className="px-2.5 py-1.5 rounded-lg text-xs font-black text-[--text-muted] hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
               aria-label="Next month"
             >
               ▶
@@ -462,52 +462,52 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
         <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between group">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Net Throughput</p>
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-[--text-muted]">Net Throughput</p>
           <div className="mt-3 flex flex-col sm:flex-row sm:items-end justify-between gap-2">
             <h3 className="text-xl md:text-2xl font-black truncate text-success">
               +₹{stats.totalIncome.toLocaleString()}
             </h3>
-            <span className="text-[9px] w-fit px-2 py-0.5 rounded-full bg-success/10 text-success border border-success/20 font-bold">Lifetime</span>
+            <span className="text-[0.5625rem] w-fit px-2 py-0.5 rounded-full bg-success/10 text-success border border-success/20 font-bold">Lifetime</span>
           </div>
         </div>
         <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Monthly Flow</p>
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-[--text-muted]">Monthly Flow</p>
           <div className="mt-3 flex flex-col sm:flex-row sm:items-end justify-between gap-2">
             <h3 className="text-xl md:text-2xl font-black truncate text-success">
               +₹{stats.monthlyTotal.toLocaleString()}
             </h3>
-            <span className="text-[9px] w-fit px-2 py-0.5 rounded-full bg-[--accent-primary]/10 text-[--accent-primary] border border-[--accent-primary]/20 font-bold">{format(new Date(), "MMM")}</span>
+            <span className="text-[0.5625rem] w-fit px-2 py-0.5 rounded-full bg-[--accent-primary]/10 text-[--accent-primary] border border-[--accent-primary]/20 font-bold">{format(new Date(), "MMM")}</span>
           </div>
           {stats.lastYearTotal > 0 && (
             <div className="mt-2 flex items-center gap-2">
               <span className={`text-xs font-black ${stats.yoyChange >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                 {stats.yoyChange >= 0 ? '↑' : '↓'} {Math.abs(stats.yoyChange).toFixed(1)}%
               </span>
-              <span className="text-[9px] text-[--text-muted] font-bold">vs last year</span>
+              <span className="text-[0.5625rem] text-[--text-muted] font-bold">vs last year</span>
             </div>
           )}
         </div>
         <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Average</p>
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-[--text-muted]">Average</p>
           <div className="mt-3 flex flex-col sm:flex-row sm:items-end justify-between gap-2">
             <h3 className="text-xl md:text-2xl font-black truncate text-success">
               +₹{(incomes.length ? stats.totalIncome / incomes.length : 0).toLocaleString(undefined, {maximumFractionDigits: 0})}
             </h3>
-            <span className="text-[9px] w-fit px-2 py-0.5 rounded-full bg-white/5 text-[--text-muted]">{incomes.length} pts</span>
+            <span className="text-[0.5625rem] w-fit px-2 py-0.5 rounded-full bg-white/5 text-[--text-muted]">{incomes.length} pts</span>
           </div>
         </div>
         <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between bg-gradient-to-br from-sky-500/10 to-transparent">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--text-muted]">Primary Source</p>
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-[--text-muted]">Primary Source</p>
           <div className="mt-3 flex flex-col sm:flex-row sm:items-end justify-between gap-2">
             <h3 className="text-xl md:text-2xl font-black truncate">{stats.pieData[0]?.name || "None"}</h3>
-            <span className="text-[9px] w-fit px-2 py-0.5 rounded-full bg-white/5 text-[--text-muted]">Top</span>
+            <span className="text-[0.5625rem] w-fit px-2 py-0.5 rounded-full bg-white/5 text-[--text-muted]">Top</span>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 glass-card-static p-5 md:p-8">
-          <div className="flex items-center justify-between mb-8"><h3 className="text-sm font-bold uppercase tracking-[0.2em] text-[--text-muted]">Income Velocity</h3><div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-emerald-500" /><span className="text-[10px] font-bold text-[--text-muted]">Inbound Flow</span></div></div>
+          <div className="flex items-center justify-between mb-8"><h3 className="text-sm font-bold uppercase tracking-[0.2em] text-[--text-muted]">Income Velocity</h3><div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-emerald-500" /><span className="text-xs font-bold text-[--text-muted]">Inbound Flow</span></div></div>
           <div className="h-[280px] w-full">
             <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
               <AreaChart data={stats.trendData}>
@@ -529,13 +529,13 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
             </ResponsiveContainer>
           </div>
         </div>
-        <div className="glass-card-static p-5 md:p-8"><h3 className="text-sm font-bold uppercase tracking-[0.2em] text-[--text-muted] mb-8">Source Distribution</h3><div className="h-[240px] w-full"><ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}><PieChart><Pie data={stats.pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={8} dataKey="value">{stats.pieData.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} stroke="none" />))}</Pie><Tooltip contentStyle={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "12px" }} /></PieChart></ResponsiveContainer></div><div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2">{stats.pieData.slice(0, 4).map((item) => (<div key={item.name} className="flex items-center gap-2"><div className="w-2 h-2 rounded-full" style={{background: item.color}} /><span className="text-[10px] font-bold text-[--text-secondary] truncate">{item.name}</span></div>))}</div></div>
+        <div className="glass-card-static p-5 md:p-8"><h3 className="text-sm font-bold uppercase tracking-[0.2em] text-[--text-muted] mb-8">Source Distribution</h3><div className="h-[240px] w-full"><ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}><PieChart><Pie data={stats.pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={8} dataKey="value">{stats.pieData.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} stroke="none" />))}</Pie><Tooltip contentStyle={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "12px" }} /></PieChart></ResponsiveContainer></div><div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2">{stats.pieData.slice(0, 4).map((item) => (<div key={item.name} className="flex items-center gap-2"><div className="w-2 h-2 rounded-full" style={{background: item.color}} /><span className="text-xs font-bold text-[--text-secondary] truncate">{item.name}</span></div>))}</div></div>
       </div>
 
       <div className="glass-card-static overflow-hidden border-white/5">
         <div className="p-5 border-b border-white/5 bg-white/[0.01] flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3 w-full md:w-auto"><select className="input-premium py-1.5 px-2 text-xs w-28 md:w-32" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} aria-label="Filter by source" id="income-category-filter" name="categoryFilter"><option value="All">All Sources</option>{INCOME_CATEGORIES.map(c => <option key={c.label} value={c.label}>{c.label}</option>)}</select></div>
-          <div className="text-[10px] font-bold text-[--text-muted]">
+          <div className="text-xs font-bold text-[--text-muted]">
             Showing {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, totalFilteredCount)} of {totalFilteredCount} results
           </div>
         </div>
@@ -560,12 +560,12 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
             <table className="w-full text-left border-collapse min-w-[800px]">
               <thead>
                 <tr className="bg-white/[0.02] border-b border-white/5">
-                  <th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Date</th>
-                  <th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Source</th>
-                  <th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Segment</th>
-                  <th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] hidden sm:table-cell">Destination</th>
-                  <th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] text-right">Credit</th>
-                  <th className="px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] text-right">Action</th>
+                  <th className="px-4 md:px-6 py-4 text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Date</th>
+                  <th className="px-4 md:px-6 py-4 text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Source</th>
+                  <th className="px-4 md:px-6 py-4 text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Segment</th>
+                  <th className="px-4 md:px-6 py-4 text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] hidden sm:table-cell">Destination</th>
+                  <th className="px-4 md:px-6 py-4 text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] text-right">Credit</th>
+                  <th className="px-4 md:px-6 py-4 text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/10">
@@ -580,22 +580,22 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
                     return (
                       <tr key={inc.id} className="text-[--text-primary]">
                         <td className="px-4 md:px-6 py-5 whitespace-nowrap">
-                          <p className="text-[13px] font-bold">{inc.date ? format(parseISO(inc.date), "MMM d, yy") : "N/A"}</p>
-                          <p className="text-[9px] text-success/60 font-bold uppercase">Credit</p>
+                          <p className="text-sm font-bold">{inc.date ? format(parseISO(inc.date), "MMM d, yy") : "N/A"}</p>
+                          <p className="text-[0.5625rem] text-success/60 font-bold uppercase">Credit</p>
                         </td>
                         <td className="px-4 md:px-6 py-4">
                           <div className="flex items-center gap-3">
                             <CompanyLogo companyName={inc.description} category={inc.category} size={40} />
-                            <p className="text-[13px] font-medium group-hover:text-success transition-colors truncate max-w-[120px] md:max-w-none">{inc.description}</p>
+                            <p className="text-sm font-medium group-hover:text-success transition-colors truncate max-w-[120px] md:max-w-none">{inc.description}</p>
                           </div>
                         </td>
                         <td className="px-4 md:px-6 py-5 whitespace-nowrap">
-                          <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-[0.1em] bg-success/5 border border-success/10 text-success" style={{color: theme.color}}>{inc.category}</span>
+                          <span className="px-2 py-0.5 rounded-full text-[0.5625rem] font-black uppercase tracking-[0.1em] bg-success/5 border border-success/10 text-success" style={{color: theme.color}}>{inc.category}</span>
                         </td>
                         <td className="px-4 md:px-6 py-5 whitespace-nowrap hidden sm:table-cell">
                           <div className="flex items-center gap-2">
                             <div className="w-1.5 h-1.5 rounded-full bg-success shadow-[0_0_8px_rgba(0,184,148,0.5)]" />
-                            <span className="text-[11px] font-medium text-[--text-secondary]">{account?.name || "Direct Log"}</span>
+                            <span className="text-xs font-medium text-[--text-secondary]">{account?.name || "Direct Log"}</span>
                           </div>
                         </td>
                         <td className="px-4 md:px-6 py-4 whitespace-nowrap text-right">
@@ -637,23 +637,23 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
                     <div className="flex items-center gap-3">
                       <CompanyLogo companyName={inc.description} category={inc.category} size={40} />
                       <div className="flex flex-col min-w-0">
-                        <span className="text-[13px] font-bold text-[--text-primary] truncate">{inc.description}</span>
-                        <span className="text-[9px] text-[--text-muted] uppercase font-bold">{inc.date ? format(parseISO(inc.date), "MMM d, yyyy") : "—"}</span>
+                        <span className="text-sm font-bold text-[--text-primary] truncate">{inc.description}</span>
+                        <span className="text-[0.5625rem] text-[--text-muted] uppercase font-bold">{inc.date ? format(parseISO(inc.date), "MMM d, yyyy") : "—"}</span>
                       </div>
                     </div>
                     <div className="text-right flex flex-col items-end gap-1">
                       <span className="text-[15px] font-black text-success">+{getAccountCurrency(inc.account_id) === 'USD' ? '$' : '₹'}{Number(inc.amount).toLocaleString()}</span>
-                      <span className="px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-[0.1em] bg-success/5 border border-success/10 text-success" style={{color: theme.color}}>{inc.category}</span>
+                      <span className="px-2 py-0.5 rounded-full text-[0.5rem] font-black uppercase tracking-[0.1em] bg-success/5 border border-success/10 text-success" style={{color: theme.color}}>{inc.category}</span>
                     </div>
                   </div>
                   <div className="flex items-center justify-between border-t border-white/[0.03] pt-2 mt-1">
                     <div className="flex items-center gap-1.5">
                       <div className="w-1.5 h-1.5 rounded-full bg-success shadow-[0_0_8px_rgba(0,184,148,0.5)]" />
-                      <span className="text-[10px] font-medium text-[--text-secondary]">{account?.name || "Direct Log"}</span>
+                      <span className="text-xs font-medium text-[--text-secondary]">{account?.name || "Direct Log"}</span>
                     </div>
                     <button type="button" 
                       onClick={() => handleDeleteIncome(inc.id)}
-                      className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-[9px] font-bold text-[--text-secondary] active:bg-danger/10 active:text-danger"
+                      className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-[0.5625rem] font-bold text-[--text-secondary] active:bg-danger/10 active:text-danger"
                     >
                       Delete
                     </button>
@@ -742,7 +742,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
         >
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">
+              <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">
                 {formData.category === "Salary" ? "Company / Employer" : "Description / Source"}
               </label>
               <input autoFocus type="text" required className="input-premium py-2 text-xs" placeholder={formData.category === "Salary" ? "e.g. Google" : "e.g. Freelance Web Design"} value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} autoComplete="new-password" id="income-description" name="description" />
@@ -750,12 +750,12 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
             
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Amount</label>
+                <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Amount</label>
                 <input type="number" required className="input-premium py-2 text-xs" placeholder="0.00" value={formData.amount} onChange={e => setFormData({ ...formData, amount: e.target.value })} autoComplete="new-password" inputMode="decimal" id="income-amount" name="amount" />
               </div>
               
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Stream</label>
+                <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Stream</label>
                 <select className="input-premium py-2 text-xs" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} aria-label="Select income stream" id="income-category" name="category">
                   {INCOME_CATEGORIES.map(c => <option key={c.label} value={c.label} className="bg-[--bg-surface]">{c.label}</option>)}
                 </select>
@@ -764,14 +764,14 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
 
             {/* Category Quick Presets */}
             <div className="space-y-1.5">
-              <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Category Quick Presets</label>
+              <label className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[--text-muted]">Category Quick Presets</label>
               <div className="flex flex-wrap gap-2 pt-1">
                 {INCOME_CATEGORIES.map((c) => (
                   <button
                     key={c.label}
                     type="button"
                     onClick={() => setFormData({ ...formData, category: c.label })}
-                    className={`px-3 py-1.5 rounded-xl text-[10px] font-bold border transition-all cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
                       formData.category === c.label
                         ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 font-black shadow-[0_2px_10px_rgba(16,185,129,0.15)]"
                         : "bg-white/5 border-white/10 text-[--text-muted] hover:text-white"
@@ -786,12 +786,12 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
             
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Date</label>
+                <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Date</label>
                 <input type="date" required className="input-premium py-2 text-xs" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} autoComplete="new-password" id="income-date" name="date" />
               </div>
               
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]">Account</label>
+                <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Account</label>
                 <select className="input-premium py-2 text-xs" value={formData.account_id} onChange={e => setFormData({...formData, account_id: e.target.value})} aria-label="Select deposit account" id="income-account" name="account_id">
                   <option value="" disabled className="bg-[--bg-surface]">Select Deposit Account</option>
                   {accounts.map(acc => <option key={acc.id} value={acc.id} className="bg-[--bg-surface]">{acc.name}</option>)}
@@ -813,7 +813,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
 
             <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 space-y-3">
               <div className="flex items-center justify-between">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted]" htmlFor="inc-recurring">
+                <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]" htmlFor="inc-recurring">
                   Recurring Income
                 </label>
                 <input
@@ -828,12 +828,12 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
               {formData.is_recurring && (
                 <div className="grid grid-cols-3 gap-3 pt-2 border-t border-white/5 animate-in fade-in duration-200">
                   <div className="space-y-1.5">
-                    <label className="text-[9px] font-bold text-[--text-muted]" htmlFor="inc-frequency">
+                    <label className="text-[0.5625rem] font-bold text-[--text-muted]" htmlFor="inc-frequency">
                       Frequency
                     </label>
                     <select
                       id="inc-frequency"
-                      className="input-premium !h-9 text-[11px] text-white"
+                      className="input-premium !h-9 text-xs text-white"
                       value={formData.recurrence_frequency}
                       onChange={e => setFormData({ ...formData, recurrence_frequency: e.target.value })}
                     >
@@ -845,7 +845,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[9px] font-bold text-[--text-muted]" htmlFor="inc-rec-day">
+                    <label className="text-[0.5625rem] font-bold text-[--text-muted]" htmlFor="inc-rec-day">
                       Day Due
                     </label>
                     <input
@@ -853,20 +853,20 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
                       id="inc-rec-day"
                       min="1"
                       max="31"
-                      className="input-premium !h-9 text-[11px] text-white"
+                      className="input-premium !h-9 text-xs text-white"
                       value={formData.recurrence_day}
                       onChange={e => setFormData({ ...formData, recurrence_day: parseInt(e.target.value) || 1 })}
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[9px] font-bold text-[--text-muted]" htmlFor="inc-end-date">
+                    <label className="text-[0.5625rem] font-bold text-[--text-muted]" htmlFor="inc-end-date">
                       End Date
                     </label>
                     <input
                       type="date"
                       id="inc-end-date"
-                      className="input-premium !h-9 text-[11px] text-white"
+                      className="input-premium !h-9 text-xs text-white"
                       value={formData.recurrence_end_date}
                       onChange={e => setFormData({ ...formData, recurrence_end_date: e.target.value })}
                     />
@@ -876,7 +876,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
             </div>
             
             <div className="pt-2 mt-4">
-              <button type="submit" disabled={submitting} className="btn-primary w-full h-10 shadow-xl shadow-[--accent-primary]/20 text-[10px] font-black uppercase tracking-widest cursor-pointer">
+              <button type="submit" disabled={submitting} className="btn-primary w-full h-10 shadow-xl shadow-[--accent-primary]/20 text-xs font-black uppercase tracking-widest cursor-pointer">
                 {submitting ? "Deploying..." : "Finalize Entry"}
               </button>
             </div>

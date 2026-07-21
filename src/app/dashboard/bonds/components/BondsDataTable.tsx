@@ -53,15 +53,15 @@ export default function BondsDataTable({ bonds, onEdit, onAdd }: BondsDataTableP
         header: "Bond",
         cell: (info) => (
           <div className="flex flex-col max-w-[200px]">
-            <p className="text-[13px] font-bold text-white truncate" title={info.getValue()}>{info.getValue()}</p>
-            <p className="text-[9px] font-black uppercase tracking-widest text-[--text-muted] truncate">{info.row.original.issuer || "N/A"} • {info.row.original.isin || "N/A"}</p>
+            <p className="text-sm font-bold text-white truncate" title={info.getValue()}>{info.getValue()}</p>
+            <p className="text-[0.5625rem] font-black uppercase tracking-widest text-[--text-muted] truncate">{info.row.original.issuer || "N/A"} • {info.row.original.isin || "N/A"}</p>
           </div>
         ),
       }),
       columnHelper.accessor("bond_type", {
         header: "Type",
         cell: (info) => (
-          <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-[0.1em] bg-white/5 border border-white/10 text-[--text-muted]">
+          <span className="px-2 py-0.5 rounded-full text-[0.5625rem] font-black uppercase tracking-[0.1em] bg-white/5 border border-white/10 text-[--text-muted]">
             {info.getValue() || "N/A"}
           </span>
         ),
@@ -71,7 +71,7 @@ export default function BondsDataTable({ bonds, onEdit, onAdd }: BondsDataTableP
         cell: (info) => (
           <div className="flex flex-col">
             <span className="text-[12px] font-bold text-[--accent-primary]">{Number(info.getValue()).toFixed(2)}%</span>
-            <span className="text-[9px] text-[--text-muted]">{info.row.original.interest_frequency}</span>
+            <span className="text-[0.5625rem] text-[--text-muted]">{info.row.original.interest_frequency}</span>
           </div>
         ),
       }),
@@ -88,7 +88,7 @@ export default function BondsDataTable({ bonds, onEdit, onAdd }: BondsDataTableP
           return (
             <div className="flex flex-col">
               <span className="text-[12px] font-bold text-white">₹{invested.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-              <span className="text-[9px] text-[--text-muted]">{info.row.original.quantity} qty @ ₹{Number(info.row.original.purchase_price).toFixed(2)}</span>
+              <span className="text-[0.5625rem] text-[--text-muted]">{info.row.original.quantity} qty @ ₹{Number(info.row.original.purchase_price).toFixed(2)}</span>
             </div>
           );
         },
@@ -107,7 +107,7 @@ export default function BondsDataTable({ bonds, onEdit, onAdd }: BondsDataTableP
           return (
             <div className="flex flex-col">
               <span className="text-[12px] font-bold text-white">₹{current.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-              <span className="text-[9px] text-[--text-muted]">LTP: ₹{Number(info.row.original.current_price).toFixed(2)}</span>
+              <span className="text-[0.5625rem] text-[--text-muted]">LTP: ₹{Number(info.row.original.current_price).toFixed(2)}</span>
             </div>
           );
         },
@@ -121,7 +121,7 @@ export default function BondsDataTable({ bonds, onEdit, onAdd }: BondsDataTableP
           return (
             <div className="flex flex-col">
               <span className="text-[12px] text-white">{date ? format(parseISO(date), "MMM d, yyyy") : "N/A"}</span>
-              <span className="text-[9px] text-[--text-muted]">YTM: {info.row.original.ytm ? `${Number(info.row.original.ytm).toFixed(2)}%` : "N/A"}</span>
+              <span className="text-[0.5625rem] text-[--text-muted]">YTM: {info.row.original.ytm ? `${Number(info.row.original.ytm).toFixed(2)}%` : "N/A"}</span>
             </div>
           );
         },
@@ -266,12 +266,12 @@ export default function BondsDataTable({ bonds, onEdit, onAdd }: BondsDataTableP
                           <h3 className="text-sm font-bold text-white leading-tight truncate group-hover:text-purple-400 transition-colors" title={bond.bond_name}>
                             {bond.bond_name}
                           </h3>
-                          <p className="text-[10px] text-[--text-muted] mt-1 font-semibold truncate">
+                          <p className="text-xs text-[--text-muted] mt-1 font-semibold truncate">
                             {bond.issuer}
                           </p>
                         </div>
                       </div>
-                      <span className={`shrink-0 px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider border ${getRatingBadgeClass(bond.credit_rating)}`}>
+                      <span className={`shrink-0 px-2 py-0.5 rounded text-[0.5rem] font-black uppercase tracking-wider border ${getRatingBadgeClass(bond.credit_rating)}`}>
                         {bond.credit_rating || "Unrated"}
                       </span>
                     </div>
@@ -279,13 +279,13 @@ export default function BondsDataTable({ bonds, onEdit, onAdd }: BondsDataTableP
                     {/* Yield Banner (Wint App returns focus) */}
                     <div className="bg-white/[0.02] border border-white/5 rounded-xl p-3.5 flex justify-between items-center my-4">
                       <div>
-                        <p className="text-[8px] font-black uppercase tracking-widest text-gray-500">Yield to Maturity</p>
+                        <p className="text-[0.5rem] font-black uppercase tracking-widest text-gray-500">Yield to Maturity</p>
                         <p className="text-lg font-black text-purple-400 mt-0.5">
                           {bond.ytm ? `${Number(bond.ytm).toFixed(2)}% p.a.` : `${Number(bond.coupon_rate).toFixed(2)}% p.a.`}
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="text-[8px] font-black uppercase tracking-widest text-gray-500">Payout</p>
+                        <p className="text-[0.5rem] font-black uppercase tracking-widest text-gray-500">Payout</p>
                         <p className="text-xs font-bold text-white mt-1">
                           {bond.interest_frequency}
                         </p>
@@ -295,17 +295,17 @@ export default function BondsDataTable({ bonds, onEdit, onAdd }: BondsDataTableP
                     {/* Middle Segment: Stats Grid */}
                     <div className="grid grid-cols-3 gap-2 py-2 text-left">
                       <div>
-                        <p className="text-[8px] font-bold uppercase tracking-wider text-gray-500">Invested</p>
+                        <p className="text-[0.5rem] font-bold uppercase tracking-wider text-gray-500">Invested</p>
                         <p className="text-xs font-bold text-white mt-1">{fmt.format(invested)}</p>
-                        <p className="text-[8px] text-gray-500 mt-0.5">{bond.quantity} Units</p>
+                        <p className="text-[0.5rem] text-gray-500 mt-0.5">{bond.quantity} Units</p>
                       </div>
                       <div>
-                        <p className="text-[8px] font-bold uppercase tracking-wider text-gray-500">Current</p>
+                        <p className="text-[0.5rem] font-bold uppercase tracking-wider text-gray-500">Current</p>
                         <p className="text-xs font-bold text-white mt-1">{fmt.format(current)}</p>
-                        <p className="text-[8px] text-gray-500 mt-0.5">LTP: ₹{Number(bond.current_price).toFixed(0)}</p>
+                        <p className="text-[0.5rem] text-gray-500 mt-0.5">LTP: ₹{Number(bond.current_price).toFixed(0)}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-[8px] font-bold uppercase tracking-wider text-gray-500">Returns</p>
+                        <p className="text-[0.5rem] font-bold uppercase tracking-wider text-gray-500">Returns</p>
                         <div className="mt-1">
                           <PnLValue value={returns} size="sm" />
                         </div>
@@ -315,7 +315,7 @@ export default function BondsDataTable({ bonds, onEdit, onAdd }: BondsDataTableP
 
                   {/* Bottom Segment: Maturity progress and Edit button */}
                   <div className="mt-4 pt-3 border-t border-white/5">
-                    <div className="flex justify-between items-center text-[9px] text-gray-500 font-bold uppercase tracking-wider">
+                    <div className="flex justify-between items-center text-[0.5625rem] text-gray-500 font-bold uppercase tracking-wider">
                       <span>Matures: {bond.maturity_date ? format(parseISO(bond.maturity_date), "dd MMM yyyy") : "N/A"}</span>
                       <span className={daysLeft > 0 ? "text-indigo-400" : "text-emerald-400"}>
                         {daysLeft > 0 ? `${daysLeft} days left` : "Matured"}
@@ -332,7 +332,7 @@ export default function BondsDataTable({ bonds, onEdit, onAdd }: BondsDataTableP
 
                     {/* Hover edit layout */}
                     <div className="flex justify-between items-center mt-4 pt-3 border-t border-white/5">
-                      <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">ISIN: {bond.isin}</span>
+                      <span className="text-[0.5625rem] font-bold text-gray-500 uppercase tracking-widest">ISIN: {bond.isin}</span>
                       <button 
                         onClick={() => onEdit(bond)} 
                         className="bg-white/5 px-3 py-1 rounded text-xs font-bold border border-white/10 flex items-center gap-1 cursor-pointer"
@@ -354,7 +354,7 @@ export default function BondsDataTable({ bonds, onEdit, onAdd }: BondsDataTableP
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id} className="border-b border-white/5 bg-black/40">
                   {headerGroup.headers.map((header) => (
-                    <th key={header.id} className={`px-5 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-[--text-muted] whitespace-nowrap ${getTableHeaderClass(header.column.id)}`}>
+                    <th key={header.id} className={`px-5 py-3 text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] whitespace-nowrap ${getTableHeaderClass(header.column.id)}`}>
                       {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                     </th>
                   ))}

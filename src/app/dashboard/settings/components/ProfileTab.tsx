@@ -39,12 +39,12 @@ export default function ProfileTab({
           </div>
           <div>
             {isSyncing ? (
-              <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-[--text-muted]">
+              <div className="flex items-center gap-2 text-[0.5625rem] font-black uppercase tracking-widest text-[--text-muted]">
                 <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
                 <span className="hidden sm:inline">Encrypting...</span>
               </div>
             ) : lastSaved ? (
-              <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-emerald-400">
+              <div className="flex items-center gap-2 text-[0.5625rem] font-black uppercase tracking-widest text-emerald-400">
                 <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={3.5} viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" /></svg>
                 <span className="hidden sm:inline">Sync Verified</span>
               </div>
@@ -59,7 +59,7 @@ export default function ProfileTab({
           </div>
           <div>
             <h3 className="text-sm font-black text-white">{input || username || "Anonymous User"}</h3>
-            <p className="text-[10px] text-[--text-muted] font-bold uppercase tracking-wider mt-0.5">Active Account Session</p>
+            <p className="text-xs text-[--text-muted] font-bold uppercase tracking-wider mt-0.5">Active Account Session</p>
           </div>
         </div>
 

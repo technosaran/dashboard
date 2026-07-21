@@ -94,7 +94,7 @@ export default function ReportDownloadButton() {
     <div className="flex items-center">
       <button
         onClick={() => setIsOpen(true)}
-        className="btn-secondary !h-10 px-4 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border border-white/10 shadow-lg shadow-black/20 hover:border-cyan-500/50 hover:bg-cyan-500/10 hover:text-cyan-400 transition-all cursor-pointer"
+        className="btn-secondary !h-10 px-4 text-xs font-black uppercase tracking-widest flex items-center gap-2 border border-white/10 shadow-lg shadow-black/20 hover:border-cyan-500/50 hover:bg-cyan-500/10 hover:text-cyan-400 transition-all cursor-pointer"
         title="Custom financial statement and particulars export"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -112,7 +112,7 @@ export default function ReportDownloadButton() {
           <div className="space-y-6 text-white py-2">
             {/* Format Selection */}
             <div>
-              <label className="text-[11px] font-black uppercase tracking-wider text-[--text-muted] block mb-2.5">
+              <label className="text-xs font-black uppercase tracking-wider text-[--text-muted] block mb-2.5">
                 Export Format
               </label>
               <div className="grid grid-cols-2 gap-3">
@@ -128,7 +128,7 @@ export default function ReportDownloadButton() {
                   <span className="text-xl">📄</span>
                   <div className="text-left">
                     <div className="text-xs font-bold">PDF Report</div>
-                    <div className="text-[10px] opacity-75 font-normal">Formatted executive statement</div>
+                    <div className="text-xs opacity-75 font-normal">Formatted executive statement</div>
                   </div>
                 </button>
                 <button
@@ -143,7 +143,7 @@ export default function ReportDownloadButton() {
                   <span className="text-xl">📊</span>
                   <div className="text-left">
                     <div className="text-xs font-bold">CSV Spreadsheet</div>
-                    <div className="text-[10px] opacity-75 font-normal">Raw data tables for analysis</div>
+                    <div className="text-xs opacity-75 font-normal">Raw data tables for analysis</div>
                   </div>
                 </button>
               </div>
@@ -152,14 +152,14 @@ export default function ReportDownloadButton() {
             {/* Date Range Selection */}
             <div>
               <div className="flex items-center justify-between mb-2.5">
-                <label className="text-[11px] font-black uppercase tracking-wider text-[--text-muted]">
+                <label className="text-xs font-black uppercase tracking-wider text-[--text-muted]">
                   Statement Period / Date Range
                 </label>
                 <div className="flex bg-white/5 rounded-lg p-0.5 border border-white/10">
                   <button
                     type="button"
                     onClick={() => setRangeMode("monthly")}
-                    className={`px-2.5 py-1 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                    className={`px-2.5 py-1 rounded text-xs font-bold transition-all cursor-pointer ${
                       rangeMode === "monthly"
                         ? "bg-[--accent-primary] text-white shadow"
                         : "text-[--text-muted] hover:text-white"
@@ -170,7 +170,7 @@ export default function ReportDownloadButton() {
                   <button
                     type="button"
                     onClick={() => setRangeMode("custom")}
-                    className={`px-2.5 py-1 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                    className={`px-2.5 py-1 rounded text-xs font-bold transition-all cursor-pointer ${
                       rangeMode === "custom"
                         ? "bg-[--accent-primary] text-white shadow"
                         : "text-[--text-muted] hover:text-white"
@@ -184,7 +184,7 @@ export default function ReportDownloadButton() {
               {rangeMode === "monthly" ? (
                 <div className="grid grid-cols-2 gap-3 bg-white/[0.02] p-3.5 rounded-xl border border-white/10">
                   <div>
-                    <label className="text-[10px] font-semibold text-[--text-muted] block mb-1">Month</label>
+                    <label className="text-xs font-semibold text-[--text-muted] block mb-1">Month</label>
                     <select
                       value={month}
                       onChange={(e) => setMonth(Number(e.target.value))}
@@ -198,7 +198,7 @@ export default function ReportDownloadButton() {
                     </select>
                   </div>
                   <div>
-                    <label className="text-[10px] font-semibold text-[--text-muted] block mb-1">Year</label>
+                    <label className="text-xs font-semibold text-[--text-muted] block mb-1">Year</label>
                     <select
                       value={year}
                       onChange={(e) => setYear(Number(e.target.value))}
@@ -215,7 +215,7 @@ export default function ReportDownloadButton() {
               ) : (
                 <div className="grid grid-cols-2 gap-3 bg-white/[0.02] p-3.5 rounded-xl border border-white/10">
                   <div>
-                    <label className="text-[10px] font-semibold text-[--text-muted] block mb-1">Start Date</label>
+                    <label className="text-xs font-semibold text-[--text-muted] block mb-1">Start Date</label>
                     <input
                       type="date"
                       value={startDate}
@@ -224,7 +224,7 @@ export default function ReportDownloadButton() {
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] font-semibold text-[--text-muted] block mb-1">End Date</label>
+                    <label className="text-xs font-semibold text-[--text-muted] block mb-1">End Date</label>
                     <input
                       type="date"
                       value={endDate}
@@ -239,14 +239,14 @@ export default function ReportDownloadButton() {
             {/* Particulars Selection */}
             <div>
               <div className="flex items-center justify-between mb-2.5">
-                <label className="text-[11px] font-black uppercase tracking-wider text-[--text-muted]">
+                <label className="text-xs font-black uppercase tracking-wider text-[--text-muted]">
                   Select Particulars / Sections ({selectedModules.size}/{AVAILABLE_MODULES.length})
                 </label>
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
                     onClick={() => handleSelectAll(true)}
-                    className="text-[10px] font-bold text-cyan-400 hover:underline cursor-pointer"
+                    className="text-xs font-bold text-cyan-400 hover:underline cursor-pointer"
                   >
                     Select All
                   </button>
@@ -254,7 +254,7 @@ export default function ReportDownloadButton() {
                   <button
                     type="button"
                     onClick={() => handleSelectAll(false)}
-                    className="text-[10px] font-bold text-rose-400 hover:underline cursor-pointer"
+                    className="text-xs font-bold text-rose-400 hover:underline cursor-pointer"
                   >
                     Deselect All
                   </button>
@@ -284,7 +284,7 @@ export default function ReportDownloadButton() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="text-xs font-bold text-white truncate">{module.label}</div>
-                        <div className="text-[10px] text-[--text-muted] leading-tight mt-0.5 line-clamp-1">{module.desc}</div>
+                        <div className="text-xs text-[--text-muted] leading-tight mt-0.5 line-clamp-1">{module.desc}</div>
                       </div>
                     </div>
                   );

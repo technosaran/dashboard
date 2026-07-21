@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase-server";
+import { getFriendlyErrorMessage } from "@/lib/action-utils";
 import { revalidatePath } from "next/cache";
 import { parseToISODate } from "@/lib/utils";
 
@@ -84,10 +85,10 @@ export async function addIncome(formData: {
     revalidatePath("/dashboard/accounts");
     revalidatePath("/dashboard/ledger");
     
-    return { success: true };
+    return { success: true, message: "Income added successfully" };
   } catch (err) {
     console.error("Error in addIncome:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }
 
@@ -152,9 +153,9 @@ export async function deleteIncome(id: string) {
     revalidatePath("/dashboard/accounts");
     revalidatePath("/dashboard/ledger");
 
-    return { success: true };
+    return { success: true, message: "Income deleted successfully" };
   } catch (err) {
     console.error("Error in deleteIncome:", err);
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" };
+    return { error: getFriendlyErrorMessage(err) };
   }
 }

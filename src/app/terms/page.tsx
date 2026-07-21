@@ -18,7 +18,7 @@ export default function TermsOfServicePage() {
             </div>
             <div>
               <span className="text-lg font-black text-white tracking-tight">arthaX</span>
-              <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest -mt-0.5">Terms of Service</span>
+              <span className="block text-xs font-bold text-gray-400 uppercase tracking-widest -mt-0.5">Terms of Service</span>
             </div>
           </Link>
           <Link

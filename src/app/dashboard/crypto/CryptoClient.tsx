@@ -101,7 +101,11 @@ export default function CryptoClient() {
   useEffect(() => {
     if (activeHoldings.length > 0 && !refreshedRef.current) {
       refreshedRef.current = true;
-      handleRefreshPrices();
+      const today = new Date().toISOString().split("T")[0];
+      if (localStorage.getItem("last_crypto_refresh") !== today) {
+        localStorage.setItem("last_crypto_refresh", today);
+        handleRefreshPrices();
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeHoldings.length]);
@@ -387,7 +391,7 @@ export default function CryptoClient() {
                       </PieChart>
                     </ResponsiveContainer>
                     <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                      <span className="text-gray-500 text-[10px] uppercase tracking-widest font-bold">Total Portfolio</span>
+                      <span className="text-gray-500 text-xs uppercase tracking-widest font-bold">Total Portfolio</span>
                       <span className="text-white text-3xl font-extrabold mt-1">
                         {formatMoney(stats.totalCurrent)}
                       </span>
@@ -403,38 +407,38 @@ export default function CryptoClient() {
               {/* Right: Quick stats */}
               <div className="flex flex-col gap-4">
                 <div className="bg-[var(--bg-card)] border border-white/5 rounded-2xl p-6 flex flex-col justify-between shadow-sm">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Total Value</span>
+                  <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Total Value</span>
                   <div>
                     <h2 className="text-3xl font-extrabold text-white mt-1">{formatMoney(stats.totalCurrent)}</h2>
-                    <span className="text-[10px] text-gray-400">Current Market Valuation (USD)</span>
+                    <span className="text-xs text-gray-400">Current Market Valuation (USD)</span>
                   </div>
                 </div>
 
                 <div className="bg-[var(--bg-card)] border border-white/5 rounded-2xl p-6 flex flex-col justify-between shadow-sm">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Invested Value</span>
+                  <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Invested Value</span>
                   <div>
                     <h2 className="text-2xl font-black text-gray-300 mt-1">{formatMoney(stats.totalInvested)}</h2>
-                    <span className="text-[10px] text-gray-400">Total Purchase Cost Basis</span>
+                    <span className="text-xs text-gray-400">Total Purchase Cost Basis</span>
                   </div>
                 </div>
 
                 <div className="bg-[var(--bg-card)] border border-white/5 rounded-2xl p-6 flex flex-col justify-between shadow-sm">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Total Unrealized P&L</span>
+                  <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Total Unrealized P&L</span>
                   <div>
                     <h2 className={`text-2xl font-black mt-1 ${stats.totalPnL >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
                       {stats.totalPnL >= 0 ? "+" : ""}{formatMoney(stats.totalPnL)} ({stats.totalPnLPercent.toFixed(2)}%)
                     </h2>
-                    <span className="text-[10px] text-gray-400">All-Time Net Returns</span>
+                    <span className="text-xs text-gray-400">All-Time Net Returns</span>
                   </div>
                 </div>
 
                 <div className="bg-[var(--bg-card)] border border-white/5 rounded-2xl p-6 flex flex-col justify-between shadow-sm">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">24h Day Change</span>
+                  <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">24h Day Change</span>
                   <div>
                     <h2 className={`text-2xl font-black mt-1 ${stats.dayPnL >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
                       {stats.dayPnL >= 0 ? "+" : ""}{formatMoney(stats.dayPnL)} ({stats.dayPnLPercent.toFixed(2)}%)
                     </h2>
-                    <span className="text-[10px] text-gray-400">{"Today's Valuation Shift"}</span>
+                    <span className="text-xs text-gray-400">{"Today's Valuation Shift"}</span>
                   </div>
                 </div>
               </div>
@@ -447,7 +451,7 @@ export default function CryptoClient() {
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="border-b border-white/5 text-[10px] uppercase font-bold text-gray-400 tracking-wider">
+                    <tr className="border-b border-white/5 text-xs uppercase font-bold text-gray-400 tracking-wider">
                       <th className="px-6 py-4">Asset</th>
                       <th className="px-6 py-4 text-right">Qty</th>
                       <th className="px-6 py-4 text-right">Avg Cost</th>
@@ -473,7 +477,7 @@ export default function CryptoClient() {
                           <td className="px-6 py-4 font-bold">
                             <div className="flex items-center gap-2">
                               <span className="p-1 bg-white/5 rounded border border-white/10 uppercase">{h.symbol}</span>
-                              <span className="text-gray-400 text-[10px]">{h.name}</span>
+                              <span className="text-gray-400 text-xs">{h.name}</span>
                             </div>
                           </td>
                           <td className="px-6 py-4 text-right font-medium">{h.quantity}</td>
@@ -489,13 +493,13 @@ export default function CryptoClient() {
                             <div className="flex items-center justify-center gap-2">
                               <button
                                 onClick={() => handleEdit(h)}
-                                className="text-[10px] bg-sky-500/10 text-sky-400 hover:bg-sky-500 hover:text-white px-2.5 py-1 rounded transition-colors font-bold uppercase"
+                                className="text-xs bg-sky-500/10 text-sky-400 hover:bg-sky-500 hover:text-white px-2.5 py-1 rounded transition-colors font-bold uppercase"
                               >
                                 Modify
                               </button>
                               <button
                                 onClick={() => handleDelete(h.id)}
-                                className="text-[10px] bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white px-2.5 py-1 rounded transition-colors font-bold uppercase"
+                                className="text-xs bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white px-2.5 py-1 rounded transition-colors font-bold uppercase"
                               >
                                 Delete
                               </button>
@@ -523,7 +527,7 @@ export default function CryptoClient() {
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="border-b border-white/5 text-[10px] uppercase font-bold text-gray-400 tracking-wider">
+                    <tr className="border-b border-white/5 text-xs uppercase font-bold text-gray-400 tracking-wider">
                       <th className="px-6 py-4">Asset</th>
                       <th className="px-6 py-4">Date</th>
                       <th className="px-6 py-4 text-right">Quantity</th>
@@ -540,7 +544,7 @@ export default function CryptoClient() {
                           <td className="px-6 py-4 font-bold">
                             <div className="flex items-center gap-2">
                               <span className="p-1 bg-white/5 rounded border border-white/10 uppercase">{h.symbol}</span>
-                              <span className="text-gray-400 text-[10px]">{h.name}</span>
+                              <span className="text-gray-400 text-xs">{h.name}</span>
                             </div>
                           </td>
                           <td className="px-6 py-4 text-gray-400">
@@ -582,7 +586,7 @@ export default function CryptoClient() {
               } text-white`}>
                 <div>
                   <span className="text-base font-bold uppercase tracking-wider">{editingId ? "Modify" : formData.trade_type === "buy" ? "Buy" : "Sell"} {formData.symbol || "Asset"}</span>
-                  <span className="ml-2 text-[10px] bg-white/20 px-1.5 py-0.5 rounded font-black tracking-widest">USDT</span>
+                  <span className="ml-2 text-xs bg-white/20 px-1.5 py-0.5 rounded font-black tracking-widest">USDT</span>
                 </div>
                 <div className="text-right">
                   <span className="text-xs text-white/70">LTP</span>
@@ -595,14 +599,14 @@ export default function CryptoClient() {
                 {/* Popular Coin Chips */}
                 {!editingId && (
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Popular Coins</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Popular Coins</label>
                     <div className="flex flex-wrap gap-1.5">
                       {POPULAR_COINS.map((c) => (
                         <button
                           key={c.symbol}
                           type="button"
                           onClick={() => handleCoinChipClick(c)}
-                          className={`text-[10px] px-2.5 py-1 rounded-lg border font-semibold transition-all uppercase ${
+                          className={`text-xs px-2.5 py-1 rounded-lg border font-semibold transition-all uppercase ${
                             formData.symbol.toUpperCase() === c.symbol
                               ? "bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] border-[var(--accent-primary)]/30"
                               : "bg-white/[0.02] border-white/5 text-gray-400 hover:text-white hover:bg-white/5"
@@ -620,7 +624,7 @@ export default function CryptoClient() {
                   
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Coin Symbol</label>
+                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Coin Symbol</label>
                       <div className="relative">
                         <input
                           required
@@ -635,7 +639,7 @@ export default function CryptoClient() {
                             type="button"
                             onClick={() => handleFetchSinglePrice(formData.symbol)}
                             disabled={isFetchingSingle}
-                            className="absolute right-2 top-1.5 text-[8px] bg-[var(--accent-primary)]/10 hover:bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] font-bold px-1.5 py-0.5 rounded uppercase transition-colors"
+                            className="absolute right-2 top-1.5 text-[0.5rem] bg-[var(--accent-primary)]/10 hover:bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] font-bold px-1.5 py-0.5 rounded uppercase transition-colors"
                           >
                             {isFetchingSingle ? "..." : "↻ Live"}
                           </button>
@@ -644,7 +648,7 @@ export default function CryptoClient() {
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Coin Name</label>
+                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Coin Name</label>
                       <input
                         required
                         type="text"
@@ -658,7 +662,7 @@ export default function CryptoClient() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Quantity</label>
+                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Quantity</label>
                       <input
                         required
                         type="number"
@@ -671,7 +675,7 @@ export default function CryptoClient() {
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Buy / Execution Price</label>
+                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Buy / Execution Price</label>
                       <input
                         required
                         type="number"
@@ -686,7 +690,7 @@ export default function CryptoClient() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">LTP (Latest price)</label>
+                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">LTP (Latest price)</label>
                       <input
                         required
                         type="number"
@@ -699,7 +703,7 @@ export default function CryptoClient() {
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Trading Fees (USDT)</label>
+                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Trading Fees (USDT)</label>
                       <input
                         type="number"
                         step="any"
@@ -714,7 +718,7 @@ export default function CryptoClient() {
                   {/* Channeling bank account drop-down list */}
                   {!editingId && (
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Channeling Account</label>
+                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Channeling Account</label>
                       <select
                         required
                         className="w-full bg-[#202020] border border-white/10 rounded px-3 py-2 text-xs text-white outline-none focus:border-[#2185d0]"
@@ -732,7 +736,7 @@ export default function CryptoClient() {
                   )}
 
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Date</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Date</label>
                     <input
                       type="date"
                       className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]"
@@ -742,7 +746,7 @@ export default function CryptoClient() {
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Notes</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Notes</label>
                     <textarea
                       className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0] resize-none h-16"
                       placeholder="Optional notes..."
