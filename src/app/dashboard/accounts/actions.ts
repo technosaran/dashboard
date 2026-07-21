@@ -122,25 +122,7 @@ export async function deleteAccount(id: string) {
   }
 }
 
-export async function getAccounts() {
-  try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { data: null, error: "Unauthorized" };
 
-    const { data, error } = await supabase
-      .from("accounts")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
-
-    if (error) return { data: null, error: error.message };
-    return { data, error: null };
-  } catch (err) {
-    console.error("Error in getAccounts:", err);
-    return { data: null, error: err instanceof Error ? err.message : "An unexpected error occurred" };
-  }
-}
 
 type TransferData = {
   from_account_id: string;

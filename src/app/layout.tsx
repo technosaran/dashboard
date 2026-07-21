@@ -87,7 +87,7 @@ export default async function RootLayout({
         {/* Optimized Static Background (Removed heavy animated blurs) */}
         <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none bg-[--bg-base]">
           {/* Subtle static gradient instead of massive animating blurs */}
-          <div className="absolute top-0 left-0 right-0 h-[300px] bg-gradient-to-b from-[rgba(14,165,233,0.05)] to-transparent" />
+          <div className="absolute top-0 left-0 right-0 h-[300px] bg-gradient-to-b from-[rgba(139,92,246,0.05)] to-transparent" />
         </div>
 
         <PwaSecurityManager />
