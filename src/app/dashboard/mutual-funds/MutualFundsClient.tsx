@@ -503,7 +503,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
 
               <form onSubmit={handleAddMF} className="space-y-4">
                 {/* Search Fund (Only when adding from scratch) */}
-                {!formData.scheme_code && (
+                {!formData.scheme_code ? (
                   <div className="space-y-2 relative">
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Search Fund</label>
                     <div className="relative">
@@ -549,29 +549,32 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                       </div>
                     )}
                   </div>
+                ) : (
+                  /* Selected Fund Card */
+                  <div className="bg-white/[0.02] border border-white/5 p-3.5 rounded-xl flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl p-2 bg-white/[0.02] rounded-xl border border-white/5">📈</span>
+                      <div>
+                        <p className="text-xs font-bold text-white">{formData.scheme_code}</p>
+                        <p className="text-xs text-gray-500 font-medium">{formData.fund_name}</p>
+                      </div>
+                    </div>
+                    {!editingId && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormData(prev => ({ ...prev, scheme_code: "", fund_name: "" }));
+                        }}
+                        className="text-xs bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white px-2 py-1 rounded transition-all font-bold"
+                      >
+                        Change Fund
+                      </button>
+                    )}
+                  </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">AMC/Provider</label>
-                    <input 
-                      required 
-                      className="w-full bg-[var(--bg-card)] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[var(--accent-primary)]" 
-                      placeholder="e.g. PPFAS" 
-                      value={formData.amc_name} 
-                      onChange={e => setFormData({...formData, amc_name: e.target.value})} 
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Scheme Code</label>
-                    <input 
-                      className="w-full bg-[var(--bg-card)] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[var(--accent-primary)]" 
-                      placeholder="e.g. 122639" 
-                      value={formData.scheme_code} 
-                      onChange={e => setFormData({...formData, scheme_code: e.target.value})} 
-                    />
-                  </div>
-                </div>
+                {/* Hidden auto-fetched field */}
+                <input type="hidden" value={formData.current_nav} />
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
@@ -604,18 +607,6 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Current NAV</label>
-                    <input 
-                      required 
-                      type="number" 
-                      step="any" 
-                      className="w-full bg-[var(--bg-card)] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[var(--accent-primary)]" 
-                      value={formData.current_nav} 
-                      onChange={e => setFormData({...formData, current_nav: e.target.value})} 
-                      inputMode="decimal" 
-                    />
-                  </div>
-                  <div className="space-y-1">
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Category</label>
                     <select 
                       className="w-full bg-[var(--bg-card)] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[var(--accent-primary)]" 
@@ -631,6 +622,32 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                     </select>
                   </div>
                 </div>
+
+                <details className="group border border-white/5 bg-white/[0.02] rounded-xl overflow-hidden mt-4">
+                  <summary className="text-xs font-bold text-gray-400 p-3 cursor-pointer outline-none hover:text-white transition-colors bg-white/[0.02]">
+                    Advanced Options (AMC, Scheme Code)
+                  </summary>
+                  <div className="p-3 pt-0 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">AMC/Provider</label>
+                      <input 
+                        className="w-full bg-[var(--bg-card)] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[var(--accent-primary)]" 
+                        placeholder="e.g. PPFAS" 
+                        value={formData.amc_name} 
+                        onChange={e => setFormData({...formData, amc_name: e.target.value})} 
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Scheme Code</label>
+                      <input 
+                        className="w-full bg-[var(--bg-card)] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[var(--accent-primary)]" 
+                        placeholder="e.g. 122639" 
+                        value={formData.scheme_code} 
+                        onChange={e => setFormData({...formData, scheme_code: e.target.value})} 
+                      />
+                    </div>
+                  </div>
+                </details>
 
                 {!editingId && (
                   <div className="space-y-4">

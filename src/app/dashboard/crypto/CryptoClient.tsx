@@ -11,7 +11,8 @@ import {
   updateCryptoHolding,
   deleteCryptoHolding,
   fetchBinancePrice,
-  refreshAllCryptoPrices
+  refreshAllCryptoPrices,
+  searchCrypto
 } from "./actions";
 
 import dynamic from "next/dynamic";
@@ -59,6 +60,28 @@ export default function CryptoClient() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isFetchingSingle, setIsFetchingSingle] = useState(false);
+
+  // Search state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+
+  useEffect(() => {
+    if (!searchQuery || searchQuery.length < 2) {
+      setSearchResults([]);
+      setShowSearchDropdown(false);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      const res = await searchCrypto(searchQuery);
+      setSearchResults(res);
+      setShowSearchDropdown(true);
+      setIsSearching(false);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -156,6 +179,7 @@ export default function CryptoClient() {
   // ─── Handlers ──────────────────────────────────────────────────────────────
   const openNewModal = () => {
     setEditingId(null);
+    setSearchQuery("");
     setFormData({
       name: "",
       symbol: "",
@@ -182,6 +206,7 @@ export default function CryptoClient() {
 
   const handleEdit = (holding: CryptoAsset) => {
     setEditingId(holding.id);
+    setSearchQuery("");
     setFormData({
       name: holding.name || "",
       symbol: holding.symbol || "",
@@ -596,69 +621,82 @@ export default function CryptoClient() {
 
               <div className="p-5 space-y-5 bg-[var(--bg-card)]">
                 
-                {/* Popular Coin Chips */}
-                {!editingId && (
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Popular Coins</label>
-                    <div className="flex flex-wrap gap-1.5">
-                      {POPULAR_COINS.map((c) => (
-                        <button
-                          key={c.symbol}
-                          type="button"
-                          onClick={() => handleCoinChipClick(c)}
-                          className={`text-xs px-2.5 py-1 rounded-lg border font-semibold transition-all uppercase ${
-                            formData.symbol.toUpperCase() === c.symbol
-                              ? "bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] border-[var(--accent-primary)]/30"
-                              : "bg-white/[0.02] border-white/5 text-gray-400 hover:text-white hover:bg-white/5"
-                          }`}
-                        >
-                          {c.symbol}
-                        </button>
-                      ))}
+                {/* Search Crypto (if adding new from scratch) */}
+                {!formData.symbol ? (
+                  <div className="space-y-1.5 relative">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Search Coin</label>
+                    <div className="relative">
+                      <input 
+                        autoFocus
+                        className="w-full bg-[#202020] border border-white/10 rounded px-3 py-2 text-xs text-white outline-none focus:border-[#2185d0] placeholder-gray-500" 
+                        placeholder="Search e.g. Bitcoin, BTC, Ethereum..."
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                      />
+                      {isSearching && (
+                        <div className="absolute right-3 top-2.5">
+                          <svg className="w-3.5 h-3.5 animate-spin text-gray-500" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" strokeDasharray="32" className="opacity-25"></circle><path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" className="opacity-75"></path></svg>
+                        </div>
+                      )}
                     </div>
+
+                    {showSearchDropdown && searchResults.length > 0 && (
+                      <div className="absolute z-[120] left-0 right-0 top-[100%] mt-1 bg-[#202020] border border-white/10 rounded shadow-xl overflow-hidden max-h-56 overflow-y-auto custom-scrollbar">
+                        {searchResults.map((res, i) => (
+                          <div 
+                            key={i} 
+                            className="px-3 py-2 hover:bg-white/5 cursor-pointer transition-colors border-b border-white/5 last:border-0 flex items-center justify-between"
+                            onClick={async () => {
+                              setFormData({...formData, symbol: res.symbol, name: res.name});
+                              setSearchQuery("");
+                              setShowSearchDropdown(false);
+                              await handleFetchSinglePrice(res.symbol);
+                            }}
+                          >
+                            <div className="flex items-center gap-3">
+                              {res.thumb && <img src={res.thumb} alt={res.symbol} className="w-6 h-6 rounded-full" />}
+                              <div>
+                                <div className="text-xs font-bold text-white">{res.symbol}</div>
+                                <div className="text-xs text-gray-400 truncate max-w-[220px]">{res.name}</div>
+                              </div>
+                            </div>
+                            <span className="text-[0.5625rem] bg-white/10 px-1.5 py-0.5 rounded text-gray-400 font-semibold">Select</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  /* Selected Crypto Card */
+                  <div className="bg-white/[0.02] border border-white/5 p-3.5 rounded-xl flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl p-2 bg-white/[0.02] rounded-xl border border-white/5">💎</span>
+                      <div>
+                        <p className="text-xs font-bold text-white">{formData.symbol}</p>
+                        <p className="text-xs text-gray-500 font-medium">{formData.name}</p>
+                      </div>
+                    </div>
+                    {!editingId && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormData(prev => ({ ...prev, symbol: "", name: "" }));
+                        }}
+                        className="text-xs bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white px-2 py-1 rounded transition-all font-bold"
+                      >
+                        Change Coin
+                      </button>
+                    )}
                   </div>
                 )}
 
                 {/* Form fields */}
                 <form onSubmit={handleSubmit} className="space-y-4">
                   
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Coin Symbol</label>
-                      <div className="relative">
-                        <input
-                          required
-                          type="text"
-                          className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0] uppercase"
-                          placeholder="e.g. BTC"
-                          value={formData.symbol}
-                          onChange={e => setFormData({ ...formData, symbol: e.target.value.toUpperCase() })}
-                        />
-                        {formData.symbol && (
-                          <button
-                            type="button"
-                            onClick={() => handleFetchSinglePrice(formData.symbol)}
-                            disabled={isFetchingSingle}
-                            className="absolute right-2 top-1.5 text-[0.5rem] bg-[var(--accent-primary)]/10 hover:bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] font-bold px-1.5 py-0.5 rounded uppercase transition-colors"
-                          >
-                            {isFetchingSingle ? "..." : "↻ Live"}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Coin Name</label>
-                      <input
-                        required
-                        type="text"
-                        className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]"
-                        placeholder="e.g. Bitcoin"
-                        value={formData.name}
-                        onChange={e => setFormData({ ...formData, name: e.target.value })}
-                      />
-                    </div>
-                  </div>
+                  {/* Hidden fields for auto-fetched data */}
+                  <input type="hidden" value={formData.current_price} />
+                  <input type="hidden" value={formData.symbol} />
+                  <input type="hidden" value={formData.name} />
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
@@ -675,7 +713,7 @@ export default function CryptoClient() {
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Buy / Execution Price</label>
+                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Buy Price</label>
                       <input
                         required
                         type="number"
@@ -686,73 +724,6 @@ export default function CryptoClient() {
                         inputMode="decimal"
                       />
                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">LTP (Latest price)</label>
-                      <input
-                        required
-                        type="number"
-                        step="any"
-                        className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]"
-                        value={formData.current_price}
-                        onChange={e => setFormData({ ...formData, current_price: e.target.value })}
-                        inputMode="decimal"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Trading Fees (USDT)</label>
-                      <input
-                        type="number"
-                        step="any"
-                        className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]"
-                        value={charges}
-                        onChange={e => setCharges(e.target.value)}
-                        inputMode="decimal"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Channeling bank account drop-down list */}
-                  {!editingId && (
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Channeling Account</label>
-                      <select
-                        required
-                        className="w-full bg-[#202020] border border-white/10 rounded px-3 py-2 text-xs text-white outline-none focus:border-[#2185d0]"
-                        value={formData.deduct_from_account}
-                        onChange={e => setFormData({ ...formData, deduct_from_account: e.target.value })}
-                      >
-                        <option value="">-- Select Bank Account --</option>
-                        {accounts.map((a) => (
-                          <option key={a.id} value={a.id}>
-                            {a.name} ({a.currency} - Bal: {Number(a.balance).toLocaleString()})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Date</label>
-                    <input
-                      type="date"
-                      className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]"
-                      value={formData.bought_at}
-                      onChange={e => setFormData({ ...formData, bought_at: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Notes</label>
-                    <textarea
-                      className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0] resize-none h-16"
-                      placeholder="Optional notes..."
-                      value={formData.notes}
-                      onChange={e => setFormData({ ...formData, notes: e.target.value })}
-                    />
                   </div>
 
                   {/* Action buttons switcher */}

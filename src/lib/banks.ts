@@ -92,13 +92,39 @@ const BANKS: Bank[] = [
   { name: "Wealthy",                    domain: "wealthy.in" },
   { name: "Paytm Money",               domain: "paytmmoney.com" },
   { name: "Coin by Zerodha",            domain: "zerodha.com" },
+  
+  // Custom / Added from user feedback
+  { name: "Chase Bank",                 domain: "chase.com" },
+  { name: "Binance",                    domain: "binance.com" },
+  { name: "SBI",                        domain: "sbi.co.in" },
 ];
 
 /**
  * Get the domain registered for a bank name
  */
 export function getBankDomain(bankName: string): string | null {
-  const bank = BANKS.find((b) => b.name.toLowerCase() === bankName.toLowerCase());
+  if (!bankName) return null;
+  const normalizedSearch = bankName.toLowerCase().trim();
+
+  // 1. Exact match
+  let bank = BANKS.find((b) => b.name.toLowerCase() === normalizedSearch);
+  
+  // 2. Acronym match (e.g., matching "SBI" in "State Bank of India (SBI)")
+  if (!bank) {
+    bank = BANKS.find((b) => {
+      const match = b.name.match(/\(([^)]+)\)/);
+      return match && match[1].toLowerCase() === normalizedSearch;
+    });
+  }
+
+  // 3. Match if the search query is fully contained within the bank name or vice-versa
+  if (!bank) {
+    bank = BANKS.find((b) => {
+      const name = b.name.toLowerCase();
+      return name.includes(normalizedSearch) || normalizedSearch.includes(name);
+    });
+  }
+
   return bank?.domain || null;
 }
 

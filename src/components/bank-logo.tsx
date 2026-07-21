@@ -97,19 +97,29 @@ const BANK_BRANDS: Record<string, { abbr: string; bg: string; fg: string }> = {
  * Tries multiple CDNs in priority order for maximum coverage.
  */
 function getLogoSources(bankName: string): string[] {
-  const domain = getBankDomain(bankName);
+  let domain = getBankDomain(bankName);
+  
+  if (!domain) {
+    const sanitized = bankName.toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (sanitized) {
+      domain = `${sanitized}.com`;
+    }
+  }
+
   if (!domain) return [];
 
   return [
     // 1. Uplead Logo API - High resolution and reliable
     `https://logo.uplead.com/${domain}`,
-    // 2. Icon Horse - Good for high resolution icons
+    // 2. Clearbit Logo API - Very reliable
+    `https://logo.clearbit.com/${domain}`,
+    // 3. Icon Horse - Good for high resolution icons
     `https://icon.horse/icon/${domain}`,
-    // 3. Unavatar - Multi-service high-def logo aggregator
+    // 4. Unavatar - Multi-service high-def logo aggregator
     `https://unavatar.io/${domain}?fallback=false`,
-    // 4. Hunter.io - Free, no API key
+    // 5. Hunter.io - Free, no API key
     `https://logos.hunter.io/${domain}`,
-    // 5. Google Favicon (fallback, requested at 128px to avoid aggressive upscaling blur)
+    // 6. Google Favicon (fallback, requested at 128px to avoid aggressive upscaling blur)
     `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
   ];
 }

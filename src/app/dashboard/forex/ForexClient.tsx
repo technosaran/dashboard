@@ -11,7 +11,9 @@ import {
   forexDeposit,
   forexWithdraw,
   createForexAccount,
-  deleteForexAccount
+  deleteForexAccount,
+  searchForex,
+  fetchLiveForexPrice
 } from "./actions";
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
@@ -30,7 +32,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
   const { data: { profile, accounts, forexAccounts, forexTrades, forexTransactions, ledgerLogs }, mutate } = useFinanceData(initialData);
   const searchParams = useSearchParams();
   const action = searchParams?.get("action");
-  const [activeTab, setActiveTab] = useState<"overview" | "accounts" | "pnl" | "transactions">("overview");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "accounts" | "pnl" | "transactions">("dashboard");
 
   const mounted = useHasMounted();
 
@@ -42,12 +44,46 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
   const [editingTrade, setEditingTrade] = useState<Tables<"forex_trades"> | null>(null);
   const [submitting, withLock] = useSubmitLock();
 
-  const [tradeForm, setTradeForm] = useState({ forex_account_id: "", trade_date: "", notes: "" });
-  const [editTradeForm, setEditTradeForm] = useState({ forex_account_id: "", trade_date: "", notes: "" });
+  const [tradeForm, setTradeForm] = useState({ forex_account_id: "", trade_date: "", notes: "", pair: "DAILY_P&L", lot_size: "1", entry_price: "", exit_price: "" });
+  const [editTradeForm, setEditTradeForm] = useState({ forex_account_id: "", trade_date: "", notes: "", pair: "DAILY_P&L", lot_size: "1", entry_price: "", exit_price: "" });
+  const [tradeType, setTradeType] = useState<"BUY" | "SELL">("BUY");
+  const [editTradeType, setEditTradeType] = useState<"BUY" | "SELL">("BUY");
   const [tradePnlType, setTradePnlType] = useState<"profit" | "loss">("profit");
   const [tradeAmount, setTradeAmount] = useState("");
   const [editTradePnlType, setEditTradePnlType] = useState<"profit" | "loss">("profit");
   const [editTradeAmount, setEditTradeAmount] = useState("");
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [selectedPair, setSelectedPair] = useState<any>(null);
+
+  useEffect(() => {
+    if (searchQuery.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      const results = await searchForex(searchQuery);
+      setSearchResults(results);
+      setIsSearching(false);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const handlePairSelect = async (pair: any) => {
+    setSelectedPair(pair);
+    setSearchQuery("");
+    setSearchResults([]);
+    setTradeForm({ ...tradeForm, pair: pair.symbol });
+    
+    // Fetch live price
+    const res = await fetchLiveForexPrice(pair.symbol);
+    if (res.price) {
+      setTradeForm(prev => ({ ...prev, entry_price: res.price.toString() }));
+    }
+  };
 
   const [fundsForm, setFundsForm] = useState({ forex_account_id: "", bank_account_id: "", amount: "", notes: "" });
   const [accountForm, setAccountForm] = useState({ broker_name: "", account_label: "", account_number: "", currency: "USD", notes: "" });
@@ -170,11 +206,13 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
       const finalPnl = tradePnlType === "profit" ? rawVal : -rawVal;
       const res = await logForexTrade({
         forex_account_id: tradeForm.forex_account_id,
-        pair: "DAILY_P&L",
-        trade_type: "BUY",
-        lot_size: 1,
+        pair: tradeForm.pair || "DAILY_P&L",
+        trade_type: tradeType,
+        lot_size: parseFloat(tradeForm.lot_size) || 1,
         pnl: finalPnl,
         trade_date: tradeForm.trade_date || undefined,
+        entry_price: tradeForm.entry_price ? parseFloat(tradeForm.entry_price) : undefined,
+        exit_price: tradeForm.exit_price ? parseFloat(tradeForm.exit_price) : undefined,
         notes: tradeForm.notes || undefined,
       });
       if (res.success) {
@@ -190,9 +228,14 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
     setEditingTrade(trade);
     setEditTradePnlType(trade.pnl >= 0 ? "profit" : "loss");
     setEditTradeAmount(Math.abs(trade.pnl).toString());
+    setEditTradeType(trade.trade_type as "BUY" | "SELL");
     setEditTradeForm({
       forex_account_id: trade.forex_account_id || "",
       trade_date: trade.trade_date ? new Date(trade.trade_date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+      pair: trade.pair || "DAILY_P&L",
+      lot_size: trade.lot_size?.toString() || "1",
+      entry_price: trade.entry_price?.toString() || "",
+      exit_price: trade.exit_price?.toString() || "",
       notes: trade.notes || ""
     });
     setShowEditTradeModal(true);
@@ -207,11 +250,13 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
       const finalPnl = editTradePnlType === "profit" ? rawVal : -rawVal;
       const res = await updateForexTrade(editingTrade.id, {
         forex_account_id: editTradeForm.forex_account_id,
-        pair: "DAILY_P&L",
-        trade_type: "BUY",
-        lot_size: 1,
+        pair: editTradeForm.pair || "DAILY_P&L",
+        trade_type: editTradeType,
+        lot_size: parseFloat(editTradeForm.lot_size) || 1,
         pnl: finalPnl,
         trade_date: editTradeForm.trade_date,
+        entry_price: editTradeForm.entry_price ? parseFloat(editTradeForm.entry_price) : undefined,
+        exit_price: editTradeForm.exit_price ? parseFloat(editTradeForm.exit_price) : undefined,
         notes: editTradeForm.notes || undefined
       });
       if (res.success) {
@@ -312,7 +357,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
         {/* Premium Segmented Switcher */}
         <div className="flex p-1 bg-white/[0.02] border border-white/5 rounded-2xl max-w-fit shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)] overflow-x-auto no-scrollbar">
           {[
-            { key: "overview", label: "Overview" },
+            { key: "dashboard", label: "Dashboard" },
             { key: "accounts", label: `Accounts (${filteredForexAccounts.length})` },
             { key: "pnl", label: "P&L Summaries" },
             { key: "transactions", label: "Transactions" }
@@ -339,7 +384,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
           })}
         </div>
 
-        {activeTab === "overview" && (
+        {activeTab === "dashboard" && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="glass-card-static p-6 min-h-[350px] flex flex-col">
@@ -577,38 +622,135 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
 
       {/* Trade Modal */}
       {(showTradeModal || showEditTradeModal) && (
-        <Drawer isOpen={showTradeModal || showEditTradeModal} onClose={() => { setShowTradeModal(false); setShowEditTradeModal(false); setEditingTrade(null); }} title={showEditTradeModal ? "Edit Daily P&L" : "Log Daily P&L"}>
-          <div className="p-2 max-w-lg mx-auto w-full">
-            <form onSubmit={showEditTradeModal ? handleUpdateTrade : handleLogTrade} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Select Broker</label>
-                  <select required className="input-premium !h-10 text-xs text-white" value={showEditTradeModal ? editTradeForm.forex_account_id : tradeForm.forex_account_id} onChange={e => showEditTradeModal ? setEditTradeForm({...editTradeForm, forex_account_id: e.target.value}) : setTradeForm({...tradeForm, forex_account_id: e.target.value})}>
-                    <option value="">Select Account</option>
-                    {filteredForexAccounts.map(a => <option key={a.id} value={a.id}>{a.account_label} ({a.broker_name})</option>)}
-                  </select>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Date</label>
-                  <input required type="date" className="input-premium !h-10 text-xs" value={showEditTradeModal ? editTradeForm.trade_date : tradeForm.trade_date} onChange={e => showEditTradeModal ? setEditTradeForm({...editTradeForm, trade_date: e.target.value}) : setTradeForm({...tradeForm, trade_date: e.target.value})} />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Entry Type</label>
-                  <div className="flex bg-white/5 p-1 rounded-xl border border-white/5 gap-1">
-                    <button type="button" onClick={() => showEditTradeModal ? setEditTradePnlType("profit") : setTradePnlType("profit")} className={`flex-1 h-8 text-xs font-black rounded-lg transition-all ${((showEditTradeModal ? editTradePnlType : tradePnlType) === "profit") ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "text-[--text-muted]"}`}>Profit</button>
-                    <button type="button" onClick={() => showEditTradeModal ? setEditTradePnlType("loss") : setTradePnlType("loss")} className={`flex-1 h-8 text-xs font-black rounded-lg transition-all ${((showEditTradeModal ? editTradePnlType : tradePnlType) === "loss") ? "bg-rose-500/20 text-rose-400 border border-rose-500/30" : "text-[--text-muted]"}`}>Loss</button>
+        <Drawer isOpen={showTradeModal || showEditTradeModal} onClose={() => { setShowTradeModal(false); setShowEditTradeModal(false); setEditingTrade(null); setSelectedPair(null); setSearchQuery(""); setSearchResults([]); }} title={showEditTradeModal ? "Edit Forex Trade" : "Log Forex Trade"}>
+          <div className="p-4 max-w-2xl mx-auto w-full">
+            <form onSubmit={showEditTradeModal ? handleUpdateTrade : handleLogTrade} className="space-y-6">
+              
+              {/* Search Section - Only for new trades */}
+              {!showEditTradeModal && (
+                <div className="relative z-50">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Search currency pairs (e.g. EURUSD=X)..."
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-lg font-black text-white placeholder:text-white/20 focus:outline-none focus:border-[--accent-primary] transition-all shadow-inner"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                    {isSearching && (
+                      <div className="absolute right-6 top-1/2 -translate-y-1/2">
+                        <div className="w-5 h-5 border-2 border-[--accent-primary] border-t-transparent rounded-full animate-spin" />
+                      </div>
+                    )}
                   </div>
+                  {searchResults.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 mt-2 bg-[#0A0A0A] border border-white/10 rounded-xl overflow-hidden shadow-2xl z-50 max-h-[300px] overflow-y-auto">
+                      {searchResults.map((pair, idx) => (
+                        <div
+                          key={idx}
+                          onClick={() => handlePairSelect(pair)}
+                          className="px-6 py-4 hover:bg-white/5 cursor-pointer border-b border-white/5 last:border-0 transition-colors flex justify-between items-center"
+                        >
+                          <div>
+                            <div className="font-black text-white">{pair.symbol}</div>
+                            <div className="text-xs text-[--text-muted]">{pair.name}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Amount</label>
-                  <input required type="number" step="0.01" min="0.01" className="input-premium !h-10 text-xs tabular-nums" placeholder="0.00" value={showEditTradeModal ? editTradeAmount : tradeAmount} onChange={e => showEditTradeModal ? setEditTradeAmount(e.target.value) : setTradeAmount(e.target.value)} inputMode="decimal" />
+              )}
+
+              {/* Form Content - Shows if editing or if a pair is selected/entered */}
+              {(showEditTradeModal || (tradeForm.pair && tradeForm.pair !== "DAILY_P&L")) && (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-3">
+                      <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Select Broker</label>
+                      <select required className="input-premium" value={showEditTradeModal ? editTradeForm.forex_account_id : tradeForm.forex_account_id} onChange={e => showEditTradeModal ? setEditTradeForm({...editTradeForm, forex_account_id: e.target.value}) : setTradeForm({...tradeForm, forex_account_id: e.target.value})}>
+                        <option value="">Select Account</option>
+                        {filteredForexAccounts.map(a => <option key={a.id} value={a.id}>{a.account_label} ({a.broker_name})</option>)}
+                      </select>
+                    </div>
+                    <div className="space-y-3">
+                      <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Date</label>
+                      <input required type="date" className="input-premium" value={showEditTradeModal ? editTradeForm.trade_date : tradeForm.trade_date} onChange={e => showEditTradeModal ? setEditTradeForm({...editTradeForm, trade_date: e.target.value}) : setTradeForm({...tradeForm, trade_date: e.target.value})} />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-3">
+                      <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">P&L Type</label>
+                      <div className="flex bg-white/5 p-1 rounded-xl border border-white/5 gap-1">
+                        <button type="button" onClick={() => showEditTradeModal ? setEditTradePnlType("profit") : setTradePnlType("profit")} className={`flex-1 h-12 text-xs font-black rounded-lg transition-all ${((showEditTradeModal ? editTradePnlType : tradePnlType) === "profit") ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "text-[--text-muted]"}`}>Profit</button>
+                        <button type="button" onClick={() => showEditTradeModal ? setEditTradePnlType("loss") : setTradePnlType("loss")} className={`flex-1 h-12 text-xs font-black rounded-lg transition-all ${((showEditTradeModal ? editTradePnlType : tradePnlType) === "loss") ? "bg-rose-500/20 text-rose-400 border border-rose-500/30" : "text-[--text-muted]"}`}>Loss</button>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">P&L Amount</label>
+                      <input required type="number" step="0.01" min="0.01" className="input-premium tabular-nums" placeholder="0.00" value={showEditTradeModal ? editTradeAmount : tradeAmount} onChange={e => showEditTradeModal ? setEditTradeAmount(e.target.value) : setTradeAmount(e.target.value)} inputMode="decimal" />
+                    </div>
+                  </div>
+
+                  <details className="group glass-card-static border border-white/5 rounded-xl overflow-hidden mt-6">
+                    <summary className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] p-4 cursor-pointer outline-none hover:text-white transition-colors bg-white/[0.01]">
+                      Advanced Trade Details
+                    </summary>
+                    <div className="p-4 pt-0 space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-3">
+                          <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Pair</label>
+                          <input className="input-premium uppercase" placeholder="e.g. EURUSD=X" value={showEditTradeModal ? editTradeForm.pair : tradeForm.pair} onChange={e => showEditTradeModal ? setEditTradeForm({...editTradeForm, pair: e.target.value}) : setTradeForm({...tradeForm, pair: e.target.value})} />
+                        </div>
+                        <div className="space-y-3">
+                          <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Trade Type</label>
+                          <div className="flex bg-white/5 p-1 rounded-xl border border-white/5 gap-1">
+                            <button type="button" onClick={() => showEditTradeModal ? setEditTradeType("BUY") : setTradeType("BUY")} className={`flex-1 h-12 text-xs font-black rounded-lg transition-all ${((showEditTradeModal ? editTradeType : tradeType) === "BUY") ? "bg-[--accent-primary]/20 text-[--accent-primary] border border-[--accent-primary]/30" : "text-[--text-muted]"}`}>Buy</button>
+                            <button type="button" onClick={() => showEditTradeModal ? setEditTradeType("SELL") : setTradeType("SELL")} className={`flex-1 h-12 text-xs font-black rounded-lg transition-all ${((showEditTradeModal ? editTradeType : tradeType) === "SELL") ? "bg-[--accent-primary]/20 text-[--accent-primary] border border-[--accent-primary]/30" : "text-[--text-muted]"}`}>Sell</button>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="space-y-3">
+                          <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Lot Size</label>
+                          <input type="number" step="0.01" className="input-premium tabular-nums" placeholder="1.0" value={showEditTradeModal ? editTradeForm.lot_size : tradeForm.lot_size} onChange={e => showEditTradeModal ? setEditTradeForm({...editTradeForm, lot_size: e.target.value}) : setTradeForm({...tradeForm, lot_size: e.target.value})} />
+                        </div>
+                        <div className="space-y-3">
+                          <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Entry Price</label>
+                          <input type="number" step="0.00001" className="input-premium tabular-nums" placeholder="Optional" value={showEditTradeModal ? editTradeForm.entry_price : tradeForm.entry_price} onChange={e => showEditTradeModal ? setEditTradeForm({...editTradeForm, entry_price: e.target.value}) : setTradeForm({...tradeForm, entry_price: e.target.value})} />
+                        </div>
+                        <div className="space-y-3">
+                          <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Exit Price</label>
+                          <input type="number" step="0.00001" className="input-premium tabular-nums" placeholder="Optional" value={showEditTradeModal ? editTradeForm.exit_price : tradeForm.exit_price} onChange={e => showEditTradeModal ? setEditTradeForm({...editTradeForm, exit_price: e.target.value}) : setTradeForm({...tradeForm, exit_price: e.target.value})} />
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Notes</label>
+                        <input className="input-premium" placeholder="Optional notes about this trade..." value={showEditTradeModal ? editTradeForm.notes : tradeForm.notes} onChange={e => showEditTradeModal ? setEditTradeForm({...editTradeForm, notes: e.target.value}) : setTradeForm({...tradeForm, notes: e.target.value})} />
+                      </div>
+                    </div>
+                  </details>
+
+                  <div className="pt-4 mt-8">
+                    <button type="submit" disabled={submitting} className={`btn-primary w-full h-12 shadow-xl text-xs font-black uppercase tracking-widest shadow-[--accent-primary]/20`}>
+                      {submitting ? "Processing..." : (showEditTradeModal ? "Update Trade" : "Log Trade")}
+                    </button>
+                  </div>
+                </>
+              )}
+              
+              {/* If no pair selected, show basic P&L fallback for manual entry */}
+              {!showEditTradeModal && !tradeForm.pair && (
+                <div className="text-center p-8 bg-white/5 border border-white/10 rounded-2xl">
+                  <p className="text-[--text-muted] mb-4">Or log a generic daily P&L entry without a specific pair.</p>
+                  <button type="button" onClick={() => setTradeForm({ ...tradeForm, pair: "DAILY_P&L" })} className="btn-secondary px-6 py-3 text-xs font-black uppercase tracking-widest">
+                    Log Daily P&L
+                  </button>
                 </div>
-              </div>
-              <button type="submit" disabled={submitting} className="btn-primary w-full h-11 text-xs font-bold shadow-md mt-4 cursor-pointer">
-                {submitting ? "Processing..." : (showEditTradeModal ? "Update P&L" : "Log P&L")}
-              </button>
+              )}
             </form>
           </div>
         </Drawer>

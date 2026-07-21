@@ -435,3 +435,32 @@ export async function updateForexTrade(id: string, data: {
     return { error: getFriendlyErrorMessage(err) };
   }
 }
+
+export async function searchForex(query: string) {
+  try {
+    const res = await fetch(`https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(query)}&quotesCount=10&newsCount=0`);
+    const data = await res.json();
+    return data.quotes
+      .filter((q: any) => q.quoteType === "CURRENCY")
+      .map((q: any) => ({
+        symbol: q.symbol,
+        name: q.shortname || q.longname || q.symbol
+      }));
+  } catch (err) {
+    return [];
+  }
+}
+
+export async function fetchLiveForexPrice(symbol: string) {
+  try {
+    const res = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`);
+    const data = await res.json();
+    const price = data.chart?.result?.[0]?.meta?.regularMarketPrice;
+    if (price) {
+      return { price };
+    }
+    return { error: "Price not found" };
+  } catch (err) {
+    return { error: "Failed to fetch price" };
+  }
+}

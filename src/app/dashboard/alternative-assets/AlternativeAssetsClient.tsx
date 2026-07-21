@@ -34,7 +34,7 @@ export default function AlternativeAssetsClient({ initialData, isSubComponent = 
   const [showAddModal, setShowAddModal] = useState(searchParams?.get("action") === "new");
   const [submitting, withLock] = useSubmitLock();
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"overview" | "inventory" | "history">(isSubComponent ? "inventory" : "overview");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "inventory" | "history">(isSubComponent ? "inventory" : "dashboard");
 
   const mounted = useHasMounted();
 
@@ -45,9 +45,26 @@ export default function AlternativeAssetsClient({ initialData, isSubComponent = 
   }, [ledgerLogs]);
 
   const [formData, setFormData] = useState({
-    name: "", category: "Real Estate", purchase_price: "", current_value: "",
+    name: "", category: "", purchase_price: "", current_value: "",
     purchase_date: "", notes: "", account_id: "",
   });
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<any>(null);
+
+  const searchResults = useMemo(() => {
+    if (searchQuery.length < 1) return CATEGORIES;
+    return CATEGORIES.filter(c => 
+      c.label.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      c.icon.includes(searchQuery)
+    );
+  }, [searchQuery]);
+
+  const handleCategorySelect = (cat: any) => {
+    setSelectedCategory(cat);
+    setSearchQuery("");
+    setFormData({ ...formData, category: cat.label });
+  };
 
   const stats = useMemo(() => {
     const totalValue = alternativeAssets.reduce((s, a) => s + Number(a.current_value), 0);
@@ -95,7 +112,8 @@ export default function AlternativeAssetsClient({ initialData, isSubComponent = 
         toast.success(editingId ? "Asset updated" : "Asset established");
         setShowAddModal(false);
         setEditingId(null);
-        setFormData({ name: "", category: "Real Estate", purchase_price: "", current_value: "", purchase_date: "", notes: "", account_id: "" });
+        setSelectedCategory(null);
+        setFormData({ name: "", category: "", purchase_price: "", current_value: "", purchase_date: "", notes: "", account_id: "" });
         mutate();
       } else toast.error(res.error);
     });
@@ -113,6 +131,7 @@ export default function AlternativeAssetsClient({ initialData, isSubComponent = 
       purchase_date: asset.purchase_date ? new Date(asset.purchase_date).toISOString().split("T")[0] : "",
       notes: asset.notes || "", account_id: "",
     });
+    setSelectedCategory(CATEGORIES.find(c => c.label === asset.category) || null);
     setShowAddModal(true);
   };
 
@@ -141,7 +160,8 @@ export default function AlternativeAssetsClient({ initialData, isSubComponent = 
             type="button" 
             onClick={() => {
               setEditingId(null);
-              setFormData({ name: "", category: "Real Estate", purchase_price: "", current_value: "", purchase_date: new Date().toISOString().split("T")[0], notes: "", account_id: "" });
+              setSelectedCategory(null);
+              setFormData({ name: "", category: "", purchase_price: "", current_value: "", purchase_date: new Date().toISOString().split("T")[0], notes: "", account_id: "" });
               setShowAddModal(true);
             }} 
             disabled={submitting} 
@@ -167,7 +187,8 @@ export default function AlternativeAssetsClient({ initialData, isSubComponent = 
           <div className="mt-8 flex justify-center">
              <button onClick={() => {
                setEditingId(null);
-               setFormData({ name: "", category: "Real Estate", purchase_price: "", current_value: "", purchase_date: new Date().toISOString().split("T")[0], notes: "", account_id: "" });
+               setSelectedCategory(null);
+               setFormData({ name: "", category: "", purchase_price: "", current_value: "", purchase_date: new Date().toISOString().split("T")[0], notes: "", account_id: "" });
                setShowAddModal(true);
              }} className="btn-primary">Record New Asset</button>
           </div>
@@ -211,7 +232,7 @@ export default function AlternativeAssetsClient({ initialData, isSubComponent = 
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex flex-wrap gap-1.5 rounded-2xl bg-white/[0.02] border border-white/5 p-1.5 max-w-fit shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]">
             {[
-              ...(!isSubComponent ? [{ key: "overview", label: "Overview" }] : []),
+              ...(!isSubComponent ? [{ key: "dashboard", label: "Dashboard" }] : []),
               { key: "inventory", label: "Inventory Directory", badge: alternativeAssets.length },
               { key: "history", label: "Audit History" }
             ].map((tab) => {
@@ -262,7 +283,7 @@ export default function AlternativeAssetsClient({ initialData, isSubComponent = 
           )}
         </div>
 
-        {activeTab === "overview" && (
+        {activeTab === "dashboard" && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="glass-card-static p-6 min-h-[350px] flex flex-col">
@@ -404,63 +425,156 @@ export default function AlternativeAssetsClient({ initialData, isSubComponent = 
       {showAddModal && (
         <Drawer
           isOpen={showAddModal}
-          onClose={() => { setShowAddModal(false); setEditingId(null); }}
+          onClose={() => { setShowAddModal(false); setEditingId(null); setSelectedCategory(null); setSearchQuery(""); }}
           title={editingId ? "Update Asset" : "Establish Asset"}
         >
-          <div className="p-2 max-w-lg mx-auto w-full">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Asset Name</label>
-                  <input required className="input-premium !h-10 text-xs" placeholder="e.g. 2BHK Apartment" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} autoComplete="new-password" />
+          <div className="p-4 max-w-2xl mx-auto w-full">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              
+              {/* Search Section - Only for new assets */}
+              {!editingId && (
+                <div className="relative z-50">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Search asset category (e.g. Gold, Real Estate)..."
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-lg font-black text-white placeholder:text-white/20 focus:outline-none focus:border-[--accent-primary] transition-all shadow-inner"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
+                  {searchResults.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 mt-2 bg-[#0A0A0A] border border-white/10 rounded-xl overflow-hidden shadow-2xl z-50 max-h-[300px] overflow-y-auto">
+                      {searchResults.map((cat, idx) => (
+                        <div
+                          key={idx}
+                          onClick={() => handleCategorySelect(cat)}
+                          className="px-6 py-4 hover:bg-white/5 cursor-pointer border-b border-white/5 last:border-0 transition-colors flex justify-between items-center"
+                        >
+                          <div className="flex items-center gap-4">
+                            <span className="text-2xl">{cat.icon}</span>
+                            <div className="font-black text-white">{cat.label}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Classification</label>
-                  <select aria-label="Select asset category" className="input-premium !h-10 text-xs text-white" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
-                    {CATEGORIES.map(c => <option key={c.label} value={c.label}>{c.label}</option>)}
-                  </select>
-                </div>
-              </div>
+              )}
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Acquisition Cost (₹)</label>
-                  <input required type="number" className="input-premium !h-10 text-xs tabular-nums" value={formData.purchase_price} onChange={e => setFormData({...formData, purchase_price: e.target.value})} autoComplete="new-password" inputMode="decimal" />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Current Valuation (₹)</label>
-                  <input required type="number" className="input-premium !h-10 text-xs tabular-nums" value={formData.current_value} onChange={e => setFormData({...formData, current_value: e.target.value})} autoComplete="new-password" inputMode="decimal" />
-                </div>
-              </div>
+              {/* Form Content - Shows if a category is selected or editing */}
+              {(editingId || formData.category) && (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-3">
+                      <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Asset Name</label>
+                      <input 
+                        required 
+                        className="input-premium" 
+                        placeholder="e.g. 2BHK Apartment" 
+                        value={formData.name} 
+                        onChange={e => setFormData({...formData, name: e.target.value})} 
+                        autoComplete="off" 
+                      />
+                    </div>
+                    <div className="space-y-3">
+                      <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Classification</label>
+                      <div className="input-premium flex items-center gap-3 bg-white/5 pointer-events-none">
+                        <span>{selectedCategory?.icon || "💎"}</span>
+                        <span className="text-white font-bold">{formData.category}</span>
+                      </div>
+                    </div>
+                  </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Acquisition Date</label>
-                  <input type="date" className="input-premium !h-10 text-xs" value={formData.purchase_date} onChange={e => setFormData({...formData, purchase_date: e.target.value})} autoComplete="new-password" />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Source Account (Optional)</label>
-                  <select aria-label="Select account" className="input-premium !h-10 text-xs text-white" value={formData.account_id} onChange={e => setFormData({...formData, account_id: e.target.value})}>
-                    <option value="">No Transaction</option>
-                    {accounts.map(acc => (
-                      <option key={acc.id} value={acc.id}>{acc.name} (₹{acc.balance.toLocaleString()})</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-3">
+                      <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Acquisition Cost (₹)</label>
+                      <input 
+                        required 
+                        type="number" 
+                        className="input-premium tabular-nums" 
+                        value={formData.purchase_price} 
+                        onChange={e => setFormData({...formData, purchase_price: e.target.value})} 
+                        autoComplete="off" 
+                        inputMode="decimal" 
+                      />
+                    </div>
+                    <div className="space-y-3">
+                      <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Current Valuation (₹)</label>
+                      <input 
+                        required 
+                        type="number" 
+                        className="input-premium tabular-nums" 
+                        value={formData.current_value} 
+                        onChange={e => setFormData({...formData, current_value: e.target.value})} 
+                        autoComplete="off" 
+                        inputMode="decimal" 
+                      />
+                    </div>
+                  </div>
 
-              <div className="grid grid-cols-1 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Notes / Location</label>
-                  <input type="text" className="input-premium !h-10 text-xs" placeholder="Optional notes..." value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} autoComplete="new-password" />
-                </div>
-              </div>
+                  <details className="group glass-card-static border border-white/5 rounded-xl overflow-hidden mt-6" open>
+                    <summary className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] p-4 cursor-pointer outline-none hover:text-white transition-colors bg-white/[0.01]">
+                      Additional Details
+                    </summary>
+                    <div className="p-4 pt-0 space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-3">
+                          <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Acquisition Date</label>
+                          <input 
+                            type="date" 
+                            className="input-premium" 
+                            value={formData.purchase_date} 
+                            onChange={e => setFormData({...formData, purchase_date: e.target.value})} 
+                          />
+                        </div>
+                        <div className="space-y-3">
+                          <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Source Account (Optional)</label>
+                          <select 
+                            aria-label="Select account" 
+                            className="input-premium" 
+                            value={formData.account_id} 
+                            onChange={e => setFormData({...formData, account_id: e.target.value})}
+                          >
+                            <option value="">No Transaction</option>
+                            {accounts.map(acc => (
+                              <option key={acc.id} value={acc.id}>{acc.name} (₹{acc.balance.toLocaleString()})</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
 
-              <div className="pt-2">
-                <button type="submit" disabled={submitting} className="btn-primary w-full h-11 text-xs font-bold shadow-xl shadow-[--accent-primary]/20 uppercase tracking-widest cursor-pointer">
-                  {submitting ? "Processing..." : editingId ? "Update Entry" : "Establish Entry"}
-                </button>
-              </div>
+                      <div className="space-y-3">
+                        <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Notes / Location</label>
+                        <input 
+                          type="text" 
+                          className="input-premium" 
+                          placeholder="Optional notes..." 
+                          value={formData.notes} 
+                          onChange={e => setFormData({...formData, notes: e.target.value})} 
+                          autoComplete="off" 
+                        />
+                      </div>
+                    </div>
+                  </details>
+
+                  <div className="pt-4 mt-8">
+                    <button type="submit" disabled={submitting} className="btn-primary w-full h-12 shadow-xl shadow-[--accent-primary]/20 text-xs font-black uppercase tracking-widest cursor-pointer">
+                      {submitting ? "Processing..." : editingId ? "Update Asset" : "Establish Asset"}
+                    </button>
+                  </div>
+                </>
+              )}
+              
+              {/* If no category selected, show fallback for manual entry */}
+              {!editingId && !formData.category && (
+                <div className="text-center p-8 bg-white/5 border border-white/10 rounded-2xl">
+                  <p className="text-[--text-muted] mb-4">Or create a custom asset directly.</p>
+                  <button type="button" onClick={() => setFormData({ ...formData, category: "Others" })} className="btn-secondary px-6 py-3 text-xs font-black uppercase tracking-widest">
+                    Manual Entry
+                  </button>
+                </div>
+              )}
             </form>
           </div>
         </Drawer>

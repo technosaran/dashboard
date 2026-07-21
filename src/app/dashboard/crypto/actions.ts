@@ -368,3 +368,21 @@ export async function deleteCryptoHolding(id: string) {
     return { error: getFriendlyErrorMessage(err) };
   }
 }
+
+// ─── Search Crypto ───────────────────────────────────────────────────────────
+export async function searchCrypto(query: string) {
+  try {
+    if (!query || query.length < 2) return [];
+    const res = await fetch(`https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(query)}`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.coins || []).slice(0, 10).map((c: any) => ({
+      symbol: c.symbol.toUpperCase(),
+      name: c.name,
+      thumb: c.thumb
+    }));
+  } catch (err) {
+    console.error("Error searching crypto:", err);
+    return [];
+  }
+}

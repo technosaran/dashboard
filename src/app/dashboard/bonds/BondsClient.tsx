@@ -136,11 +136,31 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
   const [showAddModal, setShowAddModal] = useState(searchParams?.get("action") === "new");
   const [submitting, withLock] = useSubmitLock();
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [activeView, setActiveView] = useState<"overview" | "holdings">("overview");
+  const [activeView, setActiveView] = useState<"dashboard" | "holdings" | "history">("dashboard");
 
   const mounted = useHasMounted();
 
   const bonds = useMemo(() => (bondsData || []).filter(b => b.status === 'Active') as Bond[], [bondsData]);
+  const historyBonds = useMemo(() => (bondsData || []).filter(b => b.status !== 'Active') as Bond[], [bondsData]);
+
+  // Search state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<{isin: string, data: any}[]>([]);
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+
+  useEffect(() => {
+    if (!searchQuery || searchQuery.length < 2) {
+      setSearchResults([]);
+      setShowSearchDropdown(false);
+      return;
+    }
+    const q = searchQuery.toLowerCase();
+    const results = Object.entries(MOCK_BOND_DB).filter(([isin, data]) => 
+      isin.toLowerCase().includes(q) || data.bond_name.toLowerCase().includes(q) || data.issuer.toLowerCase().includes(q)
+    ).map(([isin, data]) => ({ isin, data }));
+    setSearchResults(results);
+    setShowSearchDropdown(true);
+  }, [searchQuery]);
 
   const [formData, setFormData] = useState({
     bond_name: "", isin: "", issuer: "", bond_type: "Government",
@@ -446,8 +466,9 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
         {/* Premium Segmented Switcher */}
         <div className="flex p-1 bg-white/[0.02] border border-white/5 rounded-2xl max-w-fit shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]">
           {[
-            { key: "overview", label: "Overview" },
-            { key: "holdings", label: "Bond Holdings", badge: bonds.length }
+            { key: "dashboard", label: "Dashboard" },
+            { key: "holdings", label: "Bond Holdings", badge: bonds.length },
+            { key: "history", label: "History", badge: historyBonds.length }
           ].map((tab) => {
             const isActive = activeView === tab.key;
             
@@ -479,7 +500,7 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
         </div>
 
         {/* View Content */}
-        {activeView === "overview" ? (
+        {activeView === "dashboard" && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Invested vs Current Bar Chart */}
@@ -548,10 +569,22 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
               </div>
             </div>
           </div>
-        ) : (
+        )}
+        
+        {activeView === "holdings" && (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
             <BondsDataTable 
               bonds={bonds} 
+              onEdit={startEdit} 
+              onAdd={() => setShowAddModal(true)} 
+            />
+          </div>
+        )}
+
+        {activeView === "history" && (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <BondsDataTable 
+              bonds={historyBonds} 
               onEdit={startEdit} 
               onAdd={() => setShowAddModal(true)} 
             />
@@ -569,101 +602,196 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
         >
           <div className="p-2 max-w-2xl mx-auto w-full">
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-3">
-                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Bond Name</label>
-                  <input required className="input-premium" placeholder="e.g. 7.18% GS 2033" value={formData.bond_name} onChange={e => setFormData({...formData, bond_name: e.target.value})} />
+              
+              {/* Bond Search UI */}
+              {!formData.bond_name ? (
+                <div className="space-y-2 relative">
+                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Search Bond</label>
+                  <div className="relative">
+                    <input 
+                      autoFocus
+                      className="input-premium" 
+                      placeholder="e.g. SGB, RBI, Shriram..."
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                    />
+                  </div>
+                  {showSearchDropdown && searchResults.length > 0 && (
+                    <div className="absolute z-[120] left-0 right-0 top-[100%] mt-1 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-xl overflow-hidden max-h-56 overflow-y-auto custom-scrollbar">
+                      {searchResults.map((res, i) => (
+                        <div 
+                          key={i} 
+                          className="px-4 py-3 hover:bg-white/5 cursor-pointer transition-colors border-b border-white/5 last:border-0 flex items-center justify-between"
+                          onClick={() => {
+                            setFormData(prev => ({
+                              ...prev,
+                              isin: res.isin,
+                              bond_name: res.data.bond_name,
+                              issuer: res.data.issuer,
+                              bond_type: res.data.bond_type,
+                              face_value: res.data.face_value.toString(),
+                              coupon_rate: res.data.coupon_rate.toString(),
+                              ytm: res.data.ytm.toString(),
+                              interest_frequency: res.data.interest_frequency,
+                              credit_rating: res.data.credit_rating,
+                              current_price: res.data.current_price.toString(),
+                              purchase_price: res.data.current_price.toString(),
+                              maturity_date: res.data.maturity_date,
+                            }));
+                            setSearchQuery("");
+                            setShowSearchDropdown(false);
+                          }}
+                        >
+                          <div>
+                            <div className="text-sm font-bold text-white">{res.data.bond_name}</div>
+                            <div className="text-xs text-[--text-muted]">{res.isin} &bull; {res.data.issuer}</div>
+                          </div>
+                          <span className="text-[0.6rem] bg-[--accent-primary]/20 text-[--accent-primary] px-2 py-1 rounded font-black uppercase tracking-wider">Select</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="pt-2 text-center">
+                    <button 
+                      type="button" 
+                      className="text-xs text-[--accent-primary] hover:underline font-bold"
+                      onClick={() => setFormData(prev => ({...prev, bond_name: "Custom Bond", isin: "CUSTOM"}))}
+                    >
+                      + Add custom bond manually
+                    </button>
+                  </div>
                 </div>
-                <div className="space-y-3">
-                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Issuer</label>
-                  <input required className="input-premium" placeholder="e.g. RBI" value={formData.issuer} onChange={e => setFormData({...formData, issuer: e.target.value})} />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-3">
-                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">ISIN</label>
-                  <input required className="input-premium uppercase" placeholder="e.g. IN0020230085" value={formData.isin} onChange={e => handleIsinChange(e.target.value)} />
-                </div>
-                <div className="space-y-3">
-                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Bond Type</label>
-                  <select className="input-premium" value={formData.bond_type} onChange={e => setFormData({...formData, bond_type: e.target.value})}>
-                    <option value="Government">Government</option>
-                    <option value="Corporate">Corporate</option>
-                    <option value="Tax-Free">Tax-Free</option>
-                    <option value="Infrastructure">Infrastructure</option>
-                    <option value="PSU">PSU</option>
-                  </select>
-                </div>
-                <div className="space-y-3">
-                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Platform</label>
-                  <input className="input-premium" placeholder="e.g. Wint Wealth" value={formData.platform} onChange={e => setFormData({...formData, platform: e.target.value})} />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-3">
-                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Quantity</label>
-                  <input required type="number" className="input-premium tabular-nums" value={formData.quantity} onChange={e => setFormData({...formData, quantity: e.target.value})} />
-                </div>
-                <div className="space-y-3">
-                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Face Value (₹)</label>
-                  <input required type="number" step="any" className="input-premium tabular-nums" value={formData.face_value} onChange={e => setFormData({...formData, face_value: e.target.value})} />
-                </div>
-                <div className="space-y-3">
-                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Purchase Price (₹)</label>
-                  <input required type="number" step="any" className="input-premium tabular-nums" value={formData.purchase_price} onChange={e => setFormData({...formData, purchase_price: e.target.value})} />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-3">
-                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Coupon Rate (%)</label>
-                  <input required type="number" step="any" className="input-premium tabular-nums" value={formData.coupon_rate} onChange={e => setFormData({...formData, coupon_rate: e.target.value})} />
-                </div>
-                <div className="space-y-3">
-                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">YTM (%)</label>
-                  <input type="number" step="any" className="input-premium tabular-nums" placeholder="Optional" value={formData.ytm} onChange={e => setFormData({...formData, ytm: e.target.value})} />
-                </div>
-                <div className="space-y-3">
-                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Interest Frequency</label>
-                  <select className="input-premium" value={formData.interest_frequency} onChange={e => setFormData({...formData, interest_frequency: e.target.value})}>
-                    <option value="Monthly">Monthly</option>
-                    <option value="Quarterly">Quarterly</option>
-                    <option value="Semi-Annual">Semi-Annual</option>
-                    <option value="Annual">Annual</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-3">
-                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Purchase Date</label>
-                  <input type="date" required className="input-premium" value={formData.purchase_date} onChange={e => setFormData({...formData, purchase_date: e.target.value})} />
-                </div>
-                <div className="space-y-3">
-                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Maturity Date</label>
-                  <input type="date" required className="input-premium" value={formData.maturity_date} onChange={e => setFormData({...formData, maturity_date: e.target.value})} />
-                </div>
-              </div>
-
-              {!editingId && (
-                <div className="space-y-3">
-                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Deduct From Account</label>
-                  <select className="input-premium" value={formData.account_id} onChange={e => setFormData({...formData, account_id: e.target.value})}>
-                    <option value="" disabled>Select Account</option>
-                    {accounts.map(acc => (
-                      <option key={acc.id} value={acc.id}>{acc.name} (₹{acc.balance.toLocaleString()})</option>
-                    ))}
-                  </select>
+              ) : (
+                /* Selected Bond Card */
+                <div className="glass-card-static border border-white/10 p-4 rounded-xl flex items-center justify-between bg-gradient-to-r from-white/[0.05] to-transparent">
+                  <div className="flex items-center gap-4">
+                    <span className="text-3xl p-3 bg-white/[0.03] rounded-xl border border-white/5 shadow-inner">📜</span>
+                    <div>
+                      <p className="text-sm font-black text-white">{formData.bond_name}</p>
+                      <p className="text-xs text-[--text-muted] font-medium tracking-wide uppercase mt-1">{formData.isin} &bull; {formData.issuer}</p>
+                    </div>
+                  </div>
+                  {!editingId && (
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, bond_name: "", isin: "" }))}
+                      className="text-xs bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white px-3 py-1.5 rounded-lg transition-all font-bold uppercase tracking-wider"
+                    >
+                      Change
+                    </button>
+                  )}
                 </div>
               )}
 
-              <div className="pt-4 mt-8">
-                <button type="submit" disabled={submitting} className={`btn-primary w-full h-12 shadow-xl text-xs font-black uppercase tracking-widest shadow-[--accent-primary]/20`}>
-                  {submitting ? "Processing..." : (editingId ? "Update Bond" : "Invest in Bond")}
-                </button>
-              </div>
+              {/* Main Inputs (only show if bond selected) */}
+              {formData.bond_name && (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-3">
+                      <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Quantity</label>
+                      <input required type="number" className="input-premium tabular-nums" value={formData.quantity} onChange={e => setFormData({...formData, quantity: e.target.value})} />
+                    </div>
+                    <div className="space-y-3">
+                      <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Purchase Price / Unit (₹)</label>
+                      <input required type="number" step="any" className="input-premium tabular-nums" value={formData.purchase_price} onChange={e => setFormData({...formData, purchase_price: e.target.value})} />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-3">
+                      <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Purchase Date</label>
+                      <input type="date" required className="input-premium" value={formData.purchase_date} onChange={e => setFormData({...formData, purchase_date: e.target.value})} />
+                    </div>
+                    {!editingId && (
+                      <div className="space-y-3">
+                        <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Deduct From Account</label>
+                        <select className="input-premium" value={formData.account_id} onChange={e => setFormData({...formData, account_id: e.target.value})}>
+                          <option value="" disabled>Select Account</option>
+                          {accounts.map(acc => (
+                            <option key={acc.id} value={acc.id}>{acc.name} (₹{acc.balance.toLocaleString()})</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+
+                  <details className="group glass-card-static border border-white/5 rounded-xl overflow-hidden mt-6">
+                    <summary className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] p-4 cursor-pointer outline-none hover:text-white transition-colors bg-white/[0.01]">
+                      Advanced Bond Details
+                    </summary>
+                    <div className="p-4 pt-0 space-y-6">
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-3">
+                          <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Bond Name</label>
+                          <input required className="input-premium" placeholder="e.g. 7.18% GS 2033" value={formData.bond_name} onChange={e => setFormData({...formData, bond_name: e.target.value})} />
+                        </div>
+                        <div className="space-y-3">
+                          <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Issuer</label>
+                          <input required className="input-premium" placeholder="e.g. RBI" value={formData.issuer} onChange={e => setFormData({...formData, issuer: e.target.value})} />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="space-y-3">
+                          <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">ISIN</label>
+                          <input required className="input-premium uppercase" placeholder="e.g. IN0020230085" value={formData.isin} onChange={e => handleIsinChange(e.target.value)} />
+                        </div>
+                        <div className="space-y-3">
+                          <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Bond Type</label>
+                          <select className="input-premium" value={formData.bond_type} onChange={e => setFormData({...formData, bond_type: e.target.value})}>
+                            <option value="Government">Government</option>
+                            <option value="Corporate">Corporate</option>
+                            <option value="Tax-Free">Tax-Free</option>
+                            <option value="Infrastructure">Infrastructure</option>
+                            <option value="PSU">PSU</option>
+                          </select>
+                        </div>
+                        <div className="space-y-3">
+                          <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Face Value (₹)</label>
+                          <input required type="number" step="any" className="input-premium tabular-nums" value={formData.face_value} onChange={e => setFormData({...formData, face_value: e.target.value})} />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="space-y-3">
+                          <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Coupon Rate (%)</label>
+                          <input required type="number" step="any" className="input-premium tabular-nums" value={formData.coupon_rate} onChange={e => setFormData({...formData, coupon_rate: e.target.value})} />
+                        </div>
+                        <div className="space-y-3">
+                          <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">YTM (%)</label>
+                          <input type="number" step="any" className="input-premium tabular-nums" placeholder="Optional" value={formData.ytm} onChange={e => setFormData({...formData, ytm: e.target.value})} />
+                        </div>
+                        <div className="space-y-3">
+                          <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Interest Frequency</label>
+                          <select className="input-premium" value={formData.interest_frequency} onChange={e => setFormData({...formData, interest_frequency: e.target.value})}>
+                            <option value="Monthly">Monthly</option>
+                            <option value="Quarterly">Quarterly</option>
+                            <option value="Semi-Annual">Semi-Annual</option>
+                            <option value="Annual">Annual</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-3">
+                          <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Maturity Date</label>
+                          <input type="date" required className="input-premium" value={formData.maturity_date} onChange={e => setFormData({...formData, maturity_date: e.target.value})} />
+                        </div>
+                        <div className="space-y-3">
+                          <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Platform / Broker</label>
+                          <input className="input-premium" placeholder="e.g. Wint Wealth, Kite" value={formData.platform} onChange={e => setFormData({...formData, platform: e.target.value})} />
+                        </div>
+                      </div>
+                    </div>
+                  </details>
+
+                  <div className="pt-4 mt-8">
+                    <button type="submit" disabled={submitting} className={`btn-primary w-full h-12 shadow-xl text-xs font-black uppercase tracking-widest shadow-[--accent-primary]/20`}>
+                      {submitting ? "Processing..." : (editingId ? "Update Bond" : "Invest in Bond")}
+                    </button>
+                  </div>
+                </>
+              )}
             </form>
           </div>
         </Drawer>

@@ -652,28 +652,8 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
                   </div>
                 </div>
 
-                {/* LTP Price row */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">LTP (Latest price)</label>
-                    <input 
-                      required 
-                      type="number" 
-                      step="any"
-                      className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]" 
-                      value={formData.current_price} 
-                      onChange={e => setFormData({...formData, current_price: e.target.value})} 
-                      inputMode="decimal"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Order Type</label>
-                    <div className="flex border border-white/10 rounded overflow-hidden">
-                      <button type="button" className="flex-1 py-1.5 bg-[#2185d0] text-white text-xs font-bold uppercase">Limit</button>
-                      <button type="button" disabled className="flex-1 py-1.5 text-gray-500 text-xs font-bold uppercase cursor-not-allowed">Market</button>
-                    </div>
-                  </div>
-                </div>
+                {/* Hidden LTP (auto-fetched) */}
+                <input type="hidden" value={formData.current_price} />
 
                 {!editingId && (
                   <>
@@ -704,28 +684,33 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Brokerage &amp; Charges (₹)</label>
-                        <input 
-                          type="number" 
-                          step="any"
-                          className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]" 
-                          value={charges} 
-                          onChange={e => setCharges(e.target.value)} 
-                        />
+                    <details className="group border border-white/5 bg-white/[0.02] rounded-xl overflow-hidden mt-4">
+                      <summary className="text-xs font-bold text-gray-400 p-3 cursor-pointer outline-none hover:text-white transition-colors bg-white/[0.02]">
+                        Advanced Options (Brokerage, Notes)
+                      </summary>
+                      <div className="p-3 pt-0 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Brokerage &amp; Charges (₹)</label>
+                          <input 
+                            type="number" 
+                            step="any"
+                            className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]" 
+                            value={charges} 
+                            onChange={e => setCharges(e.target.value)} 
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Notes</label>
+                          <input 
+                            type="text"
+                            className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]" 
+                            placeholder="Optional notes..."
+                            value={formData.notes}
+                            onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                          />
+                        </div>
                       </div>
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Notes</label>
-                        <input 
-                          type="text"
-                          className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]" 
-                          placeholder="Optional notes..."
-                          value={formData.notes}
-                          onChange={e => setFormData({ ...formData, notes: e.target.value })}
-                        />
-                      </div>
-                    </div>
+                    </details>
                   </>
                 )}
 
