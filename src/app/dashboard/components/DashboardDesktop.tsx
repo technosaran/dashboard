@@ -179,15 +179,14 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
   ]);
 
   const chartData = useMemo(() => {
-    const rate = showUSD && stats.netWorthINR > 0 ? (stats.netWorthUSD / stats.netWorthINR) : 1;
     return stats.trendData.map(d => ({
       ...d,
-      income: d.income * rate,
-      expense: d.expense * rate,
-      netWorth: (d as any).netWorth ? (d as any).netWorth * rate : 0,
-      investments: (d as any).investments ? (d as any).investments * rate : 0,
+      income: d.income,
+      expense: d.expense,
+      netWorth: (d as any).netWorth || 0,
+      investments: (d as any).investments || 0,
     }));
-  }, [stats.trendData, showUSD, stats.netWorthINR, stats.netWorthUSD]);
+  }, [stats.trendData]);
 
   const filteredChartData = useMemo(() => {
     if (timeframe === "1M") return chartData.slice(-1);
@@ -305,7 +304,7 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                       <span>{stats.totalDayPnL >= 0 ? "▲ +" : "▼ "}</span>
                       <span>
                         {showUSD 
-                          ? `$${Math.abs(stats.totalDayPnL * (stats.netWorthINR > 0 ? stats.netWorthUSD / stats.netWorthINR : 1)).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+                          ? `$${Math.abs(stats.totalDayPnL).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
                           : `₹${Math.abs(stats.totalDayPnL).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
                         }
                       </span>

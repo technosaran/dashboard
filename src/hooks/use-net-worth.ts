@@ -46,50 +46,102 @@ export function useNetWorth() {
     const hasAlt = enabledModules.includes("Alt Assets");
     const hasLiabilities = enabledModules.includes("Liabilities");
 
-    // Determine USD to INR exchange rate (from USD forex account or default 83.5)
-    const usdForexAccount = forexAccounts.find(f => f.currency === "USD" && Number((f as any).exchange_rate || 0) > 0);
-    const usdToInrRate = usdForexAccount ? Number((usdForexAccount as any).exchange_rate) : 83.5;
+    // Pure INR calculations (Only items where currency !== 'USD')
+    const cashBalanceINR = accounts
+      .filter(a => a.currency !== "USD")
+      .reduce((sum, acc) => sum + Number(acc.balance || 0), 0);
 
-    // Calculate INR values (converting USD components using FX rate)
-    const cashBalanceINR = accounts.reduce((sum, acc) => {
-      const val = Number(acc.balance || 0);
-      return sum + (acc.currency === 'USD' ? val * usdToInrRate : val);
-    }, 0);
+    const stockBalanceINR = hasStocks
+      ? investments
+          .filter(i => i.type === "stock" && i.currency !== "USD")
+          .reduce((sum, inv) => sum + Number(inv.quantity || 0) * Number(inv.current_price || 0), 0)
+      : 0;
 
-    const stockBalanceINR = hasStocks ? investments.filter(i => i.type === 'stock').reduce((sum, inv) => {
-      const val = Number(inv.quantity || 0) * Number(inv.current_price || 0);
-      return sum + (inv.currency === 'USD' ? val * usdToInrRate : val);
-    }, 0) : 0;
+    const forexBalanceINR = hasForex
+      ? forexAccounts
+          .filter(acc => acc.currency !== "USD")
+          .reduce((sum, acc) => sum + Number(acc.balance || 0), 0)
+      : 0;
 
-    const forexBalanceINR = hasForex ? forexAccounts.reduce((sum, acc) => {
-      const val = Number(acc.balance || 0);
-      return sum + (acc.currency === 'USD' ? val * usdToInrRate : val);
-    }, 0) : 0;
+    const cryptoBalanceINR = investments
+      .filter(i => i.type === "crypto" && i.currency !== "USD")
+      .reduce((sum, inv) => sum + Number(inv.quantity || 0) * Number(inv.current_price || 0), 0);
 
-    const cryptoBalanceUSD = investments.filter(i => i.type === 'crypto').reduce((sum, inv) => sum + (Number(inv.quantity || 0) * Number(inv.current_price || 0)), 0);
-    const cryptoBalanceINR = cryptoBalanceUSD * usdToInrRate;
+    const mfBalanceINR = hasMF
+      ? mutualFunds
+          .filter(mf => (mf as any).currency !== "USD")
+          .reduce((sum, mf) => sum + Number(mf.units || 0) * Number(mf.current_nav || 0), 0)
+      : 0;
 
-    // Mutual funds, bonds, alt assets, liabilities
-    const mfBalanceINR = hasMF ? mutualFunds.reduce((sum, mf) => sum + (Number(mf.units) * Number(mf.current_nav || 0)), 0) : 0;
-    const bondBalanceINR = hasBonds ? (bonds || []).filter(b => b.status === 'Active').reduce((sum, b) => sum + Number(b.current_value || 0), 0) : 0;
-    const altBalanceINR = hasAlt ? (alternativeAssets || []).reduce((sum, asset) => sum + Number(asset.current_value || 0), 0) : 0;
-    const debtBalanceINR = hasLiabilities ? liabilities.reduce((sum, debt) => sum + Number(debt.remaining_amount || 0), 0) : 0;
+    const bondBalanceINR = hasBonds
+      ? (bonds || [])
+          .filter(b => b.status === "Active" && (b as any).currency !== "USD")
+          .reduce((sum, b) => sum + Number(b.current_value || 0), 0)
+      : 0;
 
-    // Total INR Net Worth (Including converted USD & Crypto)
+    const altBalanceINR = hasAlt
+      ? (alternativeAssets || [])
+          .filter(asset => (asset as any).currency !== "USD")
+          .reduce((sum, asset) => sum + Number(asset.current_value || 0), 0)
+      : 0;
+
+    const debtBalanceINR = hasLiabilities
+      ? liabilities
+          .filter(debt => (debt as any).currency !== "USD")
+          .reduce((sum, debt) => sum + Number(debt.remaining_amount || 0), 0)
+      : 0;
+
     const liquidBalanceINR = cashBalanceINR + stockBalanceINR + mfBalanceINR + bondBalanceINR + forexBalanceINR + cryptoBalanceINR;
     const totalAssetsINR = liquidBalanceINR + altBalanceINR;
     const netWorthINR = totalAssetsINR - debtBalanceINR;
 
-    // Converted USD Net Worth values
-    const cashBalanceUSD = cashBalanceINR / usdToInrRate;
-    const stockBalanceUSD = stockBalanceINR / usdToInrRate;
-    const forexBalanceUSD = forexBalanceINR / usdToInrRate;
-    const mfBalanceUSD = mfBalanceINR / usdToInrRate;
-    const bondBalanceUSD = bondBalanceINR / usdToInrRate;
-    const altBalanceUSD = altBalanceINR / usdToInrRate;
-    const debtBalanceUSD = debtBalanceINR / usdToInrRate;
-    const liquidBalanceUSD = liquidBalanceINR / usdToInrRate;
-    const totalAssetsUSD = totalAssetsINR / usdToInrRate;
+    // Pure USD calculations (Only items where currency === 'USD')
+    const cashBalanceUSD = accounts
+      .filter(a => a.currency === "USD")
+      .reduce((sum, acc) => sum + Number(acc.balance || 0), 0);
+
+    const stockBalanceUSD = hasStocks
+      ? investments
+          .filter(i => i.type === "stock" && i.currency === "USD")
+          .reduce((sum, inv) => sum + Number(inv.quantity || 0) * Number(inv.current_price || 0), 0)
+      : 0;
+
+    const forexBalanceUSD = hasForex
+      ? forexAccounts
+          .filter(acc => acc.currency === "USD")
+          .reduce((sum, acc) => sum + Number(acc.balance || 0), 0)
+      : 0;
+
+    const cryptoBalanceUSD = investments
+      .filter(i => i.type === "crypto" || i.currency === "USD")
+      .reduce((sum, inv) => sum + Number(inv.quantity || 0) * Number(inv.current_price || 0), 0);
+
+    const mfBalanceUSD = hasMF
+      ? mutualFunds
+          .filter(mf => (mf as any).currency === "USD")
+          .reduce((sum, mf) => sum + Number(mf.units || 0) * Number(mf.current_nav || 0), 0)
+      : 0;
+
+    const bondBalanceUSD = hasBonds
+      ? (bonds || [])
+          .filter(b => b.status === "Active" && (b as any).currency === "USD")
+          .reduce((sum, b) => sum + Number(b.current_value || 0), 0)
+      : 0;
+
+    const altBalanceUSD = hasAlt
+      ? (alternativeAssets || [])
+          .filter(asset => (asset as any).currency === "USD")
+          .reduce((sum, asset) => sum + Number(asset.current_value || 0), 0)
+      : 0;
+
+    const debtBalanceUSD = hasLiabilities
+      ? liabilities
+          .filter(debt => (debt as any).currency === "USD")
+          .reduce((sum, debt) => sum + Number(debt.remaining_amount || 0), 0)
+      : 0;
+
+    const liquidBalanceUSD = cashBalanceUSD + stockBalanceUSD + mfBalanceUSD + bondBalanceUSD + forexBalanceUSD + cryptoBalanceUSD;
+    const totalAssetsUSD = liquidBalanceUSD + altBalanceUSD;
     const netWorthUSD = totalAssetsUSD - debtBalanceUSD;
 
     // Default unified properties aligned to user currency preference

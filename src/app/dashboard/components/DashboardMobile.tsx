@@ -142,7 +142,7 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, accou
                 <span>{stats.totalDayPnL >= 0 ? "▲ +" : "▼ "}</span>
                 <span>
                   {showUSD 
-                    ? `$${Math.abs(stats.totalDayPnL * (stats.netWorthINR > 0 ? stats.netWorthUSD / stats.netWorthINR : 1)).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+                    ? `$${Math.abs(stats.totalDayPnL).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
                     : `₹${Math.abs(stats.totalDayPnL).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
                   }
                 </span>
