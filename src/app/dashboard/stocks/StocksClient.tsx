@@ -284,21 +284,48 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
     e.preventDefault();
     await withLock(async () => {
       try {
-        const fullSymbol = formData.symbol ? formData.symbol.trim().toUpperCase() : undefined;
+        let finalSymbol = formData.symbol ? formData.symbol.trim().toUpperCase() : "";
+        let finalName = formData.name ? formData.name.trim() : "";
+
+        // Fallback to manual searchQuery if symbol wasn't selected from dropdown
+        if (!finalSymbol && searchQuery.trim().length > 0) {
+          finalSymbol = searchQuery.trim().toUpperCase();
+          finalName = searchQuery.trim();
+        }
+
+        if (!finalName && !finalSymbol) {
+          toast.error("Please search and select a stock or type a stock symbol");
+          return;
+        }
+
         const qty = parseFloat(formData.quantity);
+        if (!qty || qty <= 0 || !Number.isFinite(qty)) {
+          toast.error("Please enter a valid positive quantity");
+          return;
+        }
+
         const price = parseFloat(formData.buy_price);
-        const manualChargesValue = parseFloat(charges) || 0;
-        const finalNetAmount = formData.trade_type === "buy" ? (qty * price) + manualChargesValue : (qty * price) - manualChargesValue;
+        if (!price || price <= 0 || !Number.isFinite(price)) {
+          toast.error("Please enter a valid buy price");
+          return;
+        }
+
+        const currentPrice = parseFloat(formData.current_price) > 0 ? parseFloat(formData.current_price) : price;
+        const isBuy = formData.trade_type === "buy";
+        const turnover = qty * price;
+        const autoCharges = calculateEquityDeliveryCharges(turnover, isBuy).totalCharges;
+        const effectiveCharges = isCustomCharges ? (parseFloat(charges) || 0) : autoCharges;
+        const finalNetAmount = isBuy ? turnover + effectiveCharges : turnover - effectiveCharges;
 
         const payload = {
-          name: formData.name, 
-          symbol: fullSymbol,
+          name: finalName || finalSymbol, 
+          symbol: finalSymbol,
           quantity: qty,
           buy_price: price,
-          current_price: parseFloat(formData.current_price),
+          current_price: currentPrice,
           currency: formData.currency,
           notes: formData.notes || undefined,
-          bought_at: formData.bought_at,
+          bought_at: formData.bought_at || new Date().toISOString().split("T")[0],
           deduct_account_id: formData.deduct_from_account || undefined,
           total_cost_with_charges: !editingId ? finalNetAmount : undefined,
           trade_type: formData.trade_type
@@ -318,14 +345,16 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
             toast.error(res.error);
           }
         } else {
-          if (!formData.deduct_from_account) {
-            toast.error("Please select a channeling account");
-            return;
-          }
           const res = await createInvestment(payload);
           if (!res?.error) {
-            toast.success(formData.trade_type === 'buy' ? "Stock purchased" : "Stock sold");
+            toast.success(formData.trade_type === 'buy' ? "Stock purchased successfully" : "Stock sold successfully");
             setShowAddModal(false);
+            setFormData({
+              name: "", symbol: "", quantity: "", buy_price: "", current_price: "",
+              currency: "INR", notes: "", bought_at: new Date().toISOString().split("T")[0],
+              deduct_from_account: "", trade_type: "buy"
+            });
+            setSearchQuery("");
             mutate();
           } else {
             toast.error(res.error);

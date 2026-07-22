@@ -172,9 +172,9 @@ export default function DashboardClient() {
     const expenseTrend: TrendEntry[] = [];
     const catMap: Record<string, number> = {};
     
-    // Trend Map Initialization
+    // Trend Map Initialization (Last 24 Months)
     const trendMap: Record<string, TrendMapEntry> = {};
-    for (let i = 5; i >= 0; i--) {
+    for (let i = 23; i >= 0; i--) {
       const d = subMonths(now, i);
       const m = format(d, "MMM yy");
       trendMap[m] = { name: m, income: 0, expense: 0 };

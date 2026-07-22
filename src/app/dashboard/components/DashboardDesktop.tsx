@@ -95,6 +95,7 @@ type Props = {
 const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goals, accounts, isLoading }: Props) {
   const { data: { profile } = {} } = useFinanceData();
   const [activeChartMetric, setActiveChartMetric] = useState<"cashflow" | "assets" | "investments">("cashflow");
+  const [timeframe, setTimeframe] = useState<"1M" | "3M" | "6M" | "1Y" | "ALL">("6M");
 
   const enabledModules = useMemo(() => {
     const raw = profile?.enabled_modules || [...MODULE_KEYS];
@@ -187,6 +188,14 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
       investments: (d as any).investments ? (d as any).investments * rate : 0,
     }));
   }, [stats.trendData, showUSD, stats.netWorthINR, stats.netWorthUSD]);
+
+  const filteredChartData = useMemo(() => {
+    if (timeframe === "1M") return chartData.slice(-1);
+    if (timeframe === "3M") return chartData.slice(-3);
+    if (timeframe === "6M") return chartData.slice(-6);
+    if (timeframe === "1Y") return chartData.slice(-12);
+    return chartData; // ALL
+  }, [chartData, timeframe]);
 
   const CustomPieTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
@@ -408,32 +417,51 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                     {activeChartMetric === "cashflow" ? "Cash Flow" : activeChartMetric === "assets" ? "Net Worth Over Time" : "Investment Growth"}
                   </h3>
                   <span className="text-xs text-[--text-muted] mt-1">
-                    {activeChartMetric === "cashflow" ? "Income vs expenses over the last 6 months" : activeChartMetric === "assets" ? "Cumulative net worth trend" : "Stock, mutual fund, and bond portfolio growth"}
+                    {activeChartMetric === "cashflow" ? `Income vs expenses (${timeframe} view)` : activeChartMetric === "assets" ? `Cumulative net worth trend (${timeframe} view)` : `Portfolio performance (${timeframe} view)`}
                   </span>
                 </div>
                 <div className="flex flex-col items-start sm:items-end gap-2 shrink-0">
-                  {/* #2 — clear label above the segmented control */}
-                  <p className="text-xs font-semibold text-[--text-muted]">Chart type</p>
-                  <div className="flex items-center gap-1 rounded-xl bg-white/5 border border-white/10 p-1">
-                    {[
-                      { key: "cashflow", label: "Cash Flow" },
-                      { key: "assets", label: "Net Worth" },
-                      { key: "investments", label: "Investments" },
-                    ].map((m) => (
-                      <button
-                        key={m.key}
-                        onClick={() => setActiveChartMetric(m.key as any)}
-                        aria-pressed={activeChartMetric === m.key}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                          activeChartMetric === m.key
-                            ? "bg-[--accent-primary] text-white shadow-md shadow-[--accent-primary]/20"
-                            : "text-[--text-muted] hover:text-white"
-                        }`}
-                      >
-                        {m.label}
-                      </button>
-                    ))}
+                  <div className="flex flex-wrap items-center gap-3">
+                    {/* Timeframe Control Bar */}
+                    <div className="flex items-center gap-1 rounded-xl bg-white/5 border border-white/10 p-1">
+                      {(["1M", "3M", "6M", "1Y", "ALL"] as const).map((tf) => (
+                        <button
+                          key={tf}
+                          onClick={() => setTimeframe(tf)}
+                          className={`px-2.5 py-1 rounded-lg text-[0.6875rem] font-black tracking-wider transition-all cursor-pointer ${
+                            timeframe === tf
+                              ? "bg-white/20 text-white shadow-sm"
+                              : "text-[--text-muted] hover:text-white hover:bg-white/5"
+                          }`}
+                        >
+                          {tf}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Chart Metric Control Bar */}
+                    <div className="flex items-center gap-1 rounded-xl bg-white/5 border border-white/10 p-1">
+                      {[
+                        { key: "cashflow", label: "Cash Flow" },
+                        { key: "assets", label: "Net Worth" },
+                        { key: "investments", label: "Investments" },
+                      ].map((m) => (
+                        <button
+                          key={m.key}
+                          onClick={() => setActiveChartMetric(m.key as any)}
+                          aria-pressed={activeChartMetric === m.key}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                            activeChartMetric === m.key
+                              ? "bg-[--accent-primary] text-white shadow-md shadow-[--accent-primary]/20"
+                              : "text-[--text-muted] hover:text-white"
+                          }`}
+                        >
+                          {m.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
+
                   {activeChartMetric === "cashflow" && (
                     <div className="flex items-center gap-3 mt-1">
                       {enabledModules.includes("Income") && (
@@ -455,7 +483,7 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
 
               <div className="h-[280px] w-full">
                 <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
-                  <AreaChart data={chartData} margin={{ left: -10, right: 10, top: 10, bottom: 0 }}>
+                  <AreaChart data={filteredChartData} margin={{ left: -10, right: 10, top: 10, bottom: 0 }}>
                     <defs>
                       <linearGradient id="incomeGlow" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="var(--accent-primary)" stopOpacity={0.25} />

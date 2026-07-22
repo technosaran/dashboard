@@ -220,9 +220,10 @@ export async function createInvestment(data: {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Unauthorized" };
 
-    // Input validation
-    if (!data.name || data.name.trim().length === 0) {
-      return { error: "Stock name is required" };
+    // Input validation with fallbacks
+    const name = data.name ? data.name.trim() : (data.symbol ? data.symbol.trim() : "");
+    if (!name) {
+      return { error: "Stock name or symbol is required" };
     }
     if (!data.quantity || data.quantity <= 0 || !Number.isFinite(data.quantity)) {
       return { error: "Quantity must be a positive number" };
@@ -230,9 +231,9 @@ export async function createInvestment(data: {
     if (!data.buy_price || data.buy_price <= 0 || !Number.isFinite(data.buy_price)) {
       return { error: "Buy price must be a positive number" };
     }
-    if (!data.current_price || data.current_price <= 0 || !Number.isFinite(data.current_price)) {
-      return { error: "Current price must be a positive number" };
-    }
+    const currentPrice = (data.current_price && data.current_price > 0 && Number.isFinite(data.current_price)) 
+      ? data.current_price 
+      : data.buy_price;
 
     // Harden input parameters to prevent empty string UUID and null string database crashes
     const cleanAccountId = data.deduct_account_id && 
@@ -272,12 +273,12 @@ export async function createInvestment(data: {
 
     const { data: rpcRes, error: rpcErr } = await rpc("record_investment", {
       p_user_id: user.id,
-      p_name: data.name,
+      p_name: name,
       p_type: "stock",
       p_symbol: cleanSymbol,
       p_quantity: data.quantity,
       p_buy_price: data.buy_price,
-      p_current_price: data.current_price,
+      p_current_price: currentPrice,
       p_currency: data.currency || "INR",
       p_notes: cleanNotes,
       p_date: tradeDate,

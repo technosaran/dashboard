@@ -65,6 +65,14 @@ export default function InvestmentsClient() {
     return list;
   }, [hasStocks, hasMF, hasBonds, hasFnO, hasForex, hasAltAssets]);
 
+  // Sync active tab when searchParams ?tab=... changes
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam && availableTabs.some(t => t.key === tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams, availableTabs]);
+
   // Adjust active tab if the requested tab isn't enabled
   useEffect(() => {
     const exists = availableTabs.some(t => t.key === activeTab);
@@ -77,23 +85,29 @@ export default function InvestmentsClient() {
 
   // Combined Portfolio Statistics (Separate INR and USD, zero conversion)
   const portfolioStats = useMemo(() => {
-    // 1. Stocks (INR)
-    const activeStocks = investments.filter(i => i.type === "stock" && Number(i.quantity) > 0);
+    // 1. Stocks (INR) - filter out USD equities
+    const activeStocks = investments.filter(i => i.type === "stock" && Number(i.quantity) > 0 && i.currency !== "USD");
     const stocksInvested = activeStocks.reduce((sum, i) => sum + (Number(i.quantity) * Number(i.buy_price)), 0);
     const stocksCurrent = activeStocks.reduce((sum, i) => sum + (Number(i.quantity) * Number(i.current_price)), 0);
-    const stocksRealized = investments.filter(i => i.type === "stock").reduce((sum, i) => sum + Number(i.realized_pnl || 0), 0);
+    const stocksRealized = investments.filter(i => i.type === "stock" && i.currency !== "USD").reduce((sum, i) => sum + Number(i.realized_pnl || 0), 0);
 
-    // 2. Mutual Funds (INR)
+    // 2. USD Equities / Stocks (Separate USD)
+    const activeUsdStocks = investments.filter(i => i.type === "stock" && Number(i.quantity) > 0 && i.currency === "USD");
+    const usdStocksInvested = activeUsdStocks.reduce((sum, i) => sum + (Number(i.quantity) * Number(i.buy_price)), 0);
+    const usdStocksCurrent = activeUsdStocks.reduce((sum, i) => sum + (Number(i.quantity) * Number(i.current_price)), 0);
+    const usdStocksRealized = investments.filter(i => i.type === "stock" && i.currency === "USD").reduce((sum, i) => sum + Number(i.realized_pnl || 0), 0);
+
+    // 3. Mutual Funds (INR)
     const activeMF = mutualFunds.filter(m => Number(m.units) > 0);
     const mfInvested = activeMF.reduce((sum, m) => sum + (Number(m.units) * Number(m.avg_nav)), 0);
     const mfCurrent = activeMF.reduce((sum, m) => sum + (Number(m.units) * Number(m.current_nav)), 0);
     const mfRealized = mutualFunds.reduce((sum, m) => sum + Number(m.realized_pnl || 0), 0);
 
-    // 3. Bonds (INR)
+    // 4. Bonds (INR)
     const bondsInvested = bonds.reduce((sum, b) => sum + Number(b.total_invested || 0), 0);
     const bondsCurrent = bonds.reduce((sum, b) => sum + Number(b.current_value || 0), 0);
 
-    // 4. Alternative Assets (INR)
+    // 5. Alternative Assets (INR)
     const activeAlt = alternativeAssets || [];
     const altInvested = activeAlt.reduce((sum, a) => sum + Number(a.purchase_price || 0), 0);
     const altCurrent = activeAlt.reduce((sum, a) => sum + Number(a.current_value || 0), 0);
@@ -102,9 +116,10 @@ export default function InvestmentsClient() {
     const totalCurrentINR = stocksCurrent + mfCurrent + bondsCurrent + altCurrent;
     const totalRealizedINR = stocksRealized + mfRealized;
     const totalPnLINR = (totalCurrentINR - totalInvestedINR) + totalRealizedINR;
-    const totalPnLPercentINR = totalInvestedINR > 0 ? (totalPnLINR / totalInvestedINR) * 100 : 0;
+    const rawPnLPercentINR = totalInvestedINR > 0 ? (totalPnLINR / totalInvestedINR) * 100 : 0;
+    const totalPnLPercentINR = Number.isFinite(rawPnLPercentINR) ? rawPnLPercentINR : 0;
 
-    // 5. Forex (Separate USD)
+    // 6. Forex & USD Stocks (Separate USD)
     const activeForex = forexAccounts.filter(f => Number(f.balance) > 0);
     const forexInvestedUSD = activeForex.reduce((sum, f) => {
       const amount = Number(f.total_deposited || 0) - Number(f.total_withdrawn || 0);
@@ -112,15 +127,21 @@ export default function InvestmentsClient() {
     }, 0);
     const forexCurrentUSD = activeForex.reduce((sum, f) => sum + Number(f.balance || 0), 0);
     const forexRealizedUSD = forexAccounts.reduce((sum, f) => sum + Number(f.total_pnl || 0), 0);
-    const forexPnLUSD = (forexCurrentUSD - forexInvestedUSD) + forexRealizedUSD;
-    const forexPnLPercentUSD = forexInvestedUSD > 0 ? (forexPnLUSD / forexInvestedUSD) * 100 : 0;
 
-    // 6. Crypto (Binance USDT / USD)
+    const totalInvestedUSD = forexInvestedUSD + usdStocksInvested;
+    const totalCurrentUSD = forexCurrentUSD + usdStocksCurrent;
+    const totalRealizedUSD = forexRealizedUSD + usdStocksRealized;
+    const totalPnLUSD = (totalCurrentUSD - totalInvestedUSD) + totalRealizedUSD;
+    const rawPnLPercentUSD = totalInvestedUSD > 0 ? (totalPnLUSD / totalInvestedUSD) * 100 : 0;
+    const totalPnLPercentUSD = Number.isFinite(rawPnLPercentUSD) ? rawPnLPercentUSD : 0;
+
+    // 7. Crypto (Binance USDT / USD)
     const activeCrypto = investments.filter(i => i.type === "crypto" && Number(i.quantity) > 0);
     const cryptoInvestedUSD = activeCrypto.reduce((sum, c) => sum + (Number(c.quantity) * Number(c.buy_price)), 0);
     const cryptoCurrentUSD = activeCrypto.reduce((sum, c) => sum + (Number(c.quantity) * Number(c.current_price)), 0);
     const cryptoPnLUSD = cryptoCurrentUSD - cryptoInvestedUSD;
-    const cryptoPnLPercentUSD = cryptoInvestedUSD > 0 ? (cryptoPnLUSD / cryptoInvestedUSD) * 100 : 0;
+    const rawCryptoPnLPercentUSD = cryptoInvestedUSD > 0 ? (cryptoPnLUSD / cryptoInvestedUSD) * 100 : 0;
+    const cryptoPnLPercentUSD = Number.isFinite(rawCryptoPnLPercentUSD) ? rawCryptoPnLPercentUSD : 0;
 
     return {
       inr: {
@@ -135,11 +156,11 @@ export default function InvestmentsClient() {
         hasData: totalCurrentINR > 0 || totalInvestedINR > 0
       },
       usd: {
-        totalInvested: forexInvestedUSD,
-        totalCurrent: forexCurrentUSD,
-        totalPnL: forexPnLUSD,
-        totalPnLPercent: forexPnLPercentUSD,
-        hasData: forexCurrentUSD > 0 || forexInvestedUSD > 0
+        totalInvested: totalInvestedUSD,
+        totalCurrent: totalCurrentUSD,
+        totalPnL: totalPnLUSD,
+        totalPnLPercent: totalPnLPercentUSD,
+        hasData: totalCurrentUSD > 0 || totalInvestedUSD > 0
       },
       crypto: {
         totalInvested: cryptoInvestedUSD,
