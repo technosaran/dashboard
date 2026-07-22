@@ -19,7 +19,12 @@ export function getDb() {
     throw new Error("Missing environment variable: DATABASE_URL is required to initialize Drizzle.");
   }
 
-  globalForDb.pool = new Pool({ connectionString });
+  globalForDb.pool = new Pool({
+    connectionString,
+    max: 10,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 5000,
+  });
   globalForDb.db = drizzle(globalForDb.pool, { schema });
   return globalForDb.db;
 }

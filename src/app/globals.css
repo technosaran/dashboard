@@ -197,13 +197,13 @@ textarea:focus-visible,
   outline-offset: 2px;
 }
 
-/* Force Financial Status Colors */
-.text-success { color: #10b981 !important; }
-.text-danger { color: #ef4444 !important; }
-.bg-success { background-color: #10b981 !important; }
-.bg-danger { background-color: #ef4444 !important; }
-.border-success { border-color: #10b981 !important; }
-.border-danger { border-color: #ef4444 !important; }
+/* Financial Status Colors */
+.text-success { color: #10b981; }
+.text-danger { color: #ef4444; }
+.bg-success { background-color: #10b981; }
+.bg-danger { background-color: #ef4444; }
+.border-success { border-color: #10b981; }
+.border-danger { border-color: #ef4444; }
 
 input, textarea, [contenteditable="true"] {
   user-select: text;

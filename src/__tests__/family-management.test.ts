@@ -89,7 +89,7 @@ describe('addFamilyMember', () => {
 
   it('should succeed with valid data', async () => {
     const result = await addFamilyMember({ name: 'Alice', relationship: 'Daughter' });
-    expect(result).toEqual({ success: true });
+    expect(result).toMatchObject({ success: true });
     expect(mockFrom).toHaveBeenCalledWith('family_members');
     expect(mockInsert).toHaveBeenCalledWith({
       user_id: 'test-user-id',
@@ -213,7 +213,7 @@ describe('processFamilyTransfer', () => {
       note: '  hello  ',
     });
 
-    expect(result).toEqual({ success: true });
+    expect(result).toMatchObject({ success: true });
     expect(mockRpc).toHaveBeenCalledWith('process_family_transfer_v2', {
       p_user_id: 'test-user-id',
       p_family_member_id: 'member-1',

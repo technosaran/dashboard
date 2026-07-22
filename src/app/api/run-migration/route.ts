@@ -8,14 +8,15 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const secret = searchParams.get("secret");
 
-  if (secret !== "run_my_migration_2026") {
+  const expectedSecret = process.env.MIGRATION_SECRET || process.env.CRON_SECRET;
+  if (!expectedSecret || secret !== expectedSecret) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const projId = "hfbhkfllkvgxikjspemk";
-  const password = "@TechnoML2023";
-  // Connect using session pooler or direct connection (resolves cleanly in Vercel environment)
-  const connectionString = `postgresql://postgres:${encodeURIComponent(password)}@db.${projId}.supabase.co:5432/postgres`;
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) {
+    return NextResponse.json({ error: "DATABASE_URL environment variable is not configured" }, { status: 500 });
+  }
 
   const client = new Client({ connectionString });
 

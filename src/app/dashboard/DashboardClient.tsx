@@ -80,42 +80,49 @@ export default function DashboardClient() {
       refreshedRef.current = true;
       let updated = 0;
       try {
-        // 1. Sync Stocks
-        const activeStocks = investments.filter(i => i.type === "stock" && Number(i.quantity) > 0);
-        for (const stock of activeStocks) {
-          if (!stock.symbol) continue;
-          const liveData = await fetchLiveStockPrice(stock.symbol);
-          if (liveData && (liveData.price !== stock.current_price || liveData.previousClose !== stock.previous_close)) {
-            const updatePayload: { current_price: number; previous_close?: number } = { current_price: liveData.price };
-            if (liveData.previousClose) updatePayload.previous_close = liveData.previousClose;
-            await updateInvestment(stock.id, updatePayload);
-            updated++;
-          }
-        }
-
-        // 2. Sync Mutual Funds
-        const rawMfs = mutualFunds.filter(m => Number(m.units) > 0);
-        for (const mf of rawMfs) {
-          let code: string | undefined = mf.scheme_code || undefined;
-          if (!code) {
-            const searchResults = await searchMFSchemes(mf.fund_name);
-            if (searchResults && searchResults.length > 0 && searchResults[0].schemeCode) {
-              code = searchResults[0].schemeCode;
-              await updateMFHolding(mf.id, { scheme_code: code, fund_symbol: code });
+        // 1. Sync Stocks concurrently
+        const activeStocks = investments.filter(i => i.type === "stock" && Number(i.quantity) > 0 && !!i.symbol);
+        const stockUpdates = await Promise.all(
+          activeStocks.map(async (stock) => {
+            const liveData = await fetchLiveStockPrice(stock.symbol!);
+            if (liveData && (liveData.price !== stock.current_price || liveData.previousClose !== stock.previous_close)) {
+              const updatePayload: { current_price: number; previous_close?: number } = { current_price: liveData.price };
+              if (liveData.previousClose) updatePayload.previous_close = liveData.previousClose;
+              await updateInvestment(stock.id, updatePayload);
+              return 1;
             }
-          }
-          if (!code) continue;
-          const liveData = await fetchLiveMFNAV(code);
-          if (liveData && (liveData.nav !== mf.current_nav || liveData.previousNav !== mf.previous_nav)) {
-            const updatePayload: { current_nav: number; previous_nav?: number } = { current_nav: liveData.nav };
-            if (liveData.previousNav) updatePayload.previous_nav = liveData.previousNav;
-            await updateMFHolding(mf.id, updatePayload);
-            updated++;
-          }
-        }
+            return 0;
+          })
+        );
+        updated += stockUpdates.reduce<number>((acc, curr) => acc + curr, 0);
+
+        // 2. Sync Mutual Funds concurrently
+        const rawMfs = mutualFunds.filter(m => Number(m.units) > 0);
+        const mfUpdates = await Promise.all(
+          rawMfs.map(async (mf) => {
+            let code: string | undefined = mf.scheme_code || undefined;
+            if (!code) {
+              const searchResults = await searchMFSchemes(mf.fund_name);
+              if (searchResults && searchResults.length > 0 && searchResults[0].schemeCode) {
+                code = searchResults[0].schemeCode;
+                await updateMFHolding(mf.id, { scheme_code: code, fund_symbol: code });
+              }
+            }
+            if (!code) return 0;
+            const liveData = await fetchLiveMFNAV(code);
+            if (liveData && (liveData.nav !== mf.current_nav || liveData.previousNav !== mf.previous_nav)) {
+              const updatePayload: { current_nav: number; previous_nav?: number } = { current_nav: liveData.nav };
+              if (liveData.previousNav) updatePayload.previous_nav = liveData.previousNav;
+              await updateMFHolding(mf.id, updatePayload);
+              return 1;
+            }
+            return 0;
+          })
+        );
+        updated += mfUpdates.reduce<number>((acc, curr) => acc + curr, 0);
 
         if (updated > 0) {
-          mutate();
+          mutate(undefined, undefined, "investments");
         }
       } catch (err) {
         console.error("Failed to run dashboard background sync:", err);

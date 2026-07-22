@@ -58,7 +58,7 @@ export default function PnLValue({
     : undefined;
 
   return (
-    <div className={`flex flex-col items-end ${className}`}>
+    <div className={`flex flex-col items-end ${className}`} aria-live="polite">
       <span 
         className={`${sizeClasses[size]} tabular-nums ${colorClass}`}
         style={glowStyle}

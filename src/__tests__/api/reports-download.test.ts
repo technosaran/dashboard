@@ -108,6 +108,6 @@ describe("Reports Download API Route", () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get("Content-Type")).toBe("application/pdf");
-    expect(response.headers.get("Content-Disposition")).toContain("Financial-Statement-7-2026.pdf");
+    expect(response.headers.get("Content-Disposition")).toContain("Financial-Statement-July-2026.pdf");
   });
 });

@@ -194,20 +194,26 @@ export function useFinanceData(initialData?: FinanceData) {
     cashflowSWR.isValidating ||
     forexSWR.isValidating;
 
+  type MutateTarget = "summary" | "investments" | "cashflow" | "forex" | "all";
+
   const mutate = async (
     data?: unknown,
-    options?: unknown
+    options?: unknown,
+    target: MutateTarget = "all"
   ) => {
     if (data !== undefined) {
       const d = data as FinanceData;
-      await Promise.all([
-        summarySWR.mutate({
+      const tasks = [];
+      if (target === "all" || target === "summary") {
+        tasks.push(summarySWR.mutate({
           profile: d.profile,
           accounts: d.accounts,
           transactions: d.transactions,
           ledgerLogs: d.ledgerLogs,
-        }, options as Parameters<typeof summarySWR.mutate>[1]),
-        investmentsSWR.mutate({
+        }, options as Parameters<typeof summarySWR.mutate>[1]));
+      }
+      if (target === "all" || target === "investments") {
+        tasks.push(investmentsSWR.mutate({
           investments: d.investments,
           mutualFunds: d.mutualFunds,
           bonds: d.bonds,
@@ -216,27 +222,32 @@ export function useFinanceData(initialData?: FinanceData) {
           mutualFundTrades: d.mutualFundTrades,
           bondTransactions: d.bondTransactions,
           fnoTrades: d.fnoTrades,
-        }, options as Parameters<typeof investmentsSWR.mutate>[1]),
-        cashflowSWR.mutate({
+        }, options as Parameters<typeof investmentsSWR.mutate>[1]));
+      }
+      if (target === "all" || target === "cashflow") {
+        tasks.push(cashflowSWR.mutate({
           incomes: d.incomes,
           expenses: d.expenses,
           budgets: d.budgets,
           goals: d.goals,
           liabilities: d.liabilities,
-        }, options as Parameters<typeof cashflowSWR.mutate>[1]),
-        forexSWR.mutate({
+        }, options as Parameters<typeof cashflowSWR.mutate>[1]));
+      }
+      if (target === "all" || target === "forex") {
+        tasks.push(forexSWR.mutate({
           forexAccounts: d.forexAccounts,
           forexTrades: d.forexTrades,
           forexTransactions: d.forexTransactions,
-        }, options as Parameters<typeof forexSWR.mutate>[1]),
-      ]);
+        }, options as Parameters<typeof forexSWR.mutate>[1]));
+      }
+      await Promise.all(tasks);
     } else {
-      await Promise.all([
-        summarySWR.mutate(),
-        investmentsSWR.mutate(),
-        cashflowSWR.mutate(),
-        forexSWR.mutate(),
-      ]);
+      const tasks = [];
+      if (target === "all" || target === "summary") tasks.push(summarySWR.mutate());
+      if (target === "all" || target === "investments") tasks.push(investmentsSWR.mutate());
+      if (target === "all" || target === "cashflow") tasks.push(cashflowSWR.mutate());
+      if (target === "all" || target === "forex") tasks.push(forexSWR.mutate());
+      await Promise.all(tasks);
     }
   };
 

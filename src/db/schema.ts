@@ -33,7 +33,7 @@ export const profiles = pgTable("profiles", {
 // ---------------------------------------------------------------------------
 export const accounts = pgTable("accounts", {
   id: uuid("id").defaultRandom().primaryKey(),
-  user_id: uuid("user_id").notNull(),
+  user_id: uuid("user_id").references(() => profiles.id, { onDelete: "cascade" }).notNull(),
   name: text("name").notNull(),
   type: text("type").notNull(),
   balance: numeric("balance").default("0").notNull(),
@@ -51,8 +51,8 @@ export const accounts = pgTable("accounts", {
 // ---------------------------------------------------------------------------
 export const transactions = pgTable("transactions", {
   id: uuid("id").defaultRandom().primaryKey(),
-  user_id: uuid("user_id").notNull(),
-  account_id: uuid("account_id").notNull(),
+  user_id: uuid("user_id").references(() => profiles.id, { onDelete: "cascade" }).notNull(),
+  account_id: uuid("account_id").references(() => accounts.id, { onDelete: "cascade" }).notNull(),
   type: text("type").notNull(),
   amount: numeric("amount").notNull(),
   description: text("description").notNull(),
@@ -70,9 +70,9 @@ export const transactions = pgTable("transactions", {
 // ---------------------------------------------------------------------------
 export const transfers = pgTable("transfers", {
   id: uuid("id").defaultRandom().primaryKey(),
-  user_id: uuid("user_id").notNull(),
-  from_account_id: uuid("from_account_id").notNull(),
-  to_account_id: uuid("to_account_id").notNull(),
+  user_id: uuid("user_id").references(() => profiles.id, { onDelete: "cascade" }).notNull(),
+  from_account_id: uuid("from_account_id").references(() => accounts.id, { onDelete: "cascade" }).notNull(),
+  to_account_id: uuid("to_account_id").references(() => accounts.id, { onDelete: "cascade" }).notNull(),
   amount: numeric("amount").notNull(),
   note: text("note"),
   created_at: timestamp("created_at").defaultNow().notNull(),

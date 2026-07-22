@@ -20,6 +20,7 @@ export interface RateLimitResult {
 
 // In-memory fallback store for when Redis is unavailable
 const memoryStore = new Map<string, number[]>();
+const MAX_MEMORY_KEYS = 5000;
 
 // Periodically clean up memoryStore to prevent memory leaks
 const gcInterval = setInterval(() => {
@@ -27,6 +28,13 @@ const gcInterval = setInterval(() => {
   // Assume a safe max window of 1 hour (3600000 ms) for cleanup
   for (const [key, timestamps] of memoryStore.entries()) {
     if (timestamps.length === 0 || now - timestamps[timestamps.length - 1] > 3600000) {
+      memoryStore.delete(key);
+    }
+  }
+  // Enforce absolute capacity limit if keys exceed cap
+  if (memoryStore.size > MAX_MEMORY_KEYS) {
+    const keysToDelete = Array.from(memoryStore.keys()).slice(0, memoryStore.size - MAX_MEMORY_KEYS);
+    for (const key of keysToDelete) {
       memoryStore.delete(key);
     }
   }
