@@ -507,15 +507,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
-    // ─── Command: /balance ───
-    if (commandText === "balance" || commandText === "balances") {
+    // ─── Command: /balance or /networth ───
+    if (commandText === "balance" || commandText === "balances" || commandText === "networth") {
       if (!accounts || accounts.length === 0) {
         await sendTelegramMessage(chatId, "💳 *No Active Accounts*: You haven't added any bank accounts yet. Add one in your dashboard to start tracking balances.");
         return NextResponse.json({ success: true });
       }
 
       let totalNetWorth = 0;
-      let msg = "💳 *Your Account Balances*\n\n";
+      let msg = "💳 *Your Account Balances & Portfolio*\n\n";
       for (const acc of accounts) {
         const bal = parseFloat((acc as any).balance || 0);
         totalNetWorth += bal;
@@ -524,6 +524,232 @@ export async function POST(req: NextRequest) {
         msg += `${icon} *${acc.name}*: ₹${bal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}\n`;
       }
       msg += `\n🌟 *Total Net Worth*: ₹${totalNetWorth.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`;
+      await sendTelegramMessage(chatId, msg);
+      return NextResponse.json({ success: true });
+    }
+
+    // ─── Command: /accounts ───
+    if (commandText === "accounts" || commandText === "banks") {
+      if (!accounts || accounts.length === 0) {
+        await sendTelegramMessage(chatId, "💳 *No Accounts*: No bank accounts found in your dashboard.");
+        return NextResponse.json({ success: true });
+      }
+      let msg = "🏦 *Active Accounts & Channels*\n\n";
+      for (const a of accounts) {
+        const bal = parseFloat((a as any).balance || 0);
+        const curr = (a as any).currency || "INR";
+        const symbol = curr === "USD" ? "$" : "₹";
+        msg += `• *${a.name}* (${(a as any).type || "Bank"}): ${symbol}${bal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}\n`;
+      }
+      await sendTelegramMessage(chatId, msg);
+      return NextResponse.json({ success: true });
+    }
+
+    // ─── Command: /stocks ───
+    if (commandText === "stocks" || commandText === "equity") {
+      const { data: stockItems } = await supabase
+        .from("investments")
+        .select("name, symbol, quantity, buy_price, current_price, currency")
+        .eq("user_id", profile.id)
+        .eq("type", "stock")
+        .gt("quantity", 0);
+
+      if (!stockItems || stockItems.length === 0) {
+        await sendTelegramMessage(chatId, "📈 *No Active Stock Holdings*: You don't have active stock holdings yet. Log one via: `stock buy 10 RELIANCE 2500`.");
+        return NextResponse.json({ success: true });
+      }
+
+      let totalVal = 0;
+      let totalCost = 0;
+      let msg = "📈 *Your Stock Holdings*\n\n";
+      for (const s of stockItems) {
+        const qty = parseFloat(s.quantity) || 0;
+        const buyP = parseFloat(s.buy_price) || 0;
+        const curP = parseFloat(s.current_price) || buyP;
+        const val = qty * curP;
+        const cost = qty * buyP;
+        totalVal += val;
+        totalCost += cost;
+        const pnl = val - cost;
+        const pnlSign = pnl >= 0 ? "+" : "";
+        msg += `• *${s.symbol || s.name}*: ${qty} shares @ ₹${curP} (Val: ₹${val.toLocaleString("en-IN")}, P&L: ${pnlSign}₹${pnl.toFixed(0)})\n`;
+      }
+      const overallPnL = totalVal - totalCost;
+      msg += `\n💼 *Total Stock Portfolio*: ₹${totalVal.toLocaleString("en-IN")} (P&L: ${overallPnL >= 0 ? "+" : ""}₹${overallPnL.toFixed(0)})`;
+      await sendTelegramMessage(chatId, msg);
+      return NextResponse.json({ success: true });
+    }
+
+    // ─── Command: /mf ───
+    if (commandText === "mf" || commandText === "mutualfunds") {
+      const { data: mfs } = await supabase
+        .from("mutual_funds")
+        .select("fund_name, units, current_nav, avg_nav")
+        .eq("user_id", profile.id)
+        .gt("units", 0);
+
+      if (!mfs || mfs.length === 0) {
+        await sendTelegramMessage(chatId, "🏦 *No Mutual Fund Holdings*: Log a SIP or lumpsum via: `mf sip 5000 Nifty 50`.");
+        return NextResponse.json({ success: true });
+      }
+
+      let totalVal = 0;
+      let msg = "🏦 *Your Mutual Funds Portfolio*\n\n";
+      for (const m of mfs) {
+        const units = parseFloat(m.units) || 0;
+        const nav = parseFloat(m.current_nav || m.avg_nav) || 0;
+        const val = units * nav;
+        totalVal += val;
+        msg += `• *${m.fund_name}*: ${units.toFixed(2)} units @ NAV ₹${nav} (Val: ₹${val.toLocaleString("en-IN")})\n`;
+      }
+      msg += `\n💎 *Total Mutual Fund Value*: ₹${totalVal.toLocaleString("en-IN")}`;
+      await sendTelegramMessage(chatId, msg);
+      return NextResponse.json({ success: true });
+    }
+
+    // ─── Command: /crypto ───
+    if (commandText === "crypto") {
+      const { data: cryptos } = await supabase
+        .from("investments")
+        .select("name, symbol, quantity, buy_price, current_price")
+        .eq("user_id", profile.id)
+        .eq("type", "crypto")
+        .gt("quantity", 0);
+
+      if (!cryptos || cryptos.length === 0) {
+        await sendTelegramMessage(chatId, "🪙 *No Crypto Holdings*: Log a crypto trade via: `crypto buy 0.05 BTC 65000`.");
+        return NextResponse.json({ success: true });
+      }
+
+      let totalValUSD = 0;
+      let msg = "🪙 *Your Crypto Holdings ($ USDT)*\n\n";
+      for (const c of cryptos) {
+        const qty = parseFloat(c.quantity) || 0;
+        const curP = parseFloat(c.current_price || c.buy_price) || 0;
+        const val = qty * curP;
+        totalValUSD += val;
+        msg += `• *${c.symbol || c.name}*: ${qty} @ $${curP} (Val: $${val.toFixed(2)})\n`;
+      }
+      msg += `\n🚀 *Total Crypto Value*: $${totalValUSD.toFixed(2)}`;
+      await sendTelegramMessage(chatId, msg);
+      return NextResponse.json({ success: true });
+    }
+
+    // ─── Command: /bonds ───
+    if (commandText === "bonds" || commandText === "fixedincome") {
+      const { data: bondList } = await supabase
+        .from("bonds")
+        .select("bond_name, issuer, current_value, total_invested")
+        .eq("user_id", profile.id);
+
+      if (!bondList || bondList.length === 0) {
+        await sendTelegramMessage(chatId, "🔏 *No Bond Investments*: Log a bond purchase via: `bond buy 10 Sovereign Gold Bond 6000`.");
+        return NextResponse.json({ success: true });
+      }
+
+      let totalVal = 0;
+      let msg = "🔏 *Your Fixed Income & Bond Holdings*\n\n";
+      for (const b of bondList) {
+        const val = parseFloat(b.current_value || b.total_invested) || 0;
+        totalVal += val;
+        msg += `• *${b.bond_name || b.issuer}*: ₹${val.toLocaleString("en-IN")}\n`;
+      }
+      msg += `\n🛡️ *Total Bonds Value*: ₹${totalVal.toLocaleString("en-IN")}`;
+      await sendTelegramMessage(chatId, msg);
+      return NextResponse.json({ success: true });
+    }
+
+    // ─── Command: /fno ───
+    if (commandText === "fno" || commandText === "derivatives") {
+      const { data: trades } = await supabase
+        .from("fno_trades")
+        .select("symbol, instrument_type, strike_price, trade_type, quantity, entry_price, status")
+        .eq("user_id", profile.id)
+        .order("created_at", { ascending: false })
+        .limit(5);
+
+      if (!trades || trades.length === 0) {
+        await sendTelegramMessage(chatId, "📊 *No FnO Trades*: Log a derivative trade via: `fno buy 25 NIFTY 24500 CE 150`.");
+        return NextResponse.json({ success: true });
+      }
+
+      let msg = "📊 *Recent FnO Derivatives Positions*\n\n";
+      for (const t of trades) {
+        msg += `• *${t.symbol} ${t.strike_price || ""} ${t.instrument_type}* (${t.trade_type}): ${t.quantity} Qty @ ₹${t.entry_price} _[${t.status}]_\n`;
+      }
+      await sendTelegramMessage(chatId, msg);
+      return NextResponse.json({ success: true });
+    }
+
+    // ─── Command: /forex ───
+    if (commandText === "forex") {
+      const { data: fxAccounts } = await supabase
+        .from("forex_accounts")
+        .select("broker_name, account_label, balance, currency")
+        .eq("user_id", profile.id);
+
+      if (!fxAccounts || fxAccounts.length === 0) {
+        await sendTelegramMessage(chatId, "💱 *No Forex Accounts*: Log forex trades via: `forex buy 100 USD`.");
+        return NextResponse.json({ success: true });
+      }
+
+      let totalValUSD = 0;
+      let msg = "💱 *Your Forex Trading Accounts*\n\n";
+      for (const f of fxAccounts) {
+        const bal = parseFloat(f.balance) || 0;
+        totalValUSD += bal;
+        msg += `• *${f.broker_name}* (${f.account_label || "Account"}): $${bal.toLocaleString("en-US", { minimumFractionDigits: 2 })}\n`;
+      }
+      msg += `\n🌐 *Total Forex Equity*: $${totalValUSD.toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
+      await sendTelegramMessage(chatId, msg);
+      return NextResponse.json({ success: true });
+    }
+
+    // ─── Command: /alt ───
+    if (commandText === "alt" || commandText === "assets") {
+      const { data: altList } = await supabase
+        .from("alternative_assets")
+        .select("asset_name, category, current_value")
+        .eq("user_id", profile.id);
+
+      if (!altList || altList.length === 0) {
+        await sendTelegramMessage(chatId, "🏢 *No Alternative Assets*: Log alt assets via: `alt buy 25000 Gold`.");
+        return NextResponse.json({ success: true });
+      }
+
+      let totalVal = 0;
+      let msg = "🏢 *Your Alternative Assets*\n\n";
+      for (const a of altList) {
+        const val = parseFloat(a.current_value) || 0;
+        totalVal += val;
+        msg += `• *${a.asset_name}* (${a.category || "Asset"}): ₹${val.toLocaleString("en-IN")}\n`;
+      }
+      msg += `\n🏰 *Total Alt Asset Value*: ₹${totalVal.toLocaleString("en-IN")}`;
+      await sendTelegramMessage(chatId, msg);
+      return NextResponse.json({ success: true });
+    }
+
+    // ─── Command: /liabilities or /loans ───
+    if (commandText === "liabilities" || commandText === "loans" || commandText === "debts") {
+      const { data: liabList } = await supabase
+        .from("liabilities")
+        .select("name, total_amount, remaining_amount, emi_amount")
+        .eq("user_id", profile.id);
+
+      if (!liabList || liabList.length === 0) {
+        await sendTelegramMessage(chatId, "🎉 *No Active Liabilities*: You have zero logged loans or debts.");
+        return NextResponse.json({ success: true });
+      }
+
+      let totalOutstanding = 0;
+      let msg = "💳 *Your Liabilities & Loans*\n\n";
+      for (const l of liabList) {
+        const rem = parseFloat(l.remaining_amount || l.total_amount) || 0;
+        const emi = parseFloat(l.emi_amount) || 0;
+        totalOutstanding += rem;
+        msg += `• *${l.name}*: Remaining ₹${rem.toLocaleString("en-IN")}${emi > 0 ? ` (EMI: ₹${emi.toLocaleString("en-IN")})` : ""}\n`;
+      }
+      msg += `\n⚠️ *Total Outstanding Debt*: ₹${totalOutstanding.toLocaleString("en-IN")}`;
       await sendTelegramMessage(chatId, msg);
       return NextResponse.json({ success: true });
     }
@@ -1151,7 +1377,197 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true });
       }
 
-      // ─── E. Explicit OR Auto-Sensed Goal Contribution ───
+      // ─── E. Inter-Account Transfer Parser ───
+      const isExplicitTransfer = firstWord === "transfer" || firstWord === "xfer";
+      const hasTransferKeyword = /\b(transferred|transfer|xfer|moved)\b/i.test(text);
+      const toAccountMatch = text.match(/\b(?:from|in)\s+([a-zA-Z0-9\s]+?)\s+to\s+([a-zA-Z0-9\s]+)/i) || text.match(/\b([a-zA-Z0-9]+)\s+to\s+([a-zA-Z0-9]+)/i);
+
+      if ((isExplicitTransfer || (hasTransferKeyword && primaryAmount > 0)) && accounts && accounts.length >= 2) {
+        const amount = primaryAmount;
+        let fromAcc = accounts[0];
+        let toAcc = accounts[1] || accounts[0];
+
+        if (toAccountMatch) {
+          const fromQuery = toAccountMatch[1].trim().toLowerCase();
+          const toQuery = toAccountMatch[2].trim().toLowerCase();
+          const matchedFrom = accounts.find(a => a.name.toLowerCase().includes(fromQuery));
+          const matchedTo = accounts.find(a => a.name.toLowerCase().includes(toQuery));
+          if (matchedFrom) fromAcc = matchedFrom;
+          if (matchedTo) toAcc = matchedTo;
+        }
+
+        if (fromAcc.id === toAcc.id) {
+          toAcc = accounts.find(a => a.id !== fromAcc.id) || accounts[1] || accounts[0];
+        }
+
+        const { error: trErr } = await supabase.from("transfers").insert({
+          user_id: profile.id,
+          from_account_id: fromAcc.id,
+          to_account_id: toAcc.id,
+          amount: amount,
+          date: cleanDate,
+          notes: `[Telegram Transfer] ${text}`
+        });
+
+        if (!trErr) {
+          // Adjust account balances
+          await supabase.from("accounts").update({ balance: (parseFloat(fromAcc.balance) || 0) - amount }).eq("id", fromAcc.id);
+          await supabase.from("accounts").update({ balance: (parseFloat(toAcc.balance) || 0) + amount }).eq("id", toAcc.id);
+
+          await sendTelegramMessage(chatId, `🔄 *Inter-Account Transfer Logged*:\n• *Amount*: ₹${amount.toLocaleString("en-IN")}\n• *From*: ${fromAcc.name}\n• *To*: ${toAcc.name}`);
+          return NextResponse.json({ success: true });
+        }
+      }
+
+      // ─── F. Crypto Trade Parser ───
+      const isExplicitCrypto = firstWord === "crypto";
+      const hasCryptoKeywords = /\b(btc|bitcoin|eth|ethereum|sol|solana|usdt|crypto)\b/i.test(text);
+      if (isExplicitCrypto || (hasCryptoKeywords && primaryAmount > 0)) {
+        const tradeType = /sell|sold/i.test(lowerText) ? "sell" : "buy";
+        let quantity = numbers[0] || 0.01;
+        let price = numbers[1] || numbers[0] || 1;
+        let symbol = "BTC";
+
+        if (isExplicitCrypto) {
+          quantity = parseFloat(rawTokens[2]) || numbers[0] || 0.01;
+          symbol = (rawTokens[3] || "CRYPTO").toUpperCase();
+          price = parseFloat(rawTokens[4]) || numbers[1] || 1;
+        } else {
+          const matchedSymbol = text.match(/\b(BTC|ETH|SOL|USDT|BNB|ADA|XRP|DOGE)\b/i);
+          if (matchedSymbol) symbol = matchedSymbol[1].toUpperCase();
+          if (numbers.length >= 2) {
+            quantity = numbers[0];
+            price = numbers[1];
+          }
+        }
+
+        const targetAccount = resolveAccount(tradeType === "buy" ? "expense" : "income", text);
+        if (!targetAccount) throw new Error("No bank account found to record crypto trade.");
+
+        const { data: rpcData, error } = await supabase.rpc("record_investment", {
+          p_user_id: profile.id,
+          p_name: symbol,
+          p_type: "crypto",
+          p_symbol: symbol,
+          p_quantity: quantity,
+          p_buy_price: price,
+          p_current_price: price,
+          p_currency: "USD",
+          p_notes: `[Telegram] ${text}`,
+          p_date: cleanDate,
+          p_account_id: targetAccount,
+          p_total_cost: quantity * price,
+          p_trade_type: tradeType,
+          p_charges: 0
+        });
+
+        if (error) throw error;
+        await sendTelegramMessage(chatId, `🪙 *Crypto Trade Recorded*:\n• *Action*: ${tradeType.toUpperCase()}\n• *Symbol*: ${symbol}\n• *Qty*: ${quantity} @ $${price}\n• *Total*: $${(quantity * price).toFixed(2)}`);
+        return NextResponse.json({ success: true });
+      }
+
+      // ─── G. Bond / Fixed Income Parser ───
+      const isExplicitBond = firstWord === "bond" || firstWord === "bonds";
+      const hasBondKeywords = /\b(bond|bonds|debenture|sgb|sovereign gold)\b/i.test(text);
+      if (isExplicitBond || (hasBondKeywords && primaryAmount > 0)) {
+        const bondName = text.replace(/\b(bond|bonds|buy|sell|for|rs|₹|\d+(?:\.\d+)?)\b/gi, "").trim() || "Government Bond";
+        const amount = primaryAmount;
+
+        const { error: bErr } = await supabase.from("bonds").insert({
+          user_id: profile.id,
+          bond_name: bondName,
+          issuer: "RBI / Government",
+          total_invested: amount,
+          current_value: amount,
+          purchase_date: cleanDate
+        });
+
+        if (!bErr) {
+          await sendTelegramMessage(chatId, `🔏 *Bond Purchase Recorded*:\n• *Bond*: ${bondName}\n• *Amount*: ₹${amount.toLocaleString("en-IN")}`);
+          return NextResponse.json({ success: true });
+        }
+      }
+
+      // ─── H. FnO Derivative Trade Parser ───
+      const isExplicitFno = firstWord === "fno" || firstWord === "futures" || firstWord === "options";
+      const hasFnoKeywords = /\b(call|put|\bce\b|\bpe\b|nifty|banknifty|futures|options|fno)\b/i.test(text);
+      if (isExplicitFno || (hasFnoKeywords && primaryAmount > 0 && numbers.length >= 2)) {
+        const symbolMatch = text.match(/\b(NIFTY|BANKNIFTY|FINNIFTY|SENSEX|[A-Z]{3,10})\b/i);
+        const typeMatch = text.match(/\b(CE|PE|FUT)\b/i);
+        const symbol = symbolMatch ? symbolMatch[1].toUpperCase() : "NIFTY";
+        const instType = typeMatch ? typeMatch[1].toUpperCase() : "CE";
+        const quantity = numbers[0] || 25;
+        const entryPrice = numbers[1] || 100;
+        const tradeType = /sell|sold/i.test(lowerText) ? "sell" : "buy";
+
+        const { error: fnoErr } = await supabase.from("fno_trades").insert({
+          user_id: profile.id,
+          symbol,
+          instrument_type: instType,
+          trade_type: tradeType,
+          quantity,
+          entry_price: entryPrice,
+          status: "OPEN",
+          entry_date: cleanDate
+        });
+
+        if (!fnoErr) {
+          await sendTelegramMessage(chatId, `📊 *FnO Derivative Trade Recorded*:\n• *Contract*: ${symbol} ${instType}\n• *Action*: ${tradeType.toUpperCase()}\n• *Qty*: ${quantity} @ ₹${entryPrice}`);
+          return NextResponse.json({ success: true });
+        }
+      }
+
+      // ─── I. Alternative Asset Parser ───
+      const isExplicitAlt = firstWord === "alt" || firstWord === "asset";
+      const hasAltKeywords = /\b(gold|silver|real estate|property|land|vehicle|car|watch|art)\b/i.test(text);
+      if (isExplicitAlt || (hasAltKeywords && primaryAmount > 0)) {
+        const assetName = text.replace(/\b(alt|asset|buy|sell|for|rs|₹|\d+(?:\.\d+)?)\b/gi, "").trim() || "Alternative Asset";
+        const amount = primaryAmount;
+        let category = "Gold";
+        if (/property|land|flat|real estate/i.test(assetName)) category = "Real Estate";
+        else if (/car|bike|vehicle/i.test(assetName)) category = "Vehicle";
+        else if (/silver/i.test(assetName)) category = "Silver";
+
+        const { error: altErr } = await supabase.from("alternative_assets").insert({
+          user_id: profile.id,
+          asset_name: assetName,
+          category,
+          purchase_price: amount,
+          current_value: amount,
+          purchase_date: cleanDate
+        });
+
+        if (!altErr) {
+          await sendTelegramMessage(chatId, `🏢 *Alternative Asset Logged*:\n• *Asset*: ${assetName}\n• *Category*: ${category}\n• *Value*: ₹${amount.toLocaleString("en-IN")}`);
+          return NextResponse.json({ success: true });
+        }
+      }
+
+      // ─── J. Liability & Loan Payment Parser ───
+      const isExplicitLoan = firstWord === "loan" || firstWord === "emi" || firstWord === "liability";
+      const hasLoanKeywords = /\b(emi|loan|debt|liability|mortgage)\b/i.test(text);
+      if (isExplicitLoan || (hasLoanKeywords && primaryAmount > 0)) {
+        const amount = primaryAmount;
+        const targetAccount = resolveAccount("expense", text);
+        const loanQuery = text.replace(/\b(loan|emi|pay|paid|liability|debt|rs|₹|\d+(?:\.\d+)?)\b/gi, "").trim() || "Loan Payment";
+
+        // Record loan payment as expense under Housing/Debts
+        const { data: rpcData, error } = await supabase.rpc("record_expense", {
+          p_user_id: profile.id,
+          p_description: `[Telegram EMI] ${loanQuery}`,
+          p_amount: amount,
+          p_category: "Housing",
+          p_date: cleanDate,
+          p_account_id: targetAccount,
+        });
+
+        if (!error) {
+          await sendTelegramMessage(chatId, `💳 *Loan / EMI Payment Logged*:\n• *Payment*: ₹${amount.toLocaleString("en-IN")}\n• *Loan Note*: ${loanQuery}`);
+          return NextResponse.json({ success: true });
+        }
+      }
+
+      // ─── K. Explicit OR Auto-Sensed Goal Contribution ───
       const isExplicitGoal = firstWord === "goal";
       const mentionedGoal = goals?.find((g: any) => lowerText.includes(g.name.toLowerCase()));
       if (isExplicitGoal || (mentionedGoal && primaryAmount > 0 && /\b(goal|target|save|contribute)\b/i.test(text))) {

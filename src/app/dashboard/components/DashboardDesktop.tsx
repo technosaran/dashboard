@@ -289,13 +289,31 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                 onClick={() => setShowUSD(!showUSD)}
                 title="Click to toggle currency"
               >
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex flex-wrap items-center gap-3 mb-2">
                   <span className="text-xs font-semibold text-[--text-muted] transition-colors group-hover/nw:text-[--text-primary]">
                     Portfolio Net Worth ({showUSD ? 'USD' : 'INR'}) {isLoading && <span className="text-xs italic font-normal">(loading...)</span>}
                   </span>
                   <svg className="w-3.5 h-3.5 text-[--text-muted] opacity-50 group-hover/nw:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                   </svg>
+                  {stats.totalDayPnL !== 0 && (
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[0.6875rem] font-extrabold tracking-tight border backdrop-blur-md transition-all ${
+                      stats.totalDayPnL >= 0 
+                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_12px_rgba(52,211,153,0.15)]' 
+                        : 'bg-rose-500/10 text-rose-400 border-rose-500/20 shadow-[0_0_12px_rgba(244,63,94,0.15)]'
+                    }`}>
+                      <span>{stats.totalDayPnL >= 0 ? "▲ +" : "▼ "}</span>
+                      <span>
+                        {showUSD 
+                          ? `$${Math.abs(stats.totalDayPnL * (stats.netWorthINR > 0 ? stats.netWorthUSD / stats.netWorthINR : 1)).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+                          : `₹${Math.abs(stats.totalDayPnL).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+                        }
+                      </span>
+                      <span className="opacity-75">
+                        ({stats.totalDayPnLPercent >= 0 ? "+" : ""}{stats.totalDayPnLPercent.toFixed(2)}%)
+                      </span>
+                    </span>
+                  )}
                 </div>
                 <div className="relative flex items-center justify-start h-[3.5rem] md:h-[4rem] w-[280px] sm:w-[450px]">
                   <AnimatePresence>
@@ -578,48 +596,8 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
           )}
         </div>
 
-        {/* RIGHT COLUMN: ACTIONS, STATS & ACTIVE GOALS (Span 1) */}
+        {/* RIGHT COLUMN: STATS & ACTIVE GOALS (Span 1) */}
         <div className="flex flex-col gap-6">
-          
-          {/* QUICK ACTIONS PANEL */}
-          <div className="glass-card-static rich-border p-6 md:p-8">
-            <h3 className="text-sm font-semibold text-[--text-muted] mb-5">Quick Actions</h3>
-            <div className="grid grid-cols-2 gap-3">
-              {enabledModules.includes("Expenses") && (
-                <Link href="/dashboard/expenses?action=new" className="flex flex-col items-center justify-center p-4 bg-rose-500/5 hover:bg-rose-500/10 border border-rose-500/10 rounded-2xl text-center transition-all group hover:-translate-y-1">
-                  <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">💸</span>
-                  <span className="text-xs font-bold text-rose-400">Log Expense</span>
-                </Link>
-              )}
-              {enabledModules.includes("Income") && (
-                <Link href="/dashboard/income?action=new" className="flex flex-col items-center justify-center p-4 bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/10 rounded-2xl text-center transition-all group hover:-translate-y-1">
-                  <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">💼</span>
-                  <span className="text-xs font-bold text-emerald-400">Log Income</span>
-                </Link>
-              )}
-              {enabledModules.includes("Stocks") && (
-                <Link href="/dashboard/stocks?action=new" className="flex flex-col items-center justify-center p-4 bg-blue-500/5 hover:bg-blue-500/10 border border-blue-500/10 rounded-2xl text-center transition-all group hover:-translate-y-1">
-                  <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">📈</span>
-                  <span className="text-xs font-bold text-blue-400">Add Stock</span>
-                </Link>
-              )}
-              {enabledModules.includes("Family Management") && (
-                <Link href="/dashboard/family?action=send" className="flex flex-col items-center justify-center p-4 bg-purple-500/5 hover:bg-purple-500/10 border border-purple-500/10 rounded-2xl text-center transition-all group hover:-translate-y-1">
-                  <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">👨‍👩‍👧‍👦</span>
-                  <span className="text-xs font-bold text-purple-400">Send Family</span>
-                </Link>
-              )}
-              <Link href="/dashboard/accounts?action=new" className="flex flex-col items-center justify-center p-4 bg-sky-500/5 hover:bg-sky-500/10 border border-sky-500/10 rounded-2xl text-center transition-all group hover:-translate-y-1">
-                <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">💳</span>
-                <span className="text-xs font-bold text-sky-400">Add Account</span>
-              </Link>
-              {/* #4 — fallback "Browse all" tile ensures even grid when modules are limited */}
-              <Link href="/dashboard/settings" className="flex flex-col items-center justify-center p-4 bg-white/[0.02] border border-white/5 rounded-2xl text-center">
-                <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">⚙️</span>
-                <span className="text-xs font-bold text-[--text-muted]">Settings</span>
-              </Link>
-            </div>
-          </div>
 
           {/* ACTIVE FINANCIAL GOALS MILestones */}
           {enabledModules.includes("Goals") && (

@@ -126,13 +126,31 @@ const DashboardMobile = memo(function DashboardMobile({ stats, recentLogs, accou
           onClick={() => setIsToggled(prev => !prev)}
           title="Click to toggle currency"
         >
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-2">
             <p className="text-xs font-semibold text-[--text-muted] transition-colors group-hover/nw:text-[--text-primary]">
               Net worth ({showUSD ? 'USD' : 'INR'})
             </p>
             <svg className="w-3 h-3 text-[--text-muted] opacity-50 group-hover/nw:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
             </svg>
+            {stats.totalDayPnL !== undefined && stats.totalDayPnL !== 0 && (
+              <span className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[0.625rem] font-extrabold tracking-tight border backdrop-blur-md transition-all ${
+                stats.totalDayPnL >= 0 
+                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_10px_rgba(52,211,153,0.15)]' 
+                  : 'bg-rose-500/10 text-rose-400 border-rose-500/20 shadow-[0_0_10px_rgba(244,63,94,0.15)]'
+              }`}>
+                <span>{stats.totalDayPnL >= 0 ? "▲ +" : "▼ "}</span>
+                <span>
+                  {showUSD 
+                    ? `$${Math.abs(stats.totalDayPnL * (stats.netWorthINR > 0 ? stats.netWorthUSD / stats.netWorthINR : 1)).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+                    : `₹${Math.abs(stats.totalDayPnL).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+                  }
+                </span>
+                <span className="opacity-75">
+                  ({stats.totalDayPnLPercent >= 0 ? "+" : ""}{stats.totalDayPnLPercent.toFixed(1)}%)
+                </span>
+              </span>
+            )}
           </div>
           <div className="relative flex items-center justify-start h-[2.5rem] mt-1 w-[300px]">
             <AnimatePresence>
