@@ -59,7 +59,6 @@ export default function CryptoClient() {
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isFetchingSingle, setIsFetchingSingle] = useState(false);
 
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
@@ -156,7 +155,6 @@ export default function CryptoClient() {
   // ─── Auto-Fetch Single LTP on Coin Selection/Entry ────────────────────────
   const handleFetchSinglePrice = async (sym: string) => {
     if (!sym) return;
-    setIsFetchingSingle(true);
     try {
       const res = await fetchBinancePrice(sym);
       if (res.price !== undefined) {
@@ -171,8 +169,6 @@ export default function CryptoClient() {
       }
     } catch {
       toast.error("Failed to fetch live price.");
-    } finally {
-      setIsFetchingSingle(false);
     }
   };
 
@@ -331,162 +327,198 @@ export default function CryptoClient() {
   };
 
   return (
-    <div className="flex w-full bg-[var(--bg-base)] min-h-screen">
-      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+    <div className="flex w-full bg-[#0B0E11] min-h-screen text-[#EAECSF] relative font-sans">
+      {/* Background Ambient Binance Glows */}
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+        <div className="absolute -top-32 -right-32 w-[550px] h-[550px] bg-[#F0B90B]/5 rounded-full blur-[160px]" />
+        <div className="absolute top-1/2 -left-32 w-[550px] h-[550px] bg-[#0ECB81]/5 rounded-full blur-[160px]" />
+      </div>
+
+      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto relative z-10">
         
-        {/* Header bar */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-[var(--bg-card)]">
-          <div className="flex items-center gap-6">
-            <div className="flex gap-1.5 rounded-2xl bg-white/[0.02] border border-white/5 p-1.5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]">
+        {/* Binance Pro Top Header Bar */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-6 py-4 border-b border-[#2B313A] bg-[#181A20] gap-4 shadow-xl">
+          <div className="flex items-center gap-4">
+            {/* Binance Brand Icon */}
+            <div className="w-10 h-10 rounded-xl bg-[#F0B90B]/10 border border-[#F0B90B]/30 flex items-center justify-center text-[#F0B90B] shadow-[0_0_15px_rgba(240,185,11,0.2)]">
+              <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                <path d="M12 0l-4.5 4.5 4.5 4.5 4.5-4.5L12 0zm-7.5 7.5L0 12l4.5 4.5 4.5-4.5L4.5 7.5zm15 0l-4.5 4.5 4.5 4.5 4.5-4.5-4.5-4.5zM12 15l-4.5 4.5L12 24l4.5-4.5L12 15zm0-4.5L9.75 8.25 12 6l2.25 2.25L12 10.5z" />
+              </svg>
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-base font-extrabold text-white tracking-wider uppercase">Binance Spot Portfolio</h1>
+                <span className="text-[0.5625rem] bg-[#F0B90B]/20 text-[#F0B90B] border border-[#F0B90B]/30 px-1.5 py-0.5 rounded font-black tracking-widest uppercase">PRO</span>
+              </div>
+              <p className="text-[0.6875rem] text-[#848E9C] font-semibold flex items-center gap-1.5 mt-0.5">
+                <span className="w-2 h-2 rounded-full bg-[#0ECB81] animate-pulse" />
+                Binance Live Data Feed • USDT Base Pair
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+            <div className="flex gap-1 rounded-xl bg-[#0B0E11] border border-[#2B313A] p-1 shadow-inner">
               <button
                 onClick={() => setActiveTab("dashboard")}
-                className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
                   activeTab === "dashboard"
-                    ? "bg-[var(--accent-primary)] text-white shadow-[0_0_15px_var(--accent-primary)/0.35]"
-                    : "text-gray-400 hover:text-white"
+                    ? "bg-[#F0B90B] text-black shadow-[0_0_12px_rgba(240,185,11,0.4)]"
+                    : "text-[#848E9C] hover:text-white hover:bg-white/5"
                 }`}
               >
-                Dashboard
+                Overview
               </button>
               <button
                 onClick={() => setActiveTab("holdings")}
-                className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
                   activeTab === "holdings"
-                    ? "bg-[var(--accent-primary)] text-white shadow-[0_0_15px_var(--accent-primary)/0.35]"
-                    : "text-gray-400 hover:text-white"
+                    ? "bg-[#F0B90B] text-black shadow-[0_0_12px_rgba(240,185,11,0.4)]"
+                    : "text-[#848E9C] hover:text-white hover:bg-white/5"
                 }`}
               >
                 Holdings ({activeHoldings.length})
               </button>
               <button
                 onClick={() => setActiveTab("transactions")}
-                className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
                   activeTab === "transactions"
-                    ? "bg-[var(--accent-primary)] text-white shadow-[0_0_15px_var(--accent-primary)/0.35]"
-                    : "text-gray-400 hover:text-white"
+                    ? "bg-[#F0B90B] text-black shadow-[0_0_12px_rgba(240,185,11,0.4)]"
+                    : "text-[#848E9C] hover:text-white hover:bg-white/5"
                 }`}
               >
-                Transactions
+                Order History
               </button>
             </div>
-          </div>
 
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleRefreshPrices}
-              disabled={isRefreshing || activeHoldings.length === 0}
-              className="bg-white/5 hover:bg-white/10 border border-white/10 text-white px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 disabled:opacity-50 flex items-center gap-2"
-            >
-              {isRefreshing ? (
-                <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" strokeDasharray="32" className="opacity-25"></circle><path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" className="opacity-75"></path></svg>
-              ) : (
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-              )}
-              Refresh Prices
-            </button>
-            <button
-              onClick={openNewModal}
-              className="bg-[var(--accent-primary)] hover:brightness-90 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 shadow-md shadow-[var(--accent-primary)]/10"
-            >
-              Add Trade
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleRefreshPrices}
+                disabled={isRefreshing || activeHoldings.length === 0}
+                className="bg-[#2B313A]/50 hover:bg-[#2B313A] border border-[#2B313A] text-white px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+              >
+                {isRefreshing ? (
+                  <svg className="w-3.5 h-3.5 animate-spin text-[#F0B90B]" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" strokeDasharray="32" className="opacity-25"></circle><path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" className="opacity-75"></path></svg>
+                ) : (
+                  <svg className="w-3.5 h-3.5 text-[#F0B90B]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                )}
+                Sync Prices
+              </button>
+              <button
+                onClick={openNewModal}
+                className="bg-[#F0B90B] hover:bg-[#fcd535] text-black font-extrabold px-4 py-1.5 rounded-lg text-xs uppercase tracking-wider transition-all shadow-[0_0_15px_rgba(240,185,11,0.25)] cursor-pointer"
+              >
+                + New Trade
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Dashboard View */}
-        <div className="p-6 max-w-6xl w-full mx-auto space-y-6">
+        <div className="p-6 max-w-7xl w-full mx-auto space-y-6">
           {activeTab === "dashboard" && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch mt-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch mt-2">
               
               {/* Left: Allocation Donut */}
-              <div className="lg:col-span-2 flex flex-col items-center justify-center bg-[var(--bg-card)] p-8 border border-white/5 rounded-2xl relative">
-                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6 absolute top-6 left-6">Asset Allocation</h3>
+              <div className="lg:col-span-2 flex flex-col items-center justify-center bg-[#181A20] p-8 border border-[#2B313A] rounded-2xl relative shadow-2xl overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#F0B90B] via-[#0ECB81] to-[#F6465D]" />
+                <h3 className="text-xs font-bold text-[#848E9C] uppercase tracking-widest mb-6 absolute top-6 left-6 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[#F0B90B]" />
+                  Binance Asset Allocation
+                </h3>
                 {mounted && pieChartData.length > 0 ? (
                   <div className="w-[300px] h-[300px] relative mt-8">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
-                        <Pie data={pieChartData} cx="50%" cy="50%" innerRadius={85} outerRadius={115} paddingAngle={2} dataKey="value" stroke="none">
+                        <Pie data={pieChartData} cx="50%" cy="50%" innerRadius={85} outerRadius={115} paddingAngle={3} dataKey="value" stroke="none">
                           {pieChartData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} />)}
                         </Pie>
                         <RechartsTooltip
-                          contentStyle={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border-primary)", borderRadius: "12px" }}
-                          itemStyle={{ color: "#fff", fontSize: "11px" }}
-                          formatter={(value) => [`${formatMoney(Number(value))}`, "Value"]}
+                          contentStyle={{ backgroundColor: "#181A20", border: "1px solid #2B313A", borderRadius: "12px", boxShadow: "0 10px 30px rgba(0,0,0,0.8)" }}
+                          itemStyle={{ color: "#F0B90B", fontSize: "12px", fontWeight: "bold" }}
+                          formatter={(value) => [`${formatMoney(Number(value))}`, "USDT Value"]}
                         />
                       </PieChart>
                     </ResponsiveContainer>
                     <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                      <span className="text-gray-500 text-xs uppercase tracking-widest font-bold">Total Portfolio</span>
-                      <span className="text-white text-3xl font-extrabold mt-1">
+                      <span className="text-[#848E9C] text-xs uppercase tracking-widest font-black">Total Valuation</span>
+                      <span className="text-white text-3xl font-extrabold tracking-tight mt-1">
                         {formatMoney(stats.totalCurrent)}
                       </span>
                     </div>
                   </div>
                 ) : (
-                  <div className="h-[280px] flex items-center justify-center text-gray-500 text-xs font-medium">
-                    No holdings to show.
+                  <div className="h-[280px] flex flex-col items-center justify-center text-[#848E9C] text-xs font-medium gap-3">
+                    <span>No crypto holdings in Binance portfolio.</span>
+                    <button
+                      onClick={openNewModal}
+                      className="bg-[#F0B90B] text-black font-extrabold px-4 py-2 rounded-lg text-xs uppercase tracking-wider hover:bg-[#fcd535] transition-all shadow-[0_0_15px_rgba(240,185,11,0.3)] cursor-pointer"
+                    >
+                      + Execute First Spot Trade
+                    </button>
                   </div>
                 )}
               </div>
 
-              {/* Right: Quick stats */}
+              {/* Right: Binance Spot Stats Cards */}
               <div className="flex flex-col gap-4">
-                <div className="bg-[var(--bg-card)] border border-white/5 rounded-2xl p-6 flex flex-col justify-between shadow-sm">
-                  <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Total Value</span>
-                  <div>
-                    <h2 className="text-3xl font-extrabold text-white mt-1">{formatMoney(stats.totalCurrent)}</h2>
-                    <span className="text-xs text-gray-400">Current Market Valuation (USD)</span>
+                <div className="bg-[#181A20] border border-[#2B313A] rounded-2xl p-6 flex flex-col justify-between shadow-xl relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-[#F0B90B]/5 rounded-bl-full pointer-events-none" />
+                  <span className="text-[0.6875rem] font-bold text-[#848E9C] uppercase tracking-widest">Total Spot Balance (USDT)</span>
+                  <div className="mt-2">
+                    <h2 className="text-3xl font-extrabold text-white tracking-tight">{formatMoney(stats.totalCurrent)}</h2>
+                    <span className="text-xs text-[#0ECB81] font-bold mt-1 block">≈ 1.00000000 USDT Base</span>
                   </div>
                 </div>
 
-                <div className="bg-[var(--bg-card)] border border-white/5 rounded-2xl p-6 flex flex-col justify-between shadow-sm">
-                  <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Invested Value</span>
-                  <div>
-                    <h2 className="text-2xl font-black text-gray-300 mt-1">{formatMoney(stats.totalInvested)}</h2>
-                    <span className="text-xs text-gray-400">Total Purchase Cost Basis</span>
+                <div className="bg-[#181A20] border border-[#2B313A] rounded-2xl p-6 flex flex-col justify-between shadow-xl">
+                  <span className="text-[0.6875rem] font-bold text-[#848E9C] uppercase tracking-widest">Total Cost Basis</span>
+                  <div className="mt-2">
+                    <h2 className="text-2xl font-bold text-[#EAECSF]">{formatMoney(stats.totalInvested)}</h2>
+                    <span className="text-xs text-[#848E9C]">Historical Purchase Capital</span>
                   </div>
                 </div>
 
-                <div className="bg-[var(--bg-card)] border border-white/5 rounded-2xl p-6 flex flex-col justify-between shadow-sm">
-                  <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Total Unrealized P&L</span>
-                  <div>
-                    <h2 className={`text-2xl font-black mt-1 ${stats.totalPnL >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
+                <div className="bg-[#181A20] border border-[#2B313A] rounded-2xl p-6 flex flex-col justify-between shadow-xl">
+                  <span className="text-[0.6875rem] font-bold text-[#848E9C] uppercase tracking-widest">Total P&L (Unrealized)</span>
+                  <div className="mt-2">
+                    <h2 className={`text-2xl font-extrabold ${stats.totalPnL >= 0 ? "text-[#0ECB81]" : "text-[#F6465D]"}`}>
                       {stats.totalPnL >= 0 ? "+" : ""}{formatMoney(stats.totalPnL)} ({stats.totalPnLPercent.toFixed(2)}%)
                     </h2>
-                    <span className="text-xs text-gray-400">All-Time Net Returns</span>
+                    <span className="text-xs text-[#848E9C]">All-Time Net Return</span>
                   </div>
                 </div>
 
-                <div className="bg-[var(--bg-card)] border border-white/5 rounded-2xl p-6 flex flex-col justify-between shadow-sm">
-                  <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">24h Day Change</span>
-                  <div>
-                    <h2 className={`text-2xl font-black mt-1 ${stats.dayPnL >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
+                <div className="bg-[#181A20] border border-[#2B313A] rounded-2xl p-6 flex flex-col justify-between shadow-xl">
+                  <span className="text-[0.6875rem] font-bold text-[#848E9C] uppercase tracking-widest">24h Price Change</span>
+                  <div className="mt-2">
+                    <h2 className={`text-2xl font-extrabold ${stats.dayPnL >= 0 ? "text-[#0ECB81]" : "text-[#F6465D]"}`}>
                       {stats.dayPnL >= 0 ? "+" : ""}{formatMoney(stats.dayPnL)} ({stats.dayPnLPercent.toFixed(2)}%)
                     </h2>
-                    <span className="text-xs text-gray-400">{"Today's Valuation Shift"}</span>
+                    <span className="text-xs text-[#848E9C]">24 Hours Spot Market Fluctuation</span>
                   </div>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Holdings View */}
+          {/* Holdings View - Binance Spot Pairs */}
           {activeTab === "holdings" && (
-            <div className="bg-[var(--bg-card)] border border-white/5 rounded-2xl overflow-hidden mt-4">
+            <div className="bg-[#181A20] border border-[#2B313A] rounded-2xl overflow-hidden shadow-2xl mt-2">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="border-b border-white/5 text-xs uppercase font-bold text-gray-400 tracking-wider">
-                      <th className="px-6 py-4">Asset</th>
-                      <th className="px-6 py-4 text-right">Qty</th>
-                      <th className="px-6 py-4 text-right">Avg Cost</th>
-                      <th className="px-6 py-4 text-right">LTP (Live Price)</th>
-                      <th className="px-6 py-4 text-right">Current Value</th>
-                      <th className="px-6 py-4 text-right">Total P&L</th>
-                      <th className="px-6 py-4 text-center">Actions</th>
+                    <tr className="border-b border-[#2B313A] bg-[#0B0E11] text-[0.6875rem] uppercase font-extrabold text-[#848E9C] tracking-wider">
+                      <th className="px-6 py-4">Spot Pair</th>
+                      <th className="px-6 py-4 text-right">Holding Qty</th>
+                      <th className="px-6 py-4 text-right">Avg Entry Price</th>
+                      <th className="px-6 py-4 text-right">Binance LTP</th>
+                      <th className="px-6 py-4 text-right">Total Value (USDT)</th>
+                      <th className="px-6 py-4 text-right">Unrealized P&L</th>
+                      <th className="px-6 py-4 text-center">Trade Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-white/[0.02]">
+                  <tbody className="divide-y divide-[#2B313A]/50">
                     {activeHoldings.map((h) => {
                       const costBasis = Number(h.quantity) * Number(h.buy_price);
                       const currentVal = Number(h.quantity) * Number(h.current_price);
@@ -498,33 +530,35 @@ export default function CryptoClient() {
                       const isLtpUp = ltp >= prevClose;
 
                       return (
-                        <tr key={h.id} className="hover:bg-white/[0.01] transition-colors text-xs text-white">
+                        <tr key={h.id} className="hover:bg-[#2B313A]/30 transition-colors text-xs text-white">
                           <td className="px-6 py-4 font-bold">
                             <div className="flex items-center gap-2">
-                              <span className="p-1 bg-white/5 rounded border border-white/10 uppercase">{h.symbol}</span>
-                              <span className="text-gray-400 text-xs">{h.name}</span>
+                              <span className="px-2 py-1 bg-[#F0B90B]/10 text-[#F0B90B] border border-[#F0B90B]/20 rounded font-black tracking-wider uppercase text-xs">
+                                {h.symbol}/USDT
+                              </span>
+                              <span className="text-[#848E9C] text-xs font-medium">{h.name}</span>
                             </div>
                           </td>
-                          <td className="px-6 py-4 text-right font-medium">{h.quantity}</td>
-                          <td className="px-6 py-4 text-right text-gray-400">{formatMoney(Number(h.buy_price))}</td>
-                          <td className={`px-6 py-4 text-right font-semibold ${isLtpUp ? "text-emerald-400" : "text-rose-400"}`}>
+                          <td className="px-6 py-4 text-right font-mono font-bold text-white">{h.quantity}</td>
+                          <td className="px-6 py-4 text-right font-mono text-[#848E9C]">{formatMoney(Number(h.buy_price))}</td>
+                          <td className={`px-6 py-4 text-right font-mono font-bold ${isLtpUp ? "text-[#0ECB81]" : "text-[#F6465D]"}`}>
                             {formatMoney(ltp)}
                           </td>
-                          <td className="px-6 py-4 text-right font-bold">{formatMoney(currentVal)}</td>
-                          <td className={`px-6 py-4 text-right font-extrabold ${pnl >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
+                          <td className="px-6 py-4 text-right font-mono font-extrabold text-white">{formatMoney(currentVal)}</td>
+                          <td className={`px-6 py-4 text-right font-mono font-black ${pnl >= 0 ? "text-[#0ECB81]" : "text-[#F6465D]"}`}>
                             {pnl >= 0 ? "+" : ""}{formatMoney(pnl)} ({pnlPercent.toFixed(2)}%)
                           </td>
                           <td className="px-6 py-4 text-center">
                             <div className="flex items-center justify-center gap-2">
                               <button
                                 onClick={() => handleEdit(h)}
-                                className="text-xs bg-sky-500/10 text-sky-400 hover:bg-sky-500 hover:text-white px-2.5 py-1 rounded transition-colors font-bold uppercase"
+                                className="text-xs bg-[#2B313A] hover:bg-[#363D47] text-white px-2.5 py-1 rounded-md transition-colors font-bold uppercase cursor-pointer"
                               >
                                 Modify
                               </button>
                               <button
                                 onClick={() => handleDelete(h.id)}
-                                className="text-xs bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white px-2.5 py-1 rounded transition-colors font-bold uppercase"
+                                className="text-xs bg-[#F6465D]/10 text-[#F6465D] hover:bg-[#F6465D] hover:text-white px-2.5 py-1 rounded-md transition-colors font-bold uppercase cursor-pointer"
                               >
                                 Delete
                               </button>
@@ -535,8 +569,16 @@ export default function CryptoClient() {
                     })}
                     {activeHoldings.length === 0 && (
                       <tr>
-                        <td colSpan={7} className="text-center py-12 text-gray-500 text-xs font-semibold">
-                          No crypto holdings found. Add a trade to get started!
+                        <td colSpan={7} className="text-center py-12 text-[#848E9C] text-xs font-semibold">
+                          <div className="flex flex-col items-center justify-center gap-3">
+                            <span>No active spot holdings found. Execute a trade to get started!</span>
+                            <button
+                              onClick={openNewModal}
+                              className="bg-[#F0B90B] text-black font-extrabold px-4 py-2 rounded-lg text-xs uppercase tracking-wider hover:bg-[#fcd535] transition-all shadow-[0_0_15px_rgba(240,185,11,0.3)] cursor-pointer"
+                            >
+                              + Place Spot Order
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     )}
@@ -548,37 +590,39 @@ export default function CryptoClient() {
 
           {/* Transactions View */}
           {activeTab === "transactions" && (
-            <div className="bg-[var(--bg-card)] border border-white/5 rounded-2xl overflow-hidden mt-4">
+            <div className="bg-[#181A20] border border-[#2B313A] rounded-2xl overflow-hidden shadow-2xl mt-2">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="border-b border-white/5 text-xs uppercase font-bold text-gray-400 tracking-wider">
-                      <th className="px-6 py-4">Asset</th>
-                      <th className="px-6 py-4">Date</th>
-                      <th className="px-6 py-4 text-right">Quantity</th>
-                      <th className="px-6 py-4 text-right">Executed Price</th>
+                    <tr className="border-b border-[#2B313A] bg-[#0B0E11] text-[0.6875rem] uppercase font-extrabold text-[#848E9C] tracking-wider">
+                      <th className="px-6 py-4">Spot Pair</th>
+                      <th className="px-6 py-4">Execution Date</th>
+                      <th className="px-6 py-4 text-right">Executed Quantity</th>
+                      <th className="px-6 py-4 text-right">Executed Price (USDT)</th>
                       <th className="px-6 py-4 text-right">Gross Turn</th>
-                      <th className="px-6 py-4 text-center">Notes</th>
+                      <th className="px-6 py-4 text-center">Order Notes</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-white/[0.02]">
+                  <tbody className="divide-y divide-[#2B313A]/50">
                     {cryptoHoldings.map((h) => {
                       const gross = Number(h.quantity) * Number(h.buy_price);
                       return (
-                        <tr key={h.id} className="hover:bg-white/[0.01] transition-colors text-xs text-white">
+                        <tr key={h.id} className="hover:bg-[#2B313A]/30 transition-colors text-xs text-white">
                           <td className="px-6 py-4 font-bold">
                             <div className="flex items-center gap-2">
-                              <span className="p-1 bg-white/5 rounded border border-white/10 uppercase">{h.symbol}</span>
-                              <span className="text-gray-400 text-xs">{h.name}</span>
+                              <span className="px-2 py-1 bg-[#F0B90B]/10 text-[#F0B90B] border border-[#F0B90B]/20 rounded font-black tracking-wider uppercase text-xs">
+                                {h.symbol}/USDT
+                              </span>
+                              <span className="text-[#848E9C] text-xs font-medium">{h.name}</span>
                             </div>
                           </td>
-                          <td className="px-6 py-4 text-gray-400">
+                          <td className="px-6 py-4 text-[#848E9C]">
                             {h.bought_at ? new Date(h.bought_at).toLocaleDateString("en-US", { dateStyle: "medium" }) : "-"}
                           </td>
-                          <td className="px-6 py-4 text-right font-medium">{h.quantity}</td>
-                          <td className="px-6 py-4 text-right text-gray-400">{formatMoney(Number(h.buy_price))}</td>
-                          <td className="px-6 py-4 text-right font-semibold">{formatMoney(gross)}</td>
-                          <td className="px-6 py-4 text-center text-gray-500 italic max-w-[200px] truncate" title={h.notes || ""}>
+                          <td className="px-6 py-4 text-right font-mono font-bold">{h.quantity}</td>
+                          <td className="px-6 py-4 text-right font-mono text-[#848E9C]">{formatMoney(Number(h.buy_price))}</td>
+                          <td className="px-6 py-4 text-right font-mono font-bold text-white">{formatMoney(gross)}</td>
+                          <td className="px-6 py-4 text-center text-[#848E9C] italic max-w-[200px] truncate" title={h.notes || ""}>
                             {h.notes || "-"}
                           </td>
                         </tr>
@@ -586,8 +630,8 @@ export default function CryptoClient() {
                     })}
                     {cryptoHoldings.length === 0 && (
                       <tr>
-                        <td colSpan={6} className="text-center py-12 text-gray-500 text-xs font-semibold">
-                          No transactions found.
+                        <td colSpan={6} className="text-center py-12 text-[#848E9C] text-xs font-semibold">
+                          No order execution history found.
                         </td>
                       </tr>
                     )}
@@ -598,82 +642,136 @@ export default function CryptoClient() {
           )}
         </div>
 
-        {/* Order Ticket Drawer */}
+        {/* Binance Order Ticket Drawer */}
         {showModal && (
           <Drawer
             isOpen={showModal}
             onClose={() => { setShowModal(false); setEditingId(null); }}
-            title={editingId ? `Edit ${formData.symbol}` : "Order Ticket"}
+            title={editingId ? `Binance Spot Order - Edit ${formData.symbol}/USDT` : "Binance Spot Order Ticket"}
           >
             <div className="p-0 -mx-6 -mt-6">
+              {/* Binance Trade Header */}
               <div className={`p-4 rounded-t flex items-center justify-between ${
-                formData.trade_type === "buy" ? "bg-emerald-600" : "bg-rose-600"
-              } text-white`}>
+                formData.trade_type === "buy" ? "bg-[#0ECB81]" : "bg-[#F6465D]"
+              } text-black font-extrabold`}>
                 <div>
-                  <span className="text-base font-bold uppercase tracking-wider">{editingId ? "Modify" : formData.trade_type === "buy" ? "Buy" : "Sell"} {formData.symbol || "Asset"}</span>
-                  <span className="ml-2 text-xs bg-white/20 px-1.5 py-0.5 rounded font-black tracking-widest">USDT</span>
+                  <span className="text-base font-black uppercase tracking-wider">{editingId ? "Modify" : formData.trade_type === "buy" ? "Buy Spot" : "Sell Spot"} {formData.symbol || "Crypto"}</span>
+                  <span className="ml-2 text-xs bg-black/20 text-white px-1.5 py-0.5 rounded font-black tracking-widest">USDT PAIR</span>
                 </div>
-                <div className="text-right">
-                  <span className="text-xs text-white/70">LTP</span>
-                  <span className="ml-1 text-sm font-bold">${parseFloat(formData.current_price || "0").toFixed(2)}</span>
+                <div className="text-right text-white">
+                  <span className="text-[0.65rem] text-white/70 uppercase font-black block">Binance LTP</span>
+                  <span className="text-sm font-black">${parseFloat(formData.current_price || "0").toFixed(2)}</span>
                 </div>
               </div>
 
-              <div className="p-5 space-y-5 bg-[var(--bg-card)]">
+              <div className="p-5 space-y-5 bg-[#181A20] text-white">
                 
-                {/* Search Crypto (if adding new from scratch) */}
+                {/* Search Crypto / Popular Coins / Manual Entry */}
                 {!formData.symbol ? (
-                  <div className="space-y-1.5 relative">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Search Coin</label>
-                    <div className="relative">
-                      <input 
-                        autoFocus
-                        className="w-full bg-[#202020] border border-white/10 rounded px-3 py-2 text-xs text-white outline-none focus:border-[#2185d0] placeholder-gray-500" 
-                        placeholder="Search e.g. Bitcoin, BTC, Ethereum..."
-                        value={searchQuery}
-                        onChange={e => setSearchQuery(e.target.value)}
-                      />
-                      {isSearching && (
-                        <div className="absolute right-3 top-2.5">
-                          <svg className="w-3.5 h-3.5 animate-spin text-gray-500" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" strokeDasharray="32" className="opacity-25"></circle><path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" className="opacity-75"></path></svg>
+                  <div className="space-y-3 relative">
+                    <div className="space-y-1.5 relative">
+                      <label className="text-xs font-bold text-[#848E9C] uppercase tracking-wide">Search Binance Coin / Ticker</label>
+                      <div className="relative">
+                        <input 
+                          autoFocus
+                          className="w-full bg-[#0B0E11] border border-[#2B313A] rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#F0B90B] placeholder-[#848E9C]" 
+                          placeholder="Search e.g. Bitcoin, BTC, Ethereum..."
+                          value={searchQuery}
+                          onChange={e => setSearchQuery(e.target.value)}
+                        />
+                        {isSearching && (
+                          <div className="absolute right-3 top-2.5">
+                            <svg className="w-3.5 h-3.5 animate-spin text-[#F0B90B]" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" strokeDasharray="32" className="opacity-25"></circle><path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" className="opacity-75"></path></svg>
+                          </div>
+                        )}
+                      </div>
+
+                      {showSearchDropdown && searchResults.length > 0 && (
+                        <div className="absolute z-[120] left-0 right-0 top-[100%] mt-1 bg-[#181A20] border border-[#2B313A] rounded-xl shadow-2xl overflow-hidden max-h-56 overflow-y-auto custom-scrollbar">
+                          {searchResults.map((res, i) => (
+                            <div 
+                              key={i} 
+                              className="px-3 py-2 hover:bg-[#2B313A] cursor-pointer transition-colors border-b border-[#2B313A]/50 last:border-0 flex items-center justify-between"
+                              onClick={async () => {
+                                setFormData({...formData, symbol: res.symbol, name: res.name});
+                                setSearchQuery("");
+                                setShowSearchDropdown(false);
+                                await handleFetchSinglePrice(res.symbol);
+                              }}
+                            >
+                              <div className="flex items-center gap-3">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                {res.thumb && <img src={res.thumb} alt={res.symbol} className="w-6 h-6 rounded-full" />}
+                                <div>
+                                  <div className="text-xs font-bold text-[#F0B90B]">{res.symbol}/USDT</div>
+                                  <div className="text-xs text-[#848E9C] truncate max-w-[220px]">{res.name}</div>
+                                </div>
+                              </div>
+                              <span className="text-[0.5625rem] bg-[#F0B90B]/20 text-[#F0B90B] px-1.5 py-0.5 rounded font-extrabold uppercase">Select</span>
+                            </div>
+                          ))}
                         </div>
                       )}
                     </div>
 
-                    {showSearchDropdown && searchResults.length > 0 && (
-                      <div className="absolute z-[120] left-0 right-0 top-[100%] mt-1 bg-[#202020] border border-white/10 rounded shadow-xl overflow-hidden max-h-56 overflow-y-auto custom-scrollbar">
-                        {searchResults.map((res, i) => (
-                          <div 
-                            key={i} 
-                            className="px-3 py-2 hover:bg-white/5 cursor-pointer transition-colors border-b border-white/5 last:border-0 flex items-center justify-between"
-                            onClick={async () => {
-                              setFormData({...formData, symbol: res.symbol, name: res.name});
-                              setSearchQuery("");
-                              setShowSearchDropdown(false);
-                              await handleFetchSinglePrice(res.symbol);
-                            }}
+                    {/* Popular Coin Quick Select Chips */}
+                    <div className="space-y-1.5">
+                      <label className="text-[0.65rem] font-bold text-[#848E9C] uppercase tracking-wider">Binance Top Spot Markets</label>
+                      <div className="flex flex-wrap gap-1.5">
+                        {POPULAR_COINS.map(coin => (
+                          <button
+                            key={coin.symbol}
+                            type="button"
+                            onClick={() => handleCoinChipClick(coin)}
+                            className="text-xs bg-[#0B0E11] hover:bg-[#F0B90B]/20 border border-[#2B313A] hover:border-[#F0B90B]/50 text-white hover:text-[#F0B90B] px-2.5 py-1 rounded-lg transition-all font-semibold cursor-pointer"
                           >
-                            <div className="flex items-center gap-3">
-                              {res.thumb && <img src={res.thumb} alt={res.symbol} className="w-6 h-6 rounded-full" />}
-                              <div>
-                                <div className="text-xs font-bold text-white">{res.symbol}</div>
-                                <div className="text-xs text-gray-400 truncate max-w-[220px]">{res.name}</div>
-                              </div>
-                            </div>
-                            <span className="text-[0.5625rem] bg-white/10 px-1.5 py-0.5 rounded text-gray-400 font-semibold">Select</span>
-                          </div>
+                            {coin.symbol}
+                          </button>
                         ))}
                       </div>
-                    )}
+                    </div>
+
+                    {/* Manual Token / Custom Coin Input */}
+                    <div className="pt-2 border-t border-[#2B313A]">
+                      <details className="group" open={Boolean(formData.symbol)}>
+                        <summary className="text-xs text-[#848E9C] hover:text-[#F0B90B] cursor-pointer font-bold select-none">
+                          Or enter custom crypto token details →
+                        </summary>
+                        <div className="mt-2 space-y-3 p-3 bg-[#0B0E11] border border-[#2B313A] rounded-xl">
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-[0.65rem] font-bold text-[#848E9C] uppercase">Ticker Symbol *</label>
+                              <input
+                                type="text"
+                                className="w-full bg-[#181A20] border border-[#2B313A] rounded px-2.5 py-1.5 text-xs text-white outline-none uppercase focus:border-[#F0B90B]"
+                                placeholder="e.g. SOL"
+                                value={formData.symbol}
+                                onChange={e => setFormData({ ...formData, symbol: e.target.value.toUpperCase() })}
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[0.65rem] font-bold text-[#848E9C] uppercase">Coin Name *</label>
+                              <input
+                                type="text"
+                                className="w-full bg-[#181A20] border border-[#2B313A] rounded px-2.5 py-1.5 text-xs text-white outline-none focus:border-[#F0B90B]"
+                                placeholder="e.g. Solana"
+                                value={formData.name}
+                                onChange={e => setFormData({ ...formData, name: e.target.value })}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </details>
+                    </div>
                   </div>
                 ) : (
                   /* Selected Crypto Card */
-                  <div className="bg-white/[0.02] border border-white/5 p-3.5 rounded-xl flex items-center justify-between">
+                  <div className="bg-[#0B0E11] border border-[#2B313A] p-3.5 rounded-xl flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <span className="text-2xl p-2 bg-white/[0.02] rounded-xl border border-white/5">💎</span>
+                      <span className="text-2xl p-2 bg-[#F0B90B]/10 rounded-xl border border-[#F0B90B]/20">💎</span>
                       <div>
-                        <p className="text-xs font-bold text-white">{formData.symbol}</p>
-                        <p className="text-xs text-gray-500 font-medium">{formData.name}</p>
+                        <p className="text-xs font-black text-[#F0B90B]">{formData.symbol}/USDT</p>
+                        <p className="text-xs text-[#848E9C] font-medium">{formData.name}</p>
                       </div>
                     </div>
                     {!editingId && (
@@ -682,9 +780,9 @@ export default function CryptoClient() {
                         onClick={() => {
                           setFormData(prev => ({ ...prev, symbol: "", name: "" }));
                         }}
-                        className="text-xs bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white px-2 py-1 rounded transition-all font-bold"
+                        className="text-xs bg-[#F6465D]/10 text-[#F6465D] hover:bg-[#F6465D] hover:text-white px-2 py-1 rounded transition-all font-bold cursor-pointer"
                       >
-                        Change Coin
+                        Change Market
                       </button>
                     )}
                   </div>
@@ -700,12 +798,12 @@ export default function CryptoClient() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Quantity</label>
+                      <label className="text-xs font-bold text-[#848E9C] uppercase tracking-wide">Order Quantity</label>
                       <input
                         required
                         type="number"
                         step="any"
-                        className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]"
+                        className="w-full bg-[#0B0E11] border border-[#2B313A] rounded-lg px-3 py-1.5 text-xs text-white outline-none focus:border-[#F0B90B]"
                         value={formData.quantity}
                         onChange={e => setFormData({ ...formData, quantity: e.target.value })}
                         inputMode="decimal"
@@ -713,12 +811,12 @@ export default function CryptoClient() {
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Buy Price</label>
+                      <label className="text-xs font-bold text-[#848E9C] uppercase tracking-wide">Buy Price (USDT)</label>
                       <input
                         required
                         type="number"
                         step="any"
-                        className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]"
+                        className="w-full bg-[#0B0E11] border border-[#2B313A] rounded-lg px-3 py-1.5 text-xs text-white outline-none focus:border-[#F0B90B]"
                         value={formData.buy_price}
                         onChange={e => setFormData({ ...formData, buy_price: e.target.value })}
                         inputMode="decimal"
@@ -733,17 +831,17 @@ export default function CryptoClient() {
                         type="submit"
                         onClick={() => setFormData({ ...formData, trade_type: "buy" })}
                         disabled={submitting}
-                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded text-xs transition-colors uppercase tracking-wider disabled:opacity-50"
+                        className="flex-1 bg-[#0ECB81] hover:bg-[#0bb774] text-black font-extrabold py-2.5 rounded-lg text-xs transition-colors uppercase tracking-wider disabled:opacity-50 cursor-pointer"
                       >
-                        BUY
+                        BUY SPOT ({formData.symbol || "COIN"})
                       </button>
                       <button
                         type="submit"
                         onClick={() => setFormData({ ...formData, trade_type: "sell" })}
                         disabled={submitting}
-                        className="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 rounded text-xs transition-colors uppercase tracking-wider disabled:opacity-50"
+                        className="flex-1 bg-[#F6465D] hover:bg-[#e03a50] text-white font-extrabold py-2.5 rounded-lg text-xs transition-colors uppercase tracking-wider disabled:opacity-50 cursor-pointer"
                       >
-                        SELL
+                        SELL SPOT ({formData.symbol || "COIN"})
                       </button>
                     </div>
                   )}
@@ -752,9 +850,9 @@ export default function CryptoClient() {
                     <button
                       type="submit"
                       disabled={submitting}
-                      className="w-full bg-[var(--accent-primary)] hover:brightness-95 text-white font-bold py-2.5 rounded text-xs transition-all uppercase tracking-wider disabled:opacity-50"
+                      className="w-full bg-[#F0B90B] hover:bg-[#fcd535] text-black font-extrabold py-2.5 rounded-lg text-xs transition-all uppercase tracking-wider disabled:opacity-50 cursor-pointer"
                     >
-                      Update Holding
+                      Update Binance Spot Holding
                     </button>
                   )}
                 </form>

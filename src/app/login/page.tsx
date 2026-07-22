@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { login, signup } from "./actions";
 import { createClient } from "@/lib/supabase-browser";
 import Link from "next/link";
@@ -27,7 +27,6 @@ const itemVariants: any = {
 
 export default function LoginPage() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
@@ -89,7 +88,9 @@ export default function LoginPage() {
   useEffect(() => {
     const urlError = searchParams.get("error");
     if (urlError) {
-      setError(decodeURIComponent(urlError));
+      setTimeout(() => {
+        setError(decodeURIComponent(urlError));
+      }, 0);
       const url = new URL(window.location.href);
       url.searchParams.delete("error");
       window.history.replaceState({}, "", url.toString());
@@ -121,16 +122,18 @@ export default function LoginPage() {
     }
   }
 
+  const [successMessage, setSuccessMessage] = useState("");
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
     if (lockoutUntil && Date.now() < lockoutUntil) return;
 
     setError("");
+    setSuccessMessage("");
     setLoading(true);
     
     try {
-      // In a real app, rememberMe flag would be passed to the auth provider
       const formData = new FormData(e.currentTarget);
       const result = isSignUp 
         ? await signup(formData)
@@ -146,13 +149,17 @@ export default function LoginPage() {
           const multiplier = Math.pow(2, failCountRef.current - MAX_ATTEMPTS);
           startLockout(LOCKOUT_DURATION_MS * multiplier);
         }
+      } else if (result?.requiresVerification) {
+        setLoading(false);
+        setError("");
+        setSuccessMessage(result.message || "Account created! Please check your email or sign in.");
+        setIsSignUp(false);
       } else {
         failCountRef.current = 0;
         localStorage.removeItem("failCount");
         localStorage.removeItem("lockoutUntil");
         
-        router.refresh();
-        router.push("/dashboard");
+        window.location.href = "/dashboard";
       }
     } catch {
       setError("An unexpected error occurred. Please try again.");
@@ -399,6 +406,23 @@ export default function LoginPage() {
             </AnimatePresence>
 
             <AnimatePresence>
+              {successMessage ? (
+                <motion.div 
+                  key="success-message"
+                  initial={{ opacity: 0, height: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, height: "auto", scale: 1 }}
+                  exit={{ opacity: 0, height: 0, scale: 0.95 }}
+                  className="overflow-hidden"
+                >
+                  <div className="flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-xs font-medium mt-1">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" className="flex-shrink-0">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>{successMessage}</span>
+                  </div>
+                </motion.div>
+              ) : null}
+
               {error ? (
                 <motion.div 
                   key="error-message"

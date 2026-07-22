@@ -231,7 +231,7 @@ async function syncUserGmail(
         const dateObj = new Date(cleanDate);
         const minDate = new Date(dateObj.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
         const maxDate = new Date(dateObj.getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
-        const tableName = type === "expense" ? "expenses" : "income";
+        const tableName = type === "expense" ? "expenses" : "incomes";
 
         const [{ data: existingTable }, { data: existingTx }] = await Promise.all([
           supabase
@@ -258,7 +258,7 @@ async function syncUserGmail(
           const rpcName = type === "expense" ? "record_expense_by_sms" : "record_income_by_sms";
           const { data: rpcData, error: rpcError } = await supabase.rpc(rpcName, {
             p_token: smsSyncToken,
-            p_description: merchant,
+            p_description: `[Gmail] ${merchant}`,
             p_amount: amount,
             p_category: category,
             p_date: cleanDate,
@@ -268,23 +268,45 @@ async function syncUserGmail(
           if (!rpcError && (!rpcData || rpcData.success !== false)) {
             processedCount++;
           }
+        } else if (resolvedAccountId) {
+          // Direct RPC fallback when user has no sms_sync_token
+          const rpcName = type === "expense" ? "record_expense" : "record_income";
+          const { data: rpcData, error: rpcError } = await supabase.rpc(rpcName, {
+            p_user_id: userId,
+            p_description: `[Gmail] ${merchant}`,
+            p_amount: amount,
+            p_category: category,
+            p_date: cleanDate,
+            p_account_id: resolvedAccountId,
+          });
+
+          if (!rpcError && (!rpcData || (rpcData as any).success !== false)) {
+            processedCount++;
+          }
         }
       }
 
       // 5. Mark message as read using correct single-message modify endpoint
-      await fetch(
-        `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msgRef.id}/modify`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            removeLabelIds: ["UNREAD"],
-          }),
+      try {
+        const modifyRes = await fetch(
+          `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msgRef.id}/modify`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              removeLabelIds: ["UNREAD"],
+            }),
+          }
+        );
+        if (!modifyRes.ok && modifyRes.status === 403) {
+          console.warn(`[Gmail Sync] Insufficient permissions to mark message ${msgRef.id} as read. User may need to re-link Gmail with updated scopes.`);
         }
-      );
+      } catch (modifyErr) {
+        console.warn(`[Gmail Sync] Failed to mark message ${msgRef.id} as read:`, modifyErr);
+      }
     } catch (err) {
       console.error(`Error processing email message ${msgRef.id}:`, err);
     }

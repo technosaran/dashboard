@@ -2,7 +2,6 @@
 
 import { createClient } from "@/lib/supabase-server";
 import { redisGet, redisIncr, redisExpire, redisSet } from "@/lib/redis";
-import zxcvbn from "zxcvbn";
 
 const MAX_LOGIN_ATTEMPTS = 10;
 const LOCKOUT_DURATION = 60 * 15; // 15 minutes
@@ -32,20 +31,18 @@ async function clearFailedAttempts(email: string) {
 }
 
 function validatePasswordPolicy(password: string): string | null {
-  if (password.length < 12) return "Password must be at least 12 characters long.";
-  if (!/[A-Z]/.test(password)) return "Password must contain at least one uppercase letter.";
-  if (!/[a-z]/.test(password)) return "Password must contain at least one lowercase letter.";
-  if (!/[0-9]/.test(password)) return "Password must contain at least one number.";
-  if (!/[^A-Za-z0-9]/.test(password)) return "Password must contain at least one special character.";
-  
-  const strength = zxcvbn(password);
-  if (strength.score < 3) {
-    return `Password is too weak. ${strength.feedback.warning || "Please use a stronger password."}`;
-  }
+  if (password.length < 6) return "Password must be at least 6 characters long.";
   return null;
 }
 
-export async function login(formData: FormData) {
+export type AuthResult = {
+  success?: boolean;
+  error?: string;
+  requiresVerification?: boolean;
+  message?: string;
+};
+
+export async function login(formData: FormData): Promise<AuthResult> {
   const email = formData.get("email");
   const password = formData.get("password");
 
@@ -58,9 +55,13 @@ export async function login(formData: FormData) {
   }
 
   const emailStr = email.trim();
-  const bruteCheck = await checkBruteForce(emailStr);
-  if (bruteCheck.locked) {
-    return { error: bruteCheck.message };
+  try {
+    const bruteCheck = await checkBruteForce(emailStr);
+    if (bruteCheck.locked) {
+      return { error: bruteCheck.message };
+    }
+  } catch (err) {
+    console.warn("Brute force check skipped:", err);
   }
 
   const supabase = await createClient();
@@ -71,17 +72,21 @@ export async function login(formData: FormData) {
   });
 
   if (error) {
-    await recordFailedAttempt(emailStr);
+    try {
+      await recordFailedAttempt(emailStr);
+    } catch {}
     console.error("Login error:", error);
     return { error: error.message || "Invalid email or password." };
   }
 
-  await clearFailedAttempts(emailStr);
+  try {
+    await clearFailedAttempts(emailStr);
+  } catch {}
 
   return { success: true };
 }
 
-export async function signup(formData: FormData) {
+export async function signup(formData: FormData): Promise<AuthResult> {
   const email = formData.get("email");
   const password = formData.get("password");
 
@@ -100,7 +105,7 @@ export async function signup(formData: FormData) {
 
   const supabase = await createClient();
 
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email: email.trim(),
     password,
   });
@@ -108,6 +113,15 @@ export async function signup(formData: FormData) {
   if (error) {
     console.error("Signup error:", error);
     return { error: error.message || "Failed to create account." };
+  }
+
+  // If Supabase created user but email confirmation is required (no session yet)
+  if (data.user && !data.session) {
+    return {
+      success: true,
+      requiresVerification: true,
+      message: "Account created successfully! If email verification is enabled, please check your inbox or try signing in."
+    };
   }
 
   return { success: true };

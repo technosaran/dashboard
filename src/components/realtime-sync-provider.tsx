@@ -84,7 +84,7 @@ export function RealtimeSyncProvider({ children }: { children: React.ReactNode }
 
     channel.subscribe((status) => {
       if (status === "CHANNEL_ERROR" && process.env.NODE_ENV !== 'production') {
-        console.error("Real-time connection error - retrying...");
+        console.warn("Real-time sync reconnecting in background...");
       }
     });
 

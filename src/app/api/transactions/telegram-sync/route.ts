@@ -1,46 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import logger from "@/lib/logger";
+import { sendTelegramMessage } from "@/lib/telegram";
 import { redisGet, redisSet, redisDel, isRedisConfigured } from "@/lib/redis";
 import { getExchangeRate } from "@/lib/utils";
 
-// Helper to send message back to Telegram user with automatic fallback if Markdown entities fail to parse
-async function sendTelegramMessage(chatId: string, text: string) {
-  const token = process.env.TELEGRAM_BOT_TOKEN;
-  if (!token) {
-    console.error("Missing TELEGRAM_BOT_TOKEN in environment variables");
-    return;
-  }
-
-  try {
-    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text,
-        parse_mode: "Markdown",
-      }),
-    });
-    if (!res.ok) {
-      const errBody = await res.text();
-      console.error(`Telegram API error (${res.status}): ${errBody}`);
-      // If Telegram failed due to Markdown entity parsing issues (e.g., unescaped underscores/asterisks), retry sending as plain text
-      if (res.status === 400 && /can't parse entities/i.test(errBody)) {
-        await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            chat_id: chatId,
-            text,
-          }),
-        });
-      }
-    }
-  } catch (error) {
-    console.error("Failed to send Telegram message:", error);
-  }
-}
 
 // Helper to check budget and send instant Telegram push warning if over 80%
 async function checkAndNotifyBudget(supabase: any, userId: string, chatId: string, category: string, newAmount: number) {
@@ -232,7 +196,7 @@ export async function POST(req: NextRequest) {
     }
 
     const chatId = String(body.message.chat.id);
-    let rawText = String(body.message.text || body.message.caption || "").trim();
+    const rawText = String(body.message.text || body.message.caption || "").trim();
 
     // Handle voice notes without text
     if (!rawText && body.message.voice) {
@@ -262,6 +226,21 @@ export async function POST(req: NextRequest) {
 
     // 1. Handle Account Link command (/link tg-123456 or /start tg-123456)
     const linkMatch = rawText.match(/^\/(?:link|start)\s+(tg-\d+)/i);
+
+    // Handle bare /start without link code — show welcome message
+    if (/^\/start$/i.test(rawText.trim())) {
+      await sendTelegramMessage(
+        chatId,
+        `👋 *Welcome to the Finance Dashboard Bot!*\n\n` +
+        `To get started, you need to link this bot to your dashboard account:\n\n` +
+        `1️⃣ Go to your dashboard *Settings > Integrations*\n` +
+        `2️⃣ Click *Generate Code* under Telegram Bot\n` +
+        `3️⃣ Send the code here: \`/link tg-xxxxxx\`\n\n` +
+        `Or scan the QR code shown on your dashboard!\n\n` +
+        `_Already linked? Type \`/help\` to see all commands._`
+      );
+      return NextResponse.json({ success: true });
+    }
     if (linkMatch) {
       const code = linkMatch[1].toLowerCase();
 
@@ -887,7 +866,7 @@ export async function POST(req: NextRequest) {
         const dateObj = new Date(cleanDate);
         const minDate = new Date(dateObj.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
         const maxDate = new Date(dateObj.getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
-        const tableName = smsData.type === "expense" ? "expenses" : "income";
+        const tableName = smsData.type === "expense" ? "expenses" : "incomes";
 
         const [{ data: existingTable }, { data: existingTx }] = await Promise.all([
           supabase

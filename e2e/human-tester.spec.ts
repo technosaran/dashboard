@@ -29,7 +29,7 @@ test.describe('Human Tester Crawl', () => {
   // Increase timeout to 120 seconds since we are visiting many pages
   test.setTimeout(120000);
   
-  let errors: string[] = [];
+  const errors: string[] = [];
 
   test.beforeEach(async ({ page }) => {
     // Capture unhandled errors

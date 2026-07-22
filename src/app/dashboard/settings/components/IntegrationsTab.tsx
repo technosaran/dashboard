@@ -6,6 +6,12 @@ import { toast } from "react-hot-toast";
 import { updateSettings, generateTelegramLinkCode } from "../actions";
 import type { FinanceData } from "@/hooks/use-finance-data";
 
+// Derive Gmail linked status from either explicit flag or token presence
+function isGmailLinked(profile: FinanceData["profile"] | undefined): boolean {
+  if (!profile) return false;
+  return !!(profile.is_gmail_linked || (profile as any).gmail_refresh_token);
+}
+
 interface IntegrationsTabProps {
   profile: FinanceData["profile"] | undefined;
   isGmailSyncing: boolean;
@@ -40,7 +46,7 @@ export default function IntegrationsTab({
           <div className="flex items-center gap-3">
             {[
               { label: "SMS", active: !!profile?.sms_sync_token },
-              { label: "Gmail", active: !!profile?.is_gmail_linked },
+              { label: "Gmail", active: isGmailLinked(profile) },
               { label: "Telegram", active: !!profile?.telegram_chat_id },
             ].map((s) => (
               <div
@@ -232,7 +238,7 @@ export default function IntegrationsTab({
                     <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-500/20 to-rose-500/5 border border-rose-500/20 flex items-center justify-center text-2xl shadow-[0_0_20px_rgba(244,63,94,0.12)]">
                       ✉️
                     </div>
-                    {profile?.is_gmail_linked && (
+                    {isGmailLinked(profile) && (
                       <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-[#0d1117] shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
                     )}
                   </div>
@@ -248,7 +254,7 @@ export default function IntegrationsTab({
                   Securely link your Google account via OAuth 2.0 to automatically scan transaction alert emails in the background. Works on all devices — iPhone, Android, and Desktop.
                 </p>
 
-                {profile?.is_gmail_linked && (
+                {isGmailLinked(profile) && (
                   <div className="flex items-center gap-4">
                     <div className="flex-1 p-4 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between gap-4">
                       <div>
@@ -278,7 +284,7 @@ export default function IntegrationsTab({
               </div>
 
               <div className="flex md:flex-col items-center gap-3 md:pt-2">
-                {profile?.is_gmail_linked ? (
+                {isGmailLinked(profile) ? (
                   <>
                     <div className="hidden md:flex flex-col items-center gap-1 mb-2">
                       <span className="relative flex h-3 w-3">
@@ -301,6 +307,15 @@ export default function IntegrationsTab({
                       className="px-4 py-2 rounded-xl bg-rose-500/5 hover:bg-rose-500/10 border border-rose-500/10 text-xs font-bold text-rose-400 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
                     >
                       Disconnect
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        window.location.href = "/api/auth/google";
+                      }}
+                      className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold text-[--text-secondary] hover:text-white active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+                    >
+                      Re-link
                     </button>
                   </>
                 ) : (

@@ -150,16 +150,21 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
 
   useEffect(() => {
     if (!searchQuery || searchQuery.length < 2) {
-      setSearchResults([]);
-      setShowSearchDropdown(false);
-      return;
+      const timer = setTimeout(() => {
+        setSearchResults([]);
+        setShowSearchDropdown(false);
+      }, 0);
+      return () => clearTimeout(timer);
     }
     const q = searchQuery.toLowerCase();
     const results = Object.entries(MOCK_BOND_DB).filter(([isin, data]) => 
       isin.toLowerCase().includes(q) || data.bond_name.toLowerCase().includes(q) || data.issuer.toLowerCase().includes(q)
     ).map(([isin, data]) => ({ isin, data }));
-    setSearchResults(results);
-    setShowSearchDropdown(true);
+    const timer = setTimeout(() => {
+      setSearchResults(results);
+      setShowSearchDropdown(true);
+    }, 0);
+    return () => clearTimeout(timer);
   }, [searchQuery]);
 
   const [formData, setFormData] = useState({
@@ -170,64 +175,6 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
     credit_rating: "", platform: "Wint", demat_account: "", account_id: "", notes: "",
     accrued_interest: "0", total_interest_earned: "0", current_value: ""
   });
-
-  const handleIsinChange = (val: string) => {
-    const cleanIsin = val.toUpperCase().trim().substring(0, 12);
-    setFormData(prev => ({ ...prev, isin: cleanIsin }));
-
-    if (cleanIsin.length === 12) {
-      const matched = MOCK_BOND_DB[cleanIsin];
-      if (matched) {
-        toast.success(`✨ Auto-filled details for: ${matched.bond_name}`);
-        setFormData(prev => ({
-          ...prev,
-          bond_name: matched.bond_name,
-          issuer: matched.issuer,
-          bond_type: matched.bond_type,
-          face_value: matched.face_value.toString(),
-          coupon_rate: matched.coupon_rate.toString(),
-          ytm: matched.ytm.toString(),
-          interest_frequency: matched.interest_frequency,
-          credit_rating: matched.credit_rating,
-          current_price: matched.current_price.toString(),
-          purchase_price: prev.purchase_price || matched.current_price.toString(),
-          maturity_date: matched.maturity_date,
-        }));
-      } else if (cleanIsin.startsWith("IN00")) {
-        toast.success("✨ Auto-filled RBI Government Bond defaults");
-        setFormData(prev => ({
-          ...prev,
-          bond_name: "Government G-Sec",
-          issuer: "Government of India",
-          bond_type: "Government",
-          face_value: "1000",
-          coupon_rate: "7.15",
-          ytm: "7.15",
-          interest_frequency: "Semi-Annual",
-          credit_rating: "Sovereign",
-          current_price: "1000",
-          purchase_price: prev.purchase_price || "1000",
-          maturity_date: "2034-06-15",
-        }));
-      } else if (cleanIsin.startsWith("INE")) {
-        toast.success("✨ Auto-filled Corporate NCD defaults");
-        setFormData(prev => ({
-          ...prev,
-          bond_name: "Corporate Bond",
-          issuer: "Corporate Issuer",
-          bond_type: "Corporate",
-          face_value: "1000",
-          coupon_rate: "8.50",
-          ytm: "8.50",
-          interest_frequency: "Annual",
-          credit_rating: "AAA",
-          current_price: "1000",
-          purchase_price: prev.purchase_price || "1000",
-          maturity_date: "2029-12-31",
-        }));
-      }
-    }
-  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -240,11 +187,10 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
     if (accounts.length > 0 && showAddModal && !formData.account_id) {
       const defaultAccId = profile?.default_accounts?.bonds;
       const defaultAccExists = defaultAccId && accounts.some(a => a.id === defaultAccId);
-      if (defaultAccExists) {
-        setTimeout(() => {
-          setFormData(prev => ({ ...prev, account_id: defaultAccId }));
-        }, 0);
-      }
+      const chosenAccount = defaultAccExists ? defaultAccId : accounts[0].id;
+      setTimeout(() => {
+        setFormData(prev => ({ ...prev, account_id: chosenAccount }));
+      }, 0);
     }
   }, [accounts, profile, showAddModal, formData.account_id]);
 
@@ -392,410 +338,433 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
   };
 
   return (
-    <div className="flex flex-col gap-8 animate-in fade-in duration-700">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div>
-          <h1 className="text-4xl font-black tracking-tight text-white uppercase italic">Fixed Income</h1>
-          <p className="text-xs text-[--text-muted] font-black uppercase tracking-[0.4em] mt-2 ml-1">Bonds & Debentures</p>
-        </div>
-        <button type="button" onClick={() => { 
-          setFormData({
-            bond_name: "", isin: "", issuer: "", bond_type: "Government",
-            face_value: "1000", quantity: "1", purchase_price: "", current_price: "",
-            coupon_rate: "", ytm: "", purchase_date: new Date().toISOString().split("T")[0],
-            maturity_date: "", next_interest_date: "", interest_frequency: "Semi-Annual",
-            credit_rating: "", platform: "Wint", demat_account: "", account_id: "", notes: "",
-            accrued_interest: "0", total_interest_earned: "0", current_value: ""
-          });
-          setEditingId(null);
-          setShowAddModal(true); 
-        }} disabled={submitting} className="btn-primary !h-11 px-6 shadow-[0_0_30px_rgba(14,165,233,0.3)] text-xs font-bold uppercase tracking-wider flex items-center gap-2">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
-          Record Bond
-        </button>
+    <div className="flex flex-col gap-8 animate-in fade-in duration-700 bg-[#0A0F1D] min-h-screen text-[#EAECSF] p-2 sm:p-4 rounded-3xl relative">
+      {/* Background Ambient Wint Wealth Glows */}
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+        <div className="absolute -top-32 -right-32 w-[550px] h-[550px] bg-[#00D09C]/5 rounded-full blur-[160px]" />
+        <div className="absolute top-1/2 -left-32 w-[550px] h-[550px] bg-sky-500/5 rounded-full blur-[160px]" />
       </div>
 
-      {bonds.length === 0 ? (
-        <div className="glass-card-static relative overflow-hidden p-8 md:p-16 text-center flex flex-col items-center justify-center min-h-[450px]">
-          <div className="absolute -top-24 -left-24 w-96 h-96 bg-[--accent-primary]/10 rounded-full blur-[100px] pointer-events-none" />
-          <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-emerald-500/10 rounded-full blur-[100px] pointer-events-none" />
-          <div className="relative mb-6 p-6 rounded-3xl bg-white/[0.02] border border-white/5 shadow-2xl">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[--accent-primary]/15 to-emerald-500/15 border border-[--accent-primary]/25 flex items-center justify-center shadow-[0_0_30px_-5px_rgba(14,165,233,0.3)] animate-pulse">
-              <span className="text-3xl">📜</span>
-            </div>
-          </div>
-          <h3 className="text-2xl md:text-3xl font-black text-[--text-primary] tracking-tight">No Bonds</h3>
-          <p className="text-sm text-[--text-muted] mt-3 max-w-lg mx-auto font-medium leading-relaxed">Diversify with fixed-income instruments. Track your corporate and government bonds.</p>
-          <div className="mt-8 flex justify-center">
-             <button onClick={() => setShowAddModal(true)} className="btn-primary">Record First Bond</button>
-          </div>
-        </div>
-      ) : (
-      <>
-        {/* Top Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          <div className="glass-card-static p-6 border-white/5">
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Total Invested</p>
-            <p className="text-2xl md:text-3xl font-black text-white">₹{stats.totalInvested.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
-            <p className="text-[0.5625rem] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Capital Deployed</p>
-          </div>
-          <div className="glass-card-static p-6 border-white/5">
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Current Value</p>
-            <p className="text-2xl md:text-3xl font-black text-[--accent-primary-light]">₹{stats.currentValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
-            <p className="text-[0.5625rem] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Market Value</p>
-          </div>
-          <div className="glass-card-static p-6 border-white/5">
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Total Interest</p>
-            <p className="text-2xl md:text-3xl font-black text-emerald-400">₹{stats.totalInterest.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
-            <p className="text-[0.5625rem] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Earned So Far</p>
-          </div>
-          <div className="glass-card-static p-6 border-white/5">
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Accrued Interest</p>
-            <p className="text-2xl md:text-3xl font-black text-amber-400">₹{stats.accruedInterest.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
-            <p className="text-[0.5625rem] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Yet to be paid</p>
-          </div>
-          <div className="glass-card-static p-6 border-white/5 bg-gradient-to-br from-[--accent-primary]/10 to-transparent">
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Average YTM</p>
-            <p className="text-xl md:text-2xl font-black text-[--accent-primary] truncate">
-              {stats.avgYTM > 0 ? `${stats.avgYTM.toFixed(2)}%` : "N/A"}
-            </p>
-            <p className="text-[0.5625rem] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Yield To Maturity</p>
-          </div>
-        </div>
-
-        {/* Premium Segmented Switcher */}
-        <div className="flex p-1 bg-white/[0.02] border border-white/5 rounded-2xl max-w-fit shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]">
-          {[
-            { key: "dashboard", label: "Dashboard" },
-            { key: "holdings", label: "Bond Holdings", badge: bonds.length },
-            { key: "history", label: "History", badge: historyBonds.length }
-          ].map((tab) => {
-            const isActive = activeView === tab.key;
-            
-            // Premium Gold/Yellow Theme for Bonds
-            const activeStyles = "bg-amber-600 text-white shadow-[0_0_20px_rgba(217,119,6,0.3)]";
-
-            return (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() => setActiveView(tab.key as any)}
-                className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center gap-2 whitespace-nowrap active:scale-95 cursor-pointer ${
-                  isActive
-                    ? `${activeStyles} border border-transparent`
-                    : "text-[--text-muted] hover:text-white hover:bg-white/5 border border-transparent"
-                }`}
-              >
-                {tab.label}
-                {tab.badge !== undefined && (
-                  <span className={`flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1.5 text-[0.5rem] font-black ${
-                    isActive ? "bg-white/20 text-white" : "bg-white/10 text-white"
-                  }`}>
-                    {tab.badge}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* View Content */}
-        {activeView === "dashboard" && (
-          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Invested vs Current Bar Chart */}
-              <div className="glass-card-static p-6 lg:col-span-2 min-h-[400px] flex flex-col">
-                <div className="flex justify-between items-start mb-6">
-                  <div>
-                    <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[--text-muted]">Bond Performance</h3>
-                    <p className="text-2xl font-black mt-2 text-white">Invested vs Current</p>
-                  </div>
-                </div>
-                <div className="flex-1 min-h-[250px] w-full mt-4 -ml-4">
-                  {mounted && (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={barChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }} layout="vertical">
-                        <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="rgba(255,255,255,0.05)" />
-                        <XAxis type="number" tickFormatter={formatCurrency} axisLine={false} tickLine={false} tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 12 }} />
-                        <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 12 }} width={100} />
-                        <RechartsTooltip 
-                          contentStyle={{ backgroundColor: "rgba(10,10,10,0.9)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px", boxShadow: "0 10px 25px rgba(0,0,0,0.5)" }}
-                          itemStyle={{ color: "#fff", fontWeight: "bold" }}
-                          formatter={(value: any) => [`₹${Number(value).toLocaleString()}`, ""]}
-                        />
-                        <Legend wrapperStyle={{ paddingTop: "20px" }} />
-                        <Bar dataKey="Invested" fill="#8B5CF6" radius={[0, 4, 4, 0]} />
-                        <Bar dataKey="Current" fill="var(--accent-primary)" radius={[0, 4, 4, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  )}
-                </div>
-              </div>
-
-              {/* Allocation Pie Chart */}
-              <div className="glass-card-static p-6 flex flex-col items-center justify-center relative min-h-[400px]">
-                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[--text-muted] absolute top-6 left-6">Bond Type Allocation</h3>
-                <div className="w-full h-[250px] mt-8">
-                  {mounted && pieChartData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie data={pieChartData} cx="50%" cy="50%" innerRadius={60} outerRadius={85} paddingAngle={5} dataKey="value">
-                          {pieChartData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} stroke="rgba(255,255,255,0.05)" strokeWidth={2} />)}
-                        </Pie>
-                        <RechartsTooltip 
-                          contentStyle={{ backgroundColor: "rgba(10,10,10,0.9)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px" }}
-                          itemStyle={{ color: "#fff", fontWeight: "bold" }}
-                          formatter={(value: any) => [`₹${Number(value).toLocaleString()}`, "Value"]}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center text-[--text-muted]">
-                       <span className="text-3xl mb-2">📊</span>
-                       <span className="text-xs uppercase tracking-widest font-black">No Data</span>
-                    </div>
-                  )}
-                </div>
-                {pieChartData.length > 0 && (
-                  <div className="flex flex-wrap justify-center gap-3 mt-4 w-full">
-                    {pieChartData.slice(0, 5).map((entry, index) => (
-                      <div key={index} className="flex items-center gap-1.5 text-xs">
-                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: entry.fill }} />
-                        <span className="text-[--text-secondary] font-medium">{entry.name}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+      <div className="relative z-10 flex flex-col gap-8">
         
-        {activeView === "holdings" && (
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <BondsDataTable 
-              bonds={bonds} 
-              onEdit={startEdit} 
-              onAdd={() => setShowAddModal(true)} 
-            />
+        {/* Wint Wealth Header Bar */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-[#111827] p-6 rounded-2xl border border-[#1F293D] shadow-xl">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-[#00D09C]/10 border border-[#00D09C]/30 flex items-center justify-center text-[#00D09C] shadow-[0_0_20px_rgba(0,208,156,0.2)]">
+              <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+              </svg>
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-black text-white tracking-tight uppercase">Wint Wealth Bonds</h1>
+                <span className="text-[0.625rem] bg-[#00D09C]/20 text-[#00D09C] border border-[#00D09C]/30 px-2 py-0.5 rounded font-black tracking-widest uppercase">FIXED INCOME</span>
+              </div>
+              <p className="text-xs text-[#848E9C] font-semibold mt-1">High Yield Fixed Income • Senior Secured Corporate NCDs & Sovereign Bonds</p>
+            </div>
           </div>
-        )}
 
-        {activeView === "history" && (
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <BondsDataTable 
-              bonds={historyBonds} 
-              onEdit={startEdit} 
-              onAdd={() => setShowAddModal(true)} 
-            />
+          <button type="button" onClick={() => { 
+            setFormData({
+              bond_name: "", isin: "", issuer: "", bond_type: "Corporate",
+              face_value: "1000", quantity: "1", purchase_price: "1000", current_price: "1000",
+              coupon_rate: "10.5", ytm: "10.5", purchase_date: new Date().toISOString().split("T")[0],
+              maturity_date: "", next_interest_date: "", interest_frequency: "Monthly",
+              credit_rating: "AAA", platform: "Wint Wealth", demat_account: "", account_id: "", notes: "",
+              accrued_interest: "0", total_interest_earned: "0", current_value: ""
+            });
+            setEditingId(null);
+            setShowAddModal(true); 
+          }} disabled={submitting} className="bg-[#00D09C] hover:bg-[#00b386] text-black font-extrabold px-6 py-3 rounded-xl text-xs uppercase tracking-wider transition-all shadow-[0_0_20px_rgba(0,208,156,0.3)] flex items-center gap-2 cursor-pointer">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
+            + Invest in Bond
+          </button>
+        </div>
+
+        {bonds.length === 0 ? (
+          <div className="bg-[#111827] border border-[#1F293D] rounded-3xl p-8 md:p-16 text-center flex flex-col items-center justify-center min-h-[450px] shadow-2xl relative overflow-hidden">
+            <div className="absolute -top-24 -left-24 w-96 h-96 bg-[#00D09C]/10 rounded-full blur-[120px] pointer-events-none" />
+            <div className="relative mb-6 p-6 rounded-3xl bg-[#0A0F1D] border border-[#1F293D] shadow-2xl">
+              <div className="w-16 h-16 rounded-2xl bg-[#00D09C]/15 border border-[#00D09C]/30 flex items-center justify-center shadow-[0_0_30px_rgba(0,208,156,0.2)] animate-pulse">
+                <span className="text-3xl">🏛️</span>
+              </div>
+            </div>
+            <h3 className="text-2xl md:text-3xl font-black text-white tracking-tight">No Active Bond Holdings</h3>
+            <p className="text-sm text-[#848E9C] mt-3 max-w-lg mx-auto font-medium leading-relaxed">Lock in predictable fixed interest returns up to 11.5% p.a. with senior-secured corporate bonds and sovereign gold bonds.</p>
+            <div className="mt-8 flex justify-center">
+               <button onClick={() => setShowAddModal(true)} className="bg-[#00D09C] text-black font-extrabold px-6 py-3 rounded-xl text-xs uppercase tracking-wider hover:bg-[#00b386] transition-all shadow-[0_0_20px_rgba(0,208,156,0.3)] cursor-pointer">+ Add Bond Investment</button>
+            </div>
           </div>
-        )}
-      </>
-      )}
+        ) : (
+        <>
+          {/* Top Wint Stats Summary Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div className="bg-[#111827] border border-[#1F293D] rounded-2xl p-5 shadow-xl relative overflow-hidden">
+              <p className="text-[0.6875rem] font-bold uppercase tracking-widest text-[#848E9C] mb-2">Total Bond Capital</p>
+              <p className="text-2xl font-black text-white">₹{stats.totalInvested.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+              <p className="text-[0.5625rem] font-bold text-[#848E9C] mt-2 uppercase tracking-widest">Deployed Capital</p>
+            </div>
+            <div className="bg-[#111827] border border-[#1F293D] rounded-2xl p-5 shadow-xl relative overflow-hidden">
+              <p className="text-[0.6875rem] font-bold uppercase tracking-widest text-[#848E9C] mb-2">Current Valuation</p>
+              <p className="text-2xl font-black text-[#00D09C]">₹{stats.currentValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+              <p className="text-[0.5625rem] font-bold text-[#848E9C] mt-2 uppercase tracking-widest">Market Value</p>
+            </div>
+            <div className="bg-[#111827] border border-[#1F293D] rounded-2xl p-5 shadow-xl relative overflow-hidden">
+              <p className="text-[0.6875rem] font-bold uppercase tracking-widest text-[#848E9C] mb-2">Interest Payouts</p>
+              <p className="text-2xl font-black text-[#00D09C]">₹{stats.totalInterest.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+              <p className="text-[0.5625rem] font-bold text-[#848E9C] mt-2 uppercase tracking-widest">Received Payouts</p>
+            </div>
+            <div className="bg-[#111827] border border-[#1F293D] rounded-2xl p-5 shadow-xl relative overflow-hidden">
+              <p className="text-[0.6875rem] font-bold uppercase tracking-widest text-[#848E9C] mb-2">Accrued Coupon</p>
+              <p className="text-2xl font-black text-amber-400">₹{stats.accruedInterest.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+              <p className="text-[0.5625rem] font-bold text-[#848E9C] mt-2 uppercase tracking-widest">Next Payout Cycle</p>
+            </div>
+            <div className="bg-[#111827] border border-[#00D09C]/30 rounded-2xl p-5 shadow-xl relative overflow-hidden bg-gradient-to-br from-[#00D09C]/10 to-transparent">
+              <p className="text-[0.6875rem] font-bold uppercase tracking-widest text-[#00D09C] mb-2">Weighted YTM</p>
+              <p className="text-2xl font-black text-white truncate">
+                {stats.avgYTM > 0 ? `${stats.avgYTM.toFixed(2)}% p.a.` : "N/A"}
+              </p>
+              <p className="text-[0.5625rem] font-bold text-[#848E9C] mt-2 uppercase tracking-widest">Annual Yield</p>
+            </div>
+          </div>
 
-      {/* Add / Edit Modal */}
-      {showAddModal && (
-        <Drawer
-          isOpen={showAddModal}
-          onClose={() => { setShowAddModal(false); setEditingId(null); }}
-          title={editingId ? "Update Bond" : "Record Bond Investment"}
-        >
-          <div className="p-2 max-w-2xl mx-auto w-full">
-            <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Segmented Tab Switcher */}
+          <div className="flex p-1 bg-[#111827] border border-[#1F293D] rounded-2xl max-w-fit shadow-inner">
+            {[
+              { key: "dashboard", label: "Overview" },
+              { key: "holdings", label: "Bond Portfolio", badge: bonds.length },
+              { key: "history", label: "Matured Bonds", badge: historyBonds.length }
+            ].map((tab) => {
+              const isActive = activeView === tab.key;
               
-              {/* Bond Search UI */}
-              {!formData.bond_name ? (
-                <div className="space-y-2 relative">
-                  <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Search Bond</label>
-                  <div className="relative">
-                    <input 
-                      autoFocus
-                      className="input-premium" 
-                      placeholder="e.g. SGB, RBI, Shriram..."
-                      value={searchQuery}
-                      onChange={e => setSearchQuery(e.target.value)}
-                    />
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setActiveView(tab.key as any)}
+                  className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center gap-2 whitespace-nowrap active:scale-95 cursor-pointer ${
+                    isActive
+                      ? "bg-[#00D09C] text-black shadow-[0_0_15px_rgba(0,208,156,0.3)] font-extrabold"
+                      : "text-[#848E9C] hover:text-white hover:bg-white/5"
+                  }`}
+                >
+                  {tab.label}
+                  {tab.badge !== undefined && (
+                    <span className={`flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1.5 text-[0.5rem] font-black ${
+                      isActive ? "bg-black/20 text-black" : "bg-white/10 text-white"
+                    }`}>
+                      {tab.badge}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* View Content */}
+          {activeView === "dashboard" && (
+            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Invested vs Current Bar Chart */}
+                <div className="bg-[#111827] border border-[#1F293D] rounded-2xl p-6 lg:col-span-2 min-h-[400px] flex flex-col shadow-2xl">
+                  <div className="flex justify-between items-start mb-6">
+                    <div>
+                      <h3 className="text-xs font-bold uppercase tracking-widest text-[#848E9C]">Wint Wealth Bond Yield Analysis</h3>
+                      <p className="text-2xl font-black mt-1 text-white">Invested Capital vs Market Value</p>
+                    </div>
                   </div>
-                  {showSearchDropdown && searchResults.length > 0 && (
-                    <div className="absolute z-[120] left-0 right-0 top-[100%] mt-1 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-xl overflow-hidden max-h-56 overflow-y-auto custom-scrollbar">
-                      {searchResults.map((res, i) => (
-                        <div 
-                          key={i} 
-                          className="px-4 py-3 hover:bg-white/5 cursor-pointer transition-colors border-b border-white/5 last:border-0 flex items-center justify-between"
-                          onClick={() => {
-                            setFormData(prev => ({
-                              ...prev,
-                              isin: res.isin,
-                              bond_name: res.data.bond_name,
-                              issuer: res.data.issuer,
-                              bond_type: res.data.bond_type,
-                              face_value: res.data.face_value.toString(),
-                              coupon_rate: res.data.coupon_rate.toString(),
-                              ytm: res.data.ytm.toString(),
-                              interest_frequency: res.data.interest_frequency,
-                              credit_rating: res.data.credit_rating,
-                              current_price: res.data.current_price.toString(),
-                              purchase_price: res.data.current_price.toString(),
-                              maturity_date: res.data.maturity_date,
-                            }));
-                            setSearchQuery("");
-                            setShowSearchDropdown(false);
-                          }}
-                        >
-                          <div>
-                            <div className="text-sm font-bold text-white">{res.data.bond_name}</div>
-                            <div className="text-xs text-[--text-muted]">{res.isin} &bull; {res.data.issuer}</div>
-                          </div>
-                          <span className="text-[0.6rem] bg-[--accent-primary]/20 text-[--accent-primary] px-2 py-1 rounded font-black uppercase tracking-wider">Select</span>
+                  <div className="flex-1 min-h-[250px] w-full mt-4 -ml-4">
+                    {mounted && (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={barChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }} layout="vertical">
+                          <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="rgba(255,255,255,0.05)" />
+                          <XAxis type="number" tickFormatter={formatCurrency} axisLine={false} tickLine={false} tick={{ fill: "#848E9C", fontSize: 12 }} />
+                          <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "#848E9C", fontSize: 12 }} width={100} />
+                          <RechartsTooltip 
+                            contentStyle={{ backgroundColor: "#111827", border: "1px solid #1F293D", borderRadius: "12px", boxShadow: "0 10px 25px rgba(0,0,0,0.8)" }}
+                            itemStyle={{ color: "#00D09C", fontWeight: "bold" }}
+                            formatter={(value: any) => [`₹${Number(value).toLocaleString()}`, ""]}
+                          />
+                          <Legend wrapperStyle={{ paddingTop: "20px" }} />
+                          <Bar dataKey="Invested" fill="#3B82F6" radius={[0, 4, 4, 0]} />
+                          <Bar dataKey="Current" fill="#00D09C" radius={[0, 4, 4, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    )}
+                  </div>
+                </div>
+
+                {/* Allocation Pie Chart */}
+                <div className="bg-[#111827] border border-[#1F293D] rounded-2xl p-6 flex flex-col items-center justify-center relative min-h-[400px] shadow-2xl">
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-[#848E9C] absolute top-6 left-6">Credit Breakdown</h3>
+                  <div className="w-full h-[250px] mt-8">
+                    {mounted && pieChartData.length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie data={pieChartData} cx="50%" cy="50%" innerRadius={65} outerRadius={90} paddingAngle={4} dataKey="value">
+                            {pieChartData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} stroke="#111827" strokeWidth={2} />)}
+                          </Pie>
+                          <RechartsTooltip 
+                            contentStyle={{ backgroundColor: "#111827", border: "1px solid #1F293D", borderRadius: "12px" }}
+                            itemStyle={{ color: "#fff", fontWeight: "bold" }}
+                            formatter={(value: any) => [`₹${Number(value).toLocaleString()}`, "Valuation"]}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center text-[#848E9C]">
+                         <span className="text-3xl mb-2">📊</span>
+                         <span className="text-xs uppercase tracking-widest font-bold">No Allocation Data</span>
+                      </div>
+                    )}
+                  </div>
+                  {pieChartData.length > 0 && (
+                    <div className="flex flex-wrap justify-center gap-3 mt-4 w-full">
+                      {pieChartData.slice(0, 5).map((entry, index) => (
+                        <div key={index} className="flex items-center gap-1.5 text-xs bg-[#0A0F1D] px-2.5 py-1 rounded-lg border border-[#1F293D]">
+                          <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: entry.fill }} />
+                          <span className="text-[#848E9C] font-semibold">{entry.name}</span>
                         </div>
                       ))}
                     </div>
                   )}
-                  <div className="pt-2 text-center">
-                    <button 
-                      type="button" 
-                      className="text-xs text-[--accent-primary] hover:underline font-bold"
-                      onClick={() => setFormData(prev => ({...prev, bond_name: "Custom Bond", isin: "CUSTOM"}))}
-                    >
-                      + Add custom bond manually
-                    </button>
-                  </div>
                 </div>
-              ) : (
-                /* Selected Bond Card */
-                <div className="glass-card-static border border-white/10 p-4 rounded-xl flex items-center justify-between bg-gradient-to-r from-white/[0.05] to-transparent">
-                  <div className="flex items-center gap-4">
-                    <span className="text-3xl p-3 bg-white/[0.03] rounded-xl border border-white/5 shadow-inner">📜</span>
-                    <div>
-                      <p className="text-sm font-black text-white">{formData.bond_name}</p>
-                      <p className="text-xs text-[--text-muted] font-medium tracking-wide uppercase mt-1">{formData.isin} &bull; {formData.issuer}</p>
-                    </div>
-                  </div>
-                  {!editingId && (
-                    <button
-                      type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, bond_name: "", isin: "" }))}
-                      className="text-xs bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white px-3 py-1.5 rounded-lg transition-all font-bold uppercase tracking-wider"
-                    >
-                      Change
-                    </button>
-                  )}
-                </div>
-              )}
+              </div>
+            </div>
+          )}
+          
+          {activeView === "holdings" && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <BondsDataTable 
+                bonds={bonds} 
+                onEdit={startEdit} 
+                onAdd={() => setShowAddModal(true)} 
+              />
+            </div>
+          )}
 
-              {/* Main Inputs (only show if bond selected) */}
-              {formData.bond_name && (
-                <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-3">
-                      <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Quantity</label>
-                      <input required type="number" className="input-premium tabular-nums" value={formData.quantity} onChange={e => setFormData({...formData, quantity: e.target.value})} />
-                    </div>
-                    <div className="space-y-3">
-                      <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Purchase Price / Unit (₹)</label>
-                      <input required type="number" step="any" className="input-premium tabular-nums" value={formData.purchase_price} onChange={e => setFormData({...formData, purchase_price: e.target.value})} />
-                    </div>
-                  </div>
+          {activeView === "history" && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <BondsDataTable 
+                bonds={historyBonds} 
+                onEdit={startEdit} 
+                onAdd={() => setShowAddModal(true)} 
+              />
+            </div>
+          )}
+        </>
+        )}
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-3">
-                      <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Purchase Date</label>
-                      <input type="date" required className="input-premium" value={formData.purchase_date} onChange={e => setFormData({...formData, purchase_date: e.target.value})} />
+        {/* Wint Wealth Add / Edit Bond Drawer */}
+        {showAddModal && (
+          <Drawer
+            isOpen={showAddModal}
+            onClose={() => { setShowAddModal(false); setEditingId(null); }}
+            title={editingId ? "Modify Bond Investment" : "Wint Wealth - Record Bond"}
+          >
+            <div className="p-1 max-w-2xl mx-auto w-full text-white">
+              <form onSubmit={handleSubmit} className="space-y-5">
+                
+                {/* Wint Wealth Search & Quick Suggestions */}
+                {!formData.bond_name ? (
+                  <div className="space-y-3 relative">
+                    <label className="text-xs font-bold uppercase tracking-wider text-[#848E9C]">Search Bond Issue / ISIN</label>
+                    <div className="relative">
+                      <input 
+                        autoFocus
+                        className="w-full bg-[#0A0F1D] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-[#00D09C] placeholder-[#848E9C]" 
+                        placeholder="Search e.g. InCred, Navi, SGB, Piramal..."
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                      />
                     </div>
-                    {!editingId && (
-                      <div className="space-y-3">
-                        <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Deduct From Account</label>
-                        <select className="input-premium" value={formData.account_id} onChange={e => setFormData({...formData, account_id: e.target.value})}>
-                          <option value="" disabled>Select Account</option>
-                          {accounts.map(acc => (
-                            <option key={acc.id} value={acc.id}>{acc.name} (₹{acc.balance.toLocaleString()})</option>
-                          ))}
-                        </select>
+                    {showSearchDropdown && searchResults.length > 0 && (
+                      <div className="absolute z-[120] left-0 right-0 top-[100%] mt-1 bg-[#111827] border border-[#1F293D] rounded-xl shadow-2xl overflow-hidden max-h-56 overflow-y-auto custom-scrollbar">
+                        {searchResults.map((res, i) => (
+                          <div 
+                            key={i} 
+                            className="px-4 py-3 hover:bg-[#1F293D] cursor-pointer transition-colors border-b border-[#1F293D]/50 last:border-0 flex items-center justify-between"
+                            onClick={() => {
+                              setFormData(prev => ({
+                                ...prev,
+                                isin: res.isin,
+                                bond_name: res.data.bond_name,
+                                issuer: res.data.issuer,
+                                bond_type: res.data.bond_type,
+                                face_value: res.data.face_value.toString(),
+                                coupon_rate: res.data.coupon_rate.toString(),
+                                ytm: res.data.ytm.toString(),
+                                interest_frequency: res.data.interest_frequency,
+                                credit_rating: res.data.credit_rating,
+                                current_price: res.data.current_price.toString(),
+                                purchase_price: res.data.current_price.toString(),
+                                maturity_date: res.data.maturity_date,
+                              }));
+                              setSearchQuery("");
+                              setShowSearchDropdown(false);
+                            }}
+                          >
+                            <div>
+                              <div className="text-xs font-bold text-[#00D09C]">{res.data.bond_name}</div>
+                              <div className="text-[0.6875rem] text-[#848E9C]">{res.isin} • {res.data.issuer} • {res.data.credit_rating}</div>
+                            </div>
+                            <span className="text-[0.5625rem] bg-[#00D09C]/20 text-[#00D09C] px-2 py-0.5 rounded font-black uppercase tracking-wider">Select</span>
+                          </div>
+                        ))}
                       </div>
                     )}
+
+                    <div className="pt-2">
+                      <button 
+                        type="button" 
+                        className="text-xs text-[#00D09C] hover:underline font-bold cursor-pointer"
+                        onClick={() => setFormData(prev => ({...prev, bond_name: "Custom Corporate Bond", isin: "INE000000000", credit_rating: "AA"}))}
+                      >
+                        + Enter custom bond details manually
+                      </button>
+                    </div>
                   </div>
-
-                  <details className="group glass-card-static border border-white/5 rounded-xl overflow-hidden mt-6">
-                    <summary className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] p-4 cursor-pointer outline-none hover:text-white transition-colors bg-white/[0.01]">
-                      Advanced Bond Details
-                    </summary>
-                    <div className="p-4 pt-0 space-y-6">
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-3">
-                          <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Bond Name</label>
-                          <input required className="input-premium" placeholder="e.g. 7.18% GS 2033" value={formData.bond_name} onChange={e => setFormData({...formData, bond_name: e.target.value})} />
-                        </div>
-                        <div className="space-y-3">
-                          <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Issuer</label>
-                          <input required className="input-premium" placeholder="e.g. RBI" value={formData.issuer} onChange={e => setFormData({...formData, issuer: e.target.value})} />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="space-y-3">
-                          <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">ISIN</label>
-                          <input required className="input-premium uppercase" placeholder="e.g. IN0020230085" value={formData.isin} onChange={e => handleIsinChange(e.target.value)} />
-                        </div>
-                        <div className="space-y-3">
-                          <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Bond Type</label>
-                          <select className="input-premium" value={formData.bond_type} onChange={e => setFormData({...formData, bond_type: e.target.value})}>
-                            <option value="Government">Government</option>
-                            <option value="Corporate">Corporate</option>
-                            <option value="Tax-Free">Tax-Free</option>
-                            <option value="Infrastructure">Infrastructure</option>
-                            <option value="PSU">PSU</option>
-                          </select>
-                        </div>
-                        <div className="space-y-3">
-                          <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Face Value (₹)</label>
-                          <input required type="number" step="any" className="input-premium tabular-nums" value={formData.face_value} onChange={e => setFormData({...formData, face_value: e.target.value})} />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="space-y-3">
-                          <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Coupon Rate (%)</label>
-                          <input required type="number" step="any" className="input-premium tabular-nums" value={formData.coupon_rate} onChange={e => setFormData({...formData, coupon_rate: e.target.value})} />
-                        </div>
-                        <div className="space-y-3">
-                          <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">YTM (%)</label>
-                          <input type="number" step="any" className="input-premium tabular-nums" placeholder="Optional" value={formData.ytm} onChange={e => setFormData({...formData, ytm: e.target.value})} />
-                        </div>
-                        <div className="space-y-3">
-                          <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Interest Frequency</label>
-                          <select className="input-premium" value={formData.interest_frequency} onChange={e => setFormData({...formData, interest_frequency: e.target.value})}>
-                            <option value="Monthly">Monthly</option>
-                            <option value="Quarterly">Quarterly</option>
-                            <option value="Semi-Annual">Semi-Annual</option>
-                            <option value="Annual">Annual</option>
-                          </select>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-3">
-                          <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Maturity Date</label>
-                          <input type="date" required className="input-premium" value={formData.maturity_date} onChange={e => setFormData({...formData, maturity_date: e.target.value})} />
-                        </div>
-                        <div className="space-y-3">
-                          <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Platform / Broker</label>
-                          <input className="input-premium" placeholder="e.g. Wint Wealth, Kite" value={formData.platform} onChange={e => setFormData({...formData, platform: e.target.value})} />
-                        </div>
+                ) : (
+                  /* Selected Bond Card */
+                  <div className="bg-[#0A0F1D] border border-[#00D09C]/30 p-4 rounded-xl flex items-center justify-between shadow-lg">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl p-2 bg-[#00D09C]/10 rounded-xl border border-[#00D09C]/20 text-[#00D09C]">📜</span>
+                      <div>
+                        <p className="text-xs font-extrabold text-[#00D09C]">{formData.bond_name}</p>
+                        <p className="text-[0.6875rem] text-[#848E9C] font-semibold uppercase mt-0.5">{formData.isin} • {formData.issuer} • <span className="text-[#00D09C]">{formData.credit_rating || "AAA"} Rated</span></p>
                       </div>
                     </div>
-                  </details>
-
-                  <div className="pt-4 mt-8">
-                    <button type="submit" disabled={submitting} className={`btn-primary w-full h-12 shadow-xl text-xs font-black uppercase tracking-widest shadow-[--accent-primary]/20`}>
-                      {submitting ? "Processing..." : (editingId ? "Update Bond" : "Invest in Bond")}
-                    </button>
+                    {!editingId && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, bond_name: "", isin: "" }))}
+                        className="text-xs bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white px-2.5 py-1 rounded transition-all font-bold cursor-pointer"
+                      >
+                        Change
+                      </button>
+                    )}
                   </div>
-                </>
-              )}
-            </form>
-          </div>
-        </Drawer>
-      )}
+                )}
+
+                {/* Main Inputs */}
+                {formData.bond_name && (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-[#848E9C] uppercase tracking-wide">Units / Quantity</label>
+                        <input required type="number" className="w-full bg-[#0A0F1D] border border-[#1F293D] rounded-lg px-3 py-1.5 text-xs text-white outline-none focus:border-[#00D09C]" value={formData.quantity} onChange={e => setFormData({...formData, quantity: e.target.value})} />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-[#848E9C] uppercase tracking-wide">Purchase Price / Unit (₹)</label>
+                        <input required type="number" step="any" className="w-full bg-[#0A0F1D] border border-[#1F293D] rounded-lg px-3 py-1.5 text-xs text-white outline-none focus:border-[#00D09C]" value={formData.purchase_price} onChange={e => setFormData({...formData, purchase_price: e.target.value})} />
+                      </div>
+                    </div>
+
+                    {/* Wint Wealth Live Interest Payout Calculator Preview Box */}
+                    {Boolean(formData.quantity) && Boolean(formData.purchase_price) && (
+                      <div className="bg-[#0A0F1D] border border-[#00D09C]/40 p-3.5 rounded-xl space-y-2">
+                        <div className="flex items-center justify-between text-xs border-b border-[#1F293D] pb-2">
+                          <span className="text-[#848E9C] font-semibold">Total Capital Investment</span>
+                          <span className="font-extrabold text-white">₹{(Number(formData.quantity) * Number(formData.purchase_price)).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-[#848E9C] font-semibold">Expected Annual Interest ({formData.coupon_rate || "10.5"}%)</span>
+                          <span className="font-extrabold text-[#00D09C]">₹{((Number(formData.quantity) * Number(formData.purchase_price) * (Number(formData.coupon_rate || 10.5) / 100))).toLocaleString("en-IN", { maximumFractionDigits: 0 })} / year</span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-[#848E9C] font-semibold">Monthly Interest Payout</span>
+                          <span className="font-extrabold text-[#00D09C]">₹{(((Number(formData.quantity) * Number(formData.purchase_price) * (Number(formData.coupon_rate || 10.5) / 100))) / 12).toLocaleString("en-IN", { maximumFractionDigits: 0 })} / month</span>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-[#848E9C] uppercase tracking-wide">Purchase Date</label>
+                        <input type="date" required className="w-full bg-[#0A0F1D] border border-[#1F293D] rounded-lg px-3 py-1.5 text-xs text-white outline-none focus:border-[#00D09C]" value={formData.purchase_date} onChange={e => setFormData({...formData, purchase_date: e.target.value})} />
+                      </div>
+                      {!editingId && (
+                        <div className="space-y-1">
+                          <label className="text-xs font-bold text-[#848E9C] uppercase tracking-wide">Channeling Account</label>
+                          <select className="w-full bg-[#0A0F1D] border border-[#1F293D] rounded-lg px-3 py-1.5 text-xs text-white outline-none focus:border-[#00D09C]" value={formData.account_id} onChange={e => setFormData({...formData, account_id: e.target.value})}>
+                            <option value="" disabled>Select Account</option>
+                            {accounts.map(acc => (
+                              <option key={acc.id} value={acc.id}>{acc.name} (₹{acc.balance.toLocaleString()})</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                    </div>
+
+                    <details className="group bg-[#0A0F1D] border border-[#1F293D] rounded-xl overflow-hidden mt-3">
+                      <summary className="text-xs font-bold uppercase tracking-wider text-[#848E9C] p-3 cursor-pointer select-none hover:text-[#00D09C] transition-colors">
+                        Additional Bond Terms & Credit Ratings →
+                      </summary>
+                      <div className="p-4 space-y-4 pt-2">
+                        
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <label className="text-[0.6875rem] font-bold text-[#848E9C] uppercase">Issuer Name</label>
+                            <input required className="w-full bg-[#111827] border border-[#1F293D] rounded px-2.5 py-1 text-xs text-white outline-none focus:border-[#00D09C]" placeholder="e.g. InCred Financial" value={formData.issuer} onChange={e => setFormData({...formData, issuer: e.target.value})} />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[0.6875rem] font-bold text-[#848E9C] uppercase">Credit Rating</label>
+                            <select className="w-full bg-[#111827] border border-[#1F293D] rounded px-2.5 py-1 text-xs text-white outline-none focus:border-[#00D09C]" value={formData.credit_rating} onChange={e => setFormData({...formData, credit_rating: e.target.value})}>
+                              <option value="AAA">AAA (Highest Safety)</option>
+                              <option value="AA+">AA+ (High Safety)</option>
+                              <option value="AA">AA (Strong Safety)</option>
+                              <option value="A+">A+ (Adequate Safety)</option>
+                              <option value="Sovereign">Sovereign (Govt Backed)</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-3">
+                          <div className="space-y-1">
+                            <label className="text-[0.6875rem] font-bold text-[#848E9C] uppercase">Coupon (%)</label>
+                            <input required type="number" step="any" className="w-full bg-[#111827] border border-[#1F293D] rounded px-2.5 py-1 text-xs text-white outline-none focus:border-[#00D09C]" value={formData.coupon_rate} onChange={e => setFormData({...formData, coupon_rate: e.target.value})} />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[0.6875rem] font-bold text-[#848E9C] uppercase">YTM (%)</label>
+                            <input type="number" step="any" className="w-full bg-[#111827] border border-[#1F293D] rounded px-2.5 py-1 text-xs text-white outline-none focus:border-[#00D09C]" placeholder="Optional" value={formData.ytm} onChange={e => setFormData({...formData, ytm: e.target.value})} />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[0.6875rem] font-bold text-[#848E9C] uppercase">Payout Frequency</label>
+                            <select className="w-full bg-[#111827] border border-[#1F293D] rounded px-2.5 py-1 text-xs text-white outline-none focus:border-[#00D09C]" value={formData.interest_frequency} onChange={e => setFormData({...formData, interest_frequency: e.target.value})}>
+                              <option value="Monthly">Monthly Payout</option>
+                              <option value="Quarterly">Quarterly Payout</option>
+                              <option value="Semi-Annual">Semi-Annual Payout</option>
+                              <option value="Annual">Annual Payout</option>
+                              <option value="Cumulative">Cumulative (At Maturity)</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <label className="text-[0.6875rem] font-bold text-[#848E9C] uppercase">Maturity Date</label>
+                            <input type="date" required className="w-full bg-[#111827] border border-[#1F293D] rounded px-2.5 py-1 text-xs text-white outline-none focus:border-[#00D09C]" value={formData.maturity_date} onChange={e => setFormData({...formData, maturity_date: e.target.value})} />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[0.6875rem] font-bold text-[#848E9C] uppercase">Platform</label>
+                            <input className="w-full bg-[#111827] border border-[#1F293D] rounded px-2.5 py-1 text-xs text-white outline-none focus:border-[#00D09C]" value={formData.platform} onChange={e => setFormData({...formData, platform: e.target.value})} />
+                          </div>
+                        </div>
+                      </div>
+                    </details>
+
+                    <div className="pt-2">
+                      <button type="submit" disabled={submitting} className="w-full bg-[#00D09C] hover:bg-[#00b386] text-black font-extrabold py-3 rounded-xl text-xs uppercase tracking-wider transition-all shadow-[0_0_20px_rgba(0,208,156,0.3)] disabled:opacity-50 cursor-pointer">
+                        {submitting ? "Processing..." : (editingId ? "Update Bond Investment" : "Confirm Bond Investment")}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </form>
+            </div>
+          </Drawer>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,7 +1,7 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { EmptyState } from "@/components/empty-state";
 import type { Tables } from "@/lib/database.types";
 
@@ -15,81 +15,51 @@ interface MutualFundsDataTableProps {
   onAdd: () => void;
 }
 
-export function getAMCLogoDomain(amcName: string, fundName?: string): { domain: string; badge: string; color: string } {
-  const text = `${amcName || ""} ${fundName || ""}`.toLowerCase();
-  if (text.includes("uti")) return { domain: "utimf.com", badge: "UTI", color: "from-purple-600 to-indigo-700" };
-  if (text.includes("sbi")) return { domain: "sbimf.com", badge: "SBI", color: "from-blue-600 to-cyan-700" };
-  if (text.includes("icici")) return { domain: "icicipruamc.com", badge: "ICICI", color: "from-orange-500 to-red-600" };
-  if (text.includes("hdfc")) return { domain: "hdfcfund.com", badge: "HDFC", color: "from-red-600 to-rose-700" };
-  if (text.includes("axis")) return { domain: "axismf.com", badge: "AXIS", color: "from-rose-700 to-pink-800" };
-  if (text.includes("kotak")) return { domain: "kotakmf.com", badge: "KOTAK", color: "from-red-500 to-orange-600" };
-  if (text.includes("birla") || text.includes("aditya")) return { domain: "mutualfund.adityabirlacapital.com", badge: "ABSL", color: "from-red-600 to-amber-600" };
-  if (text.includes("nippon")) return { domain: "nipponindiaim.com", badge: "NIPPON", color: "from-red-600 to-rose-600" };
-  if (text.includes("franklin")) return { domain: "franklintempletonindia.com", badge: "FT", color: "from-teal-600 to-blue-700" };
-  if (text.includes("dsp")) return { domain: "dspim.com", badge: "DSP", color: "from-blue-700 to-indigo-800" };
-  if (text.includes("mirae")) return { domain: "miraeassetmf.co.in", badge: "MIRAE", color: "from-orange-600 to-amber-700" };
-  if (text.includes("parag") || text.includes("ppfas")) return { domain: "amc.ppfas.com", badge: "PPFAS", color: "from-emerald-600 to-teal-700" };
-  if (text.includes("motilal")) return { domain: "motilaloswalmf.com", badge: "MO", color: "from-amber-600 to-yellow-700" };
-  if (text.includes("tata")) return { domain: "tatamutualfund.com", badge: "TATA", color: "from-blue-600 to-sky-700" };
-  if (text.includes("bandhan") || text.includes("idfc")) return { domain: "bandhanmutual.com", badge: "BANDHAN", color: "from-amber-500 to-orange-600" };
-  if (text.includes("edelweiss")) return { domain: "edelweissmf.com", badge: "EDEL", color: "from-blue-500 to-indigo-600" };
-  if (text.includes("sundaram")) return { domain: "sundarammutual.com", badge: "SUND", color: "from-blue-600 to-blue-800" };
-  if (text.includes("quant")) return { domain: "quantmutual.com", badge: "QUANT", color: "from-teal-500 to-emerald-600" };
-  if (text.includes("canara")) return { domain: "canararobeco.com", badge: "CANARA", color: "from-blue-700 to-cyan-800" };
-  if (text.includes("invesco")) return { domain: "invescomutualfund.com", badge: "INVESCO", color: "from-blue-800 to-indigo-900" };
-  if (text.includes("lic")) return { domain: "licmf.com", badge: "LIC", color: "from-yellow-600 to-amber-700" };
-  if (text.includes("mahindra")) return { domain: "mahindramanulife.com", badge: "MAH", color: "from-red-600 to-rose-700" };
-  if (text.includes("groww")) return { domain: "groww.in", badge: "GROWW", color: "from-emerald-500 to-teal-600" };
-  if (text.includes("zerodha")) return { domain: "zerodhafundhouse.com", badge: "ZFH", color: "from-blue-500 to-sky-600" };
-  if (text.includes("navi")) return { domain: "navi.com", badge: "NAVI", color: "from-emerald-600 to-green-700" };
-  if (text.includes("hsbc")) return { domain: "assetmanagement.hsbc.co.in", badge: "HSBC", color: "from-red-700 to-rose-800" };
-  if (text.includes("nj")) return { domain: "njmutualfund.com", badge: "NJ", color: "from-purple-600 to-indigo-700" };
-  if (text.includes("white oak") || text.includes("whiteoak")) return { domain: "whiteoakamc.com", badge: "WO", color: "from-slate-700 to-gray-800" };
-  if (text.includes("baroda") || text.includes("bnp")) return { domain: "barodabnpparibasmf.in", badge: "BNP", color: "from-emerald-700 to-teal-800" };
-  if (text.includes("pgim")) return { domain: "pgimindiamf.com", badge: "PGIM", color: "from-blue-800 to-indigo-900" };
-  if (text.includes("boi") || text.includes("bank of india")) return { domain: "boimf.in", badge: "BOI", color: "from-orange-600 to-red-700" };
-  
-  const defaultBadge = (amcName || fundName || "MF").substring(0, 3).toUpperCase();
-  return { domain: "", badge: defaultBadge, color: "from-indigo-600 to-purple-700" };
-}
+import { getAMCLogoInfo } from "@/lib/amc-logos";
 
 export function AMCAvatar({ amcName, fundName }: { amcName: string; fundName: string }) {
-  const [imgStage, setImgStage] = useState<0 | 1 | 2>(0);
-  const info = getAMCLogoDomain(amcName, fundName);
+  const [imgStage, setImgStage] = useState<0 | 1 | 2 | 3>(0);
+  const info = getAMCLogoInfo(amcName, fundName);
 
-  const primaryUrl = info.domain ? `https://logo.clearbit.com/${info.domain}?size=512` : "";
-  const secondaryUrl = info.domain ? `https://www.google.com/s2/favicons?domain=${info.domain}&sz=128` : "";
+  const logoUrl = info.logoUrl;
+  const unavatarUrl = info.fallbackLogoUrl;
+  const clearbitUrl = info.domain ? `https://logo.clearbit.com/${info.domain}?size=512` : "";
 
-  if (primaryUrl && imgStage === 0) {
+  if (logoUrl && imgStage === 0) {
     return (
-      <Image 
-        src={primaryUrl} 
+      <img 
+        src={logoUrl} 
         alt={info.badge} 
-        width={40}
-        height={40}
-        unoptimized
-        className="w-10 h-10 rounded-full bg-white object-contain p-1 flex-shrink-0 border border-white/10 shadow-sm"
+        className="w-10 h-10 rounded-full bg-white object-contain p-1 flex-shrink-0 border border-white/10 shadow-md"
         onError={() => setImgStage(1)}
       />
     );
   }
 
-  if (secondaryUrl && imgStage === 1) {
+  if (unavatarUrl && imgStage === 1) {
     return (
-      <Image 
-        src={secondaryUrl} 
+      <img 
+        src={unavatarUrl} 
         alt={info.badge} 
-        width={40}
-        height={40}
-        unoptimized
-        className="w-10 h-10 rounded-full bg-white object-contain p-1 flex-shrink-0 border border-white/10 shadow-sm"
+        className="w-10 h-10 rounded-full bg-white object-contain p-1 flex-shrink-0 border border-white/10 shadow-md"
         onError={() => setImgStage(2)}
       />
     );
   }
 
+  if (clearbitUrl && imgStage === 2) {
+    return (
+      <img 
+        src={clearbitUrl} 
+        alt={info.badge} 
+        className="w-10 h-10 rounded-full bg-white object-contain p-1 flex-shrink-0 border border-white/10 shadow-md"
+        onError={() => setImgStage(3)}
+      />
+    );
+  }
+
   return (
-    <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${info.color} border border-white/20 flex items-center justify-center text-xs font-black text-white flex-shrink-0 shadow-md tracking-tighter`}>
+    <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${info.gradientColor} border border-white/20 flex items-center justify-center text-xs font-black text-white flex-shrink-0 shadow-md tracking-tighter`}>
       {info.badge}
     </div>
   );
@@ -123,11 +93,11 @@ export default function MutualFundsDataTable({ funds, onEdit, onBuy, onSell, onA
   const totalPnLPct = totalInvested > 0 ? (totalPnL / totalInvested) * 100 : 0;
 
   return (
-    <div className="glass-card-static rounded-2xl overflow-hidden flex flex-col border border-white/5 bg-[var(--bg-card)] w-full">
+    <div className="glass-card-static rounded-3xl overflow-hidden flex flex-col border border-white/10 bg-white/[0.02] backdrop-blur-2xl shadow-2xl w-full relative">
       <div className="w-full">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="border-b border-white/5 bg-black/40 text-[0.5625rem] sm:text-xs font-black uppercase tracking-[0.15em] text-[--text-muted]">
+            <tr className="border-b border-white/10 bg-black/60 backdrop-blur-md text-[0.5625rem] sm:text-xs font-extrabold uppercase tracking-[0.15em] text-gray-400">
               <th className="px-3 sm:px-4 py-3.5">Fund Name</th>
               <th className="px-2 sm:px-3 py-3.5 text-center">Type</th>
               <th className="px-2 sm:px-3 py-3.5 text-right">Units</th>

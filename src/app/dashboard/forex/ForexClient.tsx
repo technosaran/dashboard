@@ -56,12 +56,13 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [selectedPair, setSelectedPair] = useState<any>(null);
 
   useEffect(() => {
     if (searchQuery.length < 2) {
-      setSearchResults([]);
-      return;
+      const timer = setTimeout(() => {
+        setSearchResults([]);
+      }, 0);
+      return () => clearTimeout(timer);
     }
     const timer = setTimeout(async () => {
       setIsSearching(true);
@@ -73,7 +74,6 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
   }, [searchQuery]);
 
   const handlePairSelect = async (pair: any) => {
-    setSelectedPair(pair);
     setSearchQuery("");
     setSearchResults([]);
     setTradeForm({ ...tradeForm, pair: pair.symbol });
@@ -622,7 +622,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
 
       {/* Trade Modal */}
       {(showTradeModal || showEditTradeModal) && (
-        <Drawer isOpen={showTradeModal || showEditTradeModal} onClose={() => { setShowTradeModal(false); setShowEditTradeModal(false); setEditingTrade(null); setSelectedPair(null); setSearchQuery(""); setSearchResults([]); }} title={showEditTradeModal ? "Edit Forex Trade" : "Log Forex Trade"}>
+        <Drawer isOpen={showTradeModal || showEditTradeModal} onClose={() => { setShowTradeModal(false); setShowEditTradeModal(false); setEditingTrade(null); setSearchQuery(""); setSearchResults([]); }} title={showEditTradeModal ? "Edit Forex Trade" : "Log Forex Trade"}>
           <div className="p-4 max-w-2xl mx-auto w-full">
             <form onSubmit={showEditTradeModal ? handleUpdateTrade : handleLogTrade} className="space-y-6">
               

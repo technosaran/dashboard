@@ -189,6 +189,30 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
     );
   };
 
+  const handleExportCSV = () => {
+    if (allFilteredLogs.length === 0) return;
+    const headers = ["Date", "Account", "Action", "Source", "Particulars", "Prev Balance", "Debit (Dr)", "Credit (Cr)", "Closing Balance"];
+    const rows = allFilteredLogs.map(log => [
+      log.created_at ? format(new Date(log.created_at), "yyyy-MM-dd HH:mm:ss") : "",
+      log.account_name || "",
+      log.action_type || "",
+      log.source_type || "",
+      `"${(log.details || "").replace(/"/g, '""')}"`,
+      log.previous_balance ?? "",
+      isDebitLog(log) ? (log.amount ?? "") : "",
+      isCreditLog(log) ? (log.amount ?? "") : "",
+      log.new_balance ?? ""
+    ]);
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `Ledger_Statement_${format(new Date(), "yyyy-MM-dd")}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="flex flex-col gap-[var(--section-gap)] max-w-7xl mx-auto w-full px-2">
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 px-2">
@@ -201,6 +225,18 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
             <span className={`h-2 w-2 rounded-full shadow-lg ${isValidating ? "animate-pulse bg-warning shadow-warning/40" : "bg-success shadow-success/40"}`} />
           </div>
         </div>
+
+        <button
+          type="button"
+          onClick={handleExportCSV}
+          disabled={allFilteredLogs.length === 0}
+          className="h-10 px-4 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-xl text-xs font-bold transition-all flex items-center gap-2 disabled:opacity-50 cursor-pointer shadow-lg"
+        >
+          <svg className="w-4 h-4 text-[#f26522]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          Export Statement (CSV)
+        </button>
       </header>
 
       {/* Zerodha Console Filters Form */}
@@ -224,9 +260,9 @@ export default function LedgerClient({ initialData }: { initialData?: FinanceDat
               value={selectedAccountId}
               onChange={(e) => setSelectedAccountId(e.target.value)}
             >
-              <option value="all">All Accounts (Consolidated)</option>
+              <option value="all" className="bg-[#181A20] text-white font-medium">All Accounts (Consolidated)</option>
               {accounts.map(acc => (
-                <option key={acc.id} value={acc.id}>{acc.name} ({acc.currency})</option>
+                <option key={acc.id} value={acc.id} className="bg-[#181A20] text-white font-medium">{acc.name} ({acc.currency})</option>
               ))}
             </select>
           </div>

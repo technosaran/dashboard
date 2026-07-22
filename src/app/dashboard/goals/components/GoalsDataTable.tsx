@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { format, differenceInDays, parseISO, isValid } from "date-fns";
 import {
   useReactTable,
@@ -20,6 +20,7 @@ type Goal = Tables<"goals">;
 
 interface GoalsDataTableProps {
   goals: Goal[];
+  initialFilter?: "all" | "active" | "completed" | "dueSoon";
   onEdit: (goal: Goal) => void;
   onDelete: (id: string) => void;
   onContribute: (goal: Goal) => void;
@@ -39,11 +40,15 @@ const GOAL_CATEGORIES = [
 
 const columnHelper = createColumnHelper<Goal>();
 
-export default function GoalsDataTable({ goals, onEdit, onDelete, onContribute, onAdd }: GoalsDataTableProps) {
+export default function GoalsDataTable({ goals, initialFilter = "all", onEdit, onDelete, onContribute, onAdd }: GoalsDataTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
-  const [goalFilter, setGoalFilter] = useState<"all" | "active" | "completed" | "dueSoon">("all");
+  const [goalFilter, setGoalFilter] = useState<"all" | "active" | "completed" | "dueSoon">(initialFilter);
+
+  useEffect(() => {
+    setGoalFilter(initialFilter);
+  }, [initialFilter]);
 
   const columns = useMemo(
     () => [
@@ -239,7 +244,6 @@ export default function GoalsDataTable({ goals, onEdit, onDelete, onContribute, 
               { key: "all", label: "All", value: goals.length },
               { key: "active", label: "Active", value: summary.active },
               { key: "completed", label: "Completed", value: summary.completed },
-              { key: "dueSoon", label: "Due ≤30d", value: summary.dueSoon },
             ].map((filter) => (
               <button
                 key={filter.key}
@@ -395,6 +399,22 @@ export default function GoalsDataTable({ goals, onEdit, onDelete, onContribute, 
                           />
                         ))}
                       </div>
+                      {/* Monthly Required Savings Pill */}
+                      {!isCompleted && goal.deadline && isValid(parseISO(goal.deadline)) && (() => {
+                        const daysLeft = differenceInDays(parseISO(goal.deadline), new Date());
+                        if (daysLeft > 0) {
+                          const monthsLeft = Math.max(0.1, daysLeft / 30.4375);
+                          const remainingAmount = target - current;
+                          const monthlyReq = Math.ceil(remainingAmount / monthsLeft);
+                          return (
+                            <div className="mt-3 p-2 rounded-xl bg-purple-500/10 border border-purple-500/20 text-[0.6875rem] text-purple-300 font-semibold flex items-center justify-between">
+                              <span className="text-white/70">Monthly Savings Needed:</span>
+                              <span className="font-extrabold text-white">₹{monthlyReq.toLocaleString()}/mo</span>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
                   </div>
 

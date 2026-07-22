@@ -17,6 +17,8 @@ import { PieChart, Pie, Cell, Tooltip as RechartsTooltip } from "recharts";
 
 import StocksDataTable from "./components/StocksDataTable";
 import StocksHistoryTable from "./components/StocksHistoryTable";
+import { calculateEquityDeliveryCharges } from "@/lib/zerodha-charges";
+import { getIndianMarketStatus, type MarketStatusInfo } from "@/lib/market-hours";
 
 type Stock = Tables<"investments"> & { day_change?: number; day_change_percent?: number };
 
@@ -31,6 +33,17 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
   useEffect(() => setMounted(true), []);
 
   const [charges, setCharges] = useState("0");
+  const [isCustomCharges, setIsCustomCharges] = useState(false);
+
+  // Zerodha Market Status & Clock State
+  const [marketStatus, setMarketStatus] = useState<MarketStatusInfo>(() => getIndianMarketStatus());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setMarketStatus(getIndianMarketStatus());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const [formData, setFormData] = useState({
     name: "", symbol: "", quantity: "", buy_price: "", current_price: "",
@@ -99,11 +112,10 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
     if (accounts.length > 0 && showAddModal && !formData.deduct_from_account) {
       const defaultAccId = profile?.default_accounts?.stocks;
       const defaultAccExists = defaultAccId && accounts.some(a => a.id === defaultAccId);
-      if (defaultAccExists) {
-        setTimeout(() => {
-          setFormData(prev => ({ ...prev, deduct_from_account: defaultAccId }));
-        }, 0);
-      }
+      const chosenAccount = defaultAccExists ? defaultAccId : accounts[0].id;
+      setTimeout(() => {
+        setFormData(prev => ({ ...prev, deduct_from_account: chosenAccount }));
+      }, 0);
     }
   }, [accounts, profile, showAddModal, formData.deduct_from_account]);
 
@@ -257,6 +269,17 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeStocks]);
 
+  // Zerodha Live Market Auto-Polling Engine (15s polling during live trading hours)
+  useEffect(() => {
+    if (marketStatus.isOpen && activeStocks.length > 0) {
+      const interval = setInterval(() => {
+        handleRefreshPrices();
+      }, 15000);
+      return () => clearInterval(interval);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [marketStatus.isOpen, activeStocks.length]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     await withLock(async () => {
@@ -323,164 +346,224 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
   };
 
   return (
-    <div className="flex w-full bg-[var(--bg-base)] min-h-screen">
-      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        {/* Kite-style Top Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-[var(--bg-card)]">
-          <div className="flex items-center gap-6">
-            <div className="flex gap-1.5 rounded-2xl bg-white/[0.02] border border-white/5 p-1.5 max-w-fit shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]">
+    <div className="flex w-full bg-[#191919] min-h-screen text-[#E0E0E0] relative font-sans">
+      {/* Ambient Kite Glow */}
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+        <div className="absolute -top-32 -right-32 w-[550px] h-[550px] bg-[#387ED1]/10 rounded-full blur-[160px]" />
+        <div className="absolute top-1/2 -left-32 w-[550px] h-[550px] bg-[#41B883]/5 rounded-full blur-[160px]" />
+      </div>
+
+      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto relative z-10">
+        
+        {/* Zerodha Kite Header Bar */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-6 py-3.5 border-b border-[#2B313A] bg-[#121212] gap-4 shadow-xl">
+          <div className="flex items-center gap-4">
+            {/* Zerodha Kite Emblem */}
+            <div className="w-9 h-9 rounded-lg bg-[#FF5722]/10 border border-[#FF5722]/30 flex items-center justify-center text-[#FF5722] shadow-[0_0_15px_rgba(255,87,34,0.25)]">
+              <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                <path d="M12 2L2 12l10 10 10-10L12 2zm0 4.5l6.5 6.5-6.5 6.5-6.5-6.5L12 6.5z" />
+              </svg>
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-base font-extrabold text-white tracking-wider uppercase">Zerodha Kite Equity</h1>
+                <span className="text-[0.5625rem] bg-[#387ED1]/20 text-[#387ED1] border border-[#387ED1]/30 px-1.5 py-0.5 rounded font-black tracking-widest uppercase">KITE PRO</span>
+                <span 
+                  className="text-[0.625rem] font-extrabold px-2.5 py-0.5 rounded-full flex items-center gap-1.5 border tracking-wider"
+                  style={{ 
+                    backgroundColor: `${marketStatus.badgeColor}15`, 
+                    color: marketStatus.badgeColor,
+                    borderColor: `${marketStatus.badgeColor}40`
+                  }}
+                  title={marketStatus.nextSessionText}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: marketStatus.badgeColor }} />
+                  {marketStatus.statusText} • {marketStatus.formattedTimeIST}
+                </span>
+              </div>
+              <p className="text-[0.6875rem] text-[#848E9C] font-semibold flex items-center gap-1.5 mt-0.5">
+                NSE / BSE Spot Watch • {marketStatus.nextSessionText}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+            <div className="flex gap-1 rounded-xl bg-[#191919] border border-[#2B313A] p-1 shadow-inner">
               <button 
                 onClick={() => setActiveTab("dashboard")}
-                className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
                   activeTab === 'dashboard' 
-                    ? 'bg-[var(--accent-primary)] text-white shadow-[0_0_15px_var(--accent-primary)/0.35] border border-transparent' 
-                    : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
+                    ? 'bg-[#387ED1] text-white shadow-[0_0_12px_rgba(56,126,209,0.4)]' 
+                    : 'text-[#848E9C] hover:text-white hover:bg-white/5'
                 }`}
               >
-                Dashboard
+                Overview
               </button>
               <button 
                 onClick={() => setActiveTab("holdings")}
-                className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
                   activeTab === 'holdings' 
-                    ? 'bg-[var(--accent-primary)] text-white shadow-[0_0_15px_var(--accent-primary)/0.35] border border-transparent' 
-                    : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
+                    ? 'bg-[#387ED1] text-white shadow-[0_0_12px_rgba(56,126,209,0.4)]' 
+                    : 'text-[#848E9C] hover:text-white hover:bg-white/5'
                 }`}
               >
                 Holdings ({activeStocks.length})
               </button>
               <button 
                 onClick={() => setActiveTab("history")}
-                className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
                   activeTab === 'history' 
-                    ? 'bg-[var(--accent-primary)] text-white shadow-[0_0_15px_var(--accent-primary)/0.35] border border-transparent' 
-                    : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
+                    ? 'bg-[#387ED1] text-white shadow-[0_0_12px_rgba(56,126,209,0.4)]' 
+                    : 'text-[#848E9C] hover:text-white hover:bg-white/5'
                 }`}
               >
-                Trade History
+                Order Book
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={handleRefreshPrices} 
+                disabled={isRefreshing || activeStocks.length === 0}
+                className="bg-[#2B313A]/50 hover:bg-[#2B313A] border border-[#2B313A] text-white px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+              >
+                {isRefreshing ? (
+                  <svg className="w-3.5 h-3.5 animate-spin text-[#387ED1]" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" strokeDasharray="32" className="opacity-25"></circle><path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" className="opacity-75"></path></svg>
+                ) : (
+                  <svg className="w-3.5 h-3.5 text-[#387ED1]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                )}
+                Refresh LTP
+              </button>
+              <button 
+                onClick={() => { 
+                  setFormData({
+                    name: "", symbol: "", quantity: "", buy_price: "", current_price: "",
+                    currency: "INR", notes: "", bought_at: new Date().toISOString().split("T")[0],
+                    deduct_from_account: "", trade_type: "buy"
+                  });
+                  setEditingId(null);
+                  setShowAddModal(true); 
+                }} 
+                className="bg-[#41B883] hover:bg-[#38a373] text-black font-extrabold px-4 py-1.5 rounded-lg text-xs uppercase tracking-wider transition-all shadow-[0_0_15px_rgba(65,184,131,0.3)] cursor-pointer"
+              >
+                + New Order
               </button>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={handleRefreshPrices} 
-              disabled={isRefreshing || activeStocks.length === 0}
-              className="bg-white/5 hover:bg-white/10 border border-white/10 text-white px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 disabled:opacity-50 flex items-center gap-2 shadow-sm"
-            >
-              {isRefreshing ? (
-                <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" strokeDasharray="32" className="opacity-25"></circle><path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" className="opacity-75"></path></svg>
-              ) : (
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-              )}
-              Refresh Prices
-            </button>
-            <button 
-              onClick={() => { 
-                setFormData({
-                  name: "", symbol: "", quantity: "", buy_price: "", current_price: "",
-                  currency: "INR", notes: "", bought_at: new Date().toISOString().split("T")[0],
-                  deduct_from_account: "", trade_type: "buy"
-                });
-                setEditingId(null);
-                setShowAddModal(true); 
-              }} 
-              className="bg-[var(--accent-primary)] hover:brightness-90 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 shadow-md shadow-[var(--accent-primary)]/10 hover:shadow-[var(--accent-primary)]/20"
-            >
-              Add Trade
-            </button>
-          </div>
         </div>
 
-        <div className="p-6 max-w-6xl w-full mx-auto">
+        <div className="p-6 max-w-7xl w-full mx-auto">
           {activeTab === "dashboard" && (
-            <div className="flex flex-col lg:flex-row gap-12 items-center lg:items-stretch mt-4">
+            <div className="flex flex-col lg:flex-row gap-6 items-center lg:items-stretch mt-2">
               {/* Left: Large Allocation Donut */}
-              <div className="flex-1 flex flex-col items-center justify-center bg-[var(--bg-card)] p-8 border border-white/5 rounded-lg">
-                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">Asset Allocation</h3>
+              <div className="flex-1 flex flex-col items-center justify-center bg-[#252525] p-8 border border-[#333333] rounded-2xl relative shadow-2xl overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#FF5722] via-[#387ED1] to-[#41B883]" />
+                <h3 className="text-xs font-bold text-[#848E9C] uppercase tracking-widest mb-6 absolute top-6 left-6 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[#387ED1]" />
+                  Sector / Equity Breakdown
+                </h3>
                 {mounted && pieChartData.length > 0 ? (
-                  <div className="w-[280px] h-[280px] relative">
+                  <div className="w-[300px] h-[300px] relative mt-8">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
-                        <Pie data={pieChartData} cx="50%" cy="50%" innerRadius={80} outerRadius={110} paddingAngle={2} dataKey="value" stroke="none">
+                        <Pie data={pieChartData} cx="50%" cy="50%" innerRadius={85} outerRadius={115} paddingAngle={3} dataKey="value" stroke="none">
                           {pieChartData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} />)}
                         </Pie>
                         <RechartsTooltip 
-                          contentStyle={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border-primary)", borderRadius: "4px" }}
-                          itemStyle={{ color: "#fff", fontSize: "11px" }}
-                          formatter={(value) => [`${formatMoney(Number(value))}`, "Value"]}
+                          contentStyle={{ backgroundColor: "#191919", border: "1px solid #333", borderRadius: "12px", boxShadow: "0 10px 30px rgba(0,0,0,0.8)" }}
+                          itemStyle={{ color: "#387ED1", fontSize: "12px", fontWeight: "bold" }}
+                          formatter={(value) => [`${formatMoney(Number(value))}`, "Market Value"]}
                         />
                       </PieChart>
                     </ResponsiveContainer>
                     <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                      <span className="text-gray-500 text-xs uppercase tracking-widest font-bold">Total Wealth</span>
-                      <span className="text-white text-2xl font-normal mt-1">
+                      <span className="text-[#848E9C] text-xs uppercase tracking-widest font-black">Current Portfolio</span>
+                      <span className="text-white text-3xl font-extrabold tracking-tight mt-1">
                         {showUSD ? formatMoney(stats.totalCurrent) : stats.totalCurrent >= 10000000 ? "₹" + (stats.totalCurrent / 10000000).toFixed(2) + " Cr" : stats.totalCurrent >= 100000 ? "₹" + (stats.totalCurrent / 100000).toFixed(2) + " L" : formatMoney(stats.totalCurrent)}
                       </span>
                     </div>
                   </div>
                 ) : (
-                  <div className="w-[250px] h-[250px] rounded-full border-2 border-dashed border-white/10 flex items-center justify-center">
-                    <span className="text-xs text-gray-500 font-bold uppercase tracking-wider">No Stock Holdings</span>
+                  <div className="h-[260px] flex flex-col items-center justify-center text-[#848E9C] text-xs font-medium gap-3">
+                    <span>No stock holdings found in Zerodha Kite portfolio.</span>
+                    <button
+                      onClick={() => setShowAddModal(true)}
+                      className="bg-[#387ED1] text-white font-bold px-4 py-2 rounded-lg text-xs uppercase tracking-wider hover:bg-[#306eb8] transition-all shadow-md cursor-pointer"
+                    >
+                      + Place First Order
+                    </button>
                   </div>
                 )}
                 
                 {pieChartData.length > 0 && (
                   <div className="flex flex-wrap justify-center gap-4 mt-8">
                     {pieChartData.map((entry, index) => (
-                      <div key={index} className="flex items-center gap-2">
+                      <div key={index} className="flex items-center gap-2 bg-[#191919] px-3 py-1.5 rounded-lg border border-[#333]">
                         <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: entry.fill }} />
-                        <span className="text-xs text-gray-400 font-semibold">{entry.name}</span>
+                        <span className="text-xs text-[#E0E0E0] font-bold">{entry.name}</span>
                       </div>
                     ))}
                   </div>
                 )}
               </div>
 
-              {/* Right: Stats summary */}
-              <div className="flex-1 flex flex-col justify-center bg-[var(--bg-card)] p-8 border border-white/5 rounded-lg">
+              {/* Right: Zerodha Kite Summary Cards */}
+              <div className="flex-1 flex flex-col justify-center bg-[#252525] p-8 border border-[#333333] rounded-2xl shadow-2xl relative overflow-hidden">
                 <div className="space-y-6">
                   <div>
-                    <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Current value</p>
-                    <p className="text-3xl font-normal text-white">{formatMoney(stats.totalCurrent)}</p>
+                    <p className="text-[0.6875rem] font-bold text-[#848E9C] uppercase tracking-widest mb-1">Total Current Valuation</p>
+                    <p className="text-4xl font-extrabold text-white tracking-tight">{formatMoney(stats.totalCurrent)}</p>
                   </div>
                   
                   <div>
-                    <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Invested value</p>
-                    <p className="text-xl font-normal text-white/90">{formatMoney(stats.totalInvested)}</p>
+                    <p className="text-[0.6875rem] font-bold text-[#848E9C] uppercase tracking-widest mb-1">Total Invested Cost</p>
+                    <p className="text-2xl font-bold text-[#CCCCCC]">{formatMoney(stats.totalInvested)}</p>
                   </div>
 
-                  <div className="h-px w-full bg-white/5" />
+                  <div className="h-px w-full bg-[#333]" />
 
-                  <div className="grid grid-cols-2 gap-8">
-                    <div>
-                      <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Total returns</p>
-                      <div className={`text-lg font-bold ${stats.totalPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="bg-[#191919] p-4 rounded-xl border border-[#333]">
+                      <p className="text-[0.65rem] text-[#848E9C] font-bold uppercase tracking-widest mb-1">Total P&amp;L</p>
+                      <div className={`text-xl font-extrabold ${stats.totalPnL >= 0 ? 'text-[#41B883]' : 'text-[#FF5722]'}`}>
                         {stats.totalPnL >= 0 ? '+' : ''}{formatMoney(stats.totalPnL)}
-                        <div className="text-xs font-semibold mt-0.5 opacity-90">{stats.totalPnLPercent >= 0 ? '+' : ''}{stats.totalPnLPercent.toFixed(2)}%</div>
+                        <div className="text-xs font-bold mt-0.5">{stats.totalPnLPercent >= 0 ? '+' : ''}{stats.totalPnLPercent.toFixed(2)}%</div>
                       </div>
                     </div>
-                    <div>
-                      <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Day&apos;s returns</p>
-                      <div className={`text-lg font-bold ${stats.dayPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    <div className="bg-[#191919] p-4 rounded-xl border border-[#333]">
+                      <div className="flex justify-between items-center mb-1">
+                        <p className="text-[0.65rem] text-[#848E9C] font-bold uppercase tracking-widest">Day&apos;s P&amp;L</p>
+                        <span 
+                          className="text-[0.5625rem] font-bold px-1.5 py-0.2 rounded border uppercase tracking-wider"
+                          style={{ 
+                            backgroundColor: `${marketStatus.badgeColor}15`, 
+                            color: marketStatus.badgeColor,
+                            borderColor: `${marketStatus.badgeColor}30`
+                          }}
+                        >
+                          {marketStatus.isOpen ? 'LIVE' : 'SETTLED'}
+                        </span>
+                      </div>
+                      <div className={`text-xl font-extrabold ${stats.dayPnL >= 0 ? 'text-[#41B883]' : 'text-[#FF5722]'}`}>
                         {stats.dayPnL >= 0 ? '+' : ''}{formatMoney(stats.dayPnL)}
-                        <div className="text-xs font-semibold mt-0.5 opacity-90">{stats.dayPnLPercent >= 0 ? '+' : ''}{stats.dayPnLPercent.toFixed(2)}%</div>
+                        <div className="text-xs font-bold mt-0.5">{stats.dayPnLPercent >= 0 ? '+' : ''}{stats.dayPnLPercent.toFixed(2)}%</div>
                       </div>
                     </div>
                   </div>
 
                   {stats.totalRealizedPnL !== 0 && (
                     <>
-                      <div className="h-px w-full bg-white/5" />
-                      <div className="grid grid-cols-2 gap-8 text-xs font-semibold text-gray-400">
+                      <div className="h-px w-full bg-[#333]" />
+                      <div className="grid grid-cols-2 gap-6 text-xs font-semibold text-[#848E9C]">
                         <div>
-                          <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Unrealized P&amp;L</p>
-                          <span className={stats.unrealizedPnL >= 0 ? 'text-emerald-400' : 'text-rose-500'}>
+                          <p className="text-[0.65rem] text-[#848E9C] font-bold uppercase tracking-widest mb-1">Unrealized P&amp;L</p>
+                          <span className={stats.unrealizedPnL >= 0 ? 'text-[#41B883] font-bold' : 'text-[#FF5722] font-bold'}>
                             {stats.unrealizedPnL >= 0 ? '+' : ''}{formatMoney(stats.unrealizedPnL)}
                           </span>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Realized P&amp;L</p>
-                          <span className={stats.totalRealizedPnL >= 0 ? 'text-emerald-400' : 'text-rose-500'}>
+                          <p className="text-[0.65rem] text-[#848E9C] font-bold uppercase tracking-widest mb-1">Realized P&amp;L</p>
+                          <span className={stats.totalRealizedPnL >= 0 ? 'text-[#41B883] font-bold' : 'text-[#FF5722] font-bold'}>
                             {stats.totalRealizedPnL >= 0 ? '+' : ''}{formatMoney(stats.totalRealizedPnL)}
                           </span>
                         </div>
@@ -573,18 +656,18 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
                     </div>
 
                     {showSearchDropdown && searchResults.length > 0 && (
-                      <div className="absolute z-[120] left-0 right-0 top-[100%] mt-1 bg-[#202020] border border-white/10 rounded shadow-xl overflow-hidden max-h-56 overflow-y-auto custom-scrollbar">
+                      <div className="absolute z-[120] left-0 right-0 top-[100%] mt-1 bg-[#191919] border border-[#387ED1]/40 rounded-xl shadow-2xl overflow-hidden max-h-56 overflow-y-auto custom-scrollbar">
                         {searchResults.map((res, i) => (
                           <div 
                             key={i} 
-                            className="px-3 py-2 hover:bg-white/5 cursor-pointer transition-colors border-b border-white/5 last:border-0 flex items-center justify-between"
+                            className="px-3.5 py-2.5 hover:bg-[#387ED1]/10 cursor-pointer transition-colors border-b border-white/5 last:border-0 flex items-center justify-between"
                             onClick={() => handleSelectSearchResult(res)}
                           >
                             <div>
                               <div className="text-xs font-bold text-white">{res.symbol}</div>
                               <div className="text-xs text-gray-400 truncate max-w-[220px]">{res.name}</div>
                             </div>
-                            <span className="text-[0.5625rem] bg-white/10 px-1.5 py-0.5 rounded text-gray-400 font-semibold">Select</span>
+                            <span className="text-[0.625rem] bg-[#387ED1]/20 text-[#387ED1] px-2 py-0.5 rounded font-black uppercase">Select</span>
                           </div>
                         ))}
                       </div>
@@ -684,76 +767,144 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
                       </div>
                     </div>
 
-                    <details className="group border border-white/5 bg-white/[0.02] rounded-xl overflow-hidden mt-4">
-                      <summary className="text-xs font-bold text-gray-400 p-3 cursor-pointer outline-none hover:text-white transition-colors bg-white/[0.02]">
-                        Advanced Options (Brokerage, Notes)
-                      </summary>
-                      <div className="p-3 pt-0 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                          <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Brokerage &amp; Charges (₹)</label>
-                          <input 
-                            type="number" 
-                            step="any"
-                            className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]" 
-                            value={charges} 
-                            onChange={e => setCharges(e.target.value)} 
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Notes</label>
-                          <input 
-                            type="text"
-                            className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]" 
-                            placeholder="Optional notes..."
-                            value={formData.notes}
-                            onChange={e => setFormData({ ...formData, notes: e.target.value })}
-                          />
-                        </div>
-                      </div>
-                    </details>
+                    <div className="mt-4 space-y-1">
+                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Notes</label>
+                      <input 
+                        type="text"
+                        className="w-full bg-[#202020] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#2185d0]" 
+                        placeholder="Optional notes..."
+                        value={formData.notes}
+                        onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                      />
+                    </div>
                   </>
                 )}
 
-                {/* Live Premium Margin Calculator & Order Slip */}
+                {/* Live Premium Zerodha Margin & Tax Calculator Order Slip */}
                 {((parseFloat(formData.quantity) || 0) > 0) && (
-                  <div className="glass-card-static border border-white/5 p-4 rounded-xl space-y-2.5 text-xs bg-white/[0.01] animate-fade-in">
-                    <span className="text-xs font-black uppercase tracking-widest text-[--text-muted] block border-b border-white/5 pb-1.5">
-                      Order Slip Preview
-                    </span>
-                    <div className="flex justify-between">
-                      <span className="text-[--text-secondary]">Gross Turnover:</span>
-                      <span className="text-white font-bold">
-                        ₹{formatMoney((parseFloat(formData.quantity) || 0) * (parseFloat(formData.buy_price) || 0))}
+                  <div className="glass-card-static border border-[#387ED1]/30 p-4 rounded-xl space-y-2.5 text-xs bg-[#191919] animate-fade-in">
+                    <div className="flex justify-between items-center border-b border-[#333] pb-2">
+                      <span className="text-xs font-black uppercase tracking-widest text-[#387ED1]">
+                        Zerodha Order Slip & Tax Breakdown
                       </span>
-                    </div>
-                    
-                    {/* Dynamic Stamp Duty mock */}
-                    <div className="flex justify-between">
-                      <span className="text-[--text-secondary]">Stamp Duty (0.015%):</span>
-                      <span className="text-white font-mono">
-                        ₹{formatMoney((parseFloat(formData.quantity) || 0) * (parseFloat(formData.buy_price) || 0) * 0.00015)}
+                      <span className="text-[0.625rem] bg-[#387ED1]/20 text-[#387ED1] px-2 py-0.5 rounded font-bold uppercase">
+                        Equity Delivery
                       </span>
                     </div>
 
-                    {(parseFloat(charges) || 0) > 0 && (
-                      <div className="flex justify-between">
-                        <span className="text-[--text-secondary]">Brokerage &amp; Fees:</span>
-                        <span className="text-white font-bold">
-                          ₹{formatMoney(parseFloat(charges) || 0)}
-                        </span>
-                      </div>
-                    )}
-                    
-                    <div className="flex justify-between items-center pt-2 border-t border-white/5 font-black text-xs">
-                      <span className="text-white">Estimated {formData.trade_type === 'buy' ? 'Outflow' : 'Inflow'}:</span>
-                      <span style={{ color: formData.trade_type === 'buy' ? '#ef4444' : '#10b981' }}>
-                        ₹{formatMoney(
-                          formData.trade_type === 'buy'
-                            ? ((parseFloat(formData.quantity) || 0) * (parseFloat(formData.buy_price) || 0)) + (parseFloat(charges) || 0) + ((parseFloat(formData.quantity) || 0) * (parseFloat(formData.buy_price) || 0) * 0.00015)
-                            : ((parseFloat(formData.quantity) || 0) * (parseFloat(formData.buy_price) || 0)) - (parseFloat(charges) || 0) - ((parseFloat(formData.quantity) || 0) * (parseFloat(formData.buy_price) || 0) * 0.00015)
-                        )}
-                      </span>
-                    </div>
+                    {(() => {
+                      const q = parseFloat(formData.quantity) || 0;
+                      const p = parseFloat(formData.buy_price) || 0;
+                      const turnover = q * p;
+                      const isBuy = formData.trade_type === "buy";
+                      const calc = calculateEquityDeliveryCharges(turnover, isBuy);
+                      const currentCharges = parseFloat(charges) || 0;
+
+                      return (
+                        <>
+                          <div className="flex justify-between">
+                            <span className="text-[#848E9C]">Gross Turnover:</span>
+                            <span className="text-white font-bold">₹{turnover.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
+                          </div>
+
+                          {/* Mini Zerodha Tax Details */}
+                          <div className="bg-[#202020] p-2.5 rounded-lg border border-[#333] space-y-1 text-[0.6875rem]">
+                            <div className="flex justify-between text-[#CCCCCC]">
+                              <span>Brokerage:</span>
+                              <span className="font-bold text-[#41B883]">₹0.00 (Free)</span>
+                            </div>
+                            <div className="flex justify-between text-[#848E9C]">
+                              <span>STT (0.1%):</span>
+                              <span className="font-mono text-white">₹{calc.stt.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between text-[#848E9C]">
+                              <span>NSE Txn Fee (0.00297%):</span>
+                              <span className="font-mono text-white">₹{calc.transactionFee.toFixed(2)}</span>
+                            </div>
+                            {isBuy ? (
+                              <div className="flex justify-between text-[#848E9C]">
+                                <span>Stamp Duty (0.015%):</span>
+                                <span className="font-mono text-white">₹{calc.stampDuty.toFixed(2)}</span>
+                              </div>
+                            ) : (
+                              <div className="flex justify-between text-[#848E9C]">
+                                <span>DP Charges:</span>
+                                <span className="font-mono text-white">₹15.93</span>
+                              </div>
+                            )}
+                            <div className="flex justify-between text-[#848E9C]">
+                              <span>GST (18%):</span>
+                              <span className="font-mono text-white">₹{calc.gst.toFixed(2)}</span>
+                            </div>
+                          </div>
+
+                          {/* Prominent Auto-Calculated Total Charges Display & Edit Row */}
+                          <div className="flex justify-between items-center bg-[#202020] px-3.5 py-2.5 rounded-xl border border-[#387ED1]/30">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[#CCCCCC] font-bold text-xs uppercase tracking-wider">Total Charges:</span>
+                              {!isCustomCharges ? (
+                                <span className="text-[0.5625rem] bg-[#387ED1]/20 text-[#387ED1] border border-[#387ED1]/30 px-1.5 py-0.5 rounded font-black uppercase tracking-widest">
+                                  Auto-Calculated
+                                </span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setIsCustomCharges(false);
+                                    setCharges(calc.totalCharges.toString());
+                                  }}
+                                  className="text-[0.625rem] text-[#387ED1] hover:underline font-bold"
+                                >
+                                  (Reset Auto-Calc)
+                                </button>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-white font-mono font-extrabold text-sm">
+                                ₹{isCustomCharges ? (parseFloat(charges) || 0).toFixed(2) : calc.totalCharges.toFixed(2)}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (!isCustomCharges) {
+                                    setIsCustomCharges(true);
+                                    setCharges(calc.totalCharges.toString());
+                                  }
+                                }}
+                                className="text-xs text-gray-400 hover:text-white transition-colors cursor-pointer"
+                                title="Manual Edit Charges"
+                              >
+                                ✏️
+                              </button>
+                            </div>
+                          </div>
+
+                          {isCustomCharges && (
+                            <div className="flex items-center justify-between gap-2 bg-[#151515] p-2 rounded-lg border border-[#387ED1]/50 animate-fade-in">
+                              <span className="text-[0.6875rem] text-gray-400 font-semibold">Custom Manual Charges (₹):</span>
+                              <input
+                                type="number"
+                                step="0.01"
+                                value={charges}
+                                onChange={(e) => {
+                                  setIsCustomCharges(true);
+                                  setCharges(e.target.value);
+                                }}
+                                className="w-28 bg-[#202020] border border-[#387ED1] rounded px-2.5 py-1 text-xs text-white font-mono font-bold outline-none text-right"
+                                placeholder="0.00"
+                              />
+                            </div>
+                          )}
+
+                          <div className="flex justify-between items-center pt-2 border-t border-[#333] font-black text-xs">
+                            <span className="text-white">Estimated Net {isBuy ? 'Outflow' : 'Inflow'}:</span>
+                            <span className={isBuy ? 'text-[#FF5722]' : 'text-[#41B883]'}>
+                              ₹{(isBuy ? turnover + currentCharges : turnover - currentCharges).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                            </span>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
                 )}
 

@@ -18,19 +18,6 @@ const LOG_LEVEL = process.env.LOG_LEVEL || (process.env.NODE_ENV === 'production
 const logger = pino({
   level: LOG_LEVEL,
   
-  // Production: JSON format for log aggregation
-  // Development: Pretty print for readability
-  ...(process.env.NODE_ENV !== 'production' && {
-    transport: {
-      target: 'pino-pretty',
-      options: {
-        colorize: true,
-        translateTime: 'HH:MM:ss Z',
-        ignore: 'pid,hostname',
-      },
-    },
-  }),
-  
   // Base fields for all logs
   base: {
     env: process.env.NODE_ENV || 'development',

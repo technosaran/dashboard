@@ -792,14 +792,14 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
             <div className="space-y-3">
               <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Asset Category</label>
               <select aria-label="Select asset category" id="account-type" name="type" value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})} className="input-premium">
-                {Object.keys(TYPE_STYLES).map(t => <option key={t} value={t} style={{background: "var(--bg-surface)"}}>{t.toUpperCase()}</option>)}
+                {Object.keys(TYPE_STYLES).map(t => <option key={t} value={t} className="bg-[#181A20] text-white font-medium">{t.toUpperCase()}</option>)}
               </select>
             </div>
             <div className="space-y-3">
               <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Currency</label>
               <select aria-label="Select currency" id="account-currency" name="currency" value={formData.currency} onChange={e => setFormData({...formData, currency: e.target.value})} className="input-premium">
-                <option value="INR" style={{background: "var(--bg-surface)"}}>INR (₹)</option>
-                <option value="USD" style={{background: "var(--bg-surface)"}}>USD ($)</option>
+                <option value="INR" className="bg-[#181A20] text-white font-medium">INR (₹)</option>
+                <option value="USD" className="bg-[#181A20] text-white font-medium">USD ($)</option>
               </select>
             </div>
           </div>
@@ -907,15 +907,15 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
             <div className="space-y-2">
               <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">SOURCE ACCOUNT</label>
               <select aria-label="Select source account" id="transfer-source" name="from_account" required value={transferFromId || ""} onChange={e => setTransferFromId(e.target.value)} className="input-premium text-xs">
-                <option value="">Select source</option>
-                {accounts.map(a => <option key={a.id} value={a.id} style={{background: "var(--bg-surface)"}}>{a.name} ({getCurrencySymbol(a.currency)}{a.balance.toLocaleString()})</option>)}
+                <option value="" className="bg-[#181A20] text-white font-medium">Select source</option>
+                {accounts.map(a => <option key={a.id} value={a.id} className="bg-[#181A20] text-white font-medium">{a.name} ({getCurrencySymbol(a.currency)}{a.balance.toLocaleString()})</option>)}
               </select>
             </div>
             <div className="space-y-2">
               <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">DESTINATION ACCOUNT</label>
               <select aria-label="Select destination account" id="transfer-destination" name="to_account" required value={transferData.to_account_id} onChange={e => setTransferData({...transferData, to_account_id: e.target.value})} className="input-premium text-xs">
-                <option value="">Select target</option>
-                {accounts.map(a => a.id !== transferFromId && <option key={a.id} value={a.id} style={{background: "var(--bg-surface)"}}>{a.name} ({getCurrencySymbol(a.currency)}{a.balance.toLocaleString()})</option>)}
+                <option value="" className="bg-[#181A20] text-white font-medium">Select target</option>
+                {accounts.map(a => a.id !== transferFromId && <option key={a.id} value={a.id} className="bg-[#181A20] text-white font-medium">{a.name} ({getCurrencySymbol(a.currency)}{a.balance.toLocaleString()})</option>)}
               </select>
             </div>
           </div>

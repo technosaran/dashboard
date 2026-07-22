@@ -1,40 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import logger from "@/lib/logger";
-
-// Helper to send message back to Telegram user
-async function sendTelegramMessage(chatId: string, text: string) {
-  const token = process.env.TELEGRAM_BOT_TOKEN;
-  if (!token) return;
-
-  try {
-    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text,
-        parse_mode: "Markdown",
-      }),
-    });
-    if (!res.ok) {
-      const errBody = await res.text();
-      console.error(`Telegram API error (${res.status}): ${errBody}`);
-      if (res.status === 400 && /can't parse entities/i.test(errBody)) {
-        await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            chat_id: chatId,
-            text,
-          }),
-        });
-      }
-    }
-  } catch (error) {
-    console.error("Failed to send Telegram message:", error);
-  }
-}
+import { sendTelegramMessage } from "@/lib/telegram";
 
 export async function GET(req: NextRequest) {
   return handleCronAlerts(req);

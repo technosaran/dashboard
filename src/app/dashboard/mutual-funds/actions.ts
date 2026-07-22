@@ -1,4 +1,3 @@
-
 "use server";
 
 import { createClient } from "@/lib/supabase-server";
@@ -6,12 +5,11 @@ import { getFriendlyErrorMessage } from "@/lib/action-utils";
 import { revalidatePath } from "next/cache";
 import { parseToISODate } from "@/lib/utils";
 
-
 type MutualFundRpcResult = {
-    success?: boolean;
-    error?: string | null;
+  success?: boolean;
+  error?: string | null;
 } | null;
-// Simple in-memory caches to survive server process lifecycles and avoid rate limiting
+
 const navCache = new Map<string, { nav: number; previousNav?: number; timestamp: number }>();
 const NAV_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 
@@ -30,7 +28,7 @@ async function getAmfiNavText(): Promise<string | null> {
     const res = await fetch("https://www.amfiindia.com/spages/NAVAll.txt", {
       cache: "no-store",
       headers: { "User-Agent": userAgent },
-      signal: AbortSignal.timeout(10000) // Allow up to 10 seconds for large text list download
+      signal: AbortSignal.timeout(10000)
     });
     if (res.ok) {
       const text = await res.text();
@@ -44,6 +42,26 @@ async function getAmfiNavText(): Promise<string | null> {
 
   return amfiCacheText;
 }
+
+const POPULAR_FUNDS = [
+  { schemeCode: "152098", schemeName: "Zerodha Nifty LargeMidcap 250 Index Fund Direct Growth" },
+  { schemeCode: "120714", schemeName: "UTI Gold ETF FoF Direct Growth" },
+  { schemeCode: "122639", schemeName: "Parag Parikh Flexi Cap Fund Direct Growth" },
+  { schemeCode: "125497", schemeName: "SBI Small Cap Fund Direct Growth" },
+  { schemeCode: "119063", schemeName: "HDFC Top 100 Fund Direct Growth" },
+  { schemeCode: "120586", schemeName: "ICICI Prudential Bluechip Fund Direct Growth" },
+  { schemeCode: "125354", schemeName: "Quant Small Cap Fund Direct Growth" },
+  { schemeCode: "120594", schemeName: "Axis Bluechip Fund Direct Growth" },
+  { schemeCode: "118834", schemeName: "Mirae Asset Large Cap Fund Direct Growth" },
+  { schemeCode: "127042", schemeName: "Motilal Oswal Midcap Fund Direct Growth" },
+  { schemeCode: "118778", schemeName: "Nippon India Small Cap Fund Direct Growth" },
+  { schemeCode: "120716", schemeName: "UTI Nifty 50 Index Fund Direct Growth" },
+  { schemeCode: "135781", schemeName: "Tata Digital India Fund Direct Growth" },
+  { schemeCode: "147946", schemeName: "Bandhan Small Cap Fund Direct Growth" },
+  { schemeCode: "119800", schemeName: "Kotak Emerging Equity Fund Direct Growth" },
+  { schemeCode: "120504", schemeName: "Canara Robeco Emerging Equities Direct Growth" },
+  { schemeCode: "120383", schemeName: "DSP Midcap Fund Direct Growth" },
+];
 
 export async function searchMFSchemes(query: string) {
   if (!query || query.length < 2) return [];
@@ -68,7 +86,7 @@ export async function searchMFSchemes(query: string) {
     console.warn("MFAPI Search failed, trying Groww fallback", err);
   }
 
-  // 2. Try Groww MF API fallback (removed Direct plan constraint)
+  // 2. Try Groww MF API fallback
   try {
     const res = await fetch(`https://groww.in/v1/api/search/v1/derived/scheme?availableForInvestment=true&docType=scheme&q=${encodeURIComponent(query)}`, {
       cache: "no-store",
@@ -110,7 +128,10 @@ export async function searchMFSchemes(query: string) {
   } catch (err) {
     console.error("AMFI search fallback failed", err);
   }
-  return [];
+
+  // 4. Instant local popular funds fallback
+  const qLower = query.toLowerCase();
+  return POPULAR_FUNDS.filter(f => f.schemeName.toLowerCase().includes(qLower) || f.schemeCode.includes(qLower));
 }
 
 export async function fetchLiveMFNAV(schemeCode: string) {
@@ -135,7 +156,6 @@ export async function fetchLiveMFNAV(schemeCode: string) {
         const currentNav = parseFloat(data.data[0].nav);
         const previousNav = data.data.length > 1 ? parseFloat(data.data[1].nav) : undefined;
         
-        // Cache the healthy result
         navCache.set(schemeCode, { nav: currentNav, previousNav, timestamp: now });
         return { nav: currentNav, previousNav };
       }
@@ -144,7 +164,7 @@ export async function fetchLiveMFNAV(schemeCode: string) {
     console.warn(`MFAPI NAV failed for ${schemeCode}, trying Groww fallback`, err);
   }
   
-  // Try Groww MF API fallback (removed Direct plan constraint)
+  // Try Groww MF API fallback
   try {
     const res = await fetch(`https://groww.in/v1/api/search/v1/derived/scheme?availableForInvestment=true&docType=scheme&q=${schemeCode}`, {
       cache: "no-store",
@@ -175,7 +195,6 @@ export async function fetchLiveMFNAV(schemeCode: string) {
           const parts = line.split(";");
           const currentNav = parseFloat(parts[4].trim());
           if (!isNaN(currentNav)) {
-            // Cache the result
             navCache.set(schemeCode, { nav: currentNav, timestamp: now });
             return { nav: currentNav };
           }
@@ -189,88 +208,85 @@ export async function fetchLiveMFNAV(schemeCode: string) {
   return null;
 }
 
-
 export async function recordMFInvestment(data: {
-    fund_name: string;
-    scheme_code: string;
-    units: number;
-    nav: number;
-    investment_type: string;
-    category: string;
-    amc_name: string;
-    date: string;
-    account_id: string;
-    stamp_duty: number;
-    trade_type?: "buy" | "sell";
+  fund_name: string;
+  scheme_code: string;
+  units: number;
+  nav: number;
+  investment_type: string;
+  category: string;
+  amc_name: string;
+  date: string;
+  account_id: string;
+  stamp_duty: number;
+  trade_type?: "buy" | "sell";
 }) {
-    try {
-        const supabase = await createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return { error: "Unauthorized" };
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Unauthorized" };
 
-        // Input validation
-        if (!data.fund_name || data.fund_name.trim().length === 0) {
-            return { error: "Fund name is required" };
-        }
-        if (!data.units || data.units <= 0 || !Number.isFinite(data.units)) {
-            return { error: "Units must be a positive number" };
-        }
-        if (!data.nav || data.nav <= 0 || !Number.isFinite(data.nav)) {
-            return { error: "NAV must be a positive number" };
-        }
-
-        // Harden input parameters to prevent empty string UUID database crashes
-        const cleanAccountId = data.account_id && 
-          data.account_id.trim().length > 0 && 
-          data.account_id !== "null" && 
-          data.account_id !== "undefined" 
-            ? data.account_id 
-            : null;
-
-        const rpc = supabase.rpc.bind(supabase) as unknown as (
-            fn: "record_mf_investment_v4",
-            args: {
-                p_user_id: string;
-                p_fund_name: string;
-                p_scheme_code: string;
-                p_units: number;
-                p_nav: number;
-                p_investment_type: string;
-                p_category: string;
-                p_amc_name: string;
-                p_date: string;
-                p_account_id: string | null;
-                p_stamp_duty: number;
-                p_trade_type: "buy" | "sell";
-            }
-        ) => Promise<{ data: MutualFundRpcResult; error: { message: string } | null }>;
-
-        const cleanDate = parseToISODate(data.date);
-
-        const { data: res, error } = await rpc("record_mf_investment_v4", {
-            p_user_id: user.id,
-            p_fund_name: data.fund_name,
-            p_scheme_code: data.scheme_code,
-            p_units: data.units,
-            p_nav: data.nav,
-            p_investment_type: data.investment_type,
-            p_category: data.category,
-            p_amc_name: data.amc_name,
-            p_date: cleanDate,
-            p_account_id: cleanAccountId,
-            p_stamp_duty: data.stamp_duty,
-            p_trade_type: data.trade_type || "buy"
-        });
-
-        if (error) return { error: getFriendlyErrorMessage(error) };
-        revalidatePath("/dashboard/mutual-funds");
-        revalidatePath("/dashboard/ledger");
-        revalidatePath("/dashboard");
-        return res;
-    } catch (err) {
-        console.error("Error in recordMFInvestment:", err);
-        return { error: getFriendlyErrorMessage(err) };
+    if (!data.fund_name || data.fund_name.trim().length === 0) {
+      return { error: "Fund name is required" };
     }
+    if (!data.units || data.units <= 0 || !Number.isFinite(data.units)) {
+      return { error: "Units must be a positive number" };
+    }
+    if (!data.nav || data.nav <= 0 || !Number.isFinite(data.nav)) {
+      return { error: "NAV must be a positive number" };
+    }
+
+    const cleanAccountId = data.account_id && 
+      data.account_id.trim().length > 0 && 
+      data.account_id !== "null" && 
+      data.account_id !== "undefined" 
+        ? data.account_id 
+        : null;
+
+    const rpc = supabase.rpc.bind(supabase) as unknown as (
+      fn: "record_mf_investment_v4",
+      args: {
+        p_user_id: string;
+        p_fund_name: string;
+        p_scheme_code: string;
+        p_units: number;
+        p_nav: number;
+        p_investment_type: string;
+        p_category: string;
+        p_amc_name: string;
+        p_date: string;
+        p_account_id: string | null;
+        p_stamp_duty: number;
+        p_trade_type: "buy" | "sell";
+      }
+    ) => Promise<{ data: MutualFundRpcResult; error: { message: string } | null }>;
+
+    const cleanDate = parseToISODate(data.date);
+
+    const { data: res, error } = await rpc("record_mf_investment_v4", {
+      p_user_id: user.id,
+      p_fund_name: data.fund_name,
+      p_scheme_code: data.scheme_code,
+      p_units: data.units,
+      p_nav: data.nav,
+      p_investment_type: data.investment_type,
+      p_category: data.category,
+      p_amc_name: data.amc_name,
+      p_date: cleanDate,
+      p_account_id: cleanAccountId,
+      p_stamp_duty: data.stamp_duty,
+      p_trade_type: data.trade_type || "buy"
+    });
+
+    if (error) return { error: getFriendlyErrorMessage(error) };
+    revalidatePath("/dashboard/mutual-funds");
+    revalidatePath("/dashboard/ledger");
+    revalidatePath("/dashboard");
+    return res;
+  } catch (err) {
+    console.error("Error in recordMFInvestment:", err);
+    return { error: getFriendlyErrorMessage(err) };
+  }
 }
 
 export async function updateMFHolding(id: string, data: {

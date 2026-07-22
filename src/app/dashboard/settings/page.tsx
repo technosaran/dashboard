@@ -30,14 +30,6 @@ export default function SettingsPage() {
   const {
     profile,
     accounts = [],
-    transactions = [],
-    incomes = [],
-    expenses = [],
-    stockTrades = [],
-    mutualFundTrades = [],
-    bondTransactions = [],
-    forexTrades = [],
-    fnoTrades = [],
   } = data || {};
 
   const [input, setInput] = useState(username);

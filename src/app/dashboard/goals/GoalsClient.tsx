@@ -44,7 +44,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
   const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
   const [submitting, withLock] = useSubmitLock();
   
-  const [activeView, setActiveView] = useState<"overview" | "trackers">("overview");
+  const [activeView, setActiveView] = useState<"overview" | "trackers" | "completed" | "all">("overview");
 
   const mounted = useHasMounted();
   
@@ -81,6 +81,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
 
   const stats = useMemo(() => {
     const activeGoals = goals.filter(g => Number(g.current_amount) < Number(g.target_amount));
+    const completedGoals = goals.filter(g => Number(g.current_amount) >= Number(g.target_amount));
     const totalTarget = activeGoals.reduce((s, g) => s + Number(g.target_amount), 0);
     const totalCurrent = activeGoals.reduce((s, g) => s + Number(g.current_amount), 0);
     const overallProgress = totalTarget > 0 ? (totalCurrent / totalTarget) * 100 : 0;
@@ -100,7 +101,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
       }
     });
 
-    return { totalTarget, totalCurrent, overallProgress, activeCount: activeGoals.length, closestDays, closestDeadline };
+    return { totalTarget, totalCurrent, overallProgress, activeCount: activeGoals.length, completedCount: completedGoals.length, closestDays, closestDeadline };
   }, [goals]);
 
   const barChartData = useMemo(() => {
@@ -300,12 +301,14 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
         <div className="flex flex-wrap gap-1.5 rounded-2xl bg-white/[0.02] border border-white/5 p-1.5 max-w-fit shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]">
           {[
             { key: "overview", label: "Overview" },
-            { key: "trackers", label: "Goal Trackers", badge: goals.length }
+            { key: "trackers", label: "Goal Trackers", badge: stats.activeCount },
+            { key: "completed", label: "Completed Goals", badge: stats.completedCount }
           ].map((tab) => {
             const isActive = activeView === tab.key;
             
             let activeStyles = "bg-[--accent-primary] text-white shadow-[0_0_20px_rgba(99,102,241,0.3)]";
             if (tab.key === "trackers") activeStyles = "bg-indigo-500 text-white shadow-[0_0_20px_rgba(99,102,241,0.3)]";
+            if (tab.key === "completed") activeStyles = "bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)]";
 
             return (
               <button
@@ -320,7 +323,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
               >
                 {tab.label}
                 {tab.badge !== undefined && (
-                  <span className={`flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1 text-[0.5625rem] font-black ${
+                  <span className={`flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1.5 text-[0.5625rem] font-black ${
                     isActive ? "bg-white/20 text-white" : "bg-white/10 text-white"
                   }`}>
                     {tab.badge}
@@ -405,6 +408,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
             <GoalsDataTable 
               goals={goals} 
+              initialFilter={activeView === "completed" ? "completed" : activeView === "trackers" ? "active" : "all"}
               onEdit={startEdit} 
               onDelete={startDeleteGoal} 
               onContribute={(g) => {
@@ -448,7 +452,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
                 className="input-premium w-full font-bold"
               >
                 {accounts.map(a => (
-                  <option key={a.id} value={a.id}>{a.name} (₹{Number(a.balance).toLocaleString()})</option>
+                  <option key={a.id} value={a.id} className="bg-[#181A20] text-white font-medium">{a.name} (₹{Number(a.balance).toLocaleString()})</option>
                 ))}
               </select>
             </div>
@@ -533,7 +537,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
                 className="input-premium w-full font-bold"
               >
                 {GOAL_CATEGORIES.map(c => (
-                  <option key={c.label} value={c.label}>{c.icon} {c.label}</option>
+                  <option key={c.label} value={c.label} className="bg-[#181A20] text-white font-medium">{c.icon} {c.label}</option>
                 ))}
               </select>
             </div>
@@ -546,9 +550,9 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
                   onChange={(e) => setFormData(prev => ({ ...prev, account_id: e.target.value }))}
                   className="input-premium w-full font-bold"
                 >
-                  <option value="" disabled>Select an account</option>
+                  <option value="" disabled className="bg-[#181A20] text-white font-medium">Select an account</option>
                   {accounts.map(a => (
-                    <option key={a.id} value={a.id}>{a.name} (₹{Number(a.balance).toLocaleString()})</option>
+                    <option key={a.id} value={a.id} className="bg-[#181A20] text-white font-medium">{a.name} (₹{Number(a.balance).toLocaleString()})</option>
                   ))}
                 </select>
               </div>

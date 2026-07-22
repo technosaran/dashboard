@@ -16,6 +16,10 @@ const ResponsiveContainer = dynamic(() => import("recharts").then((mod) => mod.R
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip } from "recharts";
 
 import FNODataTable from "./components/FNODataTable";
+import { calculateFnoFuturesCharges, calculateFnoOptionsCharges } from "@/lib/zerodha-charges";
+import { getIndianMarketStatus, type MarketStatusInfo } from "@/lib/market-hours";
+
+
 
 export default function FnoClient({ initialData }: { initialData?: FinanceData }) {
   const { data: { fnoTrades, accounts, profile }, mutate } = useFinanceData(initialData);
@@ -24,6 +28,16 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
   const [showCloseForm, setShowCloseForm] = useState(false);
   const [selectedTrade, setSelectedTrade] = useState<FnoTrade | null>(null);
   const [submitting, withLock] = useSubmitLock();
+
+  // Zerodha Market Status & Clock State
+  const [marketStatus, setMarketStatus] = useState<MarketStatusInfo>(() => getIndianMarketStatus());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setMarketStatus(getIndianMarketStatus());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
   
   // Kite uses tabs: Positions (Open), History (Closed)
   const [activeTab, setActiveTab] = useState<"dashboard" | "positions" | "history">("dashboard");
@@ -33,41 +47,121 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
 
   const mounted = useHasMounted();
 
+  // Lot Size Resolver for Zerodha F&O
+  const getFnoLotSize = (symbol: string): number => {
+    const sym = (symbol || "").toUpperCase().trim();
+    if (sym.includes("BANKNIFTY")) return 15;
+    if (sym.includes("FINNIFTY")) return 25;
+    if (sym.includes("MIDCPNIFTY")) return 50;
+    if (sym.includes("RELIANCE")) return 250;
+    if (sym.includes("TCS")) return 175;
+    if (sym.includes("INFY")) return 400;
+    if (sym.includes("HDFCBANK")) return 550;
+    if (sym.includes("ICICIBANK")) return 700;
+    if (sym.includes("TATAMOTORS")) return 1425;
+    return 25; // Default NIFTY lot size
+  };
+
+  // Next Thursday Expiry Generator
+  const getNextThursdayExpiry = (offsetWeeks = 0): string => {
+    const d = new Date();
+    const currentDay = d.getDay();
+    let daysUntilThursday = (4 - currentDay + 7) % 7;
+    if (daysUntilThursday === 0) daysUntilThursday = 7;
+    d.setDate(d.getDate() + daysUntilThursday + offsetWeeks * 7);
+    return d.toISOString().split("T")[0];
+  };
+
+  const defaultExpiry = useMemo(() => getNextThursdayExpiry(0), []);
+
   const [logFormData, setLogFormData] = useState({
-    symbol: "", instrument_type: "FUT" as "FUT" | "CE" | "PE", strike_price: "",
-    expiry_date: "", trade_type: "BUY" as "BUY" | "SELL", quantity: "",
-    entry_price: "", account_id: "", notes: "", trade_date: "", charges: ""
+    symbol: "NIFTY",
+    instrument_type: "CE" as "FUT" | "CE" | "PE",
+    strike_price: "24500",
+    expiry_date: defaultExpiry,
+    trade_type: "BUY" as "BUY" | "SELL",
+    quantity: "25",
+    entry_price: "",
+    account_id: "",
+    notes: "",
+    trade_date: new Date().toISOString().split("T")[0],
+    charges: ""
   });
 
+  const [isCustomCharges, setIsCustomCharges] = useState(false);
+
+  // Auto-calculate Zerodha F&O Futures / Options Charges
+  useEffect(() => {
+    if (!isCustomCharges) {
+      const q = parseFloat(logFormData.quantity) || 0;
+      const p = parseFloat(logFormData.entry_price) || 0;
+      const turnover = q * p;
+      const isBuy = logFormData.trade_type === "BUY";
+      const calc = logFormData.instrument_type === "FUT"
+        ? calculateFnoFuturesCharges(turnover, isBuy)
+        : calculateFnoOptionsCharges(turnover, isBuy);
+      const timer = setTimeout(() => {
+        setLogFormData(prev => ({ ...prev, charges: calc.totalCharges.toString() }));
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [logFormData.quantity, logFormData.entry_price, logFormData.instrument_type, logFormData.trade_type, isCustomCharges]);
+
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedAsset, setSelectedAsset] = useState<any>(null);
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
 
-  const MOCK_FNO_ASSETS = [
-    { symbol: "NIFTY", name: "Nifty 50" },
-    { symbol: "BANKNIFTY", name: "Nifty Bank" },
-    { symbol: "FINNIFTY", name: "Nifty Financial Services" },
-    { symbol: "MIDCPNIFTY", name: "Nifty Midcap Select" },
-    { symbol: "RELIANCE", name: "Reliance Industries" },
-    { symbol: "HDFCBANK", name: "HDFC Bank" },
-    { symbol: "INFY", name: "Infosys" },
-    { symbol: "TCS", name: "Tata Consultancy Services" },
-    { symbol: "ITC", name: "ITC Ltd" },
-    { symbol: "SBI", name: "State Bank of India" },
-  ];
+  // Dynamic Zerodha Contract Generator
+  const contractSearchResults = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const q = searchQuery.toUpperCase().trim();
 
-  const searchResults = useMemo(() => {
-    if (searchQuery.length < 2) return [];
-    return MOCK_FNO_ASSETS.filter(a => 
-      a.symbol.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      a.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [searchQuery]);
+    const symbols = ["NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY", "RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK", "TATAMOTORS"];
+    const matchedSym = symbols.find(s => q.includes(s)) || (symbols.find(s => s.startsWith(q)) || "NIFTY");
 
-  const handleAssetSelect = (asset: any) => {
-    setSelectedAsset(asset);
-    setSearchQuery("");
-    setLogFormData({ ...logFormData, symbol: asset.symbol });
-  };
+    const lotSize = getFnoLotSize(matchedSym);
+    const exp = defaultExpiry;
+
+    // Check if query contains numbers (strike)
+    const numMatch = q.match(/\d+/);
+    const baseStrike = numMatch ? parseInt(numMatch[0], 10) : (matchedSym === "BANKNIFTY" ? 52000 : matchedSym.includes("NIFTY") ? 24500 : 2500);
+
+    const step = matchedSym === "BANKNIFTY" ? 100 : matchedSym.includes("NIFTY") ? 50 : 20;
+
+    const strikes = [baseStrike - step, baseStrike, baseStrike + step];
+    const results = [];
+
+    // FUT Contract
+    results.push({
+      displayName: `${matchedSym} ${exp.split("-")[1]}/${exp.split("-")[2]} FUT`,
+      symbol: matchedSym,
+      type: "FUT" as const,
+      strike: "",
+      expiry: exp,
+      lotSize,
+    });
+
+    // Option Contracts (CE & PE)
+    for (const st of strikes) {
+      results.push({
+        displayName: `${matchedSym} ${st} CE`,
+        symbol: matchedSym,
+        type: "CE" as const,
+        strike: st.toString(),
+        expiry: exp,
+        lotSize,
+      });
+      results.push({
+        displayName: `${matchedSym} ${st} PE`,
+        symbol: matchedSym,
+        type: "PE" as const,
+        strike: st.toString(),
+        expiry: exp,
+        lotSize,
+      });
+    }
+
+    return results.filter(r => r.displayName.includes(q) || matchedSym.includes(q));
+  }, [searchQuery, defaultExpiry]);
 
   const [closeFormData, setCloseFormData] = useState({
     exit_price: "", close_date: ""
@@ -85,11 +179,10 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
     if (accounts.length > 0 && showLogForm && !logFormData.account_id) {
       const defaultAccId = profile?.default_accounts?.fno;
       const defaultAccExists = defaultAccId && accounts.some(a => a.id === defaultAccId);
-      if (defaultAccExists) {
-        setTimeout(() => {
-          setLogFormData(prev => ({ ...prev, account_id: defaultAccId }));
-        }, 0);
-      }
+      const chosenAccount = defaultAccExists ? defaultAccId : accounts[0].id;
+      setTimeout(() => {
+        setLogFormData(prev => ({ ...prev, account_id: chosenAccount }));
+      }, 0);
     }
   }, [accounts, profile, showLogForm, logFormData.account_id]);
 
@@ -197,69 +290,119 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
   const formatMoney = (val: number) => val.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   return (
-    <div className="flex w-full bg-[#121212] min-h-screen">
-      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        {/* Kite Top Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-[#151515]">
-          <div className="flex items-center gap-6">
-            <div className="flex gap-4">
+    <div className="flex w-full bg-[#191919] min-h-screen text-[#E0E0E0] relative font-sans">
+      {/* Ambient Kite Glow */}
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+        <div className="absolute -top-32 -right-32 w-[550px] h-[550px] bg-[#387ED1]/10 rounded-full blur-[160px]" />
+        <div className="absolute top-1/2 -left-32 w-[550px] h-[550px] bg-[#FF5722]/5 rounded-full blur-[160px]" />
+      </div>
+
+      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto relative z-10">
+        
+        {/* Zerodha Kite FnO Header Bar */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-6 py-3.5 border-b border-[#2B313A] bg-[#121212] gap-4 shadow-xl">
+          <div className="flex items-center gap-4">
+            {/* Zerodha Kite Chevron */}
+            <div className="w-9 h-9 rounded-lg bg-[#FF5722]/10 border border-[#FF5722]/30 flex items-center justify-center text-[#FF5722] shadow-[0_0_15px_rgba(255,87,34,0.25)]">
+              <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                <path d="M12 2L2 12l10 10 10-10L12 2zm0 4.5l6.5 6.5-6.5 6.5-6.5-6.5L12 6.5z" />
+              </svg>
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-base font-extrabold text-white tracking-wider uppercase">Zerodha Kite F&amp;O</h1>
+                <span className="text-[0.5625rem] bg-[#387ED1]/20 text-[#387ED1] border border-[#387ED1]/30 px-1.5 py-0.5 rounded font-black tracking-widest uppercase">DERIVATIVES PRO</span>
+                <span 
+                  className="text-[0.625rem] font-extrabold px-2.5 py-0.5 rounded-full flex items-center gap-1.5 border tracking-wider"
+                  style={{ 
+                    backgroundColor: `${marketStatus.badgeColor}15`, 
+                    color: marketStatus.badgeColor,
+                    borderColor: `${marketStatus.badgeColor}40`
+                  }}
+                  title={marketStatus.nextSessionText}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: marketStatus.badgeColor }} />
+                  {marketStatus.statusText} • {marketStatus.formattedTimeIST}
+                </span>
+              </div>
+              <p className="text-[0.6875rem] text-[#848E9C] font-semibold flex items-center gap-1.5 mt-0.5">
+                NIFTY / BANKNIFTY Derivatives Watch • {marketStatus.nextSessionText}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+            <div className="flex gap-1.5 rounded-xl bg-[#191919] border border-[#2B313A] p-1 shadow-inner">
               <button 
                 onClick={() => setActiveTab("dashboard")} 
-                className={`text-sm font-semibold transition-colors tracking-wide ${activeTab === "dashboard" ? "text-[#ff5722]" : "text-gray-400 hover:text-white"}`}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                  activeTab === "dashboard" 
+                    ? "bg-[#387ED1] text-white shadow-[0_0_12px_rgba(56,126,209,0.4)]" 
+                    : "text-[#848E9C] hover:text-white hover:bg-white/5"
+                }`}
               >
-                Dashboard
+                Overview
               </button>
               <button 
                 onClick={() => setActiveTab("positions")} 
-                className={`text-sm font-semibold transition-colors tracking-wide ${activeTab === "positions" ? "text-[#ff5722]" : "text-gray-400 hover:text-white"}`}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                  activeTab === "positions" 
+                    ? "bg-[#387ED1] text-white shadow-[0_0_12px_rgba(56,126,209,0.4)]" 
+                    : "text-[#848E9C] hover:text-white hover:bg-white/5"
+                }`}
               >
                 Positions ({activePositions.length})
               </button>
               <button 
                 onClick={() => setActiveTab("history")} 
-                className={`text-sm font-semibold transition-colors tracking-wide ${activeTab === "history" ? "text-[#ff5722]" : "text-gray-400 hover:text-white"}`}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                  activeTab === "history" 
+                    ? "bg-[#387ED1] text-white shadow-[0_0_12px_rgba(56,126,209,0.4)]" 
+                    : "text-[#848E9C] hover:text-white hover:bg-white/5"
+                }`}
               >
-                History ({closedHistory.length})
+                Closed P&amp;L ({closedHistory.length})
               </button>
             </div>
+
+            <button 
+              onClick={() => {
+                setLogFormData({
+                  symbol: "", instrument_type: "FUT", strike_price: "", expiry_date: "",
+                  trade_type: "BUY", quantity: "", entry_price: "", account_id: "", notes: "", trade_date: new Date().toISOString().split("T")[0], charges: ""
+                });
+                setShowLogForm(true);
+              }}
+              className="bg-[#387ED1] hover:bg-[#306eb8] text-white font-extrabold px-4 py-1.5 rounded-lg text-xs uppercase tracking-wider transition-all shadow-[0_0_15px_rgba(56,126,209,0.3)] cursor-pointer"
+            >
+              + New F&amp;O Position
+            </button>
           </div>
-          <button 
-            onClick={() => {
-              setLogFormData({
-                symbol: "", instrument_type: "FUT", strike_price: "", expiry_date: "",
-                trade_type: "BUY", quantity: "", entry_price: "", account_id: "", notes: "", trade_date: new Date().toISOString().split("T")[0], charges: ""
-              });
-              setShowLogForm(true);
-            }}
-            className="bg-[#2185d0] hover:bg-[#1678c2] text-white px-4 py-1.5 rounded text-xs font-bold transition-colors"
-          >
-            Add Trade
-          </button>
         </div>
 
-        <div className="p-6 max-w-6xl w-full mx-auto">
+        <div className="p-6 max-w-7xl w-full mx-auto">
           {activeTab === "dashboard" && (
             <div className="animate-in fade-in space-y-6">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 bg-[#151515] p-6 border border-white/5 rounded">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 bg-[#252525] p-6 border border-[#333333] rounded-2xl shadow-xl">
                 <div>
-                  <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Total invested (Active)</p>
-                  <p className="text-2xl font-normal text-white">₹{formatMoney(stats.activeCost)}</p>
+                  <p className="text-[0.65rem] text-[#848E9C] font-bold uppercase tracking-widest mb-1">Active Margin Invested</p>
+                  <p className="text-2xl font-extrabold text-white">₹{formatMoney(stats.activeCost)}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Unrealized P&L</p>
-                  <p className={`text-2xl font-medium ${stats.totalUnrealizedPnL >= 0 ? 'text-[#4caf50]' : 'text-[#f44336]'}`}>
+                  <p className="text-[0.65rem] text-[#848E9C] font-bold uppercase tracking-widest mb-1">Unrealized P&amp;L</p>
+                  <p className={`text-2xl font-extrabold ${stats.totalUnrealizedPnL >= 0 ? 'text-[#41B883]' : 'text-[#FF5722]'}`}>
                     {stats.totalUnrealizedPnL >= 0 ? '+' : ''}{formatMoney(stats.totalUnrealizedPnL)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Realized P&L (History)</p>
-                  <p className={`text-2xl font-medium ${stats.totalRealizedPnL >= 0 ? 'text-[#4caf50]' : 'text-[#f44336]'}`}>
+                  <p className="text-[0.65rem] text-[#848E9C] font-bold uppercase tracking-widest mb-1">Realized P&amp;L</p>
+                  <p className={`text-2xl font-extrabold ${stats.totalRealizedPnL >= 0 ? 'text-[#41B883]' : 'text-[#FF5722]'}`}>
                     {stats.totalRealizedPnL >= 0 ? '+' : ''}{formatMoney(stats.totalRealizedPnL)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Total Charges</p>
-                  <p className="text-2xl font-normal text-[#f44336]">
+                  <p className="text-[0.65rem] text-[#848E9C] font-bold uppercase tracking-widest mb-1">Total Brokerage Charges</p>
+                  <p className="text-2xl font-extrabold text-[#FF5722]">
                     -₹{formatMoney(stats.totalCharges)}
                   </p>
                 </div>
@@ -362,158 +505,265 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
       {showLogForm && (
         <Drawer
           isOpen={showLogForm}
-          onClose={() => { setShowLogForm(false); setSelectedAsset(null); setSearchQuery(""); }}
-          title="New F&O Position"
+          onClose={() => { setShowLogForm(false); setSearchQuery(""); setShowSearchDropdown(false); }}
+          title="New F&O Position Ticket"
         >
           <div className="p-4 max-w-2xl mx-auto w-full">
-            <form onSubmit={handleLogSubmit} className="space-y-6">
+            <form onSubmit={handleLogSubmit} className="space-y-5">
               
-              {/* Search Section */}
-              <div className="relative z-50">
+              {/* Zerodha Kite Search & Presets Bar */}
+              <div className="relative z-[120] space-y-2">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Search Zerodha F&O Contract / Option Chain</label>
                 <div className="relative">
                   <input
                     type="text"
-                    placeholder="Search Underlying (e.g. NIFTY, RELIANCE)..."
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-lg font-black text-white placeholder:text-white/20 focus:outline-none focus:border-[--accent-primary] transition-all shadow-inner"
+                    placeholder="e.g. NIFTY 24500 CE, BANKNIFTY 52000 PE, RELIANCE..."
+                    className="w-full bg-[#181A20] border border-[#387ED1]/40 rounded-xl px-4 py-3 text-sm font-bold text-white placeholder:text-gray-500 focus:outline-none focus:border-[#387ED1] transition-all shadow-xl"
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onFocus={() => setShowSearchDropdown(true)}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setShowSearchDropdown(true);
+                    }}
                   />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => { setSearchQuery(""); setShowSearchDropdown(false); }}
+                      className="absolute right-3 top-3 text-xs text-gray-400 hover:text-white"
+                    >
+                      ✕
+                    </button>
+                  )}
                 </div>
-                {searchResults.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-[#0A0A0A] border border-white/10 rounded-xl overflow-hidden shadow-2xl z-50 max-h-[300px] overflow-y-auto">
-                    {searchResults.map((asset, idx) => (
+
+                {/* Underlying Quick Presets */}
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {["NIFTY", "BANKNIFTY", "FINNIFTY", "RELIANCE", "TCS", "INFY", "HDFCBANK"].map(sym => (
+                    <button
+                      key={sym}
+                      type="button"
+                      onClick={() => {
+                        const lot = getFnoLotSize(sym);
+                        setLogFormData(prev => ({
+                          ...prev,
+                          symbol: sym,
+                          quantity: lot.toString(),
+                          strike_price: sym === "BANKNIFTY" ? "52000" : sym.includes("NIFTY") ? "24500" : "2500"
+                        }));
+                        setSearchQuery(sym);
+                        setShowSearchDropdown(true);
+                      }}
+                      className={`text-[0.6875rem] px-2.5 py-1 rounded-lg font-bold transition-all border ${
+                        logFormData.symbol === sym
+                          ? "bg-[#387ED1]/20 text-[#387ED1] border-[#387ED1]/50 shadow-[0_0_10px_rgba(56,126,209,0.3)]"
+                          : "bg-[#202020] text-gray-400 border-white/5 hover:text-white hover:bg-white/5"
+                      }`}
+                    >
+                      {sym}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Floating Option Chain Contract Search Results */}
+                {showSearchDropdown && contractSearchResults.length > 0 && (
+                  <div className="absolute top-[100%] left-0 right-0 mt-1 bg-[#181A20] border border-[#387ED1]/50 rounded-xl overflow-hidden shadow-2xl z-[150] max-h-60 overflow-y-auto custom-scrollbar">
+                    {contractSearchResults.map((contract, idx) => (
                       <div
                         key={idx}
-                        onClick={() => handleAssetSelect(asset)}
-                        className="px-6 py-4 hover:bg-white/5 cursor-pointer border-b border-white/5 last:border-0 transition-colors flex justify-between items-center"
+                        onClick={() => {
+                          setLogFormData(prev => ({
+                            ...prev,
+                            symbol: contract.symbol,
+                            instrument_type: contract.type,
+                            strike_price: contract.strike,
+                            expiry_date: contract.expiry,
+                            quantity: contract.lotSize.toString()
+                          }));
+                          setSearchQuery("");
+                          setShowSearchDropdown(false);
+                          toast.success(`Selected ${contract.displayName}`);
+                        }}
+                        className="px-4 py-2.5 hover:bg-[#387ED1]/10 cursor-pointer border-b border-white/5 last:border-0 transition-colors flex justify-between items-center"
                       >
-                        <div>
-                          <div className="font-black text-white">{asset.symbol}</div>
-                          <div className="text-xs text-[--text-muted]">{asset.name}</div>
+                        <div className="flex items-center gap-2.5">
+                          <span className={`text-[0.625rem] px-1.5 py-0.5 rounded font-black uppercase ${
+                            contract.type === "CE" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" :
+                            contract.type === "PE" ? "bg-rose-500/20 text-rose-400 border border-rose-500/30" :
+                            "bg-sky-500/20 text-sky-400 border border-sky-500/30"
+                          }`}>
+                            {contract.type}
+                          </span>
+                          <span className="text-xs font-bold text-white">{contract.displayName}</span>
                         </div>
+                        <span className="text-[0.6875rem] text-gray-400 font-mono">Lot: {contract.lotSize} Qty</span>
                       </div>
                     ))}
                   </div>
                 )}
               </div>
 
-              {/* Form Content - Shows if a symbol is selected or manually typed */}
-              {(logFormData.symbol || selectedAsset) && (
-                <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-3">
-                      <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Instrument Symbol</label>
+              {/* Form Content - Always Rendered & Active */}
+              <div className="space-y-4 pt-1">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wide">Instrument Symbol</label>
+                    <input 
+                      required 
+                      className="input-premium uppercase font-black" 
+                      placeholder="e.g. NIFTY" 
+                      value={logFormData.symbol} 
+                      onChange={e => {
+                        const sym = e.target.value.toUpperCase();
+                        const lot = getFnoLotSize(sym);
+                        setLogFormData({...logFormData, symbol: sym, quantity: lot.toString()});
+                      }} 
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wide">Select Account</label>
+                    <select required className="input-premium font-semibold" value={logFormData.account_id} onChange={e => setLogFormData({...logFormData, account_id: e.target.value})}>
+                      <option value="" disabled>Select Margin Account</option>
+                      {accounts.map(acc => (
+                        <option key={acc.id} value={acc.id}>{acc.name} (₹{acc.balance.toLocaleString()})</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wide">Trade Type</label>
+                    <div className="flex bg-[#191919] p-1 rounded-xl border border-white/10 gap-1">
+                      <button type="button" onClick={() => setLogFormData({...logFormData, trade_type: "BUY"})} className={`flex-1 py-2 text-xs font-extrabold rounded-lg transition-all cursor-pointer ${logFormData.trade_type === "BUY" ? "bg-[#387ED1] text-white shadow-[0_0_12px_rgba(56,126,209,0.4)]" : "text-gray-400 hover:text-white"}`}>Buy</button>
+                      <button type="button" onClick={() => setLogFormData({...logFormData, trade_type: "SELL"})} className={`flex-1 py-2 text-xs font-extrabold rounded-lg transition-all cursor-pointer ${logFormData.trade_type === "SELL" ? "bg-rose-600 text-white shadow-[0_0_12px_rgba(225,29,72,0.4)]" : "text-gray-400 hover:text-white"}`}>Sell</button>
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wide">Instrument Type</label>
+                    <div className="flex bg-[#191919] p-1 rounded-xl border border-white/10 gap-1">
+                      <button type="button" onClick={() => setLogFormData({...logFormData, instrument_type: "FUT"})} className={`flex-1 py-2 text-xs font-extrabold rounded-lg transition-all cursor-pointer ${logFormData.instrument_type === "FUT" ? "bg-sky-600 text-white shadow-md" : "text-gray-400 hover:text-white"}`}>FUT</button>
+                      <button type="button" onClick={() => setLogFormData({...logFormData, instrument_type: "CE"})} className={`flex-1 py-2 text-xs font-extrabold rounded-lg transition-all cursor-pointer ${logFormData.instrument_type === "CE" ? "bg-emerald-600 text-white shadow-md" : "text-gray-400 hover:text-white"}`}>CE</button>
+                      <button type="button" onClick={() => setLogFormData({...logFormData, instrument_type: "PE"})} className={`flex-1 py-2 text-xs font-extrabold rounded-lg transition-all cursor-pointer ${logFormData.instrument_type === "PE" ? "bg-rose-600 text-white shadow-md" : "text-gray-400 hover:text-white"}`}>PE</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {logFormData.instrument_type !== "FUT" && (
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wide">Strike Price (₹)</label>
                       <input 
                         required 
-                        className="input-premium uppercase" 
-                        placeholder="e.g. NIFTY" 
-                        value={logFormData.symbol} 
-                        onChange={e => setLogFormData({...logFormData, symbol: e.target.value.toUpperCase()})} 
+                        type="number" 
+                        step="any" 
+                        className="input-premium font-mono font-bold" 
+                        placeholder="e.g. 24500" 
+                        value={logFormData.strike_price} 
+                        onChange={e => setLogFormData({...logFormData, strike_price: e.target.value})} 
+                        inputMode="decimal" 
                       />
                     </div>
-                    <div className="space-y-3">
-                      <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Select Account</label>
-                      <select required className="input-premium" value={logFormData.account_id} onChange={e => setLogFormData({...logFormData, account_id: e.target.value})}>
-                        <option value="" disabled>Select Margin Account</option>
-                        {accounts.map(acc => (
-                          <option key={acc.id} value={acc.id}>{acc.name} (₹{acc.balance.toLocaleString()})</option>
-                        ))}
-                      </select>
+                  )}
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between items-center">
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wide">Expiry Date</label>
+                      <div className="flex gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setLogFormData({...logFormData, expiry_date: getNextThursdayExpiry(0)})}
+                          className="text-[0.625rem] bg-[#387ED1]/20 text-[#387ED1] hover:bg-[#387ED1] hover:text-white px-1.5 py-0.5 rounded font-bold transition-all"
+                        >
+                          This Wk
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setLogFormData({...logFormData, expiry_date: getNextThursdayExpiry(1)})}
+                          className="text-[0.625rem] bg-white/10 text-gray-300 hover:bg-white/20 px-1.5 py-0.5 rounded font-bold transition-all"
+                        >
+                          Next Wk
+                        </button>
+                      </div>
+                    </div>
+                    <input 
+                      type="date" 
+                      required
+                      className="input-premium font-bold" 
+                      value={logFormData.expiry_date} 
+                      onChange={e => setLogFormData({...logFormData, expiry_date: e.target.value})} 
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between items-center">
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wide">Quantity / Lots</label>
+                      {(() => {
+                        const lot = getFnoLotSize(logFormData.symbol);
+                        const qtyNum = parseFloat(logFormData.quantity) || 0;
+                        const lotCount = Math.round(qtyNum / lot);
+                        return (
+                          <span className="text-[0.6875rem] text-[#387ED1] font-bold">
+                            {lotCount > 0 ? `${lotCount} Lot${lotCount > 1 ? 's' : ''}` : `Lot size: ${lot}`}
+                          </span>
+                        );
+                      })()}
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const lot = getFnoLotSize(logFormData.symbol);
+                          const current = parseFloat(logFormData.quantity) || lot;
+                          const nextVal = Math.max(lot, current - lot);
+                          setLogFormData({...logFormData, quantity: nextVal.toString()});
+                        }}
+                        className="px-2.5 py-2 bg-[#202020] border border-white/10 rounded-lg text-xs font-black text-white hover:bg-white/10 active:scale-95 transition-all"
+                        title="Decrease 1 Lot"
+                      >
+                        -1 Lot
+                      </button>
+                      <input 
+                        required 
+                        type="number" 
+                        step="any" 
+                        className="input-premium tabular-nums text-center font-bold" 
+                        placeholder="e.g. 25" 
+                        value={logFormData.quantity} 
+                        onChange={e => setLogFormData({...logFormData, quantity: e.target.value})} 
+                        inputMode="decimal" 
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const lot = getFnoLotSize(logFormData.symbol);
+                          const current = parseFloat(logFormData.quantity) || 0;
+                          const nextVal = current + lot;
+                          setLogFormData({...logFormData, quantity: nextVal.toString()});
+                        }}
+                        className="px-2.5 py-2 bg-[#202020] border border-white/10 rounded-lg text-xs font-black text-white hover:bg-white/10 active:scale-95 transition-all"
+                        title="Increase 1 Lot"
+                      >
+                        +1 Lot
+                      </button>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-3">
-                      <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Trade Type</label>
-                      <div className="flex bg-white/5 p-1 rounded-xl border border-white/5 gap-1">
-                        <button type="button" onClick={() => setLogFormData({...logFormData, trade_type: "BUY"})} className={`flex-1 h-12 text-xs font-black rounded-lg transition-all ${logFormData.trade_type === "BUY" ? "bg-[--accent-primary]/20 text-[--accent-primary] border border-[--accent-primary]/30" : "text-[--text-muted]"}`}>Buy</button>
-                        <button type="button" onClick={() => setLogFormData({...logFormData, trade_type: "SELL"})} className={`flex-1 h-12 text-xs font-black rounded-lg transition-all ${logFormData.trade_type === "SELL" ? "bg-rose-500/20 text-rose-400 border border-rose-500/30" : "text-[--text-muted]"}`}>Sell</button>
-                      </div>
-                    </div>
-                    <div className="space-y-3">
-                      <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Instrument Type</label>
-                      <div className="flex bg-white/5 p-1 rounded-xl border border-white/5 gap-1">
-                        <button type="button" onClick={() => setLogFormData({...logFormData, instrument_type: "FUT"})} className={`flex-1 h-12 text-xs font-black rounded-lg transition-all ${logFormData.instrument_type === "FUT" ? "bg-white/10 text-white border border-white/20" : "text-[--text-muted]"}`}>FUT</button>
-                        <button type="button" onClick={() => setLogFormData({...logFormData, instrument_type: "CE"})} className={`flex-1 h-12 text-xs font-black rounded-lg transition-all ${logFormData.instrument_type === "CE" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "text-[--text-muted]"}`}>CE</button>
-                        <button type="button" onClick={() => setLogFormData({...logFormData, instrument_type: "PE"})} className={`flex-1 h-12 text-xs font-black rounded-lg transition-all ${logFormData.instrument_type === "PE" ? "bg-rose-500/20 text-rose-400 border border-rose-500/30" : "text-[--text-muted]"}`}>PE</button>
-                      </div>
-                    </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wide">Avg. Entry Price (₹)</label>
+                    <input 
+                      required 
+                      type="number" 
+                      step="any" 
+                      className="input-premium tabular-nums font-bold" 
+                      placeholder="0.00"
+                      value={logFormData.entry_price} 
+                      onChange={e => setLogFormData({...logFormData, entry_price: e.target.value})} 
+                      inputMode="decimal" 
+                    />
                   </div>
-
-                  <details className="group glass-card-static border border-white/5 rounded-xl overflow-hidden mt-6" open>
-                    <summary className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] p-4 cursor-pointer outline-none hover:text-white transition-colors bg-white/[0.01]">
-                      Contract Details
-                    </summary>
-                    <div className="p-4 pt-0 space-y-6">
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {logFormData.instrument_type !== "FUT" && (
-                          <div className="space-y-3">
-                            <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Strike Price</label>
-                            <input 
-                              required 
-                              type="number" 
-                              step="any" 
-                              className="input-premium tabular-nums" 
-                              placeholder="e.g. 21000" 
-                              value={logFormData.strike_price} 
-                              onChange={e => setLogFormData({...logFormData, strike_price: e.target.value})} 
-                              inputMode="decimal" 
-                            />
-                          </div>
-                        )}
-                        <div className="space-y-3">
-                          <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Expiry Date</label>
-                          <input 
-                            type="date" 
-                            required
-                            className="input-premium" 
-                            value={logFormData.expiry_date} 
-                            onChange={e => setLogFormData({...logFormData, expiry_date: e.target.value})} 
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="space-y-3">
-                          <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Quantity</label>
-                          <input 
-                            required 
-                            type="number" 
-                            step="any" 
-                            className="input-premium tabular-nums" 
-                            placeholder="e.g. 50" 
-                            value={logFormData.quantity} 
-                            onChange={e => setLogFormData({...logFormData, quantity: e.target.value})} 
-                            inputMode="decimal" 
-                          />
-                        </div>
-                        <div className="space-y-3">
-                          <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Avg. Entry Price</label>
-                          <input 
-                            required 
-                            type="number" 
-                            step="any" 
-                            className="input-premium tabular-nums" 
-                            placeholder="0.00"
-                            value={logFormData.entry_price} 
-                            onChange={e => setLogFormData({...logFormData, entry_price: e.target.value})} 
-                            inputMode="decimal" 
-                          />
-                        </div>
-                        <div className="space-y-3">
-                          <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted]">Charges</label>
-                          <input 
-                            type="number" 
-                            step="any" 
-                            className="input-premium tabular-nums" 
-                            placeholder="Optional"
-                            value={logFormData.charges} 
-                            onChange={e => setLogFormData({...logFormData, charges: e.target.value})} 
-                            inputMode="decimal" 
-                          />
-                        </div>
-                      </div>
+                </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-3">
@@ -537,33 +787,127 @@ export default function FnoClient({ initialData }: { initialData?: FinanceData }
                         </div>
                       </div>
 
-                      <div className="bg-white/5 rounded-xl p-4 border border-white/5">
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-[--text-muted]">Total Trade Value</span>
-                          <span className="text-white font-black">₹{formatMoney((parseFloat(logFormData.quantity) || 0) * (parseFloat(logFormData.entry_price) || 0))}</span>
+                      {/* Zerodha Kite Derivatives Tax & Margin Breakdown Slip */}
+                      {((parseFloat(logFormData.quantity) || 0) > 0) && (
+                        <div className="bg-[#191919] border border-[#387ED1]/30 p-4 rounded-xl space-y-2.5 text-xs text-gray-300">
+                          <div className="flex justify-between items-center border-b border-[#333] pb-2">
+                            <span className="font-extrabold text-[#387ED1] uppercase tracking-wider text-[0.6875rem]">Zerodha Kite Derivatives Tax Slip</span>
+                            <span className="text-[0.625rem] bg-[#387ED1]/20 text-[#387ED1] px-2 py-0.5 rounded font-black uppercase">
+                              {logFormData.instrument_type === 'FUT' ? 'Futures' : 'Options'} ({logFormData.trade_type})
+                            </span>
+                          </div>
+
+                          {(() => {
+                            const q = parseFloat(logFormData.quantity) || 0;
+                            const p = parseFloat(logFormData.entry_price) || 0;
+                            const turnover = q * p;
+                            const isBuy = logFormData.trade_type === "BUY";
+                            const calc = logFormData.instrument_type === "FUT"
+                              ? calculateFnoFuturesCharges(turnover, isBuy)
+                              : calculateFnoOptionsCharges(turnover, isBuy);
+                            const currentCharges = parseFloat(logFormData.charges) || 0;
+
+                            return (
+                              <>
+                                <div className="flex justify-between items-center text-xs">
+                                  <span className="text-gray-400">Total Contract Value:</span>
+                                  <span className="text-white font-bold">₹{turnover.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
+                                </div>
+                                <div className="bg-[#252525] p-2.5 rounded-lg border border-[#333] space-y-1 text-[0.6875rem]">
+                                  <div className="flex justify-between text-gray-300">
+                                    <span>Brokerage:</span>
+                                    <span className="font-mono text-white">₹{calc.brokerage.toFixed(2)}</span>
+                                  </div>
+                                  <div className="flex justify-between text-gray-400">
+                                    <span>STT ({logFormData.instrument_type === 'FUT' ? '0.0125%' : '0.0625%'}):</span>
+                                    <span className="font-mono text-white">₹{calc.stt.toFixed(2)}</span>
+                                  </div>
+                                  <div className="flex justify-between text-gray-400">
+                                    <span>NSE Txn Fee ({logFormData.instrument_type === 'FUT' ? '0.00173%' : '0.0355%'}):</span>
+                                    <span className="font-mono text-white">₹{calc.transactionFee.toFixed(2)}</span>
+                                  </div>
+                                  <div className="flex justify-between text-gray-400">
+                                    <span>GST (18%):</span>
+                                    <span className="font-mono text-white">₹{calc.gst.toFixed(2)}</span>
+                                  </div>
+                                </div>
+
+                                {/* Prominent Auto-Calculated Total Charges Display & Edit Row */}
+                                <div className="flex justify-between items-center bg-[#202020] px-3.5 py-2.5 rounded-xl border border-[#387ED1]/30">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-gray-200 font-extrabold text-[0.6875rem] uppercase tracking-wider">Total Charges:</span>
+                                    {!isCustomCharges ? (
+                                      <span className="text-[0.5625rem] bg-[#387ED1]/20 text-[#387ED1] border border-[#387ED1]/30 px-1.5 py-0.5 rounded font-black uppercase tracking-widest">
+                                        Auto-Calculated
+                                      </span>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setIsCustomCharges(false);
+                                          setLogFormData(prev => ({ ...prev, charges: calc.totalCharges.toString() }));
+                                        }}
+                                        className="text-[0.625rem] text-[#387ED1] hover:underline font-bold"
+                                      >
+                                        (Reset)
+                                      </button>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-white font-mono font-extrabold text-sm">
+                                      ₹{isCustomCharges ? (parseFloat(logFormData.charges) || 0).toFixed(2) : calc.totalCharges.toFixed(2)}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        if (!isCustomCharges) {
+                                          setIsCustomCharges(true);
+                                          setLogFormData({ ...logFormData, charges: calc.totalCharges.toString() });
+                                        }
+                                      }}
+                                      className="text-xs text-gray-400 hover:text-white transition-colors cursor-pointer"
+                                      title="Manual Edit Charges"
+                                    >
+                                      ✏️
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {isCustomCharges && (
+                                  <div className="flex items-center justify-between gap-2 bg-[#151515] p-2 rounded-lg border border-[#387ED1]/50 animate-fade-in">
+                                    <span className="text-[0.6875rem] text-gray-400 font-semibold">Custom Manual Charges (₹):</span>
+                                    <input
+                                      type="number"
+                                      step="0.01"
+                                      value={logFormData.charges}
+                                      onChange={(e) => {
+                                        setIsCustomCharges(true);
+                                        setLogFormData({ ...logFormData, charges: e.target.value });
+                                      }}
+                                      className="w-28 bg-[#202020] border border-[#387ED1] rounded px-2.5 py-1 text-xs text-white font-mono font-bold outline-none text-right"
+                                      placeholder="0.00"
+                                    />
+                                  </div>
+                                )}
+
+                                <div className="flex justify-between items-center pt-2 border-t border-[#333] font-black text-xs">
+                                  <span className="text-white">Estimated Required Margin / Net:</span>
+                                  <span className={isBuy ? 'text-[#FF5722]' : 'text-[#41B883]'}>
+                                    ₹{(isBuy ? turnover + currentCharges : turnover - currentCharges).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                                  </span>
+                                </div>
+                              </>
+                            );
+                          })()}
                         </div>
-                      </div>
+                      )}
 
-                    </div>
-                  </details>
-
-                  <div className="pt-4 mt-8">
-                    <button type="submit" disabled={submitting} className={`btn-primary w-full h-12 shadow-xl text-xs font-black uppercase tracking-widest ${logFormData.trade_type === 'SELL' ? 'shadow-rose-500/20 bg-rose-500/20 text-rose-400 hover:bg-rose-500/30' : 'shadow-[--accent-primary]/20'}`}>
-                      {submitting ? "Processing..." : logFormData.trade_type === 'BUY' ? "Buy Contract" : "Sell Contract"}
-                    </button>
-                  </div>
-                </>
-              )}
-
-              {/* If no asset selected, show fallback for manual entry */}
-              {!logFormData.symbol && !selectedAsset && (
-                <div className="text-center p-8 bg-white/5 border border-white/10 rounded-2xl">
-                  <p className="text-[--text-muted] mb-4">Or enter a custom F&O contract manually.</p>
-                  <button type="button" onClick={() => setLogFormData({ ...logFormData, symbol: "CUSTOM" })} className="btn-secondary px-6 py-3 text-xs font-black uppercase tracking-widest">
-                    Manual Entry
+                <div className="pt-4 mt-6">
+                  <button type="submit" disabled={submitting} className={`w-full py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer shadow-lg ${logFormData.trade_type === 'SELL' ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-600/30' : 'bg-[#387ED1] hover:bg-[#2b6bba] text-white shadow-[#387ED1]/30'}`}>
+                    {submitting ? "Processing..." : logFormData.trade_type === 'BUY' ? "Place Buy Order" : "Place Sell Order"}
                   </button>
                 </div>
-              )}
+              </div>
             </form>
           </div>
         </Drawer>

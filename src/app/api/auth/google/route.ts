@@ -11,7 +11,8 @@ export async function GET(req: NextRequest) {
   const redirectUri = `${siteUrl}/api/auth/google/callback`;
 
   // Scopes requested (Gmail read-only to fetch transaction alerts)
-  const scope = "https://www.googleapis.com/auth/gmail.readonly";
+  // gmail.modify is required because we mark messages as read after processing
+  const scope = "https://www.googleapis.com/auth/gmail.modify";
 
   const googleOAuthUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
   googleOAuthUrl.searchParams.append("client_id", clientId);

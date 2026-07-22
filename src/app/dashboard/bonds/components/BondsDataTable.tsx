@@ -67,11 +67,11 @@ export default function BondsDataTable({ bonds, onEdit, onAdd }: BondsDataTableP
         ),
       }),
       columnHelper.accessor("coupon_rate", {
-        header: "Coupon",
+        header: "Coupon Yield",
         cell: (info) => (
           <div className="flex flex-col">
-            <span className="text-[12px] font-bold text-[--accent-primary]">{Number(info.getValue()).toFixed(2)}%</span>
-            <span className="text-[0.5625rem] text-[--text-muted]">{info.row.original.interest_frequency}</span>
+            <span className="text-[12px] font-black text-[#00D09C]">{Number(info.getValue()).toFixed(2)}% p.a.</span>
+            <span className="text-[0.5625rem] text-gray-400 font-semibold">{info.row.original.interest_frequency}</span>
           </div>
         ),
       }),

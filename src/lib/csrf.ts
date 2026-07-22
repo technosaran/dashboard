@@ -148,7 +148,7 @@ function timingSafeEqual(a: string | null | undefined, b: string | null | undefi
   }
   
   let mismatch = 0;
-  let targetA = a;
+  const targetA = a;
   let targetB = b;
   
   if (a.length !== b.length) {

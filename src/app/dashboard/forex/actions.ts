@@ -446,7 +446,7 @@ export async function searchForex(query: string) {
         symbol: q.symbol,
         name: q.shortname || q.longname || q.symbol
       }));
-  } catch (err) {
+  } catch {
     return [];
   }
 }
@@ -460,7 +460,7 @@ export async function fetchLiveForexPrice(symbol: string) {
       return { price };
     }
     return { error: "Price not found" };
-  } catch (err) {
+  } catch {
     return { error: "Failed to fetch price" };
   }
 }

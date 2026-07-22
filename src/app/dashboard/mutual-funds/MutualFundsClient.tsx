@@ -15,8 +15,9 @@ import dynamic from "next/dynamic";
 const ResponsiveContainer = dynamic(() => import("recharts").then((mod) => mod.ResponsiveContainer), { ssr: false });
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip } from "recharts";
 
-import MutualFundsDataTable from "./components/MutualFundsDataTable";
+import MutualFundsDataTable, { AMCAvatar } from "./components/MutualFundsDataTable";
 import MFHistoryTable from "./components/MFHistoryTable";
+import { calculateMutualFundCharges } from "@/lib/zerodha-charges";
 
 type MF = Tables<"mutual_funds"> & { scheme_code?: string | null; fund_symbol?: string | null; pnlPercent?: number; day_change?: number; day_change_percent?: number };
 
@@ -34,6 +35,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
   useEffect(() => setMounted(true), []);
 
   const [charges, setCharges] = useState("0");
+  const [isCustomCharges, setIsCustomCharges] = useState(false);
 
   const [formData, setFormData] = useState({
     fund_name: "",
@@ -43,7 +45,7 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
     current_nav: "",
     investment_type: "SIP",
     category: "Equity",
-    amc_name: "HDFC",
+    amc_name: "",
     date: new Date().toISOString().split("T")[0],
     account_id: "",
     trade_type: "buy" as "buy" | "sell"
@@ -74,11 +76,10 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
     if (accounts.length > 0 && showAddModal && !formData.account_id) {
       const defaultAccId = profile?.default_accounts?.mutual_funds;
       const defaultAccExists = defaultAccId && accounts.some(a => a.id === defaultAccId);
-      if (defaultAccExists) {
-        setTimeout(() => {
-          setFormData(prev => ({ ...prev, account_id: defaultAccId }));
-        }, 0);
-      }
+      const chosenAccount = defaultAccExists ? defaultAccId : accounts[0].id;
+      setTimeout(() => {
+        setFormData(prev => ({ ...prev, account_id: chosenAccount }));
+      }, 0);
     }
   }, [accounts, profile, showAddModal, formData.account_id]);
 
@@ -289,144 +290,192 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
   const formatMoney = (val: number) => val.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   return (
-    <div className="flex flex-col animate-in fade-in duration-700 w-full bg-[var(--bg-base)] min-h-screen text-[#ddd]">
-      {/* Coin-style Top Header */}
-      <div className="flex items-center justify-between px-8 py-4 border-b border-white/5 bg-[var(--bg-card)]">
-        <div className="flex items-center gap-6">
-          <div className="flex gap-1.5 rounded-2xl bg-white/[0.02] border border-white/5 p-1.5 max-w-fit shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]">
+    <div className="flex flex-col animate-in fade-in duration-700 w-full bg-[#131722] min-h-screen text-[#E0E0E0] relative font-sans">
+      {/* Background Ambient Coin Glows */}
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+        <div className="absolute -top-32 -right-32 w-[550px] h-[550px] bg-[#FF5722]/10 rounded-full blur-[160px]" />
+        <div className="absolute top-1/2 -left-32 w-[550px] h-[550px] bg-sky-500/10 rounded-full blur-[160px]" />
+      </div>
+
+      {/* Zerodha Coin Header Bar */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-8 py-3.5 border-b border-[#2B313A] bg-[#181A20] relative z-10 shadow-xl gap-4">
+        <div className="flex items-center gap-4">
+          {/* Zerodha Coin Emblem */}
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF5722]/20 to-[#FF7043]/10 border border-[#FF5722]/40 flex items-center justify-center text-[#FF5722] shadow-[0_0_15px_rgba(255,87,34,0.3)]">
+            <span className="text-lg font-black tracking-tighter text-[#FF5722]">©</span>
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-base font-extrabold text-white tracking-wider uppercase">Zerodha Coin Mutual Funds</h1>
+              <span className="text-[0.5625rem] bg-[#FF5722]/20 text-[#FF5722] border border-[#FF5722]/30 px-1.5 py-0.5 rounded font-black tracking-widest uppercase">COIN PRO</span>
+            </div>
+            <p className="text-[0.6875rem] text-[#848E9C] font-semibold flex items-center gap-1.5 mt-0.5">
+              <span className="w-2 h-2 rounded-full bg-[#0ECB81] animate-pulse" />
+              0% Commission Direct Mutual Funds • Live NAV Tracker
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+          <div className="flex gap-1.5 rounded-xl bg-[#131722] border border-[#2B313A] p-1 shadow-inner">
             <button 
               onClick={() => setActiveTab("dashboard")} 
-              className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${
+              className={`px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-300 cursor-pointer ${
                 activeTab === "dashboard" 
-                  ? "bg-[var(--accent-primary)] text-white shadow-[0_0_15px_rgba(var(--accent-primary-rgb),0.35)] border border-transparent" 
-                  : "text-gray-400 hover:text-white hover:bg-white/5 border border-transparent"
+                  ? "bg-[#FF5722] text-white shadow-[0_0_15px_rgba(255,87,34,0.4)]" 
+                  : "text-[#848E9C] hover:text-white hover:bg-white/5"
               }`}
             >
-              Dashboard
+              Overview
             </button>
             <button 
               onClick={() => setActiveTab("holdings")} 
-              className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${
+              className={`px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-300 cursor-pointer ${
                 activeTab === "holdings" 
-                  ? "bg-[var(--accent-primary)] text-white shadow-[0_0_15px_rgba(var(--accent-primary-rgb),0.35)] border border-transparent" 
-                  : "text-gray-400 hover:text-white hover:bg-white/5 border border-transparent"
+                  ? "bg-[#FF5722] text-white shadow-[0_0_15px_rgba(255,87,34,0.4)]" 
+                  : "text-[#848E9C] hover:text-white hover:bg-white/5"
               }`}
             >
-              Holdings
+              Holdings ({mutualFunds.length})
             </button>
             <button 
               onClick={() => setActiveTab("history")} 
-              className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${
+              className={`px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-300 cursor-pointer ${
                 activeTab === "history" 
-                  ? "bg-[var(--accent-primary)] text-white shadow-[0_0_15px_rgba(var(--accent-primary-rgb),0.35)] border border-transparent" 
-                  : "text-gray-400 hover:text-white hover:bg-white/5 border border-transparent"
+                  ? "bg-[#FF5722] text-white shadow-[0_0_15px_rgba(255,87,34,0.4)]" 
+                  : "text-[#848E9C] hover:text-white hover:bg-white/5"
               }`}
             >
-              Transactions
+              SIP &amp; Orders
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={handleRefreshNAV} 
+              disabled={isRefreshing || rawMfs.length === 0}
+              className="bg-[#2B313A]/50 hover:bg-[#2B313A] border border-[#2B313A] text-white px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+            >
+              {isRefreshing ? (
+                <svg className="w-3.5 h-3.5 animate-spin text-[#FF5722]" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" strokeDasharray="32" className="opacity-25"></circle><path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" className="opacity-75"></path></svg>
+              ) : (
+                <svg className="w-3.5 h-3.5 text-[#FF5722]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+              )}
+              Refresh NAV
+            </button>
+            <button 
+              onClick={() => { 
+                setFormData({
+                  fund_name: "", scheme_code: "", units: "", nav: "", current_nav: "",
+                  investment_type: "SIP", category: "Equity", amc_name: "HDFC",
+                  date: new Date().toISOString().split("T")[0], account_id: "", trade_type: "buy"
+                });
+                setEditingId(null);
+                setShowAddModal(true); 
+              }} 
+              className="bg-[#FF5722] hover:bg-[#e04a1b] text-white font-extrabold px-4 py-1.5 rounded-lg text-xs uppercase tracking-wider transition-all shadow-[0_0_15px_rgba(255,87,34,0.3)] cursor-pointer"
+            >
+              + Start SIP / Invest
             </button>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={handleRefreshNAV} 
-            disabled={isRefreshing || rawMfs.length === 0}
-            className="bg-white/5 hover:bg-white/10 border border-white/10 text-white px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 disabled:opacity-50 flex items-center gap-2 shadow-sm"
-          >
-            {isRefreshing ? (
-              <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" strokeDasharray="32" className="opacity-25"></circle><path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" className="opacity-75"></path></svg>
-            ) : (
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-            )}
-            Refresh NAV
-          </button>
-          <button 
-            onClick={() => { 
-              setFormData({
-                fund_name: "", scheme_code: "", units: "", nav: "", current_nav: "",
-                investment_type: "SIP", category: "Equity", amc_name: "HDFC",
-                date: new Date().toISOString().split("T")[0], account_id: "", trade_type: "buy"
-              });
-              setEditingId(null);
-              setShowAddModal(true); 
-            }} 
-            className="bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 shadow-md shadow-[var(--accent-primary)]/10 hover:shadow-[var(--accent-primary)]/20"
-          >
-            Invest Now
-          </button>
-        </div>
       </div>
 
-      <div className="p-4 sm:p-6 w-full">
+      <div className="p-4 sm:p-6 w-full relative z-10">
         {activeTab === "dashboard" && (
-          <div className="flex flex-col lg:flex-row gap-12 items-center lg:items-stretch mt-4">
-            {/* Left: Large Allocation Donut */}
-            <div className="flex-1 flex flex-col items-center justify-center bg-[var(--bg-card)] p-8 border border-white/5 rounded-lg">
-              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">Asset Allocation</h3>
+          <div className="flex flex-col lg:flex-row gap-8 items-center lg:items-stretch mt-4">
+            {/* Left: Large Allocation Donut Card */}
+            <div className="flex-1 flex flex-col items-center justify-center glass-card-static backdrop-blur-2xl bg-white/[0.03] border border-white/10 p-8 rounded-3xl shadow-2xl relative overflow-hidden">
+              <div className="absolute -top-20 -left-20 w-72 h-72 bg-purple-500/10 rounded-full blur-[80px] pointer-events-none" />
+              <h3 className="text-xs font-extrabold text-gray-400 uppercase tracking-widest mb-6 relative z-10">Asset Allocation</h3>
               {mounted && pieChartData.length > 0 ? (
-                <div className="w-[280px] h-[280px] relative">
+                <div className="w-[300px] h-[300px] relative z-10">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie data={pieChartData} cx="50%" cy="50%" innerRadius={80} outerRadius={110} paddingAngle={2} dataKey="value" stroke="none">
+                      <Pie data={pieChartData} cx="50%" cy="50%" innerRadius={85} outerRadius={118} paddingAngle={3} dataKey="value" stroke="none">
                         {pieChartData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} />)}
                       </Pie>
                       <RechartsTooltip 
-                        contentStyle={{ backgroundColor: "#1e1e1e", border: "1px solid #333", borderRadius: "4px" }}
-                        itemStyle={{ color: "#fff", fontSize: "11px" }}
-                        formatter={(value) => [`₹${Number(value).toLocaleString()}`, "Value"]}
+                        contentStyle={{ 
+                          backgroundColor: "rgba(15, 20, 32, 0.90)", 
+                          backdropFilter: "blur(16px)", 
+                          WebkitBackdropFilter: "blur(16px)",
+                          border: "1px solid rgba(255, 255, 255, 0.15)", 
+                          borderRadius: "16px",
+                          boxShadow: "0 20px 40px rgba(0,0,0,0.6)",
+                          padding: "10px 14px"
+                        }}
+                        itemStyle={{ color: "#fff", fontSize: "12px", fontWeight: "bold" }}
+                        formatter={(value) => [`₹${Number(value).toLocaleString("en-IN", { minimumFractionDigits: 2 })}`, "Valuation"]}
                       />
                     </PieChart>
                   </ResponsiveContainer>
                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                    <span className="text-gray-500 text-xs uppercase tracking-widest font-bold">Total Wealth</span>
-                    <span className="text-white text-2xl font-normal mt-1">₹{stats.totalCurrentValue >= 10000000 ? (stats.totalCurrentValue/10000000).toFixed(2) + 'Cr' : stats.totalCurrentValue >= 100000 ? (stats.totalCurrentValue/100000).toFixed(2) + 'L' : formatMoney(stats.totalCurrentValue)}</span>
+                    <span className="text-gray-400 text-xs uppercase tracking-widest font-black">Total Wealth</span>
+                    <span className="text-white text-3xl font-black tracking-tight mt-1">₹{stats.totalCurrentValue >= 10000000 ? (stats.totalCurrentValue/10000000).toFixed(2) + 'Cr' : stats.totalCurrentValue >= 100000 ? (stats.totalCurrentValue/100000).toFixed(2) + 'L' : formatMoney(stats.totalCurrentValue)}</span>
                   </div>
                 </div>
               ) : (
-                <div className="w-[250px] h-[250px] rounded-full border-2 border-dashed border-white/10 flex items-center justify-center">
-                  <span className="text-xs text-gray-500 font-bold uppercase tracking-wider">No MF Holdings</span>
+                <div className="w-[260px] h-[260px] rounded-full border-2 border-dashed border-white/15 backdrop-blur-md bg-white/[0.01] flex flex-col items-center justify-center gap-3 p-4 text-center relative z-10">
+                  <span className="text-xs text-gray-400 font-black uppercase tracking-wider">No MF Holdings</span>
+                  <button
+                    onClick={() => {
+                      setFormData({
+                        fund_name: "", scheme_code: "", units: "", nav: "", current_nav: "",
+                        investment_type: "SIP", category: "Equity", amc_name: "HDFC",
+                        date: new Date().toISOString().split("T")[0], account_id: "", trade_type: "buy"
+                      });
+                      setEditingId(null);
+                      setShowAddModal(true);
+                    }}
+                    className="bg-[var(--accent-primary)] text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider hover:brightness-110 transition-all shadow-lg shadow-[var(--accent-primary)]/20 cursor-pointer"
+                  >
+                    + Invest Now
+                  </button>
                 </div>
               )}
               
               {pieChartData.length > 0 && (
-                <div className="flex flex-wrap justify-center gap-4 mt-8">
+                <div className="flex flex-wrap justify-center gap-4 mt-8 relative z-10">
                   {pieChartData.map((entry, index) => (
-                    <div key={index} className="flex items-center gap-2">
+                    <div key={index} className="flex items-center gap-2 bg-white/5 border border-white/5 px-3 py-1.5 rounded-xl backdrop-blur-md">
                       <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: entry.fill }} />
-                      <span className="text-xs text-gray-400 font-semibold">{entry.name}</span>
+                      <span className="text-xs text-gray-300 font-bold">{entry.name}</span>
                     </div>
                   ))}
                 </div>
               )}
             </div>
 
-            {/* Right: Coin Stats summary */}
-            <div className="flex-1 flex flex-col justify-center bg-[var(--bg-card)] p-8 border border-white/5 rounded-lg">
-              <div className="space-y-6">
+            {/* Right: Stats Summary Card */}
+            <div className="flex-1 flex flex-col justify-center glass-card-static backdrop-blur-2xl bg-white/[0.03] border border-white/10 p-8 rounded-3xl shadow-2xl relative overflow-hidden">
+              <div className="absolute -bottom-20 -right-20 w-72 h-72 bg-emerald-500/10 rounded-full blur-[80px] pointer-events-none" />
+              <div className="space-y-6 relative z-10">
                 <div>
-                  <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Current value</p>
-                  <p className="text-3xl font-normal text-white">₹{formatMoney(stats.totalCurrentValue)}</p>
+                  <p className="text-xs text-gray-400 font-black uppercase tracking-widest mb-1">Current Value</p>
+                  <p className="text-4xl font-black text-white tracking-tight">₹{formatMoney(stats.totalCurrentValue)}</p>
                 </div>
                 
                 <div>
-                  <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Invested value</p>
-                  <p className="text-xl font-normal text-white/90">₹{formatMoney(stats.totalInvested)}</p>
+                  <p className="text-xs text-gray-400 font-black uppercase tracking-widest mb-1">Invested Value</p>
+                  <p className="text-2xl font-bold text-gray-300">₹{formatMoney(stats.totalInvested)}</p>
                 </div>
 
-                <div className="h-px w-full bg-white/5" />
+                <div className="h-px w-full bg-white/10" />
 
                 <div className="grid grid-cols-2 gap-8">
-                  <div>
-                    <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Total returns</p>
-                    <div className={`text-lg font-bold ${stats.totalPnL >= 0 ? 'text-[#4caf50]' : 'text-[#f44336]'}`}>
+                  <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 backdrop-blur-md">
+                    <p className="text-[0.65rem] text-gray-400 font-black uppercase tracking-widest mb-1">Total Returns</p>
+                    <div className={`text-xl font-black ${stats.totalPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                       {stats.totalPnL >= 0 ? '+' : ''}₹{formatMoney(stats.totalPnL)}
-                      <div className="text-xs font-semibold mt-0.5 opacity-90">{stats.totalPnLPercent >= 0 ? '+' : ''}{stats.totalPnLPercent.toFixed(2)}%</div>
+                      <div className="text-xs font-black mt-0.5 opacity-90">{stats.totalPnLPercent >= 0 ? '+' : ''}{stats.totalPnLPercent.toFixed(2)}%</div>
                     </div>
                   </div>
-                  <div>
-                    <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Day&apos;s returns</p>
-                    <div className={`text-lg font-bold ${stats.dayPnL >= 0 ? 'text-[#4caf50]' : 'text-[#f44336]'}`}>
+                  <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 backdrop-blur-md">
+                    <p className="text-[0.65rem] text-gray-400 font-black uppercase tracking-widest mb-1">Day&apos;s Returns</p>
+                    <div className={`text-xl font-black ${stats.dayPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                       {stats.dayPnL >= 0 ? '+' : ''}₹{formatMoney(stats.dayPnL)}
-                      <div className="text-xs font-semibold mt-0.5 opacity-90">{stats.dayPnLPercent >= 0 ? '+' : ''}{stats.dayPnLPercent.toFixed(2)}%</div>
+                      <div className="text-xs font-black mt-0.5 opacity-90">{stats.dayPnLPercent >= 0 ? '+' : ''}{stats.dayPnLPercent.toFixed(2)}%</div>
                     </div>
                   </div>
                 </div>
@@ -502,13 +551,13 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
               )}
 
               <form onSubmit={handleAddMF} className="space-y-4">
-                {/* Search Fund (Only when adding from scratch) */}
+                {/* Search / Manual Fund Selection */}
                 {!formData.scheme_code ? (
-                  <div className="space-y-2 relative">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Search Fund</label>
+                  <div className="space-y-1.5 relative">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Search or Enter Fund Name</label>
                     <div className="relative">
                       <input 
-                        className="w-full bg-[var(--bg-card)] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[var(--accent-primary)]" 
+                        className="w-full bg-[#181A20] border border-white/10 rounded px-3 py-2 text-xs text-white outline-none focus:border-[#FF5722] placeholder-gray-500 font-medium" 
                         placeholder="e.g. Parag Parikh Flexi Cap" 
                         value={searchQuery || formData.fund_name} 
                         onChange={e => {
@@ -517,46 +566,72 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                         }} 
                       />
                       {isSearching && (
-                        <div className="absolute right-3 top-2">
-                          <svg className="w-3.5 h-3.5 animate-spin text-gray-500" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" strokeDasharray="32" className="opacity-25"></circle><path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" className="opacity-75"></path></svg>
+                        <div className="absolute right-3 top-2.5">
+                          <svg className="w-3.5 h-3.5 animate-spin text-[#FF5722]" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" strokeDasharray="32" className="opacity-25"></circle><path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" className="opacity-75"></path></svg>
                         </div>
                       )}
                     </div>
-                    {showSearchDropdown && searchResults.length > 0 && (
-                      <div className="absolute z-50 left-0 right-0 top-[100%] mt-1 bg-[var(--bg-card)] border border-white/10 rounded shadow-xl overflow-hidden max-h-48 overflow-y-auto custom-scrollbar">
+
+                    {showSearchDropdown && (
+                      <div className="absolute z-[120] left-0 right-0 top-[100%] mt-1 bg-[#181A20] border border-[#FF5722]/40 rounded-xl shadow-2xl overflow-hidden max-h-56 overflow-y-auto custom-scrollbar">
                         {searchResults.map((res, i) => (
                           <div 
                             key={i} 
-                            className="px-3 py-2 hover:bg-white/5 cursor-pointer transition-colors border-b border-white/5 last:border-0"
+                            className="px-3.5 py-2.5 hover:bg-[#FF5722]/10 cursor-pointer transition-colors border-b border-white/5 last:border-0 flex items-center justify-between gap-3"
                             onClick={async () => {
-                              setFormData({...formData, fund_name: res.schemeName, scheme_code: res.schemeCode});
+                              const derivedAmc = res.schemeName.trim().split(" ")[0];
+                              setFormData({
+                                ...formData, 
+                                fund_name: res.schemeName, 
+                                scheme_code: res.schemeCode,
+                                amc_name: derivedAmc
+                              });
                               setSearchQuery("");
                               setShowSearchDropdown(false);
                               if (res.schemeCode) {
                                 const liveData = await fetchLiveMFNAV(res.schemeCode);
                                 if (liveData) {
-                                  setFormData(prev => ({...prev, current_nav: liveData.nav.toString()}));
+                                  setFormData(prev => ({
+                                    ...prev, 
+                                    current_nav: liveData.nav.toString(),
+                                    nav: prev.nav ? prev.nav : liveData.nav.toString()
+                                  }));
                                 }
                               }
                             }}
                           >
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs font-bold text-white truncate max-w-[80%]">{res.schemeName}</span>
-                              <span className="text-xs font-bold text-[var(--accent-primary)]">{res.schemeCode}</span>
+                            <div className="flex items-center gap-3 overflow-hidden">
+                              <AMCAvatar amcName="" fundName={res.schemeName} />
+                              <span className="text-xs font-bold text-white truncate">{res.schemeName}</span>
                             </div>
+                            <span className="text-[0.625rem] font-bold text-[#FF5722] bg-[#FF5722]/10 px-1.5 py-0.5 rounded shrink-0">{res.schemeCode}</span>
                           </div>
                         ))}
+                        {formData.fund_name.trim().length > 0 && (
+                          <div 
+                            className="px-3.5 py-2.5 bg-[#FF5722]/20 hover:bg-[#FF5722]/30 cursor-pointer transition-colors border-t border-[#FF5722]/30 flex items-center justify-between"
+                            onClick={() => {
+                              setShowSearchDropdown(false);
+                              if (!formData.scheme_code) {
+                                setFormData(prev => ({ ...prev, scheme_code: "MANUAL-" + Date.now() }));
+                              }
+                            }}
+                          >
+                            <span className="text-xs font-black text-white uppercase tracking-wider">Use &quot;{formData.fund_name}&quot; Manually</span>
+                            <span className="text-[0.625rem] bg-[#FF5722] text-white px-2 py-0.5 rounded font-black">✓ SELECT</span>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
                 ) : (
-                  /* Selected Fund Card */
-                  <div className="bg-white/[0.02] border border-white/5 p-3.5 rounded-xl flex items-center justify-between">
+                  /* Selected Fund Card with AMC Logo */
+                  <div className="bg-[#181A20] border border-[#FF5722]/30 p-3.5 rounded-xl flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <span className="text-2xl p-2 bg-white/[0.02] rounded-xl border border-white/5">📈</span>
+                      <AMCAvatar amcName={formData.amc_name} fundName={formData.fund_name} />
                       <div>
-                        <p className="text-xs font-bold text-white">{formData.scheme_code}</p>
-                        <p className="text-xs text-gray-500 font-medium">{formData.fund_name}</p>
+                        <p className="text-xs font-bold text-white">{formData.fund_name}</p>
+                        <p className="text-[0.6875rem] text-[#FF5722] font-semibold">Scheme Code: {formData.scheme_code}</p>
                       </div>
                     </div>
                     {!editingId && (
@@ -662,63 +737,123 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Stamp Duty / Charges (₹)</label>
-                        <input 
-                          type="number" 
-                          step="any" 
-                          className="w-full bg-[var(--bg-card)] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[var(--accent-primary)]" 
-                          placeholder="0.00"
-                          value={charges} 
-                          onChange={e => setCharges(e.target.value)} 
-                          inputMode="decimal" 
-                        />
+                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">
+                          {formData.trade_type === 'buy' ? 'Deduct From' : 'Deposit To'}
+                        </label>
+                        <select 
+                          className="w-full bg-[var(--bg-card)] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[#FF5722]" 
+                          value={formData.account_id} 
+                          onChange={e => setFormData({...formData, account_id: e.target.value})}
+                        >
+                          <option value="" disabled className="bg-[#181A20] text-white font-medium">Select Account</option>
+                          {accounts.map(acc => (
+                            <option key={acc.id} value={acc.id} className="bg-[#181A20] text-white font-medium">{acc.name} (₹{acc.balance.toLocaleString()})</option>
+                          ))}
+                        </select>
                       </div>
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">
-                        {formData.trade_type === 'buy' ? 'Deduct From' : 'Deposit To'}
-                      </label>
-                      <select 
-                        className="w-full bg-[var(--bg-card)] border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-[var(--accent-primary)]" 
-                        value={formData.account_id} 
-                        onChange={e => setFormData({...formData, account_id: e.target.value})}
-                      >
-                        <option value="" disabled>Select Account</option>
-                        {accounts.map(acc => (
-                          <option key={acc.id} value={acc.id}>{acc.name} (₹{acc.balance.toLocaleString()})</option>
-                        ))}
-                      </select>
                     </div>
                   </div>
                 )}
-
-                {/* Live Margin Calculation details */}
-                <div className="bg-white/5 rounded p-3 flex flex-col gap-1.5 text-xs text-gray-400">
-                  <div className="flex justify-between items-center">
-                    <span>Turnover:</span>
-                    <span className="text-white font-medium">
-                      ₹{formatMoney((parseFloat(formData.units) || 0) * (parseFloat(formData.nav) || 0))}
-                    </span>
-                  </div>
-                  {parseFloat(charges) > 0 && (
-                    <div className="flex justify-between items-center">
-                      <span>Charges / Stamp Duty:</span>
-                      <span className="text-white font-medium">
-                        ₹{formatMoney(parseFloat(charges))}
-                      </span>
+                {/* Zerodha Coin Direct MF Tax Calculation Details */}
+                {((parseFloat(formData.units) || 0) > 0) && (
+                  <div className="bg-[#181A20] rounded-xl border border-[#FF5722]/30 p-3.5 flex flex-col gap-2 text-xs mt-4">
+                    <div className="flex justify-between items-center border-b border-white/10 pb-2">
+                      <span className="font-extrabold text-[#FF5722] uppercase tracking-wider text-[0.6875rem]">Coin Direct MF Tax Slip</span>
+                      <span className="text-[0.625rem] bg-[#FF5722]/20 text-[#FF5722] px-2 py-0.5 rounded font-black uppercase">0% Commission</span>
                     </div>
-                  )}
-                  <div className="flex justify-between items-center pt-1.5 border-t border-white/5 font-bold">
-                    <span>Net Amount:</span>
-                    <span className="text-white">
-                      ₹{formatMoney(
-                        formData.trade_type === 'buy'
-                          ? ((parseFloat(formData.units) || 0) * (parseFloat(formData.nav) || 0)) + (parseFloat(charges) || 0)
-                          : ((parseFloat(formData.units) || 0) * (parseFloat(formData.nav) || 0)) - (parseFloat(charges) || 0)
-                      )}
-                    </span>
+
+                    {(() => {
+                      const u = parseFloat(formData.units) || 0;
+                      const n = parseFloat(formData.nav) || 0;
+                      const turnover = u * n;
+                      const isBuy = formData.trade_type === "buy";
+                      const calc = calculateMutualFundCharges(turnover, isBuy);
+                      const currentCharges = parseFloat(charges) || 0;
+
+                      return (
+                        <>
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="text-gray-400">Total Investment Value:</span>
+                            <span className="text-white font-bold">₹{turnover.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
+                          </div>
+                          <div className="flex justify-between items-center text-[0.6875rem] text-gray-400">
+                            <span>Brokerage:</span>
+                            <span className="text-emerald-400 font-bold">₹0.00 (Direct MF)</span>
+                          </div>
+                          <div className="flex justify-between items-center text-[0.6875rem] text-gray-400">
+                            <span>{isBuy ? "Government Stamp Duty (0.005%)" : "STT Redemption (0.001%)"}:</span>
+                            <span className="text-white font-mono">₹{(isBuy ? calc.stampDuty : calc.stt).toFixed(2)}</span>
+                          </div>
+
+                          {/* Prominent Auto-Calculated Total Charges Display & Edit Row */}
+                          <div className="flex justify-between items-center bg-[#252525] px-3.5 py-2.5 rounded-xl border border-[#FF5722]/30 mt-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-gray-200 font-extrabold text-[0.6875rem] uppercase tracking-wider">Total Charges / Stamp Duty:</span>
+                              {!isCustomCharges ? (
+                                <span className="text-[0.5625rem] bg-[#FF5722]/20 text-[#FF5722] border border-[#FF5722]/30 px-1.5 py-0.5 rounded font-black uppercase tracking-widest">
+                                  Auto-Calculated
+                                </span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setIsCustomCharges(false);
+                                    const calcRef = calculateMutualFundCharges(turnover, isBuy);
+                                    setCharges(calcRef.totalCharges.toString());
+                                  }}
+                                  className="text-[0.625rem] text-[#FF5722] hover:underline font-bold"
+                                >
+                                  (Reset)
+                                </button>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-white font-mono font-extrabold text-sm">
+                                ₹{isCustomCharges ? (parseFloat(charges) || 0).toFixed(2) : calc.totalCharges.toFixed(2)}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (!isCustomCharges) {
+                                    setIsCustomCharges(true);
+                                    setCharges(calc.totalCharges.toString());
+                                  }
+                                }}
+                                className="text-xs text-gray-400 hover:text-white transition-colors cursor-pointer"
+                                title="Manual Edit Charges"
+                              >
+                                ✏️
+                              </button>
+                            </div>
+                          </div>
+
+                          {isCustomCharges && (
+                            <div className="flex items-center justify-between gap-2 bg-[#181A20] p-2 rounded-lg border border-[#FF5722]/50 animate-fade-in">
+                              <span className="text-[0.6875rem] text-gray-400 font-semibold">Custom Manual Charges (₹):</span>
+                              <input
+                                type="number"
+                                step="0.01"
+                                value={charges}
+                                onChange={(e) => {
+                                  setIsCustomCharges(true);
+                                  setCharges(e.target.value);
+                                }}
+                                className="w-28 bg-[#252525] border border-[#FF5722] rounded px-2.5 py-1 text-xs text-white font-mono font-bold outline-none text-right"
+                                placeholder="0.00"
+                              />
+                            </div>
+                          )}
+                          <div className="flex justify-between items-center pt-2 border-t border-white/10 font-black text-xs">
+                            <span className="text-white">Estimated Net {isBuy ? 'Outflow' : 'Inflow'}:</span>
+                            <span className={isBuy ? 'text-[#FF5722]' : 'text-emerald-400'}>
+                              ₹{(isBuy ? turnover + currentCharges : turnover - currentCharges).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                            </span>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
-                </div>
+                )}
 
                 {/* Modal actions */}
                 <div className="flex gap-3 pt-2">

@@ -431,34 +431,55 @@ export default function AlternativeAssetsClient({ initialData, isSubComponent = 
           <div className="p-4 max-w-2xl mx-auto w-full">
             <form onSubmit={handleSubmit} className="space-y-6">
               
-              {/* Search Section - Only for new assets */}
-              {!editingId && (
-                <div className="relative z-50">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="Search asset category (e.g. Gold, Real Estate)..."
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-lg font-black text-white placeholder:text-white/20 focus:outline-none focus:border-[--accent-primary] transition-all shadow-inner"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                  </div>
-                  {searchResults.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 mt-2 bg-[#0A0A0A] border border-white/10 rounded-xl overflow-hidden shadow-2xl z-50 max-h-[300px] overflow-y-auto">
-                      {searchResults.map((cat, idx) => (
-                        <div
-                          key={idx}
-                          onClick={() => handleCategorySelect(cat)}
-                          className="px-6 py-4 hover:bg-white/5 cursor-pointer border-b border-white/5 last:border-0 transition-colors flex justify-between items-center"
-                        >
-                          <div className="flex items-center gap-4">
-                            <span className="text-2xl">{cat.icon}</span>
-                            <div className="font-black text-white">{cat.label}</div>
+              {/* Search Section & Quick Category Chips - Only for new assets */}
+              {!editingId && !formData.category && (
+                <div className="space-y-4">
+                  <div className="relative z-50">
+                    <label className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] block mb-2">Search Asset Category</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Search asset category (e.g. Gold, Real Estate, Collectibles)..."
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-sm font-bold text-white placeholder:text-white/20 focus:outline-none focus:border-[--accent-primary] transition-all shadow-inner"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                      />
+                    </div>
+                    {searchResults.length > 0 && searchQuery.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-[#0A0A0A] border border-white/10 rounded-xl overflow-hidden shadow-2xl z-50 max-h-[300px] overflow-y-auto">
+                        {searchResults.map((cat, idx) => (
+                          <div
+                            key={idx}
+                            onClick={() => handleCategorySelect(cat)}
+                            className="px-6 py-4 hover:bg-white/5 cursor-pointer border-b border-white/5 last:border-0 transition-colors flex justify-between items-center"
+                          >
+                            <div className="flex items-center gap-4">
+                              <span className="text-2xl">{cat.icon}</span>
+                              <div className="font-black text-white">{cat.label}</div>
+                            </div>
                           </div>
-                        </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Quick Category Chips */}
+                  <div className="space-y-2">
+                    <label className="text-[0.65rem] font-bold text-gray-400 uppercase tracking-wider">Or Pick Category</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {CATEGORIES.map((cat, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => handleCategorySelect(cat)}
+                          className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] hover:bg-white/10 border border-white/5 text-left transition-all cursor-pointer"
+                        >
+                          <span className="text-xl">{cat.icon}</span>
+                          <span className="text-xs font-bold text-white truncate">{cat.label}</span>
+                        </button>
                       ))}
                     </div>
-                  )}
+                  </div>
                 </div>
               )}
 
@@ -536,9 +557,9 @@ export default function AlternativeAssetsClient({ initialData, isSubComponent = 
                             value={formData.account_id} 
                             onChange={e => setFormData({...formData, account_id: e.target.value})}
                           >
-                            <option value="">No Transaction</option>
+                            <option value="" className="bg-[#181A20] text-white font-medium">No Transaction</option>
                             {accounts.map(acc => (
-                              <option key={acc.id} value={acc.id}>{acc.name} (₹{acc.balance.toLocaleString()})</option>
+                              <option key={acc.id} value={acc.id} className="bg-[#181A20] text-white font-medium">{acc.name} (₹{acc.balance.toLocaleString()})</option>
                             ))}
                           </select>
                         </div>

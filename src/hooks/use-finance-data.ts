@@ -18,6 +18,7 @@ type FinanceData = {
     enabled_modules: string[]; 
     default_accounts?: Record<string, string | null>;
     sms_sync_token?: string | null;
+    gmail_refresh_token?: string | null;
     is_gmail_linked?: boolean;
     telegram_chat_id?: string | null;
     telegram_link_code?: string | null;
@@ -142,8 +143,12 @@ export function useFinanceData(initialData?: FinanceData) {
     ...swrOptions,
   });
 
+  const rawProfile = summarySWR.data?.profile ?? null;
   const data: FinanceData = useMemo(() => ({
-    profile: summarySWR.data?.profile ?? null,
+    profile: rawProfile ? {
+      ...rawProfile,
+      is_gmail_linked: !!(rawProfile as any).is_gmail_linked || !!(rawProfile as any).gmail_refresh_token,
+    } : null,
     accounts: summarySWR.data?.accounts ?? EMPTY_ARRAY,
     transactions: summarySWR.data?.transactions ?? EMPTY_ARRAY,
     ledgerLogs: summarySWR.data?.ledgerLogs ?? EMPTY_ARRAY,
@@ -164,6 +169,7 @@ export function useFinanceData(initialData?: FinanceData) {
     forexTrades: forexSWR.data?.forexTrades ?? EMPTY_ARRAY,
     forexTransactions: forexSWR.data?.forexTransactions ?? EMPTY_ARRAY,
   }), [
+    rawProfile,
     summarySWR.data,
     investmentsSWR.data,
     cashflowSWR.data,
