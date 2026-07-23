@@ -1,9 +1,47 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import logger from "@/lib/logger";
-import { sendTelegramMessage } from "@/lib/telegram";
+import { sendTelegramMessage, answerCallbackQuery } from "@/lib/telegram";
 import { redisGet, redisSet, redisDel, isRedisConfigured } from "@/lib/redis";
 import { getExchangeRate } from "@/lib/utils";
+
+const MAIN_MENU_KEYBOARD = {
+  inline_keyboard: [
+    [
+      { text: "💳 Balances", callback_data: "cmd_balance" },
+      { text: "📊 Summary", callback_data: "cmd_summary" }
+    ],
+    [
+      { text: "🤖 AI Health Score", callback_data: "cmd_ai" },
+      { text: "📈 Intelligence Report", callback_data: "cmd_report" }
+    ],
+    [
+      { text: "🎯 Savings Goals", callback_data: "cmd_goals" },
+      { text: "📊 Budgets", callback_data: "cmd_budget" }
+    ],
+    [
+      { text: "📜 Recent Logs", callback_data: "cmd_recent" },
+      { text: "👨‍👩‍👧 Family Balances", callback_data: "cmd_family" }
+    ],
+    [
+      { text: "📑 Audit Ledger", callback_data: "cmd_ledger" },
+      { text: "↩️ Undo Last", callback_data: "cmd_undo" }
+    ],
+    [
+      { text: "💡 Commands & Help", callback_data: "cmd_help" }
+    ]
+  ]
+};
+
+const TX_CONFIRM_KEYBOARD = {
+  inline_keyboard: [
+    [
+      { text: "↩️ Undo", callback_data: "cmd_undo" },
+      { text: "📊 Summary", callback_data: "cmd_summary" },
+      { text: "💳 Balances", callback_data: "cmd_balance" }
+    ]
+  ]
+};
 
 
 // Helper to check budget and send instant Telegram push warning if over 80%
@@ -191,15 +229,31 @@ export async function POST(req: NextRequest) {
       await redisSet(updateIdKey, "1", 300); // 5-minute TTL
     }
 
-    if (!body.message || !body.message.chat) {
-      return NextResponse.json({ success: true, message: "No message chat found" });
+    let chatId = "";
+    let rawText = "";
+    let callbackQueryId: string | null = null;
+
+    if (body?.callback_query) {
+      callbackQueryId = body.callback_query.id;
+      chatId = String(body.callback_query.message?.chat?.id || body.callback_query.from?.id);
+      rawText = String(body.callback_query.data || "").trim();
+      if (callbackQueryId) {
+        await answerCallbackQuery(callbackQueryId);
+      }
+    } else if (body?.message?.chat) {
+      chatId = String(body.message.chat.id);
+      rawText = String(body.message.text || body.message.caption || "").trim();
+    } else {
+      return NextResponse.json({ success: true, message: "No message or callback_query to process" });
     }
 
-    const chatId = String(body.message.chat.id);
-    const rawText = String(body.message.text || body.message.caption || "").trim();
+    if (rawText.startsWith("cmd_")) {
+      const mappedCmd = rawText.replace(/^cmd_/, "");
+      rawText = `/${mappedCmd}`;
+    }
 
     // Handle voice notes without text
-    if (!rawText && body.message.voice) {
+    if (!rawText && body?.message?.voice) {
       await sendTelegramMessage(
         chatId,
         "🎙️ *Voice Note Received*\nAudio transcription active. _(Note: If running without live audio transcription API keys configured, please add a caption or text: e.g. `350 Lunch at Zomato`)_"
@@ -208,7 +262,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Handle receipt/bill photos without text/caption
-    if (!rawText && body.message.photo) {
+    if (!rawText && body?.message?.photo) {
       await sendTelegramMessage(
         chatId,
         "📸 *Receipt Photo Received*\nScanning bill details via OCR... _(Tip: Add a caption to your photo like `1200 Groceries` or `450 Swiggy` to categorize immediately)_"
@@ -303,11 +357,47 @@ export async function POST(req: NextRequest) {
     let text = mathEval ? mathEval.cleanedText : initialDateParsed.cleanedText;
 
     // Parallelize user context reads: accounts, family members, goals upfront via Promise.all
-    const [{ data: accounts }, { data: familyMembers }, { data: goals }] = await Promise.all([
+    let [{ data: accounts }, { data: familyMembers }, { data: goals }] = await Promise.all([
       supabase.from("accounts").select("id, name, notes, balance, type").eq("user_id", profile.id),
       supabase.from("family_members").select("id, name, relationship").eq("user_id", profile.id),
       supabase.from("goals").select("id, name").eq("user_id", profile.id),
     ]);
+
+    // Auto-create default account if user has no bank accounts in dashboard yet
+    if (!accounts || accounts.length === 0) {
+      await supabase.rpc("create_account_atomic", {
+        p_user_id: profile.id,
+        p_name: "Main Account",
+        p_type: "Checking",
+        p_balance: 100000,
+        p_currency: profile.base_currency || "INR",
+      });
+
+      const { data: freshAccounts } = await supabase
+        .from("accounts")
+        .select("id, name, notes, balance, type")
+        .eq("user_id", profile.id);
+
+      if (freshAccounts && freshAccounts.length > 0) {
+        accounts = freshAccounts;
+      } else {
+        const { data: directAcc } = await supabase
+          .from("accounts")
+          .insert({
+            user_id: profile.id,
+            name: "Main Account",
+            type: "Checking",
+            balance: 100000,
+            currency: profile.base_currency || "INR",
+          })
+          .select("id, name, notes, balance, type")
+          .single();
+
+        if (directAcc) {
+          accounts = [directAcc];
+        }
+      }
+    }
 
     const resolveAccount = (type: "expense" | "income", queryText?: string, accountEnding?: string | null): string | null => {
       if (!accounts || accounts.length === 0) return null;
@@ -463,32 +553,175 @@ export async function POST(req: NextRequest) {
     let lowerText = text.toLowerCase();
     const commandText = lowerText.replace(/^\//, "").trim();
 
-    // 3. Handle System & Inquiry Commands (/help, /balance, /summary, /recent, /undo, /goals, /budget, /unlink)
+    // 3. Handle System & Inquiry Commands (/menu, /ai, /family, /ledger, /calc, /help, /balance, /summary, /recent, /undo, /goals, /budget, /unlink)
+    if (commandText === "menu") {
+      await sendTelegramMessage(
+        chatId,
+        "📱 *Dashboard Quick Control Menu*\nTap any button below to get real-time insights or execute actions:",
+        MAIN_MENU_KEYBOARD
+      );
+      return NextResponse.json({ success: true });
+    }
+
+    if (commandText === "ai" || commandText === "insight" || commandText === "health" || commandText === "score") {
+      const now = new Date();
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
+
+      const { data: monthTxs } = await supabase
+        .from("transactions")
+        .select("amount, type, category")
+        .eq("user_id", profile.id)
+        .gte("date", firstDay);
+
+      let totalIncome = 0;
+      let totalExpense = 0;
+      const catMap: Record<string, number> = {};
+
+      if (monthTxs) {
+        for (const t of monthTxs) {
+          const amt = parseFloat(t.amount) || 0;
+          if (t.type === "income") totalIncome += amt;
+          else {
+            totalExpense += amt;
+            const cat = t.category || "Other";
+            catMap[cat] = (catMap[cat] || 0) + amt;
+          }
+        }
+      }
+
+      const savings = totalIncome - totalExpense;
+      const savingsRate = totalIncome > 0 ? Math.round((savings / totalIncome) * 100) : 0;
+
+      let score = 50;
+      if (savingsRate >= 30) score += 30;
+      else if (savingsRate >= 15) score += 20;
+      else if (savingsRate > 0) score += 10;
+      else score -= 15;
+
+      if (accounts && accounts.length > 0) score += 10;
+      if (goals && goals.length > 0) score += 10;
+
+      score = Math.min(100, Math.max(10, score));
+      const scoreBadge = score >= 80 ? "🟢 Excellent" : score >= 60 ? "🟡 Good" : "🔴 Needs Attention";
+
+      const topCategory = Object.entries(catMap).sort((a, b) => b[1] - a[1])[0];
+      const topCatText = topCategory ? `${topCategory[0]} (₹${topCategory[1].toLocaleString("en-IN")})` : "None";
+
+      let advice = "Keep logging daily expenses to maintain accurate cash flow tracking.";
+      if (savingsRate < 10) advice = "⚠️ Your savings rate is low. Try reviewing your top spending category to curb non-essential expenses.";
+      else if (savingsRate >= 30) advice = "🚀 Stellar 30%+ savings rate! Allocate your surplus into Mutual Funds or Stocks for long-term growth.";
+
+      const msg = `🤖 *AI Financial Health & Wealth Coach*\n\n` +
+        `🌟 *Health Score*: *${score}/100* (${scoreBadge})\n` +
+        `💰 *Monthly Income*: ₹${totalIncome.toLocaleString("en-IN")}\n` +
+        `💸 *Monthly Expense*: ₹${totalExpense.toLocaleString("en-IN")}\n` +
+        `🔥 *Savings Rate*: ${savingsRate}% (₹${savings.toLocaleString("en-IN")})\n` +
+        `🔝 *Top Expense Area*: ${topCatText}\n\n` +
+        `💡 *Smart Advice*:\n_${advice}_`;
+
+      await sendTelegramMessage(chatId, msg, MAIN_MENU_KEYBOARD);
+      return NextResponse.json({ success: true });
+    }
+
+    if (commandText === "family" || commandText === "relatives") {
+      if (!familyMembers || familyMembers.length === 0) {
+        await sendTelegramMessage(
+          chatId,
+          "👨‍👩‍👧 *No Family Members*: Add family members in your dashboard, or log a transfer via:\n`family sent 500 Mom` or `send 1000 Rahul`."
+        );
+        return NextResponse.json({ success: true });
+      }
+
+      let msg = "👨‍👩‍👧 *Family Hub & Net Balances*\n\n";
+      for (const m of familyMembers) {
+        const bal = parseFloat((m as any).balance || 0);
+        const balStr = bal >= 0 ? `+₹${bal.toLocaleString("en-IN")}` : `-₹${Math.abs(bal).toLocaleString("en-IN")}`;
+        msg += `• *${m.name}* (${m.relationship || "Relative"}): *${balStr}*\n`;
+      }
+      msg += `\n💡 *Quick Transfer Commands*:\n• \`send 500 ${familyMembers[0].name}\`\n• \`received 1000 ${familyMembers[0].name}\``;
+      await sendTelegramMessage(chatId, msg);
+      return NextResponse.json({ success: true });
+    }
+
+    if (commandText === "ledger" || commandText === "audit") {
+      const { data: logs } = await supabase
+        .from("ledger_logs")
+        .select("created_at, action_type, amount, account_name, details")
+        .eq("user_id", profile.id)
+        .order("created_at", { ascending: false })
+        .limit(5);
+
+      if (!logs || logs.length === 0) {
+        await sendTelegramMessage(chatId, "📑 *Audit Ledger*: No ledger logs found yet.");
+        return NextResponse.json({ success: true });
+      }
+
+      let msg = "📑 *Live Double-Entry Audit Trail (Last 5 Entries)*\n\n";
+      for (const l of logs) {
+        const dateStr = new Date(l.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+        const amtStr = l.amount ? `₹${parseFloat(l.amount).toLocaleString("en-IN")}` : "-";
+        msg += `▪️ *${l.action_type}* (${dateStr})\n  Acc: ${l.account_name || "System"} | Amt: ${amtStr}\n  _${l.details || "None"}_\n\n`;
+      }
+      await sendTelegramMessage(chatId, msg);
+      return NextResponse.json({ success: true });
+    }
+
+    if (commandText.startsWith("calc") || commandText.startsWith("convert")) {
+      const query = text.replace(/^\/(?:calc|convert)\s*/i, "").trim();
+      if (!query) {
+        await sendTelegramMessage(chatId, "🧮 *Financial Calculator & Converter*:\n• `/calc 1500 * 12`\n• `/calc 25000 * 0.18` (GST/Tax)\n• `/convert 100 USD to INR`");
+        return NextResponse.json({ success: true });
+      }
+
+      const convMatch = query.match(/^(\d+(?:\.\d+)?)\s*([a-zA-Z]{3})\s*(?:to\s*([a-zA-Z]{3}))?/i);
+      if (convMatch) {
+        const amt = parseFloat(convMatch[1]);
+        const fromCurr = convMatch[2].toUpperCase();
+        const toCurr = (convMatch[3] || "INR").toUpperCase();
+        const rate = await getExchangeRate(fromCurr, toCurr);
+        const result = (amt * rate).toFixed(2);
+        await sendTelegramMessage(chatId, `💱 *Currency Conversion*:\n• ${amt} ${fromCurr} = *${result} ${toCurr}*\n• Rate: 1 ${fromCurr} = ${rate} ${toCurr}`);
+        return NextResponse.json({ success: true });
+      }
+
+      try {
+        const sanitizedExpr = query.replace(/[^0-9+\-*/().]/g, "");
+        if (sanitizedExpr.length > 0) {
+          const evalResult = Function(`"use strict"; return (${sanitizedExpr})`)();
+          await sendTelegramMessage(chatId, `🧮 *Calculation Result*:\n\`${query}\` = *${evalResult.toLocaleString("en-IN")}*`);
+          return NextResponse.json({ success: true });
+        }
+      } catch {
+        await sendTelegramMessage(chatId, "❌ Could not evaluate expression. Example usage: `/calc 1500 * 12` or `/convert 100 USD`.");
+        return NextResponse.json({ success: true });
+      }
+    }
+
     if (commandText === "help") {
       await sendTelegramMessage(
         chatId,
         "💡 *Universal Dashboard Assistant*\n\n" +
-        "*📊 Quick Reports & Actions*\n" +
+        "*📊 Quick Control Menu*\n" +
+        "• `/menu` — Interactive control panel buttons\n" +
+        "• `/ai` — Instant Financial Health Score & AI Coaching\n" +
         "• `/balance` — Check active bank accounts & total net worth\n" +
         "• `/summary` — Current month income, expenses & savings rate\n" +
-        "• `/report` — Intelligence report: top categories, highest expense & savings\n" +
-        "• `/search <keyword>` — Search recent transactions (e.g. `/search swiggy`)\n" +
+        "• `/report` — Intelligence report: top categories & highest expense\n" +
+        "• `/search <keyword>` — Search recent transactions\n" +
         "• `/recent` — View last 5 transactions\n" +
+        "• `/family` — View family balances & send transfers\n" +
+        "• `/ledger` — Live double-entry audit trail\n" +
+        "• `/calc 1500 * 12` — Financial calculator & currency converter\n" +
         "• `/undo` — Delete the last logged transaction\n" +
         "• `/goals` — View savings goals progress\n" +
         "• `/budget` — Check monthly spending budget vs actuals\n\n" +
         "*⚡ Smart Transaction Logging*\n" +
         "• `50 Tea` or `credit 5000 Salary` (Smart Credit/Debit sensing)\n" +
-        "• `450 yesterday Swiggy` or `1200 2 days ago Groceries` (Natural Dates!)\n" +
+        "• `450 yesterday Swiggy` (Natural Dates!)\n" +
         "• `120 + 45 + 30 Lunch` (Supports inline math!)\n" +
         "• Forward or paste any Bank SMS/Notification directly into chat!\n\n" +
-        "*💼 Investments & Transfers*\n" +
-        "• `family sent 500 mom`\n" +
-        "• `stock buy 10 AAPL 150`\n" +
-        "• `mf sip 5000 NIFTY`\n" +
-        "• `forex buy 100 USD`\n" +
-        "• `goal 5000 Vacation`\n\n" +
-        "*Options*: `/unlink` — Disconnect bot"
+        "*Options*: `/unlink` — Disconnect bot",
+        MAIN_MENU_KEYBOARD
       );
       return NextResponse.json({ success: true });
     }
@@ -1700,8 +1933,8 @@ export async function POST(req: NextRequest) {
         `• *Amount*: ₹${primaryAmount}\n` +
         `• *Category*: ${category}\n` +
         `• *Account*: ${accObj?.name || "Default"}\n` +
-        `• *Desc*: ${description}\n\n` +
-        `_💡 Type \`/undo\` to delete this if logged by mistake._`
+        `• *Desc*: ${description}`,
+        TX_CONFIRM_KEYBOARD
       );
     } catch (e: any) {
       await sendTelegramMessage(chatId, `❌ *Error*: ${e.message || "Failed to process command."}`);
