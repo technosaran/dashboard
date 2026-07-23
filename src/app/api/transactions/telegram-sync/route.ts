@@ -43,6 +43,8 @@ const TX_CONFIRM_KEYBOARD = {
   ]
 };
 
+const NO_ACCOUNT_MSG = "❌ *No Bank Account Found*\n\nYou haven't created any bank account yet.\n\n👉 *Add one now directly in Telegram*:\n`add account SBI` or `add account SBI 5000`\n\nOr create one in your web dashboard!";
+
 
 // Helper to check budget and send instant Telegram push warning if over 80%
 async function checkAndNotifyBudget(supabase: any, userId: string, chatId: string, category: string, newAmount: number) {
@@ -392,7 +394,7 @@ export async function POST(req: NextRequest) {
       profile = profData;
 
       const [{ data: accsData }, { data: famsData }, { data: goalsData }] = await Promise.all([
-        supabase.from("accounts").select("id, name, notes, balance, type").eq("user_id", profile.id),
+        supabase.from("accounts").select("id, name, bank_name, balance, type").eq("user_id", profile.id),
         supabase.from("family_members").select("id, name, relationship, balance").eq("user_id", profile.id),
         supabase.from("goals").select("id, name, target_amount, current_amount").eq("user_id", profile.id),
       ]);
@@ -410,6 +412,85 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
+    // Handle Add Bank Account command (e.g. "add account SBI", "add account SBI 5000", "create account HDFC", "450 add account sbi")
+    const addAccountMatch = rawText.match(/^(?:([\d,]+(?:\.\d{1,2})?)\s+)?(?:\/)?(?:add\s*account|add\s*bank|create\s*account|create\s*bank|addaccount|addbank)(?:\s+(.+))?$/i);
+    if (addAccountMatch) {
+      const leadingAmountStr = addAccountMatch[1];
+      const rest = (addAccountMatch[2] || "").trim();
+
+      let accName = rest;
+      let initialBalance = leadingAmountStr ? parseFloat(leadingAmountStr.replace(/,/g, "")) || 0 : 0;
+
+      if (!initialBalance && rest) {
+        const balanceMatch = rest.match(/^(.*?)\s+([\d,]+(?:\.\d{1,2})?)$/);
+        if (balanceMatch) {
+          accName = balanceMatch[1].trim();
+          initialBalance = parseFloat(balanceMatch[2].replace(/,/g, "")) || 0;
+        }
+      }
+
+      if (!accName) {
+        await sendTelegramMessage(
+          chatId,
+          "⚠️ *Account Name Needed*: Please specify an account name, e.g.:\n`add account SBI` or `add account SBI 5000`."
+        );
+        return NextResponse.json({ success: true });
+      }
+
+      if (accName.length <= 5) accName = accName.toUpperCase();
+      else accName = accName.charAt(0).toUpperCase() + accName.slice(1);
+
+      let createdAcc: any = null;
+
+      // Try RPC first
+      const { data: rpcRes, error: rpcErr } = await supabase.rpc("create_account_atomic", {
+        p_user_id: profile.id,
+        p_name: accName,
+        p_type: "Bank",
+        p_balance: initialBalance,
+        p_currency: profile.base_currency || "INR",
+        p_bank_name: accName,
+      });
+
+      if (!rpcErr && rpcRes && typeof rpcRes === "object" && (rpcRes as any).success !== false) {
+        createdAcc = { name: accName, balance: initialBalance };
+      } else {
+        // Fallback direct table insert
+        const { data: insertData, error: insertErr } = await supabase
+          .from("accounts")
+          .insert({
+            user_id: profile.id,
+            name: accName,
+            type: "Bank",
+            balance: initialBalance,
+            currency: profile.base_currency || "INR",
+          })
+          .select("id, name, balance")
+          .single();
+
+        if (!insertErr && insertData) {
+          createdAcc = insertData;
+        } else {
+          console.error("Failed to insert account directly:", insertErr);
+          await sendTelegramMessage(
+            chatId,
+            `❌ *Failed to Create Account*: ${insertErr?.message || rpcErr?.message || "Database rejected insert."}`
+          );
+          return NextResponse.json({ success: true });
+        }
+      }
+
+      await sendTelegramMessage(
+        chatId,
+        `💳 *Bank Account Created!*\n\n` +
+        `• *Name*: ${accName}\n` +
+        `• *Initial Balance*: ₹${initialBalance.toLocaleString("en-IN")}\n\n` +
+        `🎉 You can now log expenses & income immediately in chat!\n` +
+        `Try: \`50 Tea\` or \`credit 5000 Salary\` or \`debit 450 food\``
+      );
+      return NextResponse.json({ success: true });
+    }
+
     // Run parseNaturalDate first to extract dates like 2026-07-15 before evaluateInlineMath ever sees them
     const initialDateParsed = parseNaturalDate(rawText);
     const mathEval = evaluateInlineMath(initialDateParsed.cleanedText);
@@ -418,14 +499,16 @@ export async function POST(req: NextRequest) {
     const resolveAccount = (type: "expense" | "income", queryText?: string, accountEnding?: string | null): string | null => {
       if (!accounts || accounts.length === 0) return null;
       if (accountEnding && accountEnding.length >= 4) {
-        const matched = accounts.find(a => a.name.includes(accountEnding) || (a.notes && a.notes.includes(accountEnding)));
+        const matched = accounts.find(a => (a.name && a.name.includes(accountEnding)) || (a.bank_name && a.bank_name.includes(accountEnding)));
         if (matched) return matched.id;
       }
       if (queryText) {
         const lowerQ = queryText.toLowerCase();
         for (const acc of accounts) {
-          const accLower = acc.name.toLowerCase().trim();
-          if (accLower.length >= 3 && new RegExp(`\\b${accLower.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}\\b`, 'i').test(lowerQ)) {
+          const accLower = (acc.name || "").toLowerCase().trim();
+          const bankLower = (acc.bank_name || "").toLowerCase().trim();
+          if ((accLower.length >= 2 && new RegExp(`\\b${accLower.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}\\b`, 'i').test(lowerQ)) ||
+              (bankLower.length >= 2 && new RegExp(`\\b${bankLower.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}\\b`, 'i').test(lowerQ))) {
             return acc.id;
           }
         }
@@ -471,7 +554,7 @@ export async function POST(req: NextRequest) {
               const description = pendingData.description || (txType === "expense" ? "General Expense" : "General Income");
               const targetAccount = resolveAccount(txType, replyLower);
               if (!targetAccount) {
-                await sendTelegramMessage(chatId, "❌ *No Bank Account*: Please add a bank account in your dashboard before logging transactions.");
+                await sendTelegramMessage(chatId, NO_ACCOUNT_MSG);
                 return NextResponse.json({ success: true });
               }
 
@@ -524,7 +607,7 @@ export async function POST(req: NextRequest) {
               }
               const targetAccount = resolveAccount(txType, descLower);
               if (!targetAccount) {
-                await sendTelegramMessage(chatId, "❌ *No Bank Account*: Please add a bank account in your dashboard before logging transactions.");
+                await sendTelegramMessage(chatId, NO_ACCOUNT_MSG);
                 return NextResponse.json({ success: true });
               }
 
@@ -759,7 +842,7 @@ export async function POST(req: NextRequest) {
     // ─── Command: /balance or /networth ───
     if (commandText === "balance" || commandText === "balances" || commandText === "networth") {
       if (!accounts || accounts.length === 0) {
-        await sendTelegramMessage(chatId, "💳 *No Active Accounts*: You haven't added any bank accounts yet. Add one in your dashboard to start tracking balances.");
+        await sendTelegramMessage(chatId, NO_ACCOUNT_MSG);
         return NextResponse.json({ success: true });
       }
 
@@ -1333,7 +1416,7 @@ export async function POST(req: NextRequest) {
       if (smsData) {
         const targetAccount = resolveAccount(smsData.type, text, smsData.accountEnding);
         if (!targetAccount) {
-          await sendTelegramMessage(chatId, "❌ *No Bank Account*: Please add a bank account in your dashboard before logging transactions.");
+          await sendTelegramMessage(chatId, NO_ACCOUNT_MSG);
           return NextResponse.json({ success: true });
         }
 
@@ -1931,7 +2014,7 @@ export async function POST(req: NextRequest) {
 
       if (tgErr || (tgRes && typeof tgRes === "object" && tgRes.success === false)) {
         if (!targetAccount) {
-          await sendTelegramMessage(chatId, "❌ *No Bank Account*: Please add a bank account in your dashboard before logging transactions.");
+          await sendTelegramMessage(chatId, NO_ACCOUNT_MSG);
           return NextResponse.json({ success: true });
         }
         const rpcName = txType === "expense" ? "record_expense" : "record_income";
