@@ -298,40 +298,63 @@ export async function POST(req: NextRequest) {
     if (linkMatch) {
       const code = linkMatch[1].toLowerCase();
 
-      const { data: profile, error: searchError } = await supabase
-        .from("profiles")
-        .select("id, username")
-        .eq("telegram_link_code", code)
-        .maybeSingle();
+      // 1. Try secure definer RPC function to link Telegram account
+      const { data: linkRes, error: rpcErr } = await supabase.rpc("link_telegram_account", {
+        p_link_code: code,
+        p_chat_id: String(chatId),
+      });
 
-      if (searchError || !profile) {
-        await sendTelegramMessage(chatId, "❌ *Link Failed*: Invalid or expired link code. Please check your dashboard Settings to generate a new code.");
-        return NextResponse.json({ success: true });
-      }
+      let linkedUsername = "User";
 
-      const { error: updateError } = await supabase
-        .from("profiles")
-        .update({
-          telegram_chat_id: chatId,
-          telegram_link_code: null,
-        })
-        .eq("id", profile.id);
+      if (!rpcErr && linkRes && typeof linkRes === "object" && linkRes.success === true) {
+        linkedUsername = linkRes.username || "User";
+      } else {
+        // 2. Fallback JS approach if RPC function is not yet deployed to remote DB
+        const { data: profile, error: searchError } = await supabase
+          .from("profiles")
+          .select("id, username")
+          .ilike("telegram_link_code", code)
+          .maybeSingle();
 
-      if (updateError) {
-        console.error("Failed to update profile Telegram chat ID:", updateError);
-        await sendTelegramMessage(chatId, "❌ *System Error*: Could not link account. Please try again later.");
-        return NextResponse.json({ success: true });
+        if (searchError || !profile) {
+          await sendTelegramMessage(chatId, "❌ *Link Failed*: Invalid or expired link code. Please check your dashboard Settings to generate a new code.");
+          return NextResponse.json({ success: true });
+        }
+
+        // Unlink any old profile currently tied to this chatId to avoid UNIQUE constraint violation
+        await supabase
+          .from("profiles")
+          .update({ telegram_chat_id: null })
+          .eq("telegram_chat_id", String(chatId));
+
+        // Link the profile
+        const { error: updateError } = await supabase
+          .from("profiles")
+          .update({
+            telegram_chat_id: String(chatId),
+            telegram_link_code: null,
+          })
+          .eq("id", profile.id);
+
+        if (updateError) {
+          console.error("Failed to update profile Telegram chat ID:", updateError);
+          await sendTelegramMessage(chatId, `❌ *System Error*: Could not link account. (${updateError.message || "Database rejected update"})`);
+          return NextResponse.json({ success: true });
+        }
+
+        linkedUsername = profile.username || "User";
       }
 
       await sendTelegramMessage(
         chatId,
-        `🎉 *Success!* Bot linked to account *${profile.username || "User"}*.\n\n` +
+        `🎉 *Success!* Bot linked to account *${linkedUsername}*.\n\n` +
         `🚀 *What can you do now?*\n` +
         `• Log quick expenses: \`50 Tea\` or \`120+45+30 Lunch\`\n` +
         `• Check balances: \`/balance\`\n` +
         `• Monthly summary: \`/summary\`\n` +
-        `• Undo mistakes: \`/undo\`\n` +
-        `• Paste Bank SMS alerts directly to auto-categorize!`
+        `• Undo mistakes: \`/undo\`\n\n` +
+        `👇 Tap any button below to open the interactive control menu!`,
+        MAIN_MENU_KEYBOARD
       );
       return NextResponse.json({ success: true });
     }
