@@ -278,8 +278,8 @@ export async function POST(req: NextRequest) {
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // 1. Handle Account Link command (/link tg-123456 or /start tg-123456)
-    const linkMatch = rawText.match(/^\/(?:link|start)\s+(tg-\d+)/i);
+    // 1. Handle Account Link command (/link tg-123456, /start tg-123456, or bare tg-123456)
+    const linkMatch = rawText.match(/^(?:\/)?(?:link|start)?\s*(tg-\d+)/i);
 
     // Handle bare /start without link code — show welcome message
     if (/^\/start$/i.test(rawText.trim())) {
@@ -768,8 +768,8 @@ export async function POST(req: NextRequest) {
       for (const acc of accounts) {
         const bal = parseFloat((acc as any).balance || 0);
         totalNetWorth += bal;
-        const type = (acc as any).type || "Bank";
-        const icon = type === "Bank" ? "🏦" : type === "Credit Card" ? "💳" : type === "Wallet" ? "📱" : "💵";
+        const typeStr = ((acc as any).type || "Bank").toLowerCase();
+        const icon = typeStr.includes("card") ? "💳" : typeStr.includes("wallet") ? "📱" : typeStr.includes("cash") ? "💵" : "🏦";
         msg += `${icon} *${acc.name}*: ₹${bal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}\n`;
       }
       msg += `\n🌟 *Total Net Worth*: ₹${totalNetWorth.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`;
