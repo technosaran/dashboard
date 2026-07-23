@@ -359,14 +359,50 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
-    // 2. Identify user by telegram_chat_id
-    const { data: profile, error: profError } = await supabase
-      .from("profiles")
-      .select("id, sms_sync_token, default_accounts, username, base_currency")
-      .eq("telegram_chat_id", chatId)
-      .maybeSingle();
+    // 2. Identify user & fetch context via SECURITY DEFINER RPC (bypasses RLS filtering)
+    let profile: any = null;
+    let accounts: any[] = [];
+    let familyMembers: any[] = [];
+    let goals: any[] = [];
 
-    if (profError || !profile) {
+    const { data: ctxRes, error: ctxErr } = await supabase.rpc("get_telegram_user_context", {
+      p_chat_id: String(chatId),
+    });
+
+    if (!ctxErr && ctxRes && typeof ctxRes === "object" && ctxRes.success === true) {
+      profile = ctxRes.profile;
+      accounts = ctxRes.accounts || [];
+      familyMembers = ctxRes.familyMembers || [];
+      goals = ctxRes.goals || [];
+    } else {
+      // Fallback direct reads
+      const { data: profData, error: profError } = await supabase
+        .from("profiles")
+        .select("id, sms_sync_token, default_accounts, username, base_currency")
+        .eq("telegram_chat_id", String(chatId))
+        .maybeSingle();
+
+      if (profError || !profData) {
+        await sendTelegramMessage(
+          chatId,
+          "⚠️ *Not Linked*: This Telegram account is not connected to your dashboard yet.\n\nTo link it:\n1. Go to your dashboard **Settings > Connected Integrations**.\n2. Click *Generate Telegram Code*.\n3. Send the code here as `/link tg-xxxxxx`."
+        );
+        return NextResponse.json({ success: true });
+      }
+      profile = profData;
+
+      const [{ data: accsData }, { data: famsData }, { data: goalsData }] = await Promise.all([
+        supabase.from("accounts").select("id, name, notes, balance, type").eq("user_id", profile.id),
+        supabase.from("family_members").select("id, name, relationship, balance").eq("user_id", profile.id),
+        supabase.from("goals").select("id, name, target_amount, current_amount").eq("user_id", profile.id),
+      ]);
+
+      accounts = accsData || [];
+      familyMembers = famsData || [];
+      goals = goalsData || [];
+    }
+
+    if (!profile) {
       await sendTelegramMessage(
         chatId,
         "⚠️ *Not Linked*: This Telegram account is not connected to your dashboard yet.\n\nTo link it:\n1. Go to your dashboard **Settings > Connected Integrations**.\n2. Click *Generate Telegram Code*.\n3. Send the code here as `/link tg-xxxxxx`."
@@ -378,49 +414,6 @@ export async function POST(req: NextRequest) {
     const initialDateParsed = parseNaturalDate(rawText);
     const mathEval = evaluateInlineMath(initialDateParsed.cleanedText);
     let text = mathEval ? mathEval.cleanedText : initialDateParsed.cleanedText;
-
-    // Parallelize user context reads: accounts, family members, goals upfront via Promise.all
-    let [{ data: accounts }, { data: familyMembers }, { data: goals }] = await Promise.all([
-      supabase.from("accounts").select("id, name, notes, balance, type").eq("user_id", profile.id),
-      supabase.from("family_members").select("id, name, relationship").eq("user_id", profile.id),
-      supabase.from("goals").select("id, name").eq("user_id", profile.id),
-    ]);
-
-    // Auto-create default account if user has no bank accounts in dashboard yet
-    if (!accounts || accounts.length === 0) {
-      await supabase.rpc("create_account_atomic", {
-        p_user_id: profile.id,
-        p_name: "Main Account",
-        p_type: "Checking",
-        p_balance: 100000,
-        p_currency: profile.base_currency || "INR",
-      });
-
-      const { data: freshAccounts } = await supabase
-        .from("accounts")
-        .select("id, name, notes, balance, type")
-        .eq("user_id", profile.id);
-
-      if (freshAccounts && freshAccounts.length > 0) {
-        accounts = freshAccounts;
-      } else {
-        const { data: directAcc } = await supabase
-          .from("accounts")
-          .insert({
-            user_id: profile.id,
-            name: "Main Account",
-            type: "Checking",
-            balance: 100000,
-            currency: profile.base_currency || "INR",
-          })
-          .select("id, name, notes, balance, type")
-          .single();
-
-        if (directAcc) {
-          accounts = [directAcc];
-        }
-      }
-    }
 
     const resolveAccount = (type: "expense" | "income", queryText?: string, accountEnding?: string | null): string | null => {
       if (!accounts || accounts.length === 0) return null;
@@ -1924,24 +1917,37 @@ export async function POST(req: NextRequest) {
 
       const description = text.replace(new RegExp(`\\b${primaryAmount}\\b`), "").trim().replace(/\s+/g, " ") || (txType === "expense" ? "General Expense" : "General Income");
       const targetAccount = resolveAccount(txType, text);
-      if (!targetAccount) {
-        await sendTelegramMessage(chatId, "❌ *No Bank Account*: Please add a bank account in your dashboard before logging transactions.");
-        return NextResponse.json({ success: true });
-      }
 
-      const rpcName = txType === "expense" ? "record_expense" : "record_income";
-      const { data: rpcData, error: rpcError } = await supabase.rpc(rpcName, {
-        p_user_id: profile.id,
+      // Try SECURITY DEFINER RPC first to bypass RLS restrictions
+      const { data: tgRes, error: tgErr } = await supabase.rpc("record_telegram_transaction", {
+        p_chat_id: String(chatId),
         p_description: `[Telegram] ${description}`,
         p_amount: primaryAmount,
         p_category: category,
+        p_type: txType,
         p_date: cleanDate,
-        p_account_id: targetAccount,
+        p_account_id: targetAccount || null,
       });
 
-      if (rpcError) throw rpcError;
-      if (rpcData && typeof rpcData === "object" && "success" in rpcData && (rpcData as any).success === false) {
-        throw new Error((rpcData as any).error || "Database rejected transaction.");
+      if (tgErr || (tgRes && typeof tgRes === "object" && tgRes.success === false)) {
+        if (!targetAccount) {
+          await sendTelegramMessage(chatId, "❌ *No Bank Account*: Please add a bank account in your dashboard before logging transactions.");
+          return NextResponse.json({ success: true });
+        }
+        const rpcName = txType === "expense" ? "record_expense" : "record_income";
+        const { data: rpcData, error: rpcError } = await supabase.rpc(rpcName, {
+          p_user_id: profile.id,
+          p_description: `[Telegram] ${description}`,
+          p_amount: primaryAmount,
+          p_category: category,
+          p_date: cleanDate,
+          p_account_id: targetAccount,
+        });
+
+        if (rpcError) throw rpcError;
+        if (rpcData && typeof rpcData === "object" && "success" in rpcData && (rpcData as any).success === false) {
+          throw new Error((rpcData as any).error || "Database rejected transaction.");
+        }
       }
 
       if (txType === "expense") {
