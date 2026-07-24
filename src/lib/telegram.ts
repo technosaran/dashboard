@@ -7,10 +7,6 @@
  * Send a message to a Telegram chat with automatic Markdown fallback.
  * If Telegram rejects the Markdown parse, retries as plain text.
  */
-/**
- * Send a message to a Telegram chat with automatic Markdown fallback.
- * If Telegram rejects the Markdown parse, retries as plain text.
- */
 export async function sendTelegramMessage(
   chatId: string,
   text: string,

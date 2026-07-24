@@ -51,81 +51,66 @@ export async function searchStocks(query: string, exchange: string = "NSE") {
     };
 
     const userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+    const encodedQuery = encodeURIComponent(query);
 
-    // 1. Try Tickertape (Stocks + ETFs)
-    try {
-      const url = `https://api.tickertape.in/search?text=${encodeURIComponent(query)}`;
-      const res = await fetch(url, { headers: { "User-Agent": userAgent }, cache: "no-store" });
-      if (res.ok) {
-        const data = await res.json() as TickertapeSearchResponse;
-        const list = (data?.data?.stocks ?? [])
-          .filter((q) => (q.type === "stock" || q.type === "etf") && q.ticker)
-          .map((q) => ({ ticker: q.ticker, name: q.name, type: q.type }));
-        addStocks(list);
-      }
-    } catch (e) {
-      console.error("Tickertape search failed", e);
-    }
+    const apiResults = await Promise.allSettled([
+      // 1. Tickertape API
+      fetch(`https://api.tickertape.in/search?text=${encodedQuery}`, { headers: { "User-Agent": userAgent }, cache: "no-store", signal: AbortSignal.timeout(4000) })
+        .then(async (res) => {
+          if (!res.ok) return [];
+          const data = (await res.json()) as TickertapeSearchResponse;
+          return (data?.data?.stocks ?? [])
+            .filter((q) => (q.type === "stock" || q.type === "etf") && q.ticker)
+            .map((q) => ({ ticker: q.ticker, name: q.name, type: q.type }));
+        }),
 
-    // 2. Try Yahoo Finance query2 (EQUITY + ETF)
-    try {
-      const url = `https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(query)}&quotesCount=15&newsCount=0`;
-      const res = await fetch(url, { headers: { "User-Agent": userAgent }, cache: "no-store" });
-      if (res.ok) {
-        const data = await res.json() as YahooSearchResponse;
-        const list = (data?.quotes ?? [])
-          .filter((q) => (q.quoteType === "EQUITY" || q.quoteType === "ETF") && (q.symbol.endsWith(".NS") || q.symbol.endsWith(".BO")))
-          .map((q) => ({
-            ticker: q.symbol.replace(".NS", "").replace(".BO", ""),
-            name: q.shortname ?? q.longname ?? q.symbol,
-            type: "stock",
-          }));
-        addStocks(list);
-      }
-    } catch (e) {
-      console.error("Yahoo search failed", e);
-    }
-
-    // 3. Fallback to Yahoo query1
-    if (stocks.length < 3) {
-      try {
-        const url = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(query)}&quotesCount=15&newsCount=0`;
-        const res = await fetch(url, { headers: { "User-Agent": userAgent }, cache: "no-store" });
-        if (res.ok) {
-          const data = await res.json() as YahooSearchResponse;
-          const list = (data?.quotes ?? [])
+      // 2. Yahoo Finance API (query2)
+      fetch(`https://query2.finance.yahoo.com/v1/finance/search?q=${encodedQuery}&quotesCount=15&newsCount=0`, { headers: { "User-Agent": userAgent }, cache: "no-store", signal: AbortSignal.timeout(4000) })
+        .then(async (res) => {
+          if (!res.ok) return [];
+          const data = (await res.json()) as YahooSearchResponse;
+          return (data?.quotes ?? [])
             .filter((q) => (q.quoteType === "EQUITY" || q.quoteType === "ETF") && (q.symbol.endsWith(".NS") || q.symbol.endsWith(".BO")))
             .map((q) => ({
               ticker: q.symbol.replace(".NS", "").replace(".BO", ""),
               name: q.shortname ?? q.longname ?? q.symbol,
               type: "stock",
             }));
-          addStocks(list);
-        }
-      } catch (e) {
-        console.error("Yahoo query1 search failed", e);
-      }
-    }
+        }),
 
-    // 4. Fallback to Groww Stocks API
-    if (stocks.length < 3) {
-      try {
-        const url = `https://groww.in/v1/api/search/v3/query/global/st_p_query?page=0&query=${encodeURIComponent(query)}&size=10`;
-        const res = await fetch(url, { headers: { "User-Agent": userAgent }, cache: "no-store" });
-        if (res.ok) {
+      // 3. Yahoo Finance API (query1)
+      fetch(`https://query1.finance.yahoo.com/v1/finance/search?q=${encodedQuery}&quotesCount=15&newsCount=0`, { headers: { "User-Agent": userAgent }, cache: "no-store", signal: AbortSignal.timeout(4000) })
+        .then(async (res) => {
+          if (!res.ok) return [];
+          const data = (await res.json()) as YahooSearchResponse;
+          return (data?.quotes ?? [])
+            .filter((q) => (q.quoteType === "EQUITY" || q.quoteType === "ETF") && (q.symbol.endsWith(".NS") || q.symbol.endsWith(".BO")))
+            .map((q) => ({
+              ticker: q.symbol.replace(".NS", "").replace(".BO", ""),
+              name: q.shortname ?? q.longname ?? q.symbol,
+              type: "stock",
+            }));
+        }),
+
+      // 4. Groww Stocks API
+      fetch(`https://groww.in/v1/api/search/v3/query/global/st_p_query?page=0&query=${encodedQuery}&size=10`, { headers: { "User-Agent": userAgent }, cache: "no-store", signal: AbortSignal.timeout(4000) })
+        .then(async (res) => {
+          if (!res.ok) return [];
           const data = await res.json();
           const items = data?.data?.content ?? [];
-          const list = items
+          return items
             .filter((q: any) => q.entity_type === "Stocks" && (q.nse_scrip_code || q.bse_scrip_code))
             .map((q: any) => ({
               ticker: q.nse_scrip_code || q.bse_scrip_code,
               name: q.title || q.company_short_name || q.ticker,
               type: "stock",
             }));
-          addStocks(list);
-        }
-      } catch (e) {
-        console.error("Groww stock search failed", e);
+        })
+    ]);
+
+    for (const res of apiResults) {
+      if (res.status === "fulfilled" && Array.isArray(res.value)) {
+        addStocks(res.value);
       }
     }
 

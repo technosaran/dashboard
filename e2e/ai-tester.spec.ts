@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test } from '@playwright/test';
 import { auto } from 'auto-playwright';
 import * as dotenv from 'dotenv';
 import * as path from 'path';

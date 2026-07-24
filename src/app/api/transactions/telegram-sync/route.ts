@@ -13,21 +13,22 @@ const MAIN_MENU_KEYBOARD = {
     ],
     [
       { text: "🤖 AI Health Score", callback_data: "cmd_ai" },
-      { text: "📈 Intelligence Report", callback_data: "cmd_report" }
+      { text: "📥 Export Statement", callback_data: "cmd_export" }
     ],
     [
       { text: "🎯 Savings Goals", callback_data: "cmd_goals" },
       { text: "📊 Budgets", callback_data: "cmd_budget" }
     ],
     [
-      { text: "📜 Recent Logs", callback_data: "cmd_recent" },
+      { text: "💱 Currency Convert", callback_data: "cmd_convert" },
       { text: "👨‍👩‍👧 Family Balances", callback_data: "cmd_family" }
     ],
     [
-      { text: "📑 Audit Ledger", callback_data: "cmd_ledger" },
-      { text: "↩️ Undo Last", callback_data: "cmd_undo" }
+      { text: "📜 Recent Logs", callback_data: "cmd_recent" },
+      { text: "📑 Audit Ledger", callback_data: "cmd_ledger" }
     ],
     [
+      { text: "↩️ Undo Last", callback_data: "cmd_undo" },
       { text: "💡 Commands & Help", callback_data: "cmd_help" }
     ]
   ]
@@ -42,6 +43,25 @@ const TX_CONFIRM_KEYBOARD = {
     ]
   ]
 };
+
+const CATEGORY_KEYBOARD = (txId: string) => ({
+  inline_keyboard: [
+    [
+      { text: "🍔 Food", callback_data: `cat_${txId}_Food` },
+      { text: "🚗 Transport", callback_data: `cat_${txId}_Transport` },
+      { text: "🛒 Shopping", callback_data: `cat_${txId}_Shopping` }
+    ],
+    [
+      { text: "🎬 Ent.", callback_data: `cat_${txId}_Entertainment` },
+      { text: "💡 Bills", callback_data: `cat_${txId}_Utilities` },
+      { text: "🏥 Health", callback_data: `cat_${txId}_Health` }
+    ],
+    [
+      { text: "↩️ Undo", callback_data: "cmd_undo" },
+      { text: "📊 Summary", callback_data: "cmd_summary" }
+    ]
+  ]
+});
 
 const NO_ACCOUNT_MSG = "❌ *No Bank Account Found*\n\nYou haven't created any bank account yet.\n\n👉 *Add one now directly in Telegram*:\n`add account SBI` or `add account SBI 5000`\n\nOr create one in your web dashboard!";
 
@@ -208,6 +228,109 @@ function parseBankSmsOrNotification(text: string): {
   return { amount, type, merchant, accountEnding };
 }
 
+// Calculate Levenshtein distance for typo tolerance
+function levenshteinDistance(a: string, b: string): number {
+  if (a.length === 0) return b.length;
+  if (b.length === 0) return a.length;
+  const matrix: number[][] = [];
+  for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+  for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      if (b.charAt(i - 1) === a.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1
+        );
+      }
+    }
+  }
+  return matrix[b.length][a.length];
+}
+
+const CATEGORY_FUZZY_DICT: Record<string, string[]> = {
+  Food: [
+    "food", "fud", "lunch", "lunh", "lnch", "lanch", "dinner", "dinr", "diner", "dnr",
+    "breakfast", "brkfast", "bf", "snack", "snak", "tea", "chai", "chaai", "coffee", "cofe",
+    "cfee", "cafe", "swiggy", "swigy", "zomato", "zomatoo", "zomat", "grocery", "groceries",
+    "grocry", "groceris", "grocries", "zepto", "blinkit", "milk", "kirana", "nashta", "khana",
+    "khrcha", "restaurant", "resturant", "restraunt", "biscuit", "pizza", "burger", "subway",
+    "mcdonalds", "kfc", "dominos", "swiggi", "eat", "eating"
+  ],
+  Transport: [
+    "uber", "ubr", "ola", "rapido", "cab", "taxi", "txi", "ride", "auto", "autto", "otto",
+    "metro", "petrol", "petrl", "ptrol", "diesel", "disel", "fuel", "ful", "parking", "prking",
+    "toll", "bus", "train", "flight", "flite", "trvl", "travel", "travl", "ticket", "vahan",
+    "gaadi", "petrolpump"
+  ],
+  Entertainment: [
+    "netflix", "netflx", "prime", "hotstar", "spotify", "spotfy", "movie", "mvie", "pvr",
+    "show", "game", "playstation", "steam", "subscription", "subscriptn", "cinema", "pub"
+  ],
+  Housing: [
+    "rent", "rnt", "house", "room", "flat", "flt", "maintenance", "maintnance", "pg", "kiraya"
+  ],
+  Utilities: [
+    "electricity", "electrcty", "water", "watr", "gas", "wifi", "broadband", "airtel", "jio",
+    "vi", "recharge", "recharg", "mobile", "bill", "bil", "bijli", "phonebill"
+  ],
+  Shopping: [
+    "amazon", "amzn", "flipkart", "flpkrt", "myntra", "ajio", "croma", "clothes", "cloths",
+    "shoes", "shos", "shopping", "shopyng", "shpping", "purchase", "samman", "kapde", "mall"
+  ],
+  Health: [
+    "doctor", "dr", "hospital", "hsptl", "medicine", "medcine", "pharmacy", "apollo", "1mg",
+    "gym", "fitness", "dawa", "dawai", "pharma", "clinic", "meds"
+  ]
+};
+
+const INCOME_FUZZY_KEYWORDS = [
+  "salary", "salry", "slry", "paycheck", "credit", "credt", "crdt", "credited", "crdited",
+  "received", "recived", "earned", "inflow", "refund", "refnd", "dividend", "bonus",
+  "cashback", "cshback", "got", "deposit", "kamai", "aaya"
+];
+
+function classifyTextFuzzy(text: string): { type: "expense" | "income"; category: string } {
+  const lower = text.toLowerCase();
+  const words = lower.split(/[^a-z0-9]+/i).filter(w => w.length >= 2);
+
+  // 1. Determine type
+  let isIncome = false;
+  for (const word of words) {
+    for (const target of INCOME_FUZZY_KEYWORDS) {
+      if (word === target || word.includes(target) || (word.length >= 4 && levenshteinDistance(word, target) <= 2)) {
+        isIncome = true;
+        break;
+      }
+    }
+    if (isIncome) break;
+  }
+
+  if (isIncome) {
+    let cat = "Salary";
+    if (/freelance|project|consulting/i.test(lower)) cat = "Work";
+    else if (/gift|reward|cashback/i.test(lower)) cat = "Gift";
+    else if (/refund/i.test(lower)) cat = "Refund";
+    return { type: "income", category: cat };
+  }
+
+  // 2. Determine expense category
+  for (const word of words) {
+    for (const [catName, keywords] of Object.entries(CATEGORY_FUZZY_DICT)) {
+      for (const kw of keywords) {
+        if (word === kw || word.includes(kw) || (word.length >= 4 && kw.length >= 4 && levenshteinDistance(word, kw) <= 2)) {
+          return { type: "expense", category: catName };
+        }
+      }
+    }
+  }
+
+  return { type: "expense", category: "Other" };
+}
+
 export async function POST(req: NextRequest) {
   try {
     const webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
@@ -267,7 +390,23 @@ export async function POST(req: NextRequest) {
     if (!rawText && body?.message?.photo) {
       await sendTelegramMessage(
         chatId,
-        "📸 *Receipt Photo Received*\nScanning bill details via OCR... _(Tip: Add a caption to your photo like `1200 Groceries` or `450 Swiggy` to categorize immediately)_"
+        "📸 *Receipt Photo Received*\nTap a quick amount & category below or reply with a caption (e.g., `450 Dinner`) to log this receipt:",
+        {
+          inline_keyboard: [
+            [
+              { text: "🍔 Food (₹200)", callback_data: "200 Food Receipt" },
+              { text: "🛒 Groceries (₹500)", callback_data: "500 Groceries Receipt" }
+            ],
+            [
+              { text: "🛍️ Shopping (₹1000)", callback_data: "1000 Shopping Receipt" },
+              { text: "🚗 Transport (₹300)", callback_data: "300 Transport Receipt" }
+            ],
+            [
+              { text: "💡 Utilities (₹1500)", callback_data: "1500 Utilities Receipt" },
+              { text: "☕ Coffee (₹100)", callback_data: "100 Coffee Receipt" }
+            ]
+          ]
+        }
       );
       return NextResponse.json({ success: true });
     }
@@ -412,6 +551,32 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
+    // Handle inline category re-assignment callback (e.g. "cat_txId_Category")
+    if (rawText.startsWith("cat_")) {
+      const parts = rawText.split("_");
+      if (parts.length >= 3) {
+        const txId = parts[1];
+        const newCategory = parts.slice(2).join("_");
+        
+        const { error: catUpdateErr } = await supabase
+          .from("transactions")
+          .update({ category: newCategory })
+          .eq("id", txId)
+          .eq("user_id", profile.id);
+
+        if (!catUpdateErr) {
+          await sendTelegramMessage(
+            chatId,
+            `🏷️ *Category Updated*\nTransaction category changed to *${newCategory}* successfully!`,
+            MAIN_MENU_KEYBOARD
+          );
+        } else {
+          await sendTelegramMessage(chatId, `❌ *Failed to update category*: ${catUpdateErr.message}`);
+        }
+        return NextResponse.json({ success: true });
+      }
+    }
+
     // Handle Add Bank Account command (e.g. "add account SBI", "add account SBI 5000", "create account HDFC", "450 add account sbi")
     const addAccountMatch = rawText.match(/^(?:([\d,]+(?:\.\d{1,2})?)\s+)?(?:\/)?(?:add\s*account|add\s*bank|create\s*account|create\s*bank|addaccount|addbank)(?:\s+(.+))?$/i);
     if (addAccountMatch) {
@@ -440,8 +605,6 @@ export async function POST(req: NextRequest) {
       if (accName.length <= 5) accName = accName.toUpperCase();
       else accName = accName.charAt(0).toUpperCase() + accName.slice(1);
 
-      let createdAcc: any = null;
-
       // Try RPC first
       const { data: rpcRes, error: rpcErr } = await supabase.rpc("create_account_atomic", {
         p_user_id: profile.id,
@@ -452,9 +615,7 @@ export async function POST(req: NextRequest) {
         p_bank_name: accName,
       });
 
-      if (!rpcErr && rpcRes && typeof rpcRes === "object" && (rpcRes as any).success !== false) {
-        createdAcc = { name: accName, balance: initialBalance };
-      } else {
+      if (rpcErr || !rpcRes || typeof rpcRes !== "object" || (rpcRes as any).success === false) {
         // Fallback direct table insert
         const { data: insertData, error: insertErr } = await supabase
           .from("accounts")
@@ -468,9 +629,7 @@ export async function POST(req: NextRequest) {
           .select("id, name, balance")
           .single();
 
-        if (!insertErr && insertData) {
-          createdAcc = insertData;
-        } else {
+        if (insertErr || !insertData) {
           console.error("Failed to insert account directly:", insertErr);
           await sendTelegramMessage(
             chatId,
@@ -762,6 +921,55 @@ export async function POST(req: NextRequest) {
         msg += `▪️ *${l.action_type}* (${dateStr})\n  Acc: ${l.account_name || "System"} | Amt: ${amtStr}\n  _${l.details || "None"}_\n\n`;
       }
       await sendTelegramMessage(chatId, msg);
+      return NextResponse.json({ success: true });
+    }
+
+    if (commandText === "export" || commandText === "statement" || commandText === "download") {
+      const now = new Date();
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
+      const monthName = now.toLocaleString("default", { month: "long", year: "numeric" });
+
+      const { data: monthTxs } = await supabase
+        .from("transactions")
+        .select("amount, type, category, description, date")
+        .eq("user_id", profile.id)
+        .gte("date", firstDay)
+        .order("date", { ascending: false });
+
+      let totalIncome = 0;
+      let totalExpense = 0;
+      const catMap: Record<string, number> = {};
+
+      if (monthTxs) {
+        for (const t of monthTxs) {
+          const amt = parseFloat(t.amount) || 0;
+          if (t.type === "income") totalIncome += amt;
+          else {
+            totalExpense += amt;
+            const cat = t.category || "Other";
+            catMap[cat] = (catMap[cat] || 0) + amt;
+          }
+        }
+      }
+
+      const netSavings = totalIncome - totalExpense;
+      const savingsPct = totalIncome > 0 ? Math.round((netSavings / totalIncome) * 100) : 0;
+
+      let msg = `📥 *Monthly Statement Report*\n*Period*: ${monthName}\n\n`;
+      msg += `💰 *Total Income*: ₹${totalIncome.toLocaleString("en-IN")}\n`;
+      msg += `💸 *Total Expense*: ₹${totalExpense.toLocaleString("en-IN")}\n`;
+      msg += `📈 *Net Savings*: ₹${netSavings.toLocaleString("en-IN")} _(${savingsPct}% rate)_\n\n`;
+
+      if (Object.keys(catMap).length > 0) {
+        msg += `📊 *Category Breakdown*:\n`;
+        for (const [cat, amt] of Object.entries(catMap)) {
+          msg += `• *${cat}*: ₹${amt.toLocaleString("en-IN")}\n`;
+        }
+      } else {
+        msg += `ℹ️ No expenses recorded for this month yet.`;
+      }
+
+      await sendTelegramMessage(chatId, msg, MAIN_MENU_KEYBOARD);
       return NextResponse.json({ success: true });
     }
 
@@ -1776,7 +1984,7 @@ export async function POST(req: NextRequest) {
         const targetAccount = resolveAccount(tradeType === "buy" ? "expense" : "income", text);
         if (!targetAccount) throw new Error("No bank account found to record crypto trade.");
 
-        const { data: rpcData, error } = await supabase.rpc("record_investment", {
+        const { error } = await supabase.rpc("record_investment", {
           p_user_id: profile.id,
           p_name: symbol,
           p_type: "crypto",
@@ -1884,7 +2092,7 @@ export async function POST(req: NextRequest) {
         const loanQuery = text.replace(/\b(loan|emi|pay|paid|liability|debt|rs|₹|\d+(?:\.\d+)?)\b/gi, "").trim() || "Loan Payment";
 
         // Record loan payment as expense under Housing/Debts
-        const { data: rpcData, error } = await supabase.rpc("record_expense", {
+        const { error } = await supabase.rpc("record_expense", {
           p_user_id: profile.id,
           p_description: `[Telegram EMI] ${loanQuery}`,
           p_amount: amount,
@@ -1950,11 +2158,8 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true });
       }
 
-      const isIncomeExplicit = /\b(received|income|salary|credited|credit|cr\.?|cr|earned|refund|dividend|bonus|cashback|got|deposit)\b/i.test(lowerText) && !/\b(paid|spent|sent|debited|debit|dr\.?|dr|to|outflow)\b/i.test(lowerText);
-      const isExpenseExplicit = /\b(paid|spent|sent|debited|debit|dr\.?|dr|bought|purchase|expense|outflow|charge)\b/i.test(lowerText) || /zomato|swiggy|restaurant|eat|lunch|dinner|breakfast|snack|tea|coffee|chai|cafe|food|dining|grocery|groceries|zepto|blinkit|milk|uber|ola|rapido|cab|taxi|ride|auto|metro|petrol|diesel|fuel|parking|netflix|prime|hotstar|spotify|movie|pvr|show|rent|house|electricity|water|gas|wifi|broadband|airtel|jio|recharge|amazon|flipkart|myntra|ajio|clothes|shoes|doctor|hospital|medicine|pharmacy|gym/i.test(lowerText);
-
-      // If text is purely digits or neither debit/credit/category can be deduced, ask smart clarifying question
-      if ((!isIncomeExplicit && !isExpenseExplicit) || /^\d+(?:\.\d{1,2})?$/.test(text.trim())) {
+      // Only ask clarifying question if text is literally just digits with zero description or letters
+      if (/^\d+(?:\.\d{1,2})?$/.test(text.trim())) {
         if (!isRedisConfigured()) {
           await sendTelegramMessage(
             chatId,
@@ -1965,8 +2170,7 @@ export async function POST(req: NextRequest) {
           );
           return NextResponse.json({ success: true });
         }
-        const descStr = text.replace(new RegExp(`\\b${primaryAmount}\\b`), "").trim() || "General Transaction";
-        await redisSet(pendingKey, JSON.stringify({ pending: true, reason: "unknown_type", amount: primaryAmount, description: descStr }), 600);
+        await redisSet(pendingKey, JSON.stringify({ pending: true, reason: "unknown_type", amount: primaryAmount, description: "General Transaction" }), 600);
         await sendTelegramMessage(
           chatId,
           `🤖 *Need Clarification for ₹${primaryAmount.toLocaleString("en-IN")}*:\n` +
@@ -1979,24 +2183,8 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true });
       }
 
-      const txType: "expense" | "income" = isIncomeExplicit ? "income" : "expense";
-      
-      let category = txType === "expense" ? "Other" : "Salary";
-      if (txType === "expense") {
-        if (/zomato|swiggy|restaurant|eat|lunch|dinner|breakfast|snack|tea|coffee|chai|cafe|food|dining|grocery|groceries|zepto|blinkit|milk|veg/i.test(lowerText)) category = "Food";
-        else if (/uber|ola|rapido|cab|taxi|ride|auto|metro|petrol|diesel|fuel|parking|toll|bus|train|flight/i.test(lowerText)) category = "Transport";
-        else if (/netflix|prime|hotstar|spotify|movie|pvr|show|game|playstation|steam|subscription/i.test(lowerText)) category = "Entertainment";
-        else if (/rent|house|room|flat|maintenance/i.test(lowerText)) category = "Housing";
-        else if (/electricity|water|gas|wifi|broadband|airtel|jio|vi|recharge|mobile|bill/i.test(lowerText)) category = "Utilities";
-        else if (/amazon|flipkart|myntra|ajio|croma|clothes|shoes|shopping/i.test(lowerText)) category = "Shopping";
-        else if (/doctor|hospital|medicine|pharmacy|apollo|1mg|gym|fitness/i.test(lowerText)) category = "Health";
-      } else {
-        if (/salary|paycheck/i.test(lowerText)) category = "Salary";
-        else if (/freelance|project|consulting/i.test(lowerText)) category = "Work";
-        else if (/gift|reward|cashback/i.test(lowerText)) category = "Gift";
-        else if (/refund/i.test(lowerText)) category = "Refund";
-        else category = "Others";
-      }
+      // Fault-tolerant Fuzzy NLP classifier (handles typos, misspellings, & slang)
+      const { type: txType, category } = classifyTextFuzzy(text);
 
       const description = text.replace(new RegExp(`\\b${primaryAmount}\\b`), "").trim().replace(/\s+/g, " ") || (txType === "expense" ? "General Expense" : "General Income");
       const targetAccount = resolveAccount(txType, text);
@@ -2039,6 +2227,18 @@ export async function POST(req: NextRequest) {
 
       const symbol = txType === "expense" ? "💸" : "💰";
       const accObj = accounts?.find((a: any) => a.id === targetAccount);
+
+      const { data: latestTx } = await supabase
+        .from("transactions")
+        .select("id")
+        .eq("user_id", profile.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const txId = latestTx?.id;
+      const keyboard = txId && txType === "expense" ? CATEGORY_KEYBOARD(txId) : TX_CONFIRM_KEYBOARD;
+
       await sendTelegramMessage(
         chatId,
         `${symbol} *Logged ${txType === "expense" ? "Expense" : "Income"}*:\n` +
@@ -2046,7 +2246,7 @@ export async function POST(req: NextRequest) {
         `• *Category*: ${category}\n` +
         `• *Account*: ${accObj?.name || "Default"}\n` +
         `• *Desc*: ${description}`,
-        TX_CONFIRM_KEYBOARD
+        keyboard
       );
     } catch (e: any) {
       await sendTelegramMessage(chatId, `❌ *Error*: ${e.message || "Failed to process command."}`);

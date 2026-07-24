@@ -38,19 +38,43 @@ const COINGECKO_ID_MAP: Record<string, string> = {
 
 // ─── Fetch Single Ticker ─────────────────────────────────────────────────────
 export async function fetchBinancePrice(symbol: string): Promise<{ price?: number; error?: string }> {
+  const symbolUpper = symbol.toUpperCase().trim();
+  
+  // 1. Try Primary Binance Ticker API
   try {
-    const formattedSymbol = symbol.toUpperCase().trim() + "USDT";
+    const formattedSymbol = symbolUpper + "USDT";
     const res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${formattedSymbol}`, {
-      next: { revalidate: 10 } // Cache for 10 seconds
+      next: { revalidate: 10 },
+      signal: AbortSignal.timeout(4000)
     });
-    if (!res.ok) {
-      return { error: `Symbol ${symbol} not found on Binance` };
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.price) return { price: parseFloat(data.price) };
     }
-    const data = await res.json();
-    return { price: parseFloat(data.price) };
-  } catch (err) {
-    return { error: getFriendlyErrorMessage(err) };
+  } catch {
+    // Continue to fallback
   }
+
+  // 2. Fallback to CoinGecko Simple Price API
+  try {
+    const cgId = COINGECKO_ID_MAP[symbolUpper];
+    if (cgId) {
+      const cgRes = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${cgId}&vs_currencies=usd`, {
+        next: { revalidate: 30 },
+        signal: AbortSignal.timeout(4000)
+      });
+      if (cgRes.ok) {
+        const cgData = await cgRes.json();
+        if (cgData?.[cgId]?.usd) {
+          return { price: parseFloat(cgData[cgId].usd) };
+        }
+      }
+    }
+  } catch {
+    // Fallback failed
+  }
+
+  return { error: `Price for ${symbolUpper} could not be retrieved from primary or secondary crypto APIs.` };
 }
 
 // ─── Fetch Batch Tickers ─────────────────────────────────────────────────────

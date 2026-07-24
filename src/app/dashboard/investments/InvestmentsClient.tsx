@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useFinanceData } from "@/hooks/use-finance-data";
 import { useHasMounted } from "@/hooks/use-has-mounted";
@@ -24,10 +24,8 @@ import CryptoClient from "@/app/dashboard/crypto/CryptoClient";
 
 export default function InvestmentsClient() {
   const searchParams = useSearchParams();
-  const initialTab = searchParams.get("tab") || "overview";
 
   const { data: { investments, mutualFunds, bonds, forexAccounts, alternativeAssets, profile }, isLoading } = useFinanceData();
-  const [activeTab, setActiveTab] = useState(initialTab);
   const mounted = useHasMounted();
 
   // Dynamic modules check
@@ -65,23 +63,26 @@ export default function InvestmentsClient() {
     return list;
   }, [hasStocks, hasMF, hasBonds, hasFnO, hasForex, hasAltAssets]);
 
-  // Sync active tab when searchParams ?tab=... changes
-  useEffect(() => {
-    const tabParam = searchParams.get("tab");
-    if (tabParam && availableTabs.some(t => t.key === tabParam)) {
-      setActiveTab(tabParam);
-    }
-  }, [searchParams, availableTabs]);
+  const tabParam = searchParams.get("tab");
+  const validTabParam = useMemo(() => {
+    return tabParam && availableTabs.some(t => t.key === tabParam) ? tabParam : null;
+  }, [tabParam, availableTabs]);
 
-  // Adjust active tab if the requested tab isn't enabled
-  useEffect(() => {
-    const exists = availableTabs.some(t => t.key === activeTab);
-    if (!exists && availableTabs.length > 0) {
-      setTimeout(() => {
-        setActiveTab("overview");
-      }, 0);
+  const [customTab, setCustomTab] = useState<string | null>(null);
+
+  const activeTab = useMemo(() => {
+    if (customTab && availableTabs.some(t => t.key === customTab)) {
+      return customTab;
     }
-  }, [availableTabs, activeTab]);
+    if (validTabParam) {
+      return validTabParam;
+    }
+    return availableTabs[0]?.key || "overview";
+  }, [customTab, validTabParam, availableTabs]);
+
+  const setActiveTab = (tab: string) => {
+    setCustomTab(tab);
+  };
 
   // Combined Portfolio Statistics (Separate INR and USD, zero conversion)
   const portfolioStats = useMemo(() => {

@@ -66,71 +66,84 @@ const POPULAR_FUNDS = [
 export async function searchMFSchemes(query: string) {
   if (!query || query.length < 2) return [];
   const userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
-  
-  // 1. Try api.mfapi.in search
-  try {
-    const res = await fetch(`https://api.mfapi.in/mf/search?q=${encodeURIComponent(query)}`, {
-        cache: "no-store",
-        headers: { "User-Agent": userAgent },
-        signal: AbortSignal.timeout(5000)
-    });
-    if (res.ok) {
+  const qLower = query.toLowerCase();
+  const encodedQuery = encodeURIComponent(query);
+
+  const seenCodes = new Set<string>();
+  const combinedResults: { schemeCode: string; schemeName: string }[] = [];
+
+  const addResults = (list: { schemeCode?: string; schemeName?: string }[]) => {
+    for (const item of list) {
+      if (item.schemeCode && item.schemeName) {
+        const code = item.schemeCode.trim();
+        if (!seenCodes.has(code)) {
+          seenCodes.add(code);
+          combinedResults.push({ schemeCode: code, schemeName: item.schemeName.trim() });
+        }
+      }
+    }
+  };
+
+  // Fetch concurrently from MFAPI.in, Groww API, and AMFI Official NAV text
+  const apiResults = await Promise.allSettled([
+    // 1. api.mfapi.in API
+    fetch(`https://api.mfapi.in/mf/search?q=${encodedQuery}`, {
+      cache: "no-store",
+      headers: { "User-Agent": userAgent },
+      signal: AbortSignal.timeout(4000)
+    }).then(async (res) => {
+      if (!res.ok) return [];
       const data = await res.json();
-      const results = (data || []).map((s: { schemeCode?: number; schemeName: string }) => ({
+      return (data || []).map((s: { schemeCode?: number; schemeName: string }) => ({
         schemeCode: s.schemeCode?.toString(),
         schemeName: s.schemeName
       }));
-      if (results.length > 0) return results;
-    }
-  } catch (err) {
-    console.warn("MFAPI Search failed, trying Groww fallback", err);
-  }
+    }),
 
-  // 2. Try Groww MF API fallback
-  try {
-    const res = await fetch(`https://groww.in/v1/api/search/v1/derived/scheme?availableForInvestment=true&docType=scheme&q=${encodeURIComponent(query)}`, {
+    // 2. Groww MF Search API
+    fetch(`https://groww.in/v1/api/search/v1/derived/scheme?availableForInvestment=true&docType=scheme&q=${encodedQuery}`, {
       cache: "no-store",
       headers: { "User-Agent": userAgent },
-      signal: AbortSignal.timeout(5000)
-    });
-    if (res.ok) {
+      signal: AbortSignal.timeout(4000)
+    }).then(async (res) => {
+      if (!res.ok) return [];
       const data = await res.json();
-      if (data && data.content && data.content.length > 0) {
-        const results = data.content.map((s: { scheme_code?: string; scheme_name?: string; fund_name?: string }) => ({
-          schemeCode: s.scheme_code?.toString() || "",
-          schemeName: s.scheme_name || s.fund_name || ""
-        })).filter((s: { schemeCode: string; schemeName: string }) => s.schemeCode && s.schemeName);
-        if (results.length > 0) return results;
-      }
-    }
-  } catch (err) {
-    console.warn("Groww MF search fallback failed, trying AMFI fallback", err);
-  }
+      const items = data?.content ?? [];
+      return items.map((s: { scheme_code?: string; scheme_name?: string; fund_name?: string }) => ({
+        schemeCode: s.scheme_code?.toString(),
+        schemeName: s.scheme_name || s.fund_name
+      }));
+    }),
 
-  // 3. Try AMFI search fallback using the cached text
-  try {
-    const text = await getAmfiNavText();
-    if (text) {
+    // 3. AMFI India Official NAV dataset
+    getAmfiNavText().then((text) => {
+      if (!text) return [];
       const lines = text.split("\n");
-      const qLower = query.toLowerCase();
-      const results = [];
+      const list = [];
       for (const line of lines) {
         if (line.includes(";")) {
           const parts = line.split(";");
           if (parts.length >= 4 && parts[3].toLowerCase().includes(qLower)) {
-            results.push({ schemeCode: parts[0].trim(), schemeName: parts[3].trim() });
-            if (results.length >= 15) break;
+            list.push({ schemeCode: parts[0].trim(), schemeName: parts[3].trim() });
+            if (list.length >= 15) break;
           }
         }
       }
-      if (results.length > 0) return results;
+      return list;
+    })
+  ]);
+
+  for (const res of apiResults) {
+    if (res.status === "fulfilled" && Array.isArray(res.value)) {
+      addResults(res.value);
     }
-  } catch (err) {
-    console.error("AMFI search fallback failed", err);
   }
 
-  // 4. Instant local popular funds fallback
-  const qLower = query.toLowerCase();
+  if (combinedResults.length > 0) {
+    return combinedResults.slice(0, 20);
+  }
+
+  // Fallback to local popular funds
   return POPULAR_FUNDS.filter(f => f.schemeName.toLowerCase().includes(qLower) || f.schemeCode.includes(qLower));
 }
 

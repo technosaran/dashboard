@@ -290,7 +290,7 @@ export default function LoginPage() {
                   value={emailInput}
                   onChange={(e) => setEmailInput(e.target.value)}
                   className="peer w-full bg-white/[0.03] border border-white/10 text-white text-sm rounded-xl px-4 pt-6 pb-2 outline-none focus:border-sky-500/50 focus:bg-white/[0.05] focus:shadow-[0_0_15px_rgba(14,165,233,0.1)] transition-all placeholder-transparent"
-                  placeholder=" "
+                  placeholder="you@example.com"
                 />
                 <label 
                   htmlFor="login-email"
@@ -312,7 +312,7 @@ export default function LoginPage() {
                   value={passwordInput}
                   onChange={(e) => setPasswordInput(e.target.value)}
                   className="peer w-full bg-white/[0.03] border border-white/10 text-white text-sm rounded-xl px-4 pt-6 pb-2 pr-12 outline-none focus:border-sky-500/50 focus:bg-white/[0.05] focus:shadow-[0_0_15px_rgba(14,165,233,0.1)] transition-all placeholder-transparent"
-                  placeholder=" "
+                  placeholder="••••••••"
                 />
                 <label 
                   htmlFor="login-password"
