@@ -25,6 +25,7 @@ export async function GET(request: NextRequest) {
 
     const cookieStore = await cookies();
     const response = NextResponse.redirect(redirectUrl);
+    const THIRTY_DAYS_IN_SECONDS = 60 * 60 * 24 * 30; // 30 days (1 month persistent session)
 
     const supabase = createServerClient<Database>(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -36,8 +37,14 @@ export async function GET(request: NextRequest) {
           },
           setAll(cookiesToSet) {
             cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options);
-              response.cookies.set(name, value, options);
+              const opts = {
+                ...options,
+                maxAge: options?.maxAge ?? THIRTY_DAYS_IN_SECONDS,
+                sameSite: options?.sameSite ?? "lax" as const,
+                path: options?.path ?? "/",
+              };
+              cookieStore.set(name, value, opts);
+              response.cookies.set(name, value, opts);
             });
           },
         },

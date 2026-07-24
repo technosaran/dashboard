@@ -175,6 +175,8 @@ export async function proxy(request: NextRequest) {
 
   let supabaseResponse = createPassThroughResponse(requestHeaders);
 
+  const THIRTY_DAYS_IN_SECONDS = 60 * 60 * 24 * 30; // 30 days (1 month persistent session)
+
   // Initialize Supabase client for authentication
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -201,7 +203,12 @@ export async function proxy(request: NextRequest) {
           supabaseResponse = createPassThroughResponse(requestHeaders);
           
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
+            supabaseResponse.cookies.set(name, value, {
+              ...options,
+              maxAge: options?.maxAge ?? THIRTY_DAYS_IN_SECONDS,
+              sameSite: options?.sameSite ?? "lax",
+              path: options?.path ?? "/",
+            })
           );
         },
       },
@@ -233,7 +240,12 @@ export async function proxy(request: NextRequest) {
   if (finalResponse !== supabaseResponse) {
     supabaseResponse.cookies.getAll().forEach((cookie) => {
       // Pass the entire cookie object to preserve all attributes including `expires` and `maxAge`
-      finalResponse.cookies.set(cookie.name, cookie.value, cookie);
+      finalResponse.cookies.set(cookie.name, cookie.value, {
+        ...cookie,
+        maxAge: cookie.maxAge ?? THIRTY_DAYS_IN_SECONDS,
+        sameSite: "lax",
+        path: "/",
+      });
     });
   }
 

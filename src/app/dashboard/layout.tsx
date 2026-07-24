@@ -48,7 +48,7 @@ export default async function DashboardLayout({
               }}
             />
             <div 
-              className="relative z-10 w-full px-[var(--page-padding-x)] pb-[calc(var(--mobile-bottom-nav-height)+var(--page-padding-y))] md:pb-[calc(var(--page-padding-y)*2)]"
+              className="relative z-10 w-full px-[var(--page-padding-x)] pb-[calc(var(--mobile-bottom-nav-height)+env(safe-area-inset-bottom,16px)+1rem)] md:pb-[calc(var(--page-padding-y)*2)]"
               style={{
                 paddingTop: "calc(var(--page-padding-y) + env(safe-area-inset-top, 0px))"
               }}

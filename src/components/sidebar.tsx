@@ -444,9 +444,9 @@ export default function Sidebar() {
         {mobileNavLeft.map((item) => {
           const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href + "/"));
           return (
-            <Link key={item.label} href={item.href} prefetch={true} className={`flex-1 flex flex-col items-center justify-center h-full relative transition-all active:scale-90 ${active ? "text-[--accent-primary-light]" : "text-[--text-muted]"}`}>
-              <div className={`${active ? "scale-110 -translate-y-0.5" : "opacity-70"} transition-all duration-300`}>{item.icon}</div>
-              <span className={`text-xs font-semibold absolute bottom-1.5 transition-all duration-300 ${active ? "opacity-100" : "opacity-70"}`}>{item.label}</span>
+            <Link key={item.label} href={item.href} prefetch={true} className={`flex-1 flex flex-col items-center justify-center gap-1 py-1 transition-all active:scale-90 ${active ? "text-[--accent-primary-light]" : "text-[--text-muted]"}`}>
+              <div className={`${active ? "scale-110" : "opacity-70"} transition-all duration-300`}>{item.icon}</div>
+              <span className={`text-[10px] sm:text-xs font-semibold leading-none transition-all duration-300 ${active ? "opacity-100 font-bold" : "opacity-70"}`}>{item.label}</span>
             </Link>
           );
         })}
@@ -470,16 +470,16 @@ export default function Sidebar() {
         {mobileNavRight.map((item) => {
           const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href + "/"));
           return (
-            <Link key={item.label} href={item.href} prefetch={true} className={`flex-1 flex flex-col items-center justify-center h-full relative transition-all active:scale-90 ${active ? "text-[--accent-primary-light]" : "text-[--text-muted]"}`}>
-              <div className={`${active ? "scale-110 -translate-y-0.5" : "opacity-70"} transition-all duration-300`}>{item.icon}</div>
-              <span className={`text-xs font-semibold absolute bottom-1.5 transition-all duration-300 ${active ? "opacity-100" : "opacity-70"}`}>{item.label}</span>
+            <Link key={item.label} href={item.href} prefetch={true} className={`flex-1 flex flex-col items-center justify-center gap-1 py-1 transition-all active:scale-90 ${active ? "text-[--accent-primary-light]" : "text-[--text-muted]"}`}>
+              <div className={`${active ? "scale-110" : "opacity-70"} transition-all duration-300`}>{item.icon}</div>
+              <span className={`text-[10px] sm:text-xs font-semibold leading-none transition-all duration-300 ${active ? "opacity-100 font-bold" : "opacity-70"}`}>{item.label}</span>
             </Link>
           );
         })}
         
-        <button type="button" onClick={() => setIsMoreOpen(true)} aria-label="Open more navigation" aria-expanded={isMoreOpen} aria-controls="more-navigation-dialog" className={`flex-1 flex flex-col items-center justify-center h-full relative transition-all active:scale-90 ${isMoreOpen ? "text-[--accent-primary-light]" : "text-[--text-muted]"}`}>
-          <div className={`${isMoreOpen ? "scale-110 translate-y-0" : "opacity-40"} transition-all duration-300`}><svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" /></svg></div>
-          <span className={`text-xs font-bold absolute bottom-2 transition-all duration-300 ${isMoreOpen ? "opacity-100" : "opacity-0 translate-y-2"}`}>More</span>
+        <button type="button" onClick={() => setIsMoreOpen(true)} aria-label="Open more navigation" aria-expanded={isMoreOpen} aria-controls="more-navigation-dialog" className={`flex-1 flex flex-col items-center justify-center gap-1 py-1 transition-all active:scale-90 ${isMoreOpen ? "text-[--accent-primary-light]" : "text-[--text-muted]"}`}>
+          <div className={`${isMoreOpen ? "scale-110" : "opacity-60"} transition-all duration-300`}><svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" /></svg></div>
+          <span className={`text-[10px] sm:text-xs font-bold leading-none transition-all duration-300 ${isMoreOpen ? "opacity-100" : "opacity-70"}`}>More</span>
         </button>
       </nav>
     </>

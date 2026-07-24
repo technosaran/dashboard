@@ -14,6 +14,8 @@ export async function createClient() {
   }
 
   const cookieStore = await cookies();
+  const THIRTY_DAYS_IN_SECONDS = 60 * 60 * 24 * 30; // 30 days (1 month persistent session)
+
   return createServerClient<Database>(
     url,
     anonKey,
@@ -25,7 +27,12 @@ export async function createClient() {
         setAll(cookiesToSet) {
           try {
             cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
+              cookieStore.set(name, value, {
+                ...options,
+                maxAge: options?.maxAge ?? THIRTY_DAYS_IN_SECONDS,
+                sameSite: options?.sameSite ?? "lax",
+                path: options?.path ?? "/",
+              })
             );
           } catch {}
         },
