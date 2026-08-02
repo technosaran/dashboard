@@ -258,7 +258,7 @@ export default function IntegrationsTab({
               <div className="p-3 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center gap-3">
                 <div className="p-1 bg-white rounded-lg shrink-0">
                   <QRCode
-                    value={`https://t.me/${process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "FIN_DASHBAORD_bot"}?start=${profile.telegram_link_code}`}
+                    value={`https://t.me/${process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "FIN_DASHBOARD_bot"}?start=${profile.telegram_link_code}`}
                     size={64}
                     level="M"
                   />
@@ -266,7 +266,7 @@ export default function IntegrationsTab({
                 <div className="flex-1 space-y-1">
                   <p className="text-xs font-bold text-white">Scan QR or Click Below</p>
                   <a
-                    href={`https://t.me/${process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "FIN_DASHBAORD_bot"}?start=${profile.telegram_link_code}`}
+                    href={`https://t.me/${process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "FIN_DASHBOARD_bot"}?start=${profile.telegram_link_code}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-block text-[0.6875rem] font-bold text-sky-400 underline"

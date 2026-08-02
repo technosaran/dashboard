@@ -396,6 +396,18 @@ export default function SettingsPage() {
     return filteredCategories.flatMap((c) => c.items);
   }, [filteredCategories]);
 
+  const activeTabMeta = useMemo(() => {
+    return NAV_CATEGORIES.flatMap((category) => category.items).find((item) => item.key === activeTab);
+  }, [NAV_CATEGORIES, activeTab]);
+
+  useEffect(() => {
+    if (!searchQuery.trim() || mobileNavItems.length === 0) return;
+    const hasActiveTab = mobileNavItems.some((item) => item.key === activeTab);
+    if (!hasActiveTab) {
+      setActiveTab(mobileNavItems[0].key);
+    }
+  }, [searchQuery, mobileNavItems, activeTab]);
+
   return (
     <div className="flex flex-col gap-6 animate-fade-in pb-12">
       {/* Top Banner Header with Quick Search Bar */}
@@ -464,7 +476,7 @@ export default function SettingsPage() {
                 <p className="px-3 text-[0.625rem] font-black uppercase tracking-[0.2em] text-indigo-400/80">
                   {cat.category}
                 </p>
-                <div className="space-y-0.5">
+                 <div className="space-y-0.5" role="tablist" aria-label={`${cat.category} settings tabs`}>
                   {cat.items.map((item) => {
                     const isActive = activeTab === item.key;
                     return (
@@ -472,9 +484,12 @@ export default function SettingsPage() {
                         key={item.key}
                         type="button"
                         onClick={() => handleTabChange(item.key)}
-                        className={`w-full p-2.5 rounded-2xl text-left transition-all duration-200 flex items-center justify-between group cursor-pointer ${
-                          isActive
-                            ? "bg-gradient-to-r from-indigo-600/30 to-purple-600/20 border border-indigo-500/40 text-white shadow-[0_4px_20px_rgba(99,102,241,0.2)]"
+                         role="tab"
+                         aria-selected={isActive}
+                         aria-current={isActive ? "page" : undefined}
+                         className={`w-full p-2.5 rounded-2xl text-left transition-all duration-200 flex items-center justify-between group cursor-pointer ${
+                           isActive
+                             ? "bg-gradient-to-r from-indigo-600/30 to-purple-600/20 border border-indigo-500/40 text-white shadow-[0_4px_20px_rgba(99,102,241,0.2)]"
                             : "text-[--text-muted] hover:text-white hover:bg-white/[0.04] border border-transparent"
                         }`}
                       >
@@ -505,7 +520,7 @@ export default function SettingsPage() {
 
             {filteredCategories.length === 0 && (
               <div className="p-4 text-center text-xs text-gray-400">
-                No setting matching &quot;{searchQuery}&quot; found.
+                No settings matching &quot;{searchQuery}&quot; found.
               </div>
             )}
           </div>
@@ -513,7 +528,7 @@ export default function SettingsPage() {
 
         {/* Mobile Horizontal Sticky Pill Scrollbar (< md) */}
         <div className="md:hidden sticky top-0 z-20 w-full overflow-x-auto no-scrollbar scroll-smooth py-2 bg-[#0b0f19]/90 backdrop-blur-md border-b border-white/10">
-          <div className="flex items-center gap-2 rounded-2xl bg-slate-900/80 border border-white/10 p-2 w-max min-w-full">
+          <div className="flex items-center gap-2 rounded-2xl bg-slate-900/80 border border-white/10 p-2 w-max min-w-full" role="tablist" aria-label="Settings tabs">
             {mobileNavItems.map((tab) => {
               const isActive = activeTab === tab.key;
               return (
@@ -521,6 +536,9 @@ export default function SettingsPage() {
                   key={tab.key}
                   type="button"
                   onClick={() => handleTabChange(tab.key)}
+                  role="tab"
+                  aria-selected={isActive}
+                  aria-current={isActive ? "page" : undefined}
                   className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 whitespace-nowrap cursor-pointer shrink-0 transition-all ${
                     isActive
                       ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 border border-indigo-400/30"
@@ -541,7 +559,31 @@ export default function SettingsPage() {
 
         {/* Right Main Content Canvas (Desktop md:grid-cols-8) */}
         <div className="col-span-1 md:col-span-8 lg:col-span-9 min-w-0">
-          {activeTab === "profile" && (
+          <div className="glass-card rounded-3xl border border-white/10 bg-slate-900/45 p-4 sm:p-5 md:p-6 shadow-xl">
+            {activeTabMeta && (
+              <div className="mb-5 border-b border-white/10 pb-4">
+                <p className="text-[0.625rem] font-black uppercase tracking-[0.2em] text-indigo-400/90">
+                  {activeTabMeta.label}
+                </p>
+                <p className="mt-1 text-xs text-[--text-muted]">{activeTabMeta.description}</p>
+              </div>
+            )}
+
+            {mobileNavItems.length === 0 ? (
+              <div className="flex min-h-56 flex-col items-center justify-center rounded-2xl border border-dashed border-white/15 bg-black/20 px-6 py-10 text-center">
+                <p className="text-sm font-bold text-white">No settings match your search.</p>
+                <p className="mt-1 text-xs text-[--text-muted]">Try a different keyword or clear the search filter.</p>
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="mt-4 rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-3.5 py-2 text-xs font-bold text-indigo-300 transition-all hover:bg-indigo-500/20"
+                >
+                  Clear Search
+                </button>
+              </div>
+            ) : (
+              <>
+                {activeTab === "profile" && (
             <ProfileTab
               input={input}
               username={username}
@@ -557,46 +599,46 @@ export default function SettingsPage() {
               profile={profile}
               user={user}
             />
-          )}
+                )}
 
-          {activeTab === "modules" && (
+                {activeTab === "modules" && (
             <ModulesTab
               enabledModules={enabledModules}
               toggleModule={toggleModule}
               onEnableAll={handleEnableAllModules}
             />
-          )}
+                )}
 
-          {activeTab === "defaults" && (
+                {activeTab === "defaults" && (
             <DefaultsTab
               defaultAccounts={defaultAccounts}
               accounts={accounts}
               handleDefaultAccountChange={handleDefaultAccountChange}
               sectionsRequiringAccount={SECTIONS_REQUIRING_ACCOUNT}
             />
-          )}
+                )}
 
-          {activeTab === "imports" && (
+                {activeTab === "imports" && (
             <ImportsTab accounts={accounts} mutate={mutate} />
-          )}
+                )}
 
-          {activeTab === "exports" && (
+                {activeTab === "exports" && (
             <ExportsTab />
-          )}
+                )}
 
-          {activeTab === "integrations" && (
+                {activeTab === "integrations" && (
             <IntegrationsTab profile={profile} mutate={mutate} />
-          )}
+                )}
 
-          {activeTab === "status" && (
+                {activeTab === "status" && (
             <SystemStatusTab
               diagnostics={diagnostics}
               runningDiagnostics={runningDiagnostics}
               runDiagnostics={runDiagnostics}
             />
-          )}
+                )}
 
-          {activeTab === "danger" && (
+                {activeTab === "danger" && (
             <DangerZoneTab
               handleResetClick={handleResetClick}
               showResetModal={showResetModal}
@@ -608,11 +650,13 @@ export default function SettingsPage() {
               handleResetConfirm={handleResetConfirm}
               canExecuteReset={canExecuteReset}
             />
-          )}
+                )}
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>
   );
 }
-
 
