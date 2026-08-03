@@ -188,8 +188,14 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         });
 
         if (error) {
-          console.error("Failed to update username:", error.message);
+          console.error("Failed to update username in auth:", error.message);
         }
+
+        // Also sync username to public.profiles table
+        await supabase
+          .from("profiles")
+          .update({ username: trimmedName })
+          .eq("id", user.id);
       } catch (err) {
         console.error("Context error during username sync:", err);
       } finally {

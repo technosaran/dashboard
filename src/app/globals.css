@@ -322,7 +322,7 @@ input, textarea, [contenteditable="true"] {
   .input-premium:focus {
     border-color: var(--accent-primary);
     background: var(--bg-surface);
-    box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.08);
+    box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.18), 0 0 15px rgba(139, 92, 246, 0.1);
   }
 
   .input-premium::placeholder {
@@ -389,12 +389,12 @@ input, textarea, [contenteditable="true"] {
   .btn-primary {
     background: var(--gradient-primary);
     color: white;
-    box-shadow: 0 4px 15px rgba(14, 165, 233, 0.25), 0 0 0 1px rgba(14, 165, 233, 0.1);
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.28), 0 0 0 1px rgba(139, 92, 246, 0.15);
   }
 
   .btn-primary:hover {
     transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 8px 25px rgba(14, 165, 233, 0.45), 0 0 0 1px rgba(14, 165, 233, 0.2);
+    box-shadow: 0 8px 25px rgba(139, 92, 246, 0.45), 0 0 0 1px rgba(139, 92, 246, 0.25);
     filter: brightness(1.1);
   }
 
@@ -485,16 +485,17 @@ body {
 
 /* Toast UI */
 .app-toast {
-  background: rgba(18, 18, 18, 0.9) !important;
-  /* Removed heavy backdrop-filter */
+  background: rgba(18, 24, 38, 0.95) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
   color: var(--text-primary) !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.1) !important;
-  border-radius: 16px !important;
-  padding: 16px 28px !important;
-  font-size: 18px !important;
-  font-weight: 700 !important;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
-  max-width: 600px !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 14px !important;
+  padding: 12px 20px !important;
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
+  max-width: 500px !important;
   text-align: center;
   letter-spacing: 0.01em;
 }
@@ -682,9 +683,9 @@ body {
 }
 
 .badge-info {
-  background: rgba(14, 165, 233, 0.12);
-  color: var(--accent-primary);
-  border: 1px solid rgba(14, 165, 233, 0.2);
+  background: rgba(139, 92, 246, 0.12);
+  color: var(--accent-primary-light);
+  border: 1px solid rgba(139, 92, 246, 0.25);
 }
 
 @theme inline {

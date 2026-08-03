@@ -70,7 +70,7 @@ const nav = [
     ),
   },
   {
-    label: "Tax & Reports",
+    label: "Tax",
     href: "/dashboard/tax-reports",
     icon: (
       <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
@@ -242,6 +242,7 @@ export default function Sidebar() {
       }
 
       const dbLabel: ModuleKey | string = 
+        item.label === "Tax" ? "Tax & Reports" : 
         item.label === "Assets" ? "Alt Assets" : 
         item.label === "Loans" ? "Liabilities" : 
         item.label === "Family" ? "Family Management" : 
@@ -389,7 +390,7 @@ export default function Sidebar() {
 
       {/* Mobile More Overlay — #6 improved layout, #25 focus trap */}
       <div
-        className={`md:hidden fixed inset-0 z-[60] bg-slate-900/40 backdrop-blur-md transition-all duration-500 ease-in-out ${isMoreOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        className={`md:hidden fixed inset-0 z-[120] bg-slate-950/80 backdrop-blur-md transition-all duration-500 ease-in-out ${isMoreOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}
         onClick={() => setIsMoreOpen(false)}
         aria-hidden={!isMoreOpen}
       >

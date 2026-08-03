@@ -1,6 +1,7 @@
 "use client";
 
-import type { User } from "@supabase/supabase-js";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
+import { User } from "lucide-react";
 
 interface ProfileTabProps {
   input: string;
@@ -15,7 +16,7 @@ interface ProfileTabProps {
   timezone?: string;
   onSaveSetting?: (key: string, value: unknown, msg: string) => void;
   profile?: any;
-  user?: User | null;
+  user?: SupabaseUser | null;
 }
 
 export default function ProfileTab({
@@ -47,7 +48,7 @@ export default function ProfileTab({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 text-xl shadow-inner">
-              👤
+              <User className="w-5 h-5" />
             </div>
             <div>
               <h2 className="text-lg font-black text-white tracking-tight">Logged-in User Profile</h2>

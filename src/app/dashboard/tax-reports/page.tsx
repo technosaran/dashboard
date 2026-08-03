@@ -5,8 +5,8 @@ import { redirect } from "next/navigation";
 import TaxReportsClient from "./TaxReportsClient";
 
 export const metadata: Metadata = {
-  title: "Tax & Reports",
-  description: "India-first tax planning center and high-level fiscal reporting dashboard.",
+  title: "Tax Studio",
+  description: "India-first tax planning center and income tax calculation studio.",
 };
 
 export const dynamic = "force-dynamic";

@@ -22,6 +22,11 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "No CAS statement file uploaded" }, { status: 400 });
       }
 
+      const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB limit
+      if (file.size > MAX_FILE_SIZE_BYTES) {
+        return NextResponse.json({ error: "Uploaded file size exceeds 10MB limit." }, { status: 400 });
+      }
+
       const buffer = Buffer.from(await file.arrayBuffer());
 
       if (file.type === "application/pdf" || file.name.endsWith(".pdf")) {
@@ -73,8 +78,9 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error("Error parsing CAS statement:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to parse CAS statement" },
+      { error: "Failed to parse CAS statement" },
       { status: 500 }
     );
   }
 }
+

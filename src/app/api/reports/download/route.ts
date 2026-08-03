@@ -160,9 +160,6 @@ export async function GET(request: Request) {
     const usdNetWorth = totalUsdAssets; // Assumes USD liabilities are not active
 
     // ===================================================
-    // 8. FETCH AND MAP TRANSACTIONS
-    // ===================================================
-    // ===================================================
     // 8. FETCH AND MAP TRANSACTIONS & PARTICULARS FILTERING
     // ===================================================
     const pad = (n: number) => String(n).padStart(2, "0");

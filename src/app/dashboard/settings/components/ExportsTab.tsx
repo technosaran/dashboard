@@ -4,6 +4,18 @@ import { useState } from "react";
 import { useFinanceData } from "@/hooks/use-finance-data";
 import { exportToCSV } from "@/lib/export-csv";
 import dynamic from "next/dynamic";
+import {
+  DollarSign,
+  CreditCard,
+  Landmark,
+  BarChart2,
+  TrendingUp,
+  Gem,
+  ScrollText,
+  Home,
+  RefreshCw,
+  Rocket,
+} from "lucide-react";
 
 const ReportDownloadButton = dynamic(
   () => import("../../components/ReportDownloadButton"),
@@ -148,12 +160,20 @@ export default function ExportsTab() {
     ]);
   };
 
-  const exportCards = [
+  const exportCards: {
+    title: string;
+    desc: string;
+    count: number;
+    icon: React.ReactNode;
+    action: () => void;
+    badge: string;
+    color: string;
+  }[] = [
     {
       title: "Income Revenue Streams",
       desc: "Salary, dividends, freelance credits, and bonus history",
       count: incomes.length,
-      icon: "💵",
+      icon: <DollarSign className="w-6 h-6 text-emerald-400" />,
       action: handleExportIncome,
       badge: "CSV",
       color: "emerald",
@@ -162,7 +182,7 @@ export default function ExportsTab() {
       title: "Expense Transactions",
       desc: "Categorized outflow transactions & spending history",
       count: expenses.length,
-      icon: "💳",
+      icon: <CreditCard className="w-6 h-6 text-rose-400" />,
       action: handleExportExpenses,
       badge: "CSV",
       color: "rose",
@@ -171,7 +191,7 @@ export default function ExportsTab() {
       title: "Bank & Credit Accounts",
       desc: "Checking, savings, credit cards, and liquid balance nodes",
       count: accounts.length,
-      icon: "🏦",
+      icon: <Landmark className="w-6 h-6 text-sky-400" />,
       action: handleExportAccounts,
       badge: "CSV",
       color: "sky",
@@ -180,7 +200,7 @@ export default function ExportsTab() {
       title: "Ledger & Audit Trail",
       desc: "Full immutable log of all balance changes and transfers",
       count: ledgerLogs.length,
-      icon: "📊",
+      icon: <BarChart2 className="w-6 h-6 text-amber-400" />,
       action: handleExportLedger,
       badge: "CSV",
       color: "amber",
@@ -189,7 +209,7 @@ export default function ExportsTab() {
       title: "Stock Holdings (Equities)",
       desc: "Direct stock portfolio, quantity, buy price, and current values",
       count: investments.length,
-      icon: "📈",
+      icon: <TrendingUp className="w-6 h-6 text-cyan-400" />,
       action: handleExportStocks,
       badge: "CSV",
       color: "cyan",
@@ -198,7 +218,7 @@ export default function ExportsTab() {
       title: "Mutual Funds & SIPs",
       desc: "AMC schemes, units, invested capital, and latest NAVs",
       count: mutualFunds.length,
-      icon: "💎",
+      icon: <Gem className="w-6 h-6 text-indigo-400" />,
       action: handleExportMutualFunds,
       badge: "CSV",
       color: "indigo",
@@ -207,7 +227,7 @@ export default function ExportsTab() {
       title: "Equity & Stock Trades",
       desc: "Executed stock trades, buy/sell executions, and P&L history",
       count: stockTrades.length,
-      icon: "📈",
+      icon: <TrendingUp className="w-6 h-6 text-sky-400" />,
       action: handleExportStockTrades,
       badge: "CSV",
       color: "sky",
@@ -216,7 +236,7 @@ export default function ExportsTab() {
       title: "Mutual Fund Trades",
       desc: "SIP investments, lumpsum purchases, and redemption records",
       count: mutualFundTrades.length,
-      icon: "🏦",
+      icon: <Landmark className="w-6 h-6 text-indigo-400" />,
       action: handleExportMutualFundTrades,
       badge: "CSV",
       color: "indigo",
@@ -225,7 +245,7 @@ export default function ExportsTab() {
       title: "Bond Holdings & Fixed Income",
       desc: "Corporate bonds, sovereign gold bonds, and yield records",
       count: bonds.length,
-      icon: "📜",
+      icon: <ScrollText className="w-6 h-6 text-purple-400" />,
       action: handleExportBonds,
       badge: "CSV",
       color: "purple",
@@ -234,7 +254,7 @@ export default function ExportsTab() {
       title: "Liabilities & Debt",
       desc: "Loans, EMIs, credit card dues, and outstanding debt balances",
       count: liabilities.length,
-      icon: "💳",
+      icon: <CreditCard className="w-6 h-6 text-rose-400" />,
       action: handleExportLiabilities,
       badge: "CSV",
       color: "rose",
@@ -243,7 +263,7 @@ export default function ExportsTab() {
       title: "Alternative Assets",
       desc: "Real estate, precious metals, startup equity, and private assets",
       count: alternativeAssets.length,
-      icon: "🏠",
+      icon: <Home className="w-6 h-6 text-yellow-400" />,
       action: handleExportAlternativeAssets,
       badge: "CSV",
       color: "yellow",
@@ -252,7 +272,7 @@ export default function ExportsTab() {
       title: "Forex & USD Portfolio",
       desc: "Foreign currency accounts, balances, and invested capital",
       count: forexAccounts.length,
-      icon: "💱",
+      icon: <RefreshCw className="w-6 h-6 text-orange-400" />,
       action: handleExportForex,
       badge: "CSV",
       color: "orange",
@@ -273,7 +293,7 @@ export default function ExportsTab() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-black uppercase tracking-wider mb-3">
-              <span>🚀 Central Export Hub</span>
+              <span className="flex items-center gap-1.5"><Rocket className="w-3.5 h-3.5" /> Central Export Hub</span>
             </div>
             <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight">
               Custom Financial Statement & Particulars Export
@@ -317,7 +337,7 @@ export default function ExportsTab() {
             >
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-2xl">{card.icon}</span>
+                  <div className="flex items-center">{card.icon}</div>
                   <span className={`px-2 py-0.5 rounded-full text-[0.625rem] font-mono font-bold border ${
                     card.count > 0 ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : "bg-white/5 border-white/10 text-[--text-muted]"
                   }`}>

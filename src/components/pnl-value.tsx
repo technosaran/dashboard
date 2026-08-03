@@ -10,8 +10,10 @@ interface PnLValueProps {
   className?: string;
   showSign?: boolean;
   showIcon?: boolean;
+  showTrendIcon?: boolean;
   size?: "sm" | "md" | "lg";
   glow?: boolean;
+  align?: "left" | "right" | "center";
 }
 
 export default function PnLValue({ 
@@ -24,8 +26,10 @@ export default function PnLValue({
   className = "", 
   showSign = true,
   showIcon,
+  showTrendIcon = false,
   size = "md",
-  glow = false
+  glow = false,
+  align = "right"
 }: PnLValueProps) {
   const finalValue = value !== undefined ? value : (amount || 0);
   const finalPrefix = prefix !== undefined ? prefix : (currency === 'USD' ? '$' : '₹');
@@ -39,6 +43,12 @@ export default function PnLValue({
     : isNegative 
       ? "text-danger" 
       : "text-[--text-secondary]";
+
+  const alignClasses = {
+    left: "items-start text-left",
+    center: "items-center text-center",
+    right: "items-end text-right",
+  };
 
   const sizeClasses = {
     sm: "text-xs font-bold",
@@ -58,16 +68,17 @@ export default function PnLValue({
     : undefined;
 
   return (
-    <div className={`flex flex-col items-end ${className}`} aria-live="polite">
+    <div className={`flex flex-col ${alignClasses[align]} ${className}`} aria-live="polite">
       <span 
-        className={`${sizeClasses[size]} tabular-nums ${colorClass}`}
+        className={`${sizeClasses[size]} tabular-nums ${colorClass} inline-flex items-center gap-1`}
         style={glowStyle}
       >
+        {showTrendIcon && (isPositive ? "▲ " : isNegative ? "▼ " : "")}
         {finalShowSign && isPositive ? "+" : ""}{isNegative ? "-" : ""}{finalPrefix}{Math.abs(finalValue).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{suffix}
       </span>
       {percentage !== undefined && (
         <span 
-          className={`text-xs font-black opacity-60 tabular-nums ${colorClass}`}
+          className={`text-xs font-black opacity-80 tabular-nums ${colorClass}`}
           style={glowStyle}
         >
           ({isPositive ? "+" : ""}{percentage.toFixed(2)}%)

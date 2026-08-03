@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FileText, FileCheck, ArrowRight, ShieldCheck } from "lucide-react";
+import { FileText, FileCheck, ArrowRight, ShieldCheck, Download } from "lucide-react";
 import BankStatementParserModal from "@/components/BankStatementParserModal";
 import CASImportModal from "@/components/CASImportModal";
 import type { Tables } from "@/lib/database.types";
@@ -21,7 +21,7 @@ export default function ImportsTab({ accounts, mutate }: ImportsTabProps) {
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col gap-2">
         <h2 className="text-xl font-bold text-white flex items-center gap-2">
-          <span>📥</span> Data Imports & Statement Parsers
+          <Download className="w-5 h-5 text-sky-400 shrink-0" /> Data Imports & Statement Parsers
         </h2>
         <p className="text-xs text-[--text-secondary]">
           Import bank PDF statements, CAMS/NSDL mutual fund statements, and stock portfolio holdings from one central hub.

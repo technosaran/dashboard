@@ -309,9 +309,18 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
           <div className="flex flex-col lg:flex-row items-center justify-between gap-10 relative z-10">
             <div className="relative z-10 w-full lg:w-auto">
               <div 
-                className="flex flex-col select-none cursor-pointer group/nw"
+                role="button"
+                tabIndex={0}
+                aria-label="Toggle currency between INR and USD"
+                className="flex flex-col select-none cursor-pointer group/nw outline-none focus-visible:ring-2 focus-visible:ring-sky-400 rounded-2xl p-1 -m-1"
                 onClick={() => setShowUSD(prev => !prev)}
-                title="Click to toggle currency (INR / USD)"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setShowUSD(prev => !prev);
+                  }
+                }}
+                title="Click or press Space/Enter to toggle currency (INR / USD)"
               >
                 <div className="flex flex-wrap items-center gap-3 mb-3">
                   <span className="text-xs font-black uppercase tracking-wider text-[--text-muted] group-hover/nw:text-white transition-colors flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">

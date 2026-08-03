@@ -70,6 +70,9 @@ const TAX_PAID_CATEGORY_MAP = {
   tds: ["tds", "tax deducted"],
   tcs: ["tcs", "tax collected"],
   advanceTax: ["advance tax", "self assessment tax"],
+  cgst: ["cgst"],
+  sgst: ["sgst"],
+  igst: ["igst"],
   gst: ["gst", "cgst", "sgst", "igst"],
 };
 
@@ -274,13 +277,34 @@ export function computeIndiaTaxReport(input: TaxEngineInput) {
     .filter((x) => x.type === "expense" && categoryHasAny(x.category, TAX_PAID_CATEGORY_MAP.gst))
     .reduce((s, x) => s + toAmount(x.amount), 0);
 
+  const cgst = txnsInFY
+    .filter((x) => x.type === "expense" && categoryHasAny(x.category, TAX_PAID_CATEGORY_MAP.cgst))
+    .reduce((s, x) => s + toAmount(x.amount), 0);
+
+  const sgst = txnsInFY
+    .filter((x) => x.type === "expense" && categoryHasAny(x.category, TAX_PAID_CATEGORY_MAP.sgst))
+    .reduce((s, x) => s + toAmount(x.amount), 0);
+
+  const igst = txnsInFY
+    .filter((x) => x.type === "expense" && categoryHasAny(x.category, TAX_PAID_CATEGORY_MAP.igst))
+    .reduce((s, x) => s + toAmount(x.amount), 0);
+
   const grossIncome = salaryIncome + (housePropertyIncome - housePropertyExpense) + otherSourcesIncome + uncategorizedIncome + stcg + ltcg;
 
   const taxableOld = Math.max(0, grossIncome - rule.standardDeductionOld - totalDeductions);
   const taxableNew = Math.max(0, grossIncome - rule.standardDeductionNew);
 
-  const oldTax = calcSlabTax(taxableOld, rule.oldRegimeSlabs);
-  const newTax = calcSlabTax(taxableNew, rule.newRegimeSlabs);
+  const oldTaxBeforeRebate = calcSlabTax(taxableOld, rule.oldRegimeSlabs);
+  const newTaxBeforeRebate = calcSlabTax(taxableNew, rule.newRegimeSlabs);
+
+  // Section 87A Tax Rebate
+  const oldRebate = taxableOld <= 500000 ? Math.min(oldTaxBeforeRebate, 12500) : 0;
+  const newRebateLimit = fyStartYear >= 2025 ? 60000 : 25000;
+  const newRebateThreshold = fyStartYear >= 2025 ? 1200000 : 700000;
+  const newRebate = taxableNew <= newRebateThreshold ? Math.min(newTaxBeforeRebate, newRebateLimit) : 0;
+
+  const oldTax = Math.max(0, oldTaxBeforeRebate - oldRebate);
+  const newTax = Math.max(0, newTaxBeforeRebate - newRebate);
 
   const oldTaxWithCess = oldTax * (1 + rule.cessRate);
   const newTaxWithCess = newTax * (1 + rule.cessRate);
@@ -317,8 +341,29 @@ export function computeIndiaTaxReport(input: TaxEngineInput) {
     .sort((a, b) => b.amount - a.amount)
     .slice(0, 7);
 
-  const monthlyIncome = txnsInFY.filter((x) => x.type === "income").reduce((s, x) => s + toAmount(x.amount), 0);
-  const monthlyExpense = txnsInFY.filter((x) => x.type === "expense").reduce((s, x) => s + toAmount(x.amount), 0);
+  const fyTotalIncome = txnsInFY.filter((x) => x.type === "income").reduce((s, x) => s + toAmount(x.amount), 0);
+  const fyTotalExpense = txnsInFY.filter((x) => x.type === "expense").reduce((s, x) => s + toAmount(x.amount), 0);
+
+  const now = new Date();
+  const curYear = now.getFullYear();
+  const curMonth = now.getMonth(); // 0-indexed
+
+  const curMonthTxns = txnsInFY.filter((x) => {
+    if (!x.date) return false;
+    const d = new Date(x.date);
+    return d.getFullYear() === curYear && d.getMonth() === curMonth;
+  });
+  const monthlyIncome = curMonthTxns.filter((x) => x.type === "income").reduce((s, x) => s + toAmount(x.amount), 0);
+  const monthlyExpense = curMonthTxns.filter((x) => x.type === "expense").reduce((s, x) => s + toAmount(x.amount), 0);
+
+  const qStartMonth = Math.floor(curMonth / 3) * 3;
+  const curQuarterTxns = txnsInFY.filter((x) => {
+    if (!x.date) return false;
+    const d = new Date(x.date);
+    return d.getFullYear() === curYear && d.getMonth() >= qStartMonth && d.getMonth() < qStartMonth + 3;
+  });
+  const quarterlyIncome = curQuarterTxns.filter((x) => x.type === "income").reduce((s, x) => s + toAmount(x.amount), 0);
+  const quarterlyExpense = curQuarterTxns.filter((x) => x.type === "expense").reduce((s, x) => s + toAmount(x.amount), 0);
 
   const regimeComparison = {
     old: oldTaxWithCess,
@@ -351,6 +396,7 @@ export function computeIndiaTaxReport(input: TaxEngineInput) {
       tcs,
       advanceTax,
       gst,
+      gstBreakdown: { cgst, sgst, igst },
       totalTaxPaid,
       taxPayable: Math.max(0, selectedTaxBeforePaid - totalTaxPaid),
       taxRefundEstimate: Math.max(0, totalTaxPaid - selectedTaxBeforePaid),
@@ -359,8 +405,8 @@ export function computeIndiaTaxReport(input: TaxEngineInput) {
     capitalGainsRows,
     reports: {
       monthly: { income: monthlyIncome, expense: monthlyExpense, pnl: monthlyIncome - monthlyExpense },
-      quarterly: { income: monthlyIncome * 3, expense: monthlyExpense * 3, pnl: (monthlyIncome - monthlyExpense) * 3 },
-      annual: { income: monthlyIncome * 12, expense: monthlyExpense * 12, pnl: (monthlyIncome - monthlyExpense) * 12 },
+      quarterly: { income: quarterlyIncome, expense: quarterlyExpense, pnl: quarterlyIncome - quarterlyExpense },
+      annual: { income: fyTotalIncome, expense: fyTotalExpense, pnl: fyTotalIncome - fyTotalExpense },
       balanceSheet: { totalAssets, totalLiabilities: liabilitiesTotal, netWorth: totalAssets - liabilitiesTotal },
       spendingCategories,
       assetAllocation: [

@@ -1,42 +1,53 @@
-jest.mock("@supabase/supabase-js", () => {
-  const mockAccounts = [
-    { id: "acc-1", name: "HDFC Bank", balance: 25000, currency: "INR", user_id: "u-1" }
-  ];
+const mockAccounts = [
+  { id: "acc-1", name: "HDFC Bank", balance: 25000, currency: "INR", user_id: "u-1" }
+];
 
-  return {
-    createClient: jest.fn(() => ({
-      from: jest.fn((table: string) => {
-        const getTableData = () => (table === "accounts" ? mockAccounts : []);
-        const createQuery = () => {
-          const res = { data: getTableData(), error: null };
-          return {
-            then: (resolve: any) => resolve(res),
-            select: jest.fn().mockImplementation(() => createQuery()),
-            eq: jest.fn().mockImplementation(() => createQuery()),
-            limit: jest.fn().mockImplementation(() => createQuery()),
-            order: jest.fn().mockImplementation(() => createQuery()),
-            single: jest.fn().mockImplementation(() => Promise.resolve({ data: getTableData()[0] || null, error: null })),
-          };
-        };
+const mockSupabaseClient = {
+  auth: {
+    getUser: jest.fn().mockResolvedValue({
+      data: { user: { id: "u-1", email: "test@example.com" } },
+      error: null,
+    }),
+  },
+  from: jest.fn((table: string) => {
+    const getTableData = () => (table === "accounts" ? mockAccounts : []);
+    const createQuery = () => {
+      const res = { data: getTableData(), error: null };
+      return {
+        then: (resolve: any) => resolve(res),
+        select: jest.fn().mockImplementation(() => createQuery()),
+        eq: jest.fn().mockImplementation(() => createQuery()),
+        limit: jest.fn().mockImplementation(() => createQuery()),
+        order: jest.fn().mockImplementation(() => createQuery()),
+        single: jest.fn().mockImplementation(() => Promise.resolve({ data: getTableData()[0] || null, error: null })),
+      };
+    };
 
+    return {
+      select: jest.fn().mockImplementation(() => createQuery()),
+      update: jest.fn().mockImplementation(() => createQuery()),
+      insert: jest.fn().mockImplementation((item: any) => {
+        const data = Array.isArray(item) ? item[0] : item;
+        const res = { data, error: null };
         return {
-          select: jest.fn().mockImplementation(() => createQuery()),
-          update: jest.fn().mockImplementation(() => createQuery()),
-          insert: jest.fn().mockImplementation((item: any) => {
-            const data = Array.isArray(item) ? item[0] : item;
-            const res = { data, error: null };
-            return {
-              then: (resolve: any) => resolve(res),
-              select: jest.fn().mockImplementation(() => ({
-                single: jest.fn().mockImplementation(() => Promise.resolve({ data: { id: "tx-1", ...data }, error: null })),
-              })),
-            };
-          }),
+          then: (resolve: any) => resolve(res),
+          select: jest.fn().mockImplementation(() => ({
+            single: jest.fn().mockImplementation(() => Promise.resolve({ data: { id: "tx-1", ...data }, error: null })),
+          })),
         };
       }),
-    })),
-  };
-});
+    };
+  }),
+};
+
+jest.mock("@/lib/supabase-server", () => ({
+  createClient: jest.fn().mockImplementation(() => Promise.resolve(mockSupabaseClient)),
+}));
+
+jest.mock("@supabase/supabase-js", () => ({
+  createClient: jest.fn(() => mockSupabaseClient),
+}));
+
 
 import { GET, POST } from "@/app/api/mcp/route";
 

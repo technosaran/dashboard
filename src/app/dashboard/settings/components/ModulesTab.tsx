@@ -2,6 +2,20 @@
 
 import React, { useState } from "react";
 import { MODULE_KEYS, MODULE_DISPLAY_LABELS } from "@/lib/modules";
+import {
+  DollarSign,
+  BarChart2,
+  TrendingUp,
+  FileText,
+  Building2,
+  CreditCard,
+  Target,
+  Users,
+  BookOpen,
+  Puzzle,
+  Zap,
+  Settings,
+} from "lucide-react";
 
 interface ModulesTabProps {
   enabledModules: string[];
@@ -12,16 +26,16 @@ interface ModulesTabProps {
 export default function ModulesTab({ enabledModules, toggleModule, onEnableAll }: ModulesTabProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
 
-  const MODULE_METADATA: Record<string, { icon: string; desc: string; category: string }> = {
-    "Income & Expenses": { icon: "💰", desc: "Track daily revenue, recurring debits, and cash flow", category: "Core Cashflow" },
-    "Budget": { icon: "📊", desc: "Set spending limits and receive over-budget alerts", category: "Planning" },
-    "Investments": { icon: "📈", desc: "Manage Stocks, Mutual Funds, Bonds, FnO & Forex portfolios", category: "Wealth" },
-    "Tax & Reports": { icon: "🧾", desc: "India-first tax center, fiscal reports, and CA-ready export packs", category: "Compliance" },
-    "Alt Assets": { icon: "🏢", desc: "Track Real Estate, Gold, Startup equity, & Collectibles", category: "Wealth" },
-    "Liabilities": { icon: "💸", desc: "Monitor Loans, EMIs, Mortgages, and Outstanding Debt", category: "Debt" },
-    "Goals": { icon: "🎯", desc: "Target savings milestones and track progress live", category: "Planning" },
-    "Family Management": { icon: "👨‍👩‍👧‍👦", desc: "Coordinate household budgets, allowances, and member transfers", category: "Household" },
-    "Ledger": { icon: "📑", desc: "Immutable audit trail of all balance adjustments", category: "Audit" },
+  const MODULE_METADATA: Record<string, { icon: React.ReactNode; desc: string; category: string }> = {
+    "Income & Expenses": { icon: <DollarSign className="w-5 h-5" />, desc: "Track daily revenue, recurring debits, and cash flow", category: "Core Cashflow" },
+    "Budget": { icon: <BarChart2 className="w-5 h-5" />, desc: "Set spending limits and receive over-budget alerts", category: "Planning" },
+    "Investments": { icon: <TrendingUp className="w-5 h-5" />, desc: "Manage Stocks, Mutual Funds, Bonds, FnO & Forex portfolios", category: "Wealth" },
+    "Tax & Reports": { icon: <FileText className="w-5 h-5" />, desc: "India-first tax center, fiscal reports, and CA-ready export packs", category: "Compliance" },
+    "Alt Assets": { icon: <Building2 className="w-5 h-5" />, desc: "Track Real Estate, Gold, Startup equity, & Collectibles", category: "Wealth" },
+    "Liabilities": { icon: <CreditCard className="w-5 h-5" />, desc: "Monitor Loans, EMIs, Mortgages, and Outstanding Debt", category: "Debt" },
+    "Goals": { icon: <Target className="w-5 h-5" />, desc: "Target savings milestones and track progress live", category: "Planning" },
+    "Family Management": { icon: <Users className="w-5 h-5" />, desc: "Coordinate household budgets, allowances, and member transfers", category: "Household" },
+    "Ledger": { icon: <BookOpen className="w-5 h-5" />, desc: "Immutable audit trail of all balance adjustments", category: "Audit" },
   };
 
   const categories = ["All", "Core Cashflow", "Planning", "Wealth", "Debt", "Compliance", "Household", "Audit"];
@@ -42,6 +56,8 @@ export default function ModulesTab({ enabledModules, toggleModule, onEnableAll }
     return cat === selectedCategory;
   });
 
+  const activeCount = MODULE_KEYS.filter((key) => enabledModules.includes(key)).length;
+
   return (
     <div className="max-w-4xl space-y-6 animate-fade-in">
       <div className="glass-card p-6 md:p-8 rounded-3xl relative overflow-hidden bg-gradient-to-br from-cyan-950/20 via-slate-900/40 to-slate-950/80 border border-cyan-500/20 shadow-2xl">
@@ -50,13 +66,13 @@ export default function ModulesTab({ enabledModules, toggleModule, onEnableAll }
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 text-xl shadow-inner">
-              🧩
+              <Puzzle className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-black text-white tracking-tight">Module Architecture & Visibility</h2>
                 <span className="text-[0.6875rem] font-bold px-2.5 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
-                  {enabledModules.length} / {MODULE_KEYS.length} Active
+                  {activeCount} / {MODULE_KEYS.length} Active
                 </span>
               </div>
               <p className="text-xs text-[--text-muted] mt-0.5">Customize active workspace modules. Disabling hides sections from UI without deleting data.</p>
@@ -66,9 +82,9 @@ export default function ModulesTab({ enabledModules, toggleModule, onEnableAll }
           <button
             type="button"
             onClick={handleEnableAllClick}
-            className="px-3.5 py-2 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 text-xs font-bold transition-all cursor-pointer shrink-0 active:scale-95"
+            className="px-3.5 py-2 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 text-xs font-bold transition-all cursor-pointer shrink-0 active:scale-95 flex items-center gap-1.5"
           >
-            ⚡ Enable All Modules
+            <Zap className="w-3.5 h-3.5" /> Enable All Modules
           </button>
         </div>
 
@@ -97,7 +113,7 @@ export default function ModulesTab({ enabledModules, toggleModule, onEnableAll }
           {filteredModules.map((module) => {
             const displayLabel = MODULE_DISPLAY_LABELS[module];
             const isEnabled = enabledModules.includes(module);
-            const meta = MODULE_METADATA[module] || { icon: "⚙️", desc: "Module feature section", category: "General" };
+            const meta = MODULE_METADATA[module] || { icon: <Settings className="w-5 h-5" />, desc: "Module feature section", category: "General" };
 
             return (
               <div
@@ -110,7 +126,7 @@ export default function ModulesTab({ enabledModules, toggleModule, onEnableAll }
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-xl shrink-0">
+                    <div className="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-cyan-400 shrink-0">
                       {meta.icon}
                     </div>
                     <div>

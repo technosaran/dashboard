@@ -15,6 +15,7 @@ const DEFAULT_TABLES: RealtimeTables[] = ["accounts", "expenses", "income", "inv
  */
 export function useRealtimeSync(tables: RealtimeTables[] = DEFAULT_TABLES, enabled: boolean = true) {
   const { mutate } = useSWRConfig();
+  const tablesKey = tables.join(",");
 
   useEffect(() => {
     if (!enabled || typeof window === "undefined") return;
@@ -29,10 +30,11 @@ export function useRealtimeSync(tables: RealtimeTables[] = DEFAULT_TABLES, enabl
 
     if (!supabase) return;
 
+    const currentTables = tablesKey.split(",") as RealtimeTables[];
     const channelName = `realtime-financial-feed-${Date.now()}`;
     const channel = supabase.channel(channelName);
 
-    tables.forEach((table) => {
+    currentTables.forEach((table) => {
       channel.on(
         "postgres_changes" as any,
         { event: "*", schema: "public", table },
@@ -57,5 +59,6 @@ export function useRealtimeSync(tables: RealtimeTables[] = DEFAULT_TABLES, enabl
         supabase.removeChannel(channel);
       }
     };
-  }, [tables, enabled, mutate]);
+  }, [tablesKey, enabled, mutate]);
 }
+

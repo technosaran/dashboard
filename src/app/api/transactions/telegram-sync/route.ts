@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import crypto from "crypto";
 import logger from "@/lib/logger";
 import { sendTelegramMessage, answerCallbackQuery, setTelegramBotCommands, getBrandEmoji, sendTelegramChatAction, downloadTelegramFile, sendTelegramDocument } from "@/lib/telegram";
 import { redisGet, redisSet, redisDel, isRedisConfigured } from "@/lib/redis";
@@ -393,10 +394,16 @@ export async function POST(req: NextRequest) {
     const webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
     if (webhookSecret) {
       const secretToken = req.headers.get("x-telegram-bot-api-secret-token");
-      if (secretToken !== webhookSecret) {
+      if (!secretToken) {
+        return NextResponse.json({ error: "Missing secret token header" }, { status: 401 });
+      }
+      const bufSecret = Buffer.from(webhookSecret);
+      const bufToken = Buffer.from(secretToken);
+      if (bufSecret.length !== bufToken.length || !crypto.timingSafeEqual(bufSecret, bufToken)) {
         return NextResponse.json({ error: "Unauthorized webhook request" }, { status: 401 });
       }
     }
+
 
     const body = await req.json();
     logger.info(`[Telegram Webhook] Received update: ${JSON.stringify(body)}`);

@@ -237,6 +237,37 @@ function normalizeCategory(cat: string): string {
     });
   }, [budgets, expenses, selectedMonth, selectedYear]);
 
+  const velocityForecast = useMemo(() => {
+    const today = new Date();
+    const curMonth = today.getMonth() + 1;
+    const curYear = today.getFullYear();
+    const isCurrentMonth = selectedMonth === curMonth && selectedYear === curYear;
+
+    const dayOfMonth = isCurrentMonth ? Math.max(1, today.getDate()) : 30;
+    const totalDays = isCurrentMonth ? getDaysInMonth(today) : 30;
+
+    return dynamicCategories.map((cat) => {
+      const budget = currentBudgets.find((b) => b.category === cat.label);
+      const limit = Number(budget?.amount || 0);
+      const spent = actualSpending[cat.label] || 0;
+      const dailyPace = spent / dayOfMonth;
+      const projected = Math.round(dailyPace * totalDays);
+      const willExceed = limit > 0 && projected > limit && spent <= limit;
+      const exceedDay = willExceed && dailyPace > 0 ? Math.min(totalDays, Math.ceil(limit / dailyPace)) : null;
+
+      return {
+        category: cat.label,
+        spent,
+        limit,
+        dailyPace,
+        projected,
+        willExceed,
+        exceedDay,
+        icon: cat.icon,
+      };
+    });
+  }, [dynamicCategories, currentBudgets, actualSpending, selectedMonth, selectedYear]);
+
   const pieData = useMemo(() => {
     if (currentBudgets.length > 0) {
       return currentBudgets.map(b => {
@@ -472,6 +503,25 @@ function normalizeCategory(cat: string): string {
           <p className="text-[0.5625rem] text-[--text-muted] mt-1 opacity-80">Total revenue stream</p>
         </div>
       </div>
+
+      {/* Predictive Velocity Pacing Alert Banner */}
+      {velocityForecast.some((v) => v.willExceed) && (
+        <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex flex-col md:flex-row md:items-center justify-between gap-3 animate-fade-in">
+          <div className="flex items-center gap-3">
+            <span className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 font-bold text-sm shrink-0">⚡</span>
+            <div>
+              <p className="font-black text-amber-400 uppercase tracking-wider text-[11px]">Predictive Velocity Alert</p>
+              <p className="text-gray-300 font-medium">
+                At your current spending pace,{" "}
+                <strong className="text-amber-300">
+                  {velocityForecast.filter((v) => v.willExceed).map((v) => v.category).join(", ")}
+                </strong>{" "}
+                will exceed set budget limits before month-end.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Segmented 3-Tab Switcher */}
       <div className="flex flex-wrap gap-2 rounded-2xl bg-white/[0.02] border border-white/5 p-1.5 max-w-fit shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]">

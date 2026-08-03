@@ -21,7 +21,7 @@ export const MODULE_DISPLAY_LABELS: Record<ModuleKey, string> = {
   "Income & Expenses": "Income & Expenses",
   "Budget": "Budget",
   "Investments": "Investments",
-  "Tax & Reports": "Tax & Reports",
+  "Tax & Reports": "Tax",
   "Alt Assets": "Assets",
   "Liabilities": "Loans",
   "Goals": "Goals",

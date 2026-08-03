@@ -1,15 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-function getSupabaseClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error("Missing Supabase credentials in environment variables.");
-  }
-  return createClient(supabaseUrl, supabaseKey);
-}
+import { createClient } from "@/lib/supabase-server";
 
 export async function GET() {
   return NextResponse.json({
@@ -29,17 +19,25 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: "Unauthorized access. Valid session required." }, { status: 401 });
+    }
+
     const body = await request.json();
     const { name, arguments: args } = body;
 
-    const supabase = getSupabaseClient();
-
     if (name === "get_financial_overview") {
       const [{ data: accountsArr }, { data: expensesArr }, { data: incomesArr }, { data: liabilitiesArr }] = await Promise.all([
-        supabase.from("accounts").select("*"),
-        supabase.from("expenses").select("*"),
-        supabase.from("incomes").select("*"),
-        supabase.from("liabilities").select("*"),
+        supabase.from("accounts").select("*").eq("user_id", user.id),
+        supabase.from("expenses").select("*").eq("user_id", user.id),
+        supabase.from("incomes").select("*").eq("user_id", user.id),
+        supabase.from("liabilities").select("*").eq("user_id", user.id),
       ]);
 
       const totalBalance = (accountsArr || []).reduce((acc, curr) => acc + Number(curr.balance || 0), 0);
@@ -64,7 +62,7 @@ export async function POST(request: Request) {
     }
 
     if (name === "list_accounts") {
-      const { data: accountsArr, error } = await supabase.from("accounts").select("*");
+      const { data: accountsArr, error } = await supabase.from("accounts").select("*").eq("user_id", user.id);
       if (error) throw error;
       return NextResponse.json({ success: true, result: accountsArr || [] });
     }
@@ -74,7 +72,7 @@ export async function POST(request: Request) {
       const category = args?.category;
       const limit = Number(args?.limit || 20);
 
-      let query = supabase.from("transactions").select("*").order("date", { ascending: false }).limit(limit);
+      let query = supabase.from("transactions").select("*").eq("user_id", user.id).order("date", { ascending: false }).limit(limit);
       if (type !== "all") query = query.eq("type", type);
       if (category) query = query.ilike("category", `%${category}%`);
 
@@ -91,25 +89,23 @@ export async function POST(request: Request) {
       const category = args?.category;
       const accountInput = args?.account_name_or_id;
 
-      if (!type || !amount || !description || !category) {
-        return NextResponse.json({ error: "Missing required fields: type, amount, description, category" }, { status: 400 });
+      if (!type || isNaN(amount) || amount <= 0 || !description || !category) {
+        return NextResponse.json({ error: "Missing or invalid required fields: type, amount, description, category" }, { status: 400 });
       }
 
       let account: any = null;
-      const { data: allAccounts } = await supabase.from("accounts").select("*");
+      const { data: allAccounts } = await supabase.from("accounts").select("*").eq("user_id", user.id);
 
       if (allAccounts && allAccounts.length > 0) {
         if (accountInput) {
           account = allAccounts.find(
-            (a) => a.id === accountInput || a.name.toLowerCase().includes(accountInput.toLowerCase())
+            (a) => a.id === accountInput || a.name.toLowerCase().includes(String(accountInput).toLowerCase())
           );
         }
         if (!account) account = allAccounts[0];
       }
 
-      const userId = account?.user_id || "00000000-0000-0000-0000-000000000000";
       const accountId = account?.id || null;
-
       let newBalance = Number(account?.balance || 0);
       const oldBalance = newBalance;
 
@@ -117,16 +113,16 @@ export async function POST(request: Request) {
       else newBalance += amount;
 
       if (accountId) {
-        await supabase.from("accounts").update({ balance: newBalance.toString() }).eq("id", accountId);
+        await supabase.from("accounts").update({ balance: newBalance }).eq("id", accountId).eq("user_id", user.id);
       }
 
       const { data: newTx, error: txErr } = await supabase
         .from("transactions")
         .insert({
-          user_id: userId,
+          user_id: user.id,
           account_id: accountId,
           type,
-          amount: amount.toString(),
+          amount,
           description,
           category,
           date: new Date().toISOString(),
@@ -138,35 +134,36 @@ export async function POST(request: Request) {
 
       if (type === "expense") {
         await supabase.from("expenses").insert({
-          user_id: userId,
+          user_id: user.id,
           account_id: accountId,
           description,
-          amount: amount.toString(),
+          amount,
           category,
           date: new Date().toISOString(),
         });
       } else {
         await supabase.from("incomes").insert({
-          user_id: userId,
+          user_id: user.id,
           account_id: accountId,
           description,
-          amount: amount.toString(),
+          amount,
           category,
           date: new Date().toISOString(),
         });
       }
 
       await supabase.from("ledger_logs").insert({
-        user_id: userId,
+        user_id: user.id,
         account_id: accountId,
         account_name: account?.name || "General",
         action_type: type === "expense" ? "ADJUST_DOWN" : "ADJUST_UP",
-        amount: amount.toString(),
-        previous_balance: oldBalance.toString(),
-        new_balance: newBalance.toString(),
+        amount,
+        previous_balance: oldBalance,
+        new_balance: newBalance,
         details: `MCP Transaction: ${description} (${category})`,
         source_type: type,
       });
+
 
       return NextResponse.json({
         success: true,
@@ -182,10 +179,10 @@ export async function POST(request: Request) {
 
     if (name === "get_portfolio_summary") {
       const [{ data: stocks }, { data: mutualFunds }, { data: bonds }, { data: altAssets }] = await Promise.all([
-        supabase.from("investments").select("*"),
-        supabase.from("mutual_funds").select("*"),
-        supabase.from("bonds").select("*"),
-        supabase.from("alternative_assets").select("*"),
+        supabase.from("investments").select("*").eq("user_id", user.id),
+        supabase.from("mutual_funds").select("*").eq("user_id", user.id),
+        supabase.from("bonds").select("*").eq("user_id", user.id),
+        supabase.from("alternative_assets").select("*").eq("user_id", user.id),
       ]);
 
       const stocksValue = (stocks || []).reduce((acc, curr) => acc + Number(curr.quantity || 0) * Number(curr.current_price || 0), 0);
@@ -209,7 +206,7 @@ export async function POST(request: Request) {
       const queryStr = args?.query || "";
       const limit = Number(args?.limit || 20);
 
-      let query = supabase.from("ledger_logs").select("*").order("created_at", { ascending: false }).limit(limit);
+      let query = supabase.from("ledger_logs").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(limit);
 
       if (queryStr) {
         query = query.or(`details.ilike.%${queryStr}%,account_name.ilike.%${queryStr}%`);
@@ -223,6 +220,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ error: `Unknown tool name: ${name}` }, { status: 400 });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || String(error) }, { status: 500 });
+    console.error("MCP route error:", error);
+    return NextResponse.json({ error: "An unexpected error occurred while processing the request." }, { status: 500 });
   }
 }
+

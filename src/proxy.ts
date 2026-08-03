@@ -204,12 +204,17 @@ export async function proxy(request: NextRequest) {
   let finalResponse: NextResponse;
 
   if (!user && !isPublicRoute) {
-    finalResponse = NextResponse.redirect(new URL("/login", request.url));
+    if (pathname.startsWith("/api/")) {
+      finalResponse = NextResponse.json({ error: "Unauthorized access" }, { status: 401 });
+    } else {
+      finalResponse = NextResponse.redirect(new URL("/login", request.url));
+    }
   } else if (user && pathname === "/login") {
     finalResponse = NextResponse.redirect(new URL("/dashboard", request.url));
   } else {
     finalResponse = supabaseResponse;
   }
+
 
   if (finalResponse !== supabaseResponse) {
     supabaseResponse.cookies.getAll().forEach((cookie: { name: string; value: string; maxAge?: number }) => {

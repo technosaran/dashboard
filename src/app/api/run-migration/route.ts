@@ -2,14 +2,22 @@ import { NextRequest, NextResponse } from "next/server";
 import { Client } from "pg";
 import fs from "fs";
 import path from "path";
+import crypto from "crypto";
 import logger from "@/lib/logger";
+
+function timingSafeEqual(a: string, b: string): boolean {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) return false;
+  return crypto.timingSafeEqual(bufA, bufB);
+}
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const secret = searchParams.get("secret");
 
   const expectedSecret = process.env.MIGRATION_SECRET || process.env.CRON_SECRET;
-  if (!expectedSecret || secret !== expectedSecret) {
+  if (!expectedSecret || !secret || !timingSafeEqual(secret, expectedSecret)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -64,11 +72,12 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ success: true, message: "Migrations completed and API schema cache refreshed successfully!" });
   } catch (error: any) {
-    console.error("Migration endpoint error:", error);
-    return NextResponse.json({ error: error.message || error }, { status: 500 });
+    logger.error("Migration endpoint error:", error);
+    return NextResponse.json({ error: "Migration execution failed." }, { status: 500 });
   } finally {
     try {
       await client.end();
     } catch {}
   }
 }
+

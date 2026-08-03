@@ -17,6 +17,25 @@ import ExportsTab from "./components/ExportsTab";
 import IntegrationsTab from "./components/IntegrationsTab";
 import SystemStatusTab from "./components/SystemStatusTab";
 import DangerZoneTab from "./components/DangerZoneTab";
+import {
+  User,
+  Puzzle,
+  Settings,
+  Download,
+  Upload,
+  Zap,
+  ShieldCheck,
+  AlertTriangle,
+  CreditCard,
+  DollarSign,
+  Users,
+  Target,
+  BarChart2,
+  Landmark,
+  Lock,
+  TrendingUp,
+  RefreshCw,
+} from "lucide-react";
 
 type TabKey = "profile" | "modules" | "defaults" | "imports" | "integrations" | "exports" | "status" | "danger";
 
@@ -25,7 +44,7 @@ interface NavigationCategory {
   items: {
     key: TabKey;
     label: string;
-    icon: string;
+    icon: React.ReactNode;
     badge?: string;
     description: string;
   }[];
@@ -199,6 +218,10 @@ export default function SettingsPage() {
     saveSetting("default_accounts", updatedDefaultAccounts, "Default account updated");
   };
 
+  const handleClearAllDefaults = () => {
+    saveSetting("default_accounts", {}, "All default accounts cleared");
+  };
+
   const toggleModule = (module: string) => {
     const raw = profile?.enabled_modules || [...MODULE_KEYS];
     let newModules: string[];
@@ -237,15 +260,15 @@ export default function SettingsPage() {
   };
 
   const SECTIONS_REQUIRING_ACCOUNT = [
-    { key: "expenses", label: "Expenses", icon: "💳" },
-    { key: "income", label: "Income", icon: "💰" },
-    { key: "family", label: "Family Transfers", icon: "💜" },
-    { key: "goals", label: "Goals & Savings", icon: "🎯" },
-    { key: "stocks", label: "Stock Portfolio", icon: "📊" },
-    { key: "mutual_funds", label: "Mutual Funds", icon: "🏦" },
-    { key: "bonds", label: "Bond Investments", icon: "🔏" },
-    { key: "fno", label: "Futures & Options", icon: "📈" },
-    { key: "forex", label: "Forex Operations", icon: "💱" },
+    { key: "expenses", label: "Expenses", icon: <CreditCard className="w-4 h-4 text-rose-400" /> },
+    { key: "income", label: "Income", icon: <DollarSign className="w-4 h-4 text-emerald-400" /> },
+    { key: "family", label: "Family Transfers", icon: <Users className="w-4 h-4 text-purple-400" /> },
+    { key: "goals", label: "Goals & Savings", icon: <Target className="w-4 h-4 text-amber-400" /> },
+    { key: "stocks", label: "Stock Portfolio", icon: <BarChart2 className="w-4 h-4 text-cyan-400" /> },
+    { key: "mutual_funds", label: "Mutual Funds", icon: <Landmark className="w-4 h-4 text-indigo-400" /> },
+    { key: "bonds", label: "Bond Investments", icon: <Lock className="w-4 h-4 text-sky-400" /> },
+    { key: "fno", label: "Futures & Options", icon: <TrendingUp className="w-4 h-4 text-emerald-400" /> },
+    { key: "forex", label: "Forex Operations", icon: <RefreshCw className="w-4 h-4 text-orange-400" /> },
   ];
 
   const [showResetModal, setShowResetModal] = useState(false);
@@ -337,20 +360,24 @@ export default function SettingsPage() {
 
   const canExecuteReset = resetConfirmText === "RESET" && resetCountdown <= 0 && !isResetting;
 
+  const activeModulesCount = useMemo(() => {
+    return MODULE_KEYS.filter((key) => enabledModules.includes(key)).length;
+  }, [enabledModules]);
+
   const NAV_CATEGORIES: NavigationCategory[] = useMemo(() => [
     {
       category: "Account & Workspace",
       items: [
-        { key: "profile", label: "Profile & Identity", icon: "👤", description: "Display name & account identity" },
-        { key: "modules", label: "Module Visibility", icon: "🧩", badge: `${enabledModules.length} Active`, description: "Enable or hide dashboard modules" },
-        { key: "defaults", label: "Default Bank Accounts", icon: "⚙️", description: "Default payment nodes per feature" },
+        { key: "profile", label: "Profile & Identity", icon: <User className="w-4 h-4" />, description: "Display name & account identity" },
+        { key: "modules", label: "Module Visibility", icon: <Puzzle className="w-4 h-4" />, badge: `${activeModulesCount} Active`, description: "Enable or hide dashboard modules" },
+        { key: "defaults", label: "Default Bank Accounts", icon: <Settings className="w-4 h-4" />, description: "Default payment nodes per feature" },
       ],
     },
     {
       category: "Data & Storage",
       items: [
-        { key: "imports", label: "Data Imports", icon: "📥", badge: "2 Parsers", description: "Bank statement PDF & CAS parser" },
-        { key: "exports", label: "Data Exports", icon: "📤", badge: "10 Formats", description: "CSV exports & custom reports" },
+        { key: "imports", label: "Data Imports", icon: <Download className="w-4 h-4" />, badge: "2 Parsers", description: "Bank statement PDF & CAS parser" },
+        { key: "exports", label: "Data Exports", icon: <Upload className="w-4 h-4" />, badge: "10 Formats", description: "CSV exports & custom reports" },
       ],
     },
     {
@@ -359,7 +386,7 @@ export default function SettingsPage() {
         {
           key: "integrations",
           label: "Connected Services",
-          icon: "⚡",
+          icon: <Zap className="w-4 h-4" />,
           badge: profile?.telegram_chat_id ? "Active" : "Ready",
           description: "Telegram Assistant & Gemini AI",
         },
@@ -368,11 +395,11 @@ export default function SettingsPage() {
     {
       category: "System & Safety",
       items: [
-        { key: "status", label: "System Status", icon: "🟢", description: "API health & latency checks" },
-        { key: "danger", label: "Danger Zone", icon: "⚠️", description: "Reset workspace & delete data" },
+        { key: "status", label: "System Status", icon: <ShieldCheck className="w-4 h-4" />, description: "API health & latency checks" },
+        { key: "danger", label: "Danger Zone", icon: <AlertTriangle className="w-4 h-4" />, description: "Reset workspace & delete data" },
       ],
     },
-  ], [enabledModules.length, profile?.telegram_chat_id]);
+  ], [activeModulesCount, profile?.telegram_chat_id]);
 
   const filteredCategories = useMemo(() => {
     if (!searchQuery.trim()) return NAV_CATEGORIES;
@@ -414,7 +441,7 @@ export default function SettingsPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 glass-card p-6 md:p-8 rounded-3xl bg-gradient-to-r from-slate-900/80 via-indigo-950/30 to-slate-950/80 border border-white/10 shadow-2xl">
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-black uppercase tracking-wider mb-2">
-            <span>⚙️ Workspace Settings</span>
+            <span className="flex items-center gap-1.5"><Settings className="w-3.5 h-3.5" /> Workspace Settings</span>
           </div>
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-white">
             Settings & Preferences
@@ -494,7 +521,7 @@ export default function SettingsPage() {
                         }`}
                       >
                         <div className="flex items-center gap-3 min-w-0">
-                          <span className="text-base select-none shrink-0">{item.icon}</span>
+                          <span className="text-base select-none shrink-0 flex items-center justify-center">{item.icon}</span>
                           <div className="min-w-0">
                             <p className="text-xs font-bold truncate group-hover:text-white">{item.label}</p>
                             <p className="text-[0.625rem] text-gray-500 truncate">{item.description}</p>
@@ -545,7 +572,7 @@ export default function SettingsPage() {
                       : "text-gray-400 hover:text-white bg-white/5 border border-transparent"
                   }`}
                 >
-                  <span className="text-sm">{tab.icon}</span>
+                  <span className="text-sm flex items-center justify-center">{tab.icon}</span>
                   <span>{tab.label}</span>
                 </button>
               );
@@ -614,6 +641,7 @@ export default function SettingsPage() {
               defaultAccounts={defaultAccounts}
               accounts={accounts}
               handleDefaultAccountChange={handleDefaultAccountChange}
+              onClearAllDefaults={handleClearAllDefaults}
               sectionsRequiringAccount={SECTIONS_REQUIRING_ACCOUNT}
             />
                 )}

@@ -117,7 +117,7 @@ export async function GET(request: Request) {
             .insert({
               user_id: inv.user_id,
               description: description,
-              category: "freelance", // standard category in incomes table enum/type
+              category: "dividend",
               amount: totalAmount,
               date: divDate,
               created_at: new Date().toISOString(),

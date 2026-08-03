@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { Zap } from "lucide-react";
 
 interface DiagnosticResult {
   name: string;
@@ -99,7 +100,7 @@ export default function SystemStatusTab({
                   Pinging APIs...
                 </>
               ) : (
-                "⚡ Re-Run Diagnostics"
+                <span className="flex items-center gap-1.5"><Zap className="w-3.5 h-3.5" /> Re-Run Diagnostics</span>
               )}
             </button>
           </div>
@@ -140,7 +141,7 @@ export default function SystemStatusTab({
 
           {diagnostics.length === 0 && !runningDiagnostics && (
             <div className="text-center py-8 text-xs text-[--text-muted]">
-              No diagnostics run yet. Click &quot;⚡ Re-Run Diagnostics&quot; to test API connections.
+              No diagnostics run yet. Click &quot;Re-Run Diagnostics&quot; to test API connections.
             </div>
           )}
         </div>

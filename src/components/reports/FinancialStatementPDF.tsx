@@ -229,6 +229,9 @@ export default function FinancialStatementPDF({
   const inrAccounts = accounts.filter(a => a.currency === "INR");
   const usdAccounts = accounts.filter(a => a.currency === "USD");
 
+  const hasTaxAppendix = !!(indiaTaxSummary || capitalGainsSummary.length > 0 || deductionSummary.length > 0);
+  const totalPages = hasTaxAppendix ? 4 : 3;
+
   return (
     <Document>
       {/* PAGE 1: WEALTH & LIQUIDITY OVERVIEW */}
@@ -332,7 +335,7 @@ export default function FinancialStatementPDF({
 
         <View style={styles.footer}>
           <Text>Finance OS Wealth Report • Confidential</Text>
-          <Text>Page 1 of 3</Text>
+          <Text>Page 1 of {totalPages}</Text>
         </View>
       </Page>
 
@@ -460,7 +463,7 @@ export default function FinancialStatementPDF({
 
         <View style={styles.footer}>
           <Text>Finance OS Wealth Report • Confidential</Text>
-          <Text>Page 2 of 3</Text>
+          <Text>Page 2 of {totalPages}</Text>
         </View>
       </Page>
 
@@ -590,7 +593,7 @@ export default function FinancialStatementPDF({
 
         <View style={styles.footer}>
           <Text>Finance OS Wealth Report • Confidential</Text>
-          <Text>Page 3 of 3</Text>
+          <Text>Page 3 of {totalPages}</Text>
         </View>
       </Page>
 
@@ -675,7 +678,7 @@ export default function FinancialStatementPDF({
 
           <View style={styles.footer}>
             <Text>Finance OS Tax Report • Confidential</Text>
-            <Text>Tax Appendix</Text>
+            <Text>Page 4 of {totalPages}</Text>
           </View>
         </Page>
       )}

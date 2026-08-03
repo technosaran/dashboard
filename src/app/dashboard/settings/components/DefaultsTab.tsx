@@ -2,18 +2,20 @@
 
 import React from "react";
 import Link from "next/link";
+import { Settings, Landmark } from "lucide-react";
 import type { FinanceData } from "@/hooks/use-finance-data";
 
 interface SectionConfig {
   key: string;
   label: string;
-  icon: string;
+  icon: React.ReactNode;
 }
 
 interface DefaultsTabProps {
   defaultAccounts: Record<string, string | null>;
   accounts: FinanceData["accounts"];
   handleDefaultAccountChange: (sectionKey: string, accountId: string) => void;
+  onClearAllDefaults?: () => void;
   sectionsRequiringAccount: SectionConfig[];
 }
 
@@ -21,17 +23,22 @@ export default function DefaultsTab({
   defaultAccounts,
   accounts = [],
   handleDefaultAccountChange,
+  onClearAllDefaults,
   sectionsRequiringAccount,
 }: DefaultsTabProps) {
   const hasAccounts = accounts && accounts.length > 0;
   const configuredCount = Object.values(defaultAccounts).filter(Boolean).length;
 
   const handleClearAllDefaults = () => {
-    sectionsRequiringAccount.forEach((s) => {
-      if (defaultAccounts[s.key]) {
-        handleDefaultAccountChange(s.key, "");
-      }
-    });
+    if (onClearAllDefaults) {
+      onClearAllDefaults();
+    } else {
+      sectionsRequiringAccount.forEach((s) => {
+        if (defaultAccounts[s.key]) {
+          handleDefaultAccountChange(s.key, "");
+        }
+      });
+    }
   };
 
   return (
@@ -39,8 +46,8 @@ export default function DefaultsTab({
       {/* Header Info */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 glass-card p-6 rounded-3xl bg-slate-900/50 border border-white/10">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 text-xl shadow-inner">
-            ⚙️
+          <div className="w-11 h-11 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 shadow-inner">
+            <Settings className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -69,7 +76,7 @@ export default function DefaultsTab({
       {!hasAccounts && (
         <div className="p-6 rounded-3xl glass-card bg-indigo-950/20 border border-indigo-500/30 text-center space-y-3">
           <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 text-2xl mx-auto">
-            🏦
+            <Landmark className="w-6 h-6" />
           </div>
           <h3 className="text-base font-bold text-white">No Bank Accounts Found</h3>
           <p className="text-xs text-[--text-muted] max-w-md mx-auto leading-relaxed">
@@ -101,7 +108,7 @@ export default function DefaultsTab({
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <span className="text-lg select-none">{section.icon}</span>
+                  <span className="text-lg select-none flex items-center justify-center text-cyan-400">{section.icon}</span>
                   <span className="text-xs font-black text-white tracking-wide">{section.label}</span>
                 </div>
                 {selectedAcc && (

@@ -60,21 +60,29 @@ export class CacheService {
     return fresh;
   }
 
-  /**
-   * Deletes keys matching a wildcard pattern (e.g. "user:123:*").
-   */
   public async deletePattern(pattern: string): Promise<void> {
     const redis = getRedisClient();
     if (redis && isRedisHealthy()) {
       try {
-        const keys = await redis.keys(pattern);
-        if (keys.length > 0) {
-          await redis.del(...keys);
-        }
+        let cursor = "0";
+        do {
+          const [nextCursor, keys] = await redis.scan(cursor, "MATCH", pattern, "COUNT", 100);
+          cursor = nextCursor;
+          if (keys.length > 0) {
+            await redis.del(...keys);
+          }
+        } while (cursor !== "0");
       } catch (err) {
         console.error(`[CacheService] DELETE pattern ${pattern} failed:`, err);
       }
     }
+  }
+
+  /**
+   * Clears all cached keys for a specific user.
+   */
+  public async clearUserCache(userId: string): Promise<void> {
+    await this.deletePattern(`user:${userId}:*`);
   }
 
   /**

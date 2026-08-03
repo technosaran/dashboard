@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
       randomState = parts[1];
     }
 
-    if (!state || (storedState && randomState !== storedState)) {
+    if (!state || !storedState || randomState !== storedState) {
       return makeRedirect(new URL("/dashboard/settings?gmail=error&reason=csrf_state_mismatch", req.url));
     }
 
@@ -82,9 +82,7 @@ export async function GET(req: NextRequest) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
-    const targetUserId = user?.id || userIdFromState;
-
-    if (!targetUserId) {
+    if (!user || (userIdFromState && user.id !== userIdFromState)) {
       return makeRedirect(new URL("/dashboard/settings?gmail=error&reason=unauthenticated", req.url));
     }
 
@@ -92,7 +90,8 @@ export async function GET(req: NextRequest) {
     const { error: dbError } = await supabase
       .from("profiles")
       .update({ gmail_refresh_token: refreshToken })
-      .eq("id", targetUserId);
+      .eq("id", user.id);
+
 
     if (dbError) {
       console.error("Failed to save Gmail refresh token:", dbError);
