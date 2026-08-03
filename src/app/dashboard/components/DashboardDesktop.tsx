@@ -270,24 +270,26 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
 
 
       {!isLoading && stats.totalAssets === 0 && recentLogs.length === 0 && (
-        <div className="glass-card-static rich-border relative overflow-hidden p-8 md:p-10 border border-white/10 bg-white/[0.02]">
-          <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[--accent-primary] via-purple-500 to-cyan-400" />
+        <div className="glass-card-static relative overflow-hidden p-8 md:p-10 border border-slate-800 bg-slate-900/60 rounded-3xl">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-amber-400/40" />
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
-            <div className="flex-1 space-y-3">
+            <div className="flex-1 space-y-2">
               <div className="flex items-center gap-3">
-                <span className="text-2xl">🚀</span>
-                <h2 className="text-xl font-black text-white">Welcome to your Dashboard Terminal</h2>
+                <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path d="M12 4v16m8-8H4" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <h2 className="text-lg font-serif font-semibold text-white">Welcome to arthaX</h2>
               </div>
-              <p className="text-xs text-[--text-secondary] leading-relaxed max-w-2xl">
-                Your database is initialized and completely clean. Let&apos;s breathe life into your dashboard! Manually construct your financial system to see allocations, investments, cash flows, and forex logs in action.
+              <p className="text-xs text-slate-400 leading-relaxed max-w-2xl font-sans">
+                Your portfolio is ready. Add your first bank account or stock holding to track your total liquid net worth, investments, and monthly cashflow.
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto flex-shrink-0">
               <Link 
                 href="/dashboard/accounts?action=new" 
-                className="btn-primary !h-11 px-6 text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-[--accent-primary] to-indigo-500 shadow-[0_4px_20px_rgba(99,102,241,0.25)] hover:shadow-[0_4px_25px_rgba(99,102,241,0.35)] active:scale-[0.98] transition-all flex items-center justify-center no-underline"
+                className="h-10 px-5 text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl transition-all flex items-center justify-center no-underline border border-amber-400/30"
               >
-                Create First Account
+                Add First Account
               </Link>
             </div>
           </div>
@@ -299,12 +301,10 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          whileHover={{ y: -2 }}
-          className="glass-card-static rich-border group relative overflow-hidden p-8 md:p-10 lg:col-span-3 border border-white/10 bg-gradient-to-br from-slate-900/90 via-slate-950/80 to-slate-900/90 hover:border-sky-500/30 hover:shadow-[0_25px_60px_rgba(14,165,233,0.18)] transition-all duration-500 backdrop-blur-2xl rounded-3xl"
+          whileHover={{ y: -1 }}
+          className="glass-card-static group relative overflow-hidden p-8 md:p-10 lg:col-span-3 border border-slate-800/80 bg-slate-900/80 hover:border-slate-700/80 transition-all duration-300 backdrop-blur-2xl rounded-3xl"
         >
-          <div className="absolute top-0 left-0 right-0 h-[4px] bg-gradient-to-r from-[--accent-primary] via-purple-500 to-emerald-500 animate-pulse-glow" />
-          <div className="absolute -top-24 -right-24 w-72 h-72 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 via-amber-300 to-emerald-400" />
 
           <div className="flex flex-col lg:flex-row items-center justify-between gap-10 relative z-10">
             <div className="relative z-10 w-full lg:w-auto">
@@ -312,7 +312,7 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                 role="button"
                 tabIndex={0}
                 aria-label="Toggle currency between INR and USD"
-                className="flex flex-col select-none cursor-pointer group/nw outline-none focus-visible:ring-2 focus-visible:ring-sky-400 rounded-2xl p-1 -m-1"
+                className="flex flex-col select-none cursor-pointer group/nw outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded-2xl p-1 -m-1"
                 onClick={() => setShowUSD(prev => !prev)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
@@ -323,29 +323,29 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                 title="Click or press Space/Enter to toggle currency (INR / USD)"
               >
                 <div className="flex flex-wrap items-center gap-3 mb-3">
-                  <span className="text-xs font-black uppercase tracking-wider text-[--text-muted] group-hover/nw:text-white transition-colors flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
+                  <span className="text-xs font-medium uppercase tracking-wider text-slate-400 group-hover/nw:text-slate-200 transition-colors flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/60 border border-slate-700/50 backdrop-blur-md">
                     <span>Portfolio Net Worth</span>
-                    <span className="text-[0.625rem] font-bold text-sky-400 bg-sky-500/10 border border-sky-500/20 px-1.5 py-0.5 rounded-md">
+                    <span className="text-[10px] font-mono font-semibold text-amber-300 bg-amber-400/10 border border-amber-400/20 px-1.5 py-0.5 rounded-md">
                       {showUSD ? 'USD $' : 'INR ₹'}
                     </span>
-                    <svg className="w-3.5 h-3.5 text-sky-400 group-hover/nw:rotate-180 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                    <svg className="w-3.5 h-3.5 text-amber-400 group-hover/nw:rotate-180 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                     </svg>
                   </span>
 
-                  <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[0.6875rem] font-extrabold tracking-tight border backdrop-blur-md transition-all ${
+                  <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold tracking-tight border transition-all ${
                     stats.totalDayPnL >= 0 
-                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25 shadow-[0_0_15px_rgba(52,211,153,0.2)]' 
-                      : 'bg-rose-500/10 text-rose-400 border-rose-500/25 shadow-[0_0_15px_rgba(244,63,94,0.2)]'
+                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+                      : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
                   }`}>
                     <span>Today: {stats.totalDayPnL >= 0 ? "+" : "-"}</span>
-                    <span>
+                    <span className="font-mono tabular-nums">
                       {showUSD 
                         ? `$${Math.abs(stats.totalDayPnLUSD).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
                         : `₹${Math.abs(stats.totalDayPnLINR).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
                       }
                     </span>
-                    <span className="opacity-80">
+                    <span className="opacity-80 font-mono tabular-nums">
                       ({stats.totalDayPnLPercent >= 0 ? "+" : ""}{(stats.totalDayPnLPercent || 0).toFixed(2)}%)
                     </span>
                   </span>
@@ -354,15 +354,11 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                   <AnimatePresence>
                     <motion.h2 
                       key={showUSD ? 'usd' : 'inr'} 
-                      initial={{ opacity: 0, y: 15, filter: "blur(4px)" }}
-                      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                      exit={{ opacity: 0, y: -15, filter: "blur(4px)" }}
+                      initial={{ opacity: 0, y: 15 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -15 }}
                       transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                      className={`absolute left-0 bg-clip-text bg-gradient-to-r text-[clamp(2.4rem,5vw,3.8rem)] font-[950] leading-none tracking-[-0.04em] text-transparent [font-family:'Outfit',sans-serif] whitespace-nowrap overflow-hidden transition-all duration-500 ${
-                        showUSD 
-                          ? "from-white via-sky-200 to-indigo-300 drop-shadow-[0_10px_35px_rgba(99,102,241,0.35)]" 
-                          : "from-white via-white to-slate-200 drop-shadow-[0_10px_35px_rgba(14,165,233,0.35)]"
-                      }`}
+                      className="absolute left-0 text-4xl sm:text-5xl md:text-6xl font-mono font-bold tracking-tight text-amber-200 tabular-nums whitespace-nowrap overflow-hidden"
                     >
                     {showUSD 
                       ? `$${stats.netWorthUSD.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}` 

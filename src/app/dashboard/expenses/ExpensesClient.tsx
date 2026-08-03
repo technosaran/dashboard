@@ -13,6 +13,7 @@ import { ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area, CartesianGri
 import { CHART_SERIES_COLOURS, getCategoryColour } from "@/lib/chart-colours";
 import ExpenseDataTable from "./components/ExpenseDataTable";
 import ExpenseForm from "./components/ExpenseForm";
+import { CustomChartTooltip } from "@/components/ui/chart-tooltip";
 
 const CATEGORIES = [
   { label: "Rent", icon: "🏠", color: getCategoryColour("Rent") },
@@ -99,6 +100,31 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
     });
   }
 
+  async function handleSubmitForm(data: any) {
+    await withLock(async () => {
+      const isEdit = Boolean(editingExpense || data.id);
+      const res = isEdit
+        ? await updateExpense({
+            id: editingExpense?.id || data.id,
+            description: data.description,
+            amount: typeof data.amount === "number" ? data.amount : parseFloat(data.amount),
+            category: data.category,
+            date: data.date,
+            account_id: data.account_id || undefined,
+          })
+        : await addExpense(data);
+
+      if (!res?.error) {
+        toast.success(isEdit ? "Expense entry updated" : "Expense recorded successfully");
+        setShowAddModal(false);
+        setEditingExpense(null);
+        mutate();
+      } else {
+        toast.error(res.error);
+      }
+    });
+  }
+
   const getColorByLabel = (label: string | null | undefined) => {
     if (!label) return "#06B6D4";
     let hash = 0;
@@ -113,13 +139,17 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
     return colors[Math.abs(hash) % colors.length];
   };
 
-  const stats = useMemo(() => {
-    const targetDate = new Date(selectedYear, selectedMonth - 1, 1);
-    const currentMonth = expenses.filter(e => {
+  const currentMonthExpenses = useMemo(() => {
+    return expenses.filter(e => {
       if (!e.date) return false;
       const d = parseISO(e.date);
       return d.getMonth() + 1 === selectedMonth && d.getFullYear() === selectedYear;
     });
+  }, [expenses, selectedMonth, selectedYear]);
+
+  const stats = useMemo(() => {
+    const targetDate = new Date(selectedYear, selectedMonth - 1, 1);
+    const currentMonth = currentMonthExpenses;
     const totalSpent = expenses.reduce((s, e) => s + Number(e.amount), 0);
     const monthlyTotal = currentMonth.reduce((s, e) => s + Number(e.amount), 0);
     
@@ -164,52 +194,18 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
     return { totalSpent, monthlyTotal, pieData, trendData };
   }, [expenses, selectedMonth, selectedYear]);
 
-  const currentMonthExpenses = useMemo(() => {
-    return expenses.filter(e => {
-      if (!e.date) return false;
-      const d = parseISO(e.date);
-      return d.getMonth() + 1 === selectedMonth && d.getFullYear() === selectedYear;
-    });
-  }, [expenses, selectedMonth, selectedYear]);
-
-  async function handleSubmitForm(data: any) {
-    await withLock(async () => {
-      const isEdit = Boolean(editingExpense || data.id);
-      const result = isEdit
-        ? await updateExpense({
-            id: editingExpense?.id || data.id,
-            description: data.description,
-            amount: typeof data.amount === "number" ? data.amount : parseFloat(data.amount),
-            category: data.category,
-            date: data.date,
-            account_id: data.account_id || undefined,
-          })
-        : await addExpense(data);
-
-      if (!result?.error) {
-        toast.success(isEdit ? "Expense entry updated successfully" : (result.message || "Daily expenditure recorded: Ledger updated"));
-        setShowAddModal(false);
-        setEditingExpense(null);
-        mutate();
-      } else {
-        toast.error(result.error);
-      }
-    });
-  }
-
   return (
     <div className="flex flex-col gap-[var(--section-gap)] animate-fade-in">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[--text-primary]">Expense Tracking</h1>
-            <div className={`status-dot scale-90 ${isValidating ? 'animate-pulse bg-yellow-400' : 'bg-emerald-400 opacity-50'}`} />
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif font-normal tracking-tight text-white">Expenses</h1>
+            <div className={`status-dot scale-90 ${isValidating ? 'animate-pulse bg-amber-400' : 'bg-emerald-400 opacity-50'}`} />
           </div>
-          <p className="text-[--text-secondary] text-sm md:text-sm mt-1">Monitor your spending and analyze your monthly expenditure.</p>
+          <p className="text-slate-400 text-sm mt-1 font-sans">Monitor your daily spend and monthly category breakdowns.</p>
         </div>
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-          {/* Desktop Month Switcher */}
-          <div className="hidden md:flex items-center gap-1.5 bg-white/5 border border-white/10 p-1.5 rounded-xl">
+          <div className="hidden md:flex items-center gap-1.5 bg-slate-900/80 border border-slate-800 p-1.5 rounded-xl">
             <button
               type="button"
               onClick={() => {
@@ -220,12 +216,12 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
                   setSelectedMonth(prev => prev - 1);
                 }
               }}
-              className="px-2.5 py-1.5 rounded-lg text-xs font-black text-[--text-muted] hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+              className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
               aria-label="Previous month"
             >
               ◀
             </button>
-            <div className="px-3 py-1.5 text-xs font-black uppercase tracking-wider text-rose-400 select-none">
+            <div className="px-3 py-1.5 text-xs font-mono font-semibold uppercase tracking-wider text-amber-300 select-none">
               {format(new Date(selectedYear, selectedMonth - 1, 1), "MMM yyyy")}
             </div>
             <button
@@ -238,111 +234,107 @@ export default function ExpensesClient({ initialData }: { initialData?: FinanceD
                   setSelectedMonth(prev => prev + 1);
                 }
               }}
-              className="px-2.5 py-1.5 rounded-lg text-xs font-black text-[--text-muted] hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+              className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
               aria-label="Next month"
             >
               ▶
             </button>
           </div>
 
-          {/* Mobile Fallback selects */}
-          <select 
-            className="btn-secondary !h-11 px-4 text-xs font-bold md:hidden" 
-            value={selectedMonth} 
-            onChange={e => setSelectedMonth(parseInt(e.target.value))}
-            aria-label="Select month"
+          <button 
+            type="button" 
+            onClick={() => setShowAddModal(true)} 
+            className="h-10 px-5 text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl transition-all flex items-center justify-center gap-2 border border-amber-400/30 cursor-pointer"
           >
-            {Array.from({ length: 12 }, (_, i) => (
-              <option key={i + 1} value={i + 1} className="bg-[--bg-surface]">
-                {format(new Date(2020, i, 1), "MMMM")}
-              </option>
-            ))}
-          </select>
-          <select 
-            className="btn-secondary !h-11 px-4 text-xs font-bold md:hidden" 
-            value={selectedYear} 
-            onChange={e => setSelectedYear(parseInt(e.target.value))}
-            aria-label="Select year"
-          >
-            {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map(y => (
-              <option key={y} value={y} className="bg-[--bg-surface]">{y}</option>
-            ))}
-          </select>
-          <button type="button" onClick={() => setShowAddModal(true)} className="btn-primary flex-1 md:flex-none gap-2">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
-            Record
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
+            Log Expense
           </button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-        <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between group">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-[--text-muted]">Net Consumption</p>
-          <div className="mt-3 flex flex-col sm:flex-row sm:items-end justify-between gap-2">
-            <h3 className="text-xl md:text-2xl font-black truncate text-danger">
+        <div className="border border-slate-800 bg-slate-900/60 p-5 md:p-6 rounded-2xl flex flex-col justify-between">
+          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Total Expenses</p>
+          <div className="mt-3 flex items-baseline justify-between gap-2">
+            <h3 className="text-xl md:text-2xl font-mono font-bold text-rose-400 tabular-nums">
               -₹{stats.totalSpent.toLocaleString()}
             </h3>
-            <span className="text-[0.5625rem] w-fit px-2 py-0.5 rounded-full bg-success/10 text-success border border-success/20 font-bold">All Time</span>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20">All Time</span>
           </div>
         </div>
-        <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-[--text-muted]">Monthly Flow</p>
-          <div className="mt-3 flex flex-col sm:flex-row sm:items-end justify-between gap-2">
-            <h3 className="text-xl md:text-2xl font-black truncate text-danger">
+        <div className="border border-slate-800 bg-slate-900/60 p-5 md:p-6 rounded-2xl flex flex-col justify-between">
+          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">This Month</p>
+          <div className="mt-3 flex items-baseline justify-between gap-2">
+            <h3 className="text-xl md:text-2xl font-mono font-bold text-amber-300 tabular-nums">
               -₹{stats.monthlyTotal.toLocaleString()}
             </h3>
-            <span className="text-[0.5625rem] w-fit px-2 py-0.5 rounded-full bg-[--accent-primary]/10 text-[--accent-primary] border border-[--accent-primary]/20 font-bold">{format(new Date(selectedYear, selectedMonth - 1, 1), "MMM")}</span>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-400/10 text-amber-300 border border-amber-400/20">{format(new Date(selectedYear, selectedMonth - 1, 1), "MMM")}</span>
           </div>
         </div>
-        <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-[--text-muted]">Average</p>
-          <div className="mt-3 flex flex-col sm:flex-row sm:items-end justify-between gap-2">
-            <h3 className="text-xl md:text-2xl font-black truncate text-danger">
+        <div className="border border-slate-800 bg-slate-900/60 p-5 md:p-6 rounded-2xl flex flex-col justify-between">
+          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Average Expense</p>
+          <div className="mt-3 flex items-baseline justify-between gap-2">
+            <h3 className="text-xl md:text-2xl font-mono font-bold text-slate-200 tabular-nums">
               -₹{(expenses.length ? stats.totalSpent / expenses.length : 0).toLocaleString(undefined, {maximumFractionDigits: 0})}
             </h3>
-            <span className="text-[0.5625rem] w-fit px-2 py-0.5 rounded-full bg-white/5 text-[--text-muted]">{expenses.length} txns</span>
+            <span className="text-[10px] font-mono text-slate-500">{expenses.length} entries</span>
           </div>
         </div>
-        <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between bg-gradient-to-br from-sky-500/10 to-transparent">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-[--text-muted]">Top Sector</p>
-          <div className="mt-3 flex flex-col sm:flex-row sm:items-end justify-between gap-2">
-            <h3 className="text-xl md:text-2xl font-black truncate">{stats.pieData[0]?.name || "None"}</h3>
-            <span className="text-[0.5625rem] w-fit px-2 py-0.5 rounded-full bg-white/5 text-[--text-muted]">Highest</span>
+        <div className="border border-slate-800 bg-slate-900/60 p-5 md:p-6 rounded-2xl flex flex-col justify-between">
+          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Top Category</p>
+          <div className="mt-3 flex items-baseline justify-between gap-2">
+            <h3 className="text-lg md:text-xl font-bold truncate text-slate-100">{stats.pieData[0]?.name || "None"}</h3>
+            <span className="text-[10px] font-mono text-slate-500">Highest</span>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 glass-card-static p-5 md:p-8">
-          <div className="flex items-center justify-between mb-8">
-            <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-[--text-muted]">Expenditure Velocity</h3>
-            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full" style={{ backgroundColor: CHART_SERIES_COLOURS.expense }} /><span className="text-xs font-bold text-[--text-muted]">Monthly Trend</span></div>
+        <div className="lg:col-span-2 border border-slate-800 bg-slate-900/60 p-5 md:p-6 rounded-2xl">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400">Monthly Spending Trend</h3>
+            <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full bg-rose-500" /><span className="text-xs text-slate-400">Outflow</span></div>
           </div>
           <div className="h-[280px] w-full">
             <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
               <AreaChart data={stats.trendData}>
                 <defs>
-                  <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={CHART_SERIES_COLOURS.expense} stopOpacity={0.35} />
-                    <stop offset="95%" stopColor={CHART_SERIES_COLOURS.expense} stopOpacity={0} />
+                  <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 10 }} dy={10} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} dy={10} />
                 <YAxis hide />
-                <Tooltip
-                  contentStyle={{ background: 'var(--bg-surface)', border: '1px solid var(--border-default)', borderRadius: '12px' }}
-                  cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1 }}
-                />
-                <Area type="monotone" dataKey="value" stroke={CHART_SERIES_COLOURS.expense} strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" />
+                <Tooltip content={<CustomChartTooltip currency="₹" />} />
+                <Area type="monotone" dataKey="value" stroke="#ef4444" strokeWidth={2} fillOpacity={1} fill="url(#colorExpense)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
-        <div className="glass-card-static p-5 md:p-8">
-          <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-[--text-muted] mb-8">Asset Allocation</h3>
-          <div className="h-[240px] w-full"><ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}><PieChart><Pie data={stats.pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={8} dataKey="value">{stats.pieData.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} stroke="none" />))}</Pie><Tooltip contentStyle={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "12px" }} /></PieChart></ResponsiveContainer></div>
-          <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2">{stats.pieData.slice(0, 4).map((item) => (<div key={item.name} className="flex items-center gap-2"><div className="w-2 h-2 rounded-full" style={{background: item.color}} /><span className="text-xs font-bold text-[--text-secondary] truncate">{item.name}</span></div>))}</div>
+        <div className="border border-slate-800 bg-slate-900/60 p-5 md:p-6 rounded-2xl">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-6">Expense Categories</h3>
+          <div className="h-[220px] w-full">
+            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+              <PieChart>
+                <Pie data={stats.pieData} cx="50%" cy="50%" innerRadius={55} outerRadius={90} paddingAngle={6} dataKey="value">
+                  {stats.pieData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                  ))}
+                </Pie>
+                <Tooltip content={<CustomChartTooltip currency="₹" />} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2">
+            {stats.pieData.slice(0, 4).map((item) => (
+              <div key={item.name} className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full" style={{background: item.color}} />
+                <span className="text-xs font-medium text-slate-300 truncate">{item.name}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 

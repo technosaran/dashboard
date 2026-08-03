@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 export function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn("skeleton animate-pulse rounded-md bg-white/[0.04] border border-white/5", className)}
+      className={cn("skeleton skeleton-shimmer rounded-md bg-slate-800/40 border border-slate-700/30", className)}
       role="status"
       aria-hidden="true"
       {...props}

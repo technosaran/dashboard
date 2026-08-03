@@ -9,7 +9,7 @@ describe("Skeleton Components", () => {
     expect(el).toBeDefined();
     expect(el.getAttribute("role")).toBe("status");
     expect(el.getAttribute("aria-hidden")).toBe("true");
-    expect(el.className).toContain("animate-pulse");
+    expect(el.className).toContain("skeleton-shimmer");
   });
 
   it("renders correct number of rows in TableSkeleton", () => {

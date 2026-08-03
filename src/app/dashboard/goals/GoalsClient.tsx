@@ -236,61 +236,66 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
     <div className="flex flex-col gap-8 animate-in fade-in duration-700">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-          <h1 className="text-4xl font-black tracking-tight text-white">Financial Milestones</h1>
-          <p className="text-xs text-[--text-muted] font-bold uppercase tracking-[0.3em] mt-2">Target & Progression Tracking</p>
+          <h1 className="text-3xl sm:text-4xl font-serif font-normal tracking-tight text-white">Savings & Financial Goals</h1>
+          <p className="text-sm text-slate-400 mt-1 font-sans">Set dedicated targets, track completion progress, and plan savings horizons.</p>
         </div>
-        <button type="button" onClick={() => setShowAddModal(true)} className="btn-primary flex items-center gap-2">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
-          Add New Goal
+        <button
+          type="button"
+          onClick={() => setShowAddModal(true)}
+          className="h-10 px-5 text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl transition-all flex items-center justify-center gap-2 border border-amber-400/30 cursor-pointer"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
+          Add Goal
         </button>
       </div>
 
       {goals.length === 0 ? (
-        <div className="glass-card-static relative overflow-hidden p-8 md:p-16 text-center flex flex-col items-center justify-center min-h-[450px]">
-          <div className="absolute -top-24 -left-24 w-96 h-96 bg-[--accent-primary]/10 rounded-full blur-[100px] pointer-events-none" />
-          <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-indigo-500/10 rounded-full blur-[100px] pointer-events-none" />
-          <div className="relative mb-6 p-6 rounded-3xl bg-white/[0.02] border border-white/5 shadow-2xl">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[--accent-primary]/15 to-indigo-500/15 border border-[--accent-primary]/25 flex items-center justify-center shadow-[0_0_30px_-5px_rgba(14,165,233,0.3)] animate-pulse">
-              <span className="text-3xl">🎯</span>
-            </div>
+        <div className="border border-slate-800 bg-slate-900/60 p-8 md:p-16 text-center flex flex-col items-center justify-center min-h-[350px] rounded-3xl">
+          <div className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-amber-400 mb-4">
+            <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
           </div>
-          <h3 className="text-2xl md:text-3xl font-black text-[--text-primary] tracking-tight">No Active Goals</h3>
-          <p className="text-sm text-[--text-muted] mt-3 max-w-lg mx-auto font-medium leading-relaxed">Establish financial milestones to track your progress towards major purchases or savings targets.</p>
-          <div className="mt-8 flex justify-center">
-             <button onClick={() => setShowAddModal(true)} className="btn-primary">Create Your First Goal</button>
+          <h3 className="text-xl md:text-2xl font-serif font-semibold text-white">No Active Goals</h3>
+          <p className="text-xs text-slate-400 mt-2 max-w-md mx-auto font-sans leading-relaxed">Set savings milestones for major purchases, emergency funds, or investment targets.</p>
+          <div className="mt-6 flex justify-center">
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="h-10 px-5 text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl transition-all border border-amber-400/30 cursor-pointer"
+            >
+              Create First Goal
+            </button>
           </div>
         </div>
       ) : (
       <>
         {/* Top Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          <div className="glass-card-static p-6 border-white/5">
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Total Target</p>
-            <p className="text-2xl md:text-3xl font-black text-white">₹{stats.totalTarget.toLocaleString()}</p>
-            <p className="text-[0.5625rem] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Active Capital Goal</p>
+          <div className="border border-slate-800 bg-slate-900/60 p-5 rounded-2xl">
+            <p className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-2">Total Target</p>
+            <p className="text-2xl font-mono font-bold text-white tabular-nums">₹{stats.totalTarget.toLocaleString()}</p>
+            <p className="text-[11px] text-slate-500 mt-1 font-sans">Target capital sum</p>
           </div>
-          <div className="glass-card-static p-6 border-white/5">
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Capital Secured</p>
-            <p className="text-2xl md:text-3xl font-black text-[--accent-primary-light]">₹{stats.totalCurrent.toLocaleString()}</p>
-            <p className="text-[0.5625rem] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Total Saved</p>
+          <div className="border border-slate-800 bg-slate-900/60 p-5 rounded-2xl">
+            <p className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-2">Total Saved</p>
+            <p className="text-2xl font-mono font-bold text-amber-300 tabular-nums">₹{stats.totalCurrent.toLocaleString()}</p>
+            <p className="text-[11px] text-slate-500 mt-1 font-sans">Accumulated savings</p>
           </div>
-          <div className="glass-card-static p-6 border-white/5">
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Overall Progress</p>
-            <p className="text-2xl md:text-3xl font-black text-success">{stats.overallProgress.toFixed(1)}%</p>
-            <p className="text-[0.5625rem] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Completion Rate</p>
+          <div className="border border-slate-800 bg-slate-900/60 p-5 rounded-2xl">
+            <p className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-2">Overall Progress</p>
+            <p className="text-2xl font-mono font-bold text-emerald-400 tabular-nums">{stats.overallProgress.toFixed(1)}%</p>
+            <p className="text-[11px] text-slate-500 mt-1 font-sans">Completion rate</p>
           </div>
-          <div className="glass-card-static p-6 border-white/5">
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Active Trackers</p>
-            <p className="text-2xl md:text-3xl font-black text-white">{stats.activeCount}</p>
-            <p className="text-[0.5625rem] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Open Milestones</p>
+          <div className="border border-slate-800 bg-slate-900/60 p-5 rounded-2xl">
+            <p className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-2">Active Goals</p>
+            <p className="text-2xl font-mono font-bold text-slate-200 tabular-nums">{stats.activeCount}</p>
+            <p className="text-[11px] text-slate-500 mt-1 font-sans">Milestones in progress</p>
           </div>
-          <div className="glass-card-static p-6 border-white/5 bg-gradient-to-br from-[--accent-primary]/10 to-transparent">
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Nearest Deadline</p>
-            <p className={`text-2xl md:text-3xl font-black ${stats.closestDays <= 30 ? 'text-warning' : 'text-emerald-400'}`}>
+          <div className="border border-slate-800 bg-slate-900/60 p-5 rounded-2xl">
+            <p className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-2">Next Horizon</p>
+            <p className={`text-2xl font-mono font-bold tabular-nums ${stats.closestDays <= 30 ? 'text-amber-400' : 'text-emerald-400'}`}>
               {stats.closestDays === Infinity ? 'None' : `${stats.closestDays}d`}
             </p>
-            <p className="text-[0.5625rem] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">
-              {stats.closestDeadline ? format(stats.closestDeadline, "MMM d, yyyy") : "No Deadlines"}
+            <p className="text-[11px] text-slate-500 mt-1 font-sans">
+              {stats.closestDeadline ? format(stats.closestDeadline, "MMM d, yyyy") : "No set deadline"}
             </p>
           </div>
         </div>

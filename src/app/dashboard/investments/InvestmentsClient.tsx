@@ -220,62 +220,52 @@ export default function InvestmentsClient() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white uppercase italic">Investments Hub</h1>
-          <p className="text-sm text-[--text-secondary] mt-1">Multi-asset portfolio management, equity, mutual funds &amp; alternative assets.</p>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif font-normal tracking-tight text-white">Investment Portfolio</h1>
+          <p className="text-sm text-slate-400 mt-1 font-sans">Track asset allocation, net returns, and market valuations across domestic and global holdings.</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3 self-start sm:self-auto">
-          {/* Currency Switcher Toggle in Top Right */}
-          <div className="flex items-center gap-1 p-1.5 bg-white/[0.03] border border-white/10 rounded-2xl shadow-xl backdrop-blur-md">
+          {/* Currency Switcher Toggle */}
+          <div className="flex items-center gap-1 p-1 bg-slate-900 border border-slate-800 rounded-xl">
             <button
               type="button"
               onClick={() => { setCurrencyMode("INR"); setCustomTab("overview"); }}
-              className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center gap-2 cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all flex items-center gap-2 cursor-pointer ${
                 currencyMode === "INR"
-                  ? "bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.4)] scale-100"
-                  : "text-[--text-muted] hover:text-white hover:bg-white/5"
+                  ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                  : "text-slate-400 hover:text-white hover:bg-slate-800"
               }`}
             >
-              <span className="text-sm">🇮🇳</span> INR Portfolio (₹)
+              <span className="text-sm">🇮🇳</span> INR (₹)
             </button>
             <button
               type="button"
               onClick={() => { setCurrencyMode("USD"); setCustomTab("overview"); }}
-              className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center gap-2 cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all flex items-center gap-2 cursor-pointer ${
                 currencyMode === "USD"
-                  ? "bg-sky-500 text-white shadow-[0_0_20px_rgba(14,165,233,0.4)] scale-100"
-                  : "text-[--text-muted] hover:text-white hover:bg-white/5"
+                  ? "bg-sky-500/20 text-sky-400 border border-sky-500/30"
+                  : "text-slate-400 hover:text-white hover:bg-slate-800"
               }`}
             >
-              <span className="text-sm">💵</span> USD Investments ($)
+              <span className="text-sm">💵</span> USD ($)
             </button>
           </div>
         </div>
       </div>
 
-      {/* Premium Segmented Toggle Bar */}
-      <div className="flex flex-wrap gap-1.5 rounded-2xl bg-white/[0.02] border border-white/5 p-1.5 max-w-fit shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]">
+      {/* Segmented Navigation Bar */}
+      <div className="flex flex-wrap gap-1 rounded-xl bg-slate-900 border border-slate-800 p-1 max-w-fit">
         {availableTabs.map((tab) => {
           const isActive = activeTab === tab.key;
-          
-          let activeStyles = "bg-[--accent-primary] text-white shadow-[0_0_20px_rgba(99,102,241,0.3)]";
-          if (tab.key === "stocks") activeStyles = "bg-sky-500 text-white shadow-[0_0_20px_rgba(14,165,233,0.3)]";
-          else if (tab.key === "mutual-funds") activeStyles = "bg-amber-500 text-white shadow-[0_0_20px_rgba(245,158,11,0.3)]";
-          else if (tab.key === "crypto") activeStyles = "bg-violet-500 text-white shadow-[0_0_20px_rgba(139,92,246,0.3)]";
-          else if (tab.key === "bonds") activeStyles = "bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)]";
-          else if (tab.key === "fno") activeStyles = "bg-rose-500 text-white shadow-[0_0_20px_rgba(244,63,94,0.3)]";
-          else if (tab.key === "forex") activeStyles = "bg-cyan-500 text-white shadow-[0_0_20px_rgba(6,182,212,0.3)]";
-          else if (tab.key === "alt-assets") activeStyles = "bg-orange-500 text-white shadow-[0_0_20px_rgba(249,115,22,0.3)]";
-
           return (
             <button
               key={tab.key}
               type="button"
               onClick={() => setActiveTab(tab.key)}
-              className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center gap-2 whitespace-nowrap active:scale-95 cursor-pointer ${
+              className={`px-4 py-2 rounded-lg text-xs font-semibold tracking-wide transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
                 isActive
-                  ? `${activeStyles} border border-transparent`
-                  : "text-[--text-muted] hover:text-white hover:bg-white/5 border border-transparent"
+                  ? "bg-slate-800 text-amber-300 border border-slate-700/80 shadow-sm"
+                  : "text-slate-400 hover:text-white hover:bg-slate-800/40"
               }`}
             >
               {tab.label}

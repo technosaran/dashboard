@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -8,82 +7,77 @@
 @variant dark (&:where(.dark, .dark *));
 
 @theme {
+  --font-sans: var(--font-sans, system-ui);
+  --font-display: var(--font-display, system-ui);
+  --font-mono: var(--font-mono, monospace);
+  --font-serif: var(--font-serif, Georgia, serif);
+
   --color-success: #10b981;
   --color-danger: #ef4444;
   --color-warning: #f59e0b;
-  --color-info: #6366f1;
-  --color-accent-primary: #8b5cf6;
-  --color-text-primary: #ffffff;
-  --color-text-secondary: #9ca3af;
-  --color-text-muted: #6b7280;
+  --color-info: #3b82f6;
+  --color-accent-primary: #d4af37;
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #cbd5e1;
+  --color-text-muted: #64748b;
 }
 
 :root {
-  /* Premium Modern Fintech Dashboard Theme */
-  /* Inspired by Stripe, Linear, Vercel */
+  /* Bespoke Human-Crafted Wealth Terminal Theme */
+  /* Warm Graphite Onyx & Champagne Gold */
 
-  /* Background Depth Effects Custom Properties */
-  --circle-color-1: rgba(139, 92, 246, 0.15); /* Violet */
-  --circle-color-2: rgba(99, 102, 241, 0.12); /* Indigo */
-  --circle-color-3: rgba(168, 85, 247, 0.15); /* Purple */
+  --circle-color-1: rgba(212, 175, 55, 0.05); /* Champagne Gold */
+  --circle-color-2: rgba(16, 185, 129, 0.04); /* Forest Emerald */
+  --circle-color-3: rgba(59, 130, 246, 0.04); /* Slate Blue */
 
-  /* Base Colors - Deep Modern Dark */
-  --bg-base: #030712;           /* Deepest gray/blue */
-  --bg-surface: #111827;        /* Elevated surface - card background */
-  --bg-elevated: #1f2937;       /* Higher elevation - modals, dropdowns */
-  --bg-overlay: #030712;        /* Overlay background */
+  /* Base Colors - Warm Onyx Slate */
+  --bg-base: #0b0d12;           /* Warm graphite onyx */
+  --bg-surface: #141720;        /* Surface elevation */
+  --bg-elevated: #1a1e2b;       /* Modal / dropdown elevation */
+  --bg-overlay: #0b0d12;        /* Overlay background */
 
-  /* Text Hierarchy - High Contrast for Financial Data */
-  --text-primary: #ffffff;      /* Pure white for primary text - maximum contrast */
-  --text-secondary: #e5e7eb;    /* Light gray for secondary text */
-  --text-muted: #9ca3af;        /* Muted gray for labels */
-  --text-disabled: #4b5563;     /* Disabled state */
+  /* Text Hierarchy - Editorial Financial Clarity */
+  --text-primary: #f8fafc;      /* Crisp off-white */
+  --text-secondary: #cbd5e1;    /* Slate secondary text */
+  --text-muted: #64748b;        /* Muted label gray */
+  --text-disabled: #334155;     /* Disabled state */
 
-  /* Accent Colors - Modern Fintech Violet */
-  --accent-primary: #8b5cf6;    /* Violet 500 */
-  --accent-primary-light: #a78bfa; /* Violet 400 */
-  --accent-secondary: #6366f1;  /* Indigo 500 */
-  --accent-tertiary: #d946ef;   /* Fuchsia 500 */
+  /* Accent Colors - Champagne Gold & Warm Amber */
+  --accent-primary: #d4af37;    /* Champagne Gold */
+  --accent-primary-light: #e5c583; /* Light Gold */
+  --accent-secondary: #f59e0b;  /* Amber 500 */
+  --accent-tertiary: #10b981;   /* Emerald 500 */
 
-  /* Financial Status Colors - Industry Standard */
-  --success: #10b981;           /* Green - profit, positive */
-  --success-light: #34d399;     /* Light green */
-  --danger: #ef4444;            /* Red - loss, negative */
-  --danger-light: #f87171;      /* Light red */
+  /* Financial Status Colors */
+  --success: #10b981;           /* Forest Emerald - profit */
+  --success-light: #34d399;     /* Light emerald */
+  --danger: #ef4444;            /* Crimson - loss */
+  --danger-light: #f87171;      /* Light crimson */
   --warning: #f59e0b;           /* Amber - caution */
   --warning-light: #fbbf24;     /* Light amber */
-  --info: #3b82f6;              /* Blue - information */
+  --info: #3b82f6;              /* Slate blue */
 
-  /* Borders - Subtle Professional Lines */
-  --border-default: rgba(255, 255, 255, 0.1);
-  --border-strong: rgba(255, 255, 255, 0.2);
-  --border-subtle: rgba(255, 255, 255, 0.05);
-  --border-accent: rgba(139, 92, 246, 0.5);
+  /* Borders - Subtle Refined Lines */
+  --border-default: rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.15);
+  --border-subtle: rgba(255, 255, 255, 0.04);
+  --border-accent: rgba(212, 175, 55, 0.3);
 
-  /* Glass Morphism - Premium Feel */
-  --glass-bg: rgba(17, 24, 39, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --glass-hover: rgba(255, 255, 255, 0.04);
+  /* Glass Surface */
+  --glass-bg: rgba(20, 23, 32, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-hover: rgba(255, 255, 255, 0.03);
 
-  /* Gradients - Subtle Professional */
-  --gradient-primary: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
-  --gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  --gradient-danger: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
-  --gradient-mesh: radial-gradient(at 0% 0%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
-                   radial-gradient(at 100% 0%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
-                   radial-gradient(at 100% 100%, rgba(217, 70, 239, 0.08) 0%, transparent 50%),
-                   radial-gradient(at 0% 100%, rgba(139, 92, 246, 0.08) 0%, transparent 50%);
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.6);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.8);
+  --shadow-xl: 0 20px 48px rgba(0, 0, 0, 0.85);
+  --shadow-glow: 0 0 24px rgba(212, 175, 55, 0.12);
+  --shadow-glow-success: 0 0 24px rgba(16, 185, 129, 0.12);
+  --shadow-glow-danger: 0 0 24px rgba(239, 68, 68, 0.12);
 
-  /* Shadows - Depth and Elevation */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.8);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.8);
-  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.9);
-  --shadow-xl: 0 20px 48px rgba(0, 0, 0, 0.9);
-  --shadow-glow: 0 0 30px rgba(139, 92, 246, 0.25);
-  --shadow-glow-success: 0 0 30px rgba(16, 185, 129, 0.2);
-  --shadow-glow-danger: 0 0 30px rgba(239, 68, 68, 0.2);
-
-  /* Border Radius - Modern Professional */
+  /* Border Radius */
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
@@ -96,52 +90,87 @@
   --page-padding-x: 2rem;
   --page-padding-y: 2rem;
   --page-max-width: 1600px;
-  --mobile-bottom-nav-height: calc(env(safe-area-inset-bottom, 0px) + 6.5rem);
-
   /* Sidebar - Professional Navigation */
-  --sidebar-bg: #030712;
+  --sidebar-bg: #0b0d12;
   --sidebar-border: rgba(255, 255, 255, 0.08);
-  --sidebar-active: rgba(139, 92, 246, 0.15);
+  --sidebar-active: rgba(212, 175, 55, 0.15);
   --sidebar-hover: rgba(255, 255, 255, 0.05);
 
-  /* Typography - Modern & Legible */
+  /* Typography & Theme Variables */
   --font-inter: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-outfit: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-sans: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-primary: var(--font-sans);
   --font-display: 'Outfit', var(--font-sans);
   --font-mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
-  --background: #030712;
-  --foreground: #ffffff;
-  --card: #111827;
-  --card-foreground: #ffffff;
-  --popover: #1f2937;
-  --popover-foreground: #ffffff;
-  --primary: #8b5cf6;
-  --primary-foreground: #ffffff;
-  --secondary: #1f2937;
-  --secondary-foreground: #ffffff;
+  --background: #0b0d12;
+  --foreground: #f8fafc;
+  --card: #141720;
+  --card-foreground: #f8fafc;
+  --popover: #1a1e2b;
+  --popover-foreground: #f8fafc;
+  --primary: #d4af37;
+  --primary-foreground: #0b0d12;
+  --secondary: #1a1e2b;
+  --secondary-foreground: #f8fafc;
   --muted: rgba(255, 255, 255, 0.05);
-  --muted-foreground: #9ca3af;
+  --muted-foreground: #64748b;
   --accent: rgba(255, 255, 255, 0.05);
-  --accent-foreground: #ffffff;
+  --accent-foreground: #f8fafc;
   --destructive: #ef4444;
-  --border: rgba(255, 255, 255, 0.1);
-  --input: rgba(255, 255, 255, 0.1);
-  --ring: #8b5cf6;
-  --chart-1: #8b5cf6;
+  --border: rgba(255, 255, 255, 0.07);
+  --input: rgba(255, 255, 255, 0.07);
+  --ring: #d4af37;
+  --chart-1: #d4af37;
   --chart-2: #10b981;
   --chart-3: #f59e0b;
   --chart-4: #ec4899;
-  --chart-5: #06b6d4;
+  --chart-5: #3b82f6;
   --radius: 0.75rem;
-  --sidebar: #030712;
-  --sidebar-foreground: #e5e7eb;
-  --sidebar-primary: #8b5cf6;
-  --sidebar-primary-foreground: #ffffff;
+  --sidebar: #0b0d12;
+  --sidebar-foreground: #cbd5e1;
+  --sidebar-primary: #d4af37;
+  --sidebar-primary-foreground: #0b0d12;
   --sidebar-accent: rgba(255, 255, 255, 0.05);
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-ring: #8b5cf6;
+  --sidebar-accent-foreground: #f8fafc;
+  --sidebar-ring: #d4af37;
+}
+
+/* Custom Sleek Dark Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(11, 13, 18, 0.8);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(212, 175, 55, 0.4);
+}
+
+/* Metallic Shimmer Sweep Skeleton Effect */
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.02) 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer-sweep 1.6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes shimmer-sweep {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
 

@@ -1,5 +1,31 @@
 import type { Metadata, Viewport } from "next";
+import { Outfit, DM_Sans, JetBrains_Mono, Newsreader } from "next/font/google";
 import "./globals.css";
+
+const outfit = Outfit({
+  subsets: ["latin"],
+  variable: "--font-display",
+  display: "swap",
+});
+
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+  display: "swap",
+});
+
+const newsreader = Newsreader({
+  subsets: ["latin"],
+  style: ["normal", "italic"],
+  variable: "--font-serif",
+  display: "swap",
+});
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -68,7 +94,7 @@ export default async function RootLayout({
   return (
     <html
       lang="en"
-      className={cn("h-full", "antialiased", "dark", "font-sans", "theme-google")}
+      className={cn("h-full", "antialiased", "dark", outfit.variable, dmSans.variable, jetbrainsMono.variable, newsreader.variable)}
       suppressHydrationWarning
       data-scroll-behavior="smooth"
     >
@@ -76,16 +102,14 @@ export default async function RootLayout({
         <link rel="preconnect" href="https://www.google.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://www.google.com" />
       </head>
-      <body className="min-h-full flex flex-col overflow-x-hidden bg-[--bg-base] text-[--text-primary] font-sans relative">
+      <body className="min-h-full flex flex-col overflow-x-hidden bg-[--bg-base] text-[--text-primary] font-sans relative selection:bg-amber-500/20 selection:text-amber-200">
         <SkipNavLink />
-        {/* Optimized Static Background (Removed heavy animated blurs) */}
+        {/* Subtle static gradient background */}
         <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none bg-[--bg-base]">
-          {/* Subtle static gradient instead of massive animating blurs */}
-          <div className="absolute top-0 left-0 right-0 h-[300px] bg-gradient-to-b from-[rgba(139,92,246,0.05)] to-transparent" />
+          <div className="absolute top-0 left-0 right-0 h-[400px] bg-gradient-to-b from-[rgba(212,175,55,0.03)] via-transparent to-transparent" />
         </div>
 
         <PwaSecurityManager />
-
 
         {children}
         <Toaster 
@@ -114,3 +138,4 @@ export default async function RootLayout({
     </html>
   );
 }
+

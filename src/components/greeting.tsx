@@ -23,27 +23,27 @@ export default function Greeting({
       return {
         text: "Good morning",
         emoji: "☀️",
-        subtitle: "Start your morning with financial clarity. Early decisions compound growth.",
+        subtitle: "Here is a quick snapshot of your accounts, net worth, and monthly cashflow.",
       };
     }
     if (hour >= 12 && hour < 17) {
       return {
         text: "Good afternoon",
         emoji: "🌤️",
-        subtitle: "Mid-day portfolio check. Keep asset velocity high & cashflow optimized.",
+        subtitle: "Check in on your monthly spend, recent transactions, and portfolio health.",
       };
     }
     if (hour >= 17 && hour < 21) {
       return {
         text: "Good evening",
         emoji: "🌆",
-        subtitle: "Review today's yield and track your progress toward long-term wealth goals.",
+        subtitle: "Review your daily ledger entries and progress toward your financial goals.",
       };
     }
     return {
       text: "Good night",
       emoji: "🌙",
-      subtitle: "Markets rest, but your financial engine keeps working around the clock.",
+      subtitle: "All your bank balances, stock holdings, and expenses are in sync.",
     };
   })();
 
@@ -53,20 +53,20 @@ export default function Greeting({
         <div>
 
           {/* Main Title */}
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight leading-none [font-family:'Outfit',sans-serif] text-white flex flex-wrap items-center gap-2">
-            {!loading && <span className="inline-block hover:scale-125 transition-transform duration-300 cursor-default">{greetingInfo.emoji}</span>}
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif font-normal tracking-tight leading-tight text-white flex flex-wrap items-center gap-3">
+            {!loading && <span className="inline-block hover:scale-110 transition-transform duration-300 cursor-default">{greetingInfo.emoji}</span>}
             <span>{greetingInfo.text},</span>{" "}
             {loading ? (
-              <span className="inline-block w-40 h-10 rounded-xl align-middle bg-white/10 animate-pulse" />
+              <span className="inline-block w-36 h-9 rounded-xl align-middle bg-slate-800/60 skeleton-shimmer" />
             ) : (
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-white via-purple-200 to-sky-300 drop-shadow-md">
-                {username || "Commander"}
+              <span className="text-amber-300 font-sans font-semibold">
+                {username || "there"}
               </span>
             )}
           </h1>
 
           {/* Subtitle */}
-          <p className="text-xs sm:text-sm text-[--text-secondary] font-medium leading-relaxed mt-2.5 max-w-2xl">
+          <p className="text-xs sm:text-sm text-slate-400 font-sans leading-relaxed mt-2 max-w-2xl">
             {greetingInfo.subtitle}
           </p>
         </div>

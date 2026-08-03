@@ -138,20 +138,20 @@ function NavItem({ label, href, icon, pathname, isCollapsed }: (typeof nav)[0] &
         isCollapsed ? "justify-center p-2 w-9 h-9 mx-auto" : "gap-2.5 px-3 py-2 hover:pl-3.5"
       } ${
         active 
-          ? "text-[--accent-primary-light] bg-[--sidebar-active] border-[rgba(99,102,241,0.15)] shadow-[0_0_15px_rgba(99,102,241,0.08)] font-bold" 
-          : "text-[--text-secondary] border-transparent hover:bg-[var(--glass-hover)] hover:text-[--text-primary] group"
+          ? "text-amber-200 bg-amber-500/10 border-amber-500/20 font-semibold" 
+          : "text-slate-300 border-transparent hover:bg-slate-800/40 hover:text-white group"
       }`}
     >
       {active && (
         <span 
-          className="absolute left-0 top-1/4 bottom-1/4 w-0.5 rounded-r-md bg-[--accent-primary]"
+          className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-amber-400"
           aria-hidden="true"
         />
       )}
-      <span className={`transition-transform duration-300 ${active ? "text-[--accent-primary-light] scale-110" : "text-[--text-muted] group-hover:text-[--text-primary] group-hover:scale-105"}`} aria-hidden="true">
+      <span className={`transition-transform duration-300 ${active ? "text-amber-400 scale-110" : "text-slate-400 group-hover:text-slate-200 group-hover:scale-105"}`} aria-hidden="true">
         {icon}
       </span>
-      {!isCollapsed && <span className="font-semibold text-sm tracking-tight">{label}</span>}
+      {!isCollapsed && <span className="font-medium text-xs tracking-wide">{label}</span>}
     </Link>
   );
 }

@@ -13,6 +13,7 @@ import { EmptyState } from "@/components/empty-state";
 
 import { getBankLogoSources } from "@/lib/banks";
 import { getCompanyLogoSources } from "@/lib/companies";
+import { CustomChartTooltip } from "@/components/ui/chart-tooltip";
 
 import { CHART_COLOURS, CHART_SERIES_COLOURS } from "@/lib/chart-colours";
 function getColorByLabel(label: string | null | undefined) {
@@ -500,14 +501,13 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[--text-primary]">Income Strategy</h1>
-            <div className={`status-dot scale-90 ${isValidating ? 'animate-pulse bg-yellow-400' : 'bg-emerald-400 opacity-50'}`} />
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif font-normal tracking-tight text-white">Income</h1>
+            <div className={`status-dot scale-90 ${isValidating ? 'animate-pulse bg-amber-400' : 'bg-emerald-400 opacity-50'}`} />
           </div>
-          <p className="text-[--text-secondary] text-sm md:text-sm mt-1">Monitor your revenue streams and track financial growth.</p>
+          <p className="text-slate-400 text-sm mt-1 font-sans">Track your salary, freelance earnings, and investment payouts.</p>
         </div>
-         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-          {/* Desktop Month Switcher */}
-          <div className="hidden md:flex items-center gap-1.5 bg-white/5 border border-white/10 p-1.5 rounded-xl">
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          <div className="hidden md:flex items-center gap-1.5 bg-slate-900/80 border border-slate-800 p-1.5 rounded-xl">
             <button
               type="button"
               onClick={() => {
@@ -518,12 +518,12 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
                   setSelectedMonth(prev => prev - 1);
                 }
               }}
-              className="px-2.5 py-1.5 rounded-lg text-xs font-black text-[--text-muted] hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+              className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
               aria-label="Previous month"
             >
               ◀
             </button>
-            <div className="px-3 py-1.5 text-xs font-black uppercase tracking-wider text-emerald-400 select-none">
+            <div className="px-3 py-1.5 text-xs font-mono font-semibold uppercase tracking-wider text-emerald-400 select-none">
               {format(new Date(selectedYear, selectedMonth - 1, 1), "MMM yyyy")}
             </div>
             <button
@@ -536,124 +536,127 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
                   setSelectedMonth(prev => prev + 1);
                 }
               }}
-              className="px-2.5 py-1.5 rounded-lg text-xs font-black text-[--text-muted] hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+              className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
               aria-label="Next month"
             >
               ▶
             </button>
           </div>
 
-          {/* Mobile Fallback selects */}
-          <select 
-            className="btn-secondary !h-11 px-4 text-xs font-bold md:hidden" 
-            value={selectedMonth} 
-            onChange={e => setSelectedMonth(parseInt(e.target.value))}
-            aria-label="Select month"
-            id="income-month-select"
-            name="month"
+          <button 
+            type="button" 
+            onClick={handleOpenAddModal} 
+            className="h-10 px-5 text-xs font-semibold bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl transition-all flex items-center justify-center gap-2 border border-emerald-400/30 cursor-pointer"
           >
-            {Array.from({ length: 12 }, (_, i) => (
-              <option key={i + 1} value={i + 1} className="bg-[--bg-surface]">
-                {format(new Date(2020, i, 1), "MMMM")}
-              </option>
-            ))}
-          </select>
-          <select 
-            className="btn-secondary !h-11 px-4 text-xs font-bold md:hidden" 
-            value={selectedYear} 
-            onChange={e => setSelectedYear(parseInt(e.target.value))}
-            aria-label="Select year"
-            id="income-year-select"
-            name="year"
-          >
-            {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map(y => (
-              <option key={y} value={y} className="bg-[--bg-surface]">{y}</option>
-            ))}
-          </select>
-          <button type="button" onClick={handleOpenAddModal} className="btn-primary flex-1 md:flex-none gap-2">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
             Log Income
           </button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-5">
-        <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between group">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-[--text-muted]">Net Throughput</p>
-          <div className="mt-3 flex flex-col sm:flex-row sm:items-end justify-between gap-2">
-            <h3 className="text-xl md:text-2xl font-black text-success">
+        <div className="border border-slate-800 bg-slate-900/60 p-5 md:p-6 rounded-2xl flex flex-col justify-between">
+          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Total Earned</p>
+          <div className="mt-3 flex items-baseline justify-between gap-2">
+            <h3 className="text-xl md:text-2xl font-mono font-bold text-emerald-400 tabular-nums">
               +₹{stats.totalIncome.toLocaleString()}
             </h3>
-            <span className="text-[0.5625rem] w-fit px-2 py-0.5 rounded-full bg-success/10 text-success border border-success/20 font-bold shrink-0">Lifetime</span>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Lifetime</span>
           </div>
         </div>
-        <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-[--text-muted]">Monthly Flow</p>
-          <div className="mt-3 flex flex-col sm:flex-row sm:items-end justify-between gap-2">
-            <h3 className="text-xl md:text-2xl font-black text-success">
+        <div className="border border-slate-800 bg-slate-900/60 p-5 md:p-6 rounded-2xl flex flex-col justify-between">
+          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">This Month</p>
+          <div className="mt-3 flex items-baseline justify-between gap-2">
+            <h3 className="text-xl md:text-2xl font-mono font-bold text-amber-300 tabular-nums">
               +₹{stats.monthlyTotal.toLocaleString()}
             </h3>
-            <span className="text-[0.5625rem] w-fit px-2 py-0.5 rounded-full bg-[--accent-primary]/10 text-[--accent-primary] border border-[--accent-primary]/20 font-bold shrink-0">{format(new Date(), "MMM")}</span>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-400/10 text-amber-300 border border-amber-400/20">{format(new Date(selectedYear, selectedMonth - 1, 1), "MMM")}</span>
           </div>
-          {stats.lastYearTotal > 0 && (
-            <div className="mt-2 flex items-center gap-2">
-              <span className={`text-xs font-black ${stats.yoyChange >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                {stats.yoyChange >= 0 ? '↑' : '↓'} {Math.abs(stats.yoyChange).toFixed(1)}%
-              </span>
-              <span className="text-[0.5625rem] text-[--text-muted] font-bold">vs last year</span>
-            </div>
-          )}
         </div>
-        <div className="glass-card-static p-5 md:p-8 flex flex-col justify-between">
+        <div className="border border-slate-800 bg-slate-900/60 p-5 md:p-6 rounded-2xl flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[--text-muted]">Monthly Average</p>
-            <span className="text-[0.5625rem] w-fit px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold shrink-0">
-              {stats.activeMonthsCount} {stats.activeMonthsCount === 1 ? 'month' : 'months'} avg
+            <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Monthly Average</p>
+            <span className="text-[10px] font-mono text-slate-500">
+              {stats.activeMonthsCount} mo avg
             </span>
           </div>
           <div className="mt-3 flex flex-col justify-between">
-            <h3 className="text-xl md:text-2xl font-black text-success">
+            <h3 className="text-xl md:text-2xl font-mono font-bold text-emerald-400 tabular-nums">
               +₹{Math.round(stats.monthlyAverage).toLocaleString()}
-              <span className="text-xs text-[--text-muted] font-normal ml-1">/ mo</span>
+              <span className="text-xs text-slate-500 font-sans font-normal ml-1">/ mo</span>
             </h3>
-            <div className="mt-2 text-[0.6875rem] font-semibold text-[--text-muted]">
-              Avg per payout: <span className="text-white font-bold">+₹{Math.round(stats.perEntryAverage).toLocaleString()}</span> ({incomes.length} entries)
-            </div>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 glass-card-static p-5 md:p-8">
-          <div className="flex items-center justify-between mb-8"><h3 className="text-sm font-bold uppercase tracking-[0.2em] text-[--text-muted]">Income Velocity</h3><div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-emerald-500" /><span className="text-xs font-bold text-[--text-muted]">Inbound Flow</span></div></div>
+        <div className="lg:col-span-2 border border-slate-800 bg-slate-900/60 p-5 md:p-6 rounded-2xl">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400">Income Growth</h3>
+            <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full bg-emerald-500" /><span className="text-xs text-slate-400">Inflow</span></div>
+          </div>
           <div className="h-[280px] w-full">
             <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
               <AreaChart data={stats.trendData}>
                 <defs>
                   <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={CHART_SERIES_COLOURS.income} stopOpacity={0.35} />
-                    <stop offset="95%" stopColor={CHART_SERIES_COLOURS.income} stopOpacity={0} />
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 10 }} dy={10} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} dy={10} />
                 <YAxis hide />
-                <Tooltip
-                  contentStyle={{ background: 'var(--bg-surface)', border: '1px solid var(--border-default)', borderRadius: '12px' }}
-                  cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1 }}
-                />
-                <Area type="monotone" dataKey="value" stroke={CHART_SERIES_COLOURS.income} strokeWidth={3} fillOpacity={1} fill="url(#incomeGradient)" isAnimationActive={false} />
+                <Tooltip content={<CustomChartTooltip currency="₹" />} />
+                <Area type="monotone" dataKey="value" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#incomeGradient)" isAnimationActive={false} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
-        <div className="glass-card-static p-5 md:p-8"><h3 className="text-sm font-bold uppercase tracking-[0.2em] text-[--text-muted] mb-8">Source Distribution</h3><div className="h-[240px] w-full"><ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}><PieChart><Pie data={stats.pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={8} dataKey="value" isAnimationActive={false}>{stats.pieData.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} stroke="none" />))}</Pie><Tooltip contentStyle={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "12px" }} /></PieChart></ResponsiveContainer></div><div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2">{stats.pieData.slice(0, 4).map((item) => (<div key={item.name} className="flex items-center gap-2"><div className="w-2 h-2 rounded-full" style={{background: item.color}} /><span className="text-xs font-bold text-[--text-secondary] truncate">{item.name}</span></div>))}</div></div>
+        <div className="border border-slate-800 bg-slate-900/60 p-5 md:p-6 rounded-2xl">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-6">Source Distribution</h3>
+          <div className="h-[220px] w-full">
+            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+              <PieChart>
+                <Pie data={stats.pieData} cx="50%" cy="50%" innerRadius={55} outerRadius={90} paddingAngle={6} dataKey="value" isAnimationActive={false}>
+                  {stats.pieData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                  ))}
+                </Pie>
+                <Tooltip content={<CustomChartTooltip currency="₹" />} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2">
+            {stats.pieData.slice(0, 4).map((item) => (
+              <div key={item.name} className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full" style={{background: item.color}} />
+                <span className="text-xs font-medium text-slate-300 truncate">{item.name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
-      <div className="glass-card-static overflow-hidden border-white/5">
-        <div className="p-5 border-b border-white/5 bg-white/[0.01] flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3 w-full md:w-auto"><select className="input-premium py-1.5 px-2 text-xs w-28 md:w-32" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} aria-label="Filter by source" id="income-category-filter" name="categoryFilter"><option value="All">All Sources</option>{INCOME_CATEGORIES.map(c => <option key={c.label} value={c.label}>{c.label}</option>)}</select></div>
-          <div className="text-xs font-bold text-[--text-muted]">
+      <div className="border border-slate-800 bg-slate-900/60 rounded-2xl overflow-hidden">
+        <div className="p-4 border-b border-slate-800 bg-slate-950/80 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-1.5 overflow-x-auto p-1 bg-slate-900 rounded-xl border border-slate-800">
+            {["All", "Salary", "Freelance", "Dividend", "Bonus", "Others"].map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setCategoryFilter(cat)}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                  categoryFilter === cat
+                    ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+          <div className="text-xs font-mono text-slate-500">
             Showing {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, totalFilteredCount)} of {totalFilteredCount} results
           </div>
         </div>
@@ -661,16 +664,15 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
         <div className="hidden table-responsive-wrapper md:block relative">
           {incomes.length === 0 ? (
             <EmptyState
-              title="Track Your Wealth Inflow"
-              description="No revenue streams detected. Start by logging your first income to visualize your growth strategy."
+              title="No income logged yet"
+              description="Log your salary, freelance earnings, dividends, or interest to track your total income over time."
               icon={
                 <svg className="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" /></svg>
               }
               glowColor="emerald"
               action={
-                <button type="button" onClick={handleOpenAddModal} className="btn-primary shadow-xl !bg-emerald-500 hover:!bg-emerald-600 shadow-emerald-500/20 mt-8 flex items-center gap-2">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
-                  Log Your First Income
+                <button type="button" onClick={handleOpenAddModal} className="btn-primary">
+                  Log First Income
                 </button>
               }
             />
