@@ -52,7 +52,10 @@ export default function CryptoClient() {
   const [submitting, withLock] = useSubmitLock();
 
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    const t = setTimeout(() => setMounted(true), 0);
+    return () => clearTimeout(t);
+  }, []);
 
   const [activeTab, setActiveTab] = useState<"dashboard" | "holdings" | "transactions">("dashboard");
   const [showModal, setShowModal] = useState(false);
@@ -66,19 +69,34 @@ export default function CryptoClient() {
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
 
   useEffect(() => {
+    let active = true;
     if (!searchQuery || searchQuery.length < 2) {
-      setSearchResults([]);
-      setShowSearchDropdown(false);
-      return;
+      const initId = setTimeout(() => {
+        if (!active) return;
+        setSearchResults([]);
+        setShowSearchDropdown(false);
+      }, 0);
+      return () => {
+        active = false;
+        clearTimeout(initId);
+      };
     }
-    const timer = setTimeout(async () => {
+    const initId = setTimeout(() => {
+      if (!active) return;
       setIsSearching(true);
-      const res = await searchCrypto(searchQuery);
-      setSearchResults(res);
       setShowSearchDropdown(true);
+    }, 0);
+    const timer = setTimeout(async () => {
+      const res = await searchCrypto(searchQuery);
+      if (!active) return;
+      setSearchResults(res);
       setIsSearching(false);
     }, 500);
-    return () => clearTimeout(timer);
+    return () => {
+      active = false;
+      clearTimeout(initId);
+      clearTimeout(timer);
+    };
   }, [searchQuery]);
 
   const [formData, setFormData] = useState({
@@ -111,10 +129,13 @@ export default function CryptoClient() {
     if (accounts.length > 0 && showModal && !formData.deduct_from_account) {
       const usdAcc = accounts.find(a => a.currency === "USD");
       const zerodhaAcc = accounts.find(a => a.name.toLowerCase().includes("zerodha"));
-      setFormData(prev => ({
-        ...prev,
-        deduct_from_account: usdAcc ? usdAcc.id : (zerodhaAcc ? zerodhaAcc.id : accounts[0].id)
-      }));
+      const t = setTimeout(() => {
+        setFormData(prev => ({
+          ...prev,
+          deduct_from_account: usdAcc ? usdAcc.id : (zerodhaAcc ? zerodhaAcc.id : accounts[0].id)
+        }));
+      }, 0);
+      return () => clearTimeout(t);
     }
   }, [accounts, showModal, formData.deduct_from_account]);
 

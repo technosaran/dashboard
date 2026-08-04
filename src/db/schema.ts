@@ -11,7 +11,7 @@
  *   npx drizzle-kit push
  */
 
-import { pgTable, uuid, text, numeric, timestamp, boolean, integer, jsonb, real, date } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, numeric, timestamp, boolean, integer, jsonb, real, date , index } from "drizzle-orm/pg-core";
 
 // ---------------------------------------------------------------------------
 // profiles
@@ -44,7 +44,9 @@ export const accounts = pgTable("accounts", {
   color: text("color"),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
-});
+}, (t) => ({
+  userIdIdx: index("accounts_user_id_idx").on(t.user_id)
+}));
 
 // ---------------------------------------------------------------------------
 // transactions
@@ -63,7 +65,10 @@ export const transactions = pgTable("transactions", {
   ledger_log_id: uuid("ledger_log_id"),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow(),
-});
+}, (t) => ({
+  userIdIdx: index("transactions_user_id_idx").on(t.user_id),
+  accountIdIdx: index("transactions_account_id_idx").on(t.account_id)
+}));
 
 // ---------------------------------------------------------------------------
 // transfers
@@ -77,7 +82,11 @@ export const transfers = pgTable("transfers", {
   note: text("note"),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow(),
-});
+}, (t) => ({
+  userIdIdx: index("transfers_user_id_idx").on(t.user_id),
+  fromAccountIdIdx: index("transfers_from_account_id_idx").on(t.from_account_id),
+  toAccountIdIdx: index("transfers_to_account_id_idx").on(t.to_account_id)
+}));
 
 // ---------------------------------------------------------------------------
 // ledger_logs
@@ -96,7 +105,10 @@ export const ledgerLogs = pgTable("ledger_logs", {
   source_id: uuid("source_id"),
   metadata: jsonb("metadata"),
   created_at: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  userIdIdx: index("ledger_logs_user_id_idx").on(t.user_id),
+  accountIdIdx: index("ledger_logs_account_id_idx").on(t.account_id)
+}));
 
 // ---------------------------------------------------------------------------
 // incomes
@@ -116,7 +128,10 @@ export const incomes = pgTable("incomes", {
   last_generated_date: timestamp("last_generated_date"),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
-});
+}, (t) => ({
+  userIdIdx: index("incomes_user_id_idx").on(t.user_id),
+  accountIdIdx: index("incomes_account_id_idx").on(t.account_id)
+}));
 
 // ---------------------------------------------------------------------------
 // expenses
@@ -136,7 +151,10 @@ export const expenses = pgTable("expenses", {
   last_generated_date: timestamp("last_generated_date"),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
-});
+}, (t) => ({
+  userIdIdx: index("expenses_user_id_idx").on(t.user_id),
+  accountIdIdx: index("expenses_account_id_idx").on(t.account_id)
+}));
 
 // ---------------------------------------------------------------------------
 // budgets
@@ -150,7 +168,9 @@ export const budgets = pgTable("budgets", {
   period_year: integer("period_year").notNull(),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
-});
+}, (t) => ({
+  userIdIdx: index("budgets_user_id_idx").on(t.user_id)
+}));
 
 // ---------------------------------------------------------------------------
 // goals
@@ -165,7 +185,9 @@ export const goals = pgTable("goals", {
   category: text("category"),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
-});
+}, (t) => ({
+  userIdIdx: index("goals_user_id_idx").on(t.user_id)
+}));
 
 // ---------------------------------------------------------------------------
 // liabilities
@@ -183,7 +205,9 @@ export const liabilities = pgTable("liabilities", {
   notes: text("notes"),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
-});
+}, (t) => ({
+  userIdIdx: index("liabilities_user_id_idx").on(t.user_id)
+}));
 
 // ---------------------------------------------------------------------------
 // investments (stocks)
@@ -208,7 +232,9 @@ export const investments = pgTable("investments", {
   last_fetch_at: timestamp("last_fetch_at"),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (t) => ({
+  userIdIdx: index("investments_user_id_idx").on(t.user_id)
+}));
 
 // ---------------------------------------------------------------------------
 // stock_trades
@@ -228,7 +254,9 @@ export const stockTrades = pgTable("stock_trades", {
   exchange: text("exchange"),
   trade_date: timestamp("trade_date").defaultNow(),
   created_at: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  userIdIdx: index("stock_trades_user_id_idx").on(t.user_id)
+}));
 
 // ---------------------------------------------------------------------------
 // mutual_funds
@@ -253,7 +281,9 @@ export const mutualFunds = pgTable("mutual_funds", {
   last_nav_updated_at: timestamp("last_nav_updated_at"),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
-});
+}, (t) => ({
+  userIdIdx: index("mutual_funds_user_id_idx").on(t.user_id)
+}));
 
 // ---------------------------------------------------------------------------
 // mutual_fund_trades
@@ -274,7 +304,10 @@ export const mutualFundTrades = pgTable("mutual_fund_trades", {
   realized_pnl: numeric("realized_pnl"),
   date: timestamp("date").defaultNow(),
   created_at: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  userIdIdx: index("mutual_fund_trades_user_id_idx").on(t.user_id),
+  accountIdIdx: index("mutual_fund_trades_account_id_idx").on(t.account_id)
+}));
 
 // ---------------------------------------------------------------------------
 // bonds
@@ -307,7 +340,9 @@ export const bonds = pgTable("bonds", {
   notes: text("notes"),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
-});
+}, (t) => ({
+  userIdIdx: index("bonds_user_id_idx").on(t.user_id)
+}));
 
 // ---------------------------------------------------------------------------
 // bond_transactions
@@ -327,7 +362,10 @@ export const bondTransactions = pgTable("bond_transactions", {
   notes: text("notes"),
   transaction_date: date("transaction_date").notNull(),
   created_at: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  userIdIdx: index("bond_transactions_user_id_idx").on(t.user_id),
+  accountIdIdx: index("bond_transactions_account_id_idx").on(t.account_id)
+}));
 
 // ---------------------------------------------------------------------------
 // alternative_assets
@@ -343,7 +381,9 @@ export const alternativeAssets = pgTable("alternative_assets", {
   notes: text("notes"),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
-});
+}, (t) => ({
+  userIdIdx: index("alternative_assets_user_id_idx").on(t.user_id)
+}));
 
 // ---------------------------------------------------------------------------
 // forex_accounts
@@ -363,7 +403,9 @@ export const forexAccounts = pgTable("forex_accounts", {
   notes: text("notes"),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
-});
+}, (t) => ({
+  userIdIdx: index("forex_accounts_user_id_idx").on(t.user_id)
+}));
 
 // ---------------------------------------------------------------------------
 // forex_trades
@@ -383,7 +425,10 @@ export const forexTrades = pgTable("forex_trades", {
   trade_date: timestamp("trade_date").defaultNow().notNull(),
   close_date: timestamp("close_date"),
   created_at: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  userIdIdx: index("forex_trades_user_id_idx").on(t.user_id),
+  forexAccountIdIdx: index("forex_trades_forex_account_id_idx").on(t.forex_account_id)
+}));
 
 // ---------------------------------------------------------------------------
 // forex_transactions
@@ -398,7 +443,11 @@ export const forexTransactions = pgTable("forex_transactions", {
   notes: text("notes"),
   transaction_date: timestamp("transaction_date").defaultNow().notNull(),
   created_at: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  userIdIdx: index("forex_transactions_user_id_idx").on(t.user_id),
+  forexAccountIdIdx: index("forex_transactions_forex_account_id_idx").on(t.forex_account_id),
+  bankAccountIdIdx: index("forex_transactions_bank_account_id_idx").on(t.bank_account_id)
+}));
 
 // ---------------------------------------------------------------------------
 // fno_trades (Futures & Options)
@@ -424,7 +473,10 @@ export const fnoTrades = pgTable("fno_trades", {
   close_date: date("close_date"),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
-});
+}, (t) => ({
+  userIdIdx: index("fno_trades_user_id_idx").on(t.user_id),
+  accountIdIdx: index("fno_trades_account_id_idx").on(t.account_id)
+}));
 
 // ---------------------------------------------------------------------------
 // family_members
@@ -437,7 +489,9 @@ export const familyMembers = pgTable("family_members", {
   avatar_url: text("avatar_url"),
   balance: numeric("balance").default("0").notNull(),
   created_at: timestamp("created_at").defaultNow().notNull(),
-});
+}, (t) => ({
+  userIdIdx: index("family_members_user_id_idx").on(t.user_id)
+}));
 
 // ---------------------------------------------------------------------------
 // family_allowances
@@ -450,7 +504,9 @@ export const familyAllowances = pgTable("family_allowances", {
   frequency: text("frequency").notNull(),
   last_paid_at: timestamp("last_paid_at"),
   created_at: timestamp("created_at").defaultNow().notNull(),
-});
+}, (t) => ({
+  userIdIdx: index("family_allowances_user_id_idx").on(t.user_id)
+}));
 
 // ---------------------------------------------------------------------------
 // family_transfers
@@ -464,7 +520,10 @@ export const familyTransfers = pgTable("family_transfers", {
   type: text("type").notNull(),
   transfer_date: timestamp("transfer_date").defaultNow().notNull(),
   note: text("note"),
-});
+}, (t) => ({
+  userIdIdx: index("family_transfers_user_id_idx").on(t.user_id),
+  accountIdIdx: index("family_transfers_account_id_idx").on(t.account_id)
+}));
 
 // ---------------------------------------------------------------------------
 // recipients
@@ -476,4 +535,6 @@ export const recipients = pgTable("recipients", {
   relationship: text("relationship"),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
-});
+}, (t) => ({
+  userIdIdx: index("recipients_user_id_idx").on(t.user_id)
+}));

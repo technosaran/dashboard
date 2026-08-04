@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, startTransition, useMemo } from "react";
 import { mutate as globalMutate } from "swr";
+import { useRouter } from "next/navigation";
 import { useUser } from "@/context/user-context";
 import { resetUserData, updateSettings } from "./actions";
 import { toast } from "react-hot-toast";
@@ -53,13 +54,24 @@ interface NavigationCategory {
 export default function SettingsPage() {
   const { user, username, setUsername, loading, isSyncing } = useUser();
   const { data, mutate } = useFinanceData();
+  const router = useRouter();
   const { profile, accounts = [] } = data || {};
 
   const [input, setInput] = useState(username);
+  const [prevUsername, setPrevUsername] = useState(username);
+  
+  if (username !== prevUsername) {
+    setPrevUsername(username);
+    if (!loading && !isSyncing) {
+      setInput(username);
+    }
+  }
+
   const [lastSaved, setLastSaved] = useState<string | null>(null);
   const prevIsSyncingRef = useRef(false);
   const [activeTab, setActiveTab] = useState<TabKey>("profile");
   const [searchQuery, setSearchQuery] = useState("");
+  const [prevSearchQuery, setPrevSearchQuery] = useState("");
 
   const handleTabChange = (key: TabKey) => {
     setActiveTab(key);
@@ -76,7 +88,7 @@ export default function SettingsPage() {
       const params = new URLSearchParams(window.location.search);
       const gmailStatus = params.get("gmail");
       if (gmailStatus) {
-        handleTabChange("integrations");
+        setTimeout(() => handleTabChange("integrations"), 0);
         const url = new URL(window.location.href);
         url.searchParams.delete("gmail");
         url.searchParams.delete("reason");
@@ -115,7 +127,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (activeTab === "status" && diagnostics.length === 0) {
-      runDiagnostics();
+      setTimeout(() => runDiagnostics(), 0);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
@@ -128,12 +140,6 @@ export default function SettingsPage() {
   const enabledModules = useMemo(() => {
     return getCanonicalEnabledModules(profile?.enabled_modules);
   }, [profile]);
-
-  useEffect(() => {
-    if (!loading && !isSyncing) {
-      setInput(username);
-    }
-  }, [loading, username, isSyncing]);
 
   useEffect(() => {
     if (prevIsSyncingRef.current && !isSyncing) {
@@ -237,18 +243,6 @@ export default function SettingsPage() {
   const [isResetting, setIsResetting] = useState(false);
 
   useEffect(() => {
-    if (resetConfirmText === "RESET") {
-      if (!hasCountdownStarted) {
-        setResetCountdown(3);
-        setHasCountdownStarted(true);
-      }
-    } else {
-      setHasCountdownStarted(false);
-      setResetCountdown(0);
-    }
-  }, [resetConfirmText, hasCountdownStarted]);
-
-  useEffect(() => {
     if (resetCountdown <= 0) return;
     const timer = setTimeout(() => setResetCountdown((prev) => prev - 1), 1000);
     return () => clearTimeout(timer);
@@ -305,7 +299,7 @@ export default function SettingsPage() {
         );
 
         setTimeout(() => {
-          window.location.href = "/dashboard?reset=success";
+          router.push("/dashboard?reset=success");
         }, 1500);
       }
     } catch (error: unknown) {
@@ -386,13 +380,15 @@ export default function SettingsPage() {
     return NAV_CATEGORIES.flatMap((category) => category.items).find((item) => item.key === activeTab);
   }, [NAV_CATEGORIES, activeTab]);
 
-  useEffect(() => {
-    if (!searchQuery.trim() || mobileNavItems.length === 0) return;
-    const hasActiveTab = mobileNavItems.some((item) => item.key === activeTab);
-    if (!hasActiveTab) {
-      setActiveTab(mobileNavItems[0].key);
+  if (searchQuery !== prevSearchQuery) {
+    setPrevSearchQuery(searchQuery);
+    if (searchQuery.trim() && mobileNavItems.length > 0) {
+      const hasActiveTab = mobileNavItems.some((item) => item.key === activeTab);
+      if (!hasActiveTab) {
+        setActiveTab(mobileNavItems[0].key);
+      }
     }
-  }, [searchQuery, mobileNavItems, activeTab]);
+  }
 
   return (
     <div className="flex flex-col gap-6 animate-fade-in pb-12">
@@ -625,7 +621,18 @@ export default function SettingsPage() {
               showResetModal={showResetModal}
               setShowResetModal={setShowResetModal}
               resetConfirmText={resetConfirmText}
-              setResetConfirmText={setResetConfirmText}
+              setResetConfirmText={(text: string) => {
+                setResetConfirmText(text);
+                if (text === "RESET") {
+                  if (!hasCountdownStarted) {
+                    setResetCountdown(3);
+                    setHasCountdownStarted(true);
+                  }
+                } else {
+                  setHasCountdownStarted(false);
+                  setResetCountdown(0);
+                }
+              }}
               resetCountdown={resetCountdown}
               isResetting={isResetting}
               handleResetConfirm={handleResetConfirm}

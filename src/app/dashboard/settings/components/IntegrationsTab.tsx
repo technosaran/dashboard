@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import QRCode from "react-qr-code";
 import { toast } from "react-hot-toast";
 import { updateSettings, generateTelegramLinkCode } from "../actions";
@@ -32,11 +32,13 @@ export default function IntegrationsTab({
   const geminiEnabled = (profile as any)?.gemini_enabled !== false;
   const hasGeminiKey = !!(profile as any)?.gemini_api_key;
 
-  useEffect(() => {
+  const [prevProfile, setPrevProfile] = useState(profile);
+  if (profile !== prevProfile) {
+    setPrevProfile(profile);
     if (profile && (profile as any).gemini_api_key !== undefined) {
       setGeminiKeyInput((profile as any).gemini_api_key || "");
     }
-  }, [profile]);
+  }
 
   const handleSaveGeminiKey = async () => {
     setIsSavingGemini(true);

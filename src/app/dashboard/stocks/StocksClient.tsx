@@ -39,7 +39,10 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    const t = setTimeout(() => setMounted(true), 0);
+    return () => clearTimeout(t);
+  }, []);
 
   const [charges, setCharges] = useState("0");
   const [isCustomCharges, setIsCustomCharges] = useState(false);
@@ -75,18 +78,34 @@ export default function StocksClient({ initialData, showUSD = false }: { initial
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
 
   useEffect(() => {
+    let active = true;
     if (searchQuery.length > 2) {
-      setIsSearching(true);
-      setShowSearchDropdown(true);
+      const initId = setTimeout(() => {
+        if (!active) return;
+        setIsSearching(true);
+        setShowSearchDropdown(true);
+      }, 0);
       const timeoutId = setTimeout(async () => {
         const results = await searchStocks(searchQuery, selectedExchange);
+        if (!active) return;
         setSearchResults(results);
         setIsSearching(false);
       }, 500);
-      return () => clearTimeout(timeoutId);
+      return () => {
+        active = false;
+        clearTimeout(initId);
+        clearTimeout(timeoutId);
+      };
     } else {
-      setSearchResults([]);
-      setShowSearchDropdown(false);
+      const initId = setTimeout(() => {
+        if (!active) return;
+        setSearchResults([]);
+        setShowSearchDropdown(false);
+      }, 0);
+      return () => {
+        active = false;
+        clearTimeout(initId);
+      };
     }
   }, [searchQuery, selectedExchange]);
 

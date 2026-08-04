@@ -3,21 +3,24 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
 
 export default function HomePage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
+  const router = useRouter();
+
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
-        window.location.href = "/dashboard";
+        router.push("/dashboard");
       } else {
         setIsAuthenticated(false);
       }
     });
-  }, []);
+  }, [router]);
 
   // Show nothing while checking auth (will redirect if logged in)
   if (isAuthenticated === null) {

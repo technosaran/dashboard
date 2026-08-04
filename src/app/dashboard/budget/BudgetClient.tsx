@@ -63,7 +63,10 @@ export default function BudgetClient({ initialData }: { initialData?: FinanceDat
   const activeSubmissionsRef = useRef<Record<string, boolean>>({});
 
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    const t = setTimeout(() => setMounted(true), 0);
+    return () => clearTimeout(t);
+  }, []);
 
 function normalizeCategory(cat: string): string {
   if (!cat) return "Others";

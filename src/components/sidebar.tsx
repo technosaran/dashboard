@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
 import { useEffect, useState, useMemo, useRef } from "react";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -185,6 +185,7 @@ const actionModuleMap: Record<string, string> = {
 
 export default function Sidebar() {
   const { data: { profile } } = useFinanceData();
+  const router = useRouter();
   const pathname = usePathname();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [isQuickActionOpen, setIsQuickActionOpen] = useState(false);
@@ -275,7 +276,7 @@ export default function Sidebar() {
   async function confirmLogout() {
     const supabase = createClient();
     await supabase.auth.signOut();
-    window.location.href = "/login";
+    router.push("/login");
   }
 
   function handleLogout() {

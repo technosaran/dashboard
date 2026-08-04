@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { login, signup } from "./actions";
 import { createClient } from "@/lib/supabase-browser";
 import Link from "next/link";
@@ -57,6 +57,7 @@ const FEATURES = [
 
 export default function LoginPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
@@ -186,7 +187,7 @@ export default function LoginPage() {
         localStorage.removeItem("failCount");
         localStorage.removeItem("lockoutUntil");
         
-        window.location.href = "/dashboard";
+        router.push("/dashboard");
       }
     } catch {
       setError("An unexpected error occurred. Please try again.");

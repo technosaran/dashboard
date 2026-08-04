@@ -101,6 +101,29 @@ export default async function RootLayout({
       <head>
         <link rel="preconnect" href="https://www.google.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://www.google.com" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "SoftwareApplication",
+              "name": "arthaX",
+              "operatingSystem": "Web",
+              "applicationCategory": "FinanceApplication",
+              "description": "Personal wealth management terminal to track stocks, mutual funds, expenses, and automate bank transaction alerts.",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+              },
+              "creator": {
+                "@type": "Person",
+                "name": "TechnoSaran",
+                "url": "https://technosaranfin.vercel.app"
+              }
+            })
+          }}
+        />
       </head>
       <body className="min-h-full flex flex-col overflow-x-hidden bg-[--bg-base] text-[--text-primary] font-sans relative selection:bg-amber-500/20 selection:text-amber-200">
         <SkipNavLink />

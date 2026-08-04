@@ -30,7 +30,10 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
   const [activeTab, setActiveTab] = useState<"dashboard" | "holdings" | "history">("dashboard");
 
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    const t = setTimeout(() => setMounted(true), 0);
+    return () => clearTimeout(t);
+  }, []);
 
   const [charges, setCharges] = useState("0");
   const [isCustomCharges, setIsCustomCharges] = useState(false);
@@ -67,18 +70,34 @@ export default function MutualFundsClient({ initialData }: { initialData?: Finan
   }, []);
 
   useEffect(() => {
+    let active = true;
     if (searchQuery.length > 2) {
-      setIsSearching(true);
-      setShowSearchDropdown(true);
+      const initId = setTimeout(() => {
+        if (!active) return;
+        setIsSearching(true);
+        setShowSearchDropdown(true);
+      }, 0);
       const timeoutId = setTimeout(async () => {
         const results = await searchMFSchemes(searchQuery);
+        if (!active) return;
         setSearchResults(results);
         setIsSearching(false);
       }, 500);
-      return () => clearTimeout(timeoutId);
+      return () => {
+        active = false;
+        clearTimeout(initId);
+        clearTimeout(timeoutId);
+      };
     } else {
-      setSearchResults([]);
-      setShowSearchDropdown(false);
+      const initId = setTimeout(() => {
+        if (!active) return;
+        setSearchResults([]);
+        setShowSearchDropdown(false);
+      }, 0);
+      return () => {
+        active = false;
+        clearTimeout(initId);
+      };
     }
   }, [searchQuery]);
 

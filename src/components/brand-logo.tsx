@@ -178,7 +178,7 @@ export const BrandLogo = memo(({ name, symbol, className = "", style }: { name?:
     return cleaned || query;
   }, [query]);
 
-  // eslint-disable-next-line react-hooks/preserve-manual-memoization
+
   const sources = useMemo(() => {
     if (!cleanQuery) return [];
     const clean = cleanQuery.toLowerCase().trim();
