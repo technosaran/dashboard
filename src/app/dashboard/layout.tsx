@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase-server";
 import { SWRProvider } from "@/components/swr-provider";
 import type { FinanceData } from "@/hooks/use-finance-data";
 import { ErrorBoundary } from "@/components/error-boundary";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,11 @@ export default async function DashboardLayout({
   modal?: React.ReactNode;
 }) {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    redirect("/login");
+  }
+  
   const { data: initialData } = await supabase.rpc("get_finance_overview_v2");
 
   return (

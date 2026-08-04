@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useFinanceData } from "@/hooks/use-finance-data";
 import { useHasMounted } from "@/hooks/use-has-mounted";
 import { getColorByLabel } from "@/lib/chart-colours";
+import { getCanonicalEnabledModules } from "@/lib/modules";
 
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip as RechartsTooltip } from "@/components/ui/recharts";
 
@@ -26,18 +27,7 @@ export default function InvestmentsClient() {
 
   // Dynamic modules check
   const enabledModules = useMemo(() => {
-    const raw = profile?.enabled_modules && profile.enabled_modules.length > 0
-      ? profile.enabled_modules
-      : ["Income & Expenses", "Budget", "Investments", "Alt Assets", "Liabilities", "Goals", "Family Management", "Ledger"];
-    const populated = [...raw] as string[];
-    
-    if (raw.includes("Investments")) {
-      populated.push("Stocks", "Mutual Funds", "Bonds", "FnO", "Forex", "Crypto");
-    }
-    if (raw.includes("Alt Assets") || raw.includes("Assets")) {
-      populated.push("Alt Assets", "Assets");
-    }
-    return populated;
+    return getCanonicalEnabledModules(profile?.enabled_modules);
   }, [profile]);
 
   const hasStocks = enabledModules.includes("Stocks");

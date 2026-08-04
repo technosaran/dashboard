@@ -5,7 +5,7 @@ import QRCode from "react-qr-code";
 import { toast } from "react-hot-toast";
 import { updateSettings, generateTelegramLinkCode } from "../actions";
 import type { FinanceData } from "@/hooks/use-finance-data";
-import { Zap, Bot, Key, Send, AlertTriangle, ExternalLink } from "lucide-react";
+import { Bot, Key, Send, AlertTriangle, ExternalLink } from "lucide-react";
 
 interface IntegrationsTabProps {
   profile: FinanceData["profile"] | undefined;
@@ -31,7 +31,6 @@ export default function IntegrationsTab({
   const telegramActive = !!profile?.telegram_chat_id;
   const geminiEnabled = (profile as any)?.gemini_enabled !== false;
   const hasGeminiKey = !!(profile as any)?.gemini_api_key;
-  const isGeminiActive = geminiEnabled && hasGeminiKey;
 
   useEffect(() => {
     if (profile && (profile as any).gemini_api_key !== undefined) {
@@ -70,83 +69,47 @@ export default function IntegrationsTab({
   };
 
   return (
-    <div className="max-w-4xl animate-fade-in space-y-6">
-      {/* Header Banner */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-cyan-500/10 via-purple-500/5 to-transparent border border-white/10 p-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <h2 className="text-lg font-extrabold text-white tracking-wide flex items-center gap-2.5">
-              <span className="p-1.5 rounded-lg bg-cyan-500/20 text-cyan-400 text-sm flex items-center justify-center"><Zap className="w-4 h-4" /></span>
-              Connected Integrations
-            </h2>
-            <p className="text-xs text-gray-400">
-              Link external platforms to automate spending tracking & real-time AI ledger synchronization.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            {[
-              { label: "Telegram", active: telegramActive },
-              { label: "Gemini AI", active: isGeminiActive },
-            ].map((s) => (
-              <div
-                key={s.label}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[0.625rem] font-bold uppercase tracking-wider border ${
-                  s.active
-                    ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
-                    : "bg-white/5 border-white/10 text-gray-500"
-                }`}
-              >
-                <span className={`w-1.5 h-1.5 rounded-full ${s.active ? "bg-emerald-400 animate-pulse" : "bg-gray-600"}`} />
-                {s.label}: {s.active ? "Active" : "Off"}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
+    <div className="max-w-4xl animate-fade-in space-y-5">
       {/* Grid Layout of Integrations */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {/* ─── 1. Google Gemini AI Card ─── */}
-        <div className="rounded-2xl border border-white/10 bg-[#151515] p-5 flex flex-col justify-between hover:border-purple-500/30 transition-all duration-300 relative overflow-hidden group shadow-xl">
+        <div className="rounded-2xl border border-white/10 bg-[#121620] p-5 flex flex-col justify-between hover:border-purple-500/30 transition-all duration-300 relative overflow-hidden group shadow-xl">
           <div className="space-y-4">
             {/* Card Header */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-xl shadow-inner">
+                <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center shadow-inner">
                   <Bot className="w-5 h-5 text-purple-400" />
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-white flex items-center gap-2">
                     Google Gemini AI
-                    <span className="text-[0.625rem] px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-400 font-extrabold uppercase">Project AI</span>
                   </h3>
-                  <span className="text-[0.625rem] text-purple-400 font-bold uppercase tracking-wider">Gemini 2.5 Flash • Natural Language</span>
+                  <span className="text-[0.625rem] text-purple-400 font-bold uppercase tracking-wider">Gemini 2.5 Flash</span>
                 </div>
               </div>
 
               {/* Enable / Disable Toggle Switch */}
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleToggleGemini}
-                  className={`w-12 h-6 rounded-full transition-colors p-1 cursor-pointer flex items-center ${
-                    geminiEnabled ? "bg-purple-600 justify-end" : "bg-gray-700 justify-start"
-                  }`}
-                  title={geminiEnabled ? "Click to Turn OFF Gemini AI" : "Click to Turn ON Gemini AI"}
-                >
-                  <span className="w-4 h-4 rounded-full bg-white shadow-md transform transition-transform" />
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={handleToggleGemini}
+                className={`w-11 h-6 rounded-full transition-colors p-1 cursor-pointer flex items-center ${
+                  geminiEnabled ? "bg-purple-600 justify-end" : "bg-gray-700 justify-start"
+                }`}
+                title={geminiEnabled ? "Click to Turn OFF Gemini AI" : "Click to Turn ON Gemini AI"}
+              >
+                <span className="w-4 h-4 rounded-full bg-white shadow-md transform transition-transform" />
+              </button>
             </div>
 
             <p className="text-xs text-gray-400 leading-relaxed">
-              Powers intelligent natural language understanding across your dashboard and Telegram bot. If turned OFF or unconfigured, the system automatically uses standard rule-based parsing.
+              Powers natural language parsing across dashboard & Telegram bot. If unconfigured or OFF, system falls back to rule-based parsing.
             </p>
 
             {/* API Key Box */}
-            <div className="p-4 rounded-xl bg-white/[0.03] border border-white/5 space-y-3">
+            <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/5 space-y-2.5">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-white flex items-center gap-1.5">
+                <label htmlFor="gemini-key-input" className="text-xs font-bold text-white flex items-center gap-1.5">
                   <Key className="w-3.5 h-3.5 text-purple-400 shrink-0" /> Gemini API Key
                 </label>
                 <a
@@ -162,16 +125,17 @@ export default function IntegrationsTab({
               <div className="flex gap-2">
                 <div className="relative flex-1">
                   <input
+                    id="gemini-key-input"
                     type={showApiKey ? "text" : "password"}
                     placeholder="AIzaSy..."
                     value={geminiKeyInput}
                     onChange={(e) => setGeminiKeyInput(e.target.value)}
-                    className="w-full bg-black/50 border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white placeholder-gray-600 outline-none focus:border-purple-500 font-mono"
+                    className="w-full bg-black/50 border border-white/10 rounded-xl pl-3 pr-12 py-2 text-xs text-white placeholder-gray-600 outline-none focus:border-purple-500 font-mono"
                   />
                   <button
                     type="button"
                     onClick={() => setShowApiKey(!showApiKey)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 hover:text-white cursor-pointer"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[0.6875rem] text-gray-400 hover:text-white cursor-pointer"
                   >
                     {showApiKey ? "Hide" : "Show"}
                   </button>
@@ -180,7 +144,7 @@ export default function IntegrationsTab({
                   type="button"
                   disabled={isSavingGemini}
                   onClick={handleSaveGeminiKey}
-                  className="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition-all shadow-[0_0_15px_rgba(147,51,234,0.3)] cursor-pointer disabled:opacity-50"
+                  className="px-3 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition-all shadow-md cursor-pointer disabled:opacity-50"
                 >
                   {isSavingGemini ? "..." : "Save"}
                 </button>
@@ -188,11 +152,11 @@ export default function IntegrationsTab({
 
               <p className="text-[0.6875rem] text-gray-500">
                 Status: {!geminiEnabled ? (
-                  <span className="text-gray-400 font-bold">Turned OFF (Rule-Based Fallback)</span>
+                  <span className="text-gray-400 font-bold">Turned OFF (Rule Fallback)</span>
                 ) : hasGeminiKey ? (
                   <span className="text-emerald-400 font-bold">Configured & Ready</span>
                 ) : (
-                  <span className="text-amber-400 font-bold">Not Configured (Rule-Based Fallback)</span>
+                  <span className="text-amber-400 font-bold">Not Configured (Rule Fallback)</span>
                 )}
               </p>
             </div>
@@ -200,20 +164,20 @@ export default function IntegrationsTab({
         </div>
 
         {/* ─── 2. Telegram Bot Card ─── */}
-        <div className="rounded-2xl border border-white/10 bg-[#151515] p-5 flex flex-col justify-between hover:border-sky-500/30 transition-all duration-300 relative overflow-hidden group shadow-xl">
+        <div className="rounded-2xl border border-white/10 bg-[#121620] p-5 flex flex-col justify-between hover:border-sky-500/30 transition-all duration-300 relative overflow-hidden group shadow-xl">
           <div className="space-y-4">
             {/* Card Header */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-xl shadow-inner">
+                <div className="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center shadow-inner">
                   <Send className="w-5 h-5 text-sky-400" />
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-white">Telegram Assistant</h3>
-                  <span className="text-[0.625rem] text-sky-400 font-bold uppercase tracking-wider">Voice Notes • Bill OCR • SMS</span>
+                  <span className="text-[0.625rem] text-sky-400 font-bold uppercase tracking-wider">Voice Notes • Bills • SMS</span>
                 </div>
               </div>
-              <span className={`px-2.5 py-0.5 rounded-full text-[0.625rem] font-black uppercase tracking-wider border ${
+              <span className={`px-2.5 py-0.5 rounded-full text-[0.625rem] font-bold uppercase tracking-wider border ${
                 telegramActive ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "bg-white/5 border-white/10 text-gray-500"
               }`}>
                 {telegramActive ? "Connected" : "Disconnected"}
@@ -228,7 +192,7 @@ export default function IntegrationsTab({
               <div className="space-y-2">
                 <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-between text-xs">
                   <div>
-                    <p className="font-bold text-emerald-400 flex items-center gap-1.5">
+                    <p className="font-bold text-emerald-400 flex items-center gap-1.5 text-xs">
                       <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                       Bot Active
                     </p>
@@ -297,7 +261,7 @@ export default function IntegrationsTab({
                   if (res.error) toast.error(res.error);
                   else { toast.success("Link code generated!"); mutate(); }
                 }}
-                className="w-full py-2 rounded-xl bg-sky-500 hover:bg-sky-600 text-white text-xs font-bold transition-all shadow-[0_0_15px_rgba(14,165,233,0.3)] flex items-center justify-center gap-2 cursor-pointer uppercase tracking-wider"
+                className="w-full py-2 rounded-xl bg-sky-500 hover:bg-sky-600 text-white text-xs font-bold transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer uppercase tracking-wider"
               >
                 {profile?.telegram_link_code ? "Regenerate Code" : "Connect Telegram"}
               </button>

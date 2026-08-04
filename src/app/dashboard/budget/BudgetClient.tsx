@@ -480,7 +480,7 @@ function normalizeCategory(cat: string): string {
         </div>
         <div className="glass-card-static p-5 border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-transparent to-transparent shadow-lg">
           <p className="text-xs font-black uppercase tracking-[0.2em] text-amber-400/80 mb-2">Actual spend</p>
-          <p className={`text-2xl font-black ${totalSpent > totalBudgeted && totalBudgeted > 0 ? "text-rose-400 drop-shadow-[0_0_10px_rgba(244,63,94,0.4)]" : "text-amber-400 drop-shadow-[0_0_10px_rgba(245,158,11,0.3)]"}`}>₹{totalSpent.toLocaleString()}</p>
+          <p className={`text-2xl font-black ${totalSpent > totalBudgeted && totalBudgeted > 0 ? "text-rose-400 drop-shadow-[0_0_10px_rgba(244,63,94,0.4)]" : "text-white drop-shadow-[0_0_10px_rgba(245,158,11,0.3)]"}`}>₹{totalSpent.toLocaleString()}</p>
           <p className="text-[0.5625rem] text-[--text-muted] mt-1 opacity-80">Real-time outflow</p>
         </div>
         <div className="glass-card-static p-5 border-emerald-500/20 bg-gradient-to-br from-emerald-500/10 via-transparent to-transparent shadow-lg">
@@ -673,7 +673,7 @@ function normalizeCategory(cat: string): string {
                         <div>
                           <p className="text-xs font-black text-white">{cat.label}</p>
                           <p className="text-[0.625rem] font-bold text-gray-400 mt-0.5">
-                            Spent: <span className={`font-black ${percent > 100 ? 'text-rose-400' : percent > 80 ? 'text-amber-400' : 'text-emerald-400'}`}>₹{spent.toLocaleString()}</span>
+                            Spent: <span className={`font-black ${percent > 100 ? 'text-rose-400' : percent > 80 ? 'text-white' : 'text-emerald-400'}`}>₹{spent.toLocaleString()}</span>
                           </p>
                         </div>
                       </div>
@@ -684,7 +684,7 @@ function normalizeCategory(cat: string): string {
                   {limit > 0 && (
                     <div className="my-2 space-y-1">
                       <div className="flex justify-between text-[0.625rem] font-black uppercase tracking-wider mb-1">
-                        <span className={percent > 100 ? "text-rose-400" : percent > 80 ? "text-amber-400" : "text-emerald-400"}>{percent.toFixed(0)}% used</span>
+                        <span className={percent > 100 ? "text-rose-400" : percent > 80 ? "text-white" : "text-emerald-400"}>{percent.toFixed(0)}% used</span>
                         {remaining >= 0 ? (
                           <span className="text-emerald-400 font-extrabold">₹{remaining.toLocaleString()} left</span>
                         ) : (

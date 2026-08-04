@@ -366,7 +366,7 @@ export default function TaxReportsClient() {
                 <div className="flex justify-between text-gray-300"><span>CGST</span><span className="font-mono">{formatINR(report.taxPayment.gstBreakdown.cgst)}</span></div>
                 <div className="flex justify-between text-gray-300"><span>SGST</span><span className="font-mono">{formatINR(report.taxPayment.gstBreakdown.sgst)}</span></div>
                 <div className="flex justify-between text-gray-300"><span>IGST</span><span className="font-mono">{formatINR(report.taxPayment.gstBreakdown.igst)}</span></div>
-                <div className="flex justify-between font-bold text-amber-300 border-t border-amber-500/20 pt-2"><span>Total GST Paid</span><span className="font-mono">{formatINR(report.taxPayment.gst)}</span></div>
+                <div className="flex justify-between font-bold text-white border-t border-amber-500/20 pt-2"><span>Total GST Paid</span><span className="font-mono">{formatINR(report.taxPayment.gst)}</span></div>
               </div>
             )}
           </div>

@@ -276,7 +276,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
           </div>
           <div className="border border-slate-800 bg-slate-900/60 p-5 rounded-2xl">
             <p className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-2">Total Saved</p>
-            <p className="text-2xl font-mono font-bold text-amber-300 tabular-nums">₹{stats.totalCurrent.toLocaleString()}</p>
+            <p className="text-2xl font-mono font-bold text-white tabular-nums">₹{stats.totalCurrent.toLocaleString()}</p>
             <p className="text-[11px] text-slate-500 mt-1 font-sans">Accumulated savings</p>
           </div>
           <div className="border border-slate-800 bg-slate-900/60 p-5 rounded-2xl">
@@ -291,7 +291,7 @@ export default function GoalsClient({ initialData }: { initialData?: FinanceData
           </div>
           <div className="border border-slate-800 bg-slate-900/60 p-5 rounded-2xl">
             <p className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-2">Next Horizon</p>
-            <p className={`text-2xl font-mono font-bold tabular-nums ${stats.closestDays <= 30 ? 'text-amber-400' : 'text-emerald-400'}`}>
+            <p className={`text-2xl font-mono font-bold tabular-nums ${stats.closestDays <= 30 ? 'text-white' : 'text-emerald-400'}`}>
               {stats.closestDays === Infinity ? 'None' : `${stats.closestDays}d`}
             </p>
             <p className="text-[11px] text-slate-500 mt-1 font-sans">

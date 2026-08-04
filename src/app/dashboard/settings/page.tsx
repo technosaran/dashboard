@@ -7,7 +7,7 @@ import { resetUserData, updateSettings } from "./actions";
 import { toast } from "react-hot-toast";
 import { useFinanceData } from "@/hooks/use-finance-data";
 import type { FinanceData } from "@/hooks/use-finance-data";
-import { MODULE_KEYS } from "@/lib/modules";
+import { MODULE_KEYS, getCanonicalEnabledModules } from "@/lib/modules";
 
 import ProfileTab from "./components/ProfileTab";
 import ModulesTab from "./components/ModulesTab";
@@ -126,29 +126,7 @@ export default function SettingsPage() {
   const timezone = profile?.timezone || "Asia/Kolkata";
 
   const enabledModules = useMemo(() => {
-    const raw = profile?.enabled_modules || [...MODULE_KEYS];
-    const populated = [...raw] as string[];
-
-    if (raw.includes("Income & Expenses")) {
-      populated.push("Income", "Expenses");
-    } else if (raw.includes("Income") || raw.includes("Expenses")) {
-      populated.push("Income & Expenses");
-    }
-
-    if (raw.includes("Investments")) {
-      populated.push("Stocks", "Mutual Funds", "Bonds", "FnO", "Forex", "Crypto");
-    } else if (
-      raw.includes("Stocks") ||
-      raw.includes("Mutual Funds") ||
-      raw.includes("Bonds") ||
-      raw.includes("FnO") ||
-      raw.includes("Forex") ||
-      raw.includes("Crypto")
-    ) {
-      populated.push("Investments");
-    }
-
-    return populated;
+    return getCanonicalEnabledModules(profile?.enabled_modules);
   }, [profile]);
 
   useEffect(() => {
@@ -194,7 +172,7 @@ export default function SettingsPage() {
       base_currency: key === "base_currency" ? (value as string) : baseCurrency,
       theme: key === "theme" ? (value as string) : theme,
       timezone: key === "timezone" ? (value as string) : timezone,
-      enabled_modules: key === "enabled_modules" ? (value as string[]) : enabledModules,
+      enabled_modules: key === "enabled_modules" ? (value as string[]) : getCanonicalEnabledModules(profile?.enabled_modules),
       default_accounts: key === "default_accounts" ? (value as Record<string, string | null>) : defaultAccounts,
     };
 
@@ -223,34 +201,15 @@ export default function SettingsPage() {
   };
 
   const toggleModule = (module: string) => {
-    const raw = profile?.enabled_modules || [...MODULE_KEYS];
+    const currentModules = getCanonicalEnabledModules(profile?.enabled_modules);
+    const isCurrentlyEnabled = currentModules.includes(module);
+    
     let newModules: string[];
-
-    if (module === "Income & Expenses") {
-      const isEnabled = raw.includes("Income & Expenses") || raw.includes("Income") || raw.includes("Expenses");
-      newModules = isEnabled
-        ? raw.filter((m) => m !== "Income & Expenses" && m !== "Income" && m !== "Expenses")
-        : [...raw.filter((m) => m !== "Income" && m !== "Expenses"), "Income & Expenses"];
-    } else if (module === "Investments") {
-      const isEnabled =
-        raw.includes("Investments") ||
-        raw.includes("Stocks") ||
-        raw.includes("Mutual Funds") ||
-        raw.includes("Bonds") ||
-        raw.includes("FnO") ||
-        raw.includes("Forex");
-      newModules = isEnabled
-        ? raw.filter(
-            (m) => m !== "Investments" && m !== "Stocks" && m !== "Mutual Funds" && m !== "Bonds" && m !== "FnO" && m !== "Forex"
-          )
-        : [...raw.filter((m) => !["Stocks", "Mutual Funds", "Bonds", "FnO", "Forex"].includes(m)), "Investments"];
+    if (isCurrentlyEnabled) {
+      newModules = currentModules.filter((m) => m !== module);
     } else {
-      newModules = raw.includes(module) ? raw.filter((m) => m !== module) : [...raw, module];
+      newModules = Array.from(new Set([...currentModules, module]));
     }
-
-    newModules = newModules.filter(
-      (m) => !["Income", "Expenses", "Stocks", "Mutual Funds", "Bonds", "FnO", "Forex"].includes(m)
-    );
 
     saveSetting("enabled_modules", newModules, `${module} visibility updated`);
   };
@@ -438,23 +397,20 @@ export default function SettingsPage() {
   return (
     <div className="flex flex-col gap-6 animate-fade-in pb-12">
       {/* Top Banner Header with Quick Search Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 glass-card p-6 md:p-8 rounded-3xl bg-gradient-to-r from-slate-900/80 via-indigo-950/30 to-slate-950/80 border border-white/10 shadow-2xl">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 glass-card p-5 md:p-6 rounded-2xl bg-gradient-to-r from-slate-900/90 via-indigo-950/40 to-slate-950/90 border border-white/10 shadow-xl">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-black uppercase tracking-wider mb-2">
-            <span className="flex items-center gap-1.5"><Settings className="w-3.5 h-3.5" /> Workspace Settings</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-white">
+          <h1 className="text-2xl font-bold tracking-tight text-white">
             Settings & Preferences
           </h1>
-          <p className="mt-1 text-xs md:text-sm text-[--text-muted]">
-            Manage account identity, module layout, default bank nodes, imports/exports, and connected AI services.
+          <p className="mt-1 text-xs text-[--text-muted]">
+            Manage account identity, module layout, default payment nodes, imports/exports, and connected AI services.
           </p>
         </div>
 
         {/* Real-time Settings Search Filter */}
-        <div className="w-full md:w-80 relative shrink-0">
-          <div className="absolute inset-y-0 left-3.5 flex items-center pointer-events-none text-gray-400">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+        <div className="w-full md:w-72 relative shrink-0">
+          <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-gray-400">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
@@ -462,14 +418,14 @@ export default function SettingsPage() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search preferences or settings..."
-            className="w-full bg-black/40 border border-white/10 rounded-2xl pl-10 pr-9 py-2.5 text-xs text-white placeholder-gray-500 outline-none focus:border-indigo-500 transition-all font-medium shadow-inner"
+            placeholder="Search settings..."
+            className="w-full bg-black/40 border border-white/10 rounded-xl pl-9 pr-8 py-2 text-xs text-white placeholder-gray-500 outline-none focus:border-indigo-500 transition-all font-medium shadow-inner"
           />
           {searchQuery && (
             <button
               type="button"
               onClick={() => setSearchQuery("")}
-              className="absolute inset-y-0 right-3.5 flex items-center text-xs text-gray-400 hover:text-white"
+              className="absolute inset-y-0 right-3 flex items-center text-xs text-gray-400 hover:text-white"
             >
               ✕
             </button>
@@ -479,7 +435,7 @@ export default function SettingsPage() {
 
       {/* Search Result Bar */}
       {searchQuery && (
-        <div className="px-4 py-2 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-xs text-indigo-300 flex items-center justify-between">
+        <div className="px-4 py-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-xs text-indigo-300 flex items-center justify-between">
           <span>
             Found <strong>{totalMatchingItems}</strong> setting section{totalMatchingItems !== 1 ? "s" : ""} matching &quot;{searchQuery}&quot;
           </span>
@@ -497,13 +453,13 @@ export default function SettingsPage() {
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
         {/* Left Sidebar Navigation (Desktop md:grid-cols-4) with Independent Overflow Scroll */}
         <div className="hidden md:block md:col-span-4 lg:col-span-3 sticky top-6 max-h-[calc(100vh-5rem)] overflow-y-auto no-scrollbar pr-1">
-          <div className="glass-card p-3 rounded-3xl bg-slate-900/60 border border-white/10 shadow-xl space-y-3.5">
+          <div className="glass-card p-3 rounded-2xl bg-slate-900/60 border border-white/10 shadow-xl space-y-3">
             {filteredCategories.map((cat) => (
               <div key={cat.category} className="space-y-1">
-                <p className="px-3 text-[0.625rem] font-black uppercase tracking-[0.2em] text-indigo-400/80">
+                <p className="px-3 text-[0.625rem] font-bold uppercase tracking-wider text-indigo-400/80">
                   {cat.category}
                 </p>
-                 <div className="space-y-0.5" role="tablist" aria-label={`${cat.category} settings tabs`}>
+                <div className="space-y-0.5" role="tablist" aria-label={`${cat.category} settings tabs`}>
                   {cat.items.map((item) => {
                     const isActive = activeTab === item.key;
                     return (
@@ -511,25 +467,22 @@ export default function SettingsPage() {
                         key={item.key}
                         type="button"
                         onClick={() => handleTabChange(item.key)}
-                         role="tab"
-                         aria-selected={isActive}
-                         aria-current={isActive ? "page" : undefined}
-                         className={`w-full p-2.5 rounded-2xl text-left transition-all duration-200 flex items-center justify-between group cursor-pointer ${
-                           isActive
-                             ? "bg-gradient-to-r from-indigo-600/30 to-purple-600/20 border border-indigo-500/40 text-white shadow-[0_4px_20px_rgba(99,102,241,0.2)]"
-                            : "text-[--text-muted] hover:text-white hover:bg-white/[0.04] border border-transparent"
+                        role="tab"
+                        aria-selected={isActive}
+                        aria-current={isActive ? "page" : undefined}
+                        className={`w-full px-3 py-2 rounded-xl text-left transition-all duration-200 flex items-center justify-between group cursor-pointer ${
+                          isActive
+                            ? "bg-indigo-600/30 border border-indigo-500/40 text-white shadow-[0_2px_12px_rgba(99,102,241,0.2)] font-semibold"
+                            : "text-gray-400 hover:text-white hover:bg-white/[0.04] border border-transparent font-medium"
                         }`}
                       >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <span className="text-base select-none shrink-0 flex items-center justify-center">{item.icon}</span>
-                          <div className="min-w-0">
-                            <p className="text-xs font-bold truncate group-hover:text-white">{item.label}</p>
-                            <p className="text-[0.625rem] text-gray-500 truncate">{item.description}</p>
-                          </div>
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span className="text-sm shrink-0 flex items-center justify-center text-indigo-400 group-hover:text-indigo-300">{item.icon}</span>
+                          <span className="text-xs truncate">{item.label}</span>
                         </div>
                         {item.badge && (
                           <span
-                            className={`text-[0.5625rem] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0 border ${
+                            className={`text-[0.625rem] font-bold px-2 py-0.5 rounded-full shrink-0 border ${
                               isActive
                                 ? "bg-indigo-500/20 border-indigo-400/40 text-indigo-200"
                                 : "bg-white/5 border-white/10 text-gray-400"

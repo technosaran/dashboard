@@ -1,8 +1,6 @@
 import { useMemo } from "react";
 import { useFinanceData } from "@/hooks/use-finance-data";
-import { MODULE_KEYS } from "@/lib/modules";
-
-const USD_EXCHANGE_RATE = 85.0; // 1 USD = 85 INR
+import { getCanonicalEnabledModules } from "@/lib/modules";
 
 export function useNetWorth() {
   const { data } = useFinanceData();
@@ -18,28 +16,7 @@ export function useNetWorth() {
   } = data || {};
 
   return useMemo(() => {
-    const raw = profile?.enabled_modules || [...MODULE_KEYS];
-    const enabledModules = [...raw] as string[];
-    
-    // Bidirectional fallback mapping for Cashflow
-    if (raw.includes("Income & Expenses")) {
-      enabledModules.push("Income", "Expenses");
-    } else if (raw.includes("Income") || raw.includes("Expenses")) {
-      enabledModules.push("Income & Expenses");
-    }
-    
-    // Bidirectional fallback mapping for Investments
-    if (raw.includes("Investments")) {
-      enabledModules.push("Stocks", "Mutual Funds", "Bonds", "FnO", "Forex");
-    } else if (
-      raw.includes("Stocks") || 
-      raw.includes("Mutual Funds") || 
-      raw.includes("Bonds") || 
-      raw.includes("FnO") || 
-      raw.includes("Forex")
-    ) {
-      enabledModules.push("Investments");
-    }
+    const enabledModules = getCanonicalEnabledModules(profile?.enabled_modules);
     
     const hasStocks = enabledModules.includes("Stocks");
     const hasForex = enabledModules.includes("Forex");
@@ -51,16 +28,16 @@ export function useNetWorth() {
     const getConvertedValues = (val: number, currency?: string) => {
       const amount = Number(val || 0);
       const isUSD = currency === "USD";
-      const inr = isUSD ? amount * USD_EXCHANGE_RATE : amount;
-      const usd = isUSD ? amount : amount / USD_EXCHANGE_RATE;
+      const inr = isUSD ? 0 : amount;
+      const usd = isUSD ? amount : 0;
       return { inr, usd };
     };
 
-    // For investment categories, USD allocation only sums actual USD investments
+    // For investment categories, separate INR and USD totals without exchange conversion
     const getInvestmentValues = (val: number, currency?: string) => {
       const amount = Number(val || 0);
       const isUSD = currency === "USD";
-      const inr = isUSD ? amount * USD_EXCHANGE_RATE : amount;
+      const inr = isUSD ? 0 : amount;
       const usd = isUSD ? amount : 0;
       return { inr, usd };
     };

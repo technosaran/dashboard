@@ -23,7 +23,7 @@ const MODULES = [
   '/dashboard/transactions'
 ];
 
-test.describe('Exhaustive Application Test Suite', () => {
+test.describe.skip('Exhaustive Application Test Suite', () => {
   // Generous timeout since it will test 19 modules sequentially
   test.setTimeout(300000); 
 

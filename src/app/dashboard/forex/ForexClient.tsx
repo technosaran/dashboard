@@ -355,7 +355,7 @@ export default function ForexClient({ initialData }: { initialData?: FinanceData
           </div>
           <div className="glass-card-static p-6 border-white/5 bg-gradient-to-br from-[--accent-primary]/10 to-transparent">
             <p className="text-xs font-black uppercase tracking-[0.2em] text-[--text-muted] mb-3">Withdrawn</p>
-            <p className="text-xl md:text-2xl font-black text-amber-400">${stats.totalWithdrawn.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+            <p className="text-xl md:text-2xl font-black text-white">${stats.totalWithdrawn.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
             <p className="text-[0.5625rem] font-bold text-[--text-muted] mt-2 uppercase tracking-widest opacity-60">Total Outflow</p>
           </div>
         </div>

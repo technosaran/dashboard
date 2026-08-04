@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Greeting from "@/components/greeting";
 
 import { useFinanceData, type FinanceData } from "@/hooks/use-finance-data";
-import { MODULE_KEYS } from "@/lib/modules";
+import { getCanonicalEnabledModules } from "@/lib/modules";
 import { 
   Tooltip, 
   PieChart, 
@@ -111,31 +111,7 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
   const [timeframe, setTimeframe] = useState<"1M" | "3M" | "6M" | "1Y" | "ALL">("6M");
 
   const enabledModules = useMemo(() => {
-    const raw = profile?.enabled_modules || [...MODULE_KEYS];
-    const populated = [...raw] as string[];
-    
-    // Bidirectional fallback mapping for Cashflow
-    if (raw.includes("Income & Expenses")) {
-      populated.push("Income", "Expenses");
-    } else if (raw.includes("Income") || raw.includes("Expenses")) {
-      populated.push("Income & Expenses");
-    }
-    
-    // Bidirectional fallback mapping for Investments
-    if (raw.includes("Investments")) {
-      populated.push("Stocks", "Mutual Funds", "Bonds", "FnO", "Forex", "Crypto");
-    } else if (
-      raw.includes("Stocks") || 
-      raw.includes("Mutual Funds") || 
-      raw.includes("Bonds") || 
-      raw.includes("FnO") || 
-      raw.includes("Forex") ||
-      raw.includes("Crypto")
-    ) {
-      populated.push("Investments");
-    }
-    
-    return populated;
+    return getCanonicalEnabledModules(profile?.enabled_modules);
   }, [profile]);
 
   const [showUSD, setShowUSD] = useState(false);
@@ -358,7 +334,7 @@ const DashboardDesktop = memo(function DashboardDesktop({ stats, recentLogs, goa
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -15 }}
                       transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                      className="absolute left-0 text-4xl sm:text-5xl md:text-6xl font-mono font-bold tracking-tight text-amber-200 tabular-nums whitespace-nowrap overflow-hidden"
+                      className="absolute left-0 text-4xl sm:text-5xl md:text-6xl font-mono font-bold tracking-tight text-white tabular-nums whitespace-nowrap overflow-hidden"
                     >
                     {showUSD 
                       ? `$${stats.netWorthUSD.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}` 

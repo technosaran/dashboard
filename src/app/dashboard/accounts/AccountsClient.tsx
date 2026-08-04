@@ -591,7 +591,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
                   </div>
                   <h2 
                     key={displayedCurrency} 
-                    className="text-4xl sm:text-5xl font-mono font-bold tracking-tight text-amber-200 tabular-nums whitespace-nowrap"
+                    className="text-4xl sm:text-5xl font-mono font-bold tracking-tight text-white tabular-nums whitespace-nowrap"
                   >
                     {getCurrencySymbol(displayedCurrency)}{totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                   </h2>
@@ -669,7 +669,7 @@ export default function AccountsClient({ initialData }: { initialData?: FinanceD
                 </div>
                 <h2 
                   key={displayedCurrency} 
-                  className="text-3xl sm:text-4xl font-mono font-bold tracking-tight text-amber-200 tabular-nums whitespace-nowrap"
+                  className="text-3xl sm:text-4xl font-mono font-bold tracking-tight text-white tabular-nums whitespace-nowrap"
                 >
                   {getCurrencySymbol(displayedCurrency)}{totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                 </h2>

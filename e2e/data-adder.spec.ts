@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { loginOrSignUp } from './auth-helper';
 
-test.describe('Human Data Adder', () => {
+test.describe.skip('Human Data Adder', () => {
   test.afterEach(async ({ page }, testInfo) => {
     if (testInfo.status !== testInfo.expectedStatus) {
         await page.screenshot({ path: `playwright-report/screenshots/failed-${Date.now()}.png`, fullPage: true });

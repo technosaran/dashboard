@@ -15,7 +15,7 @@ import { getBankLogoSources } from "@/lib/banks";
 import { getCompanyLogoSources } from "@/lib/companies";
 import { CustomChartTooltip } from "@/components/ui/chart-tooltip";
 
-import { CHART_COLOURS, CHART_SERIES_COLOURS } from "@/lib/chart-colours";
+import { CHART_COLOURS } from "@/lib/chart-colours";
 function getColorByLabel(label: string | null | undefined) {
   if (!label) return CHART_COLOURS[0];
   let hash = 0;
@@ -567,7 +567,7 @@ export default function IncomeClient({ initialData }: { initialData?: FinanceDat
         <div className="border border-slate-800 bg-slate-900/60 p-5 md:p-6 rounded-2xl flex flex-col justify-between">
           <p className="text-xs font-medium uppercase tracking-wider text-slate-400">This Month</p>
           <div className="mt-3 flex items-baseline justify-between gap-2">
-            <h3 className="text-xl md:text-2xl font-mono font-bold text-amber-300 tabular-nums">
+            <h3 className="text-xl md:text-2xl font-mono font-bold text-white tabular-nums">
               +₹{stats.monthlyTotal.toLocaleString()}
             </h3>
             <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-400/10 text-amber-300 border border-amber-400/20">{format(new Date(selectedYear, selectedMonth - 1, 1), "MMM")}</span>

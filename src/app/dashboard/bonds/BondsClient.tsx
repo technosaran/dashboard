@@ -414,7 +414,7 @@ export default function BondsClient({ initialData }: { initialData?: FinanceData
             </div>
             <div className="bg-[#111827] border border-[#1F293D] rounded-2xl p-5 shadow-xl relative overflow-hidden">
               <p className="text-[0.6875rem] font-bold uppercase tracking-widest text-[#848E9C] mb-2">Accrued Coupon</p>
-              <p className="text-2xl font-black text-amber-400">₹{stats.accruedInterest.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+              <p className="text-2xl font-black text-white">₹{stats.accruedInterest.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
               <p className="text-[0.5625rem] font-bold text-[#848E9C] mt-2 uppercase tracking-widest">Next Payout Cycle</p>
             </div>
             <div className="bg-[#111827] border border-[#00D09C]/30 rounded-2xl p-5 shadow-xl relative overflow-hidden bg-gradient-to-br from-[#00D09C]/10 to-transparent">

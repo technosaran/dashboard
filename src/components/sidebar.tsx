@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase-browser";
 import { useEffect, useState, useMemo, useRef } from "react";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useFinanceData } from "@/hooks/use-finance-data";
-import { MODULE_KEYS } from "@/lib/modules";
+import { getCanonicalEnabledModules } from "@/lib/modules";
 import type { ModuleKey } from "@/lib/modules";
 
 const nav = [
@@ -207,47 +207,27 @@ export default function Sidebar() {
   };
 
   const enabledModules = useMemo(() => {
-    const raw = profile?.enabled_modules || [...MODULE_KEYS];
-    const populated = [...raw] as string[];
-    
-    // Bidirectional fallback mapping for Cashflow
-    if (raw.includes("Income & Expenses")) {
-      populated.push("Income", "Expenses");
-    } else if (raw.includes("Income") || raw.includes("Expenses")) {
-      populated.push("Income & Expenses");
-    }
-    
-    // Bidirectional fallback mapping for Investments
-    if (raw.includes("Investments")) {
-      populated.push("Stocks", "Mutual Funds", "Bonds", "FnO", "Forex");
-    } else if (
-      raw.includes("Stocks") || 
-      raw.includes("Mutual Funds") || 
-      raw.includes("Bonds") || 
-      raw.includes("FnO") || 
-      raw.includes("Forex")
-    ) {
-      populated.push("Investments");
-    }
-    
-    return populated;
+    return getCanonicalEnabledModules(profile?.enabled_modules);
   }, [profile]);
 
   const filteredNav = useMemo(() => {
-    return nav.filter(item => {
+    return nav.filter((item) => {
       if (["Dashboard", "Accounts", "Settings"].includes(item.label)) return true;
 
-      if (item.label === "Investments") {
-        return enabledModules.includes("Stocks") || enabledModules.includes("Mutual Funds") || enabledModules.includes("Bonds") || enabledModules.includes("FnO") || enabledModules.includes("Forex");
-      }
+      const dbLabel: ModuleKey | string =
+        item.label === "Income" || item.label === "Expenses"
+          ? "Income & Expenses"
+          : item.label === "Tax"
+          ? "Tax & Reports"
+          : item.label === "Assets"
+          ? "Alt Assets"
+          : item.label === "Loans"
+          ? "Liabilities"
+          : item.label === "Family"
+          ? "Family Management"
+          : item.label;
 
-      const dbLabel: ModuleKey | string = 
-        item.label === "Tax" ? "Tax & Reports" : 
-        item.label === "Assets" ? "Alt Assets" : 
-        item.label === "Loans" ? "Liabilities" : 
-        item.label === "Family" ? "Family Management" : 
-        item.label;
-      return enabledModules.includes(dbLabel);
+      return enabledModules.includes(dbLabel) || enabledModules.includes(item.label);
     });
   }, [enabledModules]);
 

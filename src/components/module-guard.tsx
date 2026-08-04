@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { useFinanceData } from "@/hooks/use-finance-data";
-import { MODULE_DISPLAY_LABELS } from "@/lib/modules";
+import { MODULE_DISPLAY_LABELS, isModuleEnabled } from "@/lib/modules";
 import type { ModuleKey } from "@/lib/modules";
 import { EmptyState } from "./empty-state";
 
@@ -19,8 +19,7 @@ export function ModuleGuard({ moduleKey, children }: ModuleGuardProps) {
     return null; 
   }
 
-  const enabledModules = profile?.enabled_modules;
-  const isEnabled = !enabledModules || enabledModules.includes(moduleKey);
+  const isEnabled = isModuleEnabled(profile?.enabled_modules, moduleKey);
 
   if (!isEnabled) {
     const displayName = MODULE_DISPLAY_LABELS[moduleKey] || moduleKey;
