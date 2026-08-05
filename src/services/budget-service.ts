@@ -126,12 +126,10 @@ export class BudgetService {
     // 1. Fetch all budgets for the period
     const budgets = await this.budgetRepo.findByPeriod(userId, month, year);
 
-    // 2. Fetch all transactions for the period (simplified date range filter)
+    // 2. Fetch all transactions for the period
     const startDate = `${year}-${String(month).padStart(2, "0")}-01T00:00:00.000Z`;
-    // End date is start of next month
-    const nextMonth = month === 12 ? 1 : month + 1;
-    const nextYear = month === 12 ? year + 1 : year;
-    const endDate = `${nextYear}-${String(nextMonth).padStart(2, "0")}-01T00:00:00.000Z`;
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const endDate = `${year}-${String(month).padStart(2, "0")}-${String(daysInMonth).padStart(2, "0")}T23:59:59.999Z`;
 
     const transactions = await this.transactionRepo.findByDateRange(userId, startDate, endDate);
 
@@ -150,7 +148,8 @@ export class BudgetService {
       const cat = b.category;
       const budgeted = parseFloat(String(b.amount || "0"));
       const actualSpent = spentByCategory.get(cat) || 0;
-      const utilizationPercent = budgeted > 0 ? (actualSpent / budgeted) * 100 : 0;
+      const rawPercent = budgeted > 0 ? (actualSpent / budgeted) * 100 : (actualSpent > 0 ? 100 : 0);
+      const utilizationPercent = Math.round(rawPercent * 100) / 100;
 
       return {
         category: cat,

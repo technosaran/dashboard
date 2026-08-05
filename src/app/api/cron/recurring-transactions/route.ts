@@ -25,6 +25,14 @@ export async function GET(request: Request) {
   const today = new Date();
   const todayStr = today.toISOString().split("T")[0];
   const currentDay = today.getDate();
+  const daysInCurrentMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+
+  const isRecurrenceMatch = (recDay: any) => {
+    const dayNum = Number(recDay);
+    if (!dayNum || isNaN(dayNum)) return false;
+    const targetDay = Math.min(dayNum, daysInCurrentMonth);
+    return targetDay === currentDay;
+  };
 
   let postedCount = 0;
 
@@ -44,7 +52,7 @@ export async function GET(request: Request) {
 
     if (recurringIncomes && recurringIncomes.length > 0) {
       for (const inc of recurringIncomes) {
-        if (inc.recurrence_day && Number(inc.recurrence_day) === currentDay) {
+        if (isRecurrenceMatch(inc.recurrence_day)) {
           // Check if already posted today
           const { data: existing } = await supabase
             .from("incomes")
@@ -94,7 +102,7 @@ export async function GET(request: Request) {
 
     if (recurringExpenses && recurringExpenses.length > 0) {
       for (const exp of recurringExpenses) {
-        if (exp.recurrence_day && Number(exp.recurrence_day) === currentDay) {
+        if (isRecurrenceMatch(exp.recurrence_day)) {
           const { data: existing } = await supabase
             .from("expenses")
             .select("id")
@@ -142,4 +150,8 @@ export async function GET(request: Request) {
     logger.error("[Recurring Cron Error]:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
+}
+
+export async function POST(request: Request) {
+  return GET(request);
 }

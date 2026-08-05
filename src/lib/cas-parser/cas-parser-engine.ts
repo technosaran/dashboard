@@ -37,7 +37,7 @@ export function parseCASText(text: string): CASParseResult {
 
     // Detect Mutual Fund Scheme lines
     // Example: "HDFC Top 100 Fund - Direct Plan - Growth 150.250 85.40 12831.35"
-    const mfMatch = line.match(/^([A-Za-z0-9&()\-\s]+?(?:fund|index|growth|direct|regular|plan))\s+([\d,]+\.\d{2,4})\s+([\d,]+\.\d{2,4})\s+([\d,]+\.\d{2})/i);
+    const mfMatch = line.match(/(?:^|\s)([A-Za-z0-9&()\-\s]+?(?:fund|index|growth|direct|regular|plan))\s+([\d,]+(?:\.\d{2,4})?)\s+([\d,]+(?:\.\d{2,4})?)\s+([\d,]+(?:\.\d{2,4})?)/i);
 
     if (mfMatch) {
       const name = mfMatch[1].trim();

@@ -90,7 +90,14 @@ function normalizeDate(raw: string): string {
       if (day.length === 1) day = `0${day}`;
       if (month.length === 1) month = `0${month}`;
 
-      if (Number(day) > 31 && Number(year) <= 31) {
+      // Check for ISO format (YYYY-MM-DD) before swapping
+      if (day.length === 4 && Number(day) > 1900) {
+        // ISO format: parts[0]=YYYY, parts[1]=MM, parts[2]=DD
+        const isoYear = day;
+        const isoDay = year;
+        day = isoDay;
+        year = isoYear;
+      } else if (Number(day) > 31 && Number(year) <= 31) {
         const tmp = day;
         day = year;
         year = tmp;
@@ -143,7 +150,11 @@ export function parseBankStatementText(text: string, forceBank?: BankType): Bank
           .filter((val) => val > 0 && val < 100000000);
 
         if (validAmounts.length > 0) {
-          const mainAmount = validAmounts[0]; // First primary amount
+          // Smart amount selection:
+          // In Indian bank statements, format is typically: [description] [amount] [Dr/Cr] [balance]
+          // When Dr/Cr indicator is present with 2+ amounts, first = transaction amount, last = closing balance
+          // Without Dr/Cr, use the first valid amount
+          const mainAmount = validAmounts[0];
 
           const isCr = /cr|credit|\+|by\s+/i.test(lineWithoutDate);
           const isDr = /dr|debit|\-|to\s+/i.test(lineWithoutDate);

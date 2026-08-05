@@ -19,9 +19,12 @@ export async function POST(req: NextRequest) {
 
     if (expectedSecret && cronSecret === expectedSecret) {
       // Cron-triggered background execution for all users
-      // To query all users securely, we will query via a public supabase client
-      // (Assuming RLS allows or we look up profiles with valid tokens)
-      const publicSupabase = createPublicClient(supabaseUrl, supabaseKey);
+      // Use service role key to bypass RLS when querying all user profiles
+      const cronKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      if (!cronKey) {
+        return NextResponse.json({ error: "Missing SUPABASE_SERVICE_ROLE_KEY for cron execution" }, { status: 500 });
+      }
+      const publicSupabase = createPublicClient(supabaseUrl, cronKey);
       const { data: profiles, error: pError } = await publicSupabase
         .from("profiles")
         .select("id, gmail_refresh_token, default_accounts, sms_sync_token")

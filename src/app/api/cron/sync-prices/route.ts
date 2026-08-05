@@ -28,10 +28,10 @@ async function handleSync(req: NextRequest) {
     }
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!supabaseUrl || !supabaseKey) {
-      return NextResponse.json({ error: "Database configuration missing" }, { status: 500 });
+      return NextResponse.json({ error: "Missing SUPABASE_SERVICE_ROLE_KEY configuration" }, { status: 500 });
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);

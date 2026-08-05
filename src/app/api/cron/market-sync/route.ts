@@ -12,9 +12,9 @@ export const maxDuration = 60; // Allow 60 seconds execution time
  */
 function getCronSupabaseClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!supabaseUrl || !serviceKey) {
-    throw new Error("Missing Supabase URL or Service Key environment variables");
+    throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY environment variable for cron execution.");
   }
   return createClient<Database>(supabaseUrl, serviceKey);
 }

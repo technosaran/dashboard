@@ -56,11 +56,14 @@ export class InvestmentRepository extends SupabaseRepository<Investment> {
 
       if (error) throw new DatabaseError(error.message);
 
-      return (data || []).reduce((acc, inv) => {
+      const total = (data || []).reduce((acc, inv) => {
         const qty = parseFloat(String(inv.quantity || "0"));
         const price = parseFloat(String(inv.current_price || "0"));
-        return acc + (qty * price);
+        const validQty = isNaN(qty) ? 0 : qty;
+        const validPrice = isNaN(price) ? 0 : price;
+        return acc + (validQty * validPrice);
       }, 0);
+      return Math.round(total * 100) / 100;
     } catch (err) {
       if (err instanceof DatabaseError) throw err;
       throw new DatabaseError(err instanceof Error ? err.message : undefined);

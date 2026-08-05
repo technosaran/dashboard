@@ -31,13 +31,21 @@ export async function POST(req: NextRequest) {
       return isNaN(num) ? 0 : num;
     };
 
+    const grossSalary = parseNum(salaryMatch?.[1]);
+    const warnings: string[] = [];
+
+    if (!salaryMatch || grossSalary === 0) {
+      warnings.push("Gross salary could not be automatically extracted from the provided text.");
+    }
+
     const extracted = {
-      grossSalary: parseNum(salaryMatch?.[1]) || 850000,
-      allowancesExempt: parseNum(allowancesMatch?.[1]) || 0,
-      standardDeduction: parseNum(stdDedMatch?.[1]) || 75000,
-      deductions80C: Math.min(150000, parseNum(ded80CMatch?.[1]) || 150000),
-      deductions80D: Math.min(25000, parseNum(ded80DMatch?.[1]) || 25000),
-      tdsPaid: parseNum(tdsMatch?.[1]) || 0,
+      grossSalary,
+      allowancesExempt: parseNum(allowancesMatch?.[1]),
+      standardDeduction: parseNum(stdDedMatch?.[1]),
+      deductions80C: parseNum(ded80CMatch?.[1]) ? Math.min(150000, parseNum(ded80CMatch?.[1])) : 0,
+      deductions80D: parseNum(ded80DMatch?.[1]) ? Math.min(25000, parseNum(ded80DMatch?.[1])) : 0,
+      tdsPaid: parseNum(tdsMatch?.[1]),
+      warnings: warnings.length > 0 ? warnings : undefined,
     };
 
     return NextResponse.json({ success: true, data: extracted });

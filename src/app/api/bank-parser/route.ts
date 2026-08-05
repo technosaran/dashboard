@@ -61,10 +61,16 @@ export async function POST(request: Request) {
               { status: 400 }
             );
           }
-          textContent = buffer.toString("utf-8");
+          return NextResponse.json(
+            { error: "Unable to extract text from the PDF statement. The file may be corrupted or in an unsupported format." },
+            { status: 422 }
+          );
         }
       } else {
-        textContent = buffer.toString("utf-8");
+        return NextResponse.json(
+          { error: "Unable to extract text from the PDF statement. Please try uploading a different file." },
+          { status: 422 }
+        );
       }
     } else {
       const body = await request.json();

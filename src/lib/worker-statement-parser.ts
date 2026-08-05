@@ -36,7 +36,7 @@ export async function parseCASTextAsync(text: string): Promise<CASParseResult> {
                 currentFolio = folioMatch[2];
               }
 
-              const mfMatch = line.match(/^([A-Za-z0-9&()\\-\\s]+?(?:fund|index|growth|direct|regular|plan))\\s+([\\d,]+\\.\\d{2,4})\\s+([\\d,]+\\.\\d{2,4})\\s+([\\d,]+\\.\\d{2})/i);
+              const mfMatch = line.match(/(?:^|\\s)([A-Za-z0-9&()\\-\\s]+?(?:fund|index|growth|direct|regular|plan))\\s+([\\d,]+(?:\\.\\d{2,4})?)\\s+([\\d,]+(?:\\.\\d{2,4})?)\\s+([\\d,]+(?:\\.\\d{2,4})?)/i);
               if (mfMatch) {
                 const name = mfMatch[1].trim();
                 const units = parseFloat(mfMatch[2].replace(/,/g, "")) || 0;
@@ -52,6 +52,30 @@ export async function parseCASTextAsync(text: string): Promise<CASParseResult> {
                     folioNumber: currentFolio || undefined,
                     unitsOrQuantity: units,
                     currentNavOrPrice: nav,
+                    totalValuation: val,
+                    selected: true,
+                  });
+                  continue;
+                }
+              }
+
+              const stockMatch = line.match(/(INE\\w{9})\\s+([A-Za-z0-9&\\s.-]+?)\\s+([\\d,]+)\\s+([\\d,]+(?:\\.\\d{2})?)\\s+([\\d,]+(?:\\.\\d{2})?)/i);
+              if (stockMatch) {
+                const isin = stockMatch[1];
+                const name = stockMatch[2].trim();
+                const qty = parseFloat(stockMatch[3].replace(/,/g, "")) || 0;
+                const price = parseFloat(stockMatch[4].replace(/,/g, "")) || 0;
+                const val = parseFloat(stockMatch[5].replace(/,/g, "")) || qty * price;
+
+                if (qty > 0 && price > 0) {
+                  totalValuation += val;
+                  items.push({
+                    id: "cas-item-" + (itemCounter++),
+                    assetClass: "stock",
+                    name,
+                    isin,
+                    unitsOrQuantity: qty,
+                    currentNavOrPrice: price,
                     totalValuation: val,
                     selected: true,
                   });
@@ -72,11 +96,25 @@ export async function parseCASTextAsync(text: string): Promise<CASParseResult> {
 
       const msgId = `msg-${Date.now()}-${Math.random()}`;
 
+      const cleanup = () => {
+        try {
+          worker.terminate();
+          URL.revokeObjectURL(workerUrl);
+        } catch {
+          // ignore cleanup errors
+        }
+      };
+
+      const timeoutId = setTimeout(() => {
+        cleanup();
+        resolve(parseCASText(text));
+      }, 10000);
+
       worker.onmessage = (e: MessageEvent) => {
         const data = e.data;
         if (data.id === msgId) {
-          worker.terminate();
-          URL.revokeObjectURL(workerUrl);
+          clearTimeout(timeoutId);
+          cleanup();
           if (data.success) {
             resolve(data.result);
           } else {
@@ -86,8 +124,8 @@ export async function parseCASTextAsync(text: string): Promise<CASParseResult> {
       };
 
       worker.onerror = () => {
-        worker.terminate();
-        URL.revokeObjectURL(workerUrl);
+        clearTimeout(timeoutId);
+        cleanup();
         resolve(parseCASText(text));
       };
 

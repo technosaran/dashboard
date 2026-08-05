@@ -51,12 +51,19 @@ export function parseToISODate(dateStr: string | null | undefined): string {
   try {
     const parsed = new Date(trimmed);
     if (!isNaN(parsed.getTime())) {
-      return parsed.toISOString().split("T")[0];
+      const y = parsed.getFullYear();
+      const m = String(parsed.getMonth() + 1).padStart(2, '0');
+      const d = String(parsed.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
     }
   } catch {}
 
   // Final fallback
-  return new Date().toISOString().split("T")[0];
+  const now = new Date();
+  const fy = now.getFullYear();
+  const fm = String(now.getMonth() + 1).padStart(2, '0');
+  const fd = String(now.getDate()).padStart(2, '0');
+  return `${fy}-${fm}-${fd}`;
 }
 
 export function getCurrencySymbol(currency?: string | null): string {

@@ -24,6 +24,7 @@ export function getDb() {
     max: 10,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 5000,
+    ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : undefined,
   });
   globalForDb.db = drizzle(globalForDb.pool, { schema });
   return globalForDb.db;

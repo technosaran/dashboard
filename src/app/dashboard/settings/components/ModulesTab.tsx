@@ -43,10 +43,6 @@ export default function ModulesTab({ enabledModules, toggleModule, onEnableAll }
   const handleEnableAllClick = () => {
     if (onEnableAll) {
       onEnableAll();
-    } else {
-      MODULE_KEYS.forEach((mod) => {
-        if (!enabledModules.includes(mod)) toggleModule(mod);
-      });
     }
   };
 

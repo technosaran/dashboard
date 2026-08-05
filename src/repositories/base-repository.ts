@@ -69,8 +69,9 @@ export abstract class SupabaseRepository<T, ID extends string = string> implemen
         });
       }
 
-      if (filters?.offset !== undefined && filters?.limit !== undefined) {
-        query = query.range(filters.offset, filters.offset + filters.limit - 1);
+      if (filters?.offset !== undefined) {
+        const limit = filters?.limit ?? 50;
+        query = query.range(filters.offset, filters.offset + limit - 1);
       } else if (filters?.limit !== undefined) {
         query = query.limit(filters.limit);
       }

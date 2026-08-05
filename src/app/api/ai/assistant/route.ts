@@ -19,6 +19,15 @@ export async function POST(req: NextRequest) {
       .maybeSingle();
 
     const profileData = profile as any;
+
+    // Check if user has explicitly disabled Gemini AI
+    if (profileData?.gemini_enabled === false) {
+      return NextResponse.json(
+        { error: "Gemini AI is disabled in your settings. Enable it to use the AI assistant." },
+        { status: 403 }
+      );
+    }
+
     const apiKey = profileData?.gemini_api_key || process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
@@ -28,18 +37,36 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const body = await req.json();
+    let body;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON request body" }, { status: 400 });
+    }
     const { mode, prompt, contextSummary, text } = body;
 
     if (mode === "parse") {
+      if (!text && !prompt) {
+        return NextResponse.json({ error: "Text is required for parse mode" }, { status: 400 });
+      }
       const parsed = await parseTransactionWithGemini(text || prompt || "", apiKey);
-      return NextResponse.json(parsed);
+      return NextResponse.json({ success: true, data: parsed });
     }
 
     if (mode === "insights") {
       // Fetch user's financial overview to feed Gemini
       const { data: overview } = await supabase.rpc("get_finance_overview_v2");
-      const summaryText = JSON.stringify(overview || {}).slice(0, 1500);
+
+      // Format as structured plain-text instead of truncated JSON
+      const ov = overview || {} as any;
+      const summaryText = [
+        `Net Worth: ₹${ov.net_worth ?? 'N/A'}`,
+        `Total Income: ₹${ov.total_income ?? 'N/A'}`,
+        `Total Expenses: ₹${ov.total_expenses ?? 'N/A'}`,
+        `Savings Rate: ${ov.savings_rate ?? 'N/A'}%`,
+        `Top Expense Category: ${ov.top_expense_category ?? 'N/A'}`,
+        `Investment Value: ₹${ov.investment_value ?? 'N/A'}`,
+      ].join('\n');
 
       const insightPrompt = `Provide a 3-bullet-point financial summary for this user:
 - Bullet 1: Top spending category observation & advice

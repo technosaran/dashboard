@@ -34,7 +34,7 @@ function createSecurityHeaders(nonce: string) {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com data:",
     "img-src 'self' data: blob: https://* https://assets.groww.in https://cdn.jsdelivr.net https://raw.githubusercontent.com",
-    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.yahoo.com https://*.yahooapis.com https://api.mfapi.in https://www.alphavantage.co https://va.vercel-scripts.com",
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://generativelanguage.googleapis.com https://*.yahoo.com https://*.yahooapis.com https://api.mfapi.in https://www.alphavantage.co https://va.vercel-scripts.com",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",
@@ -82,7 +82,8 @@ function createPassThroughResponse(requestHeaders: Headers) {
  * Next.js Proxy middleware for authentication and security headers
  */
 export async function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const rawPathname = request.nextUrl.pathname;
+  const pathname = rawPathname.length > 1 && rawPathname.endsWith("/") ? rawPathname.slice(0, -1) : rawPathname;
 
   if (isStaticAsset(pathname)) {
     return NextResponse.next();
@@ -199,7 +200,7 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isPublicRoute = PUBLIC_ROUTES.has(pathname) || pathname.startsWith("/auth/") || pathname.startsWith("/api/auth/google") || pathname.startsWith("/api/bots/") || pathname === "/api/transactions/telegram-sync" || pathname === "/api/transactions/sms-sync" || pathname === "/api/run-migration" || pathname.startsWith("/api/cron/");
+  const isPublicRoute = PUBLIC_ROUTES.has(pathname) || pathname.startsWith("/auth/") || pathname.startsWith("/api/auth/google") || pathname.startsWith("/api/bots/") || pathname === "/api/transactions/telegram-sync" || pathname === "/api/transactions/sms-sync" || pathname.startsWith("/api/cron/");
 
   let finalResponse: NextResponse;
 

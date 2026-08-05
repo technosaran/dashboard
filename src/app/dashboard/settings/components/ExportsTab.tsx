@@ -317,10 +317,12 @@ export default function ExportsTab() {
           
           <div className="flex items-center gap-3">
             <input
-              type="text"
+              type="search"
               value={exportSearch}
               onChange={(e) => setExportSearch(e.target.value)}
               placeholder="Filter exporter modules..."
+              autoComplete="off"
+              name="export-filter-search"
               className="bg-black/40 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white placeholder-gray-500 outline-none focus:border-cyan-500 transition-all font-medium"
             />
             <span className="text-xs font-mono text-[--text-muted] shrink-0">

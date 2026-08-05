@@ -84,7 +84,7 @@ export async function callGeminiApi(
   }
 
   // Model fallback list for maximum reliability across API keys
-  const models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
+  const models = ["gemini-2.0-flash", "gemini-1.5-flash"];
   let lastError = "";
 
   for (const model of models) {
@@ -136,8 +136,8 @@ export async function parseTransactionWithGemini(
 Only output raw JSON without markdown code blocks.`;
 
     const resultText = await callGeminiApi(apiKey, `Parse this financial text: "${text}"`, systemPrompt);
-    const cleanedJson = resultText.replace(/```json/g, "").replace(/```/g, "").trim();
-    const parsed = JSON.parse(cleanedJson);
+    const jsonMatch = resultText.match(/\{[\s\S]*\}/);
+    const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : resultText.replace(/```json/g, "").replace(/```/g, "").trim());
 
     return {
       success: true,
@@ -250,8 +250,8 @@ IMPORTANT: For DELETE_ACCOUNT, match the accountName the user mentions against t
 Output raw JSON with no markdown tags.`;
 
     const resultText = await callGeminiApi(apiKey, `User message: "${text}"`, systemPrompt);
-    const cleanedJson = resultText.replace(/```json/g, "").replace(/```/g, "").trim();
-    const parsed = JSON.parse(cleanedJson);
+    const jsonMatch = resultText.match(/\{[\s\S]*\}/);
+    const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : resultText.replace(/```json/g, "").replace(/```/g, "").trim());
 
     return {
       action: parsed.action || "UNKNOWN",
@@ -333,8 +333,8 @@ Output raw JSON with no markdown tags.`;
       { mimeType: mimeType || "audio/ogg", data: audioBase64 }
     );
 
-    const cleanedJson = resultText.replace(/```json/g, "").replace(/```/g, "").trim();
-    const parsed = JSON.parse(cleanedJson);
+    const jsonMatch = resultText.match(/\{[\s\S]*\}/);
+    const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : resultText.replace(/```json/g, "").replace(/```/g, "").trim());
 
     return {
       transcription: parsed.transcription || "Voice audio processed",
@@ -404,8 +404,8 @@ Output raw JSON with no markdown tags.`;
       { mimeType: mimeType || "image/jpeg", data: imageBase64 }
     );
 
-    const cleanedJson = resultText.replace(/```json/g, "").replace(/```/g, "").trim();
-    const parsed = JSON.parse(cleanedJson);
+    const jsonMatch = resultText.match(/\{[\s\S]*\}/);
+    const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : resultText.replace(/```json/g, "").replace(/```/g, "").trim());
 
     return {
       success: true,

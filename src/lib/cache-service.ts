@@ -72,9 +72,29 @@ export class CacheService {
             await redis.del(...keys);
           }
         } while (cursor !== "0");
+        return;
       } catch (err) {
         console.error(`[CacheService] DELETE pattern ${pattern} failed:`, err);
       }
+    }
+
+    // In-memory fallback: convert glob pattern to regex and delete matching keys
+    try {
+      const regexPattern = pattern
+        .replace(/[.+^${}()|[\]\\]/g, '\\$&')
+        .replace(/\*/g, '.*')
+        .replace(/\?/g, '.');
+      const regex = new RegExp(`^${regexPattern}$`);
+      const { inMemoryStore } = await import('./redis') as any;
+      if (inMemoryStore && typeof inMemoryStore.keys === 'function') {
+        for (const key of inMemoryStore.keys()) {
+          if (regex.test(key)) {
+            inMemoryStore.delete(key);
+          }
+        }
+      }
+    } catch {
+      // ignore in-memory pattern cleanup errors
     }
   }
 

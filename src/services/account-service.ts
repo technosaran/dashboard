@@ -36,7 +36,7 @@ export class AccountService {
     const account = await this.accountRepo.findById(id);
 
     if (account && this.cacheService) {
-      await this.cacheService.set(cacheKey, account, 300); // 5 mins
+      await this.cacheService.set(cacheKey, account, CACHE_TTL.accountSummary);
     }
 
     return account;

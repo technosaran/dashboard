@@ -178,7 +178,7 @@ export default function SettingsPage() {
       base_currency: key === "base_currency" ? (value as string) : baseCurrency,
       theme: key === "theme" ? (value as string) : theme,
       timezone: key === "timezone" ? (value as string) : timezone,
-      enabled_modules: key === "enabled_modules" ? (value as string[]) : getCanonicalEnabledModules(profile?.enabled_modules),
+      enabled_modules: key === "enabled_modules" ? (value as string[]) : (profile?.enabled_modules || [...MODULE_KEYS] as string[]),
       default_accounts: key === "default_accounts" ? (value as Record<string, string | null>) : defaultAccounts,
     };
 
@@ -207,21 +207,28 @@ export default function SettingsPage() {
   };
 
   const toggleModule = (module: string) => {
-    const currentModules = getCanonicalEnabledModules(profile?.enabled_modules);
-    const isCurrentlyEnabled = currentModules.includes(module);
+    // Work with raw MODULE_KEYS only — never save expanded aliases to the database.
+    // getCanonicalEnabledModules expands aliases (e.g. "Income" → "Income & Expenses"),
+    // which would re-enable modules that were toggled off.
+    const rawModules = profile?.enabled_modules;
+    const currentRawKeys = Array.isArray(rawModules) && rawModules.length > 0
+      ? rawModules.filter((m: string) => (MODULE_KEYS as readonly string[]).includes(m))
+      : [...MODULE_KEYS];
+    
+    const isCurrentlyEnabled = currentRawKeys.includes(module);
     
     let newModules: string[];
     if (isCurrentlyEnabled) {
-      newModules = currentModules.filter((m) => m !== module);
+      newModules = currentRawKeys.filter((m) => m !== module);
     } else {
-      newModules = Array.from(new Set([...currentModules, module]));
+      newModules = Array.from(new Set([...currentRawKeys, module]));
     }
 
     saveSetting("enabled_modules", newModules, `${module} visibility updated`);
   };
 
   const handleEnableAllModules = () => {
-    saveSetting("enabled_modules", [...MODULE_KEYS], "All dashboard modules enabled!");
+    saveSetting("enabled_modules", [...MODULE_KEYS] as string[], "All dashboard modules enabled!");
   };
 
   const SECTIONS_REQUIRING_ACCOUNT = [
@@ -411,10 +418,13 @@ export default function SettingsPage() {
             </svg>
           </div>
           <input
-            type="text"
+            type="search"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search settings..."
+            autoComplete="off"
+            name="settings-filter-search"
+            aria-label="Search settings"
             className="w-full bg-black/40 border border-white/10 rounded-xl pl-9 pr-8 py-2 text-xs text-white placeholder-gray-500 outline-none focus:border-indigo-500 transition-all font-medium shadow-inner"
           />
           {searchQuery && (

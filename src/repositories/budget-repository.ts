@@ -48,7 +48,7 @@ export class BudgetRepository extends SupabaseRepository<Budget> {
   ): Promise<Budget | null> {
     try {
       const now = new Date();
-      const currentMonth = month !== undefined ? month : now.getMonth() + 1;
+      const currentMonth = (month !== undefined && month >= 1 && month <= 12) ? month : now.getMonth() + 1;
       const currentYear = year !== undefined ? year : now.getFullYear();
 
       const { data, error } = await this.supabase

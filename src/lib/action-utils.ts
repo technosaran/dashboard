@@ -47,7 +47,7 @@ export async function logLedgerEntry(
   }
 ) {
   try {
-    await supabase.from("ledger_logs").insert({
+    const { error } = await supabase.from("ledger_logs").insert({
       user_id: params.user_id,
       action_type: params.action_type,
       account_id: params.account_id || null,
@@ -60,6 +60,10 @@ export async function logLedgerEntry(
       source_id: params.source_id || null,
       metadata: params.metadata || null,
     });
+
+    if (error) {
+      console.error("Failed to insert ledger log:", error.message);
+    }
   } catch (err) {
     console.error("Failed to insert ledger log:", err);
   }
