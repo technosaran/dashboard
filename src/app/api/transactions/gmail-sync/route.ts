@@ -15,7 +15,6 @@ export async function POST(req: NextRequest) {
     const expectedSecret = process.env.GMAIL_SYNC_SECRET;
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
 
     if (expectedSecret && cronSecret === expectedSecret) {
       // Cron-triggered background execution for all users

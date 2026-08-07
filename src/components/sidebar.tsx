@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase-browser";
 import { useEffect, useState, useMemo, useRef } from "react";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useFinanceData } from "@/hooks/use-finance-data";
+import { useUser } from "@/context/user-context";
 import { getCanonicalEnabledModules } from "@/lib/modules";
 import type { ModuleKey } from "@/lib/modules";
 
@@ -211,8 +212,17 @@ export default function Sidebar() {
     return getCanonicalEnabledModules(profile?.enabled_modules);
   }, [profile]);
 
+  const { user } = useUser();
+
   const filteredNav = useMemo(() => {
+    const userEmail = (user?.email || "").toLowerCase().trim();
+    const isSuperAdminEmail = userEmail === "iamsaran.ai@gmail.com";
+
     return nav.filter((item) => {
+      if (item.label === "Super Admin") {
+        return isSuperAdminEmail;
+      }
+
       if (["Dashboard", "Accounts", "Settings"].includes(item.label)) return true;
 
       const dbLabel: ModuleKey | string =
@@ -230,7 +240,7 @@ export default function Sidebar() {
 
       return enabledModules.includes(dbLabel) || enabledModules.includes(item.label);
     });
-  }, [enabledModules]);
+  }, [enabledModules, user?.email]);
 
   useEffect(() => {
     if (!isMoreOpen && !isQuickActionOpen) return;

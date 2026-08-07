@@ -9,7 +9,7 @@ import { CacheService, CACHE_TTL } from "@/lib/cache-service";
 
 export interface CreateBudgetInput {
   category: string;
-  amount: string;
+  amount: number | string;
   period_month: number;
   period_year: number;
 }
@@ -59,10 +59,12 @@ export class BudgetService {
    * Creates a new budget. Invalidates utilization cache.
    */
   public async createBudget(userId: string, data: CreateBudgetInput): Promise<Budget> {
+    const parsedAmount = typeof data.amount === "number" ? data.amount : parseFloat(data.amount || "0");
     const budget = await this.budgetRepo.create({
       ...data,
+      amount: isNaN(parsedAmount) ? 0 : parsedAmount,
       user_id: userId,
-    } as any);
+    });
 
     await this.invalidateUserCache(userId, data.period_month, data.period_year);
     return budget;

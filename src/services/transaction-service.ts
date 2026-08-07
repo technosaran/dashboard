@@ -10,7 +10,7 @@ import { QueryFilters } from "@/repositories/base-repository";
 export interface CreateTransactionInput {
   account_id: string;
   type: string;
-  amount: string;
+  amount: number | string;
   description: string;
   category?: string;
   date?: string;
@@ -55,10 +55,12 @@ export class TransactionService {
    * Creates a transaction. Invalidates stats cache.
    */
   public async createTransaction(userId: string, data: CreateTransactionInput): Promise<Transaction> {
+    const parsedAmount = typeof data.amount === "number" ? data.amount : parseFloat(data.amount || "0");
     const tx = await this.transactionRepo.create({
       ...data,
+      amount: isNaN(parsedAmount) ? 0 : parsedAmount,
       user_id: userId,
-    } as any);
+    });
 
     await this.invalidateUserCache(userId);
     return tx;

@@ -68,7 +68,7 @@ describe("TransactionService", () => {
       expect(result).toEqual(createdTx);
       expect(mockRepo.create).toHaveBeenCalledWith(expect.objectContaining({
         user_id: "user-1",
-        amount: "50",
+        amount: 50,
       }));
       expect(mockCache.delete).toHaveBeenCalledWith("user:user-1:tx-stats");
     });

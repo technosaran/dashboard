@@ -455,3 +455,108 @@ ${historyBlock}`;
   return await callGeminiApi(apiKey, query, systemPrompt);
 }
 
+export interface GeminiParsedTaxRules {
+  success: boolean;
+  fyStartYear: number;
+  version: string;
+  standardDeductionOld: number;
+  standardDeductionNew: number;
+  cessRate: number;
+  stcgRate: number;
+  ltcgRate: number;
+  ltcgExemption: number;
+  oldRegimeSlabs: Array<{ upto: number | null; rate: number }>;
+  newRegimeSlabs: Array<{ upto: number | null; rate: number }>;
+  deductionLimits: Record<string, number>;
+  summary: string;
+  error?: string;
+}
+
+export async function parseBudgetOrTaxAnnouncementWithGemini(
+  budgetText: string,
+  apiKey: string
+): Promise<GeminiParsedTaxRules> {
+  try {
+    const systemPrompt = `You are an expert Income Tax Law & Union Budget AI Parser for FinanceOS.
+Analyze the provided Union Budget speech, Finance Bill press release, or tax amendment text.
+Extract the exact tax rules, slabs, deductions, and capital gains parameters for Indian Income Tax.
+
+Respond ONLY with valid JSON matching this EXACT schema:
+{
+  "fyStartYear": number (e.g. 2026 for FY 2026-27),
+  "version": "FY2026-27-v1",
+  "standardDeductionOld": number (default 50000),
+  "standardDeductionNew": number (default 75000),
+  "cessRate": number (e.g. 0.04),
+  "stcgRate": number (e.g. 0.20 for 20%),
+  "ltcgRate": number (e.g. 0.125 for 12.5%),
+  "ltcgExemption": number (e.g. 125000),
+  "oldRegimeSlabs": [
+    { "upto": 250000, "rate": 0 },
+    { "upto": 500000, "rate": 0.05 },
+    { "upto": 1000000, "rate": 0.2 },
+    { "upto": null, "rate": 0.3 }
+  ],
+  "newRegimeSlabs": [
+    { "upto": 400000, "rate": 0 },
+    { "upto": 800000, "rate": 0.05 },
+    { "upto": 1200000, "rate": 0.1 },
+    { "upto": 1600000, "rate": 0.15 },
+    { "upto": 2000000, "rate": 0.2 },
+    { "upto": 2400000, "rate": 0.25 },
+    { "upto": null, "rate": 0.3 }
+  ],
+  "deductionLimits": {
+    "80C": 150000,
+    "80D": 25000,
+    "80CCD(1B)": 50000
+  },
+  "summary": "Brief clean summary of the parsed tax rule changes"
+}
+
+Output raw JSON only with no markdown formatting.`;
+
+    const resultText = await callGeminiApi(
+      apiKey,
+      `Parse this tax notification / budget text: "${budgetText}"`,
+      systemPrompt
+    );
+
+    const jsonMatch = resultText.match(/\{[\s\S]*\}/);
+    const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : resultText.replace(/```json/g, "").replace(/```/g, "").trim());
+
+    return {
+      success: true,
+      fyStartYear: typeof parsed.fyStartYear === "number" ? parsed.fyStartYear : new Date().getFullYear(),
+      version: parsed.version || `FY${parsed.fyStartYear || new Date().getFullYear()}-v1`,
+      standardDeductionOld: typeof parsed.standardDeductionOld === "number" ? parsed.standardDeductionOld : 50000,
+      standardDeductionNew: typeof parsed.standardDeductionNew === "number" ? parsed.standardDeductionNew : 75000,
+      cessRate: typeof parsed.cessRate === "number" ? parsed.cessRate : 0.04,
+      stcgRate: typeof parsed.stcgRate === "number" ? parsed.stcgRate : 0.20,
+      ltcgRate: typeof parsed.ltcgRate === "number" ? parsed.ltcgRate : 0.125,
+      ltcgExemption: typeof parsed.ltcgExemption === "number" ? parsed.ltcgExemption : 125000,
+      oldRegimeSlabs: Array.isArray(parsed.oldRegimeSlabs) ? parsed.oldRegimeSlabs : [],
+      newRegimeSlabs: Array.isArray(parsed.newRegimeSlabs) ? parsed.newRegimeSlabs : [],
+      deductionLimits: parsed.deductionLimits || { "80C": 150000, "80D": 25000 },
+      summary: parsed.summary || "Tax rules successfully updated",
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      fyStartYear: new Date().getFullYear(),
+      version: "Error",
+      standardDeductionOld: 50000,
+      standardDeductionNew: 75000,
+      cessRate: 0.04,
+      stcgRate: 0.20,
+      ltcgRate: 0.125,
+      ltcgExemption: 125000,
+      oldRegimeSlabs: [],
+      newRegimeSlabs: [],
+      deductionLimits: {},
+      summary: "Parsing failed",
+      error: error.message || "Failed to parse tax announcement with Gemini AI",
+    };
+  }
+}
+

@@ -766,6 +766,42 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
+    if (rawText.startsWith("paybill_")) {
+      const parts = rawText.split("_");
+      const category = parts[1] || "Utilities";
+      const amount = parseFloat(parts[2]) || 0;
+
+      if (accounts && accounts.length > 0) {
+        const targetAcc = accounts[0];
+        const newBal = (parseFloat(targetAcc.balance) || 0) - amount;
+
+        const { data: txData } = await supabase.from("transactions").insert({
+          user_id: profile.id,
+          amount,
+          type: "expense",
+          category,
+          description: `Bill Payment: ${category}`,
+          account_id: targetAcc.id,
+          date: new Date().toISOString().split("T")[0],
+          source_type: "recurring_bill"
+        }).select("id").single();
+
+        await supabase.from("accounts").update({ balance: newBal }).eq("id", targetAcc.id);
+        await checkAndNotifyBudget(supabase, profile.id, chatId, category, amount);
+
+        await sendTelegramMessage(
+          chatId,
+          `✅ *Bill Marked Paid & Logged!*\n\n` +
+          `• *Category*: ${category}\n` +
+          `• *Amount*: ₹${amount.toLocaleString("en-IN")}\n` +
+          `• *Account*: ${targetAcc.name} (New Bal: ₹${newBal.toLocaleString("en-IN")})\n\n` +
+          `⚡ *Status*: Recorded live on web dashboard.`,
+          CATEGORY_KEYBOARD(txData?.id || "")
+        );
+        return NextResponse.json({ success: true });
+      }
+    }
+
     // ─── 0. Greetings & Friendly Natural Language AI Assistant ───
     const cleanRaw = rawText.trim().toLowerCase();
     const isGreeting = /^(hi|hello|hey|hlo|hy|hola|yo|sup|\/start|start|good\s*morning|good\s*evening|good\s*afternoon|who\s*are\s*you|\/menu|\/help|menu|help)$/i.test(cleanRaw);
@@ -1613,6 +1649,72 @@ export async function POST(req: NextRequest) {
       }
 
       await sendTelegramMessage(chatId, msg);
+      return NextResponse.json({ success: true });
+    }
+
+    if (commandText === "bills") {
+      const { data: budgets } = await supabase
+        .from("budgets")
+        .select("id, category, amount")
+        .eq("user_id", profile.id);
+
+      if (!budgets || budgets.length === 0) {
+        await sendTelegramMessage(chatId, "🗓️ *No Recurring Bills Configured*\nSet up category budgets or recurring transactions in your web dashboard!");
+        return NextResponse.json({ success: true });
+      }
+
+      let msg = `🗓️ *Recurring Bills & Subscriptions*\n\nTap any button below to mark a bill paid and log it to your bank account:\n\n`;
+      const inlineButtons: any[] = [];
+
+      for (const b of budgets) {
+        const limit = parseFloat(b.amount) || 0;
+        msg += `• *${b.category}*: ₹${limit.toLocaleString("en-IN")}/month\n`;
+        if (inlineButtons.length < 6) {
+          inlineButtons.push([
+            { text: `✅ Mark Paid: ${b.category} (₹${limit})`, callback_data: `paybill_${b.category}_${limit}` }
+          ]);
+        }
+      }
+
+      await sendTelegramMessage(chatId, msg, { inline_keyboard: inlineButtons });
+      return NextResponse.json({ success: true });
+    }
+
+    if (commandText === "taxharvest") {
+      const { data: investments } = await supabase
+        .from("investments")
+        .select("*")
+        .eq("user_id", profile.id);
+
+      if (!investments || investments.length === 0) {
+        await sendTelegramMessage(chatId, "📉 *No Stock/MF Investments Found*\nAdd investments in your dashboard to view Tax Loss Harvesting opportunities!");
+        return NextResponse.json({ success: true });
+      }
+
+      const { computeTaxLossHarvesting, getCurrentFYStartYear } = await import("@/lib/tax/india-tax-engine");
+      const taxInput: any = {
+        fyStartYear: getCurrentFYStartYear(),
+        regime: "new",
+        incomes: [],
+        expenses: [],
+        investments,
+        mutualFunds: [],
+        bonds: [],
+        alternativeAssets: [],
+      };
+
+      const res = computeTaxLossHarvesting(taxInput);
+      const currency = profile.base_currency || "INR";
+      const formatCurr = (amt: number) => new Intl.NumberFormat("en-IN", { style: "currency", currency, maximumFractionDigits: 0 }).format(amt);
+
+      const msg = `📉 *Tax Loss Harvesting Studio* _(Finance Act 2025 Rules)_\n\n` +
+        `• *Harvestable Losses*: ${formatCurr(res.totalLossHarvestable)}\n` +
+        `• *Max Potential Tax Savings*: *${formatCurr(res.maxPotentialTaxSavings)}*\n\n` +
+        `💡 Selling under-performing holdings before year-end offsets STCG (20%) & LTCG (12.5%) taxes!`;
+
+      await sendTelegramMessage(chatId, msg, {
+        inline_keyboard: [[{ text: "📊 Open Web Tax Studio", url: "https://technosaranfin.vercel.app/dashboard/tax-reports" }]]
+      });
       return NextResponse.json({ success: true });
     }
 

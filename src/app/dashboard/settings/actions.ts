@@ -352,6 +352,12 @@ export async function triggerRecurringCronAction() {
             const { data: exist } = await supabase.from("incomes").select("id").eq("user_id", user.id).eq("description", inc.description).eq("date", todayStr).maybeSingle();
             if (!exist) {
               await supabase.from("incomes").insert({ user_id: user.id, description: inc.description, amount: inc.amount, category: inc.category || "Salary", account_id: inc.account_id, date: todayStr, is_recurring: false });
+              if (inc.account_id) {
+                const { data: acc } = await supabase.from("accounts").select("balance").eq("id", inc.account_id).single();
+                if (acc) {
+                  await supabase.from("accounts").update({ balance: Number(acc.balance) + Number(inc.amount) }).eq("id", inc.account_id);
+                }
+              }
               posted++;
             }
           }
@@ -364,6 +370,12 @@ export async function triggerRecurringCronAction() {
             const { data: exist } = await supabase.from("expenses").select("id").eq("user_id", user.id).eq("description", exp.description).eq("date", todayStr).maybeSingle();
             if (!exist) {
               await supabase.from("expenses").insert({ user_id: user.id, description: exp.description, amount: exp.amount, category: exp.category || "General", account_id: exp.account_id, date: todayStr, is_recurring: false });
+              if (exp.account_id) {
+                const { data: acc } = await supabase.from("accounts").select("balance").eq("id", exp.account_id).single();
+                if (acc) {
+                  await supabase.from("accounts").update({ balance: Number(acc.balance) - Number(exp.amount) }).eq("id", exp.account_id);
+                }
+              }
               posted++;
             }
           }

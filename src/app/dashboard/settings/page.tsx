@@ -18,6 +18,7 @@ import ExportsTab from "./components/ExportsTab";
 import IntegrationsTab from "./components/IntegrationsTab";
 import SystemStatusTab from "./components/SystemStatusTab";
 import DangerZoneTab from "./components/DangerZoneTab";
+import AdminClient from "../admin/AdminClient";
 import {
   User,
   Puzzle,
@@ -38,7 +39,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 
-type TabKey = "profile" | "modules" | "defaults" | "imports" | "integrations" | "exports" | "status" | "danger";
+type TabKey = "profile" | "modules" | "defaults" | "imports" | "integrations" | "exports" | "status" | "admin" | "danger";
 
 interface NavigationCategory {
   category: string;
@@ -324,42 +325,58 @@ export default function SettingsPage() {
     return MODULE_KEYS.filter((key) => enabledModules.includes(key)).length;
   }, [enabledModules]);
 
-  const NAV_CATEGORIES: NavigationCategory[] = useMemo(() => [
-    {
-      category: "Account & Workspace",
-      items: [
-        { key: "profile", label: "Profile & Identity", icon: <User className="w-4 h-4" />, description: "Display name & account identity" },
-        { key: "modules", label: "Module Visibility", icon: <Puzzle className="w-4 h-4" />, badge: `${activeModulesCount} Active`, description: "Enable or hide dashboard modules" },
-        { key: "defaults", label: "Default Bank Accounts", icon: <Settings className="w-4 h-4" />, description: "Default payment nodes per feature" },
-      ],
-    },
-    {
-      category: "Data & Storage",
-      items: [
-        { key: "imports", label: "Data Imports", icon: <Download className="w-4 h-4" />, badge: "2 Parsers", description: "Bank statement PDF & CAS parser" },
-        { key: "exports", label: "Data Exports", icon: <Upload className="w-4 h-4" />, badge: "10 Formats", description: "CSV exports & custom reports" },
-      ],
-    },
-    {
-      category: "AI & Integrations",
-      items: [
-        {
-          key: "integrations",
-          label: "Connected Services",
-          icon: <Zap className="w-4 h-4" />,
-          badge: profile?.telegram_chat_id ? "Active" : "Ready",
-          description: "Telegram Assistant & Gemini AI",
-        },
-      ],
-    },
-    {
+  const isSuperAdmin = (user?.email || "").toLowerCase().trim() === "iamsaran.ai@gmail.com";
+
+  const NAV_CATEGORIES: NavigationCategory[] = useMemo(() => {
+    const base: NavigationCategory[] = [
+      {
+        category: "Account & Workspace",
+        items: [
+          { key: "profile", label: "Profile & Identity", icon: <User className="w-4 h-4" />, description: "Display name & account identity" },
+          { key: "modules", label: "Module Visibility", icon: <Puzzle className="w-4 h-4" />, badge: `${activeModulesCount} Active`, description: "Enable or hide dashboard modules" },
+          { key: "defaults", label: "Default Bank Accounts", icon: <Settings className="w-4 h-4" />, description: "Default payment nodes per feature" },
+        ],
+      },
+      {
+        category: "Data & Storage",
+        items: [
+          { key: "imports", label: "Data Imports", icon: <Download className="w-4 h-4" />, badge: "2 Parsers", description: "Bank statement PDF & CAS parser" },
+          { key: "exports", label: "Data Exports", icon: <Upload className="w-4 h-4" />, badge: "10 Formats", description: "CSV exports & custom reports" },
+        ],
+      },
+      {
+        category: "AI & Integrations",
+        items: [
+          {
+            key: "integrations",
+            label: "Connected Services",
+            icon: <Zap className="w-4 h-4" />,
+            badge: profile?.telegram_chat_id ? "Active" : "Ready",
+            description: "Telegram Assistant & Gemini AI",
+          },
+        ],
+      },
+    ];
+
+    if (isSuperAdmin) {
+      base.push({
+        category: "Developer & Admin",
+        items: [
+          { key: "admin", label: "Super Admin Studio", icon: <Lock className="w-4 h-4 text-amber-400" />, badge: "Owner Only", description: "Market scrapers, AI tax sync & security logs" },
+        ],
+      });
+    }
+
+    base.push({
       category: "System & Safety",
       items: [
         { key: "status", label: "System Status", icon: <ShieldCheck className="w-4 h-4" />, description: "API health & latency checks" },
         { key: "danger", label: "Danger Zone", icon: <AlertTriangle className="w-4 h-4" />, description: "Reset workspace & delete data" },
       ],
-    },
-  ], [activeModulesCount, profile?.telegram_chat_id]);
+    });
+
+    return base;
+  }, [activeModulesCount, profile?.telegram_chat_id, isSuperAdmin]);
 
   const filteredCategories = useMemo(() => {
     if (!searchQuery.trim()) return NAV_CATEGORIES;
@@ -623,6 +640,44 @@ export default function SettingsPage() {
               runningDiagnostics={runningDiagnostics}
               runDiagnostics={runDiagnostics}
             />
+                )}
+
+                {activeTab === "admin" && (
+                  <div className="p-6 sm:p-8 rounded-3xl bg-slate-900/80 border border-amber-500/20 space-y-6 shadow-2xl animate-fade-in">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+                        <Lock className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
+                          Super Admin Command Console
+                        </h3>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          Dedicated standalone full-page studio for market scrapers, AI tax sync, and security logs.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-black/40 border border-white/10 text-xs text-gray-300 space-y-2 font-mono">
+                      <div className="flex justify-between items-center text-amber-400 font-sans font-bold">
+                        <span>Authorized Developer Account</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20">iamsaran.ai@gmail.com</span>
+                      </div>
+                      <p className="text-[11px] text-gray-400 font-sans">
+                        Clicking below opens the dedicated, full-screen Super Admin Console in a standalone workspace.
+                      </p>
+                    </div>
+
+                    <div className="pt-2">
+                      <a
+                        href="/dashboard/admin"
+                        className="inline-flex items-center gap-2.5 px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-amber-500/20 hover:shadow-amber-500/35 transition-all duration-200 active:scale-95 cursor-pointer"
+                      >
+                        <Zap className="w-4 h-4 fill-current" />
+                        <span>Launch Full-Page Admin Console</span>
+                      </a>
+                    </div>
+                  </div>
                 )}
 
                 {activeTab === "danger" && (

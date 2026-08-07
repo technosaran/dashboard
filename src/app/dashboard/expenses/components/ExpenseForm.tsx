@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 
 type Account = {
   id: string;
@@ -273,20 +274,22 @@ export default function ExpenseForm({
       })()}
 
       <div className="pt-2 flex items-center gap-2.5">
-        <button
+        <Button
           type="button"
+          variant="outline"
           onClick={_onClose}
-          className="h-10 px-5 rounded-xl border border-white/10 bg-white/5 text-xs font-bold text-white hover:bg-white/10 transition-all active:scale-95"
+          disabled={submitting}
         >
           Cancel
-        </button>
-        <button
+        </Button>
+        <Button
           type="submit"
-          disabled={submitting}
-          className="flex-1 h-10 rounded-xl bg-gradient-to-r from-rose-500 via-rose-600 to-pink-600 text-white text-xs font-black uppercase tracking-wider shadow-lg shadow-rose-500/25 hover:shadow-rose-500/40 active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          variant="danger"
+          isLoading={submitting}
+          className="flex-1 uppercase font-black tracking-wider"
         >
-          {submitting ? "Processing…" : editingExpense ? "Save Changes" : "Confirm Record"}
-        </button>
+          {editingExpense ? "Save Changes" : "Confirm Record"}
+        </Button>
       </div>
     </form>
   );

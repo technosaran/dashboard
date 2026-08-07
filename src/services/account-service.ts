@@ -9,7 +9,7 @@ import { CacheService, CACHE_TTL } from "@/lib/cache-service";
 export interface CreateAccountInput {
   name: string;
   type: string;
-  balance: string;
+  balance: number | string;
   currency?: string;
   bank_name?: string;
   account_number?: string;
@@ -53,10 +53,12 @@ export class AccountService {
    * Creates a new account. Invalidates aggregate balance cache.
    */
   public async createAccount(userId: string, data: CreateAccountInput): Promise<Account> {
+    const parsedBalance = typeof data.balance === "number" ? data.balance : parseFloat(data.balance || "0");
     const account = await this.accountRepo.create({
       ...data,
+      balance: isNaN(parsedBalance) ? 0 : parsedBalance,
       user_id: userId,
-    } as any);
+    });
 
     await this.invalidateUserCache(userId);
     return account;

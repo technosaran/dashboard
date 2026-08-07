@@ -82,6 +82,8 @@ export async function setTelegramBotCommands(): Promise<void> {
       { command: "summary", description: "📊 Monthly Flow & Savings" },
       { command: "history", description: "📜 Recent Transactions" },
       { command: "budget", description: "🎯 Category Budgets Status" },
+      { command: "bills", description: "🗓️ Recurring Bills & Subscriptions" },
+      { command: "taxharvest", description: "📉 Tax Loss Harvesting Opportunities" },
       { command: "dividends", description: "💵 Dividend Earnings Report" },
       { command: "backup", description: "📦 Download Data Backup (.json)" },
       { command: "ai", description: "🤖 AI Wealth Score & Insights" },
@@ -201,5 +203,41 @@ export function getBrandEmoji(name: string): string {
   if (/dividend|interest|stock|share|crypto|btc|eth/i.test(clean)) return "💎";
   if (/rent|house|electricity|bill|utility/i.test(clean)) return "💡";
   return "🏷️";
+}
+
+/**
+ * Trigger immediate real-time Telegram alert when category budget crosses 80% or 100% threshold
+ */
+export async function checkAndSendBudgetOverspendAlert(params: {
+  chatId: string;
+  category: string;
+  spentAmount: number;
+  budgetLimit: number;
+  currency?: string;
+}): Promise<void> {
+  const { chatId, category, spentAmount, budgetLimit, currency = "INR" } = params;
+  if (!chatId || budgetLimit <= 0) return;
+
+  const pct = Math.round((spentAmount / budgetLimit) * 100);
+  if (pct < 80) return;
+
+  const formatCurr = (amt: number) =>
+    new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 0,
+    }).format(amt);
+
+  const statusIcon = pct >= 100 ? "🚨" : "⚠️";
+  const title = pct >= 100 ? "BUDGET BREACHED" : "BUDGET WARNING";
+
+  const message =
+    `${statusIcon} *${title}*: ${category}\n\n` +
+    `You have used *${pct}%* of your monthly budget limit!\n` +
+    `• *Spent*: ${formatCurr(spentAmount)}\n` +
+    `• *Monthly Budget Limit*: ${formatCurr(budgetLimit)}\n` +
+    (pct >= 100 ? `\n‼️ *Over budget by ${formatCurr(spentAmount - budgetLimit)}*` : "");
+
+  await sendTelegramMessage(chatId, message);
 }
 

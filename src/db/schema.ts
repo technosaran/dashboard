@@ -67,7 +67,8 @@ export const transactions = pgTable("transactions", {
   updated_at: timestamp("updated_at").defaultNow(),
 }, (t) => ({
   userIdIdx: index("transactions_user_id_idx").on(t.user_id),
-  accountIdIdx: index("transactions_account_id_idx").on(t.account_id)
+  accountIdIdx: index("transactions_account_id_idx").on(t.account_id),
+  userDateIdx: index("transactions_user_date_idx").on(t.user_id, t.date),
 }));
 
 // ---------------------------------------------------------------------------
@@ -107,7 +108,8 @@ export const ledgerLogs = pgTable("ledger_logs", {
   created_at: timestamp("created_at").defaultNow(),
 }, (t) => ({
   userIdIdx: index("ledger_logs_user_id_idx").on(t.user_id),
-  accountIdIdx: index("ledger_logs_account_id_idx").on(t.account_id)
+  accountIdIdx: index("ledger_logs_account_id_idx").on(t.account_id),
+  userCreatedIdx: index("ledger_logs_user_created_idx").on(t.user_id, t.created_at),
 }));
 
 // ---------------------------------------------------------------------------
@@ -130,7 +132,8 @@ export const incomes = pgTable("incomes", {
   updated_at: timestamp("updated_at").defaultNow(),
 }, (t) => ({
   userIdIdx: index("incomes_user_id_idx").on(t.user_id),
-  accountIdIdx: index("incomes_account_id_idx").on(t.account_id)
+  accountIdIdx: index("incomes_account_id_idx").on(t.account_id),
+  userRecurringIdx: index("incomes_user_recurring_idx").on(t.user_id, t.is_recurring),
 }));
 
 // ---------------------------------------------------------------------------
@@ -153,7 +156,8 @@ export const expenses = pgTable("expenses", {
   updated_at: timestamp("updated_at").defaultNow(),
 }, (t) => ({
   userIdIdx: index("expenses_user_id_idx").on(t.user_id),
-  accountIdIdx: index("expenses_account_id_idx").on(t.account_id)
+  accountIdIdx: index("expenses_account_id_idx").on(t.account_id),
+  userRecurringIdx: index("expenses_user_recurring_idx").on(t.user_id, t.is_recurring),
 }));
 
 // ---------------------------------------------------------------------------

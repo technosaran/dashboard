@@ -3,7 +3,7 @@
  * Implements requirement 4.4 and 4.5: Redis caching for frequently accessed data.
  */
 
-import { redisGet, redisSet, redisDel, getRedisClient, isRedisHealthy } from "./redis";
+import { redisGet, redisSet, redisDel, getRedisClient, isRedisHealthy, deleteInMemoryPattern } from "./redis";
 
 export class CacheService {
   private defaultTtlSeconds = 300; // 5 minutes default
@@ -85,14 +85,7 @@ export class CacheService {
         .replace(/\*/g, '.*')
         .replace(/\?/g, '.');
       const regex = new RegExp(`^${regexPattern}$`);
-      const { inMemoryStore } = await import('./redis') as any;
-      if (inMemoryStore && typeof inMemoryStore.keys === 'function') {
-        for (const key of inMemoryStore.keys()) {
-          if (regex.test(key)) {
-            inMemoryStore.delete(key);
-          }
-        }
-      }
+      deleteInMemoryPattern(regex);
     } catch {
       // ignore in-memory pattern cleanup errors
     }

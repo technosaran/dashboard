@@ -4,6 +4,7 @@ import useSWR from "swr";
 import { useMemo } from "react";
 import { createClient } from "@/lib/supabase-browser";
 import type { Tables } from "@/lib/database.types";
+import { setOfflineCache } from "@/lib/offline-db";
 
 const EMPTY_ARRAY: never[] = [];
 const getSupabase = () => createClient();
@@ -83,11 +84,11 @@ async function fetchForex() {
 
 export function useFinanceData(initialData?: FinanceData) {
   const swrOptions = {
-    dedupingInterval: 2000, // 2 seconds deduping interval for responsive data updates
-    focusThrottleInterval: 3000, // 3 seconds focus throttle
-    revalidateOnFocus: true, // Refresh accounts & finance data when user focuses tab
+    dedupingInterval: 5000, // 5 seconds deduping interval to prevent rapid re-fetching lag
+    focusThrottleInterval: 10000, // 10 seconds focus throttle for smooth tab switching
+    revalidateOnFocus: false, // Prevent laggy background revalidation on every window focus
     revalidateOnReconnect: true, // Auto-refresh when reconnected
-    keepPreviousData: true, // Smoother UI transitions
+    keepPreviousData: true, // Smoother UI transitions with zero flicker
   };
 
   const summarySWR = useSWR("finance_summary", fetchSummary, {
@@ -174,6 +175,11 @@ export function useFinanceData(initialData?: FinanceData) {
     cashflowSWR.data,
     forexSWR.data
   ]);
+
+  // Sync to IndexedDB for 0ms instant offline loading
+  if (typeof window !== "undefined" && data.accounts.length > 0) {
+    void setOfflineCache("finance_data_cache", data);
+  }
 
   const isLoading =
     (!summarySWR.data && !summarySWR.error) ||

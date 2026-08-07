@@ -232,6 +232,17 @@ if (typeof setInterval !== 'undefined') {
 }
 
 /**
+ * Delete keys from in-memory fallback store by regex pattern
+ */
+export function deleteInMemoryPattern(regex: RegExp): void {
+  for (const key of inMemoryStore.keys()) {
+    if (regex.test(key)) {
+      inMemoryStore.delete(key);
+    }
+  }
+}
+
+/**
  * Gracefully close Redis connection
  */
 export async function closeRedis(): Promise<void> {

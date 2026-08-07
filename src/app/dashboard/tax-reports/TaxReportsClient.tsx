@@ -12,6 +12,8 @@ import {
   type TaxRegime,
 } from "@/lib/tax/india-tax-engine";
 import Form16ParserModal from "@/components/Form16ParserModal";
+import { TaxLossHarvestingCalculator } from "./components/TaxLossHarvestingCalculator";
+import { AITaxSyncModal } from "./components/AITaxSyncModal";
 import {
   Zap,
   Receipt,
@@ -24,6 +26,7 @@ import {
   Calculator,
   Sparkles,
   FileText,
+  Bot,
 } from "lucide-react";
 
 const formatINR = (value: number) =>
@@ -37,6 +40,7 @@ export default function TaxReportsClient() {
   const [isSyncingPrices, setIsSyncingPrices] = useState(false);
   const [showMathAudit, setShowMathAudit] = useState(true);
   const [showForm16Modal, setShowForm16Modal] = useState(false);
+  const [showAITaxSyncModal, setShowAITaxSyncModal] = useState(false);
 
   const {
     incomes = [],
@@ -53,22 +57,23 @@ export default function TaxReportsClient() {
     return [current - 2, current - 1, current, current + 1];
   }, []);
 
-  const report = useMemo(
-    () =>
-      computeIndiaTaxReport({
-        fyStartYear,
-        regime,
-        incomes,
-        expenses,
-        transactions: data?.transactions || [],
-        investments,
-        mutualFunds,
-        bonds,
-        alternativeAssets,
-        liabilities,
-      }),
-    [data, fyStartYear, regime, incomes, expenses, investments, mutualFunds, bonds, alternativeAssets, liabilities]
+  const taxInput = useMemo(
+    () => ({
+      fyStartYear,
+      regime,
+      incomes,
+      expenses,
+      transactions: data?.transactions || [],
+      investments,
+      mutualFunds,
+      bonds,
+      alternativeAssets,
+      liabilities,
+    }),
+    [fyStartYear, regime, incomes, expenses, data?.transactions, investments, mutualFunds, bonds, alternativeAssets, liabilities]
   );
+
+  const report = useMemo(() => computeIndiaTaxReport(taxInput), [taxInput]);
 
   const stdDeduction = regime === "new" ? 75000 : 50000;
   const taxableNet = Math.max(0, report.taxHeads.grossIncome - stdDeduction);
@@ -115,7 +120,16 @@ export default function TaxReportsClient() {
             </div>
 
             {/* Live Sync Action & Form 16 Parser */}
-            <div className="flex items-center gap-3 shrink-0 flex-wrap">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setShowAITaxSyncModal(true)}
+                className="px-4 py-2.5 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer active:scale-95 shadow-lg shadow-amber-500/10"
+              >
+                <Bot className="w-3.5 h-3.5 text-amber-400" />
+                <span>AI Tax Auto-Sync</span>
+              </button>
+
               <button
                 type="button"
                 onClick={() => setShowForm16Modal(true)}
@@ -137,6 +151,12 @@ export default function TaxReportsClient() {
             </div>
           </div>
         </div>
+
+        <AITaxSyncModal
+          isOpen={showAITaxSyncModal}
+          onClose={() => setShowAITaxSyncModal(false)}
+          onSuccess={() => mutate()}
+        />
 
         <Form16ParserModal
           isOpen={showForm16Modal}
@@ -250,6 +270,9 @@ export default function TaxReportsClient() {
             )}
           </div>
         </div>
+
+        {/* ─── TAX LOSS & GAIN HARVESTING STUDIO ─── */}
+        <TaxLossHarvestingCalculator input={taxInput} />
 
         {/* ─── TRANSPARENT LINE-BY-LINE MATH AUDIT BOX ─── */}
         <div className="p-6 rounded-3xl bg-gradient-to-br from-slate-900/90 via-indigo-950/40 to-slate-950/90 border border-cyan-500/20 shadow-2xl space-y-4">

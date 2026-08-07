@@ -116,8 +116,7 @@ export async function csrfMiddleware(request: NextRequest): Promise<NextResponse
   }
 
   const requestToken = headerToken || formToken;
-  const cookieStore = await cookies();
-  const cookieToken = cookieStore.get(CSRF_TOKEN_NAME)?.value;
+  const cookieToken = request.cookies.get(CSRF_TOKEN_NAME)?.value;
 
   if (!cookieToken || !requestToken || !timingSafeEqual(requestToken, cookieToken)) {
     return NextResponse.json(

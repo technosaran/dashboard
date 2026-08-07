@@ -434,3 +434,203 @@ export function computeIndiaTaxReport(input: TaxEngineInput) {
     },
   };
 }
+
+export type TaxHarvestingItem = {
+  id: string;
+  name: string;
+  assetClass: string;
+  isLtcg: boolean;
+  holdingDays: number;
+  investedValue: number;
+  currentValue: number;
+  unrealizedPnl: number;
+  harvestType: "Loss Harvest" | "Gain Harvest (LTCG Exemption)" | "Neutral";
+  potentialTaxSavings: number;
+};
+
+export type TaxHarvestingResult = {
+  stcgRealized: number;
+  ltcgRealized: number;
+  initialTaxPayable: number;
+  unusedLtcgExemption: number;
+  items: TaxHarvestingItem[];
+  totalLossHarvestable: number;
+  totalGainHarvestableTaxFree: number;
+  maxPotentialTaxSavings: number;
+};
+
+export function computeTaxLossHarvesting(input: TaxEngineInput): TaxHarvestingResult {
+  const report = computeIndiaTaxReport(input);
+  const stcgRealized = report.taxHeads.capitalGains.stcg;
+  const ltcgRealized = report.taxHeads.capitalGains.ltcg;
+
+  // Indian Tax Act 2025: STCG @ 20%, LTCG @ 12.5% above 1.25L exemption
+  const LTCG_EXEMPTION = 125000;
+  const STCG_RATE = 0.20;
+  const LTCG_RATE = 0.125;
+
+  const initialStcgTax = Math.max(0, stcgRealized) * STCG_RATE;
+  const initialLtcgTax = Math.max(0, ltcgRealized - LTCG_EXEMPTION) * LTCG_RATE;
+  const initialTaxPayable = initialStcgTax + initialLtcgTax;
+
+  const unusedLtcgExemption = Math.max(0, LTCG_EXEMPTION - Math.max(0, ltcgRealized));
+
+  const items: TaxHarvestingItem[] = [];
+
+  // 1. Process Stock / Equity Investments
+  for (const stock of input.investments) {
+    const qty = toAmount(stock.quantity);
+    const buy = toAmount(stock.buy_price);
+    const current = toAmount(stock.current_price || stock.buy_price);
+    const investedValue = qty * buy;
+    const currentValue = qty * current;
+    const unrealizedPnl = currentValue - investedValue;
+    const holdingDays = getHoldingDays(stock.bought_at || null);
+    const isLtcg = holdingDays > 365;
+    const assetClass = normalize(stock.type).includes("crypto") ? "Crypto" : "Equity";
+
+    let harvestType: TaxHarvestingItem["harvestType"] = "Neutral";
+    let potentialTaxSavings = 0;
+
+    if (unrealizedPnl < 0 && assetClass !== "Crypto") {
+      harvestType = "Loss Harvest";
+      potentialTaxSavings = Math.abs(unrealizedPnl) * (isLtcg ? LTCG_RATE : STCG_RATE);
+    } else if (unrealizedPnl > 0 && isLtcg && unusedLtcgExemption > 0) {
+      harvestType = "Gain Harvest (LTCG Exemption)";
+      potentialTaxSavings = Math.min(unrealizedPnl, unusedLtcgExemption) * LTCG_RATE;
+    }
+
+    items.push({
+      id: stock.id || `stock-${stock.symbol || stock.name}`,
+      name: stock.symbol || stock.name || "Stock Holding",
+      assetClass,
+      isLtcg,
+      holdingDays,
+      investedValue,
+      currentValue,
+      unrealizedPnl,
+      harvestType,
+      potentialTaxSavings,
+    });
+  }
+
+  // 2. Process Mutual Funds
+  for (const mf of input.mutualFunds) {
+    const units = toAmount(mf.units);
+    const avg = toAmount(mf.avg_nav);
+    const current = toAmount(mf.current_nav || mf.avg_nav);
+    const investedValue = units * avg;
+    const currentValue = units * current;
+    const unrealizedPnl = currentValue - investedValue;
+    const holdingDays = getHoldingDays(mf.created_at || null);
+    const isLtcg = holdingDays > 365;
+
+    let harvestType: TaxHarvestingItem["harvestType"] = "Neutral";
+    let potentialTaxSavings = 0;
+
+    if (unrealizedPnl < 0) {
+      harvestType = "Loss Harvest";
+      potentialTaxSavings = Math.abs(unrealizedPnl) * (isLtcg ? LTCG_RATE : STCG_RATE);
+    } else if (unrealizedPnl > 0 && isLtcg && unusedLtcgExemption > 0) {
+      harvestType = "Gain Harvest (LTCG Exemption)";
+      potentialTaxSavings = Math.min(unrealizedPnl, unusedLtcgExemption) * LTCG_RATE;
+    }
+
+    items.push({
+      id: mf.id || `mf-${mf.fund_name}`,
+      name: mf.fund_name || "Mutual Fund",
+      assetClass: "Mutual Funds",
+      isLtcg,
+      holdingDays,
+      investedValue,
+      currentValue,
+      unrealizedPnl,
+      harvestType,
+      potentialTaxSavings,
+    });
+  }
+
+  // 3. Process Bonds
+  for (const b of input.bonds) {
+    const qty = toAmount(b.quantity);
+    const buy = toAmount(b.purchase_price);
+    const current = toAmount(b.current_value || qty * toAmount(b.current_price));
+    const investedValue = qty * buy;
+    const currentValue = current;
+    const unrealizedPnl = currentValue - investedValue;
+    const holdingDays = getHoldingDays(b.created_at || null);
+    const isLtcg = holdingDays > 365;
+
+    let harvestType: TaxHarvestingItem["harvestType"] = "Neutral";
+    let potentialTaxSavings = 0;
+
+    if (unrealizedPnl < 0) {
+      harvestType = "Loss Harvest";
+      potentialTaxSavings = Math.abs(unrealizedPnl) * (isLtcg ? LTCG_RATE : STCG_RATE);
+    }
+
+    items.push({
+      id: b.id || `bond-${b.bond_name}`,
+      name: b.bond_name || "Bond Holding",
+      assetClass: "Bonds",
+      isLtcg,
+      holdingDays,
+      investedValue,
+      currentValue,
+      unrealizedPnl,
+      harvestType,
+      potentialTaxSavings,
+    });
+  }
+
+  // 4. Process Alternative Assets
+  for (const a of input.alternativeAssets) {
+    const investedValue = toAmount(a.purchase_price);
+    const currentValue = toAmount(a.current_value);
+    const unrealizedPnl = currentValue - investedValue;
+    const holdingDays = getHoldingDays(a.created_at || null);
+    const isLtcg = holdingDays > 365;
+
+    let harvestType: TaxHarvestingItem["harvestType"] = "Neutral";
+    let potentialTaxSavings = 0;
+
+    if (unrealizedPnl < 0) {
+      harvestType = "Loss Harvest";
+      potentialTaxSavings = Math.abs(unrealizedPnl) * (isLtcg ? LTCG_RATE : STCG_RATE);
+    }
+
+    items.push({
+      id: a.id || `alt-${a.name}`,
+      name: a.name || "Alternative Asset",
+      assetClass: a.category || "Alt Assets",
+      isLtcg,
+      holdingDays,
+      investedValue,
+      currentValue,
+      unrealizedPnl,
+      harvestType,
+      potentialTaxSavings,
+    });
+  }
+
+  const totalLossHarvestable = items
+    .filter((x) => x.harvestType === "Loss Harvest")
+    .reduce((s, x) => s + Math.abs(x.unrealizedPnl), 0);
+
+  const totalGainHarvestableTaxFree = items
+    .filter((x) => x.harvestType === "Gain Harvest (LTCG Exemption)")
+    .reduce((s, x) => s + x.unrealizedPnl, 0);
+
+  const maxPotentialTaxSavings = items.reduce((s, x) => s + x.potentialTaxSavings, 0);
+
+  return {
+    stcgRealized,
+    ltcgRealized,
+    initialTaxPayable,
+    unusedLtcgExemption,
+    items,
+    totalLossHarvestable,
+    totalGainHarvestableTaxFree,
+    maxPotentialTaxSavings,
+  };
+}

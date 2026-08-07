@@ -124,7 +124,7 @@ export async function proxy(request: NextRequest) {
     rateLimitResult = await authRateLimiter.check(ip);
     if (!rateLimitResult.allowed) {
       SecurityLogger.logRateLimitViolation(ip, pathname);
-      const res = NextResponse.redirect(new URL("/login?error=Too%20many%20login%20attempts", request.url));
+      const res = NextResponse.redirect(new URL("/login?error=Too%20many%20login%20attempts", request.url), 303);
       res.headers.set("X-RateLimit-Limit", rateLimitResult.limit.toString());
       res.headers.set("X-RateLimit-Remaining", rateLimitResult.remaining.toString());
       res.headers.set("X-RateLimit-Reset", rateLimitResult.resetAt.toISOString());
